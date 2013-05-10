@@ -19,7 +19,6 @@ import cloudstackException
 import json
 import inspect
 from cloudstackAPI import *
-import pdb
 
 class jsonLoader:
     '''The recursive class for building and representing objects with.'''
@@ -113,12 +112,8 @@ def finalizeResultObj(result, responseName, responsecls):
             return result
     else:
         return result
-                    
-            
-        
+
 def getResultObj(returnObj, responsecls=None):
-    returnObj = json.loads(returnObj)
-    
     if len(returnObj) == 0:
         return None
     responseName = filter(lambda a: a!=u'cloudstack-version', returnObj.keys())[0]

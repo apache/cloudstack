@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -79,6 +80,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the availability zone for the virtual machine")
     private String zoneName;
 
+    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description="the network type of the availability zone for the virtual machine")
+    private String zoneType;
+    
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the host for the virtual machine")
     private String hostId;
 
@@ -169,10 +173,15 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
     private String keyPairName;
 
+    @SerializedName("affinitygroup")
+    @Param(description = "list of affinity groups associated with the virtual machine", responseObject = AffinityGroupResponse.class)
+    private Set<AffinityGroupResponse> affinityGroupList;
+
     public UserVmResponse(){
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
         tags = new LinkedHashSet<ResourceTagResponse>();
+        affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
     }
 
     public void setHypervisor(String hypervisor) {
@@ -243,6 +252,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.zoneName = zoneName;
     }
 
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
+    }
+    
     public void setHostId(String hostId) {
         this.hostId = hostId;
     }
@@ -379,6 +392,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setKeyPairName(String keyPairName) {
         this.keyPairName = keyPairName;
+    }
+
+    public void setAffinityGroupList(Set<AffinityGroupResponse> affinityGroups) {
+        this.affinityGroupList = affinityGroups;
+    }
+
+    public void addAffinityGroup(AffinityGroupResponse affinityGroup) {
+        this.affinityGroupList.add(affinityGroup);
     }
 
 }

@@ -35,6 +35,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -456,7 +457,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     }
 
-    private boolean isSecondaryStorageVmRequired(long dcId) {
+    protected boolean isSecondaryStorageVmRequired(long dcId) {
         DataCenterVO dc = _dcDao.findById(dcId);
         _dcDao.loadDetails(dc);
         String ssvmReq = dc.getDetail(ZoneConfig.EnableSecStorageVm.key());
@@ -1042,10 +1043,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             	buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
             } else {
             	s_logger.debug("Telling the ssvm to load the NfsSecondaryStorageResource");
-                buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
+                buf.append(" resource=org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource");
             }
         } else {
-            buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
+            buf.append(" resource=org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource");
         }
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));

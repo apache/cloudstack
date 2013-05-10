@@ -55,6 +55,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Thumbnail access : /console?cmd=thumbnail&vm=xxx&w=xxx&h=xxx
@@ -71,19 +73,21 @@ public class ConsoleProxyServlet extends HttpServlet {
     @Inject AccountManager _accountMgr;
     @Inject VirtualMachineManager _vmMgr;
     @Inject ManagementServer _ms;
-    @Inject IdentityService _identityService; 
+    @Inject IdentityService _identityService;
 
     static ManagementServer s_ms;
 
+    private Gson _gson = new GsonBuilder().create();
+
     public ConsoleProxyServlet() {
     }
-  
+
     @Override
     public void init(ServletConfig config) throws ServletException {
-    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());
     	s_ms = _ms;
     }
-    
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         doGet(req, resp);
@@ -270,7 +274,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
     private void handleAuthRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
 
-        // TODO authentication channel between console proxy VM and management server needs to be secured, 
+        // TODO authentication channel between console proxy VM and management server needs to be secured,
         // the data is now being sent through private network, but this is apparently not enough
         VMInstanceVO vm = _vmMgr.findById(vmId);
         if(vm == null) {
@@ -327,6 +331,14 @@ public class ConsoleProxyServlet extends HttpServlet {
         return new Ternary<String, String, String>(host, tunnelUrl, tunnelSession);
     }
 
+    private String getEncryptorPassword() {
+    	String key = _ms.getEncryptionKey();
+    	String iv = _ms.getEncryptionIV();
+
+    	ConsoleProxyPasswordBasedEncryptor.KeyIVPair keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair(key, iv);
+		return _gson.toJson(keyIvPair);
+    }
+
     private String composeThumbnailUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo, int w, int h) {
         StringBuffer sb = new StringBuffer(rootUrl);
 
@@ -340,7 +352,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         tag = _identityService.getIdentityUuid("vm_instance", tag);
         String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
 
-        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
+        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
         param.setClientHostAddress(parsedHostInfo.first());
         param.setClientHostPort(portInfo.second());
@@ -373,10 +385,9 @@ public class ConsoleProxyServlet extends HttpServlet {
         Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
 
         String sid = vm.getVncPassword();
-        String tag = String.valueOf(vm.getId());
-        tag = _identityService.getIdentityUuid("vm_instance", tag);
+        String tag = vm.getUuid();
         String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
-        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
+        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
         param.setClientHostAddress(parsedHostInfo.first());
         param.setClientHostPort(portInfo.second());
@@ -461,12 +472,12 @@ public class ConsoleProxyServlet extends HttpServlet {
             } catch (PermissionDeniedException ex) {
                 if (accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
+                        s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
                                 + " does not match the account id in session " + accountObj.getId() + " and caller is a normal user");
                     }
                 } else if(accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
                     if(s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
+                        s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
                                 + " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
                     }
                 }
@@ -503,7 +514,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             account = _accountMgr.getAccount(user.getAccountId());
         }
 
-        if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) 
+        if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled)
                 || (account == null) || !account.getState().equals(Account.State.enabled)) {
             s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
             return false;
@@ -574,7 +585,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             if (!user.getState().equals(Account.State.enabled) || !account.getState().equals(Account.State.enabled)) {
                 s_logger.debug("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() + "; accountState: " + account.getState());
                 return false;
-            }     
+            }
 
             // verify secret key exists
             secretKey = user.getSecretKey();
@@ -620,10 +631,10 @@ public class ConsoleProxyServlet extends HttpServlet {
             case '>': sb.append("&gt;"); break;
             case '&': sb.append("&amp;"); break;
             case '"': sb.append("&quot;"); break;
-            case ' ': sb.append("&nbsp;");break;         
+            case ' ': sb.append("&nbsp;");break;
             default:  sb.append(c); break;
             }
         }
         return sb.toString();
-    }    
+    }
 }

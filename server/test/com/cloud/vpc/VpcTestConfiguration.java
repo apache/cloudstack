@@ -19,6 +19,7 @@ package com.cloud.vpc;
 
 import java.io.IOException;
 
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -32,6 +33,7 @@ import org.springframework.core.type.filter.TypeFilter;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
+import com.cloud.configuration.dao.ResourceCountDaoImpl;
 import com.cloud.configuration.dao.ResourceLimitDaoImpl;
 import com.cloud.dao.EntityManagerImpl;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
@@ -44,14 +46,27 @@ import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.dc.dao.PodVlanMapDaoImpl;
+import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
-import com.cloud.vpc.MockNetworkModelImpl;
+import com.cloud.network.Ipv6AddressManagerImpl;
 import com.cloud.network.StorageNetworkManager;
+import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
+import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
+import com.cloud.network.dao.LoadBalancerDaoImpl;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDaoImpl;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
+import com.cloud.network.dao.RouterNetworkDaoImpl;
+import com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl;
+import com.cloud.network.dao.UserIpv6AddressDaoImpl;
+import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpc.VpcManagerImpl;
@@ -60,47 +75,36 @@ import com.cloud.network.vpc.dao.StaticRouteDaoImpl;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDaoImpl;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
-import com.cloud.utils.component.SpringComponentScanUtils;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.dao.DomainRouterDaoImpl;
-import com.cloud.vm.dao.NicDaoImpl;
-import com.cloud.vm.dao.UserVmDaoImpl;
-import com.cloud.vm.dao.UserVmDetailsDaoImpl;
-import com.cloud.vm.dao.VMInstanceDaoImpl;
-import com.cloud.vpc.dao.MockNetworkOfferingDaoImpl;
-import com.cloud.vpc.dao.MockNetworkOfferingServiceMapDaoImpl;
-import com.cloud.vpc.dao.MockNetworkServiceMapDaoImpl;
-import com.cloud.vpc.dao.MockVpcOfferingDaoImpl;
-import com.cloud.vpc.dao.MockVpcOfferingServiceMapDaoImpl;
-
-
-import com.cloud.configuration.dao.ResourceCountDaoImpl;
-import com.cloud.dc.dao.VlanDaoImpl;
-import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
-import com.cloud.network.dao.FirewallRulesDaoImpl;
-import com.cloud.network.dao.LoadBalancerDaoImpl;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.PhysicalNetworkDaoImpl;
-import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
-import com.cloud.network.dao.RouterNetworkDaoImpl;
-import com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl;
-import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
-import com.cloud.network.element.NetworkElement;
-import com.cloud.network.element.Site2SiteVpnServiceProvider;
+import com.cloud.network.vpc.dao.VpcServiceMapDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.projects.dao.ProjectAccountDaoImpl;
 import com.cloud.projects.dao.ProjectDaoImpl;
 import com.cloud.resourcelimit.ResourceLimitManagerImpl;
+import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateDetailsDaoImpl;
+import com.cloud.storage.dao.VMTemplateHostDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.dao.DomainRouterDaoImpl;
+import com.cloud.vm.dao.NicDaoImpl;
+import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
+import com.cloud.vm.dao.UserVmDaoImpl;
+import com.cloud.vm.dao.UserVmDetailsDaoImpl;
+import com.cloud.vm.dao.VMInstanceDaoImpl;
+import com.cloud.vpc.dao.MockNetworkOfferingDaoImpl;
+import com.cloud.vpc.dao.MockNetworkOfferingServiceMapDaoImpl;
+import com.cloud.vpc.dao.MockNetworkServiceMapDaoImpl;
+import com.cloud.vpc.dao.MockVpcDaoImpl;
+import com.cloud.vpc.dao.MockVpcOfferingDaoImpl;
+import com.cloud.vpc.dao.MockVpcOfferingServiceMapDaoImpl;
 
 
 @Configuration
@@ -141,12 +145,18 @@ import com.cloud.user.dao.UserStatisticsDaoImpl;
         SnapshotDaoImpl.class,
         VMInstanceDaoImpl.class,
         VolumeDaoImpl.class,
+        UserIpv6AddressDaoImpl.class,
+        NicSecondaryIpDaoImpl.class,
+        VpcServiceMapDaoImpl.class,
+        ServiceOfferingDaoImpl.class,
+        VMTemplateHostDaoImpl.class,
+        MockVpcDaoImpl.class,
         VMTemplateDaoImpl.class,VMTemplateZoneDaoImpl.class,VMTemplateDetailsDaoImpl.class,DataCenterDaoImpl.class,DataCenterIpAddressDaoImpl.class,DataCenterLinkLocalIpAddressDaoImpl.class,DataCenterVnetDaoImpl.class,PodVlanDaoImpl.class,
         DcDetailsDaoImpl.class,MockNetworkManagerImpl.class,MockVpcVirtualNetworkApplianceManager.class,
         EntityManagerImpl.class,LoadBalancerDaoImpl.class,FirewallRulesCidrsDaoImpl.class,VirtualRouterProviderDaoImpl.class,
         ProjectDaoImpl.class,ProjectAccountDaoImpl.class,MockVpcOfferingDaoImpl.class,
         MockConfigurationManagerImpl.class, MockNetworkOfferingServiceMapDaoImpl.class,
-        MockNetworkServiceMapDaoImpl.class,MockVpcOfferingServiceMapDaoImpl.class,MockNetworkOfferingDaoImpl.class, MockNetworkModelImpl.class},
+        MockNetworkServiceMapDaoImpl.class,MockVpcOfferingServiceMapDaoImpl.class,MockNetworkOfferingDaoImpl.class, MockNetworkModelImpl.class, Ipv6AddressManagerImpl.class},
         includeFilters={@Filter(value=VpcTestConfiguration.VpcLibrary.class, type=FilterType.CUSTOM)},
         useDefaultFilters=false
         )
@@ -210,22 +220,23 @@ public class VpcTestConfiguration {
         return Mockito.mock(RemoteAccessVpnService.class);
     }
 
-    @Bean
-    public VpcDao vpcDao() {
-        return Mockito.mock(VpcDao.class);
-    }
+//    @Bean
+//    public VpcDao vpcDao() {
+//        return Mockito.mock(VpcDao.class);
+//    }
 
     @Bean
     public NetworkDao networkDao() {
         return Mockito.mock(NetworkDao.class);
     }
+    
 
     public static class VpcLibrary implements TypeFilter {
         @Override
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();
             ComponentScan cs = VpcTestConfiguration.class.getAnnotation(ComponentScan.class);
-            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
         }
     }
 }

@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.motion;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -26,9 +27,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.Host;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -60,4 +65,15 @@ public class DataMotionServiceImpl implements DataMotionService {
         throw new CloudRuntimeException("can't find strategy to move data");
     }
 
+    @Override
+    public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo,
+            Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        for (DataMotionStrategy strategy : strategies) {
+            if (strategy.canHandle(volumeMap, srcHost, destHost)) {
+                strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);
+                return;
+            }
+        }
+        throw new CloudRuntimeException("can't find strategy to move data");
+    }
 }

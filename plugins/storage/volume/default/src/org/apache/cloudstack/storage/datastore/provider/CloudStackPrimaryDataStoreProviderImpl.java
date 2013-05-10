@@ -38,7 +38,7 @@ public class CloudStackPrimaryDataStoreProviderImpl implements
     private final String providerName = DataStoreProvider.DEFAULT_PRIMARY;
     protected PrimaryDataStoreDriver driver;
     protected HypervisorHostListener listener;
-    protected DataStoreLifeCycle lifecyle;
+    protected DataStoreLifeCycle lifecycle;
 
     CloudStackPrimaryDataStoreProviderImpl() {
 
@@ -51,12 +51,12 @@ public class CloudStackPrimaryDataStoreProviderImpl implements
 
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {
-        return this.lifecyle;
+        return this.lifecycle;
     }
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        lifecyle = ComponentContext.inject(CloudStackPrimaryDataStoreLifeCycleImpl.class);
+        lifecycle = ComponentContext.inject(CloudStackPrimaryDataStoreLifeCycleImpl.class);
         driver = ComponentContext.inject(CloudStackPrimaryDataStoreDriverImpl.class);
         listener = ComponentContext.inject(DefaultHostListener.class);
         return true;

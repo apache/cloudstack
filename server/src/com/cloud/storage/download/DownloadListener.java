@@ -35,8 +35,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -50,7 +50,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -58,6 +57,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
+import com.cloud.storage.upload.UploadListener;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -183,7 +183,7 @@ public class DownloadListener implements Listener {
 				if (this.object.getType() == DataObjectType.VOLUME) {
 					dcmd.setResourceType(ResourceType.VOLUME);
 				}
-	            _ssAgent.sendMessageAsyncWithListener(dcmd, this);
+                _ssAgent.sendMessageAsync(dcmd, new UploadListener.Callback(_ssAgent.getId(), this));
             } catch (Exception e) {
             	s_logger.debug("Send command failed", e);
 				setDisconnected();

@@ -863,13 +863,16 @@ public class VirtualRoutingResource implements Manager {
     }
 
     public void assignVpcIpToRouter(final String routerIP, final boolean add, final String pubIP,
-            final String nicname, final String gateway, final String netmask, final String subnet) throws InternalErrorException {
+                                    final String nicname, final String gateway, final String netmask, final String subnet, boolean sourceNat) throws InternalErrorException {
         String args = "";
+        String snatArgs = "";
 
         if (add) {
             args += " -A ";
+            snatArgs += " -A ";
         } else {
             args += " -D ";
+            snatArgs += " -D ";
         }
 
         args += " -l ";
@@ -886,6 +889,16 @@ public class VirtualRoutingResource implements Manager {
         String result = routerProxy("vpc_ipassoc.sh", routerIP, args);
         if (result != null) {
             throw new InternalErrorException("KVM plugin \"vpc_ipassoc\" failed:"+result);
+        }
+        if (sourceNat) {
+            snatArgs += " -l " + pubIP;
+            snatArgs += " -c " + nicname;
+
+            result = routerProxy("vpc_privateGateway.sh", routerIP, snatArgs);
+            if (result != null) {
+                throw new InternalErrorException("KVM plugin \"vpc_privateGateway\" failed:"+result);
+            }
+
         }
     }
 

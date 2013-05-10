@@ -138,29 +138,11 @@ class deployDataCenters():
         if secondaryStorages is None:
             return
         for secondary in secondaryStorages:
-            secondarycmd = addImageStore.addImageStoreCmd()
+            secondarycmd = addSecondaryStorage.addSecondaryStorageCmd()
             secondarycmd.url = secondary.url
-            secondarycmd.provider = secondary.providerName
-            secondarycmd.details = []
-            for item in secondary.details:
-                secondarycmd.details.append(item.__dict__)
-            if secondarycmd.provider == "NFS":
-                secondarycmd.zoneid = zoneId
-            self.apiClient.addImageStore(secondarycmd)
+            secondarycmd.zoneid = zoneId
+            self.apiClient.addSecondaryStorage(secondarycmd)
 
-    def createCacheStorages(self, cacheStorages, zoneId):
-        if cacheStorages is None:
-            return
-        for cache in cacheStorages:
-            cachecmd = createCacheStore.createCacheStoreCmd()
-            cachecmd.url = cache.url
-            cachecmd.provider = cache.providerName
-            cachecmd.zoneid = zoneId
-            cachecmd.details = []
-            for item in cache.details:
-                cachecmd.details.append(item.__dict__)            
-            self.apiClient.createCacheStore(cachecmd)
-            
     def createnetworks(self, networks, zoneId):
         if networks is None:
             return
@@ -187,6 +169,7 @@ class deployDataCenters():
         phynet = createPhysicalNetwork.createPhysicalNetworkCmd()
         phynet.zoneid = zoneid
         phynet.name = net.name
+        phynet.isolationmethods = net.isolationmethods
         phynetwrk = self.apiClient.createPhysicalNetwork(phynet)
         self.addTrafficTypes(phynetwrk.id, net.traffictypes)
         return phynetwrk
@@ -288,6 +271,12 @@ class deployDataCenters():
         zoneCmd.allocationstate = allocation_state
         return self.apiClient.updateZone(zoneCmd)
 
+    def updateZoneDetails(self, zoneid, details):
+        zoneCmd = updateZone.updateZoneCmd()
+        zoneCmd.id = zoneid
+        zoneCmd.details = details
+        return self.apiClient.updateZone(zoneCmd)
+
     def createZones(self, zones):
         for zone in zones:
             createzone = createZone.createZoneCmd()
@@ -311,10 +300,11 @@ class deployDataCenters():
 
             if zone.networktype == "Basic":
                 listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
-                
                 listnetworkoffering.name = "DefaultSharedNetscalerEIPandELBNetworkOffering" \
                         if len(filter(lambda x : x.typ == 'Public', zone.physical_networks[0].traffictypes)) > 0 \
                         else "DefaultSharedNetworkOfferingWithSGService"
+                if zone.networkofferingname  is not None:
+                   listnetworkoffering.name = zone.networkofferingname 
 
                 listnetworkofferingresponse = \
                 self.apiClient.listNetworkOfferings(listnetworkoffering)
@@ -338,8 +328,15 @@ class deployDataCenters():
                                         zoneId)
 
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
-            self.createCacheStorages(zone.cacheStorages, zoneId)
-            self.enableZone(zoneId, "Enabled")
+            
+            enabled = getattr(zone, 'enabled', 'True')
+            if enabled == 'True' or enabled is None:
+                self.enableZone(zoneId, "Enabled")
+            details = getattr(zone, 'details')
+            if details is not None:
+                det = [d.__dict__ for d in details]
+                self.updateZoneDetails(zoneId, det)
+
         return
     
     def isEipElbZone(self, zone):
@@ -406,14 +403,15 @@ class deployDataCenters():
 
         self.testClient = \
         cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, mgt.port, \
+                                                  mgt.user, mgt.passwd, \
                                                   mgt.apiKey, \
                                                   mgt.securityKey, \
                                             logging=self.testClientLogger)
         if mgt.apiKey is None:
             apiKey, securityKey = self.registerApiKey()
-            self.testClient.close()
             self.testClient = \
             cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, 8080, \
+                                                      mgt.user, mgt.passwd, \
                                                       apiKey, securityKey, \
                                              logging=self.testClientLogger)
 
@@ -424,6 +422,11 @@ class deployDataCenters():
                                       dbSvr.passwd, dbSvr.db)
 
         self.apiClient = self.testClient.getApiClient()
+        """set hypervisor"""
+        if mgt.hypervisor:
+            self.apiClient.hypervisor = mgt.hypervisor
+        else:
+            self.apiClient.hypervisor = "XenServer"     #Defaults to Xenserver
 
     def updateConfiguration(self, globalCfg):
         if globalCfg is None:

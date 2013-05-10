@@ -68,7 +68,7 @@
         <listitem><para>vCenter must be configured to use the standard port 443 so that it can communicate with the &PRODUCT; Management Server.</para></listitem>
         <listitem><para>You must re-install VMware ESXi if you are going to re-use a host from a previous install.</para></listitem>
         <listitem><para>&PRODUCT; requires VMware vSphere 4.1 or 5.0.  VMware vSphere 4.0 is not supported.</para></listitem>
-        <listitem><para>All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled). All hosts within a cluster must be homogenous. That means the CPUs must be of the same type, count, and feature flags.</para></listitem>
+        <listitem><para>All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled). All hosts within a cluster must be homogeneous. That means the CPUs must be of the same type, count, and feature flags.</para></listitem>
         <listitem><para>The &PRODUCT; management network must not be configured as a separate virtual network. The &PRODUCT; management network is the same as the vCenter management network, and will inherit its configuration. See <xref linkend="vmware-physical-host-networking-config-vcenter-mgt" />.</para></listitem>
         <listitem><para>&PRODUCT; requires ESXi.  ESX is not supported.</para></listitem>
         <listitem><para>All resources used for &PRODUCT; must be used for &PRODUCT; only.  &PRODUCT; cannot share instance of ESXi or storage with other management consoles.  Do not share the same storage volumes that will be used by &PRODUCT; with a different set of ESXi servers that are not managed by &PRODUCT;.</para></listitem>

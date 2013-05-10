@@ -25,7 +25,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/testContext.xml")
+@ContextConfiguration(locations="classpath:/VpcTestContext.xml")
 public class Site2SiteVpnTest {
     private final static Logger s_logger = Logger.getLogger(Site2SiteVpnTest.class);
 

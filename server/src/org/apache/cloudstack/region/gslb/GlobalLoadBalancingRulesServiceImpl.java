@@ -392,6 +392,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             //mark all the GSLB-LB mapping to be in revoke state
             for (GlobalLoadBalancerLbRuleMapVO gslbLbMap : gslbLbMapVos) {
                 gslbLbMap.setRevoke(true);
+                _gslbLbMapDao.update(gslbLbMap.getId(), gslbLbMap);
             }
         }
 
@@ -411,6 +412,16 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             throw new CloudRuntimeException("Failed to update the gloabal load balancer");
         }
 
+        txn.start();
+        //remove all mappings between GSLB rule and load balancer rules
+        if (gslbLbMapVos != null) {
+            for (GlobalLoadBalancerLbRuleMapVO gslbLbMap : gslbLbMapVos) {
+                _gslbLbMapDao.remove(gslbLbMap.getId());
+            }
+        }
+        //remove the GSLB rule itself
+        _gslbRuleDao.remove(gslbRuleId);
+        txn.commit();
         return success;
     }
 
@@ -497,6 +508,20 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             return response;
         }
 
+        return null;
+    }
+
+    @Override
+    public List<LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {
+        List<GlobalLoadBalancerLbRuleMapVO> gslbLbMapVos = _gslbLbMapDao.listByGslbRuleId(gslbRuleId);
+        List<LoadBalancer> siteLoadBalancers = new ArrayList<LoadBalancer>();
+        if (gslbLbMapVos != null) {
+            for (GlobalLoadBalancerLbRuleMapVO gslbLbMapVo : gslbLbMapVos) {
+                LoadBalancerVO loadBalancer = _lbDao.findById(gslbLbMapVo.getLoadBalancerId());
+                siteLoadBalancers.add(loadBalancer);
+            }
+            return siteLoadBalancers;
+        }
         return null;
     }
 

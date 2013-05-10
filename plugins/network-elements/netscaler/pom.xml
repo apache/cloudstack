@@ -28,9 +28,9 @@
   </parent>
   <dependencies>
     <dependency>
-      <groupId>com.cloud.com.citrix</groupId>
-      <artifactId>netscaler</artifactId>
-      <version>1.0</version>
+        <groupId>com.citrix.netscaler.nitro</groupId>
+        <artifactId>nitro</artifactId>
+        <version>10.0.e</version>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.citrix</groupId>

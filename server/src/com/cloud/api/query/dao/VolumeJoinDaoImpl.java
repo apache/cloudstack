@@ -86,7 +86,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
 
         volResponse.setZoneId(volume.getDataCenterUuid());
         volResponse.setZoneName(volume.getDataCenterName());
-
+        volResponse.setZoneType(volume.getDataCenterType());
+        
         volResponse.setVolumeType(volume.getVolumeType().toString());
         volResponse.setDeviceId(volume.getDeviceId());
 
@@ -196,8 +197,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         volResponse.setExtractable(isExtractable);
 
         // set async job
-        volResponse.setJobId(volume.getJobUuid());
-        volResponse.setJobStatus(volume.getJobStatus());
+        if (volume.getJobId() != null) {
+            volResponse.setJobId(volume.getJobUuid());
+            volResponse.setJobStatus(volume.getJobStatus());
+        }
 
         volResponse.setObjectName("volume");
         return volResponse;

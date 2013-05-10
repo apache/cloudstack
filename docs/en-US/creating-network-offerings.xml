@@ -194,6 +194,51 @@
           <para condition="install">For more information, see the Administration Guide.</para>
         </listitem>
         <listitem>
+          <para><emphasis role="bold">LB Isolation</emphasis>: Specify what type of load balancer
+            isolation you want for the network: Shared or Dedicated.</para>
+          <para><emphasis role="bold">Dedicated</emphasis>: If you select dedicated LB isolation, a
+            dedicated load balancer device is assigned for the network from the pool of dedicated
+            load balancer devices provisioned in the zone. If no sufficient dedicated load balancer
+            devices are available in the zone, network creation fails. Dedicated device is a good
+            choice for the high-traffic networks that make full use of the device's
+            resources.</para>
+          <para><emphasis role="bold">Shared</emphasis>: If you select shared LB isolation, a shared
+            load balancer device is assigned for the network from the pool of shared load balancer
+            devices provisioned in the zone. While provisioning &PRODUCT; picks the shared load
+            balancer device that is used by the least number of accounts. Once the device reaches
+            its maximum capacity, the device will not be allocated to a new account.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Mode</emphasis>: You can select either Inline mode or Side by
+            Side mode:</para>
+          <para><emphasis role="bold">Inline mode</emphasis>: Supported only for Juniper SRX
+            firewall and BigF5 load balancer devices. In inline mode, a firewall device is placed in
+            front of a load balancing device. The firewall acts as the gateway for all the incoming
+            traffic, then redirect the load balancing traffic to the load balancer behind it. The
+            load balancer in this case will not have the direct access to the public network. </para>
+          <para><emphasis role="bold">Side by Side</emphasis>: In side by side mode, a firewall
+            device is deployed in parallel with the load balancer device. So the traffic to the load
+            balancer public IP is not routed through the firewall, and therefore, is exposed to the
+            public network.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Associate Public IP</emphasis>: Select this option if you want
+            to assign a public IP address to the VMs deployed in the guest network. This option is
+            available only if</para>
+          <itemizedlist>
+            <listitem>
+              <para>Guest network is shared.</para>
+            </listitem>
+            <listitem>
+              <para>StaticNAT is enabled.</para>
+            </listitem>
+            <listitem>
+              <para>Elastic IP is enabled.</para>
+            </listitem>
+          </itemizedlist>
+          <para>For information on Elastic IP, see <xref linkend="elastic-ip"/>.</para>
+        </listitem>
+        <listitem>
           <para><emphasis role="bold">Redundant router capability</emphasis>. Available only when
             Virtual Router is selected as the Source NAT provider. Select this option if you want to
             use two virtual routers in the network for uninterrupted connection: one operating as

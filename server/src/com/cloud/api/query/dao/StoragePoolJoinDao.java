@@ -18,6 +18,7 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 import com.cloud.api.query.vo.StoragePoolJoinVO;
@@ -29,6 +30,11 @@ public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> 
     StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO host);
 
     StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO host);
+
+    StoragePoolForMigrationResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO host);
+
+    StoragePoolForMigrationResponse setStoragePoolForMigrationResponse(StoragePoolForMigrationResponse response,
+            StoragePoolJoinVO host);
 
     List<StoragePoolJoinVO> newStoragePoolView(StoragePool group);
 

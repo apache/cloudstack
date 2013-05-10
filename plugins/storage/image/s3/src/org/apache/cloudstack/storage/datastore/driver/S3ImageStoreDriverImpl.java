@@ -25,6 +25,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -35,7 +37,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
@@ -49,7 +50,6 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.snapshot.SnapshotObject;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -62,10 +62,9 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.host.dao.HostDao;
-import com.cloud.storage.RegisterVolumePayload;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -191,7 +190,7 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
         VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(vol.getId());
         if (volumeStore != null) {
             if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                DataStore store = this._dataStoreMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
+                DataStore store = _dataStoreMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
                 EndPoint ep = _epSelector.select(store);
                 DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(
                         store.getTO(), volumeStore.getVolumeId(), volumeStore.getInstallPath());
@@ -250,7 +249,7 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
                 answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED ||
                 answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
             CreateCmdResult result = new CreateCmdResult(null, null);
-            result.setSucess(false);
+            result.setSuccess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
@@ -304,14 +303,14 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
                 if (answer == null || !answer.getResult()) {
                     s_logger.debug("Failed to deleted template at store: " + store.getName());
                     CommandResult result = new CommandResult();
-                    result.setSucess(false);
+                    result.setSuccess(false);
                     result.setResult("Delete template failed");
                     callback.complete(result);
 
                 } else {
                     s_logger.debug("Deleted template at: " + installPath);
                     CommandResult result = new CommandResult();
-                    result.setSucess(true);
+                    result.setSuccess(true);
                     callback.complete(result);
                 }
 

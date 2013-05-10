@@ -20,7 +20,7 @@ var g_role = null; // roles - root, domain-admin, ro-admin, user
 var g_username = null;
 var g_account = null;
 var g_domainid = null;
-var g_regionUrlParam = null;
+var g_loginCmdText = null;
 var g_enableLogging = false;
 var g_timezoneoffset = null;
 var g_timezone = null;
@@ -114,6 +114,10 @@ function createURL(apiName, options) {
   if (cloudStack.context && cloudStack.context.projects && !options.ignoreProject) {
     urlString = urlString + '&projectid=' + cloudStack.context.projects[0].id;
   }
+    
+  if(cloudStack.context != null && cloudStack.context.zoneType != null && cloudStack.context.zoneType.length > 0) { //Basic type or Advanced type
+    urlString = urlString + '&zonetype=' + cloudStack.context.zoneType;    
+  }    
   
   return urlString;
 }
@@ -325,7 +329,8 @@ cloudStack.converters = {
 	    if(g_timezoneoffset != null) 
 	      localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
 	    else 
-	      localDate = disconnected.getTimePlusTimezoneOffset(0);	 
+	      localDate = disconnected.toUTCString();
+             // localDate = disconnected.getTimePlusTimezoneOffset(0);	 
     }
 		return localDate; 		
 	},
@@ -425,6 +430,31 @@ cloudStack.converters = {
     case 26 : return "Resource Limit Exceeded";
     }
   },
+
+  toCapacityCountType:function(capacityCode){
+   switch(capacityCode){
+    case 0 : return _l('label.memory');
+    case 1 : return _l('label.cpu');
+    case 2 : return _l('label.storage');
+    case 3 : return _l('label.primary.storage');
+    case 4 : return _l('label.public.ips');
+    case 5 : return _l('label.management.ips');
+    case 6 : return _l('label.secondary.storage');
+    case 7 : return _l('label.vlan');
+    case 8 : return _l('label.direct.ips');
+    case 9 : return _l('label.local.storage');
+    case 10 : return "Routing Host";
+    case 11 : return "Storage";
+    case 12 : return "Usage Server";
+    case 13 : return "Management Server";
+    case 14 : return "Domain Router";
+    case 15 : return "Console Proxy";
+    case 16 : return "User VM";
+    case 17 : return "VLAN";
+    case 18 : return "Secondary Storage VM";
+      }
+    },
+
   convertByType: function(alertCode, value) {
     switch(alertCode) {
       case 0: return cloudStack.converters.convertBytes(value);

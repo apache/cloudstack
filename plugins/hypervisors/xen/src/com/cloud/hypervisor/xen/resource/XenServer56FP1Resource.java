@@ -132,6 +132,7 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         record.affinity = host;
         record.otherConfig.remove("disks");
         record.otherConfig.remove("default_template");
+        record.otherConfig.remove("mac_seed");
         record.isATemplate = false;
         record.nameLabel = vmSpec.getName();
         record.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;

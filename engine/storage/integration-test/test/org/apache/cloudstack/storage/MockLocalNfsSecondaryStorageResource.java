@@ -10,14 +10,17 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
 import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+
+import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -29,8 +32,6 @@ import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.resource.NfsSecondaryStorageResource;
-import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;

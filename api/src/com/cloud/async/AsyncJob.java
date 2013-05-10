@@ -49,7 +49,9 @@ public interface AsyncJob extends Identity, InternalIdentity {
         AutoScalePolicy,
         AutoScaleVmProfile,
         AutoScaleVmGroup,
-        GlobalLoadBalancerRule
+        GlobalLoadBalancerRule,
+        AffinityGroup,
+        DedicatedGuestVlanRange
     }
 
     long getUserId();

@@ -38,12 +38,10 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.agent.Agent.ExitStatus;
@@ -373,6 +371,7 @@ public class AgentShell implements IAgentShell {
                 throw new ConfigurationException("Unable to find the guid");
             }
             _guid = UUID.randomUUID().toString();
+            _properties.setProperty("guid", _guid);
         }
 
         return true;

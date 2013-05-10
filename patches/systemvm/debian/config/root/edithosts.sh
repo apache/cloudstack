@@ -19,12 +19,6 @@
 
  
 # edithosts.sh -- edit the dhcphosts file on the routing domain
-# $mac : the mac address
-# $ip : the associated ip address
-# $host : the hostname
-# $4 : default router
-# $5 : nameserver on default nic
-# $6 : comma separated static routes
 
 usage() {
   printf "Usage: %s: -m <MAC address> -4 <IPv4 address> -6 <IPv6 address> -h <hostname> -d <default router> -n <name server address> -s <Routes> -u <DUID> [-N]\n" $(basename $0) >&2
@@ -84,6 +78,9 @@ fi
 grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
 no_redundant=$?
 
+command -v dhcp_release > /dev/null 2>&1
+no_dhcp_release=$?
+
 wait_for_dnsmasq () {
   local _pid=$(pidof dnsmasq)
   for i in 0 1 2 3 4 5 6 7 8 9 10
@@ -97,7 +94,15 @@ wait_for_dnsmasq () {
   return 1
 }
 
-logger -t cloud "edithosts: update $1 $2 $3 to hosts"
+if [ $no_dhcp_release -eq 0 ]
+then
+  #release previous dhcp lease if present
+  logger -t cloud "edithosts: releasing $ipv4"
+  dhcp_release lo $ipv4 $(grep $ipv4 $DHCP_LEASES | awk '{print $2}') > /dev/null 2>&1
+  logger -t cloud "edithosts: released $ipv4"
+fi
+
+logger -t cloud "edithosts: update $mac $ipv4 $ipv6 $host to hosts"
 
 [ ! -f $DHCP_HOSTS ] && touch $DHCP_HOSTS
 [ ! -f $DHCP_OPTS ] && touch $DHCP_OPTS
@@ -113,7 +118,8 @@ if [ $ipv6 ]
 then
   sed -i  /$ipv6,/d $DHCP_HOSTS
 fi
-sed -i  /$host,/d $DHCP_HOSTS
+# don't want to do this in the future, we can have same VM with multiple nics/entries
+#sed -i  /$host,/d $DHCP_HOSTS
 
 
 #put in the new entry
@@ -200,7 +206,13 @@ fi
 pid=$(pidof dnsmasq)
 if [ "$pid" != "" ]
 then
-  service dnsmasq restart
+  # use SIGHUP to avoid service outage if dhcp_release is available.
+  if [ $no_dhcp_release -eq 0 ]
+  then
+    kill -HUP $pid
+  else
+    service dnsmasq restart
+  fi
 else
   if [ $no_redundant -eq 1 ]
   then

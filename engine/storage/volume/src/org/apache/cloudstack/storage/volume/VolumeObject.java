@@ -201,6 +201,8 @@ public class VolumeObject implements VolumeInfo {
                     volEvent = Volume.Event.CreateRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.CopyingRequested) {
                     volEvent = Volume.Event.CopyRequested;
+                } else if (event == ObjectInDataStoreStateMachine.Event.MigrationRequested) {
+                    volEvent = Volume.Event.MigrationRequested;
                 }
             }
 

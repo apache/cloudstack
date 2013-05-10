@@ -627,7 +627,7 @@ public class NetUtils {
         return result;
     }
 
-    public static Set<Long> getAllIpsFromCidr(String cidr, long size) {
+    public static Set<Long> getAllIpsFromCidr(String cidr, long size, Set<Long> usedIps) {
         assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         Set<Long> result = new TreeSet<Long>();
         long ip = ip2Long(cidr);
@@ -639,8 +639,12 @@ public class NetUtils {
 
         end++;
         end = (end << (32 - size)) - 2;
-        while (start <= end) {
-            result.add(start);
+        int maxIps = 255; // get 255 ips as maximum
+        while (start <= end && maxIps > 0) {
+            if (!usedIps.contains(start)){
+                result.add(start);
+                maxIps--;
+            }
             start++;
         }
 

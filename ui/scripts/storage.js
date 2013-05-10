@@ -88,9 +88,9 @@
                         url: createURL("listZones&available=true"),
                         dataType: "json",
                         async: true,
-                        success: function(json) {
-                          var items = json.listzonesresponse.zone;
-                          args.response.success({descriptionField: 'name', data: items});
+                        success: function(json) {												 
+													var zoneObjs = json.listzonesresponse.zone;		
+													args.response.success({descriptionField: 'name', data: zoneObjs});													                      
                         }
                       });
                     }
@@ -208,16 +208,16 @@
                   availabilityZone: {
                     label: 'label.availability.zone',
                     docID: 'helpUploadVolumeZone',
-                    select: function(args) {
-                      $.ajax({
+                    select: function(args) {                      
+											$.ajax({
                         url: createURL("listZones&available=true"),
                         dataType: "json",
                         async: true,
-                        success: function(json) {
-                          var items = json.listzonesresponse.zone;
-                          args.response.success({descriptionField: 'name', data: items});
+                        success: function(json) {												 
+													var zoneObjs = json.listzonesresponse.zone;																													
+													args.response.success({descriptionField: 'name', data: zoneObjs});													                      
                         }
-                      });
+                      });											
                     }
                   },
                   format: {
@@ -372,12 +372,12 @@
            
             if(args.context != null) {
               if("instances" in args.context) {
-							  $.extend(data, {
-								  virtualMachineId: args.context.instances[0].id
-								});
+            		$.extend(data, {
+            		  virtualMachineId: args.context.instances[0].id
+            		});
               }
             }
-
+            
             $.ajax({
               url: createURL('listVolumes'),
               data: data,             
@@ -395,6 +395,69 @@
             name: 'Volume details',
             viewAll: { path: 'storage.snapshots', label: 'label.snapshots' },
             actions: {
+
+             migrateVolume:{
+                 label:'Migrate Volume',
+               messages: {
+                  confirm: function(args) {
+                    return 'Do you want to migrate this volume ?' ;
+                  },
+                  notification: function(args) {
+                    return 'Volume migrated';
+                  }
+                },
+
+             createForm: {
+              title: 'Migrate Volume',
+              desc: '',
+              fields: {
+                storagePool: {
+                  label: 'Storage Pool',
+                  validation: { required: true },
+                  select: function(args) {
+                    $.ajax({
+                      url: createURL("findStoragePoolsForMigration&id=" + args.context.volumes[0].id),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {
+                            var pools = json.findstoragepoolsformigrationresponse.storagepool;
+                            var items = [];
+                            $(pools).each(function() {
+                              items.push({id: this.id, description: this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable")+")"   });
+                            });
+                            args.response.success({data: items});
+
+                        }                     
+                    });
+                  }
+                }
+              }
+           
+            },
+
+                 action: function(args) {
+                  $.ajax({
+                    url: createURL("migrateVolume&livemigrate=true&storageid=" + args.data.storagePool + "&volumeid=" + args.context.volumes[0].id ),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.migratevolumeresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {
+                            jobId: jid
+                         }
+                        }
+                      );
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+
+               },
+
               takeSnapshot: {
                 label: 'label.action.take.snapshot',
                 messages: {
@@ -1538,6 +1601,7 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
 
+    
     if (jsonObj.state == 'Destroyed' || jsonObj.state == 'Migrating' || jsonObj.state == 'Uploading') {
       return [];
     }
@@ -1548,7 +1612,7 @@
     if(jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
       allowedActions.push("takeSnapshot");
       allowedActions.push("recurringSnapshot");
-      if((jsonObj.hypervisor == "XenServer" || jsonObj.hypervisor == "KVM" || jsonObj.hypervisor == "VMware") && jsonObj.type == "DATADISK") {
+      if(jsonObj.type == "DATADISK") {
     	  allowedActions.push("resize");
       }
     }
@@ -1557,6 +1621,13 @@
         allowedActions.push("downloadVolume");
       }
     }
+
+   if(jsonObj.type == "ROOT" || jsonObj.type =="DATADISK"){ 
+    if(jsonObj.state == "Ready" && isAdmin() && jsonObj.virtualmachineid != null ){
+         allowedActions.push("migrateVolume");
+    }
+  }
+
     if(jsonObj.state != "Creating") {
       if(jsonObj.type == "ROOT") {
         if (jsonObj.vmstate == "Stopped") {

@@ -23,6 +23,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
 import com.cloud.utils.script.Script;
 
+import org.libvirt.Connect;
+import org.libvirt.LibvirtException;
+import org.libvirt.Secret;
+import org.libvirt.StoragePool;
+import org.libvirt.StoragePoolInfo;
+import org.libvirt.StoragePoolInfo.StoragePoolState;
+
+import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+
 public class KVMHAMonitor extends KVMHABase implements Runnable {
     private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
     private Map<String, NfsStoragePool> _storagePool = new ConcurrentHashMap<String, NfsStoragePool>();
@@ -45,7 +54,11 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     public void removeStoragePool(String uuid) {
         synchronized (_storagePool) {
-            this._storagePool.remove(uuid);
+            NfsStoragePool pool = this._storagePool.get(uuid);
+            if (pool != null) {
+                Script.runSimpleBashScript("umount " + pool._mountDestPath);
+                this._storagePool.remove(uuid);
+            }
         }
     }
 
@@ -60,7 +73,44 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         @Override
         public void run() {
             synchronized (_storagePool) {
-                for (NfsStoragePool primaryStoragePool : _storagePool.values()) {
+                for (String uuid : _storagePool.keySet()) {
+                    NfsStoragePool primaryStoragePool = _storagePool.get(uuid);
+
+                    // check for any that have been deregistered with libvirt and
+                    // skip,remove them
+
+                    StoragePool storage = null;
+                    try {
+                        Connect conn = LibvirtConnection.getConnection();
+                        storage = conn.storagePoolLookupByUUIDString(uuid);
+                        if (storage == null) {
+                            s_logger.debug("Libvirt storage pool " + uuid
+                                           +" not found, removing from HA list");
+                            removeStoragePool(uuid);
+                            continue;
+
+                        } else if (storage.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
+                            s_logger.debug("Libvirt storage pool " + uuid
+                                           +" found, but not running, removing from HA list");
+                            
+                            removeStoragePool(uuid);
+                            continue;
+                        }
+                        s_logger.debug("Found NFS storage pool " + uuid + " in libvirt, continuing");
+
+                    } catch (LibvirtException e) {
+                        s_logger.debug("Failed to lookup libvirt storage pool " + uuid
+                                       + " due to: " + e );
+
+                        // we only want to remove pool if it's not found, not if libvirt
+                        // connection fails
+                        if (e.toString().contains("pool not found")) {
+                            s_logger.debug("removing pool from HA monitor since it was deleted");
+                            removeStoragePool(uuid);
+                            continue;
+                        }
+                    }
+
                     String result = null;
                     for (int i = 0; i < 5; i++) {
                         Script cmd = new Script(_heartBeatPath,

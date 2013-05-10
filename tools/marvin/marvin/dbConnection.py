@@ -37,7 +37,11 @@ class dbConnection(object):
             return None
 
         resultRow = []
-        with contextlib.closing(mysql.connector.connect(host=self.host, port=self.port, user=self.user, password=self.passwd, db=self.database)) as conn:
+        with contextlib.closing(mysql.connector.connect(host=str(self.host),
+                                                        port=int(self.port),
+                                                        user=str(self.user),
+                                                        password=str(self.passwd),
+                                                        db=str(self.database))) as conn:
             conn.autocommit = True
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
                 cursor.execute(sql, params)

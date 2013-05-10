@@ -40,6 +40,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ConfigurationServer;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -286,6 +287,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     AccountManager _accountMgr;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    ConfigurationServer _configServer;
     @Inject
     ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
@@ -1589,7 +1592,26 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             HypervisorType hType = iter.next();
             try {
                 s_logger.debug("Allocating the domR with the hypervisor type " + hType);
-                VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
+                String templateName = null;
+                switch (hType) {
+                    case XenServer:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case KVM:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case VMware:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case Hyperv:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case LXC:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    default: break;
+                }
+                VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
                 if (template == null) {
                     s_logger.debug(hType + " won't support system vm, skip it");
@@ -2095,7 +2117,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             boolean useExtDns = !dnsProvided;
             /* For backward compatibility */
-            String use_external_dns =  _configDao.getValue(Config.UseExternalDnsServers.key());
+            String use_external_dns = _configServer.getConfigValue(Config.UseExternalDnsServers.key(), Config.ConfigurationParameterScope.zone.toString(), dc.getId());
             if (use_external_dns != null && use_external_dns.equals("true")) {
                 useExtDns = true;
             }

@@ -254,6 +254,16 @@
       <artifactId>cloud-plugin-snmp-alerts</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-host-anti-affinity</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-console-proxy</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -304,7 +314,7 @@
           -->
           <execution>
             <id>copy-systemvm</id>
-            <phase>package</phase>
+            <phase>process-resources</phase>
             <goals>
               <goal>run</goal>
             </goals>
@@ -465,11 +475,31 @@
             </goals>
             <configuration>
               <target if="${nonoss}">
-                <echo>test</echo>
                 <replaceregexp
                   file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
                   match="classpath:componentContext.xml"
                   replace="classpath:nonossComponentContext.xml" byline="true" />
+                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
+                    <fileset dir="${basedir}/../plugins/network-elements/cisco-vnmc/scripts">
+                        <include name="**/*" />
+                    </fileset>
+                </copy>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>process-quickcloud-spring-context</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target if="${quickcloud}">
+                <echo>quickcloud</echo>
+                <replaceregexp
+                    file="${basedir}/target/generated-webapp/WEB-INF/classes/applicationContext.xml"
+                  match="com.cloud.consoleproxy.ConsoleProxyManagerImpl"
+                  replace="com.cloud.consoleproxy.StaticConsoleProxyManager" byline="true" />
               </target>
             </configuration>
           </execution>
@@ -636,6 +666,11 @@
         <dependency>
           <groupId>org.apache.cloudstack</groupId>
           <artifactId>cloud-vmware-base</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.cloudstack</groupId>
+          <artifactId>cloud-plugin-network-cisco-vnmc</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>

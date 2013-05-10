@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -107,6 +108,11 @@ public class FirewallRuleTO implements InternalIdentity {
 
     public FirewallRuleTO(FirewallRule rule, String srcVlanTag, String srcIp, FirewallRule.Purpose purpose, boolean revokeState, boolean alreadyAdded) {
         this(rule.getId(),srcVlanTag, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), revokeState, alreadyAdded, purpose,rule.getSourceCidrList(),rule.getIcmpType(),rule.getIcmpCode());
+    }
+
+    public FirewallRuleTO(FirewallRule rule, String guestVlanTag, FirewallRule.TrafficType trafficType) {
+        this(rule.getId(), guestVlanTag, null, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose(), rule.getSourceCidrList(), rule.getIcmpType(), rule.getIcmpCode());
+        this.trafficType = trafficType;
     }
 
     public FirewallRule.TrafficType getTrafficType(){

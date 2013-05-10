@@ -30,7 +30,4 @@ public interface PublicIpAddress extends ControlledEntity, IpAddress, Vlan, Inte
     public String getNetmask();
 
     public String getGateway();
-
-    @Override
-    public String getVlanTag();
 }

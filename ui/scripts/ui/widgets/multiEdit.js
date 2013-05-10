@@ -240,6 +240,7 @@
 
       // Action filter
       var allowedActions = options.preFilter ? options.preFilter({
+        actions: $.map(actions, function(value, key) { return key; }),
         context: $.extend(true, {}, options.context, {
           multiRule: [data],
           actions: $.map(actions, function(value, key) { return key; })
@@ -323,6 +324,7 @@
               var $expandable = $dataItem.find('.expandable-listing');
               var isDestroy = $target.hasClass('destroy');
               var isEdit = $target.hasClass('edit');
+              var createForm = action.createForm;
 
               if (isDestroy) {
                 var $loading = _medit.loadingItem($multi, _l('label.removing') + '...');
@@ -340,7 +342,19 @@
               }
 
               if (!isEdit) {
-                performAction();
+                if (createForm) {
+                  cloudStack.dialog.createForm({
+                    form: createForm,
+                    after: function(args) {
+                      var $loading = $('<div>').addClass('loading-overlay').prependTo($dataItem);
+                      performAction({ data: args.data, complete: function() {
+                        $multi.trigger('refresh');
+                      } });
+                    }
+                  });
+                } else {
+                  performAction();
+                }
               } else {
                 // Get editable fields
                 var editableFields = {};
@@ -638,6 +652,11 @@
             }
           });
         });
+
+        var itemState=multiRule._itemState ? item[multiRule._itemState] :item.state;
+        var $itemState = $('<span>').html(_s(itemState));
+        $tr.append($('<td>').addClass('state').appendTo($tr).append("Application State - ").append($itemState));
+
 
         if (itemActions) {
           var $itemActions = $('<td>').addClass('actions item-actions');

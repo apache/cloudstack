@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -21,11 +21,10 @@
     specific language governing permissions and limitations
     under the License.
 -->
-
 <chapter id="set-up-network-for-users">
-    <title>Setting Up Networking for Users</title>
-    <xi:include href="networks-for-users-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="about-virtual-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="network-service-providers.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="network-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <title>Setting Up Networking for Users</title>
+  <xi:include href="networks-for-users-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="about-virtual-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="network-service-providers.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="network-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </chapter>

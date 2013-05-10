@@ -30,11 +30,17 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
+import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.host.Status;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -68,6 +74,7 @@ public class RemoteHostEndPoint implements EndPoint {
         return this.hostAddress;
     }
 
+    @Override
     public long getId() {
         return this.hostId;
     }
@@ -87,33 +94,75 @@ public class RemoteHostEndPoint implements EndPoint {
     	throw new CloudRuntimeException("Failed to send command, due to Agent:" + getId() + ", " + errMsg);
     }
 
-    private class CmdRunner implements Runnable {
-		final Command cmd;
+    private class CmdRunner implements Listener, Runnable {
 		final AsyncCompletionCallback<Answer> callback;
-		public CmdRunner(Command cmd, AsyncCompletionCallback<Answer> callback) {
-			this.cmd = cmd;
+        Answer answer;
+
+        public CmdRunner(AsyncCompletionCallback<Answer> callback) {
 			this.callback = callback;
 		}
-		@Override
-		public void run() {
-			Answer answer = sendMessage(cmd);
-			callback.complete(answer);
-		}
 
+        @Override
+        public boolean processAnswers(long agentId, long seq, Answer[] answers) {
+            this.answer = answers[0];
+            executor.schedule(this, 10, TimeUnit.SECONDS);
+            return true;
+        }
+
+        @Override
+        public boolean processCommands(long agentId, long seq, Command[] commands) {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public boolean processDisconnect(long agentId, Status state) {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public boolean isRecurring() {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public int getTimeout() {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public boolean processTimeout(long agentId, long seq) {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public void run() {
+            callback.complete(answer);
+        }
 	}
 
     @Override
     public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
-    	executor.schedule(new CmdRunner(cmd, callback), 10, TimeUnit.SECONDS);
-    }
-
-    @Override
-    public void sendMessageAsyncWithListener(Command cmd, Listener listener) {
-    	try {
-    		this.agentMgr.send(getId(), new Commands(cmd), listener);
-    	} catch (AgentUnavailableException e) {
-    		s_logger.debug("Failed to send command: " + e.toString());
-    		throw new CloudRuntimeException("Failed to send command: " + e.toString());
-    	}
+        try {
+            agentMgr.send(this.hostId, new Commands(cmd), new CmdRunner(callback));
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Unable to send message", e);
+        }
     }
 }

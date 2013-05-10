@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -74,10 +75,12 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="state of the virtual machine")
     private String state;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            description="the availability zone ID")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description="the availability zone ID")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN,
             description="list by network type; true if need to list vms using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
@@ -95,7 +98,7 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING,
             description="comma separated list of host details requested, " +
-            "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]." +
+            "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp]." +
                     " If no parameter is passed in, the details will be defaulted to all" )
     private List<String> viewDetails;
 
@@ -110,6 +113,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType=VpcResponse.class,
             description="list vms by vpc")
     private Long vpcId;
+
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list vms by affinity group")
+    private Long affinityGroupId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -142,6 +149,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+    
     public Boolean getForVirtualNetwork() {
         return forVirtualNetwork;
     }
@@ -172,6 +183,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     public Long getVpcId(){
         return vpcId;
+    }
+
+    public Long getAffinityGroupId() {
+        return affinityGroupId;
     }
 
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {

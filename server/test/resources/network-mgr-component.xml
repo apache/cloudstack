@@ -78,7 +78,7 @@ under the License.
             <!--<adapter name="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru"/> -->
         </adapters>
         <adapters key="com.cloud.network.IpAddrAllocator">
-            <adapter name="Basic" class="com.cloud.network.ExteralIpAddressAllocator"/>
+            <adapter name="Basic" class="com.cloud.network.ExternalIpAddressAllocator"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>

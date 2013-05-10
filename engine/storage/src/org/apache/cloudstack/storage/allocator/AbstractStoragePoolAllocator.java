@@ -176,7 +176,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         
 		Long clusterId = pool.getClusterId();
 		ClusterVO cluster = _clusterDao.findById(clusterId);
-		if (!(cluster.getHypervisorType() == dskCh.getHypersorType())) {
+		if (!(cluster.getHypervisorType() == dskCh.getHypervisorType())) {
     		if (s_logger.isDebugEnabled()) {
                 s_logger.debug("StoragePool's Cluster does not have required hypervisorType, skipping this pool");
             }

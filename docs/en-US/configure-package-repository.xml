@@ -33,7 +33,7 @@
         If you didn't follow the steps to build your own packages from source 
         in the sections for <xref linkend="sect-source-buildrpm" /> or
         <xref linkend="sect-source-builddebs" /> you may find pre-built
-        DEB and RPM packages for your convience linked from the 
+        DEB and RPM packages for your convenience linked from the
         <ulink url="http://cloudstack.apache.org/downloads.html">downloads</ulink>
         page.
     </para>

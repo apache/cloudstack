@@ -42,6 +42,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
+import com.cloud.server.ConfigurationServer;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
@@ -301,6 +302,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     SnapshotDataFactory snapshotFactory;
     @Inject
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     @Inject protected ResourceTagDao _resourceTagDao;
 
@@ -344,15 +347,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected int _retry = 2;
     protected int _pingInterval = 60; // seconds
     protected int _hostRetry;
-    protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
+    //protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
     private long _maxVolumeSizeInGb;
     private long _serverId;
 
     private int _customDiskOfferingMinSize = 1;
     private int _customDiskOfferingMaxSize = 1024;
-    private double _storageUsedThreshold = 1.0d;
-    private double _storageAllocatedThreshold = 1.0d;
-    protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);
     private Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
 
     private boolean _recreateSystemVmEnabled;
@@ -552,12 +552,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Map<String, String> configs = _configDao.getConfiguration(
                 "management-server", params);
 
-        String overProvisioningFactorStr = configs
-                .get("storage.overprovisioning.factor");
-        if (overProvisioningFactorStr != null) {
-            _overProvisioningFactor = new BigDecimal(overProvisioningFactorStr);
-        }
-
         _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 10);
         _pingInterval = NumbersUtil.parseInt(configs.get("ping.interval"), 60);
         _hostRetry = NumbersUtil.parseInt(configs.get("host.retry"), 2);
@@ -592,24 +586,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         String time = configs.get("storage.cleanup.interval");
         _storageCleanupInterval = NumbersUtil.parseInt(time, 86400);
-
-        String storageUsedThreshold = _configDao
-                .getValue(Config.StorageCapacityDisableThreshold.key());
-        if (storageUsedThreshold != null) {
-            _storageUsedThreshold = Double.parseDouble(storageUsedThreshold);
-        }
-
-        String storageAllocatedThreshold = _configDao
-                .getValue(Config.StorageAllocatedCapacityDisableThreshold.key());
-        if (storageAllocatedThreshold != null) {
-            _storageAllocatedThreshold = Double
-                    .parseDouble(storageAllocatedThreshold);
-        }
-
-        String globalStorageOverprovisioningFactor = configs
-                .get("storage.overprovisioning.factor");
-        _storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(
-                globalStorageOverprovisioningFactor, 2.0f));
 
         s_logger.info("Storage cleanup enabled: " + _storageCleanupEnabled
                 + ", interval: " + _storageCleanupInterval
@@ -980,9 +956,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = dataStoreMgr.getDataStore(
                 sPool.getId(), DataStoreRole.Primary);
-        lifeCycle.deleteDataStore(store);
-
-        return false;
+        return lifeCycle.deleteDataStore(store);
     }
 
     @Override
@@ -999,6 +973,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public BigDecimal getStorageOverProvisioningFactor(Long dcId){
+        return new BigDecimal(_configServer.getConfigValue(Config.StorageOverprovisioningFactor.key(), Config.ConfigurationParameterScope.zone.toString(), dcId));
+    }
+
+    @Override
     public void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
@@ -1009,7 +988,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long totalOverProvCapacity;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-            totalOverProvCapacity = _overProvisioningFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();// All this for the inaccuracy of floats for big number multiplication.
+            BigDecimal overProvFactor = getStorageOverProvisioningFactor(storagePool.getDataCenterId());
+            totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();// All this for the inaccuracy of floats for big number multiplication.
         } else {
             totalOverProvCapacity = storagePool.getCapacityBytes();
         }
@@ -1708,6 +1688,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private boolean checkUsagedSpace(StoragePool pool) {
         StatsCollector sc = StatsCollector.getInstance();
+        double storageUsedThreshold = Double.parseDouble(_configServer.getConfigValue(Config.StorageCapacityDisableThreshold.key(), Config.ConfigurationParameterScope.zone.toString(), pool.getDataCenterId()));
         if (sc != null) {
             long totalSize = pool.getCapacityBytes();
             StorageStats stats = sc.getStoragePoolStats(pool.getId());
@@ -1722,16 +1703,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             + pool.getCapacityBytes() + ", usedBytes: "
                             + stats.getByteUsed() + ", usedPct: "
                             + usedPercentage + ", disable threshold: "
-                            + _storageUsedThreshold);
+                            + storageUsedThreshold);
                 }
-                if (usedPercentage >= _storageUsedThreshold) {
+                if (usedPercentage >= storageUsedThreshold) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Insufficient space on pool: "
                                 + pool.getId()
                                 + " since its usage percentage: "
                                 + usedPercentage
                                 + " has crossed the pool.storage.capacity.disablethreshold: "
-                                + _storageUsedThreshold);
+                                + storageUsedThreshold);
                     }
                     return false;
                 }
@@ -1770,12 +1751,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long totalOverProvCapacity;
         if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-            totalOverProvCapacity = _storageOverprovisioningFactor.multiply(
+            totalOverProvCapacity = getStorageOverProvisioningFactor(pool.getDataCenterId()).multiply(
                     new BigDecimal(pool.getCapacityBytes())).longValue();
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
         }
 
+        double storageAllocatedThreshold = Double.parseDouble(_configServer.getConfigValue(Config.StorageAllocatedCapacityDisableThreshold.key(), Config.ConfigurationParameterScope.zone.toString(), pool.getDataCenterId()));
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking pool: " + pool.getId()
                     + " for volume allocation " + volumes.toString()
@@ -1783,12 +1765,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     + ", totalAllocatedSize : " + allocatedSizeWithtemplate
                     + ", askingSize : " + totalAskingSize
                     + ", allocated disable threshold: "
-                    + _storageAllocatedThreshold);
+                    + storageAllocatedThreshold);
         }
 
         double usedPercentage = (allocatedSizeWithtemplate + totalAskingSize)
                 / (double) (totalOverProvCapacity);
-        if (usedPercentage > _storageAllocatedThreshold) {
+        if (usedPercentage > storageAllocatedThreshold) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Insufficient un-allocated capacity on: "
                         + pool.getId()
@@ -1797,7 +1779,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         + " since its allocated percentage: "
                         + usedPercentage
                         + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: "
-                        + _storageAllocatedThreshold + ", skipping this pool");
+                        + storageAllocatedThreshold + ", skipping this pool");
             }
             return false;
         }

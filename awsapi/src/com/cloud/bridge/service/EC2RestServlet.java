@@ -209,7 +209,7 @@ public class EC2RestServlet extends HttpServlet {
             if (installedPath == null) installedPath = System.getProperty("catalina.home");
             String webappPath = config.getServletContext().getRealPath("/");
             //pathToKeystore = new String( installedPath + File.separator + "webapps" + File.separator + webappName + File.separator + "WEB-INF" + File.separator + "classes" + File.separator + keystore );
-            pathToKeystore = new String( webappPath +  File.separator +  "\\WEB-INF" + File.separator + "classes" + File.separator + keystore );
+            pathToKeystore = new String( webappPath +  File.separator +  "WEB-INF" + File.separator + "classes" + File.separator + keystore );
         }
     }
 

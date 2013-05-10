@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import com.cloud.vm.NicSecondaryIp;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -146,6 +147,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
         UserContext.current().setEventDetails("Nic Id: " + getNicId() );
         String ip;
+        NicSecondaryIp result;
         String secondaryIp = null;
         if ((ip = getIpaddress()) != null) {
             if (!NetUtils.isValidIp(ip)) {
@@ -154,12 +156,13 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         }
 
         try {
-            secondaryIp =  _networkService.allocateSecondaryGuestIP(_accountService.getAccount(getEntityOwnerId()),  getZoneId(), getNicId(), getNetworkId(), getIpaddress());
+            result =  _networkService.allocateSecondaryGuestIP(_accountService.getAccount(getEntityOwnerId()),  getZoneId(), getNicId(), getNetworkId(), getIpaddress());
         } catch (InsufficientAddressCapacityException e) {
             throw new InvalidParameterValueException("Allocating guest ip for nic failed");
         }
 
-        if (secondaryIp != null) {
+        if (result != null) {
+            secondaryIp = result.getIp4Address();
             if (getNetworkType() == NetworkType.Basic) {
                 // add security group rules for the secondary ip addresses
                 boolean success = false;
@@ -171,7 +174,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
             s_logger.info("Associated ip address to NIC : " + secondaryIp);
             NicSecondaryIpResponse response = new NicSecondaryIpResponse();
-            response = _responseGenerator.createSecondaryIPToNicResponse(secondaryIp, getNicId(), getNetworkId());
+            response = _responseGenerator.createSecondaryIPToNicResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

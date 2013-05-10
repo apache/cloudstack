@@ -47,6 +47,10 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
             required=true, description="destination storage pool ID to migrate the volume to")
     private Long storageId;
 
+    @Parameter(name=ApiConstants.LIVE_MIGRATE, type=CommandType.BOOLEAN, required=false,
+            description="if the volume should be live migrated when it is attached to a running vm")
+    private Boolean liveMigrate;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -57,6 +61,10 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
 
     public Long getStoragePoolId() {
         return storageId;
+    }
+
+    public boolean isLiveMigrate() {
+        return (liveMigrate != null) ? liveMigrate : false;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

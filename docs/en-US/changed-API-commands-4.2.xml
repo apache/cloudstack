@@ -1,0 +1,134 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="changed-API-commands-4.2">
+  <title>Changed API Commands in 4.2</title>
+  <informaltable>
+    <tgroup cols="2" align="left" colsep="1" rowsep="1">
+      <thead>
+        <row>
+          <entry><para>Parameter Name</para></entry>
+          <entry><para>Description</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para>createVlanIpRange</para></entry>
+          <entry>
+            <para>No new parameter has been added. However, the current functionality has been
+              extended to add guest IPs from a different subnet in shared networks in a Basic zone.
+              Ensure that you provide netmask and gateway if you are adding guest IPs from a
+              different subnet. </para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>updateResourceLimit</para></entry>
+          <entry>
+            <para>Added the following resource types to the <parameter>resourcetype</parameter>
+              request parameter to set the limits:</para>
+            <itemizedlist>
+              <listitem>
+                <para>CPU</para>
+              </listitem>
+              <listitem>
+                <para>RAM</para>
+              </listitem>
+              <listitem>
+                <para>primary storage</para>
+              </listitem>
+              <listitem>
+                <para>secondary storage</para>
+              </listitem>
+              <listitem>
+                <para>network rate</para>
+              </listitem>
+            </itemizedlist>
+          </entry>
+        </row>
+        <row>
+          <entry><para>updateResourceCount</para></entry>
+          <entry>
+            <para>Added the following resource types to the <parameter>resourcetype</parameter>
+              request parameter to set the limits:</para>
+            <itemizedlist>
+              <listitem>
+                <para>CPU</para>
+              </listitem>
+              <listitem>
+                <para>RAM</para>
+              </listitem>
+              <listitem>
+                <para>primary storage</para>
+              </listitem>
+              <listitem>
+                <para>secondary storage</para>
+              </listitem>
+              <listitem>
+                <para>network rate</para>
+              </listitem>
+            </itemizedlist>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listResourceLimits </para></entry>
+          <entry>
+            <para>Added the following resource types to the <parameter>resourcetype</parameter>
+              request parameter:</para>
+            <itemizedlist>
+              <listitem>
+                <para>CPU</para>
+              </listitem>
+              <listitem>
+                <para>RAM</para>
+              </listitem>
+              <listitem>
+                <para>primary storage</para>
+              </listitem>
+              <listitem>
+                <para>secondary storage</para>
+              </listitem>
+              <listitem>
+                <para>network rate</para>
+              </listitem>
+            </itemizedlist>
+          </entry>
+        </row>
+        <row>
+          <entry><para>UpdatePhysicalNetwork</para></entry>
+          <entry>
+            <para>Added the following request parameters:</para>
+            <itemizedlist>
+              <listitem>
+                <para>vlan (adds a new VLAN range to the existing VLAN range)</para>
+              </listitem>
+              <listitem>
+                <para>removelan (removes the specified VLAN range)</para>
+              </listitem>
+            </itemizedlist>
+            <note>
+              <para>The removevlan and vlan parameters can be used together. If the VLAN range that
+                you are trying to remove is in use, the operation will not succeed.</para>
+            </note>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+</section>

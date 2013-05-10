@@ -61,11 +61,11 @@ def make_request(command, args, logger, host, port,
     args["apiKey"] = apikey
     args["response"] = "json"
     request = zip(args.keys(), args.values())
-    request.sort(key=lambda x: str.lower(x[0]))
+    request.sort(key=lambda x: x[0].lower())
 
     request_url = "&".join(["=".join([r[0], urllib.quote_plus(str(r[1]))])
                            for r in request])
-    hashStr = "&".join(["=".join([str.lower(r[0]),
+    hashStr = "&".join(["=".join([r[0].lower(),
                        str.lower(urllib.quote_plus(str(r[1]))).replace("+",
                        "%20")]) for r in request])
 

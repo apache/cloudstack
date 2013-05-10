@@ -42,7 +42,7 @@ public class SamplePrimaryDatastoreProviderImpl implements PrimaryDataStoreProvi
     @Inject
     PrimaryDataStoreProviderManager storeMgr;
 
-    protected DataStoreLifeCycle lifecyle;
+    protected DataStoreLifeCycle lifecycle;
     protected String uuid;
     protected long id;
     @Override
@@ -52,7 +52,7 @@ public class SamplePrimaryDatastoreProviderImpl implements PrimaryDataStoreProvi
 
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {
-        return this.lifecyle;
+        return this.lifecycle;
     }
 
     @Override

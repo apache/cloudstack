@@ -1,15 +1,14 @@
 <!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
   license agreements. See the NOTICE file distributed with this work for additional 
-  information regarding copyright ownership. The ASF licenses this file to 
-  you under the Apache License, Version 2.0 (the "License"); you may not use 
-  this file except in compliance with the License. You may obtain a copy of 
-  the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
-  by applicable law or agreed to in writing, software distributed under the 
-  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
-  OF ANY KIND, either express or implied. See the License for the specific 
-  language governing permissions and limitations under the License. -->
+  information regarding copyright ownership. The ASF licenses this file to you under 
+  the Apache License, Version 2.0 (the "License"); you may not use this file except 
+  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
+  Unless required by applicable law or agreed to in writing, software distributed under 
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+  OF ANY KIND, either express or implied. See the License for the specific language 
+  governing permissions and limitations under the License. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-marvin</artifactId>
   <name>Apache CloudStack marvin</name>
@@ -35,7 +34,7 @@
             </goals>
             <configuration>
               <target>
-                <delete dir="marvin/cloudstackAPI"/>
+                <delete dir="marvin/cloudstackAPI" />
                 <echo>Deleting ${project.artifactId} API sources</echo>
               </target>
             </configuration>
@@ -83,7 +82,7 @@
       </plugin>
     </plugins>
   </build>
-  <!-- Custom profiles for sync and integration tests-->
+  <!-- Custom profiles for sync and integration tests -->
   <profiles>
     <profile>
       <id>marvin.sync</id>
@@ -157,14 +156,29 @@
       <id>marvin.setup</id>
       <properties>
         <marvin.config>${user.dir}/setup/dev/advanced.cfg</marvin.config>
-     </properties>
-      <activation>
-        <property>
-          <name>marvin.config</name>
-        </property>
-      </activation>
+      </properties>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.gmaven</groupId>
+            <artifactId>gmaven-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>setproperty</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <source>
+                    pom.properties['resolved.basedir']=project.basedir.absolutePath.replace('\','/').replace('D:','/cyg/d');
+                    pom.properties['resolved.userdir']='${user.dir}'.replace('\','/').replace('D:','/cyg/d');
+                  </source>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
@@ -182,35 +196,54 @@
                   <arguments>
                     <argument>deployAndRun.py</argument>
                     <argument>-c</argument>
-                    <argument>${marvin.config}</argument>
+                    <argument>${resolved.userdir}/${marvin.config}</argument>
                     <argument>-t</argument>
                     <argument>/tmp/t.log</argument>
                     <argument>-r</argument>
                     <argument>/tmp/r.log</argument>
                     <argument>-f</argument>
-                    <argument>${basedir}/marvin/testSetupSuccess.py</argument>
+                    <argument>${resolved.basedir}/marvin/testSetupSuccess.py</argument>
                   </arguments>
                 </configuration>
               </execution>
-              </executions>
-            </plugin>
+            </executions>
+          </plugin>
         </plugins>
       </build>
     </profile>
     <profile>
       <id>marvin.test</id>
       <properties>
-        <marvin.config>${user.dir}/setup/dev/advanced.cfg</marvin.config>
         <tag>simulator</tag>
         <test>test/integration/smoke</test>
+        <marvin.config>${user.dir}/setup/dev/advanced.cfg</marvin.config>
       </properties>
-      <activation>
-        <property>
-          <name>marvin.config</name>
-        </property>
-      </activation>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.gmaven</groupId>
+            <artifactId>gmaven-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>setproperty</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <properties>
+                    <resolved.user.dir>${user.dir}</resolved.user.dir>
+                    <resolved.marvin.config>${marvin.config}</resolved.marvin.config>
+                  </properties>
+                  <source>
+                    project.properties['resolved.user.dir']='${user.dir}'.replace('\','/').replace('D:','/cyg/d');
+                    project.properties['resolved.marvin.config']='${marvin.config}'.replace('\','/').replace('D:','/cyg/d');
+                  </source>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
@@ -228,11 +261,11 @@
                   <arguments>
                     <argument>--with-marvin</argument>
                     <argument>--marvin-config</argument>
-                    <argument>${marvin.config}</argument>
+                    <argument>${resolved.user.dir}/${resolved.marvin.config}</argument>
                     <argument>--load</argument>
                     <argument>-a</argument>
                     <argument>tags=${tag}</argument>
-                    <argument>${user.dir}/${test}</argument>
+                    <argument>${resolved.user.dir}/${test}</argument>
                     <argument>-v</argument>
                   </arguments>
                 </configuration>

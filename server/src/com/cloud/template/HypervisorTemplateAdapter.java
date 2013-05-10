@@ -30,9 +30,12 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
@@ -46,10 +49,15 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -71,6 +79,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Inject TemplateDataFactory imageFactory;
     @Inject TemplateManager templateMgr;
     @Inject AlertManager alertMgr;
+    @Inject
+    EndPointSelector _epSelector;
 
     @Override
     public String getName() {
@@ -216,7 +226,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 	public boolean delete(TemplateProfile profile) {
 		boolean success = true;
 
-    	VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
+    	VMTemplateVO template = profile.getTemplate();
 
         // find all eligible image stores for this template
         List<DataStore> imageStores = this.templateMgr.getImageStoreByTemplate(template.getId(), profile.getZoneId());
@@ -276,7 +286,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 	@Override
     public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
 		TemplateProfile profile = super.prepareDelete(cmd);
-		VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
+		VMTemplateVO template = profile.getTemplate();
 		Long zoneId = profile.getZoneId();
 
 		if (template.getTemplateType() == TemplateType.SYSTEM) {
@@ -301,4 +311,63 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
 		return profile;
 	}
+
+    @Override
+    public TemplateProfile prepareExtractTemplate(ExtractTemplateCmd extractcmd) {
+             TemplateProfile profile = super.prepareExtractTemplate(extractcmd);
+             VMTemplateVO template = profile.getTemplate();
+             Long zoneId = profile.getZoneId();
+             Long templateId = template.getId();
+
+             if (template.getHypervisorType() == HypervisorType.VMware) {
+                PrepareOVAPackingCommand cmd = null;
+                String zoneName="";
+                List<HostVO> secondaryStorageHosts;
+                if (!template.isCrossZones() && zoneId != null) {
+                        DataCenterVO zone = _dcDao.findById(zoneId);
+                        zoneName = zone.getName();
+                List<DataStore> imageStores = this.storeMgr.getImageStoresByScope(new ZoneScope(profile.getZoneId()));
+                if (imageStores == null || imageStores.size() == 0) {
+                    throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
+                }
+
+                    s_logger.debug("Attempting to mark template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
+
+                // Make sure the template is downloaded to all the necessary secondary storage hosts
+
+                for (DataStore store : imageStores) {
+                    long storeId = store.getId();
+                    List<TemplateDataStoreVO> templateStoreVOs = _tmpltStoreDao.listByTemplateStore(templateId, storeId);
+                    for (TemplateDataStoreVO templateStoreVO : templateStoreVOs) {
+                        if (templateStoreVO.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
+                                 String errorMsg = "Please specify a template that is not currently being downloaded.";
+                            s_logger.debug("Template: " + template.getName() + " is currently being downloaded to secondary storage host: " + store.getName() + ".");
+                                 throw new CloudRuntimeException(errorMsg);
+                        }
+                        String installPath = templateStoreVO.getInstallPath();
+                        if (installPath != null) {
+                            EndPoint ep = _epSelector.select(store);
+                            if (ep == null) {
+                                s_logger.warn("prepareOVAPacking (hyervisorTemplateAdapter): There is no secondary storage VM for secondary storage host " + store.getName());
+                                 throw new CloudRuntimeException("PrepareExtractTemplate: can't locate ssvm for SecStorage Host.");
+                              }
+                           //Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new PrepareOVAPackingCommand(secondaryStorageHost.getStorageUrl(), installPath));
+                            cmd = new PrepareOVAPackingCommand(store.getUri(), installPath);
+                            cmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
+                            Answer answer = ep.sendMessage(cmd);
+
+                                  if (answer == null || !answer.getResult()) {
+                                      s_logger.debug("Failed to create OVA for template " + templateStoreVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
+                                      throw new CloudRuntimeException("PrepareExtractTemplate: Failed to create OVA for template extraction. ");
+                                  }
+                       }
+              }
+           }
+         }  else {
+            s_logger.debug("Failed to create OVA for template " + template + " due to zone non-existing.");
+                        throw new CloudRuntimeException("PrepareExtractTemplate: Failed to create OVA for template extraction. ");
+        }
+         }
+        return profile;
+        }
 }

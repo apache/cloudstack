@@ -163,6 +163,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
+        s_logger.info("VOLSS: createSnapshotCmd starts:" + System.currentTimeMillis());
         UserContext.current().setEventDetails("Volume Id: "+getVolumeId());
         Snapshot snapshot;
         try {
@@ -177,7 +178,6 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
         }
-        
     }
 
 

@@ -16,14 +16,12 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.download.DownloadListener;
-import com.cloud.storage.resource.LocalNfsSecondaryStorageResource;
-import com.cloud.utils.component.ComponentContext;
 
 public class LocalHostEndpoint implements EndPoint {
 	private ScheduledExecutorService executor;
 	ServerResource resource;
 	public LocalHostEndpoint() {
-		resource = new LocalNfsSecondaryStorageResource();
+//FIXME		resource = new LocalNfsSecondaryStorageResource();
 		executor = Executors.newScheduledThreadPool(10);
 	}
 	@Override
@@ -92,18 +90,10 @@ public class LocalHostEndpoint implements EndPoint {
 		}
 	}
 	@Override
-	public void sendMessageAsync(Command cmd,
-			AsyncCompletionCallback<Answer> callback) {
+    public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
 		 executor.schedule(new CmdRunner(cmd, callback), 10, TimeUnit.SECONDS);
 	}
 
-	@Override
-	public void sendMessageAsyncWithListener(Command cmd, Listener listner) {
-		if (listner instanceof DownloadListener) {
-			DownloadListener listener = (DownloadListener)listner;
-			executor.schedule(new CmdRunner2(cmd, listener), 10, TimeUnit.SECONDS);
-		}
-	}
     public ServerResource getResource() {
         return resource;
     }

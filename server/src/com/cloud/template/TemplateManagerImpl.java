@@ -80,6 +80,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.ComputeChecksumCommand;
+
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobManager;
@@ -111,6 +112,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
@@ -247,6 +249,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject ImageStoreDao _imageStoreDao;
     @Inject EndPointSelector _epSelector;
 
+    @Inject
+    ConfigurationServer _configServer;
 
     int _primaryStorageDownloadWait;
     int _storagePoolMaxWaitSeconds = 3600;
@@ -261,7 +265,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     	if (type == HypervisorType.BareMetal) {
     		adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
     	} else {
-    		// see HyervisorTemplateAdapter
+    		// see HypervisorTemplateAdapter
     		adapter =  AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.Hypervisor.getName());
     	}
 
@@ -351,6 +355,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String url = cmd.getUrl();
         String mode = cmd.getMode();
         Long eventId = cmd.getStartEventId();
+
+        VirtualMachineTemplate template = getTemplate(templateId);
+        if (template == null) {
+            throw new InvalidParameterValueException("unable to find template with id " + templateId);
+        }
+        TemplateAdapter adapter = getAdapter(template.getHypervisorType());
+        TemplateProfile profile = adapter.prepareExtractTemplate(cmd);
 
         // FIXME: async job needs fixing
         Pair<Long, String> uploadPair = extract(caller, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
@@ -1242,7 +1253,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         boolean isAdmin = _accountMgr.isAdmin(caller.getType());
-        boolean allowPublicUserTemplates = Boolean.valueOf(_configDao.getValue("allow.public.user.templates"));
+        // check configuration parameter(allow.public.user.templates) value for the template owner
+        boolean allowPublicUserTemplates = Boolean.valueOf(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), template.getAccountId()));
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
         }
@@ -1353,7 +1365,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (snapshotId != null) {
                 snapshot = _snapshotDao.findById(snapshotId);
                 zoneId = snapshot.getDataCenterId();
-
             } else if (volumeId != null) {
                 volume = _volumeDao.findById(volumeId);
                 zoneId = volume.getDataCenterId();
@@ -1368,7 +1379,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 SnapshotInfo snapInfo = this._snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
                 future = this._tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store.get(0));
             } else if (volumeId != null) {
-               volume = _volumeDao.findById(volumeId);
                VolumeInfo volInfo = this._volFactory.getVolume(volumeId);
                future = this._tmpltSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store.get(0));
             } else {
@@ -1478,8 +1488,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
         }
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao
-                .getValue("allow.public.user.templates"));
+        // check whether template owner can create public templates
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), templateOwner.getId()));
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
             throw new PermissionDeniedException("Failed to create template "
                     + name + ", only private templates can be created.");

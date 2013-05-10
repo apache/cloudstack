@@ -843,6 +843,11 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
             List<String> cidrs = new ArrayList<String>();
             for (PublicIpAddress ip : ipAddress) {
+                if (ip.getState() == IpAddress.State.Releasing) {
+                    // If we are releasing we don't need to push this ip to
+                    // the Logical Router
+                    continue;
+                }
                 cidrs.add(ip.getAddress().addr() + "/" + NetUtils.getCidrSize(ip.getNetmask()));
             }
             ConfigurePublicIpsOnLogicalRouterCommand cmd = new ConfigurePublicIpsOnLogicalRouterCommand(routermapping.getLogicalRouterUuid(),

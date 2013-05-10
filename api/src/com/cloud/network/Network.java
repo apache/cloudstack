@@ -16,24 +16,11 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.Mode;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -137,6 +124,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider None = new Provider("None", false);
         // NiciraNvp is not an "External" provider, otherwise we get in trouble with NetworkServiceImpl.providersConfiguredForExternalNetworking 
         public static final Provider NiciraNvp = new Provider("NiciraNvp", false);
+        public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
 
         private String name;
         private boolean isExternal;
@@ -182,6 +170,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
         public static final Capability ElasticIp = new Capability("ElasticIp");
+        public static final Capability AssociatePublicIP = new Capability("AssociatePublicIP");
         public static final Capability ElasticLb = new Capability("ElasticLb");
         public static final Capability AutoScaleCounters = new Capability("AutoScaleCounters");
         public static final Capability InlineMode = new Capability("InlineMode");

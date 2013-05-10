@@ -33,6 +33,6 @@
     <module>ipc</module>
     <module>rest</module>
     <module>events</module>
-    <module>api</module>
+    <module>jobs</module>
   </modules>
 </project>

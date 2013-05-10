@@ -42,8 +42,13 @@
   independent configuration
     
 -->
-  <bean id="premiumDatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
-  
+  <bean id="DatabaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker"/>
+  <bean id="GlobalLoadBalancingRulesServiceImpl" class ="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" >
+    <property name="GslbServiceProvider">
+      <ref bean="Netscaler"/>
+    </property>
+  </bean>
+
   <!--
     DAO with customized configuration under non-OSS deployment
   -->
@@ -129,6 +134,16 @@
   <bean id="ciscoNexusVSMDeviceDaoImpl" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" />
   <bean id="CiscoNexus1000vVSM" class="com.cloud.network.element.CiscoNexusVSMElement">
     <property name="name" value="CiscoNexus1000vVSM"/>
+  </bean>
+  
+  <!--
+    Cisco VNMC support components
+  -->
+  <bean id="ciscoVnmcDaoImpl" class="com.cloud.network.dao.CiscoVnmcDaoImpl" />
+  <bean id="ciscoAsa1000vDaoImpl" class="com.cloud.network.dao.CiscoAsa1000vDaoImpl" />
+  <bean id="networkAsa1000vMapDaoImpl" class="com.cloud.network.dao.NetworkAsa1000vMapDaoImpl" />
+  <bean id="CiscoVNMC" class="com.cloud.network.element.CiscoVnmcElement">
+    <property name="name" value="CiscoVNMC"/>
   </bean>
   
   <!--
@@ -278,6 +293,7 @@
           <ref bean="elasticLoadBalancerElement"/>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
+          <ref bean="NiciraNvp"/>
       </list>
     </property>
   </bean>
@@ -319,6 +335,7 @@
           <ref bean="Netscaler"/>
           <ref bean="F5BigIP"/>
           <ref bean="CiscoNexus1000vVSM"/>
+          <ref bean="CiscoVNMC"/>
           <ref bean="NiciraNvp" />
           <ref bean="MidoNetElement" />
           <ref bean="bigSwitchVnsElement"/>
@@ -331,6 +348,22 @@
           <ref bean="BareMetalPxe"/>
           <ref bean="BareMetalUserdata"/>
 -->    
+      </list>
+    </property>
+  </bean>
+  
+  <!--
+   AffinityGroup Processors
+  -->
+  <bean id="HostAntiAffinityProcessor" class="org.apache.cloudstack.affinity.HostAntiAffinityProcessor">
+   	<property name="name" value="HostAntiAffinityProcessor"/>
+   	<property name="type" value="host anti-affinity"/>
+  </bean>
+  
+  <bean id="affinityProcessors" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="HostAntiAffinityProcessor" />
       </list>
     </property>
   </bean>
