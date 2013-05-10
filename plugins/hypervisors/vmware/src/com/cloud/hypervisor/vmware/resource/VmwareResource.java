@@ -491,7 +491,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((CheckS2SVpnConnectionsCommand) cmd);
             } else if (clz == ResizeVolumeCommand.class) {
                 return execute((ResizeVolumeCommand) cmd);
-            } else if (clz == StorageSubSystemCommand.class) {
+            } else if (cmd instanceof StorageSubSystemCommand) {
             	return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
