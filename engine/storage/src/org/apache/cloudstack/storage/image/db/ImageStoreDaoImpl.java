@@ -73,6 +73,7 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     public List<ImageStoreVO> findByProvider(String provider) {
         SearchCriteria<ImageStoreVO> sc = providerSearch.create();
         sc.setParameters("providerName", provider);
+        sc.setParameters("role", DataStoreRole.Image);
         return listBy(sc);
     }
 
