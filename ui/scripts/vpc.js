@@ -283,9 +283,24 @@
       privateGateways: function() {
         return cloudStack.vpc.gateways.listView()
       },
+
+      // Public IP Addresses
       publicIPs: function() {
         return cloudStack.vpc.ipAddresses.listView()
-      }      
+      },
+
+      // Network ACL lists
+      networkACLLists: {
+        listView: {
+          fields: {
+            name: { label: 'label.name' },
+            total: { label: 'label.total' }
+          },
+          dataProvider: function(args) {
+            args.response.success({ data: [] });
+          }
+        }
+      }
     },
     
     routerDetailView: function() {
