@@ -112,7 +112,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         if (isSourceNat == null) {
             return false;
         }
-        return true;
+        return isSourceNat;
     }
 
     public Long getAclId() {
