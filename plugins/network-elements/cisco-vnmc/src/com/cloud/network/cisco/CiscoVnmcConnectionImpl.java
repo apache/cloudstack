@@ -279,7 +279,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String xml = VnmcXml.CREATE_VDC.getXml();
         String service = VnmcXml.CREATE_VDC.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        xml = replaceXmlValue(xml, "descr", "VDC for Tenant" + tenantName);
+        xml = replaceXmlValue(xml, "descr", "VDC for Tenant " + tenantName);
         xml = replaceXmlValue(xml, "name", getNameForTenantVDC(tenantName));
         xml = replaceXmlValue(xml, "dn", getDnForTenantVDC(tenantName));
 
@@ -304,7 +304,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String xml = VnmcXml.CREATE_EDGE_DEVICE_PROFILE.getXml();
         String service = VnmcXml.CREATE_EDGE_DEVICE_PROFILE.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        xml = replaceXmlValue(xml, "descr", "Edge Device Profile for Tenant VDC" + tenantName);
+        xml = replaceXmlValue(xml, "descr", "Edge Device Profile for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceServiceProfile(tenantName));
         xml = replaceXmlValue(xml, "dn", getDnForTenantVDCEdgeDeviceProfile(tenantName));
 
@@ -407,7 +407,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String xml = VnmcXml.CREATE_EDGE_SECURITY_PROFILE.getXml();
         String service = VnmcXml.CREATE_EDGE_SECURITY_PROFILE.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC" + tenantName);
+        xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "egressref", "default-egress");
@@ -505,7 +505,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return createTenantVDCNatPolicyRef(
                 getDnForSourceNatPolicyRef(tenantName),
                 getNameForSourceNatPolicy(tenantName),
-                tenantName);
+                tenantName,
+                true);
     }
 
     @Override
@@ -545,7 +546,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String xml = VnmcXml.RESOLVE_NAT_POLICY_SET.getXml();
         String service = VnmcXml.RESOLVE_NAT_POLICY_SET.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC" + tenantName);
+        xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
@@ -656,7 +657,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String xml = VnmcXml.RESOLVE_ACL_POLICY_SET.getXml();
         String service = VnmcXml.RESOLVE_ACL_POLICY_SET.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC" + tenantName);
+        xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceSecurityProfile(tenantName));
         xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
         //xml = replaceXmlValue(xml, "egresspolicysetname", getNameForAclPolicySet(tenantName, false));
@@ -838,17 +839,23 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    private boolean createTenantVDCNatPolicyRef(String policyRefDn, String name, String tenantName) throws ExecutionException {
+    private boolean createTenantVDCNatPolicyRef(String policyRefDn, String name, String tenantName, boolean isSourceNat) throws ExecutionException {
         String xml = VnmcXml.CREATE_NAT_POLICY_REF.getXml();
         String service = VnmcXml.CREATE_NAT_POLICY_REF.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "natpolicyrefdn", policyRefDn);
         xml = replaceXmlValue(xml, "natpolicyname", name);
 
-        List<String> policies = listNatPolicies(tenantName);
-        int order = 100;
-        if (policies != null) {
-            order += policies.size();
+        // PF and static NAT policies need to come before source NAT, so leaving buffer
+        // and creating source NAT with a high order value.
+        // Initially tried setting MAX_INT as the order but VNMC complains about it
+        int order = 10000; // TODO: For now value should be sufficient, if required may need to increase
+        if (!isSourceNat) {
+            List<String> policies = listNatPolicies(tenantName);
+            order = 100; // order starts at 100
+            if (policies != null) {
+                order += policies.size();
+            }
         }
         xml = replaceXmlValue(xml, "order", Integer.toString(order));
 
@@ -1062,7 +1069,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return createTenantVDCNatPolicyRef(
                 getDnForPFPolicyRef(tenantName, identifier),
                 getNameForPFPolicy(tenantName, identifier),
-                tenantName);
+                tenantName,
+                false);
     }
 
     @Override
@@ -1180,7 +1188,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return createTenantVDCNatPolicyRef(
                 getDnForDNatPolicyRef(tenantName, identifier),
                 getNameForDNatPolicy(tenantName, identifier),
-                tenantName);
+                tenantName,
+                false);
     }
 
     @Override
