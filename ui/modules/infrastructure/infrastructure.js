@@ -36,7 +36,7 @@
           var selectedZoneObj = data.selectedZoneObj;   
           var selectedPhysicalNetworkObj = data.selectedPhysicalNetworkObj;
           if(selectedZoneObj.networktype == "Advanced"){      
-            var selectedProviderObj = {};
+            var selectedProviderObj = null;
             $.ajax({
               url: createURL('listNetworkServiceProviders'),
               data: {
@@ -55,7 +55,7 @@
             nspHardcodingArray.push({
               id: id,
               name: name,
-              state: selectedProviderObj.state
+              state: selectedProviderObj? selectedProviderObj.state : 'Disabled'
             });
           } 
         });

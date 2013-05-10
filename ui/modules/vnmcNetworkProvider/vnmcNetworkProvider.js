@@ -278,8 +278,11 @@
               id: { label: 'label.id' },
               servicelist: {
                 label: 'Services',
-                converter: function(args){                  
-                  return args.join(', ');
+                converter: function(args){  
+                  if(args)                  
+                    return args.join(', ');
+                  else
+                    return '';
                 }
               }
             }
@@ -295,6 +298,14 @@
                 var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
                 if(items != null && items.length > 0) {   
                   args.response.success({ data: items[0] });                  
+                }
+                else {
+                  args.response.success({ 
+                    data: {
+                      name: 'CiscoVnmc',
+                      state: 'Disabled'
+                    }
+                  })
                 }
               }
             });                 
