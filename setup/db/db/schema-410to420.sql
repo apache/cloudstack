@@ -928,7 +928,7 @@ CREATE TABLE `cloud`.`op_host_planner_reservation` (
   `host_id` bigint unsigned,
   `resource_usage` varchar(255) COMMENT 'Shared(between planners) Vs Dedicated (exclusive usage to a planner)',
   PRIMARY KEY  (`id`),
-  INDEX `i_op_host_planner_reservation__host_type`(`host_id`, `resource_type`),
+  INDEX `i_op_host_planner_reservation__host_resource_usage`(`host_id`, `resource_usage`),
   CONSTRAINT `fk_planner_reservation__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_planner_reservation__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_planner_reservation__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE,
