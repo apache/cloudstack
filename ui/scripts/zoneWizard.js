@@ -810,7 +810,7 @@
                 if($(this).val() == "VMware") {
                   //$('li[input_sub_group="external"]', $dialogAddCluster).show();
                   if(dvSwitchEnabled ){
-                     /*   $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'inline-block');
+                     /*   $fields.filter('[rel=vSwitchPublicType]').css('display', 'inline-block');
                         $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
                        
                         $form.find('.form-item[rel=vSwitchPublicName]').css('display','inline-block');
@@ -1563,7 +1563,11 @@
                       $fields.filter('[rel=connectiontimeout]').hide();
                       $fields.filter('[rel=maxerrorretry]').hide();
                       $fields.filter('[rel=sockettimeout]').hide();
-
+                      
+                      $fields.filter('[rel=createNfsCache]').hide();
+                      $fields.filter('[rel=nfsCacheNfsServer]').hide();
+                      $fields.filter('[rel=nfsCachePath]').hide();
+                      
                       //Swift
                       $fields.filter('[rel=url]').hide();
                       $fields.filter('[rel=account]').hide();
@@ -1586,6 +1590,11 @@
                       $fields.filter('[rel=maxerrorretry]').css('display', 'inline-block');
                       $fields.filter('[rel=sockettimeout]').css('display', 'inline-block');
 
+                      $fields.filter('[rel=createNfsCache]').find('input').attr('checked','checked');
+                      $fields.filter('[rel=createNfsCache]').css('display', 'inline-block');  
+                      $fields.filter('[rel=nfsCacheNfsServer]').css('display', 'inline-block');
+                      $fields.filter('[rel=nfsCachePath]').css('display', 'inline-block');
+                      
                       //Swift
                       $fields.filter('[rel=url]').hide();
                       $fields.filter('[rel=account]').hide();
@@ -1608,6 +1617,10 @@
                       $fields.filter('[rel=maxerrorretry]').hide();
                       $fields.filter('[rel=sockettimeout]').hide();
 
+                      $fields.filter('[rel=createNfsCache]').hide();
+                      $fields.filter('[rel=nfsCacheNfsServer]').hide();
+                      $fields.filter('[rel=nfsCachePath]').hide();
+                      
                       //Swift
                       $fields.filter('[rel=url]').css('display', 'inline-block');
                       $fields.filter('[rel=account]').css('display', 'inline-block');
@@ -1650,6 +1663,22 @@
           connectiontimeout: { label: 'label.s3.connection_timeout' },
           maxerrorretry: { label: 'label.s3.max_error_retry' },
           sockettimeout: { label: 'label.s3.socket_timeout' },
+          
+          createNfsCache: {
+            label: 'Create NFS Cache Storage',
+            isBoolean: true,                    
+            isChecked: true                    
+          },     
+          nfsCacheNfsServer: {
+            dependsOn: 'createNfsCache',
+            label: 'label.nfs.server',                    
+            validation: { required: true }
+          },
+          nfsCachePath: {
+            dependsOn: 'createNfsCache',
+            label: 'label.path',                    
+            validation: { required: true }
+          },                  
           //S3 (end)
           
           
@@ -3587,11 +3616,36 @@
                   })
                 });
               },
-              error: function(json) {
+              error: function(XMLHttpResponse) {
                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                 error('addSecondaryStorage', errorMsg, { fn: 'addSecondaryStorage', args: args });
               }
             });
+                        
+            if(args.data.secondaryStorage.createNfsCache == 'on') {
+              var zoneid = args.data.secondaryStorage.nfsCacheZoneid;
+              var nfs_server = args.data.secondaryStorage.nfsCacheNfsServer;
+              var path = args.data.secondaryStorage.nfsCachePath;
+              var url = nfsURL(nfs_server, path);
+              
+              var nfsCacheData = {
+                provider: 'NFS',
+                zoneid: args.data.returnedZone.id,
+                url: url                    
+              };        
+              
+              $.ajax({
+                url: createURL('createCacheStore'),
+                data: nfsCacheData,
+                success: function(json) {
+                  //do nothing                        
+                },
+                error: function(XMLHttpResponse) {
+                  var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                  error('addSecondaryStorage', errorMsg, { fn: 'addSecondaryStorage', args: args });
+                }
+              }); 
+            }     
           }
           else if(args.data.secondaryStorage.provider == 'Swift') {
             $.ajax({
@@ -3613,7 +3667,7 @@
                   })
                 });
               },
-              error: function(json) {
+              error: function(XMLHttpResponse) {
                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                 error('addSecondaryStorage', errorMsg, { fn: 'addSecondaryStorage', args: args });
               }
