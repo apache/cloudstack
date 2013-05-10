@@ -8,6 +8,7 @@
       var $title = $('<div>').addClass('title').append($('<span>'));
       var $content = $('<div>').addClass('content');
       var $dashboard = elems.dashboard({
+        context: args.context,
         dashboardItems: dashboardItems
       });
       var $detailLink = $('<div>').addClass('detail-link');
@@ -28,6 +29,7 @@
 
     router: function(args) {
       var $router = elems.tier({
+        context: args.context,
         tier: {
           name: 'Router',
         },
@@ -50,6 +52,7 @@
 
     dashboard: function(args) {
       var $dashboard = $('<div>').addClass('dashboard');
+      var context = args.context;
 
       $(args.dashboardItems).map(function(index, dashboardItem) {
         var $dashboardItem = $('<div>').addClass('dashboard-item');
@@ -70,8 +73,14 @@
               var section = cloudStack.vpc.sections[id];
               var $section = $('<div>');
 
+              if ($.isFunction(section)) {
+                section = cloudStack.vpc.sections[id]()
+              }
+
               if (section.listView) {
-                $section.listView(section);
+                $section.listView($.extend(true, {}, section, {
+                  context: context
+                }));
               }
 
               $section.appendTo($panel);
@@ -107,6 +116,7 @@
 
             $(tiers).map(function(index, tier) {
               var $tier = elems.tier({
+                context: context,
                 tier: tier,
                 dashboardItems: [
                   {
@@ -143,6 +153,7 @@
 
       // Router
       $router = elems.router({
+        context: context,
         dashboardItems: [
           {
             id: 'privateGateways',

@@ -277,6 +277,14 @@
   };
 
   cloudStack.vpc = {
+    // nTier sections
+    sections: {
+      // Private gateways
+      privateGateways: function() {
+        return cloudStack.vpc.gateways.listView()
+      }
+    },
+    
     routerDetailView: function() {
       return {
         title: 'VPC router details',
