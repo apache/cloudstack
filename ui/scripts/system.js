@@ -10380,7 +10380,11 @@
                               $form.find('.form-item[rel=connectiontimeout]').hide();
                               $form.find('.form-item[rel=maxerrorretry]').hide();
                               $form.find('.form-item[rel=sockettimeout]').hide();
-
+                              $form.find('.form-item[rel=createNfsCache]').hide();
+                              $form.find('.form-item[rel=nfsCacheZoneid]').hide();
+                              $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
+                              $form.find('.form-item[rel=nfsCachePath]').hide();
+                              
                               //Swift
                               $form.find('.form-item[rel=url]').hide();
                               $form.find('.form-item[rel=account]').hide();
@@ -10401,7 +10405,14 @@
                               $form.find('.form-item[rel=usehttps]').css('display', 'inline-block');
                               $form.find('.form-item[rel=connectiontimeout]').css('display', 'inline-block');
                               $form.find('.form-item[rel=maxerrorretry]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=sockettimeout]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=sockettimeout]').css('display', 'inline-block');                              
+                             
+                              $form.find('.form-item[rel=createNfsCache]').find('input').attr('checked','checked');
+                              $form.find('.form-item[rel=createNfsCache]').css('display', 'inline-block');                         
+                              $form.find('.form-item[rel=nfsCacheZoneid]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=nfsCacheNfsServer]').css('display', 'inline-block');
+                              $form.find('.form-item[rel=nfsCachePath]').css('display', 'inline-block');
+                          
 
                               //Swift
                               $form.find('.form-item[rel=url]').hide();
@@ -10424,7 +10435,11 @@
                               $form.find('.form-item[rel=connectiontimeout]').hide();
                               $form.find('.form-item[rel=maxerrorretry]').hide();
                               $form.find('.form-item[rel=sockettimeout]').hide();
-
+                              $form.find('.form-item[rel=createNfsCache]').hide();
+                              $form.find('.form-item[rel=nfsCacheZoneid]').hide();
+                              $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
+                              $form.find('.form-item[rel=nfsCachePath]').hide();
+                              
                               //Swift
                               $form.find('.form-item[rel=url]').css('display', 'inline-block');
                               $form.find('.form-item[rel=account]').css('display', 'inline-block');
@@ -10499,6 +10514,52 @@
                   connectiontimeout: { label: 'label.s3.connection_timeout' },
                   maxerrorretry: { label: 'label.s3.max_error_retry' },
                   sockettimeout: { label: 'label.s3.socket_timeout' },
+                  
+                  createNfsCache: {
+                    label: 'Create NFS Cache Storage',
+                    isBoolean: true,                    
+                    isChecked: true                    
+                  },                  
+                  nfsCacheZoneid: {
+                    dependsOn: 'createNfsCache',
+                    label: 'Zone',                    
+                    validation: { required: true },
+                    select: function(args) {                      
+                      $.ajax({
+                        url: createURL('listZones'),
+                        data: { 
+                          listAll: true 
+                        },
+                        success: function(json) {
+                          var zones = json.listzonesresponse.zone;
+
+                          if(zones != null){ //$.map(items, fn) - items can not be null
+                            args.response.success({
+                              data: $.map(zones, function(zone) {
+                                return {
+                                  id: zone.id,
+                                  description: zone.name
+                                };
+                              })
+                            });
+                          }
+                          else {
+                            args.response.success({data: null});
+                          }                          
+                        }
+                      });
+                    }
+                  },
+                  nfsCacheNfsServer: {
+                    dependsOn: 'createNfsCache',
+                    label: 'label.nfs.server',                    
+                    validation: { required: true }
+                  },
+                  nfsCachePath: {
+                    dependsOn: 'createNfsCache',
+                    label: 'label.path',                    
+                    validation: { required: true }
+                  },                  
                   //S3 (end)
                   
                   
