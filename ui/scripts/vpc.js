@@ -1483,6 +1483,9 @@
           path: 'network.ipAddresses',
           label: 'label.menu.ipaddresses',
           preFilter: function(args) {
+            return false;
+
+            /// Disabled
             if (args.context.networks[0].state == 'Destroyed')
               return false;
 
@@ -1753,7 +1756,7 @@
             }
           });
 
-          var hiddenTabs = ['ipAddresses']; // Disable IP address tab; it is redundant with 'view all' button
+          var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
           
           if(networkOfferingHavingELB == false)
             hiddenTabs.push("addloadBalancer");
