@@ -44,9 +44,9 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     @Inject private VMInstanceDao _instanceDao;
     
     private Map<String, Method> _handlerMap = new HashMap<String, Method>();
-	
+
 	@Override
-	public void RunJob(AsyncJob job) {
+	public void runJob(AsyncJob job) {
         try {
         	String cmd = job.getCmd();
         	assert(cmd != null);

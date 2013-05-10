@@ -808,6 +808,9 @@
   <bean id="VmWorkJobDispatcher" class="com.cloud.vm.VmWorkJobDispatcher">
     <property name="name" value="VmWorkJobDispatcher" />
   </bean>
+  <bean id="VmWorkJobWakeupDispatcher" class="com.cloud.vm.VmWorkJobWakeupDispatcher">
+    <property name="name" value="VmWorkJobWakeupDispatcher" />
+  </bean>
 
   <bean id="vmWorkJobDaoImpl" class="com.cloud.vm.VmWorkJobDaoImpl" />  
 

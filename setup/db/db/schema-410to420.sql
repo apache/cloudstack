@@ -455,14 +455,19 @@ CREATE TABLE `cloud`.`async_job_join_map` (
   `sync_source_id` bigint COMMENT 'upper-level job sync source info before join',
   `wakeup_handler` varchar(64),
   `wakeup_dispatcher` varchar(64),
+  `wakeup_interval` bigint NOT NULL DEFAULT 3000 COMMENT 'wakeup interval in seconds',
   `created` datetime NOT NULL,
   `last_updated` datetime,
+  `next_wakeup` datetime,
+  `expiration` datetime,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_async_job_join_map__job_id` FOREIGN KEY (`job_id`) REFERENCES `async_job`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_async_job_join_map__join_job_id` FOREIGN KEY (`join_job_id`) REFERENCES `async_job`(`id`),
   CONSTRAINT `fk_async_job_join_map__join` UNIQUE (`job_id`, `join_job_id`),
   INDEX `i_async_job_join_map__join_job_id`(`join_job_id`),
   INDEX `i_async_job_join_map__created`(`created`),
-  INDEX `i_async_job_join_map__last_updated`(`last_updated`)
+  INDEX `i_async_job_join_map__last_updated`(`last_updated`),
+  INDEX `i_async_job_join_map__next_wakeup`(`next_wakeup`),
+  INDEX `i_async_job_join_map__expiration`(`expiration`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

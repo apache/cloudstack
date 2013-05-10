@@ -18,6 +18,7 @@ package com.cloud.async;
 
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -40,6 +41,8 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobMonitor;
 import com.cloud.async.dao.AsyncJobJoinMapDao;
 import com.cloud.async.dao.AsyncJobJournalDao;
+import com.cloud.async.dao.SyncQueueDao;
+import com.cloud.async.dao.SyncQueueItemDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -59,6 +62,8 @@ public class TestAsyncJobManager extends TestCase {
     @Inject AsyncJobJournalDao journalDao;
     @Inject AsyncJobJoinMapDao joinMapDao;
     @Inject AccountManager accountMgr;
+    @Inject SyncQueueDao syncQueueDao;
+    @Inject SyncQueueItemDao syncQueueItemDao;
     
     @Before                                                  
     public void setUp() {
@@ -123,8 +128,8 @@ public class TestAsyncJobManager extends TestCase {
     
     @Test
     public void testJoinMapDao() {
-    	joinMapDao.joinJob(2, 1, 100, null, null, null);
-    	joinMapDao.joinJob(3, 1, 100, null, null, null);
+    	joinMapDao.joinJob(2, 1, 100, 3000, 120000, null, "wakeupHandler", "wakeupDispatcher");
+    	joinMapDao.joinJob(3, 1, 100, 5000, 120000, null, "wakeupHandler", "wakeupDispatcher");
   
     	AsyncJobJoinMapVO record = joinMapDao.getJoinRecord(2, 1);
     	Assert.assertTrue(record != null);
@@ -149,6 +154,38 @@ public class TestAsyncJobManager extends TestCase {
     	
     	joinMapDao.disjoinJob(2, 1);
     	joinMapDao.disjoinJob(3, 1);
+    }
+    
+    @Test
+    public void testJoinWakeup() {
+    	joinMapDao.joinJob(2, 1, 100, 3000, 120000, null, "wakeupHandler", "wakeupDispatcher");
+    	joinMapDao.joinJob(3, 1, 100, 5000, 120000, null, "wakeupHandler", "wakeupDispatcher");
+
+    	SyncQueueVO queue = new SyncQueueVO();
+    	queue.setCreated(new Date());
+    	queue.setLastProcessNumber(1L);
+    	queue.setLastUpdated(new Date());
+    	queue.setQueueSizeLimit(1);
+    	queue.setSyncObjType("AsynJob");
+    	queue.setSyncObjId(1L);
+    	syncQueueDao.persist(queue);
+    	
+    	SyncQueueItemVO queueItem = new SyncQueueItemVO();
+    	queueItem.setQueueId(queue.getId());
+    	queueItem.setContentId(2L);
+    	queueItem.setContentType("AsyncJob");
+    	queueItem.setLastProcessMsid(1L);
+    	queueItem.setLastProcessNumber(1L);
+    	syncQueueItemDao.persist(queueItem);
+    	Assert.assertTrue(queueItem.getId() != 0);
+    	
+    	joinMapDao.wakeupScan();
+    	
+    	joinMapDao.disjoinJob(2, 1);
+    	joinMapDao.disjoinJob(3, 1);
+    	
+    	syncQueueItemDao.expunge(queueItem.getId());
+    	syncQueueDao.expunge(queue.getId());
     }
     
     @Test

@@ -315,7 +315,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     
     @Override @DB
 	public void joinJob(long jobId, long joinJobId) {
-    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid(), null, null, null);
+    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid(), 0, 0, null, null, null);
     }
     
     @Override @DB
@@ -329,7 +329,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     		syncSourceId = context.getJob().getSyncSource().getQueueId();
     	}
     	
-    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid(), syncSourceId, wakeupHandler, wakeupDispatcher);
+    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid(), 
+    		wakeupIntervalInMilliSeconds, timeoutInMilliSeconds,
+    		syncSourceId, wakeupHandler, wakeupDispatcher);
     }
     
     @Override @DB
@@ -476,6 +478,20 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     	return null;
     }
     
+    private AsyncJobDispatcher getWakeupDispatcher(AsyncJob job) {
+    	if(_jobDispatchers != null) {
+    		List<AsyncJobJoinMapVO> joinRecords = this._joinMapDao.listJoinRecords(job.getId());
+    		if(joinRecords.size() > 0) {
+    			AsyncJobJoinMapVO joinRecord = joinRecords.get(0);
+	    		for(AsyncJobDispatcher dispatcher : _jobDispatchers) {
+	    			if(dispatcher.getName().equals(joinRecord.getWakeupDispatcher()))
+	    				return dispatcher;
+	    		}
+    		}
+    	}
+    	return null;
+    }
+    
     private Runnable getExecutorRunnable(final AsyncJobManager mgr, final AsyncJob job) {
         return new Runnable() {
             @Override
@@ -503,13 +519,22 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     if(s_logger.isDebugEnabled()) {
                         s_logger.debug("Executing " + job.getCmd() + " for job-" + job.getId());
                     }
-                    
-                    AsyncJobDispatcher jobDispatcher = getDispatcher(job.getDispatcher());
-                    if(jobDispatcher != null) {
-                    	jobDispatcher.RunJob(job);
+
+                    if((getAndResetPendingSignals(job) & AsyncJobConstants.SIGNAL_MASK_WAKEUP) != 0) {
+                    	AsyncJobDispatcher jobDispatcher = getWakeupDispatcher(job);
+                    	if(jobDispatcher != null) {
+                    		jobDispatcher.runJob(job);
+                    	} else {
+                    		s_logger.error("Unable to find a wakeup dispatcher from the joined job. job-" + job.getId());
+                    	}
                     } else {
-                    	s_logger.error("Unable to find job dispatcher, job will be cancelled");
-                        completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), null);
+	                    AsyncJobDispatcher jobDispatcher = getDispatcher(job.getDispatcher());
+	                    if(jobDispatcher != null) {
+	                    	jobDispatcher.runJob(job);
+	                    } else {
+	                    	s_logger.error("Unable to find job dispatcher, job will be cancelled");
+	                        completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), null);
+	                    }
                     }
                     
                     if (s_logger.isDebugEnabled()) {
@@ -548,6 +573,16 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             	}
             }
         };
+    }
+    
+    private int getAndResetPendingSignals(AsyncJob job) {
+    	int signals = job.getPendingSignals();
+    	if(signals != 0) {
+	    	AsyncJobVO jobRecord = _jobDao.findById(job.getId());
+	    	jobRecord.setPendingSignals(0);
+	    	_jobDao.update(job.getId(), jobRecord);
+    	}
+    	return signals;
     }
     
     private void executeQueueItem(SyncQueueItemVO item, boolean fromPreviousSession) {
@@ -653,6 +688,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             executeQueueItem(item, false);
                         }
                     }
+              
+                    _joinMapDao.wakeupScan();
                 } catch(Throwable e) {
                     s_logger.error("Unexpected exception when trying to execute queue item, ", e);
                 } finally {
@@ -662,7 +699,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         s_logger.error("Unexpected exception", e);
                 	}
                 }
-            }
+            }  
         };
     }
 

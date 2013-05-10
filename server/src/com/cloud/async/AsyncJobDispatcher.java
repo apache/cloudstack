@@ -19,5 +19,5 @@ package com.cloud.async;
 import com.cloud.utils.component.Adapter;
 
 public interface AsyncJobDispatcher extends Adapter {
-	void RunJob(AsyncJob job);
+	void runJob(AsyncJob job);
 }

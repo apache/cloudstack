@@ -16,7 +16,13 @@
 // under the License.
 package com.cloud.async.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobJoinMapVO;
@@ -24,14 +30,17 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Long> implements AsyncJobJoinMapDao {
+    public static final Logger s_logger = Logger.getLogger(AsyncJobJoinMapDaoImpl.class);
 	
 	private final SearchBuilder<AsyncJobJoinMapVO> RecordSearch;	
 	private final SearchBuilder<AsyncJobJoinMapVO> RecordSearchByOwner;	
 	private final SearchBuilder<AsyncJobJoinMapVO> CompleteJoinSearch;	
+	private final SearchBuilder<AsyncJobJoinMapVO> WakeupSearch;
 	
 	public AsyncJobJoinMapDaoImpl() {
 		RecordSearch = createSearchBuilder();
@@ -46,9 +55,16 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		CompleteJoinSearch = createSearchBuilder();
 		CompleteJoinSearch.and("joinJobId", CompleteJoinSearch.entity().getJoinJobId(), Op.EQ);
 		CompleteJoinSearch.done();
+		
+		WakeupSearch = createSearchBuilder();
+		WakeupSearch.and("nextWakeupTime", WakeupSearch.entity().getNextWakeupTime(), Op.LT);
+		WakeupSearch.and("expiration", WakeupSearch.entity().getExpiration(), Op.GT);
+		WakeupSearch.and("joinStatus", WakeupSearch.entity().getJoinStatus(), Op.EQ);
+		WakeupSearch.done();
 	}
 	
 	public Long joinJob(long jobId, long joinJobId, long joinMsid, 
+		long wakeupIntervalMs, long expirationMs,
 		Long syncSourceId, String wakeupHandler, String wakeupDispatcher) {
 		
 		AsyncJobJoinMapVO record = new AsyncJobJoinMapVO();
@@ -57,8 +73,13 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		record.setJoinMsid(joinMsid);
 		record.setJoinStatus(AsyncJobConstants.STATUS_IN_PROGRESS);
 		record.setSyncSourceId(syncSourceId);
+		record.setWakeupInterval(wakeupIntervalMs / 1000);		// convert millisecond to second
 		record.setWakeupHandler(wakeupHandler);
-		record.setWakeupHandler(wakeupHandler);
+		record.setWakeupDispatcher(wakeupDispatcher);
+		if(wakeupHandler != null) {
+			record.setNextWakeupTime(new Date(DateUtil.currentGMTTime().getTime() + wakeupIntervalMs));
+			record.setExpiration(new Date(DateUtil.currentGMTTime().getTime() + expirationMs));
+		}
 		
 		this.persist(record);
 		return record.getId();
@@ -105,5 +126,40 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
         SearchCriteria<AsyncJobJoinMapVO> sc = CompleteJoinSearch.create();
         sc.setParameters("joinJobId", joinJobId);
         update(ub, sc, null);
+	}
+
+	public void wakeupScan() {
+		Date cutDate = DateUtil.currentGMTTime();
+		
+		Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+			txn.start();
+			
+			//
+			// performance sensitive processing, do it in plain SQL 
+			//
+			
+			String sql = "UPDATE sync_queue_item SET queue_proc_msid=NULL, queue_proc_number=NULL WHERE content_id IN " + 
+			 "(SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ? AND join_status = ?)";
+			pstmt = txn.prepareStatement(sql);
+	        pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+	        pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+	        pstmt.setInt(3, AsyncJobConstants.STATUS_IN_PROGRESS);
+	        pstmt.executeUpdate();
+	        pstmt.close();
+			
+	        sql = "UPDATE async_job_join_map SET next_wakeup=next_wakeup + SEC_TO_TIME(wakeup_interval) WHERE next_wakeup < ? AND expiration > ? AND join_status = ?";
+			pstmt = txn.prepareStatement(sql);
+	        pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+	        pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+	        pstmt.setInt(3, AsyncJobConstants.STATUS_IN_PROGRESS);
+	        pstmt.executeUpdate();
+	        pstmt.close();
+
+	        txn.commit();
+		} catch (SQLException e) {
+			s_logger.error("Unexpected exception", e);
+		}
 	}
 }

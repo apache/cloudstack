@@ -51,7 +51,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
     }
     
 	@Override
-	public void RunJob(AsyncJob job) {
+	public void runJob(AsyncJob job) {
         BaseAsyncCmd cmdObj = null;
         try {
             Class<?> cmdClass = Class.forName(job.getCmd());

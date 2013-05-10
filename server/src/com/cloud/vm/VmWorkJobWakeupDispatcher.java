@@ -47,15 +47,16 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
     @Inject private VirtualMachineManager _vmMgr;
 
     private Map<String, Method> _handlerMap = new HashMap<String, Method>();
-   
+    
 	@Override
-	public void RunJob(AsyncJob job) {
+	public void runJob(AsyncJob job) {
 		try {
 			List<AsyncJobJoinMapVO> joinRecords =_joinMapDao.listJoinRecords(job.getId());
 			if(joinRecords.size() != 1) {
 				s_logger.warn("Job-" + job.getId() 
 				    + " received wakeup call with un-supported joining job number: " + joinRecords.size());
 
+				// if we fail wakeup-execution for any reason, avoid release sync-source if there is any
 				job.setSyncSource(null);
 				return;
 			}
@@ -89,6 +90,7 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
 	    } catch(Throwable e) {
 	    	s_logger.warn("Unexpected exception in waking up job-" + job.getId());
 	    	
+			// if we fail wakeup-execution for any reason, avoid release sync-source if there is any
 	    	job.setSyncSource(null);
 	    }
  	}

@@ -38,7 +38,6 @@ import com.cloud.dao.EntityManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineManagerImpl;
 
 @Configuration
 public class AsyncJobTestConfiguration {

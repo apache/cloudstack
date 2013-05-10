@@ -52,7 +52,7 @@ public class AsyncJobJoinMapVO {
 
     @Column(name="join_msid")
     private long joinMsid;
-
+    
     @Column(name="complete_msid")
     private Long completeMsid;
     
@@ -65,6 +65,9 @@ public class AsyncJobJoinMapVO {
     @Column(name="wakeup_dispatcher")
     private String wakeupDispatcher;
 
+    @Column(name="wakeup_interval")
+    private long wakeupInterval;
+    
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
     
@@ -72,8 +75,17 @@ public class AsyncJobJoinMapVO {
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastUpdated;
 
+    @Column(name="next_wakeup")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date nextWakeupTime;
+    
+    @Column(name="expiration")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date expiration;
+
     public AsyncJobJoinMapVO() {
     	created = DateUtil.currentGMTTime();
+    	lastUpdated = DateUtil.currentGMTTime();
     }
     
 	public Long getId() {
@@ -170,5 +182,29 @@ public class AsyncJobJoinMapVO {
 
 	public void setWakeupDispatcher(String wakeupDispatcher) {
 		this.wakeupDispatcher = wakeupDispatcher;
+	}
+
+	public long getWakeupInterval() {
+		return wakeupInterval;
+	}
+
+	public void setWakeupInterval(long wakeupInterval) {
+		this.wakeupInterval = wakeupInterval;
+	}
+
+	public Date getNextWakeupTime() {
+		return nextWakeupTime;
+	}
+
+	public void setNextWakeupTime(Date nextWakeupTime) {
+		this.nextWakeupTime = nextWakeupTime;
+	}
+
+	public Date getExpiration() {
+		return expiration;
+	}
+
+	public void setExpiration(Date expiration) {
+		this.expiration = expiration;
 	}
 }

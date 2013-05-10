@@ -24,6 +24,7 @@ import com.cloud.utils.db.GenericDao;
 public interface AsyncJobJoinMapDao extends GenericDao<AsyncJobJoinMapVO, Long> {
 	
 	Long joinJob(long jobId, long joinJobId, long joinMsid, 
+		long wakeupIntervalMs, long expirationMs,
 		Long syncSourceId, String wakeupHandler, String wakeupDispatcher);
 	void disjoinJob(long jobId, long joinedJobId);
 	
@@ -31,4 +32,6 @@ public interface AsyncJobJoinMapDao extends GenericDao<AsyncJobJoinMapVO, Long> 
 	List<AsyncJobJoinMapVO> listJoinRecords(long jobId);
 	
 	void completeJoin(long joinJobId, int joinStatus, String joinResult, long completeMsid);
+	
+	void wakeupScan();
 }

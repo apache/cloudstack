@@ -20,6 +20,7 @@ public interface VmWorkConstants {
 	// VmWork queue name
 	public static final String VM_WORK_QUEUE = "VmWorkJobQueue";
 	public static final String VM_WORK_JOB_DISPATCHER = "VmWorkJobDispatcher";
+	public static final String VM_WORK_JOB_WAKEUP_DISPATCHER = "VmWorkJobWakeupDispatcher";
 	
 	// work job commands
 	public static final String VM_WORK_START = "vmWorkStart";
