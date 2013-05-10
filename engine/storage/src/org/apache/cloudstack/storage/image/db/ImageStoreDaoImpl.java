@@ -96,4 +96,12 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         return listBy(sc);
     }
 
+    @Override
+    public List<ImageStoreVO> listImageStores() {
+        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
+        sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
+        return listBy(sc);
+    }
+
+
 }
