@@ -78,6 +78,9 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
             description="the ID of the zone")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -115,6 +118,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+    
     public boolean listInReadyState() {
         Account account = UserContext.current().getCaller();
         // It is account specific if account is admin type and domainId and accountName are not null

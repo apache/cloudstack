@@ -22,7 +22,7 @@
   <name>Apache CloudStack Secondary Storage Service</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloud-services</artifactId>
+    <artifactId>cloudstack-services</artifactId>
     <version>4.2.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>

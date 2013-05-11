@@ -35,6 +35,9 @@ public class ConfigurationResponse extends BaseResponse {
     @SerializedName(ApiConstants.SCOPE) @Param(description="scope(zone/cluster/pool/account) of the parameter that needs to be updated")
     private String scope;
 
+    @SerializedName(ApiConstants.ID) @Param(description="the value of the configuration")
+    private Long id;
+
     @SerializedName(ApiConstants.DESCRIPTION) @Param(description="the description of the configuration")
     private String description;
 

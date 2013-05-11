@@ -25,6 +25,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value=VirtualRouterProvider.class)
+@SuppressWarnings("unused")
 public class VirtualRouterProviderResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
     private String id;

@@ -18,6 +18,7 @@ package org.apache.cloudstack.query;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
@@ -94,5 +95,7 @@ public interface QueryService {
     List<NicDetailResponse> searchForNicDetails(ListNicDetailsCmd ListNicDetailsCmd);
 
     public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd);
+
+    ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd);
 
 }

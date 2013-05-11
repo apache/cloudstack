@@ -118,5 +118,4 @@ under the License.
     protocolvalue = "TCP" or "UDP" or "ICMP"
     deststartip="destination start ip"
     destendip="destination end ip"
-    sourceip="source ip"
 --!>

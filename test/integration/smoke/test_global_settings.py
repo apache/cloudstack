@@ -39,22 +39,22 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "use.external.dns"
         updateConfigurationCmd.value = "true"
-        updateConfigurationCmd.scope = "zone"
-        updateConfigurationCmd.id = 1
+        updateConfigurationCmd.scopename = "zone"
+        updateConfigurationCmd.scopeid = 1
 
         updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
         self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
 
         listConfigurationsCmd = listConfigurations.listConfigurationsCmd()
         listConfigurationsCmd.cfgName = updateConfigurationResponse.name
-        listConfigurationsCmd.scope = "zone"
-        listConfigurationsCmd.id = 1
+        listConfigurationsCmd.scopename = "zone"
+        listConfigurationsCmd.scopeid = 1
         listConfigurationsResponse = self.apiClient.listConfigurations(listConfigurationsCmd)
 
         self.assertNotEqual(len(listConfigurationsResponse), 0, "Check if the list API \
                             returns a non-empty response")
 
-        configParam = listConfigurationsResponse[0]
+        configParam = listConfigurationsResponse[7]
         self.assertEqual(configParam.value, updateConfigurationResponse.value, "Check if the update API returned \
                          is the same as the one we got in the list API")
 
@@ -67,6 +67,6 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "use.external.dns"
         updateConfigurationCmd.value = "false"
-        updateConfigurationCmd.scope = "zone"
-        updateConfigurationCmd.id = 1
+        updateConfigurationCmd.scopename = "zone"
+        updateConfigurationCmd.scopeid = 1
         self.apiClient.updateConfiguration(updateConfigurationCmd)

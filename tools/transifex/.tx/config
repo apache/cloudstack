@@ -1,0 +1,32 @@
+[main]
+host = https://www.transifex.com
+
+[CloudStack_UI.2-2messagesproperties]
+file_filter = translations/CloudStack_UI.2-2messagesproperties/<lang>.properties
+source_lang = en
+
+[CloudStack_UI.30xmessagesproperties]
+file_filter = translations/CloudStack_UI.30xmessagesproperties/<lang>.properties
+source_lang = en
+
+[CloudStack_UI.41xmessageproperties]
+file_filter = translations/CloudStack_UI.41xmessageproperties/<lang>.properties
+source_lang = en
+
+[CloudStack_UI.42xmessagesproperties]
+file_filter = translations/CloudStack_UI.42xmessagesproperties/<lang>.properties
+source_file = work-dir/messages.properties
+source_lang = en
+trans.ar = work-dir/messages_ar.properties
+trans.ca = work-dir/messages_ca.properties
+trans.de_DE = work-dir/messages_de_DE.properties
+trans.es = work-dir/messages_es.properties
+trans.fr_FR = work-dir/messages_fr_FR.properties
+trans.it_IT = work-dir/messages_it_IT.properties
+trans.ja = work-dir/messages_ja.properties
+trans.ko_KR = work-dir/messages_ko_KR.properties
+trans.nb_NO = work-dir/messages_nb_NO.properties
+trans.pt_BR = work-dir/messages_pt_BR.properties
+trans.ru_RU = work-dir/messages_ru_RU.properties
+trans.zh_CN = work-dir/messages_zh_CN.properties
+

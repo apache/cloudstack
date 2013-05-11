@@ -169,6 +169,7 @@ class deployDataCenters():
         phynet = createPhysicalNetwork.createPhysicalNetworkCmd()
         phynet.zoneid = zoneid
         phynet.name = net.name
+        phynet.isolationmethods = net.isolationmethods
         phynetwrk = self.apiClient.createPhysicalNetwork(phynet)
         self.addTrafficTypes(phynetwrk.id, net.traffictypes)
         return phynetwrk
@@ -214,6 +215,18 @@ class deployDataCenters():
                     vrconfig.enabled = "true"
                     vrconfig.id = vrprovid
                     self.apiClient.configureVirtualRouterElement(vrconfig)
+                    self.enableProvider(pnetprovres[0].id)
+                elif provider.name == 'InternalLbVm':
+                    internallbprov = listInternalLoadBalancerElements.listInternalLoadBalancerElementsCmd() 
+                    internallbprov.nspid = pnetprovres[0].id
+                    internallbresponse = self.apiClient.listInternalLoadBalancerElements(internallbprov)
+                    internallbid = internallbresponse[0].id
+
+                    internallbconfig = \
+                            configureInternalLoadBalancerElement.configureInternalLoadBalancerElementCmd()
+                    internallbconfig.enabled = "true"
+                    internallbconfig.id = internallbid
+                    self.apiClient.configureInternalLoadBalancerElement(internallbconfig)
                     self.enableProvider(pnetprovres[0].id)
                 elif provider.name == 'SecurityGroupProvider':
                     self.enableProvider(pnetprovres[0].id)
@@ -402,6 +415,7 @@ class deployDataCenters():
 
         self.testClient = \
         cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, mgt.port, \
+                                                  mgt.user, mgt.passwd, \
                                                   mgt.apiKey, \
                                                   mgt.securityKey, \
                                             logging=self.testClientLogger)
@@ -409,6 +423,7 @@ class deployDataCenters():
             apiKey, securityKey = self.registerApiKey()
             self.testClient = \
             cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, 8080, \
+                                                      mgt.user, mgt.passwd, \
                                                       apiKey, securityKey, \
                                              logging=self.testClientLogger)
 
@@ -419,6 +434,11 @@ class deployDataCenters():
                                       dbSvr.passwd, dbSvr.db)
 
         self.apiClient = self.testClient.getApiClient()
+        """set hypervisor"""
+        if mgt.hypervisor:
+            self.apiClient.hypervisor = mgt.hypervisor
+        else:
+            self.apiClient.hypervisor = "XenServer"     #Defaults to Xenserver
 
     def updateConfiguration(self, globalCfg):
         if globalCfg is None:

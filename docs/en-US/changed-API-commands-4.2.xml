@@ -30,6 +30,15 @@
       </thead>
       <tbody>
         <row>
+          <entry><para>createVlanIpRange</para></entry>
+          <entry>
+            <para>No new parameter has been added. However, the current functionality has been
+              extended to add guest IPs from a different subnet in shared networks in a Basic zone.
+              Ensure that you provide netmask and gateway if you are adding guest IPs from a
+              different subnet. </para>
+          </entry>
+        </row>
+        <row>
           <entry><para>updateResourceLimit</para></entry>
           <entry>
             <para>Added the following resource types to the <parameter>resourcetype</parameter>
@@ -113,8 +122,10 @@
                 <para>removelan (removes the specified VLAN range)</para>
               </listitem>
             </itemizedlist>
-            <note><para>The removevlan and vlan parameters can be used together. If the VLAN range that you are trying
-                to remove is in use, the operation will not succeed.</para></note>
+            <note>
+              <para>The removevlan and vlan parameters can be used together. If the VLAN range that
+                you are trying to remove is in use, the operation will not succeed.</para>
+            </note>
           </entry>
         </row>
       </tbody>

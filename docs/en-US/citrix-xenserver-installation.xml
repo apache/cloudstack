@@ -610,7 +610,7 @@ master-password=[your password]</programlisting>
           <listitem>
             <para>Restart the Management Server and Usage Server. You only need to do this once for
               all clusters.</para>
-            <programlisting># service cloud-management start
+            <programlisting># service cloudstack-management start
 # service cloud-usage start</programlisting>
           </listitem>
         </orderedlist>

@@ -32,7 +32,9 @@ import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
@@ -981,7 +983,21 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Override
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
-        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd);
+        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
+                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getZoneType());
+        ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
+
+        List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
+        response.setResponses(routerResponses, result.second());
+        return response;
+    }
+    
+    @Override
+    public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
+        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
+                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getZoneType());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
@@ -990,17 +1006,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
 
-    private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(ListRoutersCmd cmd) {
-        Long id = cmd.getId();
-        String name = cmd.getRouterName();
-        String state = cmd.getState();
-        Long zone = cmd.getZoneId();
-        Long pod = cmd.getPodId();
-        Long hostId = cmd.getHostId();
-        String keyword = cmd.getKeyword();
-        Long networkId = cmd.getNetworkId();
-        Long vpcId = cmd.getVpcId();
-        Boolean forVpc = cmd.getForVpc();
+    private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
+            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role, String zoneType) {
+       
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1027,9 +1035,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterType", sb.entity().getDataCenterType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+        sb.and("role", sb.entity().getRole(), SearchCriteria.Op.EQ);
 
         if (forVpc != null) {
             if (forVpc) {
@@ -1067,13 +1077,18 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("state", state);
         }
 
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
         }
 
-        if (pod != null) {
-            sc.setParameters("podId", pod);
+        if (podId != null) {
+            sc.setParameters("podId", podId);
         }
+
+        if (zoneType != null) {
+            sc.setParameters("dataCenterType", zoneType);
+        }
+        
 
         if (hostId != null) {
             sc.setParameters("hostId", hostId);
@@ -1085,6 +1100,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (vpcId != null) {
             sc.setParameters("vpcId", vpcId);
+        }
+        
+        if (role != null) {
+            sc.setParameters("role", role);
         }
 
         // search VR details by ids
@@ -1400,6 +1419,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public Pair<List<HostJoinVO>, Integer> searchForServersInternal(ListHostsCmd cmd) {
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        String zoneType = cmd.getZoneType();
         Object name = cmd.getHostName();
         Object type = cmd.getType();
         Object state = cmd.getState();
@@ -1421,6 +1441,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterType", sb.entity().getZoneType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
@@ -1464,6 +1485,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
+        }
+        if (zoneType != null) {
+        	sc.setParameters("dataCenterType", zoneType);
         }
         if (pod != null) {
             sc.setParameters("podId", pod);
@@ -2266,10 +2290,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
         String name = cmd.getName();
+        String networkType = cmd.getZoneType();
 
         Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
 
+        if(networkType != null)
+          sc.addAnd("networkType", SearchCriteria.Op.EQ, networkType);
+        
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         } else if (name != null) {

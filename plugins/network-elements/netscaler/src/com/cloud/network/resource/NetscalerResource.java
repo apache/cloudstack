@@ -1211,6 +1211,18 @@ public class NetscalerResource implements ServerResource {
             try {
                 gslbservice service;
                 service = getServiceObject(client, serviceName);
+                String gslbServerName = generateGslbServerName(serviceIp);
+
+                if (!gslbServerExists(client, gslbServerName)) {
+                    base_response apiCallResult;
+                    com.citrix.netscaler.nitro.resource.config.basic.server nsServer = new com.citrix.netscaler.nitro.resource.config.basic.server();
+                    nsServer.set_name(gslbServerName);
+                    nsServer.set_ipaddress(serviceIp);
+                    apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.server.add(client, nsServer);
+                    if ((apiCallResult.errorcode != 0) && (apiCallResult.errorcode != NitroError.NS_RESOURCE_EXISTS)) {
+                        throw new ExecutionException("Failed to add server " + gslbServerName + " due to" + apiCallResult.message);
+                    }
+                }
 
                 boolean isUpdateSite = false;
                 if (service == null) {
@@ -1220,7 +1232,7 @@ public class NetscalerResource implements ServerResource {
                 }
 
                 service.set_sitename(siteName);
-                service.set_servername(serviceIp);
+                service.set_servername(gslbServerName);
                 int port = Integer.parseInt(servicePort);
                 service.set_port(port);
                 service.set_servicename(serviceName);
@@ -1236,7 +1248,7 @@ public class NetscalerResource implements ServerResource {
                     s_logger.debug("Successfully created service: " + serviceName + " at site: " + siteName);
                 }
             } catch (Exception e) {
-                String errMsg = "Failed to created service: " + serviceName + " at site: " + siteName;
+                String errMsg = "Failed to created service: " + serviceName + " at site: " + siteName + " due to " + e.getMessage();
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(errMsg);
                 }
@@ -1284,7 +1296,7 @@ public class NetscalerResource implements ServerResource {
                     }
                 }
             } catch (Exception e) {
-                String errMsg = "Failed to update service: " + serviceName + " at site: " + siteName;
+                String errMsg = "Failed to update service: " + serviceName + " at site: " + siteName + "due to " + e.getMessage();
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(errMsg);
                 }
@@ -1294,6 +1306,7 @@ public class NetscalerResource implements ServerResource {
 
         private static void createVserverServiceBinding(nitro_service client, String serviceName, String vserverName)
                     throws ExecutionException {
+            String errMsg;
             try {
                 gslbvserver_gslbservice_binding binding = new gslbvserver_gslbservice_binding();
                 binding.set_name(vserverName);
@@ -1303,8 +1316,18 @@ public class NetscalerResource implements ServerResource {
                     s_logger.debug("Successfully created service: " + serviceName + " and virtual server: "
                             + vserverName + " binding");
                 }
+            } catch (nitro_exception ne) {
+                if (ne.getErrorCode() == 273) {
+                    return;
+                }
+                errMsg = "Failed to create service: " + serviceName + " and virtual server: "
+                        + vserverName + " binding due to " + ne.getMessage();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errMsg);
+                }
+                throw new ExecutionException(errMsg);
             } catch (Exception e) {
-                String errMsg = "Failed to create service: " + serviceName + " and virtual server: "
+                errMsg = "Failed to create service: " + serviceName + " and virtual server: "
                         + vserverName + " binding due to " + e.getMessage();
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(errMsg);
@@ -1437,6 +1460,39 @@ public class NetscalerResource implements ServerResource {
         private static String generateUniqueServiceName(String siteName, String publicIp, String publicPort) {
             return "cloud-gslb-service-" + siteName + "-" + publicIp + "-" + publicPort;
         }
+
+        private static boolean gslbServerExists(nitro_service client, String serverName) throws ExecutionException {
+            try {
+                if (com.citrix.netscaler.nitro.resource.config.basic.server.get(client, serverName) != null) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (nitro_exception e) {
+                if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
+                    return false;
+                } else {
+                    throw new ExecutionException("Failed to verify Server " + serverName + " exists on the NetScaler device due to " + e.getMessage());
+                }
+            } catch (Exception e) {
+                throw new ExecutionException("Failed to verify Server " + serverName + " exists on the NetScaler device due to " + e.getMessage());
+            }
+        }
+
+        private static String generateGslbServerName(String serverIP) {
+            return genGslbObjectName("Cloud-Server-",  serverIP);
+        }
+
+        private static String genGslbObjectName(Object... args) {
+            String objectName = "";
+            for (int i = 0; i < args.length; i++) {
+                objectName += args[i];
+                if (i != args.length -1) {
+                    objectName += "-";
+                }
+            }
+            return objectName;
+        }
     }
 
 
@@ -1562,7 +1618,9 @@ public class NetscalerResource implements ServerResource {
                 String srcIp = rule.getSrcIp();
                 String dstIP = rule.getDstIp();
                 String iNatRuleName = generateInatRuleName(srcIp, dstIP);
+                String rNatRuleName = generateRnatRuleName(srcIp, dstIP);
                 inat iNatRule = null;
+                rnat rnatRule = null;
 
                 if (!rule.revoked()) {
                     try {
@@ -1589,9 +1647,47 @@ public class NetscalerResource implements ServerResource {
                         }
                         s_logger.debug("Created Inat rule on the Netscaler device " + _ip + " to enable static NAT from " +  srcIp + " to " + dstIP);
                     }
+                    try {
+                        rnat[] rnatRules = rnat.get(_netscalerService);
+                        if (rnatRules != null) {
+                            for (rnat rantrule : rnatRules) {
+                                if (rantrule.get_network().equalsIgnoreCase(rNatRuleName)) {
+                                    rnatRule = rantrule;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (nitro_exception e) {
+                        throw e;
+                    }
+
+                    if (rnatRule == null) {
+                        rnatRule = new rnat();
+                        rnatRule.set_natip(srcIp);
+                        rnatRule.set_network(dstIP);
+                        rnatRule.set_netmask("255.255.255.255");
+                        try {
+                            apiCallResult = rnat.update(_netscalerService, rnatRule);
+                        } catch (nitro_exception e) {
+                            if (e.getErrorCode() != NitroError.NS_RESOURCE_EXISTS) {
+                                throw e;
+                            }
+                        }
+                        s_logger.debug("Created Rnat rule on the Netscaler device " + _ip + " to enable revese static NAT from " +  dstIP + " to " + srcIp);
+                    }
                 } else {
                     try {
                         inat.delete(_netscalerService, iNatRuleName);
+                        rnat[] rnatRules = rnat.get(_netscalerService);
+                        if (rnatRules != null) {
+                            for (rnat rantrule : rnatRules) {
+                                if (rantrule.get_network().equalsIgnoreCase(dstIP)) {
+                                    rnatRule = rantrule;
+                                    rnat.clear(_netscalerService, rnatRule);
+                                    break;
+                                }
+                            }
+                        }
                     } catch (nitro_exception e) {
                         if (e.getErrorCode() != NitroError.NS_RESOURCE_NOT_EXISTS) {
                             throw e;
@@ -2201,6 +2297,7 @@ public class NetscalerResource implements ServerResource {
                 }
 
                 csMon.set_interval(hcp.getHealthcheckInterval());
+                csMon.set_retries(Math.max(hcp.getHealthcheckThresshold(), hcp.getUnhealthThresshold()) + 1);
                 csMon.set_resptimeout(hcp.getResponseTime());
                 csMon.set_failureretries(hcp.getUnhealthThresshold());
                 csMon.set_successretries(hcp.getHealthcheckThresshold());
@@ -3032,6 +3129,10 @@ public class NetscalerResource implements ServerResource {
 
     private String generateInatRuleName(String srcIp, String dstIP) {
         return genObjectName("Cloud-Inat", srcIp);
+    }
+
+    private String generateRnatRuleName(String srcIp, String dstIP) {
+        return genObjectName("Cloud-Rnat", srcIp);
     }
 
     private String generateNSVirtualServerName(String srcIp, long srcPort) {

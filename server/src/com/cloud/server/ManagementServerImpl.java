@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -44,85 +43,415 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.configuration.*;
-import com.cloud.storage.dao.*;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ApiConstants;
-
-import com.cloud.event.ActionEventUtils;
-import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
-import org.apache.cloudstack.api.command.admin.account.*;
-import org.apache.cloudstack.api.command.admin.domain.*;
-import org.apache.cloudstack.api.command.admin.host.*;
-import org.apache.cloudstack.api.command.admin.network.*;
-import org.apache.cloudstack.api.command.admin.offering.*;
-import org.apache.cloudstack.api.command.admin.resource.*;
-import org.apache.cloudstack.api.command.admin.router.*;
-import org.apache.cloudstack.api.command.admin.storage.*;
-import org.apache.cloudstack.api.command.admin.systemvm.*;
-import org.apache.cloudstack.api.command.admin.usage.*;
-import org.apache.cloudstack.api.command.admin.user.*;
-import org.apache.cloudstack.api.command.admin.vlan.*;
-import org.apache.cloudstack.api.command.admin.vpc.*;
-import org.apache.cloudstack.api.command.user.autoscale.*;
-import org.apache.cloudstack.api.command.user.firewall.*;
-import org.apache.cloudstack.api.command.user.iso.*;
-import org.apache.cloudstack.api.command.user.loadbalancer.*;
-import org.apache.cloudstack.api.command.user.nat.*;
-import org.apache.cloudstack.api.command.user.network.*;
-import org.apache.cloudstack.api.command.user.project.*;
-import org.apache.cloudstack.api.command.user.resource.*;
-import org.apache.cloudstack.api.command.user.securitygroup.*;
-import org.apache.cloudstack.api.command.user.snapshot.*;
-import org.apache.cloudstack.api.command.user.template.*;
-import org.apache.cloudstack.api.command.user.vm.*;
-import org.apache.cloudstack.api.command.user.volume.*;
-import org.apache.cloudstack.api.command.user.vpc.*;
-import org.apache.cloudstack.api.command.user.vpn.*;
-import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
+import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
+import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
+import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
+import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
+import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
+import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
+import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.domain.CreateDomainCmd;
+import org.apache.cloudstack.api.command.admin.domain.DeleteDomainCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
+import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.DeleteHostCmd;
+import org.apache.cloudstack.api.command.admin.host.FindHostsForMigrationCmd;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
+import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
+import org.apache.cloudstack.api.command.admin.internallb.StartInternalLBVMCmd;
+import org.apache.cloudstack.api.command.admin.internallb.StopInternalLBVMCmd;
+import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
+import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
+import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
+import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.CreatePhysicalNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.DeletePhysicalNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
+import org.apache.cloudstack.api.command.admin.network.ListNetworkDeviceCmd;
+import org.apache.cloudstack.api.command.admin.network.ListNetworkIsolationMethodsCmd;
+import org.apache.cloudstack.api.command.admin.network.ListNetworkServiceProvidersCmd;
+import org.apache.cloudstack.api.command.admin.network.ListPhysicalNetworksCmd;
+import org.apache.cloudstack.api.command.admin.network.ListStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListSupportedNetworkServicesCmd;
+import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePhysicalNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;
+import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
+import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
+import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
+import org.apache.cloudstack.api.command.admin.region.RemoveRegionCmd;
+import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
+import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
+import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
+import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
+import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
+import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
+import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.DestroyRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
+import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.StartRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.StopRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
+import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrationCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
+import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
+import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.MigrateSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.StartSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
+import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.AddTrafficTypeCmd;
+import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficTypeCmd;
+import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypesCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageTypesCmd;
+import org.apache.cloudstack.api.command.admin.usage.UpdateTrafficTypeCmd;
+import org.apache.cloudstack.api.command.admin.user.CreateUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
+import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
+import org.apache.cloudstack.api.command.admin.user.GetUserCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.admin.user.LockUserCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
+import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
+import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vpc.DeletePrivateGatewayCmd;
+import org.apache.cloudstack.api.command.admin.vpc.DeleteVPCOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
+import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
+import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
+import org.apache.cloudstack.api.command.user.account.DeleteAccountFromProjectCmd;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
+import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
+import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupTypesCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.UpdateVMAffinityGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.DeleteAutoScalePolicyCmd;
+import org.apache.cloudstack.api.command.user.autoscale.DeleteAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.DeleteAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.DeleteConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.DisableAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.EnableAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListConditionsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
+import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
+import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
+import org.apache.cloudstack.api.command.user.event.ListEventTypesCmd;
+import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.firewall.CreateEgressFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.CreatePortForwardingRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.DeleteEgressFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.DeleteFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.DeletePortForwardingRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.UpdatePortForwardingRuleCmd;
+import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
+import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
+import org.apache.cloudstack.api.command.user.iso.AttachIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.CopyIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.DetachIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
+import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.UpdateIsoPermissionsCmd;
+import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
+import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.AssignToLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateApplicationLoadBalancerCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteApplicationLoadBalancerCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLBHealthCheckPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLBStickinessPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLBHealthCheckPoliciesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLBStickinessPoliciesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.RemoveFromLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.nat.CreateIpForwardingRuleCmd;
+import org.apache.cloudstack.api.command.user.nat.DeleteIpForwardingRuleCmd;
+import org.apache.cloudstack.api.command.user.nat.DisableStaticNatCmd;
+import org.apache.cloudstack.api.command.user.nat.EnableStaticNatCmd;
+import org.apache.cloudstack.api.command.user.nat.ListIpForwardingRulesCmd;
+import org.apache.cloudstack.api.command.user.network.*;
+import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.command.user.project.ActivateProjectCmd;
+import org.apache.cloudstack.api.command.user.project.CreateProjectCmd;
+import org.apache.cloudstack.api.command.user.project.DeleteProjectCmd;
+import org.apache.cloudstack.api.command.user.project.DeleteProjectInvitationCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
+import org.apache.cloudstack.api.command.user.project.SuspendProjectCmd;
+import org.apache.cloudstack.api.command.user.project.UpdateProjectCmd;
+import org.apache.cloudstack.api.command.user.project.UpdateProjectInvitationCmd;
+import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.CreateGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.DeleteGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.ListGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.RemoveFromGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.resource.GetCloudIdentifierCmd;
+import org.apache.cloudstack.api.command.user.resource.ListHypervisorsCmd;
+import org.apache.cloudstack.api.command.user.resource.ListResourceLimitsCmd;
+import org.apache.cloudstack.api.command.user.resource.UpdateResourceCountCmd;
+import org.apache.cloudstack.api.command.user.resource.UpdateResourceLimitCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.DeleteSecurityGroupCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
+import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.tag.CreateTagsCmd;
+import org.apache.cloudstack.api.command.user.tag.DeleteTagsCmd;
+import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
+import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
+import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RemoveIpFromVmNicCmd;
+import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
+import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
+import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
+import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
+import org.apache.cloudstack.api.command.user.volume.*;
+import org.apache.cloudstack.api.command.user.vpc.CreateStaticRouteCmd;
+import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
+import org.apache.cloudstack.api.command.user.vpc.DeleteStaticRouteCmd;
+import org.apache.cloudstack.api.command.user.vpc.DeleteVPCCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCsCmd;
+import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
+import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
+import org.apache.cloudstack.api.command.user.vpn.AddVpnUserCmd;
+import org.apache.cloudstack.api.command.user.vpn.CreateRemoteAccessVpnCmd;
+import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
+import org.apache.cloudstack.api.command.user.vpn.CreateVpnCustomerGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.CreateVpnGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.DeleteRemoteAccessVpnCmd;
+import org.apache.cloudstack.api.command.user.vpn.DeleteVpnConnectionCmd;
+import org.apache.cloudstack.api.command.user.vpn.DeleteVpnCustomerGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.DeleteVpnGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListVpnConnectionsCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListVpnCustomerGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListVpnGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
+import org.apache.cloudstack.api.command.user.vpn.RemoveVpnUserCmd;
+import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
+import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.*;
+import com.cloud.async.AsyncJobExecutor;
+import com.cloud.async.AsyncJobManager;
+import com.cloud.async.AsyncJobResult;
+import com.cloud.async.AsyncJobVO;
+import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.Configuration;
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
-import com.cloud.dc.*;
+import com.cloud.dc.AccountVlanMapVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
+import com.cloud.dc.PodVlanMapVO;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.dao.*;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.AccountVlanMapDao;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.PodVlanMapDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
-import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.*;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -139,7 +468,12 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IpAddress;
-import com.cloud.network.dao.*;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
@@ -148,11 +482,29 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.auth.UserAuthenticator;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.*;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.GuestOsCategory;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
+import com.cloud.storage.UploadVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeManager;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.UploadDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -162,7 +514,13 @@ import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
-import com.cloud.user.*;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.SSHKeyPair;
+import com.cloud.user.SSHKeyPairVO;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
@@ -175,91 +533,39 @@ import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.*;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
-import com.cloud.vm.*;
+import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.*;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.InstanceGroupDao;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
+
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
-import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
-import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
-import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
-import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
-import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
-import org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;
-import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
-import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
-import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
-import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
-import org.apache.cloudstack.api.command.admin.region.RemoveRegionCmd;
-import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
-import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
-import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
-import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
-import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
-import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
-import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
-import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
-import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
-import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
-import org.apache.cloudstack.api.command.user.account.DeleteAccountFromProjectCmd;
-import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
-import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
-import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
-import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
-import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
-import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
-import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
-import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
-import org.apache.cloudstack.api.command.user.event.ListEventTypesCmd;
-import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
-import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
-import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
-import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
-import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
-import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
-import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
-import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
-import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.tag.CreateTagsCmd;
-import org.apache.cloudstack.api.command.user.tag.DeleteTagsCmd;
-import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToSnapshotCmd;
-import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -616,48 +922,69 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Cluster>, Integer> searchForClusters(ListClustersCmd cmd) {
-        Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
-
-        Object id = cmd.getId();
+    	Object id = cmd.getId();
         Object name = cmd.getClusterName();
         Object podId = cmd.getPodId();
         Long zoneId = cmd.getZoneId();
         Object hypervisorType = cmd.getHypervisorType();
         Object clusterType = cmd.getClusterType();
         Object allocationState = cmd.getAllocationState();
+        String zoneType = cmd.getZoneType();
         String keyword = cmd.getKeyword();
-
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
-
+    	
+        
+    	Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        
+        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();        
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);        
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);  
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);          
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);         
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
+        sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        
+        if(zoneType != null) {
+            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        
+        SearchCriteria<ClusterVO> sc = sb.create();        
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);            
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", "%" + name + "%");
         }
 
         if (podId != null) {
-            sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+            sc.setParameters("podId", podId);
         }
 
         if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            sc.setParameters("dataCenterId", zoneId);
         }
 
         if (hypervisorType != null) {
-            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
+            sc.setParameters("hypervisorType", hypervisorType);
         }
 
         if (clusterType != null) {
-            sc.addAnd("clusterType", SearchCriteria.Op.EQ, clusterType);
+            sc.setParameters("clusterType", clusterType);
         }
 
         if (allocationState != null) {
-            sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
+            sc.setParameters("allocationState", allocationState);
         }
 
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+        }
+                
         if (keyword != null) {
             SearchCriteria<ClusterVO> ssc = _clusterDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1068,17 +1395,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd) {
-        Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<HostPodVO> sc = _hostPodDao.createSearchCriteria();
-
         String podName = cmd.getPodName();
         Long id = cmd.getId();
-        Long zoneId = cmd.getZoneId();
+        Long zoneId = cmd.getZoneId();        
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
-
+        String zoneType = cmd.getZoneType();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
+    	
+    	Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();        
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);          
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);         
+        sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        
+        if(zoneType != null) {
+            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+               
+        SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1088,21 +1427,25 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
-
+        
         if (podName != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + podName + "%");
+            sc.setParameters("name", "%" + podName + "%");
         }
-
+        
         if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            sc.setParameters("dataCenterId", zoneId);
         }
-
+        
         if (allocationState != null) {
-            sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
+            sc.setParameters("allocationState", allocationState);
+        }        
+    
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
         }
-
+        
         Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Pod>, Integer>(result.first(), result.second());
     }
@@ -1237,16 +1580,41 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object name = cmd.getConfigName();
         Object category = cmd.getCategory();
         Object keyword = cmd.getKeyword();
-        Long id = cmd.getId();
-        String scope = cmd.getScope();
+        Long zoneId = cmd.getZoneId();
+        Long clusterId = cmd.getClusterId();
+        Long storagepoolId = cmd.getStoragepoolId();
+        Long accountId = cmd.getAccountId();
+        String scope = null;
+        Long id = null;
+        int paramCountCheck = 0;
 
-        if (scope!= null && !scope.isEmpty()) {
+        if (zoneId != null) {
+            scope = Config.ConfigurationParameterScope.zone.toString();
+            id = zoneId;
+            paramCountCheck++;
+        }
+        if (clusterId != null) {
+            scope = Config.ConfigurationParameterScope.cluster.toString();
+            id = clusterId;
+            paramCountCheck++;
+        }
+        if (accountId != null) {
+            scope = Config.ConfigurationParameterScope.account.toString();
+            id = accountId;
+            paramCountCheck++;
+        }
+        if (storagepoolId != null) {
+            scope = Config.ConfigurationParameterScope.storagepool.toString();
+            id = storagepoolId;
+            paramCountCheck++;
+        }
+
+        if (paramCountCheck > 1) {
+            throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
+        }
+
+        if (scope != null && !scope.isEmpty()) {
             // getting the list of parameters at requested scope
-            try {
-                Config.ConfigurationParameterScope.valueOf(scope.toLowerCase());
-            } catch (Exception e ) {
-                throw new InvalidParameterValueException("Invalid scope " + scope + " while listing configuration parameters");
-            }
             if (id == null) {
                 throw new InvalidParameterValueException("Invalid id null, id is needed corresponding to the scope");
             }
@@ -1309,7 +1677,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(),
                 cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller,
-                listProjectResourcesCriteria, tags);
+                listProjectResourcesCriteria, tags, cmd.getZoneType());
     }
 
     @Override
@@ -1342,12 +1710,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return listTemplates(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(),
-                cmd.getZoneId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                cmd.getZoneId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, cmd.getZoneType());
     }
 
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso,
             Boolean bootable, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
-            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
+            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, String zoneType) {
 
         VMTemplateVO template = null;
         if (templateId != null) {
@@ -1388,7 +1756,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                         startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, tags);
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
                 templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
 
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
@@ -1412,7 +1780,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
                 templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers,
                         bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                        permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
 
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
@@ -1430,7 +1798,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else {
             if (template == null) {
                 templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
             } else {
                 // if template is not public, perform permission check here
                 if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -2194,6 +2562,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateNetworkServiceProviderCmd.class);
         cmdList.add(UpdatePhysicalNetworkCmd.class);
         cmdList.add(UpdateStorageNetworkIpRangeCmd.class);
+        cmdList.add(DedicateGuestVlanRangeCmd.class);
+        cmdList.add(ListDedicatedGuestVlanRangesCmd.class);
+        cmdList.add(ReleaseDedicatedGuestVlanRangeCmd.class);
         cmdList.add(CreateDiskOfferingCmd.class);
         cmdList.add(CreateServiceOfferingCmd.class);
         cmdList.add(DeleteDiskOfferingCmd.class);
@@ -2461,7 +2832,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListZonesByCmd.class);
         cmdList.add(ListVMSnapshotCmd.class);
         cmdList.add(CreateVMSnapshotCmd.class);
-        cmdList.add(RevertToSnapshotCmd.class);
+        cmdList.add(RevertToVMSnapshotCmd.class);
         cmdList.add(DeleteVMSnapshotCmd.class);
         cmdList.add(AddIpToVmNicCmd.class);
         cmdList.add(RemoveIpFromVmNicCmd.class);
@@ -2476,6 +2847,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AssignToGlobalLoadBalancerRuleCmd.class);
         cmdList.add(RemoveFromGlobalLoadBalancerRuleCmd.class);
         cmdList.add(ListStorageProvidersCmd.class);
+        cmdList.add(CreateApplicationLoadBalancerCmd.class);
+        cmdList.add(ListApplicationLoadBalancersCmd.class);
+        cmdList.add(DeleteApplicationLoadBalancerCmd.class);
+        cmdList.add(ConfigureInternalLoadBalancerElementCmd.class);
+        cmdList.add(CreateInternalLoadBalancerElementCmd.class);
+        cmdList.add(ListInternalLoadBalancerElementsCmd.class);
         cmdList.add(CreateAffinityGroupCmd.class);
         cmdList.add(DeleteAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupsCmd.class);
@@ -2492,6 +2869,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AddResourceDetailCmd.class);
         cmdList.add(RemoveResourceDetailCmd.class);
         cmdList.add(ListResourceDetailsCmd.class);
+        cmdList.add(StopInternalLBVMCmd.class);
+        cmdList.add(StartInternalLBVMCmd.class);
+        cmdList.add(ListInternalLBVMsCmd.class);
+        cmdList.add(ListNetworkIsolationMethodsCmd.class);
+        cmdList.add(ListNetworkIsolationMethodsCmd.class);
 
         return cmdList;
     }
@@ -2652,6 +3034,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends VirtualMachine>, Integer> searchForSystemVm(ListSystemVMsCmd cmd) {
         String type = cmd.getSystemVmType();
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        String zoneType = cmd.getZoneType();
         Long id = cmd.getId();
         String name = cmd.getSystemVmName();
         String state = cmd.getState();
@@ -2678,6 +3061,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
 
+        if(zoneType != null) {
+            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
+        }        
+        
         SearchCriteria<VMInstanceVO> sc = sb.create();
 
         if (keyword != null) {
@@ -2718,6 +3107,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setJoinParameters("volumeSearch", "poolId", storageId);
         }
 
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+        }
+        
         Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends VirtualMachine>, Integer>(result.first(), result.second());
     }
@@ -3020,7 +3413,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
 
         if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0) {
-            return extractURLList.get(0).getId(); // If download url already
+            return extractURLList.get(0).getId(); // If download url already  Note: volss
             // exists then return
         } else {
             UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, Upload.Type.VOLUME,
@@ -3072,6 +3465,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
 
             String volumeLocalPath = "volumes/" + volume.getId() + "/" + cvAnswer.getVolumePath() + "." + getFormatForPool(srcPool);
+          //Fang:  volss, handle the ova special case;
+            if (getFormatForPool(srcPool) == "ova") {
+                CreateVolumeOVACommand cvOVACmd = new CreateVolumeOVACommand(secondaryStorageURL, volumeLocalPath, cvAnswer.getVolumePath(), srcPool, copyvolumewait);
+                CreateVolumeOVAAnswer  OVAanswer = null;
+
+                try {
+                        cvOVACmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
+                        OVAanswer = (CreateVolumeOVAAnswer) _storageMgr.sendToPool(srcPool, cvOVACmd); //Fang: for extract volume, create the ova file here;
+
+                } catch (StorageUnavailableException e) {
+                    s_logger.debug("Storage unavailable");
+                }
+            }
             // Update the DB that volume is copied and volumePath
             uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);
             uploadJob.setLastUpdated(new Date());

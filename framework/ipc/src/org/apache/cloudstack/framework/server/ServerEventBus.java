@@ -18,10 +18,10 @@
  */
 package org.apache.cloudstack.framework.server;
 
-import org.apache.cloudstack.framework.eventbus.EventBusBase;
+import org.apache.cloudstack.framework.messagebus.MessageBusBase;
 import org.apache.cloudstack.framework.transport.TransportMultiplexier;
 
-public class ServerEventBus extends EventBusBase implements TransportMultiplexier {
+public class ServerEventBus extends MessageBusBase implements TransportMultiplexier {
 
 	@Override
 	public void onTransportMessage(String senderEndpointAddress,

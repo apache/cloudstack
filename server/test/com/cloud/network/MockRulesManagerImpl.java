@@ -28,6 +28,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
@@ -40,6 +41,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.net.Ip;
+import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 
 @Local(value = {RulesManager.class, RulesService.class})
@@ -76,8 +78,7 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 
 	@Override
 	public boolean enableStaticNat(long ipAddressId, long vmId, long networkId,
-			boolean isSystemVm, String ipAddr) throws NetworkRuleConflictException,
-			ResourceUnavailableException {
+			String ipAddr) throws NetworkRuleConflictException, ResourceUnavailableException {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -307,6 +308,12 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
     public PortForwardingRule createPortForwardingRule(PortForwardingRule rule,
             Long vmId, Ip vmIp, boolean openFirewall)
             throws NetworkRuleConflictException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<FirewallRuleVO> listAssociatedRulesForGuestNic(Nic nic) {
         // TODO Auto-generated method stub
         return null;
     }

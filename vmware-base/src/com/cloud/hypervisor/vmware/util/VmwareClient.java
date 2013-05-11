@@ -528,7 +528,7 @@ public class VmwareClient {
         PropertySpec pSpec = new PropertySpec();
         pSpec.setType(type);
         pSpec.setAll(false);
-        pSpec.getPathSet().add(name);
+        pSpec.getPathSet().add("name");
 
         ObjectSpec oSpec = new ObjectSpec();
         oSpec.setObj(root);

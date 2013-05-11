@@ -461,18 +461,27 @@
           id: 'lbUnderGSLB',
           label: 'assigned load balancing',
           fields: {
-            'name': { label: 'label.name' },
+            name: { label: 'label.name' },
             publicport: { label: 'label.public.port' },
-	    privateport: { label: 'label.private.port' },
-	    algorithm: { label: 'label.algorithm' }
+	          privateport: { label: 'label.private.port' },
+	          algorithm: { label: 'label.algorithm' }
           },					
-	  dataProvider: function(args) {					
-	    var items = args.context.GSLB[0].loadbalancerrule;
-            args.response.success({								 
-              data: items
-            });
+	        dataProvider: function(args) {		
+	          var data = {
+              id: args.context.GSLB[0].id
+            };
+            $.ajax({
+              url: createURL('listGlobalLoadBalancerRules'),
+              data: data,
+              success: function(json) {    
+                var items = json.listgloballoadbalancerrulesresponse.globalloadbalancerrule[0].loadbalancerrule;
+                args.response.success({
+                  data: items
+                });
+              }
+            });	          
           },	        
-	  actions: {            
+	        actions: {            
             add: {
               label: 'assign more load balancing',
               messages: {                

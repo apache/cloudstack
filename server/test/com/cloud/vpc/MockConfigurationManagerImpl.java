@@ -281,7 +281,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationService#getNetworkOfferingNetworkRate(long)
      */
     @Override
-    public Integer getNetworkOfferingNetworkRate(long networkOfferingId) {
+    public Integer getNetworkOfferingNetworkRate(long networkOfferingId, Long dataCenterId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -334,7 +334,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationService#getServiceOfferingNetworkRate(long)
      */
     @Override
-    public Integer getServiceOfferingNetworkRate(long serviceOfferingId) {
+    public Integer getServiceOfferingNetworkRate(long serviceOfferingId, Long dataCenterId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -424,9 +424,9 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#updateConfiguration(long, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public void updateConfiguration(long userId, String name, String category, String value, String scope, Long resourceId) {
+    public String updateConfiguration(long userId, String name, String category, String value, String scope, Long resourceId) {
         // TODO Auto-generated method stub
-
+        return null;
     }
 
     /* (non-Javadoc)
@@ -499,7 +499,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     @Override
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
             Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
-            Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent) {
+            Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent, Map<NetworkOffering.Detail,String> details) {
         // TODO Auto-generated method stub
         return null;
     }

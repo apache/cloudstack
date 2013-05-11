@@ -1756,7 +1756,7 @@ ServerResource {
                 String netmask = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
                 String subnet = NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
                 _virtRouterResource.assignVpcIpToRouter(routerIP, ip.isAdd(), ip.getPublicIp(),
-                        nicName, ip.getVlanGateway(), netmask, subnet);
+                        nicName, ip.getVlanGateway(), netmask, subnet, ip.isSourceNat());
                 results[i++] = ip.getPublicIp() + " - success";
             }
 

@@ -270,7 +270,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkDevice.getNetworkServiceProvder(),
                         deviceName, capacity, dedicatedUse, gslbProvider);
                 if (gslbProvider) {
-                    lbDeviceVO.setGslbSitePrivateIP(gslbSitePublicIp);
+                    lbDeviceVO.setGslbSitePublicIP(gslbSitePublicIp);
                     lbDeviceVO.setGslbSitePrivateIP(gslbSitePrivateIp);
                 }
                 _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
@@ -829,18 +829,10 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     }
 
     @Override
-    public boolean applyLoadBalancerRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyLoadBalancerRules(Network network, List<LoadBalancingRule> loadBalancingRules) throws ResourceUnavailableException {
         // Find the external load balancer in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-
-        List<LoadBalancingRule> loadBalancingRules = new ArrayList<LoadBalancingRule>();
-
-        for (FirewallRule rule : rules) {
-            if (rule.getPurpose().equals(Purpose.LoadBalancing)) {
-                loadBalancingRules.add((LoadBalancingRule) rule);
-            }
-        }
 
         if (loadBalancingRules == null || loadBalancingRules.isEmpty()) {
             return true;
@@ -870,12 +862,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
             String uuid = rule.getUuid();
-            String srcIp = _networkModel.getIp(rule.getSourceIpAddressId()).getAddress().addr();
+            String srcIp = rule.getSourceIp().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
 
             if (externalLoadBalancerIsInline) {
-                MappingNic nic = getLoadBalancingIpNic(zone, network, rule.getSourceIpAddressId(), revoked, null);
+                long ipId = _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getId();
+                MappingNic nic = getLoadBalancingIpNic(zone, network, ipId, revoked, null);
                 mappingStates.add(nic.getState());
                 NicVO loadBalancingIpNic = nic.getNic();
                 if (loadBalancingIpNic == null) {
@@ -927,7 +920,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     } else {
                         continue;
                     }
-                    getLoadBalancingIpNic(zone, network, rule.getSourceIpAddressId(), revoke, existedGuestIp);
+                    long sourceIpId = _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getId();
+                    getLoadBalancingIpNic(zone, network, sourceIpId, revoke, existedGuestIp);
                 }
             }
             throw new ResourceUnavailableException(ex.getMessage(), DataCenter.class, network.getDataCenterId());
@@ -1113,21 +1107,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     }
 
     @Override
-    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<? extends FirewallRule> rules)
+    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<LoadBalancingRule> loadBalancingRules)
             throws ResourceUnavailableException {
 
         // Find the external load balancer in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
         HealthCheckLBConfigAnswer answer = null;
-
-        List<LoadBalancingRule> loadBalancingRules = new ArrayList<LoadBalancingRule>();
-
-        for (FirewallRule rule : rules) {
-            if (rule.getPurpose().equals(Purpose.LoadBalancing)) {
-                loadBalancingRules.add((LoadBalancingRule) rule);
-            }
-        }
 
         if (loadBalancingRules == null || loadBalancingRules.isEmpty()) {
             return null;
@@ -1158,12 +1144,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
             String uuid = rule.getUuid();
-            String srcIp = _networkModel.getIp(rule.getSourceIpAddressId()).getAddress().addr();
+            String srcIp = rule.getSourceIp().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
 
             if (externalLoadBalancerIsInline) {
-                MappingNic nic = getLoadBalancingIpNic(zone, network, rule.getSourceIpAddressId(), revoked, null);
+                long sourceIpId = _networkModel.getPublicIpAddress(rule.getSourceIp().addr(), network.getDataCenterId()).getId();
+                MappingNic nic = getLoadBalancingIpNic(zone, network, sourceIpId, revoked, null);
                 mappingStates.add(nic.getState());
                 NicVO loadBalancingIpNic = nic.getNic();
                 if (loadBalancingIpNic == null) {

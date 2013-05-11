@@ -75,8 +75,8 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.ComputeChecksumCommand;
-import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
-import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
+import com.cloud.agent.api.DownloadTemplateFromSwiftToSecondaryStorageCommand;
+import com.cloud.agent.api.UploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -113,6 +113,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
@@ -253,6 +254,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     protected ResourceManager _resourceMgr;
     @Inject VolumeManager volumeMgr;
     @Inject VMTemplateHostDao templateHostDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     
     int _primaryStorageDownloadWait;
@@ -363,6 +366,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String url = cmd.getUrl();
         String mode = cmd.getMode();
         Long eventId = cmd.getStartEventId();
+
+        VirtualMachineTemplate template = getTemplate(templateId);
+        if (template == null) {
+            throw new InvalidParameterValueException("unable to find template with id " + templateId);
+        }
+        TemplateAdapter adapter = getAdapter(template.getHypervisorType());
+        TemplateProfile profile = adapter.prepareExtractTemplate(cmd);
 
         // FIXME: async job needs fixing
         Long uploadId = extract(caller, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
@@ -569,7 +579,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return errMsg;
         }
 
-        downloadTemplateFromSwiftToSecondaryStorageCommand cmd = new downloadTemplateFromSwiftToSecondaryStorageCommand(swift, secHost.getName(), dcId, template.getAccountId(), templateId,
+        DownloadTemplateFromSwiftToSecondaryStorageCommand cmd = new DownloadTemplateFromSwiftToSecondaryStorageCommand(swift, secHost.getName(), dcId, template.getAccountId(), templateId,
                 tmpltSwift.getPath(), _primaryStorageDownloadWait);
         try {
             Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
@@ -618,7 +628,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return errMsg;
         }
 
-        uploadTemplateToSwiftFromSecondaryStorageCommand cmd = new uploadTemplateToSwiftFromSecondaryStorageCommand(swift, secHost.getName(), secHost.getDataCenterId(), template.getAccountId(),
+        UploadTemplateToSwiftFromSecondaryStorageCommand cmd = new UploadTemplateToSwiftFromSecondaryStorageCommand(swift, secHost.getName(), secHost.getDataCenterId(), template.getAccountId(),
                 templateId, _primaryStorageDownloadWait);
         Answer answer = null;
         try {
@@ -1609,7 +1619,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         boolean isAdmin = _accountMgr.isAdmin(caller.getType());
-        boolean allowPublicUserTemplates = Boolean.valueOf(_configDao.getValue("allow.public.user.templates"));
+        // check configuration parameter(allow.public.user.templates) value for the template owner
+        boolean allowPublicUserTemplates = Boolean.valueOf(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), template.getAccountId()));
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
         }
@@ -1842,8 +1853,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
         }
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao
-                .getValue("allow.public.user.templates"));
+        // check whether template owner can create public templates
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), templateOwner.getId()));
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
             throw new PermissionDeniedException("Failed to create template "
                     + name + ", only private templates can be created.");

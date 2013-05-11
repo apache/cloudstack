@@ -17,19 +17,26 @@
 
 package com.cloud.vm;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyFloat;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.UUID;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.junit.Before;
@@ -44,9 +51,11 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
@@ -57,6 +66,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
@@ -73,6 +83,7 @@ public class UserVmManagerTest {
     @Mock VolumeManager _storageMgr;
     @Mock Account _account;
     @Mock AccountManager _accountMgr;
+    @Mock AccountService _accountService;
     @Mock ConfigurationManager _configMgr;
     @Mock CapacityManager _capacityMgr;
     @Mock AccountDao _accountDao;
@@ -91,6 +102,7 @@ public class UserVmManagerTest {
     @Mock VMTemplateVO _templateMock;
     @Mock VolumeVO _volumeMock;
     @Mock List<VolumeVO> _rootVols;
+    @Mock Account _accountMock2;
     @Before
     public void setup(){
         MockitoAnnotations.initMocks(this);
@@ -102,6 +114,7 @@ public class UserVmManagerTest {
         _userVmMgr._itMgr = _itMgr;
         _userVmMgr.volumeMgr = _storageMgr;
         _userVmMgr._accountDao = _accountDao;
+        _userVmMgr._accountService = _accountService;
         _userVmMgr._userDao = _userDao;
         _userVmMgr._accountMgr = _accountMgr;
         _userVmMgr._configMgr = _configMgr;
@@ -121,7 +134,7 @@ public class UserVmManagerTest {
 
     // Test restoreVm when VM state not in running/stopped case
     @Test(expected=CloudRuntimeException.class)
-    public void testRestoreVMF1() throws ResourceAllocationException {
+    public void testRestoreVMF1() throws ResourceAllocationException, InsufficientCapacityException, ResourceUnavailableException {
 
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
@@ -370,6 +383,74 @@ public class UserVmManagerTest {
         return serviceOffering;
     }
 
- 
+    // Test Move VM b/w accounts where caller is not ROOT/Domain admin
+    @Test(expected=InvalidParameterValueException.class)
+    public void testMoveVmToUser1()  throws Exception {
+        AssignVMCmd cmd = new AssignVMCmd();
+        Class<?> _class = cmd.getClass();
+
+        Field virtualmachineIdField = _class.getDeclaredField("virtualMachineId");
+        virtualmachineIdField.setAccessible(true);
+        virtualmachineIdField.set(cmd, 1L);
+
+        Field accountNameField = _class.getDeclaredField("accountName");
+        accountNameField.setAccessible(true);
+        accountNameField.set(cmd, "account");
+
+        Field domainIdField = _class.getDeclaredField("domainId");
+        domainIdField.setAccessible(true);
+        domainIdField.set(cmd, 1L);
+
+        // caller is of type 0
+        Account caller = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0,
+                UUID.randomUUID().toString());
+        UserContext.registerContext(1, caller, null, true);
+
+        _userVmMgr.moveVMToUser(cmd);
+    }
+
+
+    // Test Move VM b/w accounts where caller doesn't have access to the old or new account
+    @Test(expected=PermissionDeniedException.class)
+    public void testMoveVmToUser2()  throws Exception {
+        AssignVMCmd cmd = new AssignVMCmd();
+        Class<?> _class = cmd.getClass();
+
+        Field virtualmachineIdField = _class.getDeclaredField("virtualMachineId");
+        virtualmachineIdField.setAccessible(true);
+        virtualmachineIdField.set(cmd, 1L);
+
+        Field accountNameField = _class.getDeclaredField("accountName");
+        accountNameField.setAccessible(true);
+        accountNameField.set(cmd, "account");
+
+        Field domainIdField = _class.getDeclaredField("domainId");
+        domainIdField.setAccessible(true);
+        domainIdField.set(cmd, 1L);
+
+        // caller is of type 0
+        Account caller = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 1,
+                UUID.randomUUID().toString());
+        UserContext.registerContext(1, caller, null, true);
+
+        Account oldAccount = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0,
+                UUID.randomUUID().toString());
+        Account newAccount = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 1,
+                UUID.randomUUID().toString());
+
+        UserVmVO vm = new UserVmVO(10L, "test", "test", 1L, HypervisorType.Any, 1L, false, false, 1L, 1L,
+                5L, "test", "test", 1L);
+        vm.setState(VirtualMachine.State.Stopped);
+        when(_vmDao.findById(anyLong())).thenReturn(vm);
+
+        when(_accountService.getActiveAccountById(anyLong())).thenReturn(oldAccount);
+
+        when(_accountService.getActiveAccountByName(anyString(), anyLong())).thenReturn(newAccount);
+
+        doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class),
+                any(Boolean.class), any(ControlledEntity.class));
+
+        _userVmMgr.moveVMToUser(cmd);
+    }
 
 }

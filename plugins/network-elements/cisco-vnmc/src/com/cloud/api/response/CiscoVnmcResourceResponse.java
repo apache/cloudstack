@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 
 import com.cloud.network.cisco.CiscoVnmcController;
 import com.google.gson.annotations.SerializedName;
+
 @EntityReference(value = CiscoVnmcController.class)
 public class CiscoVnmcResourceResponse extends BaseResponse {
     public static final String RESOURCE_NAME = "resourcename";
@@ -33,43 +34,52 @@ public class CiscoVnmcResourceResponse extends BaseResponse {
     @Parameter(description="resource id of the Cisco VNMC controller")
     private String id;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) 
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
     @Parameter(description="the physical network to which this VNMC belongs to", entityType = PhysicalNetworkResponse.class)
     private Long physicalNetworkId;
 
-    public Long getPhysicalNetworkId() {
-        return physicalNetworkId;
-    }
-
-    public String getProviderName() {
-        return providerName;
-    }
-
-    public String getResourceName() {
-        return resourceName;
-    }
-
-    @SerializedName(ApiConstants.PROVIDER) @Parameter(description="name of the provider")
+    @SerializedName(ApiConstants.PROVIDER)
+    @Parameter(description="name of the provider")
     private String providerName;
 
-    @SerializedName(RESOURCE_NAME) 
+    @SerializedName(RESOURCE_NAME)
     @Parameter(description="Cisco VNMC resource name")
     private String resourceName;
 
+    public String getId() {
+        return id;
+    }
+
     public void setId(String ciscoVnmcResourceId) {
         this.id = ciscoVnmcResourceId;
+    }
+
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
     }
 
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
 
+    public String getProviderName() {
+        return providerName;
+    }
+
     public void setProviderName(String providerName) {
         this.providerName = providerName;
     }
 
+    public String getResourceName() {
+        return resourceName;
+    }
+
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
-    }     
+    }
 
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
 }

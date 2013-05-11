@@ -530,7 +530,7 @@
                       case "10":
                         domainObj["primaryStorageLimit"] = limit.max;
                         break;
-                      case "7":
+                      case "11":
                         domainObj["secondaryStorageLimit"] = limit.max;
                         break;
                       }

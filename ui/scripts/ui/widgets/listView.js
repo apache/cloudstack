@@ -734,6 +734,8 @@
   var makeActionIcons = function($td, actions, options) {
     options = options ? options : {};
     var allowedActions = options.allowedActions;
+    var $tr = $td.closest('tr');
+    var data = $tr && $tr.data('json-obj') ? $tr.data('json-obj') : null;
 
     $.each(actions, function(actionName, action) {
       if (actionName == 'add' || action.isHeader)
@@ -766,7 +768,9 @@
             .append(
               $('<input>').attr({
                 type: 'checkbox',
-                name: actionName
+                name: actionName,
+                checked: data && data._isSelected ?
+                  'checked' : false
               })
             )
             .attr({
@@ -775,6 +779,10 @@
             })
             .data('list-view-action-id', actionName)
         );
+
+        if ($td.find('input[type=checkbox]').is(':checked')) {
+          $tr.addClass('multi-edit-selected');
+        }
 
         return true;
       }
@@ -1679,6 +1687,9 @@
       return false;
     });		
 				
+    var tableHeight = $table.height();
+    var endTable = false;
+
     // Infinite scrolling event
     $listView.bind('scroll', function(event) {
       if (args.listView && args.listView.disableInfiniteScrolling) return false;
@@ -1689,7 +1700,7 @@
         var loadMoreData = $listView.scrollTop() >= ($table.height() - $listView.height()) - $listView.height() / 4;
         var context = $listView.data('view-args').context;
 
-        if (loadMoreData) {
+        if (loadMoreData && !endTable) {
           page = page + 1;
 					
 					var filterBy = {
@@ -1717,6 +1728,7 @@
             reorder: listViewData.reorder,
             detailView: listViewData.detailView
           });
+          $table.height() == tableHeight ? endTable = true : tableHeight = $table.height();
         }
       }, 500);
 

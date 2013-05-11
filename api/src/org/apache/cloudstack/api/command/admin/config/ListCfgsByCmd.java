@@ -45,11 +45,17 @@ public class ListCfgsByCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists configuration by name")
     private String configName;
 
-    @Parameter(name=ApiConstants.SCOPE, type = CommandType.STRING, description = "scope(zone/cluster/pool/account) of the parameter that needs to be updated")
-    private String scope;
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description="the ID of the Zone to update the parameter value for corresponding zone")
+    private Long zone_id;
 
-    @Parameter(name=ApiConstants.ID, type = CommandType.UUID, entityType = {ZoneResponse.class, ClusterResponse.class, StoragePoolResponse.class, AccountResponse.class}, description = "corresponding ID of the scope")
-    private Long id;
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class, description="the ID of the Cluster to update the parameter value for corresponding cluster")
+    private Long cluster_id;
+
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class, description="the ID of the Storage pool to update the parameter value for corresponding storage pool")
+    private Long storagepool_id;
+
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType=AccountResponse.class, description="the ID of the Account to update the parameter value for corresponding account")
+    private Long account_id;
 
 
     // ///////////////////////////////////////////////////
@@ -64,14 +70,21 @@ public class ListCfgsByCmd extends BaseListCmd {
         return configName;
     }
 
-    public String getScope() {
-        return scope;
+    public Long getZoneId() {
+        return zone_id;
     }
 
-    public Long getId() {
-        return id;
+    public Long getClusterId() {
+        return cluster_id;
     }
 
+    public Long getStoragepoolId() {
+        return storagepool_id;
+    }
+
+    public Long getAccountId() {
+        return account_id;
+    }
 
     @Override
     public Long getPageSizeVal() {
@@ -100,10 +113,17 @@ public class ListCfgsByCmd extends BaseListCmd {
         for (Configuration cfg : result.first()) {
             ConfigurationResponse cfgResponse = _responseGenerator.createConfigurationResponse(cfg);
             cfgResponse.setObjectName("configuration");
-            if (scope != null) {
-                cfgResponse.setScope(scope);
-            } else {
-                cfgResponse.setScope("global");
+            if(getZoneId() != null) {
+                cfgResponse.setScope("zone");
+            }
+            if(getClusterId() != null) {
+                cfgResponse.setScope("cluster");
+            }
+            if(getStoragepoolId() != null) {
+                cfgResponse.setScope("storagepool");
+            }
+            if(getAccountId() != null) {
+                cfgResponse.setScope("account");
             }
             configResponses.add(cfgResponse);
         }

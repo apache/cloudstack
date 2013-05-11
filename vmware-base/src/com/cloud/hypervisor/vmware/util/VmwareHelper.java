@@ -524,7 +524,31 @@ public class VmwareHelper {
 		return options;
 	}
 
-	public static void setBasicVmConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz,
+    public static void setVmScaleUpConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz,
+                                          int memoryMB, int memoryReserveMB, boolean limitCpuUse) {
+
+        // VM config for scaling up
+        vmConfig.setMemoryMB((long)memoryMB);
+        vmConfig.setNumCPUs(cpuCount);
+
+        ResourceAllocationInfo cpuInfo = new ResourceAllocationInfo();
+        if (limitCpuUse) {
+            cpuInfo.setLimit((long)(cpuSpeedMHz * cpuCount));
+        } else {
+            cpuInfo.setLimit(-1L);
+        }
+
+        cpuInfo.setReservation((long)cpuReservedMhz);
+        vmConfig.setCpuAllocation(cpuInfo);
+
+        ResourceAllocationInfo memInfo = new ResourceAllocationInfo();
+        memInfo.setLimit((long)memoryMB);
+        memInfo.setReservation((long)memoryReserveMB);
+        vmConfig.setMemoryAllocation(memInfo);
+
+    }
+
+    public static void setBasicVmConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz,
 		int memoryMB, int memoryReserveMB, String guestOsIdentifier, boolean limitCpuUse) {
 
 		// VM config basics

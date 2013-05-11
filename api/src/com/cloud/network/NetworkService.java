@@ -18,6 +18,8 @@ package com.cloud.network;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.*;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
@@ -27,6 +29,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.GuestVlan;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.user.Account;
@@ -112,6 +115,12 @@ public interface NetworkService {
 
     boolean deletePhysicalNetworkTrafficType(Long id);
 
+    GuestVlan dedicateGuestVlanRange(DedicateGuestVlanRangeCmd cmd);
+
+    Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd);
+
+    boolean releaseDedicatedGuestVlanRange(Long dedicatedGuestVlanRangeId);
+
     Pair<List<? extends PhysicalNetworkTrafficType>, Integer> listTrafficTypes(Long physicalNetworkId);
 
 
@@ -136,6 +145,7 @@ public interface NetworkService {
         ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException;
 
     /**
+     *
      * @param networkName
      * @param displayText
      * @param physicalNetworkId
@@ -146,17 +156,18 @@ public interface NetworkService {
      * @param netmask
      * @param networkOwnerId
      * @param vpcId TODO
+     * @param sourceNat
      * @return
      * @throws InsufficientCapacityException
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException
      */
     Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
-            String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId)
+                                 String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /* Requests an IP address for the guest nic */
-    String allocateSecondaryGuestIP(Account account, long zoneId, Long nicId,
+    NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId, Long nicId,
             Long networkId, String ipaddress) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);

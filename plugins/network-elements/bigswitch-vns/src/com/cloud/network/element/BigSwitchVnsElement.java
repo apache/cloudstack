@@ -138,7 +138,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
         if (network.getBroadcastDomainType() != BroadcastDomainType.Lswitch) {
             return false;
         }
-/*
+
         if (!_networkModel.isProviderForNetwork(getProvider(),
                 network.getId())) {
             s_logger.debug("BigSwitchVnsElement is not a provider for network "
@@ -153,7 +153,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
                     + network.getDisplayText());
             return false;
         }
-*/
+
         return true;
     }
 

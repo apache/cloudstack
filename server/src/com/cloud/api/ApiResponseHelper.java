@@ -36,12 +36,17 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -64,12 +69,15 @@ import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
@@ -126,6 +134,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
@@ -179,12 +188,15 @@ import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
+import com.cloud.network.GuestVlan;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -210,6 +222,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
@@ -223,6 +236,7 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.org.Cluster;
@@ -263,47 +277,19 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.response.*;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.usage.Usage;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.usage.UsageTypes;
-import com.cloud.vm.VmStats;
-import com.cloud.vm.dao.UserVmData;
-import com.cloud.vm.dao.UserVmData.NicData;
-import com.cloud.vm.dao.UserVmData.SecurityGroupData;
-import com.cloud.vm.snapshot.VMSnapshot;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.response.VMSnapshotResponse;
-import org.apache.log4j.Logger;
-
-import java.text.DecimalFormat;
-import java.util.*;
-
-import javax.inject.Inject;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 @Component
 public class ApiResponseHelper implements ResponseGenerator {
@@ -312,6 +298,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
     @Inject private EntityManager _entityMgr = null;
     @Inject private UsageService _usageSvc = null;
+    @Inject NetworkModel _ntwkModel;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -773,7 +760,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.UserVm, loadBalancer.getId());
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.LoadBalancer, loadBalancer.getId());
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
@@ -2286,6 +2273,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setForVpc(ApiDBUtils.isOfferingForVpc(offering));
 
         response.setServices(serviceResponses);
+        
+        //set network offering details
+        Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());
+        if (details != null && !details.isEmpty()) {
+            response.setDetails(details);
+        }
+        
         response.setObjectName("networkoffering");
         return response;
     }
@@ -2734,6 +2728,25 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan vlan) {
+        GuestVlanRangeResponse guestVlanRangeResponse = new GuestVlanRangeResponse();
+
+        guestVlanRangeResponse.setId(vlan.getUuid());
+        Long accountId= ApiDBUtils.getAccountIdForGuestVlan(vlan.getId());
+        Account owner = ApiDBUtils.findAccountById(accountId);
+        if (owner != null) {
+            populateAccount(guestVlanRangeResponse, owner.getId());
+            populateDomain(guestVlanRangeResponse, owner.getDomainId());
+        }
+        guestVlanRangeResponse.setGuestVlanRange(vlan.getGuestVlanRange());
+        guestVlanRangeResponse.setPhysicalNetworkId(vlan.getPhysicalNetworkId());
+        PhysicalNetworkVO physicalNetwork = ApiDBUtils.findPhysicalNetworkById(vlan.getPhysicalNetworkId());
+        guestVlanRangeResponse.setZoneId(physicalNetwork.getDataCenterId());
+
+        return guestVlanRangeResponse;
+    }
+
+    @Override
     public ServiceResponse createNetworkServiceResponse(Service service) {
         ServiceResponse response = new ServiceResponse();
         response.setName(service.getName());
@@ -2831,6 +2844,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result) {
+        //generate only response of the VR/VPCVR provider type
+        if (!(result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VirtualRouter
+                || result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VPCVirtualRouter)) {
+            return null;
+        }
         VirtualRouterProviderResponse response = new VirtualRouterProviderResponse();
         response.setId(result.getUuid());
         PhysicalNetworkServiceProvider nsp = ApiDBUtils.findPhysicalNetworkServiceProviderById(result.getNspId());
@@ -3128,6 +3146,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateAccount(response, result.getAccountId());
         populateDomain(response, result.getDomainId());
         response.setState(result.getState().toString());
+        response.setSourceNat(result.getSourceNat());
 
         response.setObjectName("privategateway");
 
@@ -3647,11 +3666,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
-    public NicSecondaryIpResponse createSecondaryIPToNicResponse(String ipAddr, Long nicId, Long networkId) {
+    public NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result) {
         NicSecondaryIpResponse response = new NicSecondaryIpResponse();
-        NicVO nic = _entityMgr.findById(NicVO.class, nicId);
-        NetworkVO network = _entityMgr.findById(NetworkVO.class, networkId);
-        response.setIpAddr(ipAddr);
+        NicVO nic = _entityMgr.findById(NicVO.class, result.getNicId());
+        NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
+        response.setId(result.getUuid());
+        response.setIpAddr(result.getIp4Address());
         response.setNicId(nic.getUuid());
         response.setNwId(network.getUuid());
         response.setObjectName("nicsecondaryip");
@@ -3660,7 +3680,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     public NicResponse createNicResponse(Nic result) {
         NicResponse response = new NicResponse();
+        NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
+
         response.setId(result.getUuid());
+        response.setNetworkid(network.getUuid());
         response.setIpaddress(result.getIp4Address());
 
         if (result.getSecondaryIp()) {
@@ -3678,22 +3701,82 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setGateway(result.getGateway());
-        response.setId(result.getUuid());
-        response.setGateway(result.getGateway());
         response.setNetmask(result.getNetmask());
         response.setMacAddress(result.getMacAddress());
-        if (result.getBroadcastUri() != null) {
-            response.setBroadcastUri(result.getBroadcastUri().toString());
-        }
-        if (result.getIsolationUri() != null) {
-            response.setIsolationUri(result.getIsolationUri().toString());
-        }
+
         if (result.getIp6Address() != null) {
-            response.setId(result.getIp6Address());
+            response.setIp6Address(result.getIp6Address());
         }
 
         response.setIsDefault(result.isDefaultNic());
         return response;
+    }
+
+    
+    @Override
+    public ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances) {
+
+        ApplicationLoadBalancerResponse lbResponse = new ApplicationLoadBalancerResponse();
+        lbResponse.setId(lb.getUuid());
+        lbResponse.setName(lb.getName());
+        lbResponse.setDescription(lb.getDescription());
+        lbResponse.setAlgorithm(lb.getAlgorithm());
+        Network nw = ApiDBUtils.findNetworkById(lb.getNetworkId());
+        lbResponse.setNetworkId(nw.getUuid());
+        populateOwner(lbResponse, lb);
+        
+        if (lb.getScheme() == Scheme.Internal) {
+            lbResponse.setSourceIp(lb.getSourceIp().addr());
+            //TODO - create the view for the load balancer rule to reflect the network uuid
+            Network network = ApiDBUtils.findNetworkById(lb.getNetworkId());
+            lbResponse.setSourceIpNetworkId(network.getUuid());
+        } else {
+            //for public, populate the ip information from the ip address
+            IpAddress publicIp = ApiDBUtils.findIpAddressById(lb.getSourceIpAddressId());
+            lbResponse.setSourceIp(publicIp.getAddress().addr());
+            Network ntwk = ApiDBUtils.findNetworkById(publicIp.getNetworkId());
+            lbResponse.setSourceIpNetworkId(ntwk.getUuid());
+        }
+        
+        //set load balancer rules information (only one rule per load balancer in this release)
+        List<ApplicationLoadBalancerRuleResponse> ruleResponses = new ArrayList<ApplicationLoadBalancerRuleResponse>();
+        ApplicationLoadBalancerRuleResponse ruleResponse = new ApplicationLoadBalancerRuleResponse();
+        ruleResponse.setInstancePort(lb.getDefaultPortStart());
+        ruleResponse.setSourcePort(lb.getSourcePortStart());
+        String stateToSet = lb.getState().toString();
+        if (stateToSet.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        ruleResponse.setState(stateToSet);
+        ruleResponse.setObjectName("loadbalancerrule");
+        ruleResponses.add(ruleResponse);
+        lbResponse.setLbRules(ruleResponses);
+        
+        //set Lb instances information
+        List<ApplicationLoadBalancerInstanceResponse> instanceResponses = new ArrayList<ApplicationLoadBalancerInstanceResponse>();
+        for (Ip ip : lbInstances.keySet()) {
+            ApplicationLoadBalancerInstanceResponse instanceResponse = new ApplicationLoadBalancerInstanceResponse();
+            instanceResponse.setIpAddress(ip.addr());
+            UserVm vm = lbInstances.get(ip);
+            instanceResponse.setId(vm.getUuid());
+            instanceResponse.setName(vm.getInstanceName());
+            instanceResponse.setObjectName("loadbalancerinstance");
+            instanceResponses.add(instanceResponse);
+        }
+        
+        lbResponse.setLbInstances(instanceResponses);
+
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.LoadBalancer, lb.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        lbResponse.setTags(tagResponses);
+
+        lbResponse.setObjectName("loadbalancer");
+        return lbResponse;
     }
 
     @Override
@@ -3724,5 +3807,32 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             return ag.getId();
         }
+    }
+
+    
+    @Override
+    public InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result) {
+        if (result.getType() != VirtualRouterProvider.VirtualRouterProviderType.InternalLbVm) {
+            return null;
+        }
+        InternalLoadBalancerElementResponse response = new InternalLoadBalancerElementResponse();
+        response.setId(result.getUuid());
+        PhysicalNetworkServiceProvider nsp = ApiDBUtils.findPhysicalNetworkServiceProviderById(result.getNspId());
+        if (nsp != null) {
+            response.setNspId(nsp.getUuid());
+        }
+        response.setEnabled(result.isEnabled());
+
+        response.setObjectName("internalloadbalancerelement");
+        return response;
+    }
+
+    
+    @Override
+    public IsolationMethodResponse createIsolationMethodResponse(IsolationType method) {
+        IsolationMethodResponse response = new IsolationMethodResponse();
+        response.setIsolationMethodName(method.toString());
+        response.setObjectName("isolationmethod");
+        return response;
     }
 }

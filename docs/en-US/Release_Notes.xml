@@ -5113,7 +5113,7 @@ service cloudstack-agent start
         <listitem>
           <para>Start the first Management Server. Do not start any other Management Server nodes
             yet.</para>
-          <programlisting language="Bash"><prompt>#</prompt> service cloud-management start</programlisting>
+          <programlisting language="Bash"><prompt>#</prompt> service cloudstack-management start</programlisting>
           <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
             After confirmation, start the other Management Servers one at a time by running the same
             command on each node.</para>
@@ -5126,7 +5126,7 @@ service cloudstack-agent start
         <listitem>
           <para>Start all Usage Servers (if they were running on your previous version). Perform
             this on each Usage Server host.</para>
-          <para><command># service cloud-usage start</command></para>
+          <para><command># service cloudstack-usage start</command></para>
         </listitem>
         <listitem>
           <note>
@@ -5152,7 +5152,7 @@ service cloudstack-agent start
             </listitem>
             <listitem>
               <para>Start the agent.</para>
-              <programlisting># service cloud-agent start</programlisting>
+              <programlisting># service cloudstack-agent start</programlisting>
             </listitem>
             <listitem>
               <para>Edit <filename>/etc/cloud/agent/agent.properties</filename> to change the
@@ -5742,7 +5742,7 @@ service cloudstack-agent start
         <listitem>
           <para>Start the first Management Server. Do not start any other Management Server nodes
             yet.</para>
-          <programlisting language="Bash"><prompt>#</prompt> service cloud-management start</programlisting>
+          <programlisting language="Bash"><prompt>#</prompt> service cloudstack-management start</programlisting>
           <para>Wait until the databases are upgraded. Ensure that the database upgrade is complete.
             You should see a message like "Complete! Done." After confirmation, start the other
             Management Servers one at a time by running the same command on each node.</para>
@@ -5750,7 +5750,7 @@ service cloudstack-agent start
         <listitem>
           <para>Start all Usage Servers (if they were running on your previous version). Perform
             this on each Usage Server host.</para>
-          <programlisting language="Bash"><prompt>#</prompt> service cloud-usage start</programlisting>
+          <programlisting language="Bash"><prompt>#</prompt> service cloudstack-usage start</programlisting>
         </listitem>
         <listitem>
           <para>(KVM only) Additional steps are required for each KVM host. These steps will not
@@ -5776,7 +5776,7 @@ service cloudstack-agent start
             </listitem>
             <listitem>
               <para>Start the agent.</para>
-              <programlisting># service cloud-agent start</programlisting>
+              <programlisting># service cloudstack-agent start</programlisting>
             </listitem>
             <listitem>
               <para> Copy the contents of the <filename>agent.properties</filename> file to the new

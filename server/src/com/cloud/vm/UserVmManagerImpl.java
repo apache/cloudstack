@@ -485,7 +485,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _accountMgr.checkAccess(caller, null, true, userVm);
 
-        boolean result = resetVMPasswordInternal(cmd, password);
+        boolean result = resetVMPasswordInternal(vmId, password);
 
         if (result) {
             userVm.setPassword(password);
@@ -512,10 +512,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         return userVm;
     }
 
-    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd,
+    private boolean resetVMPasswordInternal(Long vmId,
             String password) throws ResourceUnavailableException,
             InsufficientCapacityException {
-        Long vmId = cmd.getId();
         Long userId = UserContext.current().getCallerUserId();
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
@@ -838,6 +837,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if(network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
         }
+        List<NicVO> allNics = _nicDao.listByVmId(vmInstance.getId());
+        for(NicVO nic : allNics){
+            if(nic.getNetworkId() == network.getId())
+                throw new CloudRuntimeException("A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
+        }
+
         NicProfile profile = new NicProfile(null, null);
         if(ipAddress != null) {
             profile = new NicProfile(ipAddress, null);
@@ -1059,13 +1064,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCALE, eventDescription = "scaling Vm")
     public UserVm
     upgradeVirtualMachine(ScaleVMCmd cmd) throws InvalidParameterValueException, ResourceAllocationException {
+
         Long vmId = cmd.getId();
         Long newServiceOfferingId = cmd.getServiceOfferingId();
         Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
-        if(vmInstance.getHypervisorType() != HypervisorType.XenServer){
+        if(vmInstance.getHypervisorType() != HypervisorType.XenServer && vmInstance.getHypervisorType() != HypervisorType.VMware){
             throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
         }
 
@@ -1087,8 +1093,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         // Dynamically upgrade the running vms
+        boolean success = false;
         if(vmInstance.getState().equals(State.Running)){
-            boolean success = false;
             int retry = _scaleRetry;
             while (retry-- != 0) { // It's != so that it can match -1.
                 try{
@@ -1106,7 +1112,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     vmInstance = _vmInstanceDao.findById(vmId);
                     vmInstance = _itMgr.reConfigureVm(vmInstance, oldServiceOffering, existingHostHasCapacity);
                     success = true;
-                    return _vmDao.findById(vmInstance.getId());
+                    return success;
                 }catch(InsufficientCapacityException e ){
                     s_logger.warn("Received exception while scaling ",e);
                 } catch (ResourceUnavailableException e) {
@@ -1123,11 +1129,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     }
                 }
             }
-            if (!success)
-                return null;
         }
 
-        return _vmDao.findById(vmInstance.getId());
+        return success;
 
     }
 
@@ -2933,10 +2937,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         UserVO user = _userDao.findById(userId);
-
+        boolean status = false;
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            vmEntity.stop(new Long(userId).toString());
+            status = vmEntity.stop(new Long(userId).toString());
+            if (status) {
+               return _vmDao.findById(vmId);
+            } else {
+               return null;
+            }
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException(
                     "Unable to contact the agent to stop the virtual machine "
@@ -2946,8 +2955,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "Unable to contact the agent to stop the virtual machine "
                             + vm, e);
         }
-
-        return _vmDao.findById(vmId);
     }
 
     @Override
@@ -3750,19 +3757,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     + cmd.getAccountName() + " is disabled.");
         }
 
-        // make sure the accounts are under same domain
-        if (oldAccount.getDomainId() != newAccount.getDomainId()) {
-            throw new InvalidParameterValueException(
-                    "The account should be under same domain for moving VM between two accounts. Old owner domain ="
-                            + oldAccount.getDomainId()
-                            + " New owner domain="
-                            + newAccount.getDomainId());
-        }
+        //check caller has access to both the old and new account 
+        _accountMgr.checkAccess(caller, null, true, oldAccount);
+        _accountMgr.checkAccess(caller, null, true, newAccount);
 
         // make sure the accounts are not same
         if (oldAccount.getAccountId() == newAccount.getAccountId()) {
             throw new InvalidParameterValueException(
-                    "The account should be same domain for moving VM between two accounts. Account id ="
+                    "The new account is the same as the old account. Account id ="
                             + oldAccount.getAccountId());
         }
 
@@ -3854,6 +3856,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage,
                     new Long(volume.getSize()));
             volume.setAccountId(newAccount.getAccountId());
+            volume.setDomainId(newAccount.getDomainId());
             _volsDao.persist(volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage,
@@ -4106,7 +4109,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public UserVm restoreVM(RestoreVMCmd cmd) {
+    public UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException {
         // Input validation
         Account caller = UserContext.current().getCaller();
 
@@ -4124,7 +4127,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         return restoreVMInternal(caller, vm, newTemplateId);
     }
 
-    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId){
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException {
 
         Long userId = caller.getId();
         Account owner = _accountDao.findById(vm.getAccountId());
@@ -4218,6 +4221,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         _volsDao.detachVolume(root.getId());
         this.volumeMgr.destroyVolume(root);
 
+        if (template.getEnablePassword()) {
+            String password = generateRandomPassword();
+            boolean result = resetVMPasswordInternal(vmId, password);
+            if (result) {
+                vm.setPassword(password);
+                _vmDao.loadDetails(vm);
+                // update the password in vm_details table too
+                // Check if an SSH key pair was selected for the instance and if so
+                // use it to encrypt & save the vm password
+                String sshPublicKey = vm.getDetail("SSH.PublicKey");
+                if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
+                    String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
+                    if (encryptedPasswd == null) {
+                        throw new CloudRuntimeException("VM reset is completed but error occurred when encrypting newly created password");
+                    }
+                    vm.setDetail("Encrypted.Password", encryptedPasswd);
+                    _vmDao.saveDetails(vm);
+                }
+            } else {
+                throw new CloudRuntimeException("VM reset is completed but failed to reset password for the virtual machine ");
+            }
+        }
+
         if (needRestart) {
             try {
                 _itMgr.start(vm, null, user, caller);
@@ -4250,7 +4276,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _agentMgr.send(dest.getHost().getId(),cmds);
                 PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
                 if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to plug nic for " + vmVO);
+                    s_logger.warn("Unable to plug nic for " + vmVO + " due to: " + " due to: " + plugNicAnswer.getDetails());
                     return false;
                 }
             } catch (OperationTimedoutException e) {
@@ -4278,7 +4304,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _agentMgr.send(dest.getHost().getId(),cmds);
                 UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
                 if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to unplug nic for " + vmVO);
+                    s_logger.warn("Unable to unplug nic for " + vmVO + " due to: " + unplugNicAnswer.getDetails());
                     return false;
                 }
             } catch (OperationTimedoutException e) {

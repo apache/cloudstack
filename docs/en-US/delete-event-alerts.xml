@@ -28,6 +28,18 @@
     or by using the Details page. If you want to delete multiple alerts or events at the same time,
     you can use the respective context menu. You can delete alerts or events by category for a time
     period.</para>
+  <para>In order to support the delete or archive alerts, the following global parameters have been
+    added:</para>
+  <itemizedlist>
+    <listitem>
+      <para><emphasis role="bold">alert.purge.delay</emphasis>: The alerts older than specified
+        number of days are purged. Set the value to 0 to never purge alerts automatically.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">alert.purge.interval</emphasis>: The interval in seconds to wait
+        before running the alert purge thread. The default is 86400 seconds (one day).</para>
+    </listitem>
+  </itemizedlist>
   <note>
     <para>Archived alerts or events cannot be viewed in the UI, or by using the API. They are
       maintained in the database for auditing or compliance purposes.</para>

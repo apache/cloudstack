@@ -52,7 +52,7 @@
         <listitem>
         <para>Once installed, start the Usage Server with the following command.</para>
         <programlisting>
-# service cloud-usage start
+# service cloudstack-usage start
         </programlisting>
         </listitem>
     </orderedlist>
