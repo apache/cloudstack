@@ -19,15 +19,6 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.dao.*;
-import com.cloud.server.ConfigurationServer;
-import com.cloud.user.*;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -38,12 +29,29 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.dao.AccountVlanMapDaoImpl;
+import com.cloud.dc.dao.ClusterDaoImpl;
+import com.cloud.dc.dao.DataCenterDaoImpl;
+import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
+import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
+import com.cloud.dc.dao.DataCenterVnetDaoImpl;
+import com.cloud.dc.dao.DcDetailsDaoImpl;
+import com.cloud.dc.dao.HostPodDaoImpl;
+import com.cloud.dc.dao.PodVlanDaoImpl;
+import com.cloud.dc.dao.PodVlanMapDaoImpl;
+import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
@@ -80,8 +88,8 @@ import com.cloud.network.vpc.dao.PrivateIpDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.projects.ProjectManager;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.S3DaoImpl;
@@ -93,6 +101,11 @@ import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
+import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserContext;
+import com.cloud.user.UserContextInitializer;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
@@ -331,6 +344,10 @@ public class ChildTestConfiguration {
         return Mockito.mock(AccountDetailsDao.class);
     }
 
+    @Bean
+    public DataStoreManager dataStoreManager() {
+        return Mockito.mock(DataStoreManager.class);
+    }
     
     public static class Library implements TypeFilter {
 
