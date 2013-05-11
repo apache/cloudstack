@@ -176,13 +176,15 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         return null;
     }
 
-
-
+    @Override
+    public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        return null;// TODO Auto-generated method stub
+    }
 
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#releaseIpAddress(long)
-     */
+    * @see com.cloud.network.NetworkService#releaseIpAddress(long)
+    */
     @Override
     public boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
         // TODO Auto-generated method stub

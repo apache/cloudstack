@@ -66,6 +66,14 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             "be associated with")
     private Long vpcId;
 
+    @Parameter(name=ApiConstants.IS_PORTABLE, type = BaseCmd.CommandType.BOOLEAN, description = "should be set to true " +
+            "if public IP is required to be transferable across zones, if not specified defaults to false")
+    private Boolean isPortable;
+
+    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, entityType = RegionResponse.class,
+            required=false, description="region ID from where portable ip is to be associated.")
+    private Integer regionId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -105,6 +113,18 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     public Long getVpcId() {
         return vpcId;
+    }
+
+    public boolean isPortable() {
+        if (isPortable == null) {
+            return false;
+        } else {
+            return isPortable;
+        }
+    }
+
+    public Integer getRegionId() {
+        return regionId;
     }
 
     public Long getNetworkId() {

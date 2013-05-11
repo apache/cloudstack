@@ -823,6 +823,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
+    public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        return null;// TODO Auto-generated method stub
+    }
+
+    @Override
     public boolean isSecondaryIpSetForNic(long nicId) {
         // TODO Auto-generated method stub
         return false;

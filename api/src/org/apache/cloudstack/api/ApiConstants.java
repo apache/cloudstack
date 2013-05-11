@@ -108,6 +108,7 @@ public class ApiConstants {
     public static final String IS_CLEANUP_REQUIRED = "iscleanuprequired";
     public static final String IS_EXTRACTABLE = "isextractable";
     public static final String IS_FEATURED = "isfeatured";
+    public static final String IS_PORTABLE = "isportable";
     public static final String IS_PUBLIC = "ispublic";
     public static final String IS_PERSISTENT = "ispersistent";
     public static final String IS_READY = "isready";

@@ -115,6 +115,8 @@ public class IPAddressVO implements IpAddress {
     @Column(name="dnat_vmip")
     private String vmIp;
 
+    @Column(name="is_portable")
+    private boolean portable;
 
 	protected IPAddressVO() {
 		this.uuid = UUID.randomUUID().toString();
@@ -286,6 +288,15 @@ public class IPAddressVO implements IpAddress {
 	public void setSystem(boolean isSystem) {
 		this.system = isSystem;
 	}
+
+    @Override
+    public boolean isPortable() {
+        return portable;
+    }
+
+    public void setPortable(boolean portable) {
+        this.portable = portable;
+    }
 
 	@Override
     public Long getVpcId() {

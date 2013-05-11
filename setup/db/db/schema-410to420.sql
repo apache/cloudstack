@@ -1144,3 +1144,5 @@ CREATE TABLE `cloud`.`portable_ip_address` (
   CONSTRAINT `fk_portable_ip_address__portable_ip_range_id` FOREIGN KEY (`portable_ip_range_id`) REFERENCES `portable_ip_range`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_portable_ip_address__region_id` FOREIGN KEY (`region_id`) REFERENCES `region`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN is_portable int(1) unsigned NOT NULL default '0';

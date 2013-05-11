@@ -727,6 +727,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        ipResponse.setPortable(ipAddr.isPortable());
+
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.PublicIpAddress, ipAddr.getId());
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();

@@ -444,6 +444,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         return allocateIP(ipOwner, false,  zoneId);
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_ASSIGN, eventDescription = "allocating portable public Ip", create = true)
+    public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId)
+            throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        return null;
+    }
+
     public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
