@@ -328,14 +328,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
 	public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
 		DataTO srcData = cmd.getSrcTO();
 		TemplateObjectTO template = (TemplateObjectTO)srcData;
-		DataStoreTO imageStore = template.getDataStore();
 		DataTO destData = cmd.getDestTO();
 		VolumeObjectTO volume = (VolumeObjectTO)destData;
 		PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
-		if (imageStore != null && !(imageStore instanceof NfsTO)) {
-			return new CopyCmdAnswer("unsupported protocol");
-		}
-		NfsTO nfsImageStore = (NfsTO)imageStore;
+		PrimaryDataStoreTO srcStore = (PrimaryDataStoreTO)template.getDataStore();
+
 		
 		try {
 			VmwareContext context = this.hostService.getServiceContext(null);
@@ -351,7 +348,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
 			// attach volume id to make the name unique
 			String vmdkName = volume.getName() + "-" + volume.getId();
-			if (nfsImageStore == null) {
+			if (srcStore == null) {
 				// create a root volume for blank VM
 				String dummyVmName = this.hostService.getWorkerName(context, cmd, 0);
 
@@ -379,8 +376,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
 					vmMo.destroy();
 				}
 			} else {
-				String templateUrl = nfsImageStore.getUrl() + File.separator + template.getPath();
-				VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templateUrl), true);
+				String templatePath = template.getPath();
+				VirtualMachineMO vmTemplate = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templatePath), true);
 				if (vmTemplate == null) {
 					s_logger.warn("Template host in vSphere is not in connected state, request template reload");
 					return new CopyCmdAnswer("Template host in vSphere is not in connected state, request template reload");

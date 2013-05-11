@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,23 +38,33 @@ import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostEnvironment;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.vmware.VmwareServerDiscoverer;
 import com.cloud.hypervisor.xen.resource.XcpOssResource;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentManager {
     private static final Logger logger = Logger.getLogger(DirectAgentManagerSimpleImpl.class);
     private Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
     @Inject
     HostDao hostDao;
+    @Inject
+    ClusterDao clusterDao;
+    @Inject
+    ClusterDetailsDao clusterDetailsDao;
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         // TODO Auto-generated method stub
@@ -104,14 +116,39 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
         ServerResource resource = null;
         if (host.getHypervisorType() == HypervisorType.XenServer) {
              resource = new XcpOssResource();
+             try {
+                 resource.configure(host.getName(), params);
+                
+             } catch (ConfigurationException e) {
+                 logger.debug("Failed to load resource:" + e.toString());
+             }
+        } else if (host.getHypervisorType() == HypervisorType.VMware) {
+            ClusterVO cluster = clusterDao.findById(host.getClusterId());
+            String url = clusterDetailsDao.findDetail(cluster.getId(), "url").getValue();
+            URI uri;
+            try {
+                uri = new URI(url);
+                String userName = clusterDetailsDao.findDetail(cluster.getId(), "username").getValue();
+                String password = clusterDetailsDao.findDetail(cluster.getId(), "password").getValue();
+                VmwareServerDiscoverer discover = new VmwareServerDiscoverer();
+
+                Map<? extends ServerResource, Map<String, String>> resources = discover.find(host.getDataCenterId(), host.getPodId(), host.getClusterId(), uri, userName, password, null);
+                for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
+                    resource = entry.getKey();
+                }
+                if (resource == null) {
+                    throw new CloudRuntimeException("can't find resource");
+                }
+            } catch (DiscoveryException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (URISyntaxException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
 
-        try {
-            resource.configure(host.getName(), params);
-            hostResourcesMap.put(hostId, resource);
-        } catch (ConfigurationException e) {
-            logger.debug("Failed to load resource:" + e.toString());
-        }
+        hostResourcesMap.put(hostId, resource);
         HostEnvironment env = new HostEnvironment();
         SetupCommand cmd = new SetupCommand(env);
         cmd.setNeedSetup(true);

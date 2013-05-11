@@ -28,6 +28,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -286,7 +287,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 cmd instanceof CopyVolumeCommand ||
                 cmd instanceof CreateVolumeOVACommand ||
                 cmd instanceof PrepareOVAPackingCommand ||
-                cmd instanceof CreateVolumeFromSnapshotCommand) {
+                cmd instanceof CreateVolumeFromSnapshotCommand ||
+                cmd instanceof CopyCommand) {
             needDelegation = true;
         }
         /* Fang: remove this before checking in */

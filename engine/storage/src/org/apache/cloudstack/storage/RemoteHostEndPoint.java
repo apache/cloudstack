@@ -41,6 +41,7 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -52,6 +53,8 @@ public class RemoteHostEndPoint implements EndPoint {
     AgentManager agentMgr;
     @Inject
     HostEndpointRpcServer rpcServer;
+    @Inject
+    protected HypervisorGuruManager _hvGuruMgr;
     private ScheduledExecutorService executor;
 
     public RemoteHostEndPoint() {
@@ -83,7 +86,8 @@ public class RemoteHostEndPoint implements EndPoint {
     public Answer sendMessage(Command cmd) {
     	String errMsg = null;
     	try {
-			return agentMgr.send(getId(), cmd);
+    	    long newHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostId, cmd);
+			return agentMgr.send(newHostId, cmd);
 		} catch (AgentUnavailableException e) {
 			errMsg = e.toString();
 			s_logger.debug("Failed to send command, due to Agent:" + getId() + ", " + e.toString());
@@ -160,7 +164,8 @@ public class RemoteHostEndPoint implements EndPoint {
     @Override
     public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
         try {
-            agentMgr.send(this.hostId, new Commands(cmd), new CmdRunner(callback));
+    	    long newHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(this.hostId, cmd);
+            agentMgr.send(newHostId, new Commands(cmd), new CmdRunner(callback));
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to send message", e);
         }

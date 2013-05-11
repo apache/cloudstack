@@ -57,6 +57,7 @@ public class VolumeObjectTO implements DataTO {
         this.setVolumeId(volume.getId());
         this.chainInfo = volume.getChainInfo();
         this.volumeType = volume.getVolumeType();
+        this.name = volume.getName();
         this.setId(volume.getId());
     }
 
