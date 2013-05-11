@@ -36,6 +36,7 @@ import junit.framework.TestCase;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.AsyncJobManager;
+import com.cloud.async.AsyncJobVO;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
@@ -139,6 +140,24 @@ public class VmWorkTest extends TestCase {
 				return true;
 			}
 		});
+	}
+	
+	@Test
+	public void testVmWorkWakeup() {
+		AsyncJobVO mainJob = new AsyncJobVO();
+		
+		mainJob.setDispatcher("TestJobDispatcher");
+		mainJob.setAccountId(1L);
+		mainJob.setUserId(1L);
+		mainJob.setCmd("Dummy");
+		mainJob.setCmdInfo("Dummy");
+		
+		_jobMgr.submitAsyncJob(mainJob);
+		
+		try {
+			Thread.sleep(120000);
+		} catch (InterruptedException e) {
+		}
 	}
 	
 	@Test

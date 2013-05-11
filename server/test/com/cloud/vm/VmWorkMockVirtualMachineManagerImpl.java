@@ -397,10 +397,13 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
     	return vm;
     }
 	
+	public void processVmStartWakeup() {
+		System.out.println("processVmStartWakeup. job-" + AsyncJobExecutionContext.getCurrentExecutionContext().getJob().getId());
+	}
+	
 	@Override
     public <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account) 
         throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
     	return true;
     }
-        	
 }
