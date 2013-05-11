@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.dao.NicDetailDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -243,6 +244,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private ResourceMetaDataService _resourceMetaDataMgr;
+
+    @Inject
+    private TaggedResourceService _taggedResourceMgr;
 
     @Inject
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -2497,7 +2501,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String key = cmd.getKey();
         ResourceTag.TaggedResourceType resourceType = cmd.getResourceType();
         String resourceId = cmd.getResourceId();
-        Long id = _resourceMetaDataMgr.getResourceId(resourceId, resourceType);
+        Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
 
         if(resourceType == ResourceTag.TaggedResourceType.Volume){
 
