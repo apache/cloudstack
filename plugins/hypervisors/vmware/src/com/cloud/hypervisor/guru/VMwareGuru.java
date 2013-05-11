@@ -42,6 +42,9 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.cluster.ClusterManager;
@@ -64,6 +67,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -289,7 +293,23 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 cmd instanceof PrepareOVAPackingCommand ||
                 cmd instanceof CreateVolumeFromSnapshotCommand ||
                 cmd instanceof CopyCommand) {
-            needDelegation = true;
+            if (cmd instanceof CopyCommand) {
+                CopyCommand cpyCommand = (CopyCommand)cmd;
+                DataTO srcData = cpyCommand.getSrcTO();
+                DataStoreTO srcStoreTO = srcData.getDataStore();
+                DataTO destData = cpyCommand.getDestTO();
+                DataStoreTO destStoreTO = destData.getDataStore();
+                
+                if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary &&
+                        srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
+                    needDelegation = false;
+                } else {
+                    needDelegation = true;
+                }
+            } else {
+                needDelegation = true;
+            }
+            
         }
         /* Fang: remove this before checking in */
         // needDelegation = false;
