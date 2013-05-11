@@ -65,7 +65,7 @@
     <listitem>
       <para>Restart &PRODUCT; Management Server. Restarting is required because the default
         offerings are loaded into the memory at startup.</para>
-      <programlisting>service cloud-management restart</programlisting>
+      <programlisting>service cloudstack-management restart</programlisting>
     </listitem>
     <listitem>
       <para>Destroy the existing CPVM or SSVM offerings and wait for them to be recreated. The new

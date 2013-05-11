@@ -208,7 +208,7 @@
             mode. In this mode, network resources are allocated only when the first virtual machine
             starts in the network. When conservative mode is off, the public IP can only be used for
             a single service. For example, a public IP used for a port forwarding rule cannot be
-            used for defining other services, such as SaticNAT or load balancing. When the conserve
+            used for defining other services, such as StaticNAT or load balancing. When the conserve
             mode is on, you can define more than one service on the same public IP.</para>
           <note>
             <para>If StaticNAT is enabled, irrespective of the status of the conserve mode, no port
