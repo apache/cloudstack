@@ -162,7 +162,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         } else if (vo.getScope() == ScopeType.HOST) {
             List<StoragePoolHostVO> poolHosts = poolHostDao.listByPoolId(vo.getId());
             if (poolHosts.size() > 0) {
-                return new HostScope(poolHosts.get(0).getHostId());
+                return new HostScope(poolHosts.get(0).getHostId(), vo.getDataCenterId());
             }
             s_logger.debug("can't find a local storage in pool host table: " + vo.getId());
         }

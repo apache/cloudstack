@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -30,6 +31,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -137,7 +141,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         // TODO Auto-generated method stub
         return true;
     }
-    
+
     protected boolean needCacheStorage(DataObject srcData, DataObject destData) {
         DataTO srcTO = srcData.getTO();
         DataTO destTO = destData.getTO();
@@ -146,7 +150,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (srcStoreTO instanceof NfsTO || srcStoreTO.getRole() == DataStoreRole.ImageCache) {
             return false;
         }
-        
+
         if (destStoreTO instanceof NfsTO || destStoreTO.getRole() == DataStoreRole.ImageCache) {
             return false;
         }
@@ -161,7 +165,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         if (needCacheStorage(srcData, destData)) {
             //need to copy it to image cache store
-            DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
+            Scope destScope = destData.getDataStore().getScope();
+            if (destScope instanceof ClusterScope){
+                ClusterScope clusterScope = (ClusterScope)destScope;
+                destScope = new ZoneScope(clusterScope.getZoneId());
+            } else if (destScope instanceof HostScope){
+                HostScope hostScope = (HostScope)destScope;
+                destScope = new ZoneScope(hostScope.getZoneId());
+            }
+            DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
             CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait);
             EndPoint ep = selector.select(cacheData, destData);
             Answer answer = ep.sendMessage(cmd);
@@ -180,7 +192,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
         if (needCacheStorage(srcData, destData)) {
             //need to copy it to image cache store
-            DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
+            Scope destScope = destData.getDataStore().getScope();
+            if (destScope instanceof ClusterScope){
+                ClusterScope clusterScope = (ClusterScope)destScope;
+                destScope = new ZoneScope(clusterScope.getZoneId());
+            } else if (destScope instanceof HostScope){
+                HostScope hostScope = (HostScope)destScope;
+                destScope = new ZoneScope(hostScope.getZoneId());
+            }
+            DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
             CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
             EndPoint ep = selector.select(cacheData, destData);
             Answer answer = ep.sendMessage(cmd);
@@ -193,7 +213,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             return answer;
         }
     }
-    
+
     protected DataObject cacheSnapshotChain(SnapshotInfo snapshot) {
         DataObject leafData = null;
         while(snapshot != null) {
@@ -205,9 +225,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
         return leafData;
     }
-    
+
     protected void deleteSnapshotCacheChain(SnapshotInfo snapshot) {
-        
+
     }
 
     protected Answer copyVolumeFromSnapshot(DataObject snapObj, DataObject volObj) {
@@ -223,15 +243,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             if (!(storTO instanceof NfsTO)) {
                 srcData = cacheSnapshotChain(snapshot);
             }
-            
+
             String value = configDao
                     .getValue(Config.CreateVolumeFromSnapshotWait.toString());
             int _createVolumeFromSnapshotWait = NumbersUtil.parseInt(value,
                     Integer.parseInt(Config.CreateVolumeFromSnapshotWait
                             .getDefaultValue()));
-            
+
             CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait);
-          
+
 
             Answer answer = this.storageMgr
                     .sendToPool(pool, cmd);
@@ -301,7 +321,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             		destData.getType() == DataObjectType.SNAPSHOT) {
             	answer = copySnapshot(srcData, destData);
             }
-            
+
             if (answer != null && !answer.getResult()) {
                 errMsg = answer.getDetails();
             }
@@ -318,7 +338,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     @DB
     protected Answer createTemplateFromSnapshot(DataObject srcData,
             DataObject destData) {
-      
+
         String value = configDao
                 .getValue(Config.CreatePrivateTemplateFromSnapshotWait
                         .toString());
@@ -341,13 +361,13 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     private Answer createTemplateFromVolume(DataObject srcData,
             DataObject destData) {
-  
+
         String value = configDao
                 .getValue(Config.CreatePrivateTemplateFromVolumeWait.toString());
         int _createprivatetemplatefromvolumewait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CreatePrivateTemplateFromVolumeWait
                         .getDefaultValue()));
-       
+
         if (needCacheStorage(srcData, destData)) {
             //need to copy it to image cache store
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destData.getDataStore().getScope());
@@ -372,7 +392,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         try {
         if (needCacheStorage(srcData, destData)) {
             cacheData = cacheMgr.getCacheObject(srcData, destData.getDataStore().getScope());
-        
+
             CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait);
             cmd.setCacheTO(cacheData.getTO());
             EndPoint ep = selector.select(srcData, destData);
@@ -391,7 +411,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             throw new CloudRuntimeException(e.toString());
         }
-       
+
     }
 
 }

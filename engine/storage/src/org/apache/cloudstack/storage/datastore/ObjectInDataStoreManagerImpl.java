@@ -134,6 +134,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 TemplateDataStoreVO ts = new TemplateDataStoreVO();
                 ts.setTemplateId(obj.getId());
                 ts.setDataStoreId(dataStore.getId());
+                ts.setDataStoreRole(dataStore.getRole());
                 ts.setInstallPath(TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR  + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 ts.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ts = templateDataStoreDao.persist(ts);
@@ -142,6 +143,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
                 ss.setSnapshotId(obj.getId());
                 ss.setDataStoreId(dataStore.getId());
+                ss.setRole(dataStore.getRole());
                 ss.setRole(dataStore.getRole());
                 ss.setInstallPath(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
                 ss.setState(ObjectInDataStoreStateMachine.State.Allocated);

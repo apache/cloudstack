@@ -4,15 +4,18 @@ import static com.cloud.utils.StringUtils.join;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
 import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -23,19 +26,26 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.DownloadManagerImpl;
+import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 @Component
 public class LocalNfsSecondaryStorageResource extends
 		NfsSecondaryStorageResource {
 
+    private static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
+
     public LocalNfsSecondaryStorageResource(){
         this._dlMgr = new DownloadManagerImpl();
         ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
+        _storage = new JavaStorageLayer();
+        this._inSystemVM = false;
     }
 
     @Override
@@ -100,4 +110,73 @@ public class LocalNfsSecondaryStorageResource extends
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
     }
+
+    @Override
+    protected String mount(String root, String nfsPath) {
+        File file = new File(root);
+        if (!file.exists()) {
+            if (_storage.mkdir(root)) {
+                s_logger.debug("create mount point: " + root);
+            } else {
+                s_logger.debug("Unable to create mount point: " + root);
+                return null;
+            }
+        }
+
+        Script script = null;
+        String result = null;
+        script = new Script(!_inSystemVM, "mount", _timeout, s_logger);
+        List<String> res = new ArrayList<String>();
+        ZfsPathParser parser = new ZfsPathParser(root);
+        script.execute(parser);
+        res.addAll(parser.getPaths());
+        for (String s : res) {
+            if (s.contains(root)) {
+                return root;
+            }
+        }
+
+        Script command = new Script(!_inSystemVM, "mount", _timeout, s_logger);
+        command.add("-t", "nfs");
+        if ("Mac OS X".equalsIgnoreCase(System.getProperty("os.name"))) {
+            command.add("-o", "resvport");
+        }
+        if (_inSystemVM) {
+            // Fedora Core 12 errors out with any -o option executed from java
+            command.add("-o", "soft,timeo=133,retrans=2147483647,tcp,acdirmax=0,acdirmin=0");
+        }
+        command.add(nfsPath);
+        command.add(root);
+        result = command.execute();
+        if (result != null) {
+            s_logger.warn("Unable to mount " + nfsPath + " due to " + result);
+            file = new File(root);
+            if (file.exists())
+                file.delete();
+            return null;
+        }
+
+        // Change permissions for the mountpoint
+        script = new Script(true, "chmod", _timeout, s_logger);
+        script.add("777", root);
+        result = script.execute();
+        if (result != null) {
+            s_logger.warn("Unable to set permissions for " + root + " due to " + result);
+            return null;
+        }
+
+        // XXX: Adding the check for creation of snapshots dir here. Might have
+        // to move it somewhere more logical later.
+        if (!checkForSnapshotsDir(root)) {
+            return null;
+        }
+
+        // Create the volumes dir
+        if (!checkForVolumesDir(root)) {
+            return null;
+        }
+
+        return root;
+    }
+
 }
