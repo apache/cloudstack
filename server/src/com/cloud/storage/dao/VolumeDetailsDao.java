@@ -30,4 +30,7 @@ public interface VolumeDetailsDao extends GenericDao<VolumeDetailVO, Long> {
     VolumeDetailVO findDetail(long vmId, String name);
 
     void deleteDetails(long vmId);
-}
+
+    public void removeDetails(long volumeId, String key);
+
+    }

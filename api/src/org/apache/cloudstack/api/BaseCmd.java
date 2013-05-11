@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.AffinityGroupService;
+import com.cloud.server.ResourceMetaDataService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
@@ -128,6 +129,7 @@ public abstract class BaseCmd {
     @Inject public IdentityService _identityService;
     @Inject public StorageNetworkService _storageNetworkService;
     @Inject public TaggedResourceService _taggedResourceService;
+    @Inject public ResourceMetaDataService _resourceMetaDataService;
     @Inject public VpcService _vpcService;
     @Inject public NetworkACLService _networkACLService;
     @Inject public Site2SiteVpnService _s2sVpnService;

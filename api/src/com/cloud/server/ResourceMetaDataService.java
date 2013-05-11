@@ -13,23 +13,35 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License.
-package com.cloud.vm.dao;
+// under the License.package com.cloud.server;
 
+package com.cloud.server;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.NicDetailVO;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 
-public interface NicDetailDao extends GenericDao<NicDetailVO, Long> {
-    List<NicDetailVO> findDetails(long nicId);
+public interface ResourceMetaDataService {
 
-    void persist(long nicId, Map<String, String> details);
+    TaggedResourceType getResourceType (String resourceTypeStr);
 
-    NicDetailVO findDetail(long nicId, String name);
+    /**
+     * @param resourceId TODO
+     * @param resourceType
+     * @param details
+     * @return
+     */
+    boolean addResourceMetaData(String resourceId, TaggedResourceType resourceType, Map<String, String> details);
 
-    void deleteDetails(long nicId);
 
-    void removeDetails(Long id, String key);
-}
+    /**
+     *
+     * @param resourceId
+     * @param resourceType
+     * @param key
+     * @return
+     */
+    public boolean deleteResourceMetaData(String resourceId, TaggedResourceType resourceType, String key);
+
+
+    }

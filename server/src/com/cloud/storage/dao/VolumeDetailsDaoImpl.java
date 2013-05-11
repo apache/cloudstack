@@ -34,6 +34,7 @@ import com.cloud.utils.db.Transaction;
 public class VolumeDetailsDaoImpl extends GenericDaoBase<VolumeDetailVO, Long> implements VolumeDetailsDao {
     protected final SearchBuilder<VolumeDetailVO> VolumeSearch;
     protected final SearchBuilder<VolumeDetailVO> DetailSearch;
+    protected final SearchBuilder<VolumeDetailVO> VolumeDetailSearch;
 
     public VolumeDetailsDaoImpl() {
         VolumeSearch = createSearchBuilder();
@@ -44,6 +45,12 @@ public class VolumeDetailsDaoImpl extends GenericDaoBase<VolumeDetailVO, Long> i
         DetailSearch.and("volumeId", DetailSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailSearch.done();
+
+        VolumeDetailSearch = createSearchBuilder();
+        VolumeDetailSearch.and("volumeId", VolumeDetailSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeDetailSearch.and("name", VolumeDetailSearch.entity().getName(), SearchCriteria.Op.IN);
+        VolumeDetailSearch.done();
+
     }
 
     @Override
@@ -64,6 +71,20 @@ public class VolumeDetailsDaoImpl extends GenericDaoBase<VolumeDetailVO, Long> i
         sc.setParameters("name", name);
 
         return findOneBy(sc);
+    }
+
+    @Override
+    public void removeDetails(long volumeId, String key) {
+
+        if(key != null){
+            VolumeDetailVO detail = findDetail(volumeId, key);
+            if(detail != null){
+                remove(detail.getId());
+            }
+        }else {
+           deleteDetails(volumeId);
+        }
+
     }
 
     @Override

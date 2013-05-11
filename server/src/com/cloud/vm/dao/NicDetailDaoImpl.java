@@ -92,6 +92,19 @@ public class NicDetailDaoImpl extends GenericDaoBase<NicDetailVO, Long> implemen
         }
         txn.commit();
     }
-    
+
+    @Override
+    public void removeDetails(Long nicId, String key) {
+
+        if(key != null){
+            NicDetailVO detail = findDetail(nicId, key);
+            if(detail != null){
+                remove(detail.getId());
+            }
+        }else {
+            deleteDetails(nicId);
+        }
+
+    }
     
 }

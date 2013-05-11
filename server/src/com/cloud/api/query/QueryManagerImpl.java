@@ -22,6 +22,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.server.ResourceMetaDataService;
+import com.cloud.server.ResourceTag;
 import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.dao.NicDetailDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -46,6 +48,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCm
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumeDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
@@ -237,6 +240,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private HighAvailabilityManager _haMgr;
+
+    @Inject
+    private ResourceMetaDataService _resourceMetaDataMgr;
 
     @Inject
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -2483,6 +2489,67 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         List<AffinityGroupJoinVO> ags = _affinityGroupJoinDao.searchByIds(agIds);
         return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
+    }
+
+
+    public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd){
+
+        String key = cmd.getKey();
+        ResourceTag.TaggedResourceType resourceType = cmd.getResourceType();
+        String resourceId = cmd.getResourceId();
+        Long id = _resourceMetaDataMgr.getResourceId(resourceId, resourceType);
+
+        if(resourceType == ResourceTag.TaggedResourceType.Volume){
+
+            List<VolumeDetailVO> volumeDetailList;
+            if(key == null){
+                volumeDetailList = _volumeDetailDao.findDetails(id);
+            }else{
+                VolumeDetailVO volumeDetail = _volumeDetailDao.findDetail(id, key);
+                volumeDetailList = new LinkedList<VolumeDetailVO>();
+                volumeDetailList.add(volumeDetail);
+            }
+
+            List<ResourceDetailResponse> volumeDetailResponseList = new ArrayList<ResourceDetailResponse>();
+            for (VolumeDetailVO volumeDetail : volumeDetailList ){
+                ResourceDetailResponse volumeDetailResponse = new ResourceDetailResponse();
+                volumeDetailResponse.setResourceId(id.toString());
+                volumeDetailResponse.setName(volumeDetail.getName());
+                volumeDetailResponse.setValue(volumeDetail.getValue());
+                volumeDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Volume.toString());
+                volumeDetailResponse.setObjectName("volumedetail");
+                volumeDetailResponseList.add(volumeDetailResponse);
+            }
+
+            return volumeDetailResponseList;
+
+        }  else {
+
+
+            List<NicDetailVO> nicDetailList;
+            if(key == null){
+                nicDetailList = _nicDetailDao.findDetails(id);
+            }else {
+                NicDetailVO nicDetail = _nicDetailDao.findDetail(id, key);
+                nicDetailList = new LinkedList<NicDetailVO>();
+                nicDetailList.add(nicDetail);
+            }
+
+            List<ResourceDetailResponse> nicDetailResponseList = new ArrayList<ResourceDetailResponse>();
+            for(NicDetailVO nicDetail : nicDetailList){
+                ResourceDetailResponse nicDetailResponse = new ResourceDetailResponse();
+                //String uuid = ApiDBUtils.findN
+                nicDetailResponse.setName(nicDetail.getName());
+                nicDetailResponse.setValue(nicDetail.getValue());
+                nicDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Nic.toString());
+                nicDetailResponse.setObjectName("nicdetail");
+                nicDetailResponseList.add(nicDetailResponse);
+            }
+
+            return nicDetailResponseList;
+
+        }
+
     }
 
 }

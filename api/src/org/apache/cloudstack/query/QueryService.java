@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCm
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumeDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
@@ -91,4 +92,7 @@ public interface QueryService {
     public List<VolumeDetailResponse> searchForVolumeDetails(ListVolumeDetailsCmd cmd);
 
     List<NicDetailResponse> searchForNicDetails(ListNicDetailsCmd ListNicDetailsCmd);
+
+    public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd);
+
 }

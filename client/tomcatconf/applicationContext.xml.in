@@ -701,6 +701,7 @@
   <bean id="swiftManagerImpl" class="com.cloud.storage.swift.SwiftManagerImpl" />
   <bean id="syncQueueManagerImpl" class="com.cloud.async.SyncQueueManagerImpl" />
   <bean id="taggedResourceManagerImpl" class="com.cloud.tags.TaggedResourceManagerImpl" />
+  <bean id="resourceMetaDataManagerImpl" class="com.cloud.metadata.ResourceMetaDataManagerImpl" />
   <bean id="templateManagerImpl" class="com.cloud.template.TemplateManagerImpl" />
   <bean id="upgradeManagerImpl" class="com.cloud.maint.UpgradeManagerImpl" />
   <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />

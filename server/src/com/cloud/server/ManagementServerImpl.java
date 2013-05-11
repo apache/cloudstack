@@ -2489,6 +2489,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateNicDetailCmd.class);
         cmdList.add(RemoveNicDetailCmd.class);
         cmdList.add(ListNicDetailsCmd.class);
+        cmdList.add(AddResourceDetailCmd.class);
+        cmdList.add(RemoveResourceDetailCmd.class);
+        cmdList.add(ListResourceDetailsCmd.class);
+
         return cmdList;
     }
 
