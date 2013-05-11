@@ -28,12 +28,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.resource.ResourceState;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -50,7 +44,10 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.ConnectionException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -104,9 +101,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     HostDao _hostDao;
     @Inject
     VMInstanceDao _vmDao;
-    @Inject 
+    @Inject
     VolumeDao _volumeDao;
-    @Inject 
+    @Inject
     VMTemplatePoolDao _templatePoolDao;
     @Inject
     AgentManager _agentManager;
@@ -115,16 +112,16 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Inject
     StorageManager _storageMgr;
     @Inject
-    SwiftManager _swiftMgr; 
+    SwiftManager _swiftMgr;
     @Inject
-    ConfigurationManager _configMgr;   
+    ConfigurationManager _configMgr;
     @Inject
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     @Inject
     protected VMSnapshotDao _vmSnapshotDao;
     @Inject
     protected UserVmDao _userVMDao;
-    
+
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
     @Inject
@@ -142,7 +139,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("HostCapacity-Checker"));
         VirtualMachine.State.getStateMachine().registerListener(this);
-        _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageOverProvisioningFactor), true, false, false);
+        _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageMgr), true, false, false);
         _agentManager.registerForHostEvents(new ComputeCapacityListener(_capacityDao, this), true, false, false);
 
         return true;
@@ -191,8 +188,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             long actualTotalCpu = capacityCpu.getTotalCapacity();
             float cpuOvercommitRatio =Float.parseFloat(_clusterDetailsDao.findDetail(clusterId,"cpuOvercommitRatio").getValue());
             float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId,"memoryOvercommitRatio").getValue());
-            int vmCPU = (int) (svo.getCpu() * svo.getSpeed());
-            long vmMem = (long) (svo.getRamSize() * 1024L * 1024L);
+            int vmCPU = svo.getCpu() * svo.getSpeed();
+            long vmMem = svo.getRamSize() * 1024L * 1024L;
             long actualTotalMem = capacityMemory.getTotalCapacity();
             long totalMem = (long) (actualTotalMem * memoryOvercommitRatio);
             long totalCpu = (long) (actualTotalCpu * cpuOvercommitRatio);
@@ -266,8 +263,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             return;
         }
 
-        int cpu = (int) (svo.getCpu() * svo.getSpeed());
-        long ram = (long) (svo.getRamSize() * 1024L * 1024L);
+        int cpu = svo.getCpu() * svo.getSpeed();
+        long ram = svo.getRamSize() * 1024L * 1024L;
 
 
         Transaction txn = Transaction.currentTxn();
@@ -398,10 +395,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 failureReason = "Host does not have enough reserved CPU available";
             }
         } else {
-            
+
             long reservedCpuValueToUse = reservedCpu;
             long reservedMemValueToUse = reservedMem;
-            
+
             if(!considerReservedCapacity){
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("considerReservedCapacity is" + considerReservedCapacity + " , not considering reserved capacity for calculating free capacity");
@@ -458,7 +455,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         return hasCapacity;
 
     }
-    
+
     private long getVMSnapshotAllocatedCapacity(StoragePoolVO pool){
         List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId());
         long totalSize = 0;
@@ -486,39 +483,39 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
         return totalSize;
     }
-    
+
     @Override
     public long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation){
-      
+
         // Get size for all the volumes
         Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
         long totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
-        
-        // Get size for VM Snapshots 
+
+        // Get size for VM Snapshots
         totalAllocatedSize = totalAllocatedSize + getVMSnapshotAllocatedCapacity(pool);
 
         // Iterate through all templates on this storage pool
         boolean tmpinstalled = false;
         List<VMTemplateStoragePoolVO> templatePoolVOs;
         templatePoolVOs = _templatePoolDao.listByPoolId(pool.getId());
-        
-        for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {            
+
+        for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {
             if ((templateForVmCreation != null) && !tmpinstalled && (templatePoolVO.getTemplateId() == templateForVmCreation.getId())) {
                 tmpinstalled = true;
             }
             long templateSize = templatePoolVO.getTemplateSize();
             totalAllocatedSize += templateSize + _extraBytesPerVolume;
         }
-        
+
         // Add the size for the templateForVmCreation if its not already present
         /*if ((templateForVmCreation != null) && !tmpinstalled) {
-            
+
         }*/
-        
+
         return totalAllocatedSize;
     }
-    
-    
+
+
     @DB
     @Override
 	public void updateCapacityForHost(HostVO host){
@@ -528,7 +525,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         for (ServiceOfferingVO offering : offerings) {
             offeringsMap.put(offering.getId(), offering);
         }
-        
+
         long usedCpu = 0;
         long usedMemory = 0;
         long reservedMemory = 0;
@@ -574,7 +571,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         				+ usedCpu);
         		cpuCap.setUsedCapacity(usedCpu);
         	}
-	
+
 	        if (memCap.getUsedCapacity() == usedMemory && memCap.getReservedCapacity() == reservedMemory) {
 	            s_logger.debug("No need to calibrate memory capacity, host:" + host.getId() + " usedMem: " + memCap.getUsedCapacity()
 	                    + " reservedMem: " + memCap.getReservedCapacity());
@@ -591,7 +588,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 	                    + " new usedMem: " + usedMemory);
 	            memCap.setUsedCapacity(usedMemory);
 	        }
-	
+
 	        try {
 	            _capacityDao.update(cpuCap.getId(), cpuCap);
 	            _capacityDao.update(memCap.getId(), memCap);
@@ -610,24 +607,24 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             capacity.setReservedCapacity(reservedMemory);
             capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
-        	
+
             capacity = new CapacityVO(
                     host.getId(),
                     host.getDataCenterId(),
-                    host.getPodId(), 
+                    host.getPodId(),
                     host.getClusterId(),
                     usedCpu,
-                    (long)(host.getCpus().longValue() * host.getSpeed().longValue()),
+                    host.getCpus().longValue() * host.getSpeed().longValue(),
                     CapacityVO.CAPACITY_TYPE_CPU);
             capacity.setReservedCapacity(reservedCpu);
             capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
             txn.commit();
-            
+
         }
-        
+
     }
-    
+
     @Override
     public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean transitionStatus, Object opaque) {
         return true;
@@ -681,7 +678,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 releaseVmCapacity(vm, false, false, oldHostId);
             }
         }
-        
+
         if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
             boolean fromLastHost = false;
             if (vm.getLastHostId() == vm.getHostId()) {
@@ -729,7 +726,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 _capacityDao.update(CapacityVOCpu.getId(), CapacityVOCpu);
             } else {
                 CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L,
-                        (long) (server.getCpus().longValue() * server.getSpeed().longValue()),
+                        server.getCpus().longValue() * server.getSpeed().longValue(),
                         CapacityVO.CAPACITY_TYPE_CPU);
                 _capacityDao.persist(capacity);
             }
@@ -815,32 +812,32 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
 	@Override
 	public void processCancelMaintenaceEventAfter(Long hostId) {
-		updateCapacityForHost(_hostDao.findById(hostId));		
+		updateCapacityForHost(_hostDao.findById(hostId));
 	}
 
 	@Override
 	public void processCancelMaintenaceEventBefore(Long hostId) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
-	public void processDeletHostEventAfter(HostVO host) {
+    public void processDeletHostEventAfter(Host host) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
-	public void processDeleteHostEventBefore(HostVO host) {
+    public void processDeleteHostEventBefore(Host host) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void processDiscoverEventAfter(
 			Map<? extends ServerResource, Map<String, String>> resources) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -848,11 +845,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 			Long clusterId, URI uri, String username, String password,
 			List<String> hostTags) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
-	public void processPrepareMaintenaceEventAfter(Long hostId) {		
+	public void processPrepareMaintenaceEventAfter(Long hostId) {
 		_capacityDao.removeBy(Capacity.CAPACITY_TYPE_MEMORY, null, null, null, hostId);
 		_capacityDao.removeBy(Capacity.CAPACITY_TYPE_CPU, null, null, null, hostId);
 	}
@@ -860,7 +857,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 	@Override
 	public void processPrepareMaintenaceEventBefore(Long hostId) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
     @Override
@@ -871,7 +868,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);
         if(vmCount.longValue() >= maxGuestLimit.longValue()){
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() + 
+                s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +
                         " already reached max Running VMs(count includes system VMs), limit is: " + maxGuestLimit + ",Running VM counts is: "+vmCount.longValue());
             }
             return true;

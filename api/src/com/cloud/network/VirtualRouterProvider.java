@@ -23,7 +23,8 @@ public interface VirtualRouterProvider extends InternalIdentity, Identity {
     public enum VirtualRouterProviderType {
         VirtualRouter,
         ElasticLoadBalancerVm,
-        VPCVirtualRouter
+        VPCVirtualRouter,
+        InternalLbVm
     }
 
     public VirtualRouterProviderType getType();

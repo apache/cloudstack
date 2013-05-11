@@ -66,6 +66,7 @@ public class MockStoragePoolVO implements InternalIdentity {
         this.hostGuid = hostGuid;
     }
 
+    @Override
     public long getId() {
         return this.id;
     }
@@ -91,7 +92,7 @@ public class MockStoragePoolVO implements InternalIdentity {
     }
 
     public void setMountPoint(String mountPoint) {
-        this.mountPoint = mountPoint;
+        this.mountPoint = mountPoint.replace('\\', '/');
     }
 
     public long getCapacity() {

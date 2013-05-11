@@ -29,8 +29,6 @@
   </parent>
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
   </build>
   <modules>
     <module>api</module>

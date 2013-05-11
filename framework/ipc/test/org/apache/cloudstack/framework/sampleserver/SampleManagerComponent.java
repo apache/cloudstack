@@ -24,9 +24,9 @@ import java.util.TimerTask;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.eventbus.EventBus;
-import org.apache.cloudstack.framework.eventbus.EventDispatcher;
-import org.apache.cloudstack.framework.eventbus.EventHandler;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
+import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.framework.rpc.RpcCallbackListener;
 import org.apache.cloudstack.framework.rpc.RpcException;
 import org.apache.cloudstack.framework.rpc.RpcProvider;
@@ -41,7 +41,7 @@ public class SampleManagerComponent {
     private static final Logger s_logger = Logger.getLogger(SampleManagerComponent.class);
 	
 	@Inject
-	private EventBus _eventBus;
+	private MessageBus _eventBus;
  	
 	@Inject
 	private RpcProvider _rpcProvider;
@@ -58,7 +58,7 @@ public class SampleManagerComponent {
 			
 		// subscribe to all network events (for example)
 		_eventBus.subscribe("network", 
-			EventDispatcher.getDispatcher(this));
+			MessageDispatcher.getDispatcher(this));
 		
 		_timer.schedule(new TimerTask() {
 				public void run() {
@@ -72,7 +72,7 @@ public class SampleManagerComponent {
 		call.completeCall("NetworkPrepare completed");
 	}
 	
-	@EventHandler(topic="network.prepare")
+	@MessageHandler(topic="network.prepare")
 	void onPrepareNetwork(String sender, String topic, Object args) {
 	}
 	

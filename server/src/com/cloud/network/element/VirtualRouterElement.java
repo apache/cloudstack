@@ -25,7 +25,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.utils.PropertiesUtil;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
@@ -66,6 +65,7 @@ import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
+import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
@@ -242,7 +242,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
      * number like 12 2) time or tablesize like 12h, 34m, 45k, 54m , here
      * last character is non-digit but from known characters .
      */
-    private boolean containsOnlyNumbers(String str, String endChar) {
+    private static boolean containsOnlyNumbers(String str, String endChar) {
         if (str == null)
             return false;
 
@@ -271,7 +271,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         return true;
     }
 
-    private boolean validateHAProxyLBRule(LoadBalancingRule rule) {
+    public static boolean validateHAProxyLBRule(LoadBalancingRule rule) {
         String timeEndChar = "dhms";
 
         for (LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
@@ -338,7 +338,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public boolean validateLBRule(Network network, LoadBalancingRule rule) {
-        if (canHandle(network, Service.Lb)) {
+        List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
+        rules.add(rule);
+        if (canHandle(network, Service.Lb) && canHandleLbRules(rules)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 return true;
@@ -351,6 +353,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (canHandle(network, Service.Lb)) {
+            if (!canHandleLbRules(rules)) {
+                return false;
+            }
+            
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " +
@@ -358,8 +364,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return true;
             }
 
-            if (!_routerMgr.applyFirewallRules(network, rules, routers)) {
-                throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
+            if (!_routerMgr.applyLoadBalancingRules(network, rules, routers)) {
+                throw new CloudRuntimeException("Failed to apply load balancing rules in network " + network.getId());
             } else {
                 return true;
             }
@@ -452,7 +458,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         return capabilities;
     }
 
-    private static String getHAProxyStickinessCapability() {
+    public static String getHAProxyStickinessCapability() {
         LbStickinessMethod method;
         List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>(1);
 
@@ -557,8 +563,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
         lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated");
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
-
         lbCapabilities.put(Capability.SupportedStickinessMethods, getHAProxyStickinessCapability());
+        lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
 
         capabilities.put(Service.Lb, lbCapabilities);
 
@@ -715,8 +721,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public VirtualRouterProvider configure(ConfigureVirtualRouterElementCmd cmd) {
         VirtualRouterProviderVO element = _vrProviderDao.findById(cmd.getId());
-        if (element == null) {
-            s_logger.debug("Can't find element with network service provider id " + cmd.getId());
+        if (element == null || !(element.getType() == VirtualRouterProviderType.VirtualRouter || element.getType() == VirtualRouterProviderType.VPCVirtualRouter)) {
+            s_logger.debug("Can't find Virtual Router element with network service provider id " + cmd.getId());
             return null;
         }
 
@@ -728,6 +734,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public VirtualRouterProvider addElement(Long nspId, VirtualRouterProviderType providerType) {
+        if (!(providerType == VirtualRouterProviderType.VirtualRouter || providerType == VirtualRouterProviderType.VPCVirtualRouter)) {
+            throw new InvalidParameterValueException("Element " + this.getName() + " supports only providerTypes: " + 
+        VirtualRouterProviderType.VirtualRouter.toString() + " and " + VirtualRouterProviderType.VPCVirtualRouter);
+        }
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, providerType);
         if (element != null) {
             s_logger.debug("There is already a virtual router element with service provider id " + nspId);
@@ -801,7 +811,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public VirtualRouterProvider getCreatedElement(long id) {
-        return _vrProviderDao.findById(id);
+        VirtualRouterProvider provider = _vrProviderDao.findById(id);
+        if (!(provider.getType() == VirtualRouterProviderType.VirtualRouter || provider.getType() == VirtualRouterProviderType.VPCVirtualRouter)) {
+            throw new InvalidParameterValueException("Unable to find provider by id");
+        }
+        return provider;
     }
 
     @Override
@@ -911,6 +925,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (enabled != null) {
             sc.addAnd(sc.getEntity().isEnabled(), Op.EQ, enabled);
         }
+        
+        //return only VR and VPC VR
+        sc.addAnd(sc.getEntity().getType(), Op.IN, VirtualRouterProvider.VirtualRouterProviderType.VPCVirtualRouter, VirtualRouterProvider.VirtualRouterProviderType.VirtualRouter);
+        
         return sc.list();
     }
 
@@ -945,5 +963,21 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 			List<LoadBalancingRule> lbrules) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	private boolean canHandleLbRules(List<LoadBalancingRule> rules) {
+	    Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
+	    if (!lbCaps.isEmpty()) {
+	        String schemeCaps = lbCaps.get(Capability.LbSchemes);
+	        if (schemeCaps != null) {
+	            for (LoadBalancingRule rule : rules) {
+	                if (!schemeCaps.contains(rule.getScheme().toString())) {
+	                    s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
+	                    return false;
+	                }
+	            }
+	        }
+	    }
+	    return true;
 	}
 }

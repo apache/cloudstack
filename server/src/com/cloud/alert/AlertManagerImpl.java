@@ -70,6 +70,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
@@ -106,7 +107,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
     @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private ConfigurationDao _configDao;
     @Inject private ResourceManager _resourceMgr;
-    @Inject private ConfigurationManager _configMgr;   
+    @Inject private ConfigurationManager _configMgr;
+    @Inject ConfigurationServer _configServer;
     private Timer _timer = null;
     private float _cpuOverProvisioningFactor = 1;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // one hour by default
@@ -562,19 +564,33 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 float overProvFactor = 1f;
                 capacity = _capacityDao.findCapacityBy(capacityType.intValue(), cluster.getDataCenterId(), null, cluster.getId());
 
-                if (capacityType == Capacity.CAPACITY_TYPE_STORAGE){
-                    capacity.add(getUsedStats(capacityType, cluster.getDataCenterId(), cluster.getPodId(), cluster.getId()));
+                // cpu and memory allocated capacity notification threshold can be defined at cluster level, so getting the value if they are defined at cluster level
+                double capacityValue = 0;
+                switch (capacityType) {
+                    case Capacity.CAPACITY_TYPE_STORAGE:
+                        capacity.add(getUsedStats(capacityType, cluster.getDataCenterId(), cluster.getPodId(), cluster.getId()));
+                        capacityValue = Double.parseDouble(_configServer.getConfigValue(Config.StorageCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
+                        break;
+                    case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
+                        capacityValue = Double.parseDouble(_configServer.getConfigValue(Config.StorageAllocatedCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
+                        break;
+                    case Capacity.CAPACITY_TYPE_CPU:
+                        overProvFactor = ApiDBUtils.getCpuOverprovisioningFactor();
+                        capacityValue = Double.parseDouble(_configServer.getConfigValue(Config.CPUCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
+                        break;
+                    case Capacity.CAPACITY_TYPE_MEMORY:
+                        capacityValue = Double.parseDouble(_configServer.getConfigValue(Config.MemoryCapacityThreshold.key(), Config.ConfigurationParameterScope.cluster.toString(), cluster.getId()));
+                        break;
+                    default:
+                        capacityValue = _capacityTypeThresholdMap.get(capacityType);
                 }
                 if (capacity == null || capacity.size() == 0){
                     continue;
-                }        		
-                if (capacityType == Capacity.CAPACITY_TYPE_CPU){
-                    overProvFactor = ApiDBUtils.getCpuOverprovisioningFactor();
                 }
 
                 double totalCapacity = capacity.get(0).getTotalCapacity() * overProvFactor; 
                 double usedCapacity =  capacity.get(0).getUsedCapacity() + capacity.get(0).getReservedCapacity();
-                if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
+                if (totalCapacity != 0 && usedCapacity/totalCapacity > capacityValue){
                     generateEmailAlert(ApiDBUtils.findZoneById(cluster.getDataCenterId()), ApiDBUtils.findPodById(cluster.getPodId()), cluster,
                             totalCapacity, usedCapacity, capacityType);
                 }

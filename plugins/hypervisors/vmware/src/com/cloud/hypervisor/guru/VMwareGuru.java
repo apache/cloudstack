@@ -38,6 +38,8 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
+import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -282,10 +284,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
                 cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
                 cmd instanceof CopyVolumeCommand ||
+                cmd instanceof CreateVolumeOVACommand ||
+                cmd instanceof PrepareOVAPackingCommand ||
                 cmd instanceof CreateVolumeFromSnapshotCommand) {
             needDelegation = true;
         }
+        /* Fang: remove this before checking in */
+        // needDelegation = false;
 
+        if (cmd instanceof PrepareOVAPackingCommand ||
+                cmd instanceof CreateVolumeOVACommand	) {
+                cmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
+        }
         if(needDelegation) {
             HostVO host = _hostDao.findById(hostId);
             assert(host != null);
@@ -311,6 +321,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                         cmd instanceof CreatePrivateTemplateFromVolumeCommand || 
                         cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
                         cmd instanceof CopyVolumeCommand ||
+                        cmd instanceof CreateVolumeOVACommand ||
+                        cmd instanceof PrepareOVAPackingCommand ||
                         cmd instanceof CreateVolumeFromSnapshotCommand) {
 
                     String workerName = _vmwareMgr.composeWorkerName();

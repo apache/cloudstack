@@ -83,4 +83,7 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity 
     String getVmIp();
 
     boolean isPortable();
+
+    Long getNetworkId();
+
 }

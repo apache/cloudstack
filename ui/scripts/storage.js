@@ -89,20 +89,7 @@
                         dataType: "json",
                         async: true,
                         success: function(json) {												 
-													var zoneObjs;
-							            if(args.context.zoneType == null || args.context.zoneType == '') { //all types
-														zoneObjs = json.listzonesresponse.zone;			
-													}
-													else { //Basic type or Advanced type
-														zoneObjs = [];
-														var items = json.listzonesresponse.zone;
-														if(items != null) {
-															for(var i = 0; i < items.length; i++) {
-																if(items[i].networktype == args.context.zoneType) 
-																	zoneObjs.push(items[i]);
-															}
-														}
-													}						
+													var zoneObjs = json.listzonesresponse.zone;		
 													args.response.success({descriptionField: 'name', data: zoneObjs});													                      
                         }
                       });
@@ -227,20 +214,7 @@
                         dataType: "json",
                         async: true,
                         success: function(json) {												 
-													var zoneObjs;
-							            if(args.context.zoneType == null || args.context.zoneType == '') { //all types
-														zoneObjs = json.listzonesresponse.zone;			
-													}
-													else { //Basic type or Advanced type
-														zoneObjs = [];
-														var items = json.listzonesresponse.zone;
-														if(items != null) {
-															for(var i = 0; i < items.length; i++) {
-																if(items[i].networktype == args.context.zoneType) 
-																	zoneObjs.push(items[i]);
-															}
-														}
-													}						
+													var zoneObjs = json.listzonesresponse.zone;																													
 													args.response.success({descriptionField: 'name', data: zoneObjs});													                      
                         }
                       });											
@@ -398,18 +372,12 @@
            
             if(args.context != null) {
               if("instances" in args.context) {
-		$.extend(data, {
-		  virtualMachineId: args.context.instances[0].id
-		});
+            		$.extend(data, {
+            		  virtualMachineId: args.context.instances[0].id
+            		});
               }
             }
-
-            if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
-              $.extend(data, {
-                zonetype: args.context.zoneType
-              });
-            }
-
+            
             $.ajax({
               url: createURL('listVolumes'),
               data: data,             
@@ -1644,7 +1612,7 @@
     if(jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
       allowedActions.push("takeSnapshot");
       allowedActions.push("recurringSnapshot");
-      if((jsonObj.hypervisor == "XenServer" || jsonObj.hypervisor == "KVM" || jsonObj.hypervisor == "VMware") && jsonObj.type == "DATADISK") {
+      if(jsonObj.type == "DATADISK") {
     	  allowedActions.push("resize");
       }
     }

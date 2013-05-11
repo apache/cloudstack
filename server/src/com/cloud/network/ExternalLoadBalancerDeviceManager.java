@@ -23,7 +23,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Manager;
 
@@ -89,7 +89,7 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
      * @return true if successfully applied rules
      * @throws ResourceUnavailableException
      */
-    public boolean applyLoadBalancerRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
+    public boolean applyLoadBalancerRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException;
 
     /**
      * implements or shutdowns guest network on the load balancer device assigned to the guest network
@@ -102,6 +102,6 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
     public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException,
             InsufficientCapacityException;
 
-    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<? extends FirewallRule> rules)
+    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<LoadBalancingRule> rules)
             throws ResourceUnavailableException;
 }

@@ -59,6 +59,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -76,6 +77,8 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
+import com.cloud.network.dao.AccountGuestVlanMapDao;
+import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
@@ -222,6 +225,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject VolumeManager volumeMgr;
     @Inject
     private AffinityGroupDao _affinityGroupDao;
+    @Inject
+    private AccountGuestVlanMapDao _accountGuestVlanMapDao;
+    @Inject
+    private DataCenterVnetDao _dataCenterVnetDao;
 
     private List<UserAuthenticator> _userAuthenticators;
     List<UserAuthenticator> _userPasswordEncoders;
@@ -698,6 +705,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     s_logger.debug("Account specific Virtual IP ranges " + " are successfully released as a part of account id=" + accountId + " cleanup.");
                 }
             }
+
+            // release account specific guest vlans
+            List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(accountId);
+            for (AccountGuestVlanMapVO map : maps) {
+                _dataCenterVnetDao.releaseDedicatedGuestVlans(map.getId());
+            }
+            int vlansReleased = _accountGuestVlanMapDao.removeByAccountId(accountId);
+            s_logger.info("deleteAccount: Released " + vlansReleased + " dedicated guest vlan ranges from account " + accountId);
 
             return true;
         } catch (Exception ex) {

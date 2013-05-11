@@ -48,8 +48,10 @@ import com.cloud.dc.*;
 import com.cloud.dc.dao.DcDetailsDao;
 import com.cloud.user.*;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -59,6 +61,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -112,6 +115,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     @Inject private ConfigurationDao _configDao;
     @Inject private DataCenterDao _zoneDao;
+    @Inject private ClusterDao _clusterDao;
+    @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private HostPodDao _podDao;
     @Inject private DiskOfferingDao _diskOfferingDao;
     @Inject private ServiceOfferingDao _serviceOfferingDao;
@@ -698,7 +703,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                         return dcDetailVO.getValue();
                                     } break;
 
-                    case cluster:   ClusterDetailsVO cluster = _clusterDetailsDao.findById(resourceId);
+                    case cluster:   ClusterVO cluster = _clusterDao.findById(resourceId);
                                     if (cluster == null) {
                                         throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
                                     }
@@ -707,7 +712,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                         return clusterDetailsVO.getValue();
                                     } break;
 
-                    case pool:      StoragePoolDetailVO pool = _storagePoolDetailsDao.findById(resourceId);
+                    case storagepool:      StoragePoolVO pool = _storagePoolDao.findById(resourceId);
                                     if (pool == null) {
                                         throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
                                     }
@@ -716,7 +721,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                         return storagePoolDetailVO.getValue();
                                     } break;
 
-                    case account:   AccountDetailVO account = _accountDetailsDao.findById(resourceId);
+                    case account:   AccountVO account = _accountDao.findById(resourceId);
                                     if (account == null) {
                                         throw new InvalidParameterValueException("unable to find account by id " + resourceId);
                                     }
@@ -1012,7 +1017,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 "Offering for Shared Security group enabled networks",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, true, false);
+                null, Network.GuestType.Shared, true, true, false, false, false);
 
         defaultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedSGNetworkOffering);
@@ -1029,7 +1034,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 "Offering for Shared networks",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, true, false);
+                null, Network.GuestType.Shared, true, true, false, false, false);
 
         defaultSharedNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
@@ -1046,7 +1051,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 "Offering for Isolated networks with Source Nat service enabled",
                 TrafficType.Guest,
                 false, false, null, null, true, Availability.Required,
-                null, Network.GuestType.Isolated, true, false, false);
+                null, Network.GuestType.Isolated, true, false, false, false, true);
 
         defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
@@ -1064,7 +1069,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 "Offering for Isolated networks with no Source Nat service",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, true, true, false);
+                null, Network.GuestType.Isolated, true, true, false, false, false);
 
         defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);
@@ -1081,7 +1086,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true);
+                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false);
 
         defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
@@ -1098,7 +1103,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 "Offering for Isolated Vpc networks with Source Nat service enabled",
                 TrafficType.Guest,
                 false, false, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, false, false, false);
+                null, Network.GuestType.Isolated, false, false, false, false, true);
 
         defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
         defaultNetworkOfferingForVpcNetworks = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworks);
@@ -1128,7 +1133,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 "Offering for Isolated Vpc networks with Source Nat service enabled and LB service Disabled",
                 TrafficType.Guest,
                 false, false, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, false, false, false);
+                null, Network.GuestType.Isolated, false, false, false, false, false);
 
         defaultNetworkOfferingForVpcNetworksNoLB.setState(NetworkOffering.State.Enabled);
         defaultNetworkOfferingForVpcNetworksNoLB = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworksNoLB);

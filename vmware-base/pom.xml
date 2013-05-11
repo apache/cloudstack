@@ -59,8 +59,4 @@
       <version>1.4</version>
     </dependency>
   </dependencies>
-  <build>
-    <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-  </build>
 </project>

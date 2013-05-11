@@ -111,6 +111,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
@@ -155,6 +157,10 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
+import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
+import com.cloud.agent.api.storage.PrepareOVAPackingAnswer;
+import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -233,6 +239,7 @@ import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.GuestInfo;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.HostFirewallRuleset;
@@ -392,6 +399,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((DeleteStoragePoolCommand) cmd);
             } else if (clz == CopyVolumeCommand.class) {
                 answer = execute((CopyVolumeCommand) cmd);
+            } else if (clz == CreateVolumeOVACommand.class) {
+                answer = execute((CreateVolumeOVACommand) cmd);
+            } else if (clz == PrepareOVAPackingCommand.class)  {
+                answer = execute((PrepareOVAPackingCommand) cmd);
             } else if (clz == AttachVolumeCommand.class) {
                 answer = execute((AttachVolumeCommand) cmd);
             } else if (clz == AttachIsoCommand.class) {
@@ -476,6 +487,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((ResizeVolumeCommand) cmd);
             } else if (clz == UnregisterVMCommand.class) {
                 return execute((UnregisterVMCommand) cmd);
+            } else if (clz == ScaleVmCommand.class) {
+                return execute((ScaleVmCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1318,6 +1331,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
+            if(!isVMWareToolsInstalled(vmMo)){
+                String errMsg = "vmware tools is not installed or not running, cannot add nic to vm " + vmName;
+                s_logger.debug(errMsg);
+                return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + errMsg); 
+            }
+
             // TODO need a way to specify the control of NIC device type
             VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
 
@@ -1392,6 +1411,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
+            if(!isVMWareToolsInstalled(vmMo)){
+                String errMsg = "vmware tools not installed or not running, cannot remove nic from vm " + vmName;
+                s_logger.debug(errMsg);
+                return new UnPlugNicAnswer(cmd, false, "Unable to execute unPlugNicCommand due to " + errMsg);
+            }
+
             VirtualDevice nic = findVirtualNicDevice(vmMo, cmd.getNic().getMac());
             if ( nic == null ) {
                 return new UnPlugNicAnswer(cmd, true, "success");
@@ -1433,10 +1458,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         String args = "";
+        String snatArgs = "";
+
         if (ip.isAdd()) {
             args += " -A ";
+            snatArgs += " -A ";
         } else {
             args += " -D ";
+            snatArgs += " -D ";
         }
 
         args += " -l ";
@@ -1459,6 +1488,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         if (!result.first()) {
             throw new InternalErrorException("Unable to assign public IP address");
+        }
+
+        if (ip.isSourceNat()) {
+            snatArgs += " -l ";
+            snatArgs += ip.getPublicIp();
+            snatArgs += " -c ";
+            snatArgs += "eth" + ethDeviceNum;
+
+            Pair<Boolean, String> result_gateway = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/vpc_privateGateway.sh " + args);
+
+            if (!result_gateway.first()) {
+                throw new InternalErrorException("Unable to configure source NAT for public IP address.");
+            }
+
         }
     }
 
@@ -2048,6 +2092,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return validatedDisks.toArray(new VolumeTO[0]);
     }
 
+    protected ScaleVmAnswer execute(ScaleVmCommand cmd) {
+
+        VmwareContext context = getServiceContext();
+        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        try{
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            int ramMb = (int) (vmSpec.getMinRam());
+
+            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getSpeed(), vmSpec.getSpeed(),(int) (vmSpec.getMaxRam()), ramMb, vmSpec.getLimitCpuUse());
+
+            if(!vmMo.configureVm(vmConfigSpec)) {
+                throw new Exception("Unable to execute ScaleVmCommand");
+            }
+        }catch(Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new ScaleVmAnswer(cmd, false, "Unable to execute ScaleVmCommand due to " + e.toString());
+        }
+        return new ScaleVmAnswer(cmd, true, null);
+    }
+
     protected StartAnswer execute(StartCommand cmd) {
 
         if (s_logger.isInfoEnabled()) {
@@ -2151,7 +2217,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
             vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024*1024)), ramMb,
             translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), vmSpec.getLimitCpuUse());
-           
+
+            vmConfigSpec.setMemoryHotAddEnabled(true);
+            vmConfigSpec.setCpuHotAddEnabled(true);
+
             if ("true".equals(vmSpec.getDetails().get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG))) {
                 s_logger.debug("Nested Virtualization enabled in configuration, checking hypervisor capability");
                 ManagedObjectReference hostMor = vmMo.getRunningHost().getMor();
@@ -3905,8 +3974,48 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    public CreateVolumeOVAAnswer execute(CreateVolumeOVACommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource CreateVolumeOVACommand: " + _gson.toJson(cmd));
+        }
 
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            return (CreateVolumeOVAAnswer) mgr.getStorageManager().execute(this, cmd);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext();
+            }
 
+            String msg = "CreateVolumeOVACommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new CreateVolumeOVAAnswer(cmd, false, msg);
+        }
+    }
+
+    protected Answer execute(PrepareOVAPackingCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource PrepareOVAPackingCommand: " + _gson.toJson(cmd));
+        }
+
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+            return mgr.getStorageManager().execute(this, cmd);
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext();
+            }
+
+            String details = "PrepareOVAPacking for template failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(details, e);
+            return new PrepareOVAPackingAnswer(cmd, false, details);
+        }
+    }
     private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
             String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
 
@@ -5170,4 +5279,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 		// TODO Auto-generated method stub
 
 	}
+
+    private boolean isVMWareToolsInstalled(VirtualMachineMO vmMo) throws Exception{
+        GuestInfo guestInfo = vmMo.getVmGuestInfo();
+        return (guestInfo != null && guestInfo.getGuestState() != null && guestInfo.getGuestState().equalsIgnoreCase("running"));
+    }	
 }

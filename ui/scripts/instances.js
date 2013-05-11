@@ -204,13 +204,7 @@
 					  affinitygroupid: args.context.affinityGroups[0].id
 					});		
 				}
-
-        if(args.context.zoneType != null && args.context.zoneType.length > 0) { //Basic type or Advanced type
-          $.extend(data, {
-            zonetype: args.context.zoneType
-          });
-	      }
-        
+              
         $.ajax({
           url: createURL('listVirtualMachines'),
           data: data,
@@ -940,7 +934,7 @@
                         var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
                         var items = [];
                         $(serviceofferings).each(function() {
-                          items.push({id: this.id, description: this.displaytext});
+                          items.push({id: this.id, description: this.name});
                         });
                         args.response.success({data: items});
                       }
@@ -1253,9 +1247,9 @@
                 dataType: "json",
                 async: true,
                 success: function(json) {
-                  var jid = json.scalevirtualmachineresponse.jobid;
-                  args.response.success(
-                    {_custom:
+                //  var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success();
+                   /* {_custom:
                      {jobId: jid,
                       getUpdatedItem: function(json) {
                         return json.queryasyncjobresultresponse.jobresult.virtualmachine;
@@ -1264,8 +1258,8 @@
                         return vmActionfilter;
                       }
                      }
-                    }
-                  );
+                    } */
+                 
                 },
                  error:function(json){
                      args.response.error(parseXMLHttpResponse(json));
@@ -1434,8 +1428,124 @@
           nics: {
             title: 'label.nics',
             multiple: true,
+            actions: {
+              add: {
+                label: 'Add network to VM',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm that you would like to add a new VM NIC for this network.';
+                  },
+                  notification: function(args) {
+                    return 'Add network to VM';
+                  }
+                },
+                createForm: {
+                  title: 'Add network to VM',
+                  desc: 'Please specify the network that you would like to add this VM to. A new NIC will be added for this network.',
+                  fields: {
+                    networkid: {
+                      label: 'label.network',
+                      select: function(args) {
+                        $.ajax({
+                          url: createURL('listNetworks'),
+                          data: {
+                            listAll: true,
+                            zoneid: args.context.instances[0].zoneid
+                          },
+                          success: function(json) {
+                            args.response.success({
+                              data: $.map(json.listnetworksresponse.network, function(network) {
+                                return {
+                                  id: network.id,
+                                  description: network.name
+                                };
+                              })
+                            });
+                          }
+                        });
+                      }
+                    }
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('addNicToVirtualMachine'),
+                    data: {
+                      virtualmachineid: args.context.instances[0].id,
+                      networkid: args.data.networkid
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.addnictovirtualmachineresponse.jobid }
+                      });
+                    }
+                  });
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+
+              makeDefault: {
+                label: 'Set default NIC',
+                messages: {
+                  confirm: function() {
+                    return 'Please confirm that you would like to make this NIC the default for this VM.';
+                  },
+                  notification: function(args) {
+                    return 'Set default NIC'
+                  }
+                },
+                action: function (args) {
+                  $.ajax({
+                    url: createURL('updateDefaultNicForVirtualMachine'),
+                    data: {
+                      virtualmachineid: args.context.instances[0].id,
+                      nicid: args.context.nics[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.updatedefaultnicforvirtualmachineresponse.jobid }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
+              // Remove NIC/Network from VM
+              remove: {
+                label: 'label.action.delete.nic',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.action.delete.nic';
+                  },
+                  notification: function(args) {
+                    return 'label.action.delete.nic';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL('removeNicFromVirtualMachine'),
+                    data: {
+                      virtualmachineid: args.context.instances[0].id,
+                      nicid: args.context.nics[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: { jobId: json.removenicfromvirtualmachineresponse.jobid }
+                      })
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            },
             fields: [
               {
+                id: { label: 'ID' },
                 name: { label: 'label.name', header: true },
                 networkname: {label: 'Network Name' },
                 type: { label: 'label.type' },
@@ -1465,26 +1575,33 @@
               }
             },
             dataProvider: function(args) {
-                    $.ajax({
-                     url:createURL("listVirtualMachines&details=nics&id=" + args.context.instances[0].id),
-                     dataType: "json",
-                     async:true,
-                     success:function(json) {
-                     // Handling the display of network name for a VM under the NICS tabs
-                     args.response.success({
-                     data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
-                     var name = 'NIC ' + (index + 1);                    
-                     if (nic.isdefault) {
-                          name += ' (' + _l('label.default') + ')';
-                          }
-                     return $.extend(nic, {
+              $.ajax({
+                url:createURL("listVirtualMachines&details=nics&id=" + args.context.instances[0].id),
+                dataType: "json",
+                async:true,
+                success:function(json) {
+                  // Handling the display of network name for a VM under the NICS tabs
+                  args.response.success({
+                    actionFilter: function(args) {
+                      if (args.context.item.isdefault) {
+                        return [];
+                      } else {
+                        return ['remove', 'makeDefault'];
+                      }
+                    },
+                    data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
+                      var name = 'NIC ' + (index + 1);
+                      if (nic.isdefault) {
+                        name += ' (' + _l('label.default') + ')';
+                      }
+                      return $.extend(nic, {
                         name: name
-                               });
-                            })
-                        });
-                     }
-                });
-              }
+                      });
+                    })
+                  });
+                }
+              });
+            }
           },
 
            /**
@@ -1501,7 +1618,16 @@
               }
             ],
             dataProvider: function(args) {
-              args.response.success({data: args.context.instances[0].securitygroup});
+             // args.response.success({data: args.context.instances[0].securitygroup});
+                  $.ajax({
+                   url:createURL("listVirtualMachines&details=secgrp&id=" + args.context.instances[0].id),
+                   dataType: "json",
+                   async:true,	
+                   success:function(json) {
+                     args.response.success({data: json.listvirtualmachinesresponse.virtualmachine[0].securitygroup});	
+                }
+	
+              });
             }
           },
 					
@@ -1517,15 +1643,22 @@
               networkkbswrite: { label: 'label.network.write' }
             },
             dataProvider: function(args) {
-              var jsonObj = args.context.instances[0];
-              args.response.success({
+              $.ajax({
+                url:createURL("listVirtualMachines&details=stats&id=" + args.context.instances[0].id),
+                dataType: "json",	
+                async:true,
+                success:function(json) {
+                var jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];
+               args.response.success({
                 data: {
                   totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
                   cpuused: jsonObj.cpuused,
                   networkkbsread: (jsonObj.networkkbsread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
                   networkkbswrite: (jsonObj.networkkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)
-                }
-              });
+                  }
+                });
+              }
+             });
             }
           }
         }

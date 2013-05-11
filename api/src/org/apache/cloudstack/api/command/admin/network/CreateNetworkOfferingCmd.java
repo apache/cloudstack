@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -95,6 +94,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.IS_PERSISTENT, type=CommandType.BOOLEAN, description="true if network offering supports persistent networks; defaulted to false if not specified")
     private Boolean isPersistent;
+    
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, since="4.2.0", description="Template details in key/value pairs." +
+    		" Supported keys are internallbprovider/publiclbprovider with service provider as a value")
+    protected Map details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -214,6 +217,16 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         }
 
         return capabilityMap;
+    }
+    
+    public Map<String, String> getDetails() {
+        if (details == null || details.isEmpty()) {
+            return null;
+        }
+
+        Collection paramsCollection = details.values();
+        Map<String, String> params = (Map<String, String>) (paramsCollection.toArray())[0];
+        return params;
     }
 
     /////////////////////////////////////////////////////

@@ -86,7 +86,7 @@
           });
         };
 
-        var makeSelects = function(name, data, fields, options) {
+        var makeSelects = function(name, data, fields, options, selectedObj) {
           var $selects = $('<div>');
           options = options ? options : {};
 
@@ -151,7 +151,11 @@
                       .append($('<div>').addClass('desc').html(_s(this[fields.desc])))
                   )
                   .data('json-obj', this);
-
+            
+            if(selectedObj != null && selectedObj.id == item.id) {                
+              $select.find('input[type=checkbox]').attr('checked', 'checked');           
+            }                        
+            
             $selects.append($select);
 
             if (item._singleSelect) {
@@ -485,17 +489,32 @@
           'affinity': function($step, formData) {
             return {
               response: {
-                success: function(args) {
-                  $step.find('.select-container').append(
-                    makeSelects('affinity-groups', args.data.affinityGroups, {
-                      name: 'name',
-                      desc: 'description',
-                      id: 'id'
-                    }, {
-                      type: 'checkbox',
-                      'wizard-field': 'affinity-groups'
-                    })
-                  );
+                success: function(args) {                  
+                  if (args.data.affinityGroups && args.data.affinityGroups.length) {
+                    $step.prepend(
+                      $('<div>').addClass('main-desc').append(
+                        $('<p>').html(_l('message.select.affinity.groups'))
+                      )
+                    );
+                    $step.find('.select-container').append(
+                      makeSelects(
+                        'affinity-groups', 
+                        args.data.affinityGroups, 
+                        {
+                          name: 'name',
+                          desc: 'description',
+                          id: 'id'
+                        }, 
+                        {
+                          type: 'checkbox',
+                          'wizard-field': 'affinity-groups'
+                        },
+                        args.data.selectedObj
+                      )
+                    ); 
+                  } else {
+                    $step.find('.select-container').append($('<p>').html(_l('message.no.affinity.groups')));
+                  }
                 }
               }
             };

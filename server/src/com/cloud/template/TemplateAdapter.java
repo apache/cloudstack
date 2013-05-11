@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -55,6 +56,8 @@ public interface TemplateAdapter extends Adapter {
 	public TemplateProfile prepareDelete(DeleteTemplateCmd cmd);
 
 	public TemplateProfile prepareDelete(DeleteIsoCmd cmd);
+
+	public TemplateProfile prepareExtractTemplate(ExtractTemplateCmd cmd);
 
 	public boolean delete(TemplateProfile profile);
 	

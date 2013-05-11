@@ -70,6 +70,9 @@ public class ListClustersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.MANAGED_STATE, type=CommandType.STRING, description="whether this cluster is managed by cloudstack")
     private String managedState;
 
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the clusters")
     private Boolean showCapacities;
 
@@ -114,7 +117,10 @@ public class ListClustersCmd extends BaseListCmd {
         this.managedState = managedstate;
     }
 
-
+    public String getZoneType() {
+        return zoneType;
+    }
+    
     public Boolean getShowCapacities() {
         return showCapacities;
     }

@@ -73,11 +73,12 @@
       <artifactId>commons-discovery</artifactId>
       <version>${cs.discovery.version}</version>
     </dependency>
-    <dependency>
+    <!--     <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${cs.guava.version}</version>
     </dependency>
+    -->
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
@@ -172,15 +173,6 @@
         <directory>${project.basedir}/test/resources</directory>
       </testResource>
     </testResources>
-    <!-- 
-    <testResources>
-      <testResource>
-        <directory>test/resources</directory>
-      </testResource>
-      <testResource>
-        <directory>conf</directory>
-      </testResource>
-    </testResources> -->    
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

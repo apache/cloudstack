@@ -85,6 +85,7 @@ public class ApiConstants {
     public static final String GSLB_SERVICE_TYPE = "gslbservicetype";
     public static final String GSLB_STICKY_SESSION_METHOD = "gslbstickysessionmethodname";
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
+    public static final String GUEST_VLAN_RANGE = "guestvlanrange";
     public static final String HA_ENABLE = "haenable";
     public static final String HOST_ID = "hostid";
     public static final String HOST_NAME = "hostname";
@@ -223,6 +224,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VLAN = "vlan";
+    public static final String VLAN_RANGE = "vlanrange";
     public static final String REMOVE_VLAN="removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String VM_AVAILABLE = "vmavailable";
@@ -480,6 +482,12 @@ public class ApiConstants {
     public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";
     public static final String HEALTHCHECK_UNHEALTHY_THRESHOLD = "unhealthythreshold";
     public static final String HEALTHCHECK_PINGPATH = "pingpath";
+    public static final String SOURCE_PORT = "sourceport";
+    public static final String INSTANCE_PORT = "instanceport";
+    public static final String SOURCE_IP = "sourceipaddress";
+    public static final String SOURCE_IP_NETWORK_ID = "sourceipaddressnetworkid";
+    public static final String SCHEME = "scheme";
+    public static final String PROVIDER_TYPE = "providertype";
     public static final String AFFINITY_GROUP_IDS = "affinitygroupids";
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";

@@ -2217,11 +2217,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }           
 
             String args = "vpc_ipassoc.sh " + routerIp;
+            String snatArgs = "vpc_privateGateway.sh " + routerIp;
 
             if (ip.isAdd()) {
                 args += " -A ";
+                snatArgs += " -A ";
             } else {
                 args += " -D ";
+                snatArgs+= " -D ";
             }
 
             args += " -l ";
@@ -2244,6 +2247,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"vpc_ipassoc\" failed.");
             }
+
+            if (ip.isSourceNat()) {
+                snatArgs += " -l " + ip.getPublicIp();
+                snatArgs += " -c " + "eth" + correctVif.getDevice(conn);
+
+                result = callHostPlugin(conn, "vmops", "routerProxy", "args", snatArgs);
+                if (result == null || result.isEmpty()) {
+                    throw new InternalErrorException("Xen plugin \"vcp_privateGateway\" failed.");
+                }
+            }
+
         } catch (Exception e) {
             String msg = "Unable to assign public IP address due to " + e.toString();
             s_logger.warn(msg, e);

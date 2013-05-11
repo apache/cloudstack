@@ -36,7 +36,8 @@
   <xi:include href="security-groups.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="external-firewalls-and-load-balancers.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="load-balancer-rules.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="gslb.xml"
+    xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="guest-ip-ranges.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="acquire-new-ip-address.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="release-ip-address.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

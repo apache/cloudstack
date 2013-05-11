@@ -25,8 +25,6 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.network.rules.LoadBalancer;
-import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -37,8 +35,8 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -52,6 +50,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
@@ -130,6 +129,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.dao.AccountGuestVlanMapDao;
+import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -155,6 +156,8 @@ import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
+import com.cloud.network.dao.AccountGuestVlanMapDao;
+import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -179,6 +182,7 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
@@ -202,6 +206,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
@@ -309,6 +314,7 @@ public class ApiDBUtils {
     static GuestOSDao _guestOSDao;
     static GuestOSCategoryDao _guestOSCategoryDao;
     static HostDao _hostDao;
+    static AccountGuestVlanMapDao _accountGuestVlanMapDao;
     static IPAddressDao _ipAddressDao;
     static LoadBalancerDao _loadBalancerDao;
     static SecurityGroupDao _securityGroupDao;
@@ -416,6 +422,7 @@ public class ApiDBUtils {
     @Inject private GuestOSDao guestOSDao;
     @Inject private GuestOSCategoryDao guestOSCategoryDao;
     @Inject private HostDao hostDao;
+    @Inject private AccountGuestVlanMapDao accountGuestVlanMapDao;
     @Inject private IPAddressDao ipAddressDao;
     @Inject private LoadBalancerDao loadBalancerDao;
     @Inject private SecurityGroupDao securityGroupDao;
@@ -495,6 +502,7 @@ public class ApiDBUtils {
     @Inject private VMSnapshotDao vmSnapshotDao;
     @Inject private NicSecondaryIpDao nicSecondaryIpDao;
     @Inject private VpcProvisioningService vpcProvSvc;
+    @Inject private ApplicationLoadBalancerRuleDao _appLbDao;
     @Inject private AffinityGroupDao affinityGroupDao;
     @Inject private AffinityGroupJoinDao affinityGroupJoinDao;
     @Inject private GlobalLoadBalancingRulesService gslbService;
@@ -512,6 +520,7 @@ public class ApiDBUtils {
         _templateMgr = templateMgr;
 
         _accountDao = accountDao;
+        _accountGuestVlanMapDao = accountGuestVlanMapDao;
         _accountVlanMapDao = accountVlanMapDao;
         _clusterDao = clusterDao;
         _capacityDao = capacityDao;
@@ -945,6 +954,15 @@ public class ApiDBUtils {
         }
     }
 
+    public static Long getAccountIdForGuestVlan(long vlanDbId) {
+        List<AccountGuestVlanMapVO> accountGuestVlanMaps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByVlan(vlanDbId);
+        if (accountGuestVlanMaps.isEmpty()) {
+            return null;
+        } else {
+            return accountGuestVlanMaps.get(0).getAccountId();
+        }
+    }
+
     public static HypervisorType getVolumeHyperType(long volumeId) {
         return _volumeDao.getHypervisorType(volumeId);
     }
@@ -1034,7 +1052,7 @@ public class ApiDBUtils {
     }
 
     public static Integer getNetworkRate(long networkOfferingId) {
-        return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId);
+        return _configMgr.getNetworkOfferingNetworkRate(networkOfferingId, null);
     }
 
     public static Account getVlanAccount(long vlanId) {

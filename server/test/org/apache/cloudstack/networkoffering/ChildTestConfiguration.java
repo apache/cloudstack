@@ -19,10 +19,17 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.dao.*;
+import com.cloud.server.ConfigurationServer;
+import com.cloud.user.*;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -39,18 +46,6 @@ import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.dao.AccountVlanMapDaoImpl;
-import com.cloud.dc.dao.ClusterDaoImpl;
-import com.cloud.dc.dao.DataCenterDaoImpl;
-import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
-import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
-import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
-import com.cloud.dc.dao.DataCenterVnetDaoImpl;
-import com.cloud.dc.dao.DcDetailsDaoImpl;
-import com.cloud.dc.dao.HostPodDaoImpl;
-import com.cloud.dc.dao.PodVlanDaoImpl;
-import com.cloud.dc.dao.PodVlanMapDaoImpl;
-import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
@@ -61,6 +56,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkManager;
+import com.cloud.network.dao.AccountGuestVlanMapDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -99,13 +95,8 @@ import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
-import com.cloud.user.UserContextInitializer;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
-import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
@@ -162,7 +153,8 @@ import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
         StoragePoolDetailsDaoImpl.class,
         PortableIpRangeDaoImpl.class,
         RegionDaoImpl.class,
-        PortableIpDaoImpl.class
+        PortableIpDaoImpl.class,
+        AccountGuestVlanMapDaoImpl.class
     },
 includeFilters={@Filter(value=ChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
 useDefaultFilters=false
@@ -329,6 +321,22 @@ public class ChildTestConfiguration {
     public DataCenterLinkLocalIpAddressDao datacenterLinkLocalIpAddressDao() {
     	return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
     }
+
+    @Bean
+    public ConfigurationServer configurationServer() {
+        return Mockito.mock(ConfigurationServer.class);
+    }
+
+    @Bean
+    public ClusterDetailsDao clusterDetailsDao() {
+        return Mockito.mock(ClusterDetailsDao.class);
+    }
+
+    @Bean
+    public AccountDetailsDao accountDetailsDao() {
+        return Mockito.mock(AccountDetailsDao.class);
+    }
+
     
     public static class Library implements TypeFilter {
 
@@ -336,7 +344,7 @@ public class ChildTestConfiguration {
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();
             ComponentScan cs = ChildTestConfiguration.class.getAnnotation(ComponentScan.class);
-            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
         }
 
     }

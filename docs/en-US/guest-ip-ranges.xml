@@ -21,8 +21,12 @@
  specific language governing permissions and limitations
  under the License.
 -->
-
 <section id="guest-ip-ranges">
-    <title>Guest IP Ranges</title>
-    <para>The IP ranges for guest network traffic are set on a per-account basis by the user.  This allows the users to configure their network in a fashion that will enable VPN linking between their guest network and their clients.</para>
+  <title>Guest IP Ranges</title>
+  <para>The IP ranges for guest network traffic are set on a per-account basis by the user. This
+    allows the users to configure their network in a fashion that will enable VPN linking between
+    their guest network and their clients.</para>
+  <para>In shared networks in Basic zone and Security Group-enabled Advanced networks, you will have
+    the flexibility to add multiple guest IP ranges from different subnets. You can add or remove
+    one IP range at a time.</para>
 </section>

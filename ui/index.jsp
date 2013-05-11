@@ -81,6 +81,7 @@ under the License.
                 <option value="de_DE"><fmt:message key="label.lang.german"/></option>
                 <option value="it_IT"><fmt:message key="label.lang.italian"/></option>
                 <option value="nb_NO"><fmt:message key="label.lang.norwegian"/></option>
+                <option value="ar"><fmt:message key="label.lang.arabic"/></option>
               </select>
             </div>
           </div>
@@ -1661,6 +1662,7 @@ under the License.
     <script type="text/javascript" src="scripts/ui-custom/autoscaler.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/healthCheck.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/autoscaler.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/granularSettings.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/zoneChart.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/installWizard.js?t=<%=now%>"></script>
