@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.springframework.stereotype.Component;
 
@@ -394,11 +395,16 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
 
     @Override
     public boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd) {
-        return false;
+        return false;// TODO Auto-generated method stub
     }
 
     @Override
     public List<? extends PortableIpRange> listPortableIpRanges(ListPortableIpRangesCmd cmd) {
+        return null;// TODO Auto-generated method stub
+    }
+
+    @Override
+    public List<? extends PortableIp> listPortableIps(long id) {
         return null;// TODO Auto-generated method stub
     }
 

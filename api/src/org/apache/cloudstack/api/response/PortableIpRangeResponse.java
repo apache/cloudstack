@@ -55,6 +55,10 @@ public class PortableIpRangeResponse extends BaseResponse {
     @SerializedName(ApiConstants.END_IP) @Param(description="the end ip of the portable IP range")
     private String endIp;
 
+    @SerializedName(ApiConstants.PORTABLE_IP_ADDRESS)
+    @Param(description="List of portable IP and association with zone/network/vpc details that are part of GSLB rule", responseObject = PortableIpResponse.class)
+    private List<PortableIpResponse> portableIpResponses;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -83,4 +87,7 @@ public class PortableIpRangeResponse extends BaseResponse {
         this.vlan = vlan;
     }
 
+    public void setPortableIpResponses(List<PortableIpResponse> portableIpResponses) {
+        this.portableIpResponses = portableIpResponses;
+    }
 }

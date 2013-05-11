@@ -127,6 +127,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -3730,6 +3731,52 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setGateway(ipRange.getGateway());
         response.setNetmask(ipRange.getNetmask());
         response.setRegionId(ipRange.getRegionId());
+        return response;
+    }
+
+    @Override
+    public PortableIpResponse createPortableIPResponse(PortableIp portableIp) {
+        PortableIpResponse response = new PortableIpResponse();
+        response.setAddress(portableIp.getAddress());
+        Long accountId =  portableIp.getAllocatedInDomainId();
+        if (accountId != null) {
+            Account account = ApiDBUtils.findAccountById(accountId);
+            response.setAllocatedToAccountId(account.getAccountName());
+            Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
+            response.setAllocatedInDomainId(domain.getUuid());
+        }
+
+        response.setAllocatedTime(portableIp.getAllocatedTime());
+
+        if (portableIp.getAssociatedDataCenterId() != null) {
+            DataCenter zone = ApiDBUtils.findZoneById(portableIp.getAssociatedDataCenterId());
+            if (zone != null) {
+                response.setAssociatedDataCenterId(zone.getUuid());
+            }
+        }
+
+        if (portableIp.getPhysicalNetworkId() != null) {
+            PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(portableIp.getPhysicalNetworkId());
+            if (pnw != null) {
+                response.setPhysicalNetworkId(pnw.getUuid());
+            }
+        }
+
+        if (portableIp.getAssociatedWithNetworkId() != null) {
+            Network ntwk = ApiDBUtils.findNetworkById(portableIp.getAssociatedWithNetworkId());
+            if (ntwk != null) {
+                response.setAssociatedWithNetworkId(ntwk.getUuid());
+            }
+        }
+
+        if (portableIp.getAssociatedWithVpcId() != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(portableIp.getAssociatedWithVpcId());
+            if (vpc != null) {
+                response.setAssociatedWithVpcId(vpc.getUuid());
+            }
+        }
+
+        response.setState(portableIp.getState().name());
         return response;
     }
 }

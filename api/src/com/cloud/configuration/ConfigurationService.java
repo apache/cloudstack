@@ -58,6 +58,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
+import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 
 public interface ConfigurationService {
@@ -287,4 +288,6 @@ public interface ConfigurationService {
     boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd);
 
     List<? extends PortableIpRange> listPortableIpRanges(ListPortableIpRangesCmd cmd);
+
+    List<? extends PortableIp> listPortableIps(long id);
 }

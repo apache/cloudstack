@@ -21,7 +21,9 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PortableIpRangeResponse;
+import org.apache.cloudstack.api.response.PortableIpResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionService;
@@ -85,6 +87,17 @@ public class ListPortableIpRangesCmd extends BaseListCmd {
         if (portableIpRanges != null && !portableIpRanges.isEmpty()) {
             for (PortableIpRange range : portableIpRanges) {
                 PortableIpRangeResponse rangeResponse = _responseGenerator.createPortableIPRangeResponse(range);
+
+                List<? extends PortableIp> portableIps = _configService.listPortableIps(range.getId());
+                if (portableIps != null && !portableIps.isEmpty()) {
+                    List<PortableIpResponse> portableIpResponses = new ArrayList<PortableIpResponse>();
+                    for (PortableIp portableIP: portableIps) {
+                        PortableIpResponse portableIpresponse =  _responseGenerator.createPortableIPResponse(portableIP);
+                        portableIpResponses.add(portableIpresponse);
+                    }
+                    rangeResponse.setPortableIpResponses(portableIpResponses);
+                }
+
                 rangeResponse.setObjectName("portableiprange");
                 responses.add(rangeResponse);
             }

@@ -4391,6 +4391,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return _portableIpRangeDao.listAll();
     }
 
+    @Override
+    public List<? extends PortableIp> listPortableIps(long id) {
+
+        PortableIpRangeVO portableIpRange = _portableIpRangeDao.findById(id);
+        if (portableIpRange == null) {
+            throw new InvalidParameterValueException("Please specify a valid portable IP range id.");
+        }
+
+        return _portableIpDao.listByRangeId(portableIpRange.getId());
+    }
+
     private boolean checkOverlapPortableIpRange(int regionId, String newStartIpStr, String newEndIpStr) {
         long newStartIp = NetUtils.ip2Long(newStartIpStr);
         long newEndIp = NetUtils.ip2Long(newEndIpStr);
