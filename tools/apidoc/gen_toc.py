@@ -140,6 +140,10 @@ known_categories = {
     'removeIpFromNic': 'Nic',
     'listNics':'Nic',
 	'AffinityGroup': 'Affinity Group',
+    'addImageStore': 'Image Store',
+    'listImageStore': 'Image Store',
+    'deleteImageStore': 'Image Store',
+    'createCacheStore': 'Image Store',
     }
 
 

@@ -203,7 +203,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
                 answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED ||
                 answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
             CreateCmdResult result = new CreateCmdResult(null, null);
-            result.setSucess(false);
+            //result.setSucess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
@@ -295,14 +295,14 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
                 if (answer == null || !answer.getResult()) {
                     s_logger.debug("Failed to deleted template at store: " + store.getName());
                     CommandResult result = new CommandResult();
-                    result.setSucess(false);
+                    //result.setSucess(false);
                     result.setResult("Delete template failed");
                     callback.complete(result);
 
                 } else {
                     s_logger.debug("Deleted template at: " + installPath);
                     CommandResult result = new CommandResult();
-                    result.setSucess(true);
+                    //result.setSucess(true);
                     callback.complete(result);
                 }
 

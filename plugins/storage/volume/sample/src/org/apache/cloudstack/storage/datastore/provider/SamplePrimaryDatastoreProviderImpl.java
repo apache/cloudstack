@@ -57,7 +57,7 @@ public class SamplePrimaryDatastoreProviderImpl implements PrimaryDataStoreProvi
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        lifecyle = ComponentContext.inject(SamplePrimaryDataStoreLifeCycleImpl.class);
+        lifecycle = ComponentContext.inject(SamplePrimaryDataStoreLifeCycleImpl.class);
         driver = ComponentContext.inject(SamplePrimaryDataStoreDriverImpl.class);
         listener = ComponentContext.inject(DefaultHostListener.class);
         return true;

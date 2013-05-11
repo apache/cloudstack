@@ -35,6 +35,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -213,12 +214,12 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         }
     }
 
-    private void updateVolumePathsAfterMigration(Map<VolumeInfo, DataStore> volumeToPool, List<VolumeTO> volumeTos) {
+    private void updateVolumePathsAfterMigration(Map<VolumeInfo, DataStore> volumeToPool, List<VolumeObjectTO> volumeTos) {
         for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
             boolean updated = false;
             VolumeInfo volume = entry.getKey();
             StoragePool pool = (StoragePool)entry.getValue();
-            for (VolumeTO volumeTo : volumeTos) {
+            for (VolumeObjectTO volumeTo : volumeTos) {
                 if (volume.getId() == volumeTo.getId()) {
                     VolumeVO volumeVO = volDao.findById(volume.getId());
                     Long oldPoolId = volumeVO.getPoolId();
