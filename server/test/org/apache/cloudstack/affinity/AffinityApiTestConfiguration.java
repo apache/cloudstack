@@ -21,6 +21,9 @@ import java.io.IOException;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.region.PortableIpDaoImpl;
+import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
+import org.apache.cloudstack.region.dao.RegionDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
@@ -131,7 +134,8 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         FirewallRulesCidrsDaoImpl.class, PhysicalNetworkDaoImpl.class, PhysicalNetworkTrafficTypeDaoImpl.class,
         PhysicalNetworkServiceProviderDaoImpl.class, LoadBalancerDaoImpl.class, NetworkServiceMapDaoImpl.class,
         PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class, AffinityGroupServiceImpl.class,
-        ComponentContext.class, AffinityGroupProcessor.class, UserVmVO.class, EventUtils.class, UserVmVO.class
+        ComponentContext.class, AffinityGroupProcessor.class, UserVmVO.class, EventUtils.class, UserVmVO.class,
+        PortableIpRangeDaoImpl.class, RegionDaoImpl.class, PortableIpDaoImpl.class
         }, includeFilters = { @Filter(value = AffinityApiTestConfiguration.Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
 public class AffinityApiTestConfiguration {
 

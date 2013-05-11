@@ -127,6 +127,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
@@ -3713,5 +3714,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             return ag.getId();
         }
+    }
+
+    @Override
+    public PortableIpRangeResponse createPortableIPRangeResponse(PortableIpRange ipRange) {
+        PortableIpRangeResponse response = new PortableIpRangeResponse();
+        response.setId(ipRange.getUuid());
+        String ipRangeStr = ipRange.getIpRange();
+        if (ipRangeStr != null) {
+            String[] range = ipRangeStr.split("-");
+            response.setStartIp(range[0]);
+            response.setEndIp(range[1]);
+        }
+        response.setVlan(ipRange.getVlanTag());
+        response.setGateway(ipRange.getGateway());
+        response.setNetmask(ipRange.getNetmask());
+        response.setRegionId(ipRange.getRegionId());
+        return response;
     }
 }

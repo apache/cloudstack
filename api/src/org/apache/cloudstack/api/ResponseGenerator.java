@@ -102,6 +102,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.usage.Usage;
 
@@ -396,4 +397,6 @@ public interface ResponseGenerator {
     AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
 
     Long getAffinityGroupId(String name, long entityOwnerId);
+
+    PortableIpRangeResponse createPortableIPRangeResponse(PortableIpRange range);
 }

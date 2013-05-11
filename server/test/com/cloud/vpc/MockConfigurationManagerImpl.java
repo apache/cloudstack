@@ -25,7 +25,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.naming.NamingException;
 
-import com.cloud.configuration.ConfigurationVO;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
@@ -40,6 +39,9 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
@@ -48,6 +50,7 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.region.PortableIpRange;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Configuration;
@@ -75,13 +78,11 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.VirtualMachine.Type;
 
@@ -384,6 +385,21 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public boolean isOfferingForVpc(NetworkOffering offering) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public PortableIpRange createPortableIpRange(CreatePortableIpRangeCmd cmd) throws ConcurrentOperationException {
+        return null;// TODO Auto-generated method stub
+    }
+
+    @Override
+    public boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd) {
+        return false;
+    }
+
+    @Override
+    public List<? extends PortableIpRange> listPortableIpRanges(ListPortableIpRangesCmd cmd) {
+        return null;// TODO Auto-generated method stub
     }
 
     /* (non-Javadoc)

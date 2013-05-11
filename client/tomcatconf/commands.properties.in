@@ -591,3 +591,7 @@ addCiscoAsa1000vResource=1
 deleteCiscoAsa1000vResource=1
 listCiscoAsa1000vResources=1
 
+#### portable public IP commands
+createPortableIpRange=1
+deletePortableIpRange=1
+listPortableIpRanges=1

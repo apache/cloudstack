@@ -1290,4 +1290,16 @@ public class NetUtils {
     	}
 		return resultIp;
 	}
+
+    public static boolean isValidVlan(String vlan) {
+        try {
+            int vnet = Integer.parseInt(vlan);
+            if (vnet < 0 || vnet > 4096) {
+                return false;
+            }
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }
