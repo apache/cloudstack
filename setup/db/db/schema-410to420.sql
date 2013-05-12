@@ -1204,7 +1204,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'Netwo
 
 
 alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;
-<<<<<<< HEAD
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
     select
@@ -1514,7 +1513,6 @@ CREATE VIEW `cloud`.`volume_view` AS
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;
 
-=======
 ALTER TABLE `cloud`.`data_center_details` MODIFY value varchar(1024);
 ALTER TABLE `cloud`.`cluster_details` MODIFY value varchar(255);
 ALTER TABLE `cloud`.`storage_pool_details` MODIFY value varchar(255);
@@ -1541,4 +1539,3 @@ CREATE TABLE `cloud`.`account_vnet_map` (
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN account_vnet_map_id bigint unsigned;
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__account_vnet_map_id` FOREIGN KEY `fk_op_dc_vnet_alloc__account_vnet_map_id` (`account_vnet_map_id`) REFERENCES `account_vnet_map` (`id`);
->>>>>>> master
