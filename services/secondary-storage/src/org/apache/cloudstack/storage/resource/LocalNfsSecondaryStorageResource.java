@@ -28,6 +28,7 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
 import com.cloud.utils.S3Utils;
@@ -45,16 +46,6 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
         ((DownloadManagerImpl) _dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
         _storage = new JavaStorageLayer();
         this._inSystemVM = false;
-        System.setProperty("paths.script", "/Users/minc/dev/cloud-asf"); // This
-                                                                         // is
-                                                                         // just
-                                                                         // for
-                                                                         // my
-                                                                         // testing,
-                                                                         // not
-                                                                         // for
-                                                                         // QA
-                                                                         // build
     }
 
     @Override
