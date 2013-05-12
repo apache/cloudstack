@@ -115,16 +115,18 @@
                         url: createURL("listZones&available=true"),
                         dataType: "json",
                         async: true,
-                        success: function(json) {
-                          var zoneObjs = json.listzonesresponse.zone;
-                          var items = [];
-                          if (isAdmin() && !(cloudStack.context.projects &&
-                                             cloudStack.context.projects[0]))
-                            items.push({id: -1, description: "All Zones"});
-                          $(zoneObjs).each(function() {
-                            items.push({id: this.id, description: this.name});
-                          });
-                          args.response.success({data: items});
+                        success: function(json) {    
+													var zoneObjs= [];
+													var items = json.listzonesresponse.zone;
+													if(items != null) {
+														for(var i = 0; i < items.length; i++) {																
+															zoneObjs.push({id: items[i].id, description: items[i].name});		
+														}
+													}																										
+													if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])){
+                            zoneObjs.unshift({id: -1, description: "All Zones"});
+                          }																										
+													args.response.success({data: zoneObjs});     
                         }
                       });
                     }
@@ -531,13 +533,16 @@
                           dataType: "json",
                           async: true,
                           success: function(json) {
-                            var zoneObjs = json.listzonesresponse.zone;
-                            var items = [];
-                            $(zoneObjs).each(function() {
-                              if(this.id != args.context.templates[0].zoneid)
-                                items.push({id: this.id, description: this.name});
-                            });
-                            args.response.success({data: items});
+														var zoneObjs = [];
+														var items = json.listzonesresponse.zone;	
+													  if(items != null) {
+															for(var i = 0; i < items.length; i++) {																																	
+																if(items[i].id != args.context.templates[0].zoneid) { //destination zone must be different from source zone
+																	zoneObjs.push({id: items[i].id, description: items[i].name});
+																}																	
+															}
+														}			
+                            args.response.success({data: zoneObjs});
                           }
                         });
                       }
@@ -861,16 +866,18 @@
                         url: createURL("listZones&available=true"),
                         dataType: "json",
                         async: true,
-                        success: function(json) {
-                          var zoneObjs = json.listzonesresponse.zone;
-                          var items = [];
-                          if (isAdmin() && !(cloudStack.context.projects &&
-                                              cloudStack.context.projects[0]))
-                            items.push({id: -1, description: "All Zones"});
-                          $(zoneObjs).each(function() {
-                            items.push({id: this.id, description: this.name});
-                          });
-                          args.response.success({data: items});
+                        success: function(json) {													
+													var zoneObjs = [];
+													var items = json.listzonesresponse.zone;
+													if(items != null) {
+														for(var i = 0; i < items.length; i++) {																
+															zoneObjs.push({id: items[i].id, description: items[i].name});		
+														}
+													}													
+													if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])){
+                            zoneObjs.unshift({id: -1, description: "All Zones"});
+                          }																										
+													args.response.success({data: zoneObjs});  
                         }
                       });
                     }
@@ -1174,14 +1181,17 @@
                           url: createURL("listZones&available=true"),
                           dataType: "json",
                           async: true,
-                          success: function(json) {
-                            var zoneObjs = json.listzonesresponse.zone;
-                            var items = [];
-                            $(zoneObjs).each(function() {
-                              if(this.id != args.context.isos[0].zoneid)
-                                items.push({id: this.id, description: this.name});
-                            });
-                            args.response.success({data: items});
+                          success: function(json) {      
+														var zoneObjs = [];
+														var items = json.listzonesresponse.zone;			
+													  if(items != null) {
+															for(var i = 0; i < items.length; i++) {																																	
+																if(items[i].id != args.context.isos[0].zoneid) { //destination zone must be different from source zone
+																	zoneObjs.push({id: items[i].id, description: items[i].name});
+																}																	
+															}
+														}		
+                            args.response.success({data: zoneObjs});			
                           }
                         });
                       }

@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,9 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -45,32 +49,34 @@ import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobExecutor;
@@ -105,9 +111,11 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.NetworkModel;
@@ -117,7 +125,6 @@ import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -168,7 +175,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
@@ -317,7 +323,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Inject
     StorageManager storageMgr;
     private int _customDiskOfferingMinSize = 1;
-    private int _customDiskOfferingMaxSize = 1024;
+    private final int _customDiskOfferingMaxSize = 1024;
     private long _maxVolumeSizeInGb;
     private boolean _recreateSystemVmEnabled;
 
@@ -353,7 +359,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         Volume newVol = migrateVolume(volume, destPool);
-        return this.volFactory.getVolume(newVol.getId());
+        return volFactory.getVolume(newVol.getId());
     }
 
     /*
@@ -371,20 +377,20 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         String url = cmd.getUrl();
         String format = cmd.getFormat();
         String imageStoreUuid = cmd.getImageStoreUuid();
-        DataStore store = this._tmpltMgr.getImageStore(imageStoreUuid, zoneId);
+        DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format);
 
         VolumeVO volume = persistVolume(caller, ownerId, zoneId, volumeName,
                 url, cmd.getFormat());
 
-        VolumeInfo vol = this.volFactory.getVolume(volume.getId());
+        VolumeInfo vol = volFactory.getVolume(volume.getId());
 
         RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(),
                 cmd.getFormat());
         vol.addPayload(payload);
 
-        this.volService.registerVolume(vol, store);
+        volService.registerVolume(vol, store);
         return volume;
     }
 
@@ -527,10 +533,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
         }
 
-        VolumeInfo vol = this.volFactory.getVolume(volume.getId());
-        DataStore store = this.dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
-        SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
-        AsyncCallFuture<VolumeApiResult> future = this.volService.createVolumeFromSnapshot(vol, store, snapInfo);
+        VolumeInfo vol = volFactory.getVolume(volume.getId());
+        DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+        SnapshotInfo snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
+        AsyncCallFuture<VolumeApiResult> future = volService.createVolumeFromSnapshot(vol, store, snapInfo);
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
@@ -552,7 +558,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             VMTemplateVO template, DataCenterVO dc, DiskOfferingVO diskOffering) {
         if (volume.getVolumeType() == Type.ROOT
                 && Storage.ImageFormat.ISO != template.getFormat()) {
-            TemplateDataStoreVO ss = this._vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dc.getId(),
+            TemplateDataStoreVO ss = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dc.getId(),
                     VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
             if (ss == null) {
                 throw new CloudRuntimeException("Template "
@@ -591,7 +597,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 null, createdVolume.getSize());
         _usageEventDao.persist(usageEvent);
 
-        return this._volsDao.findById(createdVolume.getId());
+        return _volsDao.findById(createdVolume.getId());
     }
 
     @DB
@@ -609,8 +615,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         // Find a suitable storage to create volume on
         StoragePool destPool = storageMgr.findStoragePool(dskCh, dc, pod,
                 clusterId, null, vm, avoidPools);
-        DataStore destStore = this.dataStoreMgr.getDataStore(destPool.getId(), DataStoreRole.Primary);
-        AsyncCallFuture<VolumeApiResult> future = this.volService.copyVolume(volume, destStore);
+        DataStore destStore = dataStoreMgr.getDataStore(destPool.getId(), DataStoreRole.Primary);
+        AsyncCallFuture<VolumeApiResult> future = volService.copyVolume(volume, destStore);
 
         try {
             VolumeApiResult result = future.get();
@@ -665,14 +671,14 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Trying to create " + volume + " on " + pool);
         }
-        DataStore store = this.dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+        DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         AsyncCallFuture<VolumeApiResult> future = null;
         boolean isNotCreatedFromTemplate = volume.getTemplateId() == null ? true : false;
         if (isNotCreatedFromTemplate) {
-            future = this.volService.createVolumeAsync(volume, store);
+            future = volService.createVolumeAsync(volume, store);
         } else {
-            TemplateInfo templ = this.tmplFactory.getTemplate(template.getId(), DataStoreRole.Image);
-            future = this.volService.createVolumeFromTemplateAsync(volume, store.getId(), templ);
+            TemplateInfo templ = tmplFactory.getTemplate(template.getId(), DataStoreRole.Image);
+            future = volService.createVolumeFromTemplateAsync(volume, store.getId(), templ);
         }
         try {
             VolumeApiResult result = future.get();
@@ -1142,7 +1148,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
 
-        PrimaryDataStoreInfo pool = (PrimaryDataStoreInfo)this.dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+        PrimaryDataStoreInfo pool = (PrimaryDataStoreInfo)dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
         long currentSize = volume.getSize();
 
         /*
@@ -1193,10 +1199,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         ResizeVolumePayload payload = new ResizeVolumePayload(newSize, shrinkOk, instanceName, hosts);
 
         try {
-            VolumeInfo vol = this.volFactory.getVolume(volume.getId());
+            VolumeInfo vol = volFactory.getVolume(volume.getId());
             vol.addPayload(payload);
 
-            AsyncCallFuture<VolumeApiResult> future = this.volService.resize(vol);
+            AsyncCallFuture<VolumeApiResult> future = volService.resize(vol);
             future.get();
             volume = _volsDao.findById(volume.getId());
 
@@ -1261,11 +1267,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         try {
             if (volume.getState() != Volume.State.Destroy && volume.getState() != Volume.State.Expunging && volume.getState() != Volume.State.Expunging) {
                 Long instanceId = volume.getInstanceId();
-                if (!this.volService.destroyVolume(volume.getId())) {
+                if (!volService.destroyVolume(volume.getId())) {
                     return false;
                 }
 
-                VMInstanceVO vmInstance = this._vmInstanceDao.findById(instanceId);
+                VMInstanceVO vmInstance = _vmInstanceDao.findById(instanceId);
                 if (instanceId == null
                         || (vmInstance.getType().equals(VirtualMachine.Type.User))) {
                     // Decrement the resource count for volumes and primary storage belonging user VM's only
@@ -1288,7 +1294,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     _usageEventDao.persist(usageEvent);
                 }
             }
-            AsyncCallFuture<VolumeApiResult> future = this.volService.expungeVolumeAsync(this.volFactory.getVolume(volume.getId()));
+            AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volFactory.getVolume(volume.getId()));
             future.get();
 
         } catch (Exception e) {
@@ -1364,7 +1370,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             VMTemplateVO template, VMInstanceVO vm, Account owner) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
 
-        Long size = this._tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
+        Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
 
         VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(),
                 owner.getDomainId(), owner.getId(), offering.getId(), size);
@@ -1486,8 +1492,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     }
 
     private boolean needMoveVolume(VolumeVO rootVolumeOfVm, VolumeInfo volume) {
-        DataStore storeForRootVol = this.dataStoreMgr.getPrimaryDataStore(rootVolumeOfVm.getPoolId());
-        DataStore storeForDataVol = this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
+        DataStore storeForRootVol = dataStoreMgr.getPrimaryDataStore(rootVolumeOfVm.getPoolId());
+        DataStore storeForDataVol = dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
 
         Scope storeForRootStoreScope = storeForRootVol.getScope();
         if (storeForRootStoreScope == null) {
@@ -1514,7 +1520,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         String errorMsg = "Failed to attach volume: " + volume.getName()
                 + " to VM: " + vm.getHostName();
         boolean sendCommand = (vm.getState() == State.Running);
-        AttachVolumeAnswer answer = null;
+        AttachAnswer answer = null;
         Long hostId = vm.getHostId();
         if (hostId == null) {
             hostId = vm.getLastHostId();
@@ -1526,16 +1532,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         if (sendCommand) {
-            StoragePoolVO volumePool = _storagePoolDao.findById(volume
-                    .getPoolId());
-            AttachVolumeCommand cmd = new AttachVolumeCommand(true,
-                    vm.getInstanceName(), volume.getPoolType(),
-                    volume.getFolder(), volume.getPath(), volume.getName(),
-                    deviceId, volume.getChainInfo());
-            cmd.setPoolUuid(volumePool.getUuid());
-
+            DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
+            DiskTO disk = new DiskTO(volTO, deviceId, volume.getVolumeType());
+            AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
             try {
-                answer = (AttachVolumeAnswer) _agentMgr.send(hostId, cmd);
+                answer = (AttachAnswer) _agentMgr.send(hostId, cmd);
             } catch (Exception e) {
                 throw new CloudRuntimeException(errorMsg + " due to: "
                         + e.getMessage());
@@ -1545,8 +1546,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as attached
             if (sendCommand) {
+                DiskTO disk = answer.getDisk();
                 _volsDao.attachVolume(volume.getId(), vm.getId(),
-                        answer.getDeviceId());
+                        disk.getDiskSeq());
             } else {
                 _volsDao.attachVolume(volume.getId(), vm.getId(), deviceId);
             }
@@ -1821,7 +1823,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         // Check that the VM is in the correct state
-        UserVmVO vm = this._userVmDao.findById(vmId);
+        UserVmVO vm = _userVmDao.findById(vmId);
         if (vm.getState() != State.Running && vm.getState() != State.Stopped
                 && vm.getState() != State.Destroyed) {
             throw new InvalidParameterValueException(
@@ -1858,16 +1860,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Answer answer = null;
 
         if (sendCommand) {
-            AttachVolumeCommand cmd = new AttachVolumeCommand(false,
-                    vm.getInstanceName(), volume.getPoolType(),
-                    volume.getFolder(), volume.getPath(), volume.getName(),
-                    cmmd.getDeviceId() != null ? cmmd.getDeviceId() : volume
-                            .getDeviceId(), volume.getChainInfo());
-
-            StoragePoolVO volumePool = _storagePoolDao.findById(volume
-                    .getPoolId());
-            cmd.setPoolUuid(volumePool.getUuid());
-
+            DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
+            DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getVolumeType());
+            DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
             try {
                 answer = _agentMgr.send(vm.getHostId(), cmd);
             } catch (Exception e) {
@@ -1879,12 +1874,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
-            if (answer != null && answer instanceof AttachVolumeAnswer) {
-                volume.setChainInfo(((AttachVolumeAnswer) answer)
-                        .getChainInfo());
-                _volsDao.update(volume.getId(), volume);
-            }
-
             return _volsDao.findById(volumeId);
         } else {
 
@@ -1965,7 +1954,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 // This check is for VM in Error state (volume is already
                 // destroyed)
                 if (!vol.getState().equals(Volume.State.Destroy)) {
-                    this.volService.destroyVolume(vol.getId());
+                    volService.destroyVolume(vol.getId());
                 }
                 toBeExpunged.add(vol);
             } else {
@@ -1978,7 +1967,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         txn.commit();
         AsyncCallFuture<VolumeApiResult> future = null;
         for (VolumeVO expunge : toBeExpunged) {
-            future = this.volService.expungeVolumeAsync(this.volFactory.getVolume(expunge.getId()));
+            future = volService.expungeVolumeAsync(volFactory.getVolume(expunge.getId()));
             try {
                 future.get();
             } catch (InterruptedException e) {
@@ -2006,12 +1995,42 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     "Volume must be in ready state");
         }
 
-        if (vol.getInstanceId() != null) {
-            throw new InvalidParameterValueException(
-                    "Volume needs to be dettached from VM");
+        boolean liveMigrateVolume = false;
+        Long instanceId = vol.getInstanceId();
+        VMInstanceVO vm = null;
+        if (instanceId != null) {
+            vm = _vmInstanceDao.findById(instanceId);
         }
 
-        StoragePool destPool = (StoragePool)this.dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        if (vm != null && vm.getState() == State.Running) {
+            // Check if the underlying hypervisor supports storage motion.
+            Long hostId = vm.getHostId();
+            if (hostId != null) {
+                HostVO host = _hostDao.findById(hostId);
+                HypervisorCapabilitiesVO capabilities = null;
+                if (host != null) {
+                    capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(host.getHypervisorType(),
+                            host.getHypervisorVersion());
+                }
+
+                if (capabilities != null) {
+                    liveMigrateVolume = capabilities.isStorageMotionSupported();
+                }
+            }
+        }
+
+        // If the disk is not attached to any VM then it can be moved. Otherwise, it needs to be attached to a vm
+        // running on a hypervisor that supports storage motion so that it be be migrated.
+        if (instanceId != null && !liveMigrateVolume) {
+            throw new InvalidParameterValueException("Volume needs to be detached from VM");
+        }
+
+        if (liveMigrateVolume && !cmd.isLiveMigrate()) {
+            throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " +
+                    "the parameter livemigrate should be specified");
+        }
+
+        StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
         if (destPool == null) {
             throw new InvalidParameterValueException(
                     "Failed to find the destination storage pool: "
@@ -2023,16 +2042,19 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     "Migration of volume from local storage pool is not supported");
         }
 
-        Volume newVol = migrateVolume(vol, destPool);
+        Volume newVol = null;
+        if (liveMigrateVolume) {
+            newVol = liveMigrateVolume(vol, destPool);
+        } else {
+            newVol = migrateVolume(vol, destPool);
+        }
         return newVol;
     }
 
-
-
     @DB
     protected Volume migrateVolume(Volume volume, StoragePool destPool) {
-        VolumeInfo vol = this.volFactory.getVolume(volume.getId());
-        AsyncCallFuture<VolumeApiResult> future = this.volService.copyVolume(vol, (DataStore)destPool);
+        VolumeInfo vol = volFactory.getVolume(volume.getId());
+        AsyncCallFuture<VolumeApiResult> future = volService.copyVolume(vol, (DataStore)destPool);
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
@@ -2046,6 +2068,66 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         } catch (ExecutionException e) {
             s_logger.debug("migrate volume failed", e);
             return null;
+        }
+    }
+
+    @DB
+    protected Volume liveMigrateVolume(Volume volume, StoragePool destPool) {
+        VolumeInfo vol = volFactory.getVolume(volume.getId());
+        AsyncCallFuture<VolumeApiResult> future = volService.migrateVolume(vol, (DataStore)destPool);
+        try {
+            VolumeApiResult result = future.get();
+            if (result.isFailed()) {
+                s_logger.debug("migrate volume failed:" + result.getResult());
+                return null;
+            }
+            return result.getVolume();
+        } catch (InterruptedException e) {
+            s_logger.debug("migrate volume failed", e);
+            return null;
+        } catch (ExecutionException e) {
+            s_logger.debug("migrate volume failed", e);
+            return null;
+        }
+    }
+
+    @Override
+    public <T extends VMInstanceVO> void migrateVolumes(T vm, VirtualMachineTO vmTo, Host srcHost, Host destHost,
+            Map<VolumeVO, StoragePoolVO> volumeToPool) {
+        // Check if all the vms being migrated belong to the vm.
+        // Check if the storage pool is of the right type.
+        // Create a VolumeInfo to DataStore map too.
+        Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+        for (Map.Entry<VolumeVO, StoragePoolVO> entry : volumeToPool.entrySet()) {
+            VolumeVO volume = entry.getKey();
+            StoragePoolVO storagePool = entry.getValue();
+            StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(storagePool.getId(),
+                    DataStoreRole.Primary);
+
+            if (volume.getInstanceId() != vm.getId()) {
+                throw new CloudRuntimeException("Volume " + volume + " that has to be migrated doesn't belong to the" +
+                        " instance " + vm);
+            }
+
+            if (destPool == null) {
+                throw new CloudRuntimeException("Failed to find the destination storage pool " + storagePool.getId());
+            }
+
+            volumeMap.put(volFactory.getVolume(volume.getId()), (DataStore)destPool);
+        }
+
+        AsyncCallFuture<CommandResult> future = volService.migrateVolumes(volumeMap, vmTo, srcHost, destHost);
+        try {
+            CommandResult result = future.get();
+            if (result.isFailed()) {
+                s_logger.debug("Failed to migrated vm " + vm + " along with its volumes. " + result.getResult());
+                throw new CloudRuntimeException("Failed to migrated vm " + vm + " along with its volumes. " +
+                        result.getResult());
+            }
+        } catch (InterruptedException e) {
+            s_logger.debug("Failed to migrated vm " + vm + " along with its volumes.", e);
+        } catch (ExecutionException e) {
+            s_logger.debug("Failed to migrated vm " + vm + " along with its volumes.", e);
         }
     }
 
@@ -2097,22 +2179,17 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         for (VolumeVO vol : vols) {
-            PrimaryDataStoreInfo pool = (PrimaryDataStoreInfo)this.dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
-            vm.addDisk(new VolumeTO(vol, pool));
+            DataTO volTO = volFactory.getVolume(vol.getId()).getTO();
+            DiskTO disk = new DiskTO(volTO, vol.getDeviceId(), vol.getVolumeType());
+            vm.addDisk(disk);
         }
 
         if (vm.getType() == VirtualMachine.Type.User) {
             UserVmVO userVM = (UserVmVO) vm.getVirtualMachine();
             if (userVM.getIsoId() != null) {
-                Pair<String, String> isoPathPair = this._tmpltMgr.getAbsoluteIsoPath(
-                        userVM.getIsoId(), userVM.getDataCenterId());
-                if (isoPathPair != null) {
-                    String isoPath = isoPathPair.first();
-                    VolumeTO iso = new VolumeTO(vm.getId(), Volume.Type.ISO,
-                            StoragePoolType.ISO, null, null, null, isoPath, 0,
-                            null, null);
-                    vm.addDisk(iso);
-                }
+                DataTO dataTO = tmplFactory.getTemplate(userVM.getIsoId(), DataStoreRole.Image, userVM.getDataCenterId()).getTO();
+                DiskTO iso = new DiskTO(dataTO, 3L, Volume.Type.ISO);
+                vm.addDisk(iso);
             }
         }
     }
@@ -2264,10 +2341,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Long templateId = newVol.getTemplateId();
         AsyncCallFuture<VolumeApiResult> future = null;
         if (templateId == null) {
-            future = this.volService.createVolumeAsync(volume, destPool);
+            future = volService.createVolumeAsync(volume, destPool);
         } else {
-            TemplateInfo templ = this.tmplFactory.getTemplate(templateId, DataStoreRole.Image);
-            future = this.volService.createVolumeFromTemplateAsync(volume, destPool.getId(), templ);
+            TemplateInfo templ = tmplFactory.getTemplate(templateId, DataStoreRole.Image);
+            future = volService.createVolumeFromTemplateAsync(volume, destPool.getId(), templ);
         }
         VolumeApiResult result = null;
         try {
@@ -2278,7 +2355,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 throw new StorageUnavailableException("Unable to create "
                         + newVol + ":" + result.getResult(), destPool.getId());
             }
-            newVol = this._volsDao.findById(newVol.getId());
+            newVol = _volsDao.findById(newVol.getId());
         } catch (InterruptedException e) {
             s_logger.error("Unable to create " + newVol, e);
             throw new StorageUnavailableException("Unable to create "
@@ -2328,7 +2405,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
-            vm.addDisk(new VolumeTO(vol, pool));
+            DataTO volumeTO = volFactory.getVolume(vol.getId()).getTO();
+            DiskTO disk = new DiskTO(volumeTO, vol.getDeviceId(), vol.getVolumeType());
+            vm.addDisk(disk);
         }
     }
 
@@ -2462,7 +2541,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Override
     public void destroyVolume(VolumeVO volume) {
         try {
-            this.volService.destroyVolume(volume.getId());
+            volService.destroyVolume(volume.getId());
         } catch (ConcurrentOperationException e) {
             s_logger.debug("Failed to destroy volume" + volume.getId(), e);
             throw new CloudRuntimeException("Failed to destroy volume" + volume.getId(), e);
@@ -2474,7 +2553,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
     @Override
     public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account) throws ResourceAllocationException {
-        VolumeInfo volume = this.volFactory.getVolume(volumeId);
+        VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
@@ -2488,14 +2567,14 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         payload.setSnapshotPolicyId(policyId);
         payload.setAccount(account);
         volume.addPayload(payload);
-        return this.volService.takeSnapshot(volume);
+        return volService.takeSnapshot(volume);
     }
 
     @Override
     public Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
         Account caller = UserContext.current().getCaller();
 
-        VolumeInfo volume = this.volFactory.getVolume(volumeId);
+        VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
@@ -2524,7 +2603,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
         }
 
-        return this.snapshotMgr.allocSnapshot(volumeId, policyId);
+        return snapshotMgr.allocSnapshot(volumeId, policyId);
     }
 
 }

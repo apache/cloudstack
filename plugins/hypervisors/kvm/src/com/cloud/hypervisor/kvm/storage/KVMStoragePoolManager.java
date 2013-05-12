@@ -94,18 +94,26 @@ public class KVMStoragePoolManager {
             protocol = StoragePoolType.NetworkFilesystem;
         }
 
-        return createStoragePool(uuid, sourceHost, 0, sourcePath, "", protocol);
+        // secondary storage registers itself through here
+        return createStoragePool(uuid, sourceHost, 0, sourcePath, "", protocol, false);
     }
 
     public KVMStoragePool createStoragePool( String name, String host, int port,
                                              String path, String userInfo,
                                              StoragePoolType type) {
+        // primary storage registers itself through here
+        return createStoragePool(name, host, port, path, userInfo, type, true);
+    }
+
+    private KVMStoragePool createStoragePool( String name, String host, int port,
+                                             String path, String userInfo,
+                                             StoragePoolType type, boolean primaryStorage) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = adaptor.createStoragePool(name,
                                 host, port, path, userInfo, type);
 
         // LibvirtStorageAdaptor-specific statement
-        if (type == StoragePoolType.NetworkFilesystem) {
+        if (type == StoragePoolType.NetworkFilesystem && primaryStorage) {
             KVMHABase.NfsStoragePool nfspool = new KVMHABase.NfsStoragePool(
                     pool.getUuid(), host, path, pool.getLocalPath(),
                     PoolType.PrimaryStorage);

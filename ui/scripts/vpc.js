@@ -737,6 +737,12 @@
          actions:{
            add:{
             label:'Add Private Gateway',
+            preFilter: function(args) {
+                if(isAdmin() || isDomainAdmin() )
+                  return true;
+                else
+                  return false;
+              },
             createForm:{
                  title: 'label.add.new.gateway',
                  desc: 'message.add.new.gateway.to.vpc',

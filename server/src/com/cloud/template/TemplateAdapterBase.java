@@ -26,11 +26,14 @@ import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -43,6 +46,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -82,7 +86,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject ResourceLimitService _resourceLimitMgr;
 	protected @Inject DataStoreManager storeMgr;
 	@Inject TemplateManager templateMgr;
-
+	@Inject ConfigurationServer _configServer;
+	
 	@Override
 	public boolean stop() {
 		return true;
@@ -160,7 +165,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 			throw new InvalidParameterValueException("File:// type urls are currently unsupported");
 		}
 
-		boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));
+		// check whether owner can create public templates
+		boolean allowPublicUserTemplates = Boolean.parseBoolean(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), templateOwner.getId()));
 		if (!isAdmin && !allowPublicUserTemplates && isPublic) {
 			throw new InvalidParameterValueException("Only private templates/ISO can be created.");
 		}
@@ -329,8 +335,19 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 		return new TemplateProfile(userId, template, zoneId);
 	}
 
-	@Override
-    public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
+	public TemplateProfile prepareExtractTemplate(ExtractTemplateCmd cmd) {
+		Long templateId = cmd.getId();
+		Long userId = UserContext.current().getCallerUserId();
+	        Long zoneId = cmd.getZoneId();
+
+		VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+		if (template == null) {
+			throw new InvalidParameterValueException("unable to find template with id " + templateId);
+		}
+		return new TemplateProfile(userId, template, zoneId);
+	}
+
+	public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
 		Long templateId = cmd.getId();
         Long userId = UserContext.current().getCallerUserId();
         Account account = UserContext.current().getCaller();

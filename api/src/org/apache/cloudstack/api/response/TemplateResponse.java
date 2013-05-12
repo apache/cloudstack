@@ -91,6 +91,9 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone for this template")
     private String zoneName;
+    
+    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description="the networktype of the zone for this template")
+    private String zoneType;
 
     @SerializedName(ApiConstants.STATUS) @Param(description="the status of the template")
     private String status;
@@ -168,6 +171,10 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
         this.zoneName = zoneName;
     }
 
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
+    }
+    
     public void setAccountId(String accountId) {
         this.accountId = accountId;
     }

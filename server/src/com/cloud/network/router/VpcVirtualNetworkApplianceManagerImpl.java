@@ -1178,8 +1178,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
             for (final PrivateIpAddress ipAddr : ipAddrList) {
                 Network network = _networkModel.getNetwork(ipAddr.getNetworkId());
-                IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false, 
-                        false, ipAddr.getVlanTag(), ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(),
+                IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false,
+                        ipAddr.getSourceNat(), ipAddr.getVlanTag(), ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(),
                         null, false);
 
                 ip.setTrafficType(network.getTrafficType());

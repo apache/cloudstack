@@ -56,7 +56,7 @@ under the License.
             <!-- Password -->
             <div class="field password">
               <label for="password"><fmt:message key="label.password"/></label>
-              <input type="password" name="password" class="required" />
+              <input type="password" name="password" class="required" autocomplete="off" />
             </div>
             <!-- Domain -->
             <div class="field domain">
@@ -71,11 +71,17 @@ under the License.
                 <option value=""></option> <!-- when this blank option is selected, browser's default language will be used -->
                 <option value="en"><fmt:message key="label.lang.english"/></option>
                 <option value="ja"><fmt:message key="label.lang.japanese"/></option>
-		<option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
+                <option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
                 <option value="ru_RU"><fmt:message key="label.lang.russian"/></option>
                 <option value="fr_FR"><fmt:message key="label.lang.french"/></option>
                 <option value="pt_BR"><fmt:message key="label.lang.brportugese"/></option>
+                <option value="ca"><fmt:message key="label.lang.catalan"/></option>
                 <option value="ko_KR"><fmt:message key="label.lang.korean"/></option>
+                <option value="es"><fmt:message key="label.lang.spanish"/></option>
+                <option value="de_DE"><fmt:message key="label.lang.german"/></option>
+                <option value="it_IT"><fmt:message key="label.lang.italian"/></option>
+                <option value="nb_NO"><fmt:message key="label.lang.norwegian"/></option>
+                <option value="ar"><fmt:message key="label.lang.arabic"/></option>
               </select>
             </div>
           </div>
@@ -89,8 +95,9 @@ under the License.
             <li><span class="number">2</span><span class="multiline"><fmt:message key="label.select.a.template"/></span><span class="arrow"></span></li>
             <li><span class="number">3</span><span class="multiline"><fmt:message key="label.compute.offering"/></span><span class="arrow"></span></li>
             <li><span class="number">4</span><span class="multiline"><fmt:message key="label.data.disk.offering"/></span><span class="arrow"></span></li>
-            <li><span class="number">5</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
-            <li class="last"><span class="number">6</span><span><fmt:message key="label.review"/></span></li>
+            <li><span class="number">5</span><span><fmt:message key="label.affinity"/></span><span class="arrow"></span></li>
+            <li><span class="number">6</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
+            <li class="last"><span class="number">7</span><span><fmt:message key="label.review"/></span></li>
           </ul>
         </div>
         <form>
@@ -220,7 +227,15 @@ under the License.
               </div>
             </div>
 
-            <!-- Step 5: Network -->
+            <!-- Step 5: Affinity groups -->
+            <div class="step affinity" wizard-step-id="affinity">
+              <div class="content">
+                <!-- Existing offerings -->
+                <div class="select-container"></div>
+              </div>
+            </div>
+
+            <!-- Step 6: Network -->
             <div class="step network always-load" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">     
@@ -320,7 +335,7 @@ under the License.
                 </div>
               </div>
             </div>
-            <!-- Step 6: Review -->
+            <!-- Step 7: Review -->
             <div class="step review" wizard-step-id="review">
               <div class="main-desc">
                 <fmt:message key="message.vm.review.launch"/>
@@ -1647,6 +1662,7 @@ under the License.
     <script type="text/javascript" src="scripts/ui-custom/autoscaler.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/healthCheck.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/autoscaler.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/granularSettings.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/zoneChart.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/installWizard.js?t=<%=now%>"></script>
@@ -1655,6 +1671,8 @@ under the License.
     <script type="text/javascript" src="scripts/dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/instanceWizard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/instanceWizard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/affinity.js?t=<%=now%>"></script>  
+    <script type="text/javascript" src="scripts/ui-custom/affinity.js?t=<%=now%>"></script>  
     <script type="text/javascript" src="scripts/instances.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/events.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/regions.js?t=<%=now%>"></script>
@@ -1678,11 +1696,14 @@ under the License.
     <script type="text/javascript" src="scripts/system.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
-    <script type="text/javascript" src="scripts/vm_snapshots.js?t=<%=now%>"></script>  
+    <script type="text/javascript" src="scripts/vm_snapshots.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/projectSelect.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/zoneFilter.js?t=<%=now%>"></script>
 
-    <!-- Plugins -->
-    <script type="text/javascript" src="scripts/ui-custom/plugins.js?t=<%=now%>"></script>
+    <!-- Plugin/module API -->
+    <script type="text/javascript" src="scripts/ui-custom/pluginListing.js?t=<%=now%>"></script>
     <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="modules/modules.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
   </body>
 </html>

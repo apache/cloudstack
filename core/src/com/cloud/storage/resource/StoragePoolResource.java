@@ -21,6 +21,8 @@ import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -34,5 +36,7 @@ public interface StoragePoolResource {
     
     CopyVolumeAnswer execute(CopyVolumeCommand cmd);
     
+    CreateVolumeOVAAnswer execute(CreateVolumeOVACommand cmd);
+
     CreateAnswer execute(CreateCommand cmd);
 }

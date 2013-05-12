@@ -19,6 +19,9 @@ package com.cloud.usage;
 import java.io.File;
 import java.io.FileNotFoundException;
 
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.DOMConfigurator;
@@ -29,7 +32,7 @@ import org.springframework.util.Log4jConfigurer;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 
-public class UsageServer {
+public class UsageServer implements Daemon {
     private static final Logger s_logger = Logger.getLogger(UsageServer.class.getName());
     public static final String Name = "usage-server";
     
@@ -39,15 +42,17 @@ public class UsageServer {
      * @param args
      */
     public static void main(String[] args) {
-    	initLog4j();
+        initLog4j();
         UsageServer usage = new UsageServer();
-        usage.init(args);
         usage.start();
     }
 
-    public void init(String[] args) {
+    @Override
+    public void init(DaemonContext arg0) throws DaemonInitException, Exception {
+        initLog4j();        
     }
 
+    @Override
     public void start() {
     	ApplicationContext appContext = new ClassPathXmlApplicationContext("usageApplicationContext.xml");
 	    
@@ -66,10 +71,12 @@ public class UsageServer {
         }
     }
 
+    @Override
     public void stop() {
 
     }
 
+    @Override
     public void destroy() {
 
     }
@@ -96,4 +103,5 @@ public class UsageServer {
 	        }
 	    }
    }
+
 }

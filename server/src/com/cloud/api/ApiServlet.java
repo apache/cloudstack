@@ -299,8 +299,10 @@ public class ApiServlet extends HttpServlet {
                 auditTrailSb.insert(0, "(userId=" + UserContext.current().getCallerUserId() + " accountId="
                         + UserContext.current().getCaller().getId() + " sessionId=" + (session != null ? session.getId() : null) + ")");
 
-                    String response = _apiServer.handleRequest(params, responseType, auditTrailSb);
-                    writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
+                // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
+                params.put("httpmethod", new String[] { req.getMethod() });
+                String response = _apiServer.handleRequest(params, responseType, auditTrailSb);
+                writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
             } else {
                 if (session != null) {
                     try {

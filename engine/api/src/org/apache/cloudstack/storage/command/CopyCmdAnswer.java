@@ -17,9 +17,9 @@
 package org.apache.cloudstack.storage.command;
 
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataTO;
 
 public class CopyCmdAnswer extends Answer {
     private DataTO newData;

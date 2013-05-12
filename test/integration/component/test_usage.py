@@ -48,7 +48,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "memory": 128, # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -105,7 +105,6 @@ class Services:
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced'
                     }
 
 
@@ -118,6 +117,7 @@ class TestVmUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -135,7 +135,7 @@ class TestVmUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -145,8 +145,8 @@ class TestVmUsage(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         cls._cleanup = [
@@ -202,11 +202,11 @@ class TestVmUsage(cloudstackTestCase):
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
-                        % self.account.account.id)
+                        % self.account.id)
 
         qresultset = self.dbclient.execute(
                         "select id from account where uuid = '%s';" \
-                        % self.account.account.id
+                        % self.account.id
                         )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -301,6 +301,7 @@ class TestPublicIPUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -318,7 +319,7 @@ class TestPublicIPUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -328,8 +329,8 @@ class TestPublicIPUsage(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
 
@@ -381,18 +382,18 @@ class TestPublicIPUsage(cloudstackTestCase):
         # 3. Delete the newly created account
 
         self.debug("Deleting public IP: %s" %
-                                self.public_ip.ipaddress.ipaddress)
+                                self.public_ip.ipaddress)
 
         # Release one of the IP
         self.public_ip.delete(self.apiclient)
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
-                        % self.account.account.id)
+                        % self.account.id)
 
         qresultset = self.dbclient.execute(
                         "select id from account where uuid = '%s';" \
-                        % self.account.account.id
+                        % self.account.id
                         )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -452,6 +453,7 @@ class TestVolumeUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -472,7 +474,7 @@ class TestVolumeUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -482,8 +484,8 @@ class TestVolumeUsage(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         cls._cleanup = [
@@ -560,11 +562,11 @@ class TestVolumeUsage(cloudstackTestCase):
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
-                        % self.account.account.id)
+                        % self.account.id)
 
         qresultset = self.dbclient.execute(
                         "select id from account where uuid = '%s';" \
-                        % self.account.account.id
+                        % self.account.id
                         )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -625,6 +627,7 @@ class TestTemplateUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.services["server"]["zoneid"] = cls.zone.id
         template = get_template(
                             cls.api_client,
@@ -637,7 +640,7 @@ class TestTemplateUsage(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -648,8 +651,8 @@ class TestTemplateUsage(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["server"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
@@ -723,11 +726,11 @@ class TestTemplateUsage(cloudstackTestCase):
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
-                        % self.account.account.id)
+                        % self.account.id)
 
         qresultset = self.dbclient.execute(
                         "select id from account where uuid = '%s';" \
-                        % self.account.account.id
+                        % self.account.id
                         )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -789,6 +792,7 @@ class TestISOUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["iso"]["zoneid"] = cls.zone.id
         # Create Account, ISO image etc
@@ -797,12 +801,12 @@ class TestISOUsage(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.iso = Iso.create(
                                 cls.api_client,
                                 cls.services["iso"],
-                                account=cls.account.account.name,
-                                domainid=cls.account.account.domainid
+                                account=cls.account.name,
+                                domainid=cls.account.domainid
                             )
         try:
             # Wait till ISO gets downloaded
@@ -858,11 +862,11 @@ class TestISOUsage(cloudstackTestCase):
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
-                        % self.account.account.id)
+                        % self.account.id)
 
         qresultset = self.dbclient.execute(
                         "select id from account where uuid = '%s';" \
-                        % self.account.account.id
+                        % self.account.id
                         )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -925,6 +929,7 @@ class TestLBRuleUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -941,7 +946,7 @@ class TestLBRuleUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -951,8 +956,8 @@ class TestLBRuleUsage(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         cls.public_ip_1 = PublicIPAddress.create(
@@ -1011,7 +1016,7 @@ class TestLBRuleUsage(cloudstackTestCase):
                                           self.apiclient,
                                           self.services["lbrule"],
                                           self.public_ip_1.ipaddress.id,
-                                          accountid=self.account.account.name
+                                          accountid=self.account.name
                                           )
         # Delete LB Rule
         self.debug("Deleting LB rule with ID: %s" % lb_rule.id)
@@ -1019,11 +1024,11 @@ class TestLBRuleUsage(cloudstackTestCase):
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
-                        % self.account.account.id)
+                        % self.account.id)
 
         qresultset = self.dbclient.execute(
                         "select id from account where uuid = '%s';" \
-                        % self.account.account.id
+                        % self.account.id
                         )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -1086,6 +1091,7 @@ class TestSnapshotUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -1103,7 +1109,7 @@ class TestSnapshotUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1113,8 +1119,8 @@ class TestSnapshotUsage(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         cls._cleanup = [
@@ -1184,11 +1190,11 @@ class TestSnapshotUsage(cloudstackTestCase):
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
-                        % self.account.account.id)
+                        % self.account.id)
 
         qresultset = self.dbclient.execute(
                         "select id from account where uuid = '%s';" \
-                        % self.account.account.id
+                        % self.account.id
                         )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -1252,6 +1258,7 @@ class TestNatRuleUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1268,7 +1275,7 @@ class TestNatRuleUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1278,8 +1285,8 @@ class TestNatRuleUsage(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         cls.public_ip_1 = PublicIPAddress.create(
@@ -1347,11 +1354,11 @@ class TestNatRuleUsage(cloudstackTestCase):
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
-                        % self.account.account.id)
+                        % self.account.id)
 
         qresultset = self.dbclient.execute(
                         "select id from account where uuid = '%s';" \
-                        % self.account.account.id
+                        % self.account.id
                         )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -1413,6 +1420,7 @@ class TestVpnUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1430,7 +1438,7 @@ class TestVpnUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1440,8 +1448,8 @@ class TestVpnUsage(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
         cls.public_ip = PublicIPAddress.create(
@@ -1498,19 +1506,19 @@ class TestVpnUsage(cloudstackTestCase):
         vpn = Vpn.create(
                         self.apiclient,
                         self.public_ip.ipaddress.id,
-                        account=self.account.account.name,
-                        domainid=self.account.account.domainid
+                        account=self.account.name,
+                        domainid=self.account.domainid
                         )
 
         self.debug("Created VPN user for account: %s" %
-                                    self.account.account.name)
+                                    self.account.name)
 
         vpnuser = VpnUser.create(
                                  self.apiclient,
                                  self.services["vpn_user"]["username"],
                                  self.services["vpn_user"]["password"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
 
         # Remove VPN user
@@ -1523,11 +1531,11 @@ class TestVpnUsage(cloudstackTestCase):
 
         # Fetch account ID from account_uuid
         self.debug("select id from account where uuid = '%s';" \
-                        % self.account.account.id)
+                        % self.account.id)
 
         qresultset = self.dbclient.execute(
                         "select id from account where uuid = '%s';" \
-                        % self.account.account.id
+                        % self.account.id
                         )
         self.assertEqual(
                          isinstance(qresultset, list),

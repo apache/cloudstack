@@ -57,4 +57,7 @@
             <programlisting>http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
         </listitem>
     </orderedlist>
+  
+    <xi:include href="signing-api-calls-python.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />   
+
 </section>

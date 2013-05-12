@@ -33,6 +33,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
@@ -566,7 +567,7 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
      * @see com.cloud.network.NetworkModel#getDefaultNetworkDomain()
      */
     @Override
-    public String getDefaultNetworkDomain() {
+    public String getDefaultNetworkDomain(long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -847,6 +848,12 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public Nic getPlaceholderNicForRouter(Network network, Long podId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public IsolationType[] listNetworkIsolationMethods() {
         // TODO Auto-generated method stub
         return null;
     }

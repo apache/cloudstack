@@ -24,9 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
@@ -40,6 +38,8 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;

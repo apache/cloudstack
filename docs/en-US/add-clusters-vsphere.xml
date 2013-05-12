@@ -71,7 +71,7 @@
       <para>In Hypervisor, choose VMware.</para>
     </listitem>
     <listitem>
-      <para>Provide the following information in the dialog. The fields below make reference to
+      <para>Provide the following information in the dialog. The fields below make reference to the
         values from vCenter.</para>
       <mediaobject>
         <imageobject>
@@ -81,8 +81,6 @@
           <phrase>addcluster.png: add a cluster</phrase>
         </textobject>
       </mediaobject>
-      <para>There might be a slight delay while the cluster is provisioned. It will automatically
-        display in the UI.</para>
       <itemizedlist>
         <listitem>
           <para><emphasis role="bold">Cluster Name</emphasis>: Enter the name of the cluster you
@@ -136,7 +134,7 @@
             </listitem>
             <listitem>
               <para>Nexus dvSwitch Username: The username required to access the Nexus VSM
-                applicance.</para>
+                appliance.</para>
             </listitem>
             <listitem>
               <para>Nexus dvSwitch Password: The password associated with the username specified
@@ -151,7 +149,8 @@
         <listitem>
           <para><emphasis role="bold">Guest Traffic vSwitch Type</emphasis>: This option is
             displayed only if you enable the Override Guest Traffic option. Select a desirable
-            switch. If the vmware.use.dvswitch global parameter is true, the default option will be
+            switch. </para>
+          <para>If the vmware.use.dvswitch global parameter is true, the default option will be
             VMware vNetwork Distributed Virtual Switch.</para>
           <para>If you have enabled Nexus dvSwitch in the environment, the following parameters for
             dvSwitch configuration are displayed:</para>
@@ -161,7 +160,7 @@
             </listitem>
             <listitem>
               <para>Nexus dvSwitch Username: The username required to access the Nexus VSM
-                applicance.</para>
+                appliance.</para>
             </listitem>
             <listitem>
               <para>Nexus dvSwitch Password: The password associated with the username specified

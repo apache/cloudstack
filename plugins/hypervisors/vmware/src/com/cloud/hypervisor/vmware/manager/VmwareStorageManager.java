@@ -25,6 +25,8 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 
 public interface VmwareStorageManager {
@@ -33,6 +35,8 @@ public interface VmwareStorageManager {
     Answer execute(VmwareHostService hostService, CreatePrivateTemplateFromVolumeCommand cmd);
     Answer execute(VmwareHostService hostService, CreatePrivateTemplateFromSnapshotCommand cmd);
     Answer execute(VmwareHostService hostService, CopyVolumeCommand cmd);
+	Answer execute(VmwareHostService hostService, CreateVolumeOVACommand cmd);
+	Answer execute(VmwareHostService hostService, PrepareOVAPackingCommand cmd);
     Answer execute(VmwareHostService hostService, CreateVolumeFromSnapshotCommand cmd);
     Answer execute(VmwareHostService hostService, CreateVMSnapshotCommand cmd);
     Answer execute(VmwareHostService hostService, DeleteVMSnapshotCommand cmd);

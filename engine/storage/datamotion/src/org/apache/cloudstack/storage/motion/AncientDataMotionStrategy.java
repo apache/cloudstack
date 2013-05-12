@@ -18,23 +18,21 @@
  */
 package org.apache.cloudstack.storage.motion;
 
-import java.util.Date;
-import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -44,57 +42,33 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BackupSnapshotAnswer;
-import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.UpgradeSnapshotCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.S3TO;
-import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeManager;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -141,6 +115,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         // TODO Auto-generated method stub
         return true;
     }
+
+    @Override
+    public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        return false;
+    }
+
 
     protected boolean needCacheStorage(DataObject srcData, DataObject destData) {
         DataTO srcTO = srcData.getTO();
@@ -253,7 +233,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait);
 
 
-            Answer answer = this.storageMgr
+            Answer answer = storageMgr
                     .sendToPool(pool, cmd);
            return answer;
         } catch (StorageUnavailableException e) {
@@ -269,7 +249,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     protected Answer cloneVolume(DataObject template, DataObject volume) {
         CopyCommand cmd = new CopyCommand(template.getTO(), volume.getTO(), 0);
         try {
-            EndPoint ep = this.selector.select(volume.getDataStore());
+            EndPoint ep = selector.select(volume.getDataStore());
             Answer answer = ep.sendMessage(cmd);
             return answer;
         } catch (Exception e) {
@@ -414,4 +394,13 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     }
 
+    @Override
+    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
+            AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCommandResult result = new CopyCommandResult(null, null);
+        result.setResult("Unsupported operation requested for copying data.");
+        callback.complete(result);
+
+        return null;
+    }
 }

@@ -25,7 +25,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
@@ -42,6 +41,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
@@ -159,12 +159,12 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
         CreateVolumeAnswer answer = (CreateVolumeAnswer)callback.getResult();
         CommandResult result = new CommandResult();
         if (answer == null || answer.getDetails() != null) {
-            result.setSucess(false);
+            result.setSuccess(false);
             if (answer != null) {
                 result.setResult(answer.getDetails());
             }
         } else {
-            result.setSucess(true);
+            result.setSuccess(true);
             VolumeObject volume = context.getVolume();
             volume.setPath(answer.getVolumeUuid());
         }

@@ -425,8 +425,11 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     		prodVersion = prodVersion.trim();
     	}
 
-        if(prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") ||  prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4") || prodVersion.startsWith("1.6")))
-            return new XcpServerResource();
+        if(prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") ||  prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4"))) {
+            return new XcpServerResource("1.1");
+        } else if (prodBrand.equals("XCP") && prodVersion.startsWith("1.6")) {
+        	return new XcpServerResource("1.6");
+        }
 
     	if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0"))
     		return new XenServer56Resource();

@@ -25,8 +25,10 @@ import java.util.TimerTask;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -35,11 +37,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -50,7 +50,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.exception.AgentUnavailableException;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -58,6 +58,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
+import com.cloud.storage.upload.UploadListener;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -72,7 +73,7 @@ public class DownloadListener implements Listener {
 		private final RequestType reqType;
 
 		public StatusTask( DownloadListener dl,  RequestType req) {
-			this.reqType = req;
+			reqType = req;
 			this.dl = dl;
 		}
 
@@ -139,26 +140,26 @@ public class DownloadListener implements Listener {
 
 	// TODO: this constructor should be the one used for template only, remove other template constructor later
     public DownloadListener(EndPoint ssAgent, DataStore store, DataObject object, Timer _timer, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, AsyncCompletionCallback<DownloadAnswer> callback) {
-        this._ssAgent = ssAgent;
+        _ssAgent = ssAgent;
         this.object = object;
-        this._downloadMonitor = downloadMonitor;
-        this._cmd = cmd;
+        _downloadMonitor = downloadMonitor;
+        _cmd = cmd;
         initStateMachine();
-        this._currState=getState(Status.NOT_DOWNLOADED.toString());
+        _currState=getState(Status.NOT_DOWNLOADED.toString());
         this._timer = _timer;
-        this._timeoutTask = new TimeoutTask(this);
+        _timeoutTask = new TimeoutTask(this);
         this._timer.schedule(_timeoutTask, 3*STATUS_POLL_INTERVAL);
-        this._callback = callback;
+        _callback = callback;
         DownloadAnswer answer = new DownloadAnswer("", Status.NOT_DOWNLOADED);
         callback(answer);
     }
 
     public AsyncCompletionCallback<DownloadAnswer> getCallback() {
-    	return this._callback;
+    	return _callback;
     }
 
 	public void setCurrState(VMTemplateHostVO.Status currState) {
-		this._currState = getState(currState.toString());
+		_currState = getState(currState.toString());
 	}
 
 	private void initStateMachine() {
@@ -180,10 +181,10 @@ public class DownloadListener implements Listener {
 			}
 			try {
 				DownloadProgressCommand dcmd = new DownloadProgressCommand(getCommand(), getJobId(), reqType);
-				if (this.object.getType() == DataObjectType.VOLUME) {
+				if (object.getType() == DataObjectType.VOLUME) {
 					dcmd.setResourceType(ResourceType.VOLUME);
 				}
-	            _ssAgent.sendMessageAsyncWithListener(dcmd, this);
+                _ssAgent.sendMessageAsync(dcmd, new UploadListener.Callback(_ssAgent.getId(), this));
             } catch (Exception e) {
             	s_logger.debug("Send command failed", e);
 				setDisconnected();
@@ -201,12 +202,12 @@ public class DownloadListener implements Listener {
 	}
 
 	public void logDisconnect() {
-			s_logger.warn("Unable to monitor download progress of " + this.object.getType() + ": " +
-					this.object.getId() + " at host " + _ssAgent.getId());
+			s_logger.warn("Unable to monitor download progress of " + object.getType() + ": " +
+					object.getId() + " at host " + _ssAgent.getId());
 	}
 
 	public void log(String message, Level level) {
-		s_logger.log(level, message + ", " + this.object.getType() + ": " + this.object.getId() + " at host " + _ssAgent.getId());
+		s_logger.log(level, message + ", " + object.getType() + ": " + object.getId() + " at host " + _ssAgent.getId());
 	}
 
 	public DownloadListener(DownloadMonitorImpl monitor) {
@@ -259,7 +260,7 @@ public class DownloadListener implements Listener {
 
 	public void callback(DownloadAnswer answer) {
 	    if ( _callback != null ){
-	        this._callback.complete(answer);
+	        _callback.complete(answer);
 	    }
 	}
 
@@ -300,7 +301,7 @@ public class DownloadListener implements Listener {
             }
 	    }*/
 	    else if ( cmd instanceof StartupSecondaryStorageCommand ) {
-	        List<DataStore> imageStores = this._storeMgr.getImageStoresByScope(new ZoneScope(agent.getDataCenterId()));
+	        List<DataStore> imageStores = _storeMgr.getImageStoresByScope(new ZoneScope(agent.getDataCenterId()));
 	        for (DataStore store : imageStores){
 	            _volumeSrv.handleVolumeSync(store);
 	            _imageSrv.handleTemplateSync(store);

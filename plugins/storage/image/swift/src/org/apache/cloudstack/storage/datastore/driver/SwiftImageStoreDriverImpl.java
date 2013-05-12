@@ -29,10 +29,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
@@ -56,7 +54,9 @@ import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -203,7 +203,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
                 answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED ||
                 answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
             CreateCmdResult result = new CreateCmdResult(null, null);
-            result.setSucess(false);
+            //result.setSucess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
@@ -295,14 +295,14 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
                 if (answer == null || !answer.getResult()) {
                     s_logger.debug("Failed to deleted template at store: " + store.getName());
                     CommandResult result = new CommandResult();
-                    result.setSucess(false);
+                    //result.setSucess(false);
                     result.setResult("Delete template failed");
                     callback.complete(result);
 
                 } else {
                     s_logger.debug("Deleted template at: " + installPath);
                     CommandResult result = new CommandResult();
-                    result.setSucess(true);
+                    //result.setSucess(true);
                     callback.complete(result);
                 }
 

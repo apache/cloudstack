@@ -76,6 +76,10 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private String state;
 
 
+    @SerializedName(ApiConstants.SOURCE_NAT_SUPPORTED) @Param(description = "Souce Nat enable status")
+    private Boolean sourceNat;
+
+
     @Override
     public String getObjectId() {
         return this.id;
@@ -145,5 +149,11 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     public void setState(String state) {
         this.state = state;
     }
+
+    public void setSourceNat(Boolean sourceNat) {
+        this.sourceNat = sourceNat;
+    }
+
+
 }
 

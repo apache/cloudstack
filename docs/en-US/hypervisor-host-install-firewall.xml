@@ -34,7 +34,7 @@
         <listitem><para>49152 - 49216 (libvirt live migration)</para></listitem>
     </orderedlist>
     <para>It depends on the firewall you are using how to open these ports. Below you'll find examples how to open these ports in RHEL/CentOS and Ubuntu.</para>
-    <section id="hypervisor-host-install-firewall-rhel">
+    <section>
         <title>Open ports in RHEL/CentOS</title>
         <para>RHEL and CentOS use iptables for firewalling the system, you can open extra ports by executing the following iptable commands:</para>
         <programlisting language="Bash"><command>$ iptables -I INPUT -p tcp -m tcp --dport 22 -j ACCEPT</command></programlisting>
@@ -45,7 +45,7 @@
         <para>These iptable settings are not persistent accross reboots, we have to save them first.</para>
         <programlisting language="Bash"><command>$ iptables-save > /etc/sysconfig/iptables</command></programlisting>
     </section>
-    <section id="hypervisor-host-install-firewall-ubuntu">
+    <section>
         <title>Open ports in Ubuntu</title>
         <para>The default firewall under Ubuntu is UFW (Uncomplicated FireWall), which is a Python wrapper around iptables.</para>
         <para>To open the required ports, execute the following commands:</para>

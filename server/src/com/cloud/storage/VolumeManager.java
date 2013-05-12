@@ -18,6 +18,8 @@
  */
 package com.cloud.storage;
 
+import java.util.Map;
+
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -25,12 +27,15 @@ import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume.Type;
 import com.cloud.user.Account;
@@ -79,6 +84,9 @@ public interface VolumeManager extends VolumeApiService {
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 
     Volume migrateVolume(MigrateVolumeCmd cmd);
+
+    <T extends VMInstanceVO> void migrateVolumes(T vm, VirtualMachineTO vmTo, Host srcHost, Host destHost,
+            Map<VolumeVO, StoragePoolVO> volumeToPool);
 
     boolean storageMigration(
             VirtualMachineProfile<? extends VirtualMachine> vm,

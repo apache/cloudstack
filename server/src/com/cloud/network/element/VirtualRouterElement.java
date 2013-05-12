@@ -876,8 +876,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (publicNetwork) {
             routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
         } else {
-            Long podId = dest.getPod().getId();
             if (isPodBased) {
+                Long podId = dest.getPod().getId();
                 routers = _routerDao.listByNetworkAndPodAndRole(network.getId(), podId, Role.VIRTUAL_ROUTER);
             } else {
                 routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);

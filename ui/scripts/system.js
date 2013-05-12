@@ -184,9 +184,9 @@
     dashboard: {
       dataProvider: function(args) {
         var dataFns = {
-          zoneCount: function(data) {
+          zoneCount: function(data) {              	  	
             $.ajax({
-              url: createURL('listZones'),
+              url: createURL('listZones'),              
               success: function(json) {
                 dataFns.podCount($.extend(data, {
                   zoneCount: json.listzonesresponse.count ?
@@ -224,19 +224,29 @@
 								dataFns.hostCount($.extend(data, {
                   clusterCount: json.listclustersresponse.count ?
                     json.listclustersresponse.count : 0
-                }));								
+                }));
+																
+								//comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
+								
+								/*
+								dataFns.primaryStorageCount($.extend(data, {
+                  clusterCount: json.listclustersresponse.count ?
+                    json.listclustersresponse.count : 0
+                }));
+								*/
               }
             });
           },
 
           hostCount: function(data) {
+          	var data2= {
+              type: 'routing',
+							page: 1,
+							pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };            
             $.ajax({
               url: createURL('listHosts'),
-              data: {
-                type: 'routing',
-								page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-              },
+              data: data2,
               success: function(json) {
                 dataFns.primaryStorageCount($.extend(data, {
                   hostCount: json.listhostsresponse.count ?
@@ -247,32 +257,34 @@
           },
 
           primaryStorageCount: function(data) {
+            var data2 = {
+              page: 1,
+              pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };            
             $.ajax({
               url: createURL('listStoragePools'),
-							data: {
-							  page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-							},
+	            data: data2,
               success: function(json) {                
-								dataFns.secondaryStorageCount($.extend(data, {
-                  primaryStorageCount: json.liststoragepoolsresponse.count ?
-                    json.liststoragepoolsresponse.count : 0
-                }));								
+		            dataFns.secondaryStorageCount($.extend(data, {
+                  primaryStorageCount: json.liststoragepoolsresponse.count ? json.liststoragepoolsresponse.count : 0
+                }));		
               }
             });
           },
 
           secondaryStorageCount: function(data) {
+            var data2 = {
+              type: 'SecondaryStorage',
+              page: 1,
+              pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };            
             $.ajax({
-              url: createURL('listImageStores'),
-              data: {                
-								page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-              },
+              url: createURL('listHosts'),
+              data: data2,
               success: function(json) {
                 dataFns.systemVmCount($.extend(data, {
-                  secondaryStorageCount: json.listimagestoreresponse.imagestore ?
-                    json.listimagestoreresponse.count : 0
+                  secondaryStorageCount: json.listhostsresponse.count ?
+                    json.listhostsresponse.count : 0
                 }));
               }
             });
@@ -295,22 +307,25 @@
           },
 
           virtualRouterCount: function(data) {
+            var data2 = {
+              projectid: -1,
+              page: 1,
+              pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+            };            
             $.ajax({
               url: createURL('listRouters'),
-              data: {
-                projectid: -1,
-								page: 1,
-								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-              },
+              data: data2,
               success: function(json) {
-                var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;								
+                var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
+                
+                var data3 = {
+                  listAll: true,
+                  page: 1,
+                  pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+                };               
 								$.ajax({
 								  url: createURL('listRouters'),
-									data: {
-									  listAll: true,
-										page: 1,
-								    pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
-									},
+									data: data3,
 									success: function(json) {
 									  var total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
 										dataFns.capacity($.extend(data, {
@@ -546,6 +561,14 @@
                         });
                       }
                     },
+										actionPreFilter: function(args) {										  
+											var actionsToShow = ['destroy'];											
+											if(args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account.account == 'system')  
+											  actionsToShow.push('addAccount');
+											else
+											  actionsToShow.push('releaseFromAccount');											
+											return actionsToShow;
+										},
                     actions: {
                       destroy: {
                         label: 'label.remove.ip.range',
@@ -569,7 +592,87 @@
                             }
                           });
                         }
-                      }
+                      },											
+											
+											releaseFromAccount: {
+                        label: 'Release from Account',
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('releasePublicIpRange'),
+                            data: {
+														  id: args.context.multiRule[0].id
+														},                            
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'release from account',
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+                      },
+											
+											addAccount: {
+											  label: 'Add Account',												
+												createForm: {
+													title: 'Add Account',
+													fields: {
+														account: { label: 'Account' },
+														domainid: {
+															label: 'Domain',															
+															select: function(args) {
+																$.ajax({
+																	url: createURL('listDomains'),
+																	data: { listAll: true },
+																	success: function(json) {
+																		args.response.success({
+																			data: $.map(json.listdomainsresponse.domain, function(domain) {
+																				return {
+																					id: domain.id,
+																					description: domain.path
+																				};
+																			})
+																		});
+																	}
+																});
+															}
+														}
+													}
+												},												
+												action: function(args) {                          							
+												  var data = {
+														id: args.context.multiRule[0].id,
+														zoneid: args.context.multiRule[0].zoneid,
+														domainid: args.data.domainid,
+														account: args.data.account
+													};												
+                          $.ajax({
+                            url: createURL('dedicatePublicIpRange'),
+                            data: data,                        
+                            success: function(json) {
+                              args.response.success({
+                                notification: {
+                                  label: 'Add Account',
+                                  poll: function(args) {
+                                    args.complete();
+                                  }
+                                }
+                              });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                          });
+                        }
+											}	
+                      										
                     },
                     dataProvider: function(args) {
                       $.ajax({
@@ -915,13 +1018,14 @@
                     dataType: "json",
                     success: function(json) {
                       var jobId = json.updatephysicalnetworkresponse.jobid;
-
-                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
-
-                      updateTrafficLabels(trafficType, args.data, function() {
                         args.response.success({ _custom: { jobId: jobId }});
-                      });
+                   },
+
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
                    }
+
                   });
 
 
@@ -929,8 +1033,53 @@
                  notification:{poll:pollAsyncJobResult}
 
 
-               }
+               },
 
+                removeVlanRange:{
+                  label:'Remove VLAN Range',
+                   messages: {
+                        confirm: function(args) {
+                          return 'Are you sure you want to remove an existing VLAN Range from this guest network?';
+                        },
+                        notification: function(args) {
+                          return 'VLAN Range removed';
+                        }
+                      },
+
+                   createForm:{
+                       title:'Remove VLAN Range',
+                       fields:{
+                         startvlan: {label:'Vlan Start', validation:{required:true}},
+                         endvlan:{label:'Vlan End', validation:{required:true}}
+                       }
+
+                    },
+
+                  action:function(args){
+
+                  var array1=[];
+                  if(args.data.startvlan != "" && args.data.endvlan != ""){
+                    array1.push("&removevlan=" + args.data.startvlan + "-" +  args.data.endvlan);
+                  }
+                  $.ajax({
+                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var jobId = json.updatephysicalnetworkresponse.jobid;
+                        args.response.success({ _custom: { jobId: jobId }});
+                   },
+
+                   error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
+                   }
+
+                  });
+
+                  },
+                 notification:{poll:pollAsyncJobResult}
+
+               }
  
             },
 
@@ -949,23 +1098,24 @@
                 preFilter: function(args) {
                   var hiddenFields = [];
                   if(selectedZoneObj.networktype == "Basic") {
-                    hiddenFields.push("startVlan");
-                    hiddenFields.push("endVlan");
+                    hiddenFields.push("vlan");
+                   // hiddenFields.push("endVlan");
                   }
                   return hiddenFields;
                 },
                 fields: [
                   { //updatePhysicalNetwork API
                     state: { label: 'label.state' },
-                    startVlan: {
-                      label: 'label.start.vlan',
+                    vlan: {
+                      label: 'VLAN Range(s)',
                       isEditable: true
                     },
-                    endVlan: {
+                  /*  endVlan: {
                       label: 'label.end.vlan',
                       isEditable: true
-                    },
-										tags: { label: 'Tags', isEditable: true },
+                    },*/
+
+		    tags: { label: 'Tags', isEditable: true },
                     broadcastdomainrange: { label: 'label.broadcast.domain.range' }
                   },
                   { //updateTrafficType API
@@ -987,9 +1137,9 @@
 										success: function(json) {										  
 											selectedPhysicalNetworkObj = json.listphysicalnetworksresponse.physicalnetwork[0];			
 											
-											var startVlan, endVlan;
+										//	var startVlan, endVlan;
 											var vlan = selectedPhysicalNetworkObj.vlan;
-											if(vlan != null && vlan.length > 0) {
+									 	/*	if(vlan != null && vlan.length > 0) {
 												if(vlan.indexOf("-") != -1) {
 													var vlanArray = vlan.split("-");
 													startVlan = vlanArray[0];
@@ -1000,7 +1150,7 @@
 												}
 												selectedPhysicalNetworkObj["startVlan"] = startVlan;
 												selectedPhysicalNetworkObj["endVlan"] = endVlan;
-											}
+											}*/
 
 											//traffic type
 											var xentrafficlabel, kvmtrafficlabel, vmwaretrafficlabel;
@@ -1013,7 +1163,7 @@
 
 											args.response.success({
 												actionFilter: function() {
-													var allowedActions = ['edit' , 'addVlanRange'];
+													var allowedActions = ['edit' , 'addVlanRange','removeVlanRange'];
 													return allowedActions;
 												},
 												data: selectedPhysicalNetworkObj
@@ -2140,12 +2290,13 @@
 											}
 										}
 
+										var data2 = {
+                      forvpc: false
+                    };																	
                     var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-                      data: {
-											  forvpc: false
-											},
+                      data: data2,
                       success: function(json) {
                         var items = json.listroutersresponse.router ?
                               json.listroutersresponse.router : [];
@@ -2157,9 +2308,7 @@
                         // Get project routers
                         $.ajax({
                           url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                          data: {
-														forvpc: false
-													},
+                          data: data2,
                           success: function(json) {
                             var items = json.listroutersresponse.router ?
                                   json.listroutersresponse.router : [];
@@ -2303,15 +2452,13 @@
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																			items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -2623,13 +2770,14 @@
 											}
 										}
 
+										var data2 = {
+                      forvpc: true
+                    };				            
 										var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: 'json',
-											data: {
-											  forvpc: true
-											},
+											data: data2,
                       async: true,
                       success: function(json) {
                         var items = json.listroutersresponse.router;												
@@ -2641,9 +2789,7 @@
 												$.ajax({
 													url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
 													dataType: 'json',
-													data: {
-														forvpc: true
-													},
+													data: data2,
 													async: true,
 													success: function(json) {
 														var items = json.listroutersresponse.router;														
@@ -2879,15 +3025,13 @@
                               select: function(args) {
                                 $.ajax({
                                   url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                                   dataType: "json",
                                   async: true,
                                   success: function(json) {
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																			items.push({id: this.id, description: this.name});
+                                      items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -3157,6 +3301,19 @@
                       label: 'label.private.interface',
                       docID: 'helpNetScalerPrivateInterface'
                     },
+										
+										gslbprovider: {
+											label: 'GSLB service',
+											isBoolean: true,
+											isChecked: true
+										},
+										gslbproviderpublicip: {
+											label: 'GSLB service Public IP'
+										},
+										gslbproviderprivateip: {
+											label: 'GSLB service Private IP'
+										},
+										
                     numretries: {
                       label: 'label.numretries',
                       defaultValue: '2',
@@ -4501,8 +4658,7 @@
                         break;
                     }
                   }
-                }
-
+                }   
                 $.ajax({
                   url: createURL("listZones&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                   dataType: "json",
@@ -4764,8 +4920,11 @@
                         async: true,
                         success: function(json) {
                           args.response.success({data:{}});
-                        }
-                      });
+                        },
+                        error:function(json){
+                           args.response.error(parseXMLHttpResponse(json));
+                       }
+                      }); 
                     },
                     notification: {
                       poll: function(args) { args.complete(); }
@@ -4777,14 +4936,16 @@
                       var array1 = [];
                       array1.push("&name="  +todb(args.data.name));
                       array1.push("&dns1=" + todb(args.data.dns1));
-                      array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API
+                      array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
+                      array1.push("&ip6dns1=" + todb(args.data.ip6dns1));  //p6dns1 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.                      
+                      array1.push("&ip6dns2=" + todb(args.data.ip6dns2));  //ip6dns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
                       
                       if (selectedZoneObj.networktype == "Advanced" && args.data.guestcidraddress) {
                         array1.push("&guestcidraddress=" + todb(args.data.guestcidraddress));
                       }
                       
                       array1.push("&internaldns1=" + todb(args.data.internaldns1));
-                      array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
+                      array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API, so a user gets to update this field from an existing value to blank.
                       array1.push("&domain=" + todb(args.data.domain));
                       array1.push("&localstorageenabled=" + (args.data.localstorageenabled == 'on'));
                       $.ajax({
@@ -4822,6 +4983,8 @@
                         allocationstate: { label: 'label.allocation.state' },
                         dns1: { label: 'label.dns.1', isEditable: true, validation: { required: true } },
                         dns2: { label: 'label.dns.2', isEditable: true },
+                        ip6dns1: { label: 'IPv6 DNS1', isEditable: true },
+                        ip6dns2: { label: 'IPv6 DNS2', isEditable: true },
                         internaldns1: { label: 'label.internal.dns.1', isEditable: true, validation: { required: true } },
                         internaldns2: { label: 'label.internal.dns.2', isEditable: true },
                         domainname: { label: 'label.domain' },
@@ -4834,8 +4997,8 @@
                         localstorageenabled: {
                           label: 'label.local.storage.enabled',
                           isBoolean: true,
-													isEditable: true,
-													converter:cloudStack.converters.toBooleanText
+												  isEditable: true,
+												  converter:cloudStack.converters.toBooleanText
                         }
                       }
                     ],
@@ -5151,16 +5314,16 @@
                                   validation: { required: true },
                                   select: function(args) {
                                     $.ajax({
-                                      url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
-                                      //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                                      url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.systemVMs[0].id),
                                       dataType: "json",
                                       async: true,
                                       success: function(json) {
                                         var hostObjs = json.listhostsresponse.host;
                                         var items = [];
                                         $(hostObjs).each(function() {
-                                          //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-																					items.push({id: this.id, description: this.name});
+                                          if(this.requiresStorageMotion == false){
+                                          items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
+                                           }
                                         });
                                         args.response.success({data: items});
                                       }
@@ -5209,6 +5372,83 @@
                               poll: pollAsyncJobResult
                             }
                           },
+                   
+                          scaleUp:{
+            label:'scaleUp System VM',
+             createForm: {
+                  title: 'label.change.service.offering',
+                  desc: '',
+                  fields: {
+                    serviceOfferingId: {
+                      label: 'label.compute.offering',
+                      select: function(args) {
+                        var apiCmd = "listServiceOfferings&issystem=true";
+                        if(args.context.systemVMs[0].systemvmtype == "secondarystoragevm")
+                          apiCmd += "&systemvmtype=secondarystoragevm";
+                        else if(args.context.systemVMs[0].systemvmtype == "consoleproxy")
+                          apiCmd += "&systemvmtype=consoleproxy";
+                        $.ajax({
+                          url: createURL(apiCmd),
+                          dataType: "json",
+                          async: true,
+                          success: function(json) {
+                            var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+                            var items = [];
+                            $(serviceofferings).each(function() {
+                              if(this.id != args.context.systemVMs[0].serviceofferingid) {
+                                items.push({id: this.id, description: this.name});
+                              }
+                            });
+                            args.response.success({data: items});
+                          }
+                        });
+                      }
+                    }
+                  }
+                },
+
+            action: function(args) {
+              $.ajax({
+                url: createURL("scaleVirtualMachine&id=" + args.context.systemVMs[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                 // var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success();
+                   /* {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                         }
+                          
+                       }
+                    } */
+
+                },
+                 error:function(json){
+                     args.response.error(parseXMLHttpResponse(json));
+                     }
+
+              });
+            },
+            messages: {
+              confirm: function(args) {
+                return 'Do you really want to scale up the system VM ?';
+              },
+              notification: function(args) {
+
+                    return 'System VM Scaled Up';
+              }
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+
+          },
+
 
                           viewConsole: {
                             label: 'label.view.console',
@@ -5274,6 +5514,55 @@
                         }
                       }
                     }
+                  },
+
+                  // Granular settings for zone
+                  settings: {
+                    title: 'Settings',
+                    custom: cloudStack.uiCustom.granularSettings({
+                      dataProvider: function(args) {
+                         $.ajax({
+                            url:createURL('listConfigurations&zoneid=' + args.context.physicalResources[0].id),
+                             data: { page: args.page, pageSize: pageSize, listAll: true },
+                            success:function(json){
+                              args.response.success({
+                                 data:json.listconfigurationsresponse.configuration
+
+                                 });
+
+                             },
+
+                            error:function(json){
+                              args.response.error(parseXMLHttpResponse(json));
+
+                             }
+                       });
+
+                      },
+                      actions: {
+                        edit: function(args) {
+                          // call updateZoneLevelParamter
+                           var data = {
+                                 name: args.data.jsonObj.name,
+                                 value: args.data.value
+                                     };
+
+                          $.ajax({
+                          url:createURL('updateConfiguration&zoneid=' + args.context.physicalResources[0].id),
+                          data:data,
+                          success:function(json){
+                              var item = json.updateconfigurationresponse.configuration;
+                              args.response.success({data:item});
+                            },
+
+                          error: function(json) {
+                             args.response.error(parseXMLHttpResponse(json));
+                            }
+
+                           });
+                        }
+                      }
+                    })
                   }
                 }
               }
@@ -5368,9 +5657,16 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { 
+                    page: args.page, 
+                    pageSize: pageSize, 
+                    type: 'routing', 
+                    listAll: true 
+                  };                             
+
                   $.ajax({
                     url: createURL('listHosts' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, type: 'routing', listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.listhostsresponse.host });
                     },
@@ -5410,9 +5706,15 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { 
+                    page: args.page, 
+                    pageSize: pageSize, 
+                    listAll: true 
+                  };
+                 
                   $.ajax({
                     url: createURL('listStoragePools' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, listAll: true },
+                    data: data,
                     success: function (json) {
                       args.response.success({ data: json.liststoragepoolsresponse.storagepool });
                     },
@@ -5452,11 +5754,18 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var data = { 
+                    type: 'SecondaryStorage', 
+                    page: args.page, 
+                    pageSize: pageSize, 
+                    listAll: true 
+                  };                  
+
                   $.ajax({
-                    url: createURL('listImageStores' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, listAll: true },
+                    url: createURL('listHosts' + searchByArgs),
+                    data: data,
                     success: function (json) {
-                      args.response.success({ data: json.listimagestoreresponse.imagestore });
+                      args.response.success({ data: json.listhostsresponse.host });
                     },
                     error: function (json) {
                       args.response.error(parseXMLHttpResponse(json));
@@ -5534,12 +5843,11 @@
               var listView = $.extend(true, {}, cloudStack.sections.system.subsections.virtualRouters.listView, {
                 dataProvider: function (args) {
                   var searchByArgs = args.filterBy.search.value.length ?
-                    '&name=' + args.filterBy.search.value : '';
-
+                    '&name=' + args.filterBy.search.value : '';                          
+                                    
                   var routers = [];
                   $.ajax({
-                    url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + searchByArgs),
-                    dataType: 'json',
+                    url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + searchByArgs),                    
                     async: true,
                     success: function(json) {
                       var items = json.listroutersresponse.router ?
@@ -5551,8 +5859,7 @@
                       
                       // Get project routers
                       $.ajax({
-                        url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
-                        dataType: 'json',
+                        url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),                       
                         async: true,
                         success: function(json) {
                           var items = json.listroutersresponse.router ?
@@ -5636,12 +5943,14 @@
               }
             }
 
+            var data2 = {
+              forvpc: false
+            };
+             
             var routers = [];
             $.ajax({
               url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              data: {
-							  forvpc: false
-							},
+              data: data2,
               success: function(json) {
                 var items = json.listroutersresponse.router ?
                       json.listroutersresponse.router : [];
@@ -5652,9 +5961,7 @@
                 // Get project routers
                 $.ajax({
                   url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                  data: {
-										forvpc: false
-									},
+                  data: data2,
                   success: function(json) {
                     var items = json.listroutersresponse.router ?
                           json.listroutersresponse.router : [];
@@ -5891,15 +6198,13 @@
                       select: function(args) {
                         $.ajax({
                           url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
-                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                           dataType: "json",
                           async: true,
                           success: function(json) {
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-															items.push({id: this.id, description: this.name});
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
                             });
                             args.response.success({data: items});
                           }
@@ -5953,6 +6258,80 @@
                   poll: pollAsyncJobResult
                 }
               },
+
+          scaleUp:{
+            label:'scaleUp Router VM',
+             createForm: {
+                  title: 'label.change.service.offering',
+                  desc: '',
+                  fields: {
+
+                       serviceOfferingId: {
+                            label: 'label.compute.offering',
+                            select: function(args) {
+                            $.ajax({
+                            url: createURL('listServiceOfferings'),
+                            data: {
+                              issystem: true,
+                              systemvmtype: 'domainrouter'
+                                },
+                            success: function(json) {
+                              var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+                              var items = [];
+                              $(serviceofferings).each(function() {
+                              // if(this.id != args.context.routers[0].serviceofferingid) {
+                                   items.push({id: this.id, description: this.name});  //default one (i.e. "System Offering For Software Router") doesn't have displaytext property. So, got to use name property instead.
+
+                            });
+                             args.response.success({data: items});
+                           }
+                        });
+                      }
+                   }
+                  }
+                },
+
+            action: function(args) {
+              $.ajax({
+                url: createURL("scaleVirtualMachine&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+               //   var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success();
+                 /*   {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                        }
+                     }
+                    }*/
+                  
+                },
+                 error:function(json){
+                     args.response.error(parseXMLHttpResponse(json));
+                     }
+
+              });
+            },
+            messages: {
+              confirm: function(args) {
+                return 'Do you really want to scale up the Router VM ?';
+              },
+              notification: function(args) {
+
+                    return 'Router VM Scaled Up';
+              }
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+
+          },
+
 
               viewConsole: {
                 label: 'label.view.console',
@@ -6352,16 +6731,16 @@
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({
-                          url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
-                          //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                          url: createURL("findHostsForMigration&VirtualMachineId=" + args.context.systemVMs[0].id),
                           dataType: "json",
                           async: true,
                           success: function(json) {
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
-															items.push({id: this.id, description: this.name});
+                              if(this.requiresStorageMotion == false){
+                              items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
+                              }
                             });
                             args.response.success({data: items});
                           }
@@ -6410,6 +6789,83 @@
                   poll: pollAsyncJobResult
                 }
               },
+
+               scaleUp:{
+            label:'scaleUp System VM',
+             createForm: {
+                  title: 'label.change.service.offering',
+                  desc: '',
+                  fields: {
+                    serviceOfferingId: {
+                      label: 'label.compute.offering',
+                      select: function(args) {
+                        var apiCmd = "listServiceOfferings&issystem=true";
+                        if(args.context.systemVMs[0].systemvmtype == "secondarystoragevm")
+                          apiCmd += "&systemvmtype=secondarystoragevm";
+                        else if(args.context.systemVMs[0].systemvmtype == "consoleproxy")
+                          apiCmd += "&systemvmtype=consoleproxy";
+                        $.ajax({
+                          url: createURL(apiCmd),
+                          dataType: "json",
+                          async: true,
+                          success: function(json) {
+                            var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+                            var items = [];
+                            $(serviceofferings).each(function() {
+                              if(this.id != args.context.systemVMs[0].serviceofferingid) {
+                                items.push({id: this.id, description: this.name});
+                              }
+                            });
+                            args.response.success({data: items});
+                          }
+                        });
+                      }
+                    }
+                  }
+                },
+
+            action: function(args) {
+              $.ajax({
+                url: createURL("scaleVirtualMachine&id=" + args.context.systemVMs[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success(
+                    {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                      }
+                   }
+                    }
+                  );
+                },
+                 error:function(json){
+                     args.response.error(parseXMLHttpResponse(json));
+                     }
+
+              });
+            },
+            messages: {
+              confirm: function(args) {
+                return 'Do you really want to scale up the system VM ?';
+              },
+              notification: function(args) {
+
+                    return 'System VM Scaled Up';
+              }
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+
+          },
+
+
 
               viewConsole: {
                 label: 'label.view.console',
@@ -6537,6 +6993,19 @@
                   privateinterface: {
                     label: 'label.private.interface'
                   },
+									
+									gslbprovider: {
+										label: 'GSLB service',
+										isBoolean: true,
+										isChecked: true
+									},
+									gslbproviderpublicip: {
+										label: 'GSLB service Public IP'
+									},
+									gslbproviderprivateip: {
+										label: 'GSLB service Private IP'
+									},
+									
                   numretries: {
                     label: 'label.numretries',
                     defaultValue: '2'
@@ -8671,6 +9140,57 @@
                     });
                   }
                 }
+              },
+
+              // Granular settings for cluster
+              settings: {
+                title: 'Settings',
+                custom: cloudStack.uiCustom.granularSettings({
+                  dataProvider: function(args) {
+                     $.ajax({
+                            url:createURL('listConfigurations&clusterid=' + args.context.clusters[0].id),
+                             data: { page: args.page, pageSize: pageSize, listAll: true },
+                            success:function(json){
+                              args.response.success({
+                                 data:json.listconfigurationsresponse.configuration
+
+                                 });
+
+                             },
+
+                            error:function(json){
+                              args.response.error(parseXMLHttpResponse(json));
+
+                             }
+                       });
+
+                  },
+                  actions: {
+                    edit: function(args) {
+                      // call updateClusterLevelParameters
+
+                       var data = {
+                                 name: args.data.jsonObj.name,
+                                 value: args.data.value
+                                     };
+
+                          $.ajax({
+                          url:createURL('updateConfiguration&clusterid=' + args.context.clusters[0].id),
+                          data:data,
+                          success:function(json){
+                              var item = json.updateconfigurationresponse.configuration;
+                              args.response.success({data:item});
+                            },
+
+                          error: function(json) {
+                             args.response.error(parseXMLHttpResponse(json));
+                            }
+
+                           });
+
+                    }
+                  }
+                })
               }
             }
           }
@@ -8721,7 +9241,7 @@
             } else {
               array1.push("&hostid=" + args.context.instances[0].hostid);
             }
-
+           
             $.ajax({
               url: createURL("listHosts&type=Routing" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -9263,7 +9783,8 @@
                     url: createURL("deleteHost&id=" + args.context.hosts[0].id + array1.join("")),
                     dataType: "json",
                     async: true,
-                    success: function(json) {                     
+                    success: function(json) {
+                      //{ "deletehostresponse" : { "success" : "true"}  }
                       args.response.success({data:{}});
                     }
                   });
@@ -10105,6 +10626,7 @@
 
           detailView: {
             name: "Primary storage details",
+            isMaximized: true,
             actions: {
 							edit: {
                 label: 'label.edit',
@@ -10289,6 +10811,57 @@
 										}
 									});														
                 }
+              },
+
+              // Granular settings for storage pool
+              settings: {
+                title: 'Settings',
+                custom: cloudStack.uiCustom.granularSettings({
+                  dataProvider: function(args) {
+                     
+                       $.ajax({
+                            url:createURL('listConfigurations&storageid=' + args.context.primarystorages[0].id),
+                             data: { page: args.page, pageSize: pageSize, listAll: true },
+                            success:function(json){
+                              args.response.success({
+                                 data:json.listconfigurationsresponse.configuration
+
+                                 });
+
+                             },
+
+                            error:function(json){
+                              args.response.error(parseXMLHttpResponse(json));
+
+                             }
+                       });
+
+                  },
+                  actions: {
+                    edit: function(args) {
+                      // call updateStorageLevelParameters
+                        var data = {
+                                 name: args.data.jsonObj.name,
+                                 value: args.data.value
+                                     };
+
+                          $.ajax({
+                          url:createURL('updateConfiguration&storageid=' + args.context.primarystorages[0].id),
+                          data:data,
+                          success:function(json){
+                              var item = json.updateconfigurationresponse.configuration;
+                              args.response.success({data:item});
+                            },
+
+                          error: function(json) {
+                             args.response.error(parseXMLHttpResponse(json));
+                            }
+
+                           });
+
+                    }
+                  }
+                })
               }
             }
           }
@@ -10302,9 +10875,16 @@
           id: 'secondarystorages',
           section: 'seconary-storage',
           fields: {
-            providername: { label: 'Provider' },
-            scope: { label: 'Scope' },
-            url: { label: 'URL' }             
+            name: { label: 'label.name' },
+						created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+            resourcestate: {
+              label: 'label.state',
+              indicator: {
+                'Enabled': 'on',
+                'Disabled': 'off',
+                'Destroyed': 'off'
+              }              
+            }
           },
 
           dataProvider: function(args) {
@@ -10318,13 +10898,15 @@
 									break;
 								}
 							}
-						}            
+						}
+            array1.push("&zoneid=" + args.context.zones[0].id);
+
             $.ajax({
-              url: createURL("listImageStores&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              url: createURL("listHosts&type=SecondaryStorage&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
-                var items = json.listimagestoreresponse.imagestore;
+                var items = json.listhostsresponse.host;
                 args.response.success({
                   actionFilter: secondarystorageActionfilter,
                   data:items
@@ -10339,149 +10921,29 @@
 
               createForm: {
                 title: 'label.add.secondary.storage',
-                fields: {                  
-                  provider: {
-                    label: 'Provider',
-                    select: function(args){                  
-                      $.ajax({
-                        url: createURL('listStorageProviders'),
-                        data: {
-                          type: 'image'
-                        },
-                        success: function(json){                  
-                          var objs = json.liststorageprovidersresponse.dataStoreProvider;                  
-                          var items = [];
-                          if(objs != null) {
-                            for(var i = 0; i < objs.length; i++){
-                              if(objs[i].name == 'NFS')
-                                items.unshift({id: objs[i].name, description: objs[i].name}); 
-                              else
-                                items.push({id: objs[i].name, description: objs[i].name}); 
-                            }                    
-                          }                  
-                          args.response.success({
-                            data: items            
-                          });
-                                            
-                          args.$select.change(function() {                           
-                            var $form = $(this).closest('form');
-                            if($(this).val() == "NFS") {
-                              //NFS
-                              $form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=nfsServer]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=path]').css('display', 'inline-block');
-
-                              //S3
-                              $form.find('.form-item[rel=accesskey]').hide();
-                              $form.find('.form-item[rel=secretkey]').hide();
-                              $form.find('.form-item[rel=bucket]').hide();
-                              $form.find('.form-item[rel=endpoint]').hide();
-                              $form.find('.form-item[rel=usehttps]').hide();
-                              $form.find('.form-item[rel=connectiontimeout]').hide();
-                              $form.find('.form-item[rel=maxerrorretry]').hide();
-                              $form.find('.form-item[rel=sockettimeout]').hide();
-                              $form.find('.form-item[rel=createNfsCache]').hide();
-                              $form.find('.form-item[rel=nfsCacheZoneid]').hide();
-                              $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
-                              $form.find('.form-item[rel=nfsCachePath]').hide();
-                              
-                              //Swift
-                              $form.find('.form-item[rel=url]').hide();
-                              $form.find('.form-item[rel=account]').hide();
-                              $form.find('.form-item[rel=username]').hide();
-                              $form.find('.form-item[rel=key]').hide();
-                            }
-                            else if ($(this).val() == "S3") {
-                              //NFS
-                              $form.find('.form-item[rel=zoneid]').hide();
-                              $form.find('.form-item[rel=nfsServer]').hide();
-                              $form.find('.form-item[rel=path]').hide();
-
-                              //S3
-                              $form.find('.form-item[rel=accesskey]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=secretkey]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=bucket]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=endpoint]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=usehttps]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=connectiontimeout]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=maxerrorretry]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=sockettimeout]').css('display', 'inline-block');                              
-                             
-                              $form.find('.form-item[rel=createNfsCache]').find('input').attr('checked','checked');
-                              $form.find('.form-item[rel=createNfsCache]').css('display', 'inline-block');                         
-                              $form.find('.form-item[rel=nfsCacheZoneid]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=nfsCacheNfsServer]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=nfsCachePath]').css('display', 'inline-block');
-                          
-
-                              //Swift
-                              $form.find('.form-item[rel=url]').hide();
-                              $form.find('.form-item[rel=account]').hide();
-                              $form.find('.form-item[rel=username]').hide();
-                              $form.find('.form-item[rel=key]').hide();
-                            }
-                            else if($(this).val() == "Swift") {
-                              //NFS
-                              $form.find('.form-item[rel=zoneid]').hide();
-                              $form.find('.form-item[rel=nfsServer]').hide();
-                              $form.find('.form-item[rel=path]').hide();
-
-                              //S3
-                              $form.find('.form-item[rel=accesskey]').hide();
-                              $form.find('.form-item[rel=secretkey]').hide();
-                              $form.find('.form-item[rel=bucket]').hide();
-                              $form.find('.form-item[rel=endpoint]').hide();
-                              $form.find('.form-item[rel=usehttps]').hide();
-                              $form.find('.form-item[rel=connectiontimeout]').hide();
-                              $form.find('.form-item[rel=maxerrorretry]').hide();
-                              $form.find('.form-item[rel=sockettimeout]').hide();
-                              $form.find('.form-item[rel=createNfsCache]').hide();
-                              $form.find('.form-item[rel=nfsCacheZoneid]').hide();
-                              $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
-                              $form.find('.form-item[rel=nfsCachePath]').hide();
-                              
-                              //Swift
-                              $form.find('.form-item[rel=url]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=username]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=key]').css('display', 'inline-block');
-                            }                    
-                          });     
-                          
-                          args.$select.change();
-                        }
-                      });             
-                    }            
-                  },
-                  
-                  
-                  //NFS (begin)
+                fields: {
                   zoneid: {
                     label: 'Zone',
                     docID: 'helpSecondaryStorageZone',
                     validation: { required: true },
-                    select: function(args) {                      
+                    select: function(args) {
+                      var data = args.context.zones ?
+                      { id: args.context.zones[0].id } : { listAll: true };
+
                       $.ajax({
                         url: createURL('listZones'),
-                        data: { 
-                          listAll: true 
-                        },
+                        data: data,
                         success: function(json) {
                           var zones = json.listzonesresponse.zone;
 
-                          if(zones != null){ //$.map(items, fn) - items can not be null
-                            args.response.success({
-                              data: $.map(zones, function(zone) {
-                                return {
-                                  id: zone.id,
-                                  description: zone.name
-                                };
-                              })
-                            });
-                          }
-                          else {
-                            args.response.success({data: null});
-                          }                          
+                          args.response.success({
+                            data: $.map(zones, function(zone) {
+                              return {
+                                id: zone.id,
+                                description: zone.name
+                              };
+                            })
+                          });
                         }
                       });
                     }
@@ -10495,170 +10957,30 @@
                     label: 'label.path',
                     docID: 'helpSecondaryStoragePath',
                     validation: { required: true }
-                  },
-                  //NFS (end)
-                  
-                  
-                  //S3 (begin)
-                  accesskey: { label: 'label.s3.access_key', validation: { required: true } },
-                  secretkey: { label: 'label.s3.secret_key', validation: { required: true} },
-                  bucket: { label: 'label.s3.bucket', validation: { required: true} },
-                  endpoint: { label: 'label.s3.endpoint' },
-                  usehttps: { 
-                    label: 'label.s3.use_https', 
-                    isEditable: true,
-                    isBoolean: true,
-                    isChecked: true,
-                    converter:cloudStack.converters.toBooleanText 
-                  },
-                  connectiontimeout: { label: 'label.s3.connection_timeout' },
-                  maxerrorretry: { label: 'label.s3.max_error_retry' },
-                  sockettimeout: { label: 'label.s3.socket_timeout' },
-                  
-                  createNfsCache: {
-                    label: 'Create NFS Cache Storage',
-                    isBoolean: true,                    
-                    isChecked: true                    
-                  },                  
-                  nfsCacheZoneid: {
-                    dependsOn: 'createNfsCache',
-                    label: 'Zone',                    
-                    validation: { required: true },
-                    select: function(args) {                      
-                      $.ajax({
-                        url: createURL('listZones'),
-                        data: { 
-                          listAll: true 
-                        },
-                        success: function(json) {
-                          var zones = json.listzonesresponse.zone;
-
-                          if(zones != null){ //$.map(items, fn) - items can not be null
-                            args.response.success({
-                              data: $.map(zones, function(zone) {
-                                return {
-                                  id: zone.id,
-                                  description: zone.name
-                                };
-                              })
-                            });
-                          }
-                          else {
-                            args.response.success({data: null});
-                          }                          
-                        }
-                      });
-                    }
-                  },
-                  nfsCacheNfsServer: {
-                    dependsOn: 'createNfsCache',
-                    label: 'label.nfs.server',                    
-                    validation: { required: true }
-                  },
-                  nfsCachePath: {
-                    dependsOn: 'createNfsCache',
-                    label: 'label.path',                    
-                    validation: { required: true }
-                  },                  
-                  //S3 (end)
-                  
-                  
-                  //Swift (begin)
-                  url: { label: 'label.url', validation: { required: true } },
-                  account: { label: 'label.account' },
-                  username: { label: 'label.username' },
-                  key: { label: 'label.key' }
-                  //Swift (end)          
+                  }
                 }
               },
 
               action: function(args) {
-                if(args.data.provider == 'NFS') {
-                  var zoneid = args.data.zoneid;
-                  var nfs_server = args.data.nfsServer;
-                  var path = args.data.path;
-                  var url = nfsURL(nfs_server, path);
-                  
-                  var data = {
-                    provider: args.data.provider,
-                    zoneid: zoneid,
-                    url: url                    
-                  };
-                    
-                  $.ajax({
-                    url: createURL('addImageStore'),
-                    data: data,
-                    success: function(json) {
-                      var item = json.addimagestoreresponse.secondarystorage;
-                      args.response.success({
-  										  data:item
-  										});
-                    },
-                    error: function(XMLHttpResponse) {
-                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                      args.response.error(errorMsg);
-                    }
-                  });
-                }
-                else if(args.data.provider == 'S3') {                  
-                  $.ajax({
-                    url: createURL('addImageStore'),
-                    data: {
-                      provider: args.data.provider,                                           
-                      'details[0].key': 'accesskey',
-                      'details[0].value': args.data.accesskey,                                            
-                      'details[1].key': 'secretkey',
-                      'details[1].value': args.data.secretkey,                                            
-                      'details[2].key': 'bucket',
-                      'details[2].value': args.data.bucket,                                            
-                      'details[3].key': 'endpoint',
-                      'details[3].value': args.data.endpoint,                                          
-                      'details[4].key': 'usehttps',
-                      'details[4].value': (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false'),    
-                      'details[5].key': 'connectiontimeout',
-                      'details[5].value': args.data.connectiontimeout,                                          
-                      'details[6].key': 'maxerrorretry',
-                      'details[6].value': args.data.maxerrorretry,                                           
-                      'details[7].key': 'sockettimeout',
-                      'details[7].value': args.data.sockettimeout
-                    },
-                    success: function(json) {
-                      havingS3 = true;
-                      var item = json.addimagestoreresponse.secondarystorage;
-                      args.response.success({
-                        data:item
-                      });
-                    },
-                    error: function(json) {
-                      args.response.error(parseXMLHttpResponse(json));
-                    }
-                  });
-                }
-                else if(args.data.provider == 'Swift') {
-                  $.ajax({
-                    url: createURL('addImageStore'),
-                    data: {
-                      provider: args.data.provider,
-                      url: args.data.url,
-                      'details[0].key': 'account',
-                      'details[0].value': args.data.account,
-                      'details[1].key': 'username',
-                      'details[1].value': args.data.username,
-                      'details[2].key': 'key',
-                      'details[2].value': args.data.key                      
-                    },
-                    success: function(json) {
-                      havingSwift = true;
-                      var item = json.addimagestoreresponse.secondarystorage;
-                      args.response.success({
-                        data:item
-                      });
-                    },
-                    error: function(json) {
-                      args.response.error(parseXMLHttpResponse(json));
-                    }
-                  });
-                }   
+                var zoneId = args.data.zoneid;
+                var nfs_server = args.data.nfsServer;
+                var path = args.data.path;
+                var url = nfsURL(nfs_server, path);
+
+                $.ajax({
+                  url: createURL("addSecondaryStorage&zoneId=" + zoneId + "&url=" + todb(url)),
+                  dataType: "json",
+                  success: function(json) {
+                    var item = json.addsecondarystorageresponse.secondarystorage;
+                    args.response.success({
+										  data:item
+										});
+                  },
+                  error: function(XMLHttpResponse) {
+                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                    args.response.error(errorMsg);
+                  }
+                });
               },
 
               notification: {
@@ -10679,6 +11001,7 @@
 
           detailView: {
             name: 'Secondary storage details',
+            isMaximized: true,
             actions: {
               remove: {
                 label: 'label.action.delete.secondary.storage' ,
@@ -10692,10 +11015,9 @@
                 },
                 action: function(args) {
                   $.ajax({
-                    url: createURL('deleteImageStore'),
-                    data: {
-                      id: args.context.secondarystorages[0].id
-                    },                    
+                    url: createURL("deleteHost&id=" + args.context.secondarystorages[0].id),
+                    dataType: "json",
+                    async: true,
                     success: function(json) {
                       args.response.success();
                     }
@@ -10723,11 +11045,11 @@
 
                 dataProvider: function(args) {								  
 									$.ajax({
-										url: createURL("listImageStores&id=" + args.context.secondarystorages[0].id),
+										url: createURL("listHosts&type=SecondaryStorage&id=" + args.context.secondarystorages[0].id),
 										dataType: "json",
 										async: true,
 										success: function(json) {										  
-											var item = json.listimagestoreresponse.imagestore[0];
+											var item = json.listhostsresponse.host[0];
 											args.response.success({
 												actionFilter: secondarystorageActionfilter,
 												data:item
@@ -10736,6 +11058,27 @@
 									});										
                 }
               }
+                                             
+              // Granular settings for storage pool for secondary storage is not required
+            /*  settings: {
+                title: 'label.menu.global.settings',
+                custom: cloudStack.uiCustom.granularSettings({
+                  dataProvider: function(args) {
+                    args.response.success({
+                      data: [
+                        { name: 'config.param.1', value: 1 },
+                        { name: 'config.param.2', value: 2 }
+                      ]
+                    });
+                  },
+                  actions: {
+                    edit: function(args) {
+                      // call updateStorageLevelParameters
+                      args.response.success();
+                    }
+                  }
+                })
+              } */
             }
           }
         }
@@ -10853,6 +11196,12 @@
     array1.push("&username=" + todb(args.data.username));
     array1.push("&password=" + todb(args.data.password));
     array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+		
+		if(apiCmd == "addNetscalerLoadBalancer") {
+		  array1.push("&gslbprovider=" + (args.data.gslbprovider == "on"));
+			array1.push("&gslbproviderpublicip=" + todb(args.data.gslbproviderpublicip));
+			array1.push("&gslbproviderprivateip=" + todb(args.data.gslbproviderprivateip));
+		}
 
     //construct URL starts here
     var url = [];
@@ -11639,9 +11988,9 @@
 
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
-      			
+      allowedActions.push("scaleUp");	
 		//	if(jsonObj.vpcid != null) 
-        allowedActions.push("restart");
+      allowedActions.push("restart");
 				
       allowedActions.push("viewConsole");
       if (isAdmin())
@@ -11649,7 +11998,8 @@
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
-	    allowedActions.push("remove");
+      allowedActions.push("scaleUp");
+      allowedActions.push("remove");
 			
       if(jsonObj.vpcid != null)
         allowedActions.push("changeService");
@@ -11664,14 +12014,16 @@
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
       allowedActions.push("restart");
-      allowedActions.push("remove");  
+      allowedActions.push("remove"); 
+      allowedActions.push("scaleUp");
       allowedActions.push("viewConsole");
       if (isAdmin())
         allowedActions.push("migrate");
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");
-			allowedActions.push("changeService");
+      allowedActions.push("scaleUp");
+      allowedActions.push("changeService");
       allowedActions.push("remove");
     }
     else if (jsonObj.state == 'Error') {

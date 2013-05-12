@@ -172,6 +172,53 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         return allocateTo(plan, offering, template, avoid, clusterHosts, returnUpTo, considerReservedCapacity, account);
     }
 
+    @Override
+    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan,
+            Type type, ExcludeList avoid, List<HostVO> hosts, int returnUpTo, boolean considerReservedCapacity) {
+        long dcId = plan.getDataCenterId();
+        Long podId = plan.getPodId();
+        Long clusterId = plan.getClusterId();
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
+        Account account = vmProfile.getOwner();
+        List<Host> suitableHosts = new ArrayList<Host>();
+
+        if (type == Host.Type.Storage) {
+            // FirstFitAllocator should be used for user VMs only since it won't care whether the host is capable of
+            // routing or not.
+            return suitableHosts;
+        }
+
+        String hostTagOnOffering = offering.getHostTag();
+        String hostTagOnTemplate = template.getTemplateTag();
+        boolean hasSvcOfferingTag = hostTagOnOffering != null ? true : false;
+        boolean hasTemplateTag = hostTagOnTemplate != null ? true : false;
+
+        String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
+        if (haVmTag != null) {
+            hosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, haVmTag));
+        } else {
+            if (hostTagOnOffering == null && hostTagOnTemplate == null){
+                hosts.retainAll(_resourceMgr.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId));
+            } else {
+                if (hasSvcOfferingTag) {
+                    hosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering));
+                }
+
+                if (hasTemplateTag) {
+                    hosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate));
+                }
+            }
+        }
+
+        if (!hosts.isEmpty()) {
+            suitableHosts = allocateTo(plan, offering, template, avoid, hosts, returnUpTo, considerReservedCapacity,
+                    account);
+        }
+
+        return suitableHosts;
+    }
+
     protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<HostVO> hosts, int returnUpTo, boolean considerReservedCapacity, Account account) {
         if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random")) {
         	// Shuffle this so that we don't check the hosts in the same order.

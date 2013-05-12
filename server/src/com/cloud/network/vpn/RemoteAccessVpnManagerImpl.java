@@ -62,6 +62,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -100,6 +101,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     @Inject UsageEventDao _usageEventDao;
     @Inject ConfigurationDao _configDao;
     @Inject List<RemoteAccessVPNServiceProvider> _vpnServiceProviders;
+    @Inject ConfigurationServer _configServer;
 
 
     int _userLimit;
@@ -156,7 +158,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }
 
         if (ipRange == null) {
-            ipRange = _clientIpRange;
+            ipRange = _configServer.getConfigValue(Config.RemoteAccessVpnClientIpRange.key(), Config.ConfigurationParameterScope.account.toString(), ipAddr.getAccountId());
         }
         String[] range = ipRange.split("-");
         if (range.length != 2) {
@@ -200,7 +202,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
         String ipRange = _clientIpRange;
         if (ipRange == null) {
-            s_logger.warn("Remote Access VPN configuration missing client ip range -- ignoring");
+            s_logger.warn("Remote Access VPN global configuration missing client ip range -- ignoring");
             return;
         }
         Integer pskLength = _pskLength;

@@ -19,7 +19,7 @@
 
 # cloud-build-api-doc.sh -- builds api documentation.
 #set -x
-set -u
+#set -u
 TARGETJARDIR="$1"
 shift
 DEPSDIR="$1"

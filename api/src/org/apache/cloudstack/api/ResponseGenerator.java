@@ -20,6 +20,9 @@ import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.cloud.vm.NicSecondaryIp;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
@@ -47,6 +50,7 @@ import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
@@ -117,6 +121,7 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.*;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.as.*;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
@@ -150,18 +155,9 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
-import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.*;
-import org.apache.cloudstack.region.Region;
-
-import java.text.DecimalFormat;
-import java.util.EnumSet;
-import java.util.List;
 
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
@@ -196,9 +192,15 @@ public interface ResponseGenerator {
 
     HostResponse createHostResponse(Host host);
 
+    HostForMigrationResponse createHostForMigrationResponse(Host host);
+
+    HostForMigrationResponse createHostForMigrationResponse(Host host, EnumSet<HostDetails> details);
+
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
     IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
+
+    GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
 
     GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule);
 
@@ -222,6 +224,8 @@ public interface ResponseGenerator {
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);
+
+    StoragePoolForMigrationResponse createStoragePoolForMigrationResponse(StoragePool pool);
 
     ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities);
 
@@ -393,7 +397,13 @@ public interface ResponseGenerator {
 
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
     VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot);
-    NicSecondaryIpResponse createSecondaryIPToNicResponse(String ip,
-            Long nicId, Long networkId);
+
+    NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result);
     public NicResponse createNicResponse(Nic result);
+
+    AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
+
+    Long getAffinityGroupId(String name, long entityOwnerId);
+
+    IsolationMethodResponse createIsolationMethodResponse(IsolationType method);
 }

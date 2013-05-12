@@ -34,7 +34,7 @@ public class CommandResult {
         return !this.success;
     }
     
-    public void setSucess(boolean success) {
+    public void setSuccess(boolean success) {
         this.success = success;
     }
     

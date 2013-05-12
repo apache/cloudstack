@@ -52,25 +52,31 @@ Below is a sample login attempt
 var clientApiUrl = "/client/api";
 var clientConsoleUrl   = "/client/console";
 
-$(document).ready(function() {		
-  /*
-	condition 1: If window.location.href contains parameter 'loginUrl', save the parameter's value to a cookie, then reload the page without any URL parameter.
-	(After the page is reloaded without any URL parameter, it will fall in condition 2.) 
-	*/
-	if ($.urlParam('loginUrl') != 0) {	 
-		$.cookie('loginUrl', $.urlParam('loginUrl'), { expires: 1});
-		document.location.href = window.location.href.substring(0, window.location.href.indexOf('?'));	
-	}
+$(document).ready(function() {
 	
-	/* 
-	condition 2: If window.location.href does not contain parameter 'loginUrl' but cookie 'loginUrl' exists, 
-	save the cookie's value to g_regionUrlParam (a global variable for switching regions), 
-	then call login API to set g_loginResponse (a global variable for single-sign-on).
-	*/
-	else if($.cookie('loginUrl') != null) {	  
-	  g_regionUrlParam = '?loginUrl=' + $.cookie('loginUrl');		
+	var url = $.urlParam("loginUrl");
+	if (url != undefined && url != null && url.length > 0) {
+		url = unescape(clientApiUrl+"?"+url);
 		$.ajax({
-			url: unescape(clientApiUrl + "?" + $.cookie('loginUrl')),
+			url: url,
+			dataType: "json",
+			async: false,
+			success: function(json) {
+				g_loginResponse = json.loginresponse;
+			},
+			error: function() {
+				onLogoutCallback();
+				// This means the login failed.  You should redirect to your login page.
+			},
+			beforeSend: function(XMLHttpRequest) {
+				return true;
+			}
+		});
+	}
+	else if(window.name != null && window.name.indexOf("&domain=") != -1) {	//from region switching	  
+	  g_loginCmdText = window.name;		
+		$.ajax({
+			url: clientApiUrl + "?command=login" + window.name + "&response=json",
 			dataType: "json",
 			async: false,
 			success: function(json) {
@@ -85,7 +91,6 @@ $(document).ready(function() {
 			}
 		});
 	}
-	
 });
 
 

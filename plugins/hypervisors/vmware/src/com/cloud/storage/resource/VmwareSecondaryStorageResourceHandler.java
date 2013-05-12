@@ -20,6 +20,12 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.google.gson.Gson;
+import com.vmware.vim25.ManagedObjectReference;
+
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
@@ -27,6 +33,9 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
+import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
@@ -41,8 +50,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
-import com.google.gson.Gson;
-import com.vmware.vim25.ManagedObjectReference;
 
 public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService, VmwareStorageMount {
     private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageResourceHandler.class);
@@ -51,6 +58,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     private final VmwareStorageManager _storageMgr;
 
     private final Gson _gson;
+    private final StorageSubsystemCommandHandler storageSubsystemHandler;
 
     /*
 	private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
@@ -60,6 +68,11 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         _resource = resource;
         _storageMgr = new VmwareStorageManagerImpl(this);
         _gson = GsonHelper.getGsonLogger();
+      
+        VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor(this, true, this,
+        		null, null, null
+        		);
+        storageSubsystemHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
     }
 
     @Override
@@ -75,8 +88,14 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             answer = execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
         } else if(cmd instanceof CopyVolumeCommand) {
             answer = execute((CopyVolumeCommand)cmd);
+        } else if(cmd instanceof CreateVolumeOVACommand) {
+            answer = execute((CreateVolumeOVACommand)cmd);
+        } else if (cmd instanceof PrepareOVAPackingCommand) {
+            answer = execute((PrepareOVAPackingCommand)cmd);
         } else if(cmd instanceof CreateVolumeFromSnapshotCommand) {
             answer = execute((CreateVolumeFromSnapshotCommand)cmd);
+        } else if (cmd instanceof StorageSubSystemCommand) {
+        	answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
         } else {
             answer =  _resource.defaultAction(cmd);
         }
@@ -135,6 +154,23 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         }
 
         return _storageMgr.execute(this, cmd);
+    }
+
+    private Answer execute(PrepareOVAPackingCommand cmd) {
+        s_logger.info("Fang: VmwareSecStorageResourceHandler: exec cmd. cmd is  " + cmd.toString());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Executing resource PrepareOVAPackingCommand: " + _gson.toJson(cmd));
+        }
+
+        return _storageMgr.execute(this, cmd);
+    }
+
+    private CreateVolumeOVAAnswer execute(CreateVolumeOVACommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Executing resource CreateVolumeOVACommand: " + _gson.toJson(cmd));
+        }
+
+        return (CreateVolumeOVAAnswer) _storageMgr.execute(this, cmd);
     }
 
     private Answer execute(CreateVolumeFromSnapshotCommand cmd) {

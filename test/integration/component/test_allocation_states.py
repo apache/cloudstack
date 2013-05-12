@@ -49,7 +49,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "memory": 128,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -79,7 +79,6 @@ class Services:
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced',
                     }
 
 
@@ -94,6 +93,7 @@ class TestAllocationState(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls._cleanup = []
         return
 

@@ -21,13 +21,15 @@ package org.apache.cloudstack.storage.image;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -41,7 +43,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -57,9 +58,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
-import com.cloud.storage.template.TemplateConstants;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
@@ -71,9 +69,9 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -81,11 +79,11 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
-import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -162,7 +160,7 @@ public class TemplateServiceImpl implements TemplateService {
         } catch (Exception e) {
             TemplateApiResult result = new TemplateApiResult(templateOnStore);
             result.setResult(e.toString());
-            result.setSucess(false);
+            result.setSuccess(false);
             if ( callback != null ){
                 callback.complete(result);
             }
@@ -170,7 +168,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(callback,
-                (TemplateObject)templateOnStore, null);
+                templateOnStore, null);
 
         AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createTemplateCallback(null, null)).setContext(context);
@@ -190,8 +188,8 @@ public class TemplateServiceImpl implements TemplateService {
         for (VMTemplateVO template : toBeDownloaded) {
             TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
             if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-            	TemplateInfo tmplt = this._templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
-                this.createTemplateAsync(tmplt, store, null);
+            	TemplateInfo tmplt = _templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
+                createTemplateAsync(tmplt, store, null);
             }
         }
     }
@@ -199,7 +197,7 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId) {
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-        List<DataStore> stores = this._storeMgr.getImageStoresByScope(new ZoneScope(dcId));
+        List<DataStore> stores = _storeMgr.getImageStoresByScope(new ZoneScope(dcId));
         if (stores == null || stores.isEmpty()){
             return;
         }
@@ -225,8 +223,8 @@ public class TemplateServiceImpl implements TemplateService {
             for (VMTemplateVO template: toBeDownloaded) {
                 TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
                 if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                    TemplateInfo tmplt = this._templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
-                    this.createTemplateAsync(tmplt, store, null);
+                    TemplateInfo tmplt = _templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
+                    createTemplateAsync(tmplt, store, null);
                 }
             }
         }
@@ -331,7 +329,7 @@ public class TemplateServiceImpl implements TemplateService {
                     tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
                     tmpltStore.setDataStoreRole(store.getRole());
                     _vmTemplateStoreDao.persist(tmpltStore);
-                    this.associateTemplateToZone(tmplt.getId(), zoneId);
+                    associateTemplateToZone(tmplt.getId(), zoneId);
                 }
 
                 continue;
@@ -343,7 +341,7 @@ public class TemplateServiceImpl implements TemplateService {
                 s_logger.info("Template Sync did not find " + uniqueName + " on the server " + storeId + ", will request download shortly");
                 TemplateDataStoreVO templtStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
                 _vmTemplateStoreDao.persist(templtStore);
-                this.associateTemplateToZone(tmplt.getId(), zoneId);
+                associateTemplateToZone(tmplt.getId(), zoneId);
             }
 
         }
@@ -383,8 +381,8 @@ public class TemplateServiceImpl implements TemplateService {
                     }
                     s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + store.getName());
                     //TODO: we should pass a callback here
-                    TemplateInfo tmpl = this._templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
-                    this.createTemplateAsync(tmpl, store, null);
+                    TemplateInfo tmpl = _templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
+                    createTemplateAsync(tmpl, store, null);
                 }
             }
         }
@@ -458,7 +456,7 @@ public class TemplateServiceImpl implements TemplateService {
 
     protected Void createTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback,
             TemplateOpContext<TemplateApiResult> context) {
-        TemplateObject template = (TemplateObject)context.getTemplate();
+        TemplateObject template = context.getTemplate();
         AsyncCompletionCallback<TemplateApiResult> parentCallback = context.getParentCallback();
         TemplateApiResult result = new TemplateApiResult(template);
         CreateCmdResult callbackResult = callback.getResult();
@@ -509,7 +507,7 @@ public class TemplateServiceImpl implements TemplateService {
          }
         TemplateApiResult apiResult = new TemplateApiResult(vo);
         apiResult.setResult(result.getResult());
-        apiResult.setSucess(result.isSuccess());
+        apiResult.setSuccess(result.isSuccess());
         context.future.complete(apiResult);
         return null;
     }
@@ -522,30 +520,30 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null, (TemplateObject) templateOnStore, future);
         AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().copyTemplateCallBack(null, null)).setContext(context);
-        this._motionSrv.copyAsync(source, templateOnStore, caller);
+        _motionSrv.copyAsync(source, templateOnStore, caller);
         return future;
     }
 
     @Override
     public AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(
             SnapshotInfo snapshot, TemplateInfo template, DataStore store) {
-        return this.copyAsync(snapshot, template, store);
+        return copyAsync(snapshot, template, store);
     }
 
     @Override
     public AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(
             VolumeInfo volume, TemplateInfo template, DataStore store) {
-        return this.copyAsync(volume, template, store);
+        return copyAsync(volume, template, store);
     }
 
     @Override
     public AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate, DataStore destStore) {
-        return this.copyAsync(srcTemplate, srcTemplate, destStore);
+        return copyAsync(srcTemplate, srcTemplate, destStore);
     }
 
     @Override
     public AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool) {
-        return this.copyAsync(srcTemplate, srcTemplate, (DataStore)pool);
+        return copyAsync(srcTemplate, srcTemplate, (DataStore)pool);
     }
 
     protected Void copyTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback,
@@ -579,7 +577,7 @@ public class TemplateServiceImpl implements TemplateService {
         long storeId = store.getId();
         List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
         for ( VMTemplateVO tmplt : rtngTmplts ) {
-            TemplateDataStoreVO tmpltStore = this._vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
+            TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
             if ( tmpltStore == null ) {
                 tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, tmplt.getUrl());
                 tmpltStore.setSize(0);

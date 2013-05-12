@@ -18,10 +18,10 @@ package org.apache.cloudstack.storage.datastore;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.fsm.NoTransitionException;
 

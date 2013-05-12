@@ -1,8 +1,8 @@
-Apache CloudStack (Incubating) Version 4.0.0
+Apache CloudStack Version 4.2.0
 
-# About Apache CloudStack (Incubating)
+# About Apache CloudStack
 
-Apache CloudStack (Incubating) is software designed to deploy 
+Apache CloudStack is software designed to deploy 
 and manage large networks of virtual machines, as a highly 
 available, highly scalable Infrastructure as a Service (IaaS) 
 cloud computing platform. CloudStack is used by a number of 

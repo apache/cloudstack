@@ -52,4 +52,6 @@ public interface HypervisorCapabilities extends Identity, InternalIdentity{
      */
     Integer getMaxHostsPerCluster();
 
+    boolean isStorageMotionSupported();
+
 }

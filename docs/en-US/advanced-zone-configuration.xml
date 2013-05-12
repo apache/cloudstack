@@ -362,7 +362,7 @@
         Secondary Storage :</para>
       <itemizedlist>
         <listitem>
-          <para><emphasis role="bold">NFS Server.</emphasis> The IP address of the server.</para>
+          <para><emphasis role="bold">NFS Server.</emphasis> The IP address of the server or fully qualified domain name of the server.</para>
         </listitem>
         <listitem>
           <para><emphasis role="bold">Path.</emphasis> The exported path from the server.</para>

@@ -125,7 +125,7 @@ fi
 # Define other required variables
 CATALINA_PID="/var/run/$NAME.pid"
 BOOTSTRAP_CLASS=org.apache.catalina.startup.Bootstrap
-JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$CATALINA_HOME/bin/bootstrap.jar:/etc/cloudstack/management"
+JSVC_CLASSPATH="/usr/share/java/commons-daemon.jar:$CATALINA_HOME/bin/bootstrap.jar:/etc/cloudstack/management:/usr/share/cloudstack-management/setup"
 
 # Look for Java Secure Sockets Extension (JSSE) JARs
 if [ -z "${JSSE_HOME}" -a -r "${JAVA_HOME}/jre/lib/jsse.jar" ]; then

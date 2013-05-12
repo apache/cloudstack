@@ -95,7 +95,7 @@
           </listitem>
           <listitem>
             <para>Convert your private key format into PKCS#8 encrypted format.</para>
-            <programlisting>openssl pkcs8 -topk8 -in yourprivate.key -out yourprivate.pkcs8.encryped.key</programlisting>
+            <programlisting>openssl pkcs8 -topk8 -in yourprivate.key -out yourprivate.pkcs8.encrypted.key</programlisting>
           </listitem>
           <listitem>
             <para>Convert your PKCS#8 encrypted private key into the PKCS#8 format that is compliant

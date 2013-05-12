@@ -77,7 +77,7 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     private String projectName;
 
     @Column(name="job_id")
-    private long jobId;
+    private Long jobId;
 
     @Column(name="job_uuid")
     private String jobUuid;
@@ -269,11 +269,11 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         this.projectName = projectName;
     }
 
-    public long getJobId() {
+    public Long getJobId() {
         return jobId;
     }
 
-    public void setJobId(long jobId) {
+    public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 

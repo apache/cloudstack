@@ -107,7 +107,7 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
                 if (obj == null) {
                     CreateBaseImageResult result = new CreateBaseImageResult(
                             null);
-                    result.setSucess(false);
+                    result.setSuccess(false);
                     result.setResult(e.toString());
                     callback.complete(result);
                     return null;
@@ -122,7 +122,7 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
                         template, store);
             } catch (Exception e) {
                 CreateBaseImageResult result = new CreateBaseImageResult(null);
-                result.setSucess(false);
+                result.setSuccess(false);
                 result.setResult(e.toString());
                 callback.complete(result);
                 return null;
@@ -145,7 +145,7 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
                 s_logger.debug("state transation failed", e1);
             }
             CreateBaseImageResult result = new CreateBaseImageResult(null);
-            result.setSucess(false);
+            result.setSuccess(false);
             result.setResult(e.toString());
             callback.complete(result);
             return null;

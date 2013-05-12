@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -90,6 +92,10 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -527,25 +533,35 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 	}
 	
 	protected void createVbds(OvmVm.Details vm, VirtualMachineTO spec) throws URISyntaxException {
-		for (VolumeTO volume : spec.getDisks()) {
+		for (DiskTO volume : spec.getDisks()) {
 			if (volume.getType() == Volume.Type.ROOT) {
+				VolumeObjectTO vol = (VolumeObjectTO)volume.getData();
 				OvmDisk.Details root = new OvmDisk.Details();
-				root.path = volume.getPath();
+				root.path = vol.getPath();
 				root.type = OvmDisk.WRITE;
 				root.isIso = false;
 				vm.rootDisk = root;
 			} else if (volume.getType() == Volume.Type.ISO) {
-				if (volume.getPath() != null) {
+				DataTO isoTO = volume.getData();
+				if (isoTO.getPath() != null) {
+					TemplateObjectTO template = (TemplateObjectTO)isoTO;
+					DataStoreTO store = template.getDataStore();
+					if (!(store instanceof NfsTO)) {
+						throw new CloudRuntimeException("unsupported protocol");
+					}
+					NfsTO nfsStore = (NfsTO)store;
+					String isoPath = nfsStore.getUrl() + File.separator + template.getPath();
 					OvmDisk.Details iso = new OvmDisk.Details();
-					URI path = new URI(volume.getPath());
+					URI path = new URI(isoPath);
 					iso.path = path.getHost() + ":" + path.getPath();
 					iso.type = OvmDisk.READ;
 					iso.isIso = true;
 					vm.disks.add(iso);
 				}
 			} else if (volume.getType() == Volume.Type.DATADISK){
+				
 				OvmDisk.Details data = new OvmDisk.Details();
-				data.path = volume.getPath();
+				data.path = volume.getData().getPath();
 				data.type = OvmDisk.SHAREDWRITE;
 				data.isIso = false;
 				vm.disks.add(data);

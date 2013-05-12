@@ -31,6 +31,8 @@ public interface SecurityGroupRules extends InternalIdentity {
 
     Long getRuleId();
 
+    String getRuleUuid();
+
     int getStartPort();
 
     int getEndPort();

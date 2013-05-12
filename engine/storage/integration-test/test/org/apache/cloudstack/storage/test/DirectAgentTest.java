@@ -22,12 +22,13 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.to.ImageStoreTO;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.testng.annotations.Test;
+
+import org.apache.cloudstack.storage.to.ImageStoreTO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -67,7 +68,7 @@ public class DirectAgentTest extends CloudStackTestNGBase {
     
     @Test(priority = -1)
     public void setUp() {
-        HostVO host = hostDao.findByGuid(this.getHostGuid());
+        HostVO host = hostDao.findByGuid(getHostGuid());
         if (host != null) {
             hostId = host.getId();
             dcId = host.getDataCenterId();
@@ -81,7 +82,7 @@ public class DirectAgentTest extends CloudStackTestNGBase {
         dcId = dc.getId();
         //create pod
 
-        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(), this.getHostCidr(), 8, "test");
+        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), getHostGateway(), getHostCidr(), 8, "test");
         pod = podDao.persist(pod);
         //create xen cluster
         ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
@@ -92,11 +93,11 @@ public class DirectAgentTest extends CloudStackTestNGBase {
         clusterId = cluster.getId();
         //create xen host
 
-        host = new HostVO(this.getHostGuid());
+        host = new HostVO(getHostGuid());
         host.setName("devcloud xen host");
         host.setType(Host.Type.Routing);
         host.setHypervisorType(HypervisorType.XenServer);
-        host.setPrivateIpAddress(this.getHostIp());
+        host.setPrivateIpAddress(getHostIp());
         host.setDataCenterId(dc.getId());
         host.setVersion("6.0.1");
         host.setAvailable(true);
@@ -127,14 +128,14 @@ public class DirectAgentTest extends CloudStackTestNGBase {
     public void testDownloadTemplate() {
         ImageStoreTO image = Mockito.mock(ImageStoreTO.class);
         PrimaryDataStoreTO primaryStore = Mockito.mock(PrimaryDataStoreTO.class);
-        Mockito.when(primaryStore.getUuid()).thenReturn(this.getLocalStorageUuid());
+        Mockito.when(primaryStore.getUuid()).thenReturn(getLocalStorageUuid());
         //Mockito.when(image.get).thenReturn(primaryStore);
         
         ImageStoreTO imageStore = Mockito.mock(ImageStoreTO.class);
         Mockito.when(imageStore.getProtocol()).thenReturn("http");
         
         TemplateObjectTO template = Mockito.mock(TemplateObjectTO.class);
-        Mockito.when(template.getPath()).thenReturn(this.getTemplateUrl());
+        Mockito.when(template.getPath()).thenReturn(getTemplateUrl());
         Mockito.when(template.getImageDataStore()).thenReturn(imageStore);
         
         //Mockito.when(image.getTemplate()).thenReturn(template);

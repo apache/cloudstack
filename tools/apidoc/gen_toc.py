@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/cygdrive/c/Python27
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -56,6 +56,7 @@ dirname_to_dirname = {
 
 
 known_categories = {
+    'Cisco' : 'External Device',
     'SystemVm': 'System VM',
     'VirtualMachine': 'Virtual Machine',
     'VM': 'Virtual Machine',
@@ -83,6 +84,7 @@ known_categories = {
     'Configuration': 'Configuration',
     'Capabilities': 'Configuration',
     'Pod': 'Pod',
+    'PublicIpRange': 'Network',
     'Zone': 'Zone',
     'NetworkOffering': 'Network Offering',
     'NetworkACL': 'Network ACL',
@@ -95,7 +97,6 @@ known_categories = {
     'InstanceGroup': 'VM Group',
     'StorageMaintenance': 'Storage Pool',
     'StoragePool': 'Storage Pool',
-    'CacheStore': 'Storage Pool',
     'StorageProvider': 'Storage Pool',
     'SecurityGroup': 'Security Group',
     'SSH': 'SSH',
@@ -138,9 +139,11 @@ known_categories = {
     'addIpToNic': 'Nic',
     'removeIpFromNic': 'Nic',
     'listNics':'Nic',
+	'AffinityGroup': 'Affinity Group',
     'addImageStore': 'Image Store',
-    'listImageStores': 'Image Store',
+    'listImageStore': 'Image Store',
     'deleteImageStore': 'Image Store',
+    'createCacheStore': 'Image Store',
     }
 
 

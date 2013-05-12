@@ -74,6 +74,9 @@ public class ListSystemVMsCmd extends BaseListCmd {
             description="the storage ID where vm's volumes belong to", since="3.0.1")
     private Long storageId;
 
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -110,6 +113,10 @@ public class ListSystemVMsCmd extends BaseListCmd {
         return storageId;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

@@ -23,14 +23,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -38,13 +35,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
-import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
-import com.cloud.agent.api.GetVncPortAnswer;
-import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
@@ -52,11 +44,9 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
-import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
@@ -70,11 +60,8 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
@@ -109,13 +96,13 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateManager;
@@ -126,7 +113,6 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -169,7 +155,8 @@ import com.google.gson.GsonBuilder;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
-public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, ConsoleProxyService, AgentHook, VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager,
+        VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -233,6 +220,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     TemplateManager templateMgr;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    ManagementServer _ms;
 
     private ConsoleProxyListener _listener;
 
@@ -267,197 +256,135 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private Map<Long, ConsoleProxyLoadInfo> _zoneProxyCountMap; // map <zone id, info about proxy VMs count in zone>
     private Map<Long, ConsoleProxyLoadInfo> _zoneVmCountMap; // map <zone id, info about running VMs count in zone>
 
-    private String _hashKey;
     private String _staticPublicIp;
     private int _staticPort;
 
     private final GlobalLock _allocProxyLock = GlobalLock.getInternLock(getAllocProxyLockName());
 
-    /*
-     * private final String keyContent =
-     * "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBALV5vGlkiWwoZX4hTRplPXP8qtST\n"
-     * + "hwZhko8noeY5vf8ECwmd+vrCTw/JvnOtkx/8oYNbg/SeUt1EfOsk6gqJdBblGFBZRMcUJlIpqE9z\n" +
-     * "uv68U9G8Gfi/qvRSY336hibw0J5bZ4vn1QqmyHDB+Czea9AjFUV7AEVG15+vED7why+/AgMBAAEC\n"
-     * + "gYBmFBPnNKYYMKDmUdUNA+WNWJK/ADzzWe8WlzR6TACTcbLDthl289WFC/YVG42mcHRpbxDKiEQU\n" +
-     * "MnIR0rHTO34Qb/2HcuyweStU2gqR6omxBvMnFpJr90nD1HcOMJzeLHsphau0/EmKKey+gk4PyieD\n"
-     * + "KqTM7LTjjHv8xPM4n+WAAQJBAOMNCeFKlJ4kMokWhU74B5/w/NGyT1BHUN0VmilHSiJC8JqS4BiI\n" +
-     * "ZpAeET3VmilO6QTGh2XVhEDGteu3uZR6ipUCQQDMnRzMgQ/50LFeIQo4IBtwlEouczMlPQF4c21R\n"
-     * + "1d720moxILVPT0NJZTQUDDmmgbL+B7CgtcCR2NlP5sKPZVADAkEAh4Xq1cy8dMBKYcVNgNtPQcqI\n" +
-     * "PWpfKR3ISI5yXB0vRNAL6Vet5zbTcUZhKDVtNSbis3UEsGYH8NorEC2z2cpjGQJANhJi9Ow6c5Mh\n"
-     * + "/DURBUn+1l5pyCKrZnDbvaALSLATLvjmFTuGjoHszy2OeKnOZmEqExWnKKE/VYuPyhy6V7i3TwJA\n" +
-     * "f8skDgtPK0OsBCa6IljPaHoWBjPc4kFkSTSS1d56hUcWSikTmiuKdLyBb85AADSZYsvHWrte4opN\n" + "dhNukMJuRA==\n";
-     *
-     * private final String certContent = "-----BEGIN CERTIFICATE-----\n" +
-     * "MIIE3jCCA8agAwIBAgIFAqv56tIwDQYJKoZIhvcNAQEFBQAwgcoxCzAJBgNVBAYT\n"
-     * + "AlVTMRAwDgYDVQQIEwdBcml6b25hMRMwEQYDVQQHEwpTY290dHNkYWxlMRowGAYD\n" +
-     * "VQQKExFHb0RhZGR5LmNvbSwgSW5jLjEzMDEGA1UECxMqaHR0cDovL2NlcnRpZmlj\n"
-     * + "YXRlcy5nb2RhZGR5LmNvbS9yZXBvc2l0b3J5MTAwLgYDVQQDEydHbyBEYWRkeSBT\n" +
-     * "ZWN1cmUgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxETAPBgNVBAUTCDA3OTY5Mjg3\n"
-     * + "MB4XDTA5MDIxMTA0NTc1NloXDTEyMDIwNzA1MTEyM1owWTEZMBcGA1UECgwQKi5y\n" +
-     * "ZWFsaG9zdGlwLmNvbTEhMB8GA1UECwwYRG9tYWluIENvbnRyb2wgVmFsaWRhdGVk\n"
-     * + "MRkwFwYDVQQDDBAqLnJlYWxob3N0aXAuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GN\n" +
-     * "ADCBiQKBgQC1ebxpZIlsKGV+IU0aZT1z/KrUk4cGYZKPJ6HmOb3/BAsJnfr6wk8P\n"
-     * + "yb5zrZMf/KGDW4P0nlLdRHzrJOoKiXQW5RhQWUTHFCZSKahPc7r+vFPRvBn4v6r0\n" +
-     * "UmN9+oYm8NCeW2eL59UKpshwwfgs3mvQIxVFewBFRtefrxA+8IcvvwIDAQABo4IB\n"
-     * + "vTCCAbkwDwYDVR0TAQH/BAUwAwEBADAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB\n" +
-     * "BQUHAwIwDgYDVR0PAQH/BAQDAgWgMDIGA1UdHwQrMCkwJ6AloCOGIWh0dHA6Ly9j\n"
-     * + "cmwuZ29kYWRkeS5jb20vZ2RzMS0yLmNybDBTBgNVHSAETDBKMEgGC2CGSAGG/W0B\n" +
-     * "BxcBMDkwNwYIKwYBBQUHAgEWK2h0dHA6Ly9jZXJ0aWZpY2F0ZXMuZ29kYWRkeS5j\n"
-     * + "b20vcmVwb3NpdG9yeS8wgYAGCCsGAQUFBwEBBHQwcjAkBggrBgEFBQcwAYYYaHR0\n" +
-     * "cDovL29jc3AuZ29kYWRkeS5jb20vMEoGCCsGAQUFBzAChj5odHRwOi8vY2VydGlm\n"
-     * + "aWNhdGVzLmdvZGFkZHkuY29tL3JlcG9zaXRvcnkvZ2RfaW50ZXJtZWRpYXRlLmNy\n" +
-     * "dDAfBgNVHSMEGDAWgBT9rGEyk2xF1uLuhV+auud2mWjM5zArBgNVHREEJDAighAq\n"
-     * + "LnJlYWxob3N0aXAuY29tgg5yZWFsaG9zdGlwLmNvbTAdBgNVHQ4EFgQUHxwmdK5w\n" +
-     * "9/YVeZ/3fHyi6nQfzoYwDQYJKoZIhvcNAQEFBQADggEBABv/XinvId6oWXJtmku+\n"
-     * + "7m90JhSVH0ycoIGjgdaIkcExQGP08MCilbUsPcbhLheSFdgn/cR4e1MP083lacoj\n" +
-     * "OGauY7b8f/cuquGkT49Ns14awPlEzRjjycQEjjLxFEuL5CFWa2t2gKRE1dSfhDQ+\n"
-     * + "fJ6GBCs1XgZLuhkKS8fPf+YmG2ZjHzYDjYoSx7paDXgEm+kbYIZdCK51lA0BUAjP\n" +
-     * "9ZMGhsu/PpAbh5U/DtcIqxY0xeqD4TeGsBzXg6uLhv+jKHDtXg5fYPe+z0n5DCEL\n"
-     * + "k0fLF4+i/pt9hVCz0QrZ28RUhXf825+EOL0Gw+Uzt+7RV2cCaJrlu4cDrDom2FRy\n" + "E8I=\n" +
-     * "-----END CERTIFICATE-----\n";
-     */
-    public static final String keyContent =
-            "-----BEGIN PRIVATE KEY-----\n" +
-                    "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCDT9AtEfs+s/I8QXp6rrCw0iNJ\n" +
-                    "0+GgsybNHheU+JpL39LMTZykCrZhZnyDvwdxCoOfE38Sa32baHKNds+y2SHnMNsOkw8OcNucHEBX\n" +
-                    "1FIpOBGph9D6xC+umx9od6xMWETUv7j6h2u+WC3OhBM8fHCBqIiAol31/IkcqDxxsHlQ8S/oCfTl\n" +
-                    "XJUY6Yn628OA1XijKdRnadV0hZ829cv/PZKljjwQUTyrd0KHQeksBH+YAYSo2JUl8ekNLsOi8/cP\n" +
-                    "tfojnltzRI1GXi0ZONs8VnDzJ0a2gqZY+uxlz+CGbLnGnlN4j9cBpE+MfUE+35Dq121sTpsSgF85\n" +
-                    "Mz+pVhn2S633AgMBAAECggEAH/Szd9RxbVADenCA6wxKSa3KErRyq1YN8ksJeCKMAj0FIt0caruE\n" +
-                    "qO11DebWW8cwQu1Otl/cYI6pmg24/BBldMrp9IELX/tNJo+lhPpRyGAxxC0eSXinFfoASb8d+jJd\n" +
-                    "Bd1mmemM6fSxqRlxSP4LrzIhjhR1g2CiyYuTsiM9UtoVKGyHwe7KfFwirUOJo3Mr18zUVNm7YqY4\n" +
-                    "IVhOSq59zkH3ULBlYq4bG50jpxa5mNSCZ7IpafPY/kE/CbR+FWNt30+rk69T+qb5abg6+XGm+OAm\n" +
-                    "bnQ18yZEqX6nJLk7Ch0cfA5orGgrTMOrM71wK7tBBDQ308kOxDGebx6j0qD36QKBgQDTRDr8kuhA\n" +
-                    "9sUyKr9vk2DQCMpNvEeiwI3JRMqmmxpNAtg01aJ3Ya57vX5Fc+zcuV87kP6FM1xgpHQvnw5LWo2J\n" +
-                    "s7ANwQcP8ricEW5zkZhSjI4ssMeAubmsHOloGxmLFYZqwx0JI7CWViGTLMcUlqKblmHcjeQDeDfP\n" +
-                    "P1TaCItFmwKBgQCfHZwVvIcaDs5vxVpZ4ftvflIrW8qq0uOVK6QIf9A/YTGhCXl2qxxTg2A6+0rg\n" +
-                    "ZqI7zKzUDxIbVv0KlgCbpHDC9d5+sdtDB3wW2pimuJ3p1z4/RHb4n/lDwXCACZl1S5l24yXX2pFZ\n" +
-                    "wdPCXmy5PYkHMssFLNhI24pprUIQs66M1QKBgQDQwjAjWisD3pRXESSfZRsaFkWJcM28hdbVFhPF\n" +
-                    "c6gWhwQLmTp0CuL2RPXcPUPFi6sN2iWWi3zxxi9Eyz+9uBn6AsOpo56N5MME/LiOnETO9TKb+Ib6\n" +
-                    "rQtKhjshcv3XkIqFPo2XdVvOAgglPO7vajX91iiXXuH7h7RmJud6l0y/lwKBgE+bi90gLuPtpoEr\n" +
-                    "VzIDKz40ED5bNYHT80NNy0rpT7J2GVN9nwStRYXPBBVeZq7xCpgqpgmO5LtDAWULeZBlbHlOdBwl\n" +
-                    "NhNKKl5wzdEUKwW0yBL1WSS5PQgWPwgARYP25/ggW22sj+49WIo1neXsEKPGWObk8e050f1fTt92\n" +
-                    "Vo1lAoGAb1gCoyBCzvi7sqFxm4V5oapnJeiQQJFjhoYWqGa26rQ+AvXXNuBcigIeDXNJPctSF0Uc\n" +
-                    "p11KbbCgiruBbckvM1vGsk6Sx4leRk+IFHRpJktFUek4o0eUg0shOsyyvyet48Dfg0a8FvcxROs0\n" +
-                    "gD+IYds5doiob/hcm1hnNB/3vk4=\n" +
-                    "-----END PRIVATE KEY-----\n";
-
-    public static final String certContent =
-            "-----BEGIN CERTIFICATE-----\n" +
-                    "MIIFZTCCBE2gAwIBAgIHKBCduBUoKDANBgkqhkiG9w0BAQUFADCByjELMAkGA1UE\n" +
-                    "BhMCVVMxEDAOBgNVBAgTB0FyaXpvbmExEzARBgNVBAcTClNjb3R0c2RhbGUxGjAY\n" +
-                    "BgNVBAoTEUdvRGFkZHkuY29tLCBJbmMuMTMwMQYDVQQLEypodHRwOi8vY2VydGlm\n" +
-                    "aWNhdGVzLmdvZGFkZHkuY29tL3JlcG9zaXRvcnkxMDAuBgNVBAMTJ0dvIERhZGR5\n" +
-                    "IFNlY3VyZSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTERMA8GA1UEBRMIMDc5Njky\n" +
-                    "ODcwHhcNMTIwMjAzMDMzMDQwWhcNMTcwMjA3MDUxMTIzWjBZMRkwFwYDVQQKDBAq\n" +
-                    "LnJlYWxob3N0aXAuY29tMSEwHwYDVQQLDBhEb21haW4gQ29udHJvbCBWYWxpZGF0\n" +
-                    "ZWQxGTAXBgNVBAMMECoucmVhbGhvc3RpcC5jb20wggEiMA0GCSqGSIb3DQEBAQUA\n" +
-                    "A4IBDwAwggEKAoIBAQCDT9AtEfs+s/I8QXp6rrCw0iNJ0+GgsybNHheU+JpL39LM\n" +
-                    "TZykCrZhZnyDvwdxCoOfE38Sa32baHKNds+y2SHnMNsOkw8OcNucHEBX1FIpOBGp\n" +
-                    "h9D6xC+umx9od6xMWETUv7j6h2u+WC3OhBM8fHCBqIiAol31/IkcqDxxsHlQ8S/o\n" +
-                    "CfTlXJUY6Yn628OA1XijKdRnadV0hZ829cv/PZKljjwQUTyrd0KHQeksBH+YAYSo\n" +
-                    "2JUl8ekNLsOi8/cPtfojnltzRI1GXi0ZONs8VnDzJ0a2gqZY+uxlz+CGbLnGnlN4\n" +
-                    "j9cBpE+MfUE+35Dq121sTpsSgF85Mz+pVhn2S633AgMBAAGjggG+MIIBujAPBgNV\n" +
-                    "HRMBAf8EBTADAQEAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAOBgNV\n" +
-                    "HQ8BAf8EBAMCBaAwMwYDVR0fBCwwKjAooCagJIYiaHR0cDovL2NybC5nb2RhZGR5\n" +
-                    "LmNvbS9nZHMxLTY0LmNybDBTBgNVHSAETDBKMEgGC2CGSAGG/W0BBxcBMDkwNwYI\n" +
-                    "KwYBBQUHAgEWK2h0dHA6Ly9jZXJ0aWZpY2F0ZXMuZ29kYWRkeS5jb20vcmVwb3Np\n" +
-                    "dG9yeS8wgYAGCCsGAQUFBwEBBHQwcjAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Au\n" +
-                    "Z29kYWRkeS5jb20vMEoGCCsGAQUFBzAChj5odHRwOi8vY2VydGlmaWNhdGVzLmdv\n" +
-                    "ZGFkZHkuY29tL3JlcG9zaXRvcnkvZ2RfaW50ZXJtZWRpYXRlLmNydDAfBgNVHSME\n" +
-                    "GDAWgBT9rGEyk2xF1uLuhV+auud2mWjM5zArBgNVHREEJDAighAqLnJlYWxob3N0\n" +
-                    "aXAuY29tgg5yZWFsaG9zdGlwLmNvbTAdBgNVHQ4EFgQUZyJz9/QLy5TWIIscTXID\n" +
-                    "E8Xk47YwDQYJKoZIhvcNAQEFBQADggEBAKiUV3KK16mP0NpS92fmQkCLqm+qUWyN\n" +
-                    "BfBVgf9/M5pcT8EiTZlS5nAtzAE/eRpBeR3ubLlaAogj4rdH7YYVJcDDLLoB2qM3\n" +
-                    "qeCHu8LFoblkb93UuFDWqRaVPmMlJRnhsRkL1oa2gM2hwQTkBDkP7w5FG1BELCgl\n" +
-                    "gZI2ij2yxjge6pOEwSyZCzzbCcg9pN+dNrYyGEtB4k+BBnPA3N4r14CWbk+uxjrQ\n" +
-                    "6j2Ip+b7wOc5IuMEMl8xwTyjuX3lsLbAZyFI9RCyofwA9NqIZ1GeB6Zd196rubQp\n" +
-                    "93cmBqGGjZUs3wMrGlm7xdjlX6GQ9UvmvkMub9+lL99A5W50QgCmFeI=\n" +
-                    "-----END CERTIFICATE-----\n";
-
-    public static final String rootCa =
-            "-----BEGIN CERTIFICATE-----\n" +
-                    "MIIE3jCCA8agAwIBAgICAwEwDQYJKoZIhvcNAQEFBQAwYzELMAkGA1UEBhMCVVMx\n" +
-                    "ITAfBgNVBAoTGFRoZSBHbyBEYWRkeSBHcm91cCwgSW5jLjExMC8GA1UECxMoR28g\n" +
-                    "RGFkZHkgQ2xhc3MgMiBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0wNjExMTYw\n" +
-                    "MTU0MzdaFw0yNjExMTYwMTU0MzdaMIHKMQswCQYDVQQGEwJVUzEQMA4GA1UECBMH\n" +
-                    "QXJpem9uYTETMBEGA1UEBxMKU2NvdHRzZGFsZTEaMBgGA1UEChMRR29EYWRkeS5j\n" +
-                    "b20sIEluYy4xMzAxBgNVBAsTKmh0dHA6Ly9jZXJ0aWZpY2F0ZXMuZ29kYWRkeS5j\n" +
-                    "b20vcmVwb3NpdG9yeTEwMC4GA1UEAxMnR28gRGFkZHkgU2VjdXJlIENlcnRpZmlj\n" +
-                    "YXRpb24gQXV0aG9yaXR5MREwDwYDVQQFEwgwNzk2OTI4NzCCASIwDQYJKoZIhvcN\n" +
-                    "AQEBBQADggEPADCCAQoCggEBAMQt1RWMnCZM7DI161+4WQFapmGBWTtwY6vj3D3H\n" +
-                    "KrjJM9N55DrtPDAjhI6zMBS2sofDPZVUBJ7fmd0LJR4h3mUpfjWoqVTr9vcyOdQm\n" +
-                    "VZWt7/v+WIbXnvQAjYwqDL1CBM6nPwT27oDyqu9SoWlm2r4arV3aLGbqGmu75RpR\n" +
-                    "SgAvSMeYddi5Kcju+GZtCpyz8/x4fKL4o/K1w/O5epHBp+YlLpyo7RJlbmr2EkRT\n" +
-                    "cDCVw5wrWCs9CHRK8r5RsL+H0EwnWGu1NcWdrxcx+AuP7q2BNgWJCJjPOq8lh8BJ\n" +
-                    "6qf9Z/dFjpfMFDniNoW1fho3/Rb2cRGadDAW/hOUoz+EDU8CAwEAAaOCATIwggEu\n" +
-                    "MB0GA1UdDgQWBBT9rGEyk2xF1uLuhV+auud2mWjM5zAfBgNVHSMEGDAWgBTSxLDS\n" +
-                    "kdRMEXGzYcs9of7dqGrU4zASBgNVHRMBAf8ECDAGAQH/AgEAMDMGCCsGAQUFBwEB\n" +
-                    "BCcwJTAjBggrBgEFBQcwAYYXaHR0cDovL29jc3AuZ29kYWRkeS5jb20wRgYDVR0f\n" +
-                    "BD8wPTA7oDmgN4Y1aHR0cDovL2NlcnRpZmljYXRlcy5nb2RhZGR5LmNvbS9yZXBv\n" +
-                    "c2l0b3J5L2dkcm9vdC5jcmwwSwYDVR0gBEQwQjBABgRVHSAAMDgwNgYIKwYBBQUH\n" +
-                    "AgEWKmh0dHA6Ly9jZXJ0aWZpY2F0ZXMuZ29kYWRkeS5jb20vcmVwb3NpdG9yeTAO\n" +
-                    "BgNVHQ8BAf8EBAMCAQYwDQYJKoZIhvcNAQEFBQADggEBANKGwOy9+aG2Z+5mC6IG\n" +
-                    "OgRQjhVyrEp0lVPLN8tESe8HkGsz2ZbwlFalEzAFPIUyIXvJxwqoJKSQ3kbTJSMU\n" +
-                    "A2fCENZvD117esyfxVgqwcSeIaha86ykRvOe5GPLL5CkKSkB2XIsKd83ASe8T+5o\n" +
-                    "0yGPwLPk9Qnt0hCqU7S+8MxZC9Y7lhyVJEnfzuz9p0iRFEUOOjZv2kWzRaJBydTX\n" +
-                    "RE4+uXR21aITVSzGh6O1mawGhId/dQb8vxRMDsxuxN89txJx9OjxUUAiKEngHUuH\n" +
-                    "qDTMBqLdElrRhjZkAzVvb3du6/KFUJheqwNTrZEjYx8WnM25sgVjOuH0aBsXBTWV\n" +
-                    "U+4=\n" +
-                    "-----END CERTIFICATE-----\n" +
-                    "-----BEGIN CERTIFICATE-----\n" +
-                    "MIIE+zCCBGSgAwIBAgICAQ0wDQYJKoZIhvcNAQEFBQAwgbsxJDAiBgNVBAcTG1Zh\n" +
-                    "bGlDZXJ0IFZhbGlkYXRpb24gTmV0d29yazEXMBUGA1UEChMOVmFsaUNlcnQsIElu\n" +
-                    "Yy4xNTAzBgNVBAsTLFZhbGlDZXJ0IENsYXNzIDIgUG9saWN5IFZhbGlkYXRpb24g\n" +
-                    "QXV0aG9yaXR5MSEwHwYDVQQDExhodHRwOi8vd3d3LnZhbGljZXJ0LmNvbS8xIDAe\n" +
-                    "BgkqhkiG9w0BCQEWEWluZm9AdmFsaWNlcnQuY29tMB4XDTA0MDYyOTE3MDYyMFoX\n" +
-                    "DTI0MDYyOTE3MDYyMFowYzELMAkGA1UEBhMCVVMxITAfBgNVBAoTGFRoZSBHbyBE\n" +
-                    "YWRkeSBHcm91cCwgSW5jLjExMC8GA1UECxMoR28gRGFkZHkgQ2xhc3MgMiBDZXJ0\n" +
-                    "aWZpY2F0aW9uIEF1dGhvcml0eTCCASAwDQYJKoZIhvcNAQEBBQADggENADCCAQgC\n" +
-                    "ggEBAN6d1+pXGEmhW+vXX0iG6r7d/+TvZxz0ZWizV3GgXne77ZtJ6XCAPVYYYwhv\n" +
-                    "2vLM0D9/AlQiVBDYsoHUwHU9S3/Hd8M+eKsaA7Ugay9qK7HFiH7Eux6wwdhFJ2+q\n" +
-                    "N1j3hybX2C32qRe3H3I2TqYXP2WYktsqbl2i/ojgC95/5Y0V4evLOtXiEqITLdiO\n" +
-                    "r18SPaAIBQi2XKVlOARFmR6jYGB0xUGlcmIbYsUfb18aQr4CUWWoriMYavx4A6lN\n" +
-                    "f4DD+qta/KFApMoZFv6yyO9ecw3ud72a9nmYvLEHZ6IVDd2gWMZEewo+YihfukEH\n" +
-                    "U1jPEX44dMX4/7VpkI+EdOqXG68CAQOjggHhMIIB3TAdBgNVHQ4EFgQU0sSw0pHU\n" +
-                    "TBFxs2HLPaH+3ahq1OMwgdIGA1UdIwSByjCBx6GBwaSBvjCBuzEkMCIGA1UEBxMb\n" +
-                    "VmFsaUNlcnQgVmFsaWRhdGlvbiBOZXR3b3JrMRcwFQYDVQQKEw5WYWxpQ2VydCwg\n" +
-                    "SW5jLjE1MDMGA1UECxMsVmFsaUNlcnQgQ2xhc3MgMiBQb2xpY3kgVmFsaWRhdGlv\n" +
-                    "biBBdXRob3JpdHkxITAfBgNVBAMTGGh0dHA6Ly93d3cudmFsaWNlcnQuY29tLzEg\n" +
-                    "MB4GCSqGSIb3DQEJARYRaW5mb0B2YWxpY2VydC5jb22CAQEwDwYDVR0TAQH/BAUw\n" +
-                    "AwEB/zAzBggrBgEFBQcBAQQnMCUwIwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLmdv\n" +
-                    "ZGFkZHkuY29tMEQGA1UdHwQ9MDswOaA3oDWGM2h0dHA6Ly9jZXJ0aWZpY2F0ZXMu\n" +
-                    "Z29kYWRkeS5jb20vcmVwb3NpdG9yeS9yb290LmNybDBLBgNVHSAERDBCMEAGBFUd\n" +
-                    "IAAwODA2BggrBgEFBQcCARYqaHR0cDovL2NlcnRpZmljYXRlcy5nb2RhZGR5LmNv\n" +
-                    "bS9yZXBvc2l0b3J5MA4GA1UdDwEB/wQEAwIBBjANBgkqhkiG9w0BAQUFAAOBgQC1\n" +
-                    "QPmnHfbq/qQaQlpE9xXUhUaJwL6e4+PrxeNYiY+Sn1eocSxI0YGyeR+sBjUZsE4O\n" +
-                    "WBsUs5iB0QQeyAfJg594RAoYC5jcdnplDQ1tgMQLARzLrUc+cb53S8wGd9D0Vmsf\n" +
-                    "SxOaFIqII6hR8INMqzW/Rn453HWkrugp++85j09VZw==\n" +
-                    "-----END CERTIFICATE-----\n" +
-                    "-----BEGIN CERTIFICATE-----\n" +
-                    "MIIC5zCCAlACAQEwDQYJKoZIhvcNAQEFBQAwgbsxJDAiBgNVBAcTG1ZhbGlDZXJ0\n" +
-                    "IFZhbGlkYXRpb24gTmV0d29yazEXMBUGA1UEChMOVmFsaUNlcnQsIEluYy4xNTAz\n" +
-                    "BgNVBAsTLFZhbGlDZXJ0IENsYXNzIDIgUG9saWN5IFZhbGlkYXRpb24gQXV0aG9y\n" +
-                    "aXR5MSEwHwYDVQQDExhodHRwOi8vd3d3LnZhbGljZXJ0LmNvbS8xIDAeBgkqhkiG\n" +
-                    "9w0BCQEWEWluZm9AdmFsaWNlcnQuY29tMB4XDTk5MDYyNjAwMTk1NFoXDTE5MDYy\n" +
-                    "NjAwMTk1NFowgbsxJDAiBgNVBAcTG1ZhbGlDZXJ0IFZhbGlkYXRpb24gTmV0d29y\n" +
-                    "azEXMBUGA1UEChMOVmFsaUNlcnQsIEluYy4xNTAzBgNVBAsTLFZhbGlDZXJ0IENs\n" +
-                    "YXNzIDIgUG9saWN5IFZhbGlkYXRpb24gQXV0aG9yaXR5MSEwHwYDVQQDExhodHRw\n" +
-                    "Oi8vd3d3LnZhbGljZXJ0LmNvbS8xIDAeBgkqhkiG9w0BCQEWEWluZm9AdmFsaWNl\n" +
-                    "cnQuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDOOnHK5avIWZJV16vY\n" +
-                    "dA757tn2VUdZZUcOBVXc65g2PFxTXdMwzzjsvUGJ7SVCCSRrCl6zfN1SLUzm1NZ9\n" +
-                    "WlmpZdRJEy0kTRxQb7XBhVQ7/nHk01xC+YDgkRoKWzk2Z/M/VXwbP7RfZHM047QS\n" +
-                    "v4dk+NoS/zcnwbNDu+97bi5p9wIDAQABMA0GCSqGSIb3DQEBBQUAA4GBADt/UG9v\n" +
-                    "UJSZSWI4OB9L+KXIPqeCgfYrx+jFzug6EILLGACOTb2oWH+heQC1u+mNr0HZDzTu\n" +
-                    "IYEZoDJJKPTEjlbVUjP9UNV+mWwD5MlM/Mtsq2azSiGM5bUMMj4QssxsodyamEwC\n" +
-                    "W/POuZ6lcg5Ktz885hZo+L7tdEy8W9ViH0Pd\n" +
-                    "-----END CERTIFICATE-----\n";
-
     @Inject
     private KeystoreDao _ksDao;
     @Inject
     private KeystoreManager _ksMgr;
-    private final Random _random = new Random(System.currentTimeMillis());
+
+    public class VmBasedAgentHook extends AgentHookBase {
+
+        public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao,
+                KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, ms);
+        }
+
+        @Override
+        public void onLoadReport(ConsoleProxyLoadReportCommand cmd) {
+            if (cmd.getLoadInfo() == null) {
+                return;
+            }
+
+            ConsoleProxyStatus status = null;
+            try {
+                GsonBuilder gb = new GsonBuilder();
+                gb.setVersion(1.3);
+                Gson gson = gb.create();
+                status = gson.fromJson(cmd.getLoadInfo(), ConsoleProxyStatus.class);
+            } catch (Throwable e) {
+                s_logger.warn("Unable to parse load info from proxy, proxy vm id : " + cmd.getProxyVmId() + ", info : " + cmd.getLoadInfo());
+            }
+
+            if (status != null) {
+                int count = 0;
+                if (status.getConnections() != null) {
+                    count = status.getConnections().length;
+                }
+
+                byte[] details = null;
+                if (cmd.getLoadInfo() != null) {
+                    details = cmd.getLoadInfo().getBytes(Charset.forName("US-ASCII"));
+                }
+                _consoleProxyDao.update(cmd.getProxyVmId(), count, DateUtil.currentGMTTime(), details);
+            } else {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Unable to get console proxy load info, id : " + cmd.getProxyVmId());
+                }
+
+                _consoleProxyDao.update(cmd.getProxyVmId(), 0, DateUtil.currentGMTTime(), null);
+            }
+        }
+
+        @Override
+        public void onAgentDisconnect(long agentId, com.cloud.host.Status state) {
+
+            if (state == com.cloud.host.Status.Alert || state == com.cloud.host.Status.Disconnected) {
+                // be it either in alert or in disconnected state, the agent
+                // process
+                // may be gone in the VM,
+                // we will be reacting to stop the corresponding VM and let the
+                // scan
+                // process to
+                HostVO host = _hostDao.findById(agentId);
+                if (host.getType() == Type.ConsoleProxy) {
+                    String name = host.getName();
+                    if (s_logger.isInfoEnabled()) {
+                        s_logger.info("Console proxy agent disconnected, proxy: " + name);
+                    }
+                    if (name != null && name.startsWith("v-")) {
+                        String[] tokens = name.split("-");
+                        long proxyVmId = 0;
+                        try {
+                            proxyVmId = Long.parseLong(tokens[1]);
+                        } catch (NumberFormatException e) {
+                            s_logger.error("Unexpected exception " + e.getMessage(), e);
+                            return;
+                        }
+
+                        final ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
+                        if (proxy != null) {
+
+                            // Disable this feature for now, as it conflicts
+                            // with
+                            // the case of allowing user to reboot console proxy
+                            // when rebooting happens, we will receive
+                            // disconnect
+                            // here and we can't enter into stopping process,
+                            // as when the rebooted one comes up, it will kick
+                            // off a
+                            // newly started one and trigger the process
+                            // continue on forever
+
+                            /*
+                             * _capacityScanScheduler.execute(new Runnable() {
+                             * public void run() { if(s_logger.isInfoEnabled())
+                             * s_logger.info("Stop console proxy " +
+                             * proxy.getName() +
+                             * " VM because of that the agent running inside it has disconnected"
+                             * ); stopProxy(proxy.getId()); } });
+                             */
+                        } else {
+                            if (s_logger.isInfoEnabled()) {
+                                s_logger.info("Console proxy agent disconnected but corresponding console proxy VM no longer exists in DB, proxy: "
+                                        + name);
+                            }
+                        }
+                    } else {
+                        assert (false) : "Invalid console proxy name: " + name;
+                    }
+                }
+            }
+
+        }
+
+        @Override
+        protected HostVO findConsoleProxyHost(StartupProxyCommand startupCmd) {
+            long proxyVmId = startupCmd.getProxyVmId();
+            ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
+            if (consoleProxy == null) {
+                s_logger.info("Proxy " + proxyVmId + " is no longer in DB, skip sending startup command");
+                return null;
+            }
+
+            assert (consoleProxy != null);
+            return findConsoleProxyHostByName(consoleProxy.getHostName());
+        }
+
+    }
 
     @Override
     public ConsoleProxyInfo assignProxy(final long dataCenterId, final long vmId) {
@@ -849,181 +776,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
     }
 
-    @Override
-    public void onLoadReport(ConsoleProxyLoadReportCommand cmd) {
-        if (cmd.getLoadInfo() == null) {
-            return;
-        }
 
-        ConsoleProxyStatus status = null;
-        try {
-            GsonBuilder gb = new GsonBuilder();
-            gb.setVersion(1.3);
-            Gson gson = gb.create();
-            status = gson.fromJson(cmd.getLoadInfo(), ConsoleProxyStatus.class);
-        } catch (Throwable e) {
-            s_logger.warn("Unable to parse load info from proxy, proxy vm id : " + cmd.getProxyVmId() + ", info : " + cmd.getLoadInfo());
-        }
 
-        if (status != null) {
-            int count = 0;
-            if (status.getConnections() != null) {
-                count = status.getConnections().length;
-            }
-
-            byte[] details = null;
-            if (cmd.getLoadInfo() != null) {
-                details = cmd.getLoadInfo().getBytes(Charset.forName("US-ASCII"));
-            }
-            _consoleProxyDao.update(cmd.getProxyVmId(), count, DateUtil.currentGMTTime(), details);
-        } else {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Unable to get console proxy load info, id : " + cmd.getProxyVmId());
-            }
-
-            _consoleProxyDao.update(cmd.getProxyVmId(), 0, DateUtil.currentGMTTime(), null);
-        }
-    }
-
-    @Override
-    public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd) {
-        Long vmId = null;
-
-        String ticketInUrl = cmd.getTicket();
-        if (ticketInUrl == null) {
-            s_logger.error("Access ticket could not be found, you could be running an old version of console proxy. vmId: " + cmd.getVmId());
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Console authentication. Ticket in url for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticketInUrl);
-        }
-
-        if(!cmd.isReauthenticating()) {
-            String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
-            }
-
-            if (!ticket.equals(ticketInUrl)) {
-                Date now = new Date();
-                // considering of minute round-up
-                String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000));
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + minuteEarlyTicket);
-                }
-
-                if (!minuteEarlyTicket.equals(ticketInUrl)) {
-                    s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + ","
-                            + minuteEarlyTicket);
-                    return new ConsoleAccessAuthenticationAnswer(cmd, false);
-                }
-            }
-        }
-
-        if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Invalid vm id sent from proxy(happens when proxy session has terminated)");
-            }
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        VirtualMachine vm = _instanceDao.findByUuid(cmd.getVmId());
-        if (vm == null) {
-            vm = _instanceDao.findById(Long.parseLong(cmd.getVmId()));
-        }
-        if (vm == null) {
-            s_logger.error("Invalid vm id " + cmd.getVmId() + " sent from console access authentication");
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        if (vm.getHostId() == null) {
-            s_logger.warn("VM " + vmId + " lost host info, failed authentication request");
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        HostVO host = _hostDao.findById(vm.getHostId());
-        if (host == null) {
-            s_logger.warn("VM " + vmId + "'s host does not exist, fail authentication request");
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        String sid = cmd.getSid();
-        if (sid == null || !sid.equals(vm.getVncPassword())) {
-            s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        if(cmd.isReauthenticating()) {
-            ConsoleAccessAuthenticationAnswer authenticationAnswer = new ConsoleAccessAuthenticationAnswer(cmd, true);
-            authenticationAnswer.setReauthenticating(true);
-
-            s_logger.info("Re-authentication request, ask host " + vm.getHostId() + " for new console info");
-            GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new
-                    GetVncPortCommand(vm.getId(), vm.getInstanceName()));
-
-            if (answer != null && answer.getResult()) {
-                Ternary<String, String, String> parsedHostInfo = ConsoleProxyServlet.parseHostInfo(answer.getAddress());
-
-                if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-
-                    s_logger.info("Re-authentication result. vm: " + vm.getId() + ", tunnel url: " + parsedHostInfo.second()
-                            + ", tunnel session: " + parsedHostInfo.third());
-
-                    authenticationAnswer.setTunnelUrl(parsedHostInfo.second());
-                    authenticationAnswer.setTunnelSession(parsedHostInfo.third());
-                } else {
-                    s_logger.info("Re-authentication result. vm: " + vm.getId() + ", host address: " + parsedHostInfo.first()
-                            + ", port: " + answer.getPort());
-
-                    authenticationAnswer.setHost(parsedHostInfo.first());
-                    authenticationAnswer.setPort(answer.getPort());
-                }
-            } else {
-                s_logger.warn("Re-authentication request failed");
-
-                authenticationAnswer.setSuccess(false);
-            }
-
-            return authenticationAnswer;
-        }
-
-        return new ConsoleAccessAuthenticationAnswer(cmd, true);
-    }
-
-    @Override
-    public void onAgentConnect(Host host, StartupCommand cmd) {
-        // if (host.getType() == Type.ConsoleProxy) {
-        // // TODO we can use this event to mark the proxy is up and
-        // // functioning instead of
-        // // pinging the console proxy VM command port
-        // //
-        // // for now, just log a message
-        // if (s_logger.isInfoEnabled()) {
-        // s_logger.info("Console proxy agent is connected. proxy: " + host.getName());
-        // }
-        //
-        // /* update public/private ip address */
-        // if (_IpAllocator != null && _IpAllocator.exteralIpAddressAllocatorEnabled()) {
-        // try {
-        // ConsoleProxyVO console = findConsoleProxyByHost(host);
-        // if (console == null) {
-        // s_logger.debug("Can't find console proxy ");
-        // return;
-        // }
-        // console.setPrivateIpAddress(cmd.getPrivateIpAddress());
-        // console.setPublicIpAddress(cmd.getPublicIpAddress());
-        // console.setPublicNetmask(cmd.getPublicNetmask());
-        // _consoleProxyDao.persist(console);
-        // } catch (NumberFormatException e) {
-        // }
-        // }
-        // }
-    }
-
-    @Override
-    public void onAgentDisconnect(long agentId, com.cloud.host.Status state) {
+    public void handleAgentDisconnect(long agentId, com.cloud.host.Status state) {
         if (state == com.cloud.host.Status.Alert || state == com.cloud.host.Status.Disconnected) {
             // be it either in alert or in disconnected state, the agent process
             // may be gone in the VM,
@@ -1414,9 +1169,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (lock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                 KeystoreVO ksVo = _ksDao.findByName(CERTIFICATE_NAME);
                 if (ksVo == null) {
-                    _ksDao.save(CERTIFICATE_NAME, certContent, keyContent, "realhostip.com");
+                    _ksDao.save(CERTIFICATE_NAME, ConsoleProxyVO.certContent, ConsoleProxyVO.keyContent, "realhostip.com");
                     KeystoreVO caRoot = new KeystoreVO();
-                    caRoot.setCertificate(rootCa);
+                    caRoot.setCertificate(ConsoleProxyVO.rootCa);
                     caRoot.setDomainSuffix("realhostip.com");
                     caRoot.setName("root");
                     caRoot.setIndex(0);
@@ -1491,7 +1246,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         value = agentMgrConfigs.get("port");
         _mgmt_port = NumbersUtil.parseInt(value, 8250);
 
-        _listener = new ConsoleProxyListener(this);
+        _listener =
+                new ConsoleProxyListener(new VmBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr,
+                        _agentMgr, _ms));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
@@ -1541,18 +1298,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return true;
     }
 
-    @Override
-    public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd) throws ServerApiException {
-        Long proxyId = cmd.getId();
 
-        // verify parameters
-        ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyId);
-        if (proxy == null) {
-            throw new InvalidParameterValueException("unable to find a console proxy with id " + proxyId);
-        }
-
-        return destroyProxy(proxyId);
-    }
 
     protected ConsoleProxyManagerImpl() {
     }
@@ -1725,52 +1471,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         _consoleProxyDao.update(proxy.getId(), proxy);
     }
 
-    @Override
-    public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd) {
-        StartConsoleProxyAgentHttpHandlerCommand cmd = null;
-        if (_configDao.isPremium()) {
-            String storePassword = String.valueOf(_random.nextLong());
-            byte[] ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
 
-            assert (ksBits != null);
-            if (ksBits == null) {
-                s_logger.error("Could not find and construct a valid SSL certificate");
-            }
-            cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
-            cmd.setEncryptorPassword(getHashKey());
-        } else {
-            cmd = new StartConsoleProxyAgentHttpHandlerCommand();
-            cmd.setEncryptorPassword(getHashKey());
-        }
-
-        try {
-            long proxyVmId = startupCmd.getProxyVmId();
-            ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
-            if (consoleProxy == null) {
-                s_logger.info("Proxy " + proxyVmId + " is no longer in DB, skip sending startup command");
-                return;
-            }
-
-            assert (consoleProxy != null);
-            HostVO consoleProxyHost = findConsoleProxyHostByName(consoleProxy.getHostName());
-
-            Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
-            if (answer == null || !answer.getResult()) {
-                s_logger.error("Console proxy agent reported that it failed to execute http handling startup command");
-            } else {
-                s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
-            }
-        } catch (AgentUnavailableException e) {
-            s_logger.error("Unable to send http handling startup command to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
-        } catch (OperationTimedoutException e) {
-            s_logger.error("Unable to send http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
-        } catch (OutOfMemoryError e) {
-            s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
-            System.exit(1);
-        } catch (Exception e) {
-            s_logger.error("Unexpected exception when sending http handling startup command(time out) to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
-        }
-    }
 
     @Override
     public ConsoleProxyVO persist(ConsoleProxyVO proxy) {
@@ -1992,15 +1693,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return sc.find();
     }
 
-    public String getHashKey() {
-        // although we may have race conditioning here, database transaction serialization should
-        // give us the same key
-        if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), UUID.randomUUID().toString());
-        }
-        return _hashKey;
-    }
-
     @Override
     public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
@@ -2020,4 +1712,5 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Override
     public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
     }
+
 }

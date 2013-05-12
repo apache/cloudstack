@@ -26,11 +26,14 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.resource.ServerResource;
@@ -132,6 +135,7 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         record.affinity = host;
         record.otherConfig.remove("disks");
         record.otherConfig.remove("default_template");
+        record.otherConfig.remove("mac_seed");
         record.isATemplate = false;
         record.nameLabel = vmSpec.getName();
         record.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
@@ -194,13 +198,17 @@ public class XenServer56FP1Resource extends XenServer56Resource {
 
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
-                VolumeTO[] disks = vmSpec.getDisks();
-                for (VolumeTO disk : disks) {
-                    if (disk.getType() == Volume.Type.ISO && disk.getOsType() != null) {
-                        String isoGuestOsName = getGuestOsType(disk.getOsType(), vmSpec.getBootloader() == BootloaderType.CD);
-                        if (!isoGuestOsName.equals(guestOsTypeName)) {
-                            vmSpec.setBootloader(BootloaderType.PyGrub);
-                        }
+                DiskTO[] disks = vmSpec.getDisks();
+                for (DiskTO disk : disks) {
+                    if (disk.getType() == Volume.Type.ISO ) {
+                    	TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
+                    	String osType = iso.getGuestOsType();
+                    	if (osType != null) {
+                    		String isoGuestOsName = getGuestOsType(osType, vmSpec.getBootloader() == BootloaderType.CD);
+                    		if (!isoGuestOsName.equals(guestOsTypeName)) {
+                    			vmSpec.setBootloader(BootloaderType.PyGrub);
+                    		}
+                    	}
                     }
                 }
             }

@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.apache.cloudstack.storage.allocator.StorageAllocatorTestConfiguration.Library;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -36,7 +37,6 @@ import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
-import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.UserVmManager;
 
 
@@ -67,7 +67,7 @@ public class StorageAllocatorTestConfiguration {
 		public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
 			mdr.getClassMetadata().getClassName();
 			ComponentScan cs = StorageAllocatorTestConfiguration.class.getAnnotation(ComponentScan.class);
-			return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+			return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
 		}
 	}
 }

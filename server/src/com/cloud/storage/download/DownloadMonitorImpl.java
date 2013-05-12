@@ -36,14 +36,16 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -54,24 +56,16 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
+import com.cloud.storage.upload.UploadListener;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 @Component
 @Local(value = { DownloadMonitor.class })
@@ -102,7 +96,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     private Boolean _sslCopy = new Boolean(false);
     private String _copyAuthPasswd;
     private String _proxy = null;
-    protected SearchBuilder<TemplateDataStoreVO> ReadyTemplateStatesSearch;
 
     Timer _timer;
 
@@ -110,8 +103,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     DataStoreManager storeMgr;
 
     final Map<TemplateDataStoreVO, DownloadListener> _listenerTemplateMap = new ConcurrentHashMap<TemplateDataStoreVO, DownloadListener>();
-    final Map<VMTemplateHostVO, DownloadListener> _listenerMap = new ConcurrentHashMap<VMTemplateHostVO, DownloadListener>();
-    final Map<VolumeHostVO, DownloadListener> _listenerVolumeMap = new ConcurrentHashMap<VolumeHostVO, DownloadListener>();
     final Map<VolumeDataStoreVO, DownloadListener> _listenerVolMap = new ConcurrentHashMap<VolumeDataStoreVO, DownloadListener>();
 
 
@@ -132,20 +123,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         ComponentContext.inject(dl);
         _agentMgr.registerForHostEvents(dl, true, false, false);
 
-        ReadyTemplateStatesSearch = _vmTemplateStoreDao.createSearchBuilder();
-        ReadyTemplateStatesSearch.and("state", ReadyTemplateStatesSearch.entity().getState(), SearchCriteria.Op.EQ);
-        ReadyTemplateStatesSearch.and("destroyed", ReadyTemplateStatesSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        ReadyTemplateStatesSearch.and("store_id", ReadyTemplateStatesSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-
-        SearchBuilder<VMTemplateVO> TemplatesWithNoChecksumSearch = _templateDao.createSearchBuilder();
-        TemplatesWithNoChecksumSearch.and("checksum", TemplatesWithNoChecksumSearch.entity().getChecksum(), SearchCriteria.Op.NULL);
-
-        ReadyTemplateStatesSearch.join("vm_template", TemplatesWithNoChecksumSearch, TemplatesWithNoChecksumSearch.entity().getId(),
-                ReadyTemplateStatesSearch.entity().getTemplateId(), JoinBuilder.JoinType.INNER);
-        TemplatesWithNoChecksumSearch.done();
-        ReadyTemplateStatesSearch.done();
-
-        return true;
+       return true;
     }
 
     @Override
@@ -173,7 +151,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
         if (vmTemplateStore == null) {
             vmTemplateStore = new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0,
-                    VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
+                    Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
             vmTemplateStore.setDataStoreRole(store.getRole());
             _vmTemplateStoreDao.persist(vmTemplateStore);
         } else if ((vmTemplateStore.getJobId() != null) && (vmTemplateStore.getJobId().length() > 2)) {
@@ -208,6 +186,8 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 // to be able to remove downloadState from template_store_ref.
                 dl.setCurrState(vmTemplateStore.getDownloadState());
             }
+
+
             DownloadListener old = null;
             synchronized (_listenerTemplateMap) {
                 old = _listenerTemplateMap.put(vmTemplateStore, dl);
@@ -217,7 +197,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             }
 
             try {
-                ep.sendMessageAsyncWithListener(dcmd, dl);
+                ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
                 s_logger.warn("Unable to start /resume download of template " + template.getId() + " to " + store.getName(), e);
                 dl.setDisconnected();
@@ -251,7 +231,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
         volumeHost = _volumeStoreDao.findByStoreVolume(store.getId(), volume.getId());
         if (volumeHost == null) {
-            volumeHost = new VolumeDataStoreVO(store.getId(), volume.getId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED,
+            volumeHost = new VolumeDataStoreVO(store.getId(), volume.getId(), new Date(), 0, Status.NOT_DOWNLOADED,
                     null, null, "jobid0000", null, url, checkSum, format);
             _volumeStoreDao.persist(volumeHost);
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
@@ -289,7 +269,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             }
 
             try {
-                ep.sendMessageAsyncWithListener(dcmd, dl);
+                ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
                 s_logger.warn("Unable to start /resume download of volume " + volume.getId() + " to " + store.getName(), e);
                 dl.setDisconnected();

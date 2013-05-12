@@ -52,7 +52,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "memory": 128,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -109,7 +109,6 @@ class Services:
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced'
                     }
 
 
@@ -125,6 +124,7 @@ class TestVmUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -142,13 +142,13 @@ class TestVmUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -319,6 +319,7 @@ class TestPublicIPUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -336,13 +337,13 @@ class TestPublicIPUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -415,7 +416,7 @@ class TestPublicIPUsage(cloudstackTestCase):
         # 3. Delete the newly created account
 
         self.debug("Deleting public IP: %s" %
-                                self.public_ip.ipaddress.ipaddress)
+                                self.public_ip.ipaddress)
 
         # Release one of the IP
         self.public_ip.delete(self.apiclient)
@@ -490,6 +491,7 @@ class TestVolumeUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -510,13 +512,13 @@ class TestVolumeUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -674,6 +676,7 @@ class TestTemplateUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.services["server"]["zoneid"] = cls.zone.id
         template = get_template(
                             cls.api_client,
@@ -686,13 +689,13 @@ class TestTemplateUsage(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -846,6 +849,7 @@ class TestISOUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["iso"]["zoneid"] = cls.zone.id
         # Create Account, ISO image etc
@@ -854,12 +858,12 @@ class TestISOUsage(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.iso = Iso.create(
@@ -993,6 +997,7 @@ class TestLBRuleUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1009,13 +1014,13 @@ class TestLBRuleUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -1175,6 +1180,7 @@ class TestSnapshotUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -1192,13 +1198,13 @@ class TestSnapshotUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -1352,6 +1358,7 @@ class TestNatRuleUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1368,13 +1375,13 @@ class TestNatRuleUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -1534,6 +1541,7 @@ class TestVpnUsage(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1551,13 +1559,13 @@ class TestVpnUsage(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
 
         cls.service_offering = ServiceOffering.create(
@@ -1640,7 +1648,7 @@ class TestVpnUsage(cloudstackTestCase):
                         )
 
         self.debug("Created VPN user for account: %s" %
-                                    self.account.account.name)
+                                    self.account.name)
 
         vpnuser = VpnUser.create(
                                  self.apiclient,

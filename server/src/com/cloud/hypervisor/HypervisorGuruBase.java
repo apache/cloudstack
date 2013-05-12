@@ -22,6 +22,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
@@ -101,7 +103,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         }
 
         to.setNics(nics);
-        to.setDisks(vmProfile.getDisks().toArray(new VolumeTO[vmProfile.getDisks().size()]));
+        to.setDisks(vmProfile.getDisks().toArray(new DiskTO[vmProfile.getDisks().size()]));
 
         if(vmProfile.getTemplate().getBits() == 32) {
             to.setArch("i686");
@@ -128,5 +130,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Override
     public long getCommandHostDelegation(long hostId, Command cmd) {
         return hostId;
+    }
+    
+    @Override
+    public List<Command> finalizeExpunge(VirtualMachine vm) {
+        return null;
     }
 }

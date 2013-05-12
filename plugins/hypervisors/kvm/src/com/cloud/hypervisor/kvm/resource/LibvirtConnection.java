@@ -61,13 +61,19 @@ public class LibvirtConnection {
     static public Connect getConnectionByVmName(String vmName) throws LibvirtException {
         HypervisorType[] hypervisors = new HypervisorType[] {HypervisorType.KVM, Hypervisor.HypervisorType.LXC};
 
+        
         for (HypervisorType hypervisor : hypervisors) {
-          Connect conn = LibvirtConnection.getConnectionByType(hypervisor.toString());
-          if (conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes())) != null) {
-             return conn;
-          }
+            try {
+                Connect conn = LibvirtConnection.getConnectionByType(hypervisor.toString());
+                if (conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes())) != null) {
+                    return conn;
+                }
+            } catch (Exception e) {
+               s_logger.debug("can't find connection: " + hypervisor.toString() + ", for vm: " + vmName + ", continue");
+            }
         }
 
+        s_logger.debug("can't find which hypervisor the vm used , then use the default hypervisor");
         // return the default connection
         return getConnection();
     }

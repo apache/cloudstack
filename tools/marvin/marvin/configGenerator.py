@@ -135,6 +135,7 @@ class physical_network():
         self.traffictypes = []
         self.broadcastdomainrange = 'Zone'
         self.vlan = None
+        self.isolationmethods = []
         '''enable default virtual router provider'''
         vrouter = provider()
         vrouter.name = 'VirtualRouter'

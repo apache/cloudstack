@@ -32,7 +32,7 @@
             <listitem><para>Using the Transifex client and pushing your translated strings to the website.</para></listitem>
         </itemizedlist>
     </para>
-    <para>Once a translation is complete, a site admin will pull the translated strings within the &PRODUCT; repository, build the documenation and publish it.</para>
+    <para>Once a translation is complete, a site admin will pull the translated strings within the &PRODUCT; repository, build the documentation and publish it.</para>
     <para>For instructions on how to use the Transifex website see <ulink url="http://sebgoa.blogspot.ch/2012/11/translating-apache-cloudstack-docs-with.html">http://sebgoa.blogspot.ch/2012/11/translating-apache-cloudstack-docs-with.html</ulink></para>
     <para>For instructions on how to use the Transifex client to translate from the command line see <ulink url="http://sebgoa.blogspot.ch/2012/12/using-transifex-client-to-translate.html">http://sebgoa.blogspot.ch/2012/12/using-transifex-client-to-translate.html</ulink></para>
 </section>

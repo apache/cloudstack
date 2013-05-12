@@ -19,6 +19,8 @@
   under the License.
 -->
 <chapter id="global-config">
+  <title>Global Configuration Parameters</title>
+  <section id="setting-global-config-parameters">
   <title>Setting Global Configuration Parameters</title>
   <para>&PRODUCT; provides parameters that you can set to control many aspects of the cloud. When
     &PRODUCT; is first installed, and periodically thereafter, you might need to modify these
@@ -51,4 +53,81 @@
         must click the name of the hypervisor first to display the editing screen.</para>
     </listitem>
   </orderedlist>
+  </section>
+  <section id="about-global-config-parameters">
+  <title>About Global Configuration Parameters</title>
+    <para>&PRODUCT; provides a variety of settings you can use to set limits, configure features, 
+      and enable or disable features in the cloud. Once your Management Server is running, you might 
+      need to set some of these global configuration parameters, depending on what optional features 
+      you are setting up.</para>
+    <para>To modify global configuration parameters, use the steps in "Setting Global Configuration 
+      Parameters."</para>
+    <para>The documentation for each &PRODUCT; feature should direct you to the names of the applicable
+      parameters. Many of them are discussed in the &PRODUCT; Administration Guide. The following table 
+      shows a few of the more useful parameters.</para>
+    <informaltable frame="all">
+      <tgroup cols="2" align="left" colsep="1" rowsep="1">
+        <colspec colnum="1" colname="c1" colwidth="2*"/>
+        <colspec colnum="2" colname="c2" colwidth="1*"/>
+        <thead>
+        <row>
+          <entry><para>Field</para></entry>
+          <entry><para>Value</para></entry>
+        </row>
+        </thead>
+        <tbody>
+        <row>
+          <entry><para>management.network.cidr</para></entry>
+          <entry><para>A CIDR that describes the network that the management CIDRs reside on.  This 
+            variable must be set for deployments that use vSphere. It is recommended to be set for 
+            other deployments as well. Example: 192.168.3.0/24.</para></entry>
+        </row>
+        <row>
+          <entry><para>xen.setup.multipath</para></entry>
+          <entry><para>For XenServer nodes, this is a true/false variable that instructs CloudStack to 
+            enable iSCSI multipath on the XenServer Hosts when they are added. This defaults to false. 
+            Set it to true if you would like CloudStack to enable multipath.</para>
+            <para>If this is true for a NFS-based deployment multipath will still be enabled on the 
+            XenServer host. However, this does not impact NFS operation and is harmless.</para></entry>
+        </row>
+        <row>
+          <entry><para>secstorage.allowed.internal.sites</para></entry>
+          <entry><para>This is used to protect your internal network from rogue attempts to download 
+            arbitrary files using the template download feature. This is a comma-separated list of CIDRs. 
+            If a requested URL matches any of these CIDRs the Secondary Storage VM will use the private 
+            network interface to fetch the URL. Other URLs will go through the public interface. 
+            We suggest you set this to 1 or 2 hardened internal machines where you keep your templates. 
+            For example, set it to 192.168.1.66/32.</para></entry>
+        </row>
+        <row>
+          <entry><para>use.local.storage</para></entry>
+          <entry><para>Determines whether CloudStack will use storage that is local to the Host for data 
+          disks, templates, and snapshots. By default CloudStack will not use this storage. You should 
+          change this to true if you want to use local storage and you understand the reliability and 
+          feature drawbacks to choosing local storage.</para></entry>
+        </row>
+        <row>
+          <entry><para>host</para></entry>
+          <entry><para>This is the IP address of the Management Server. If you are using multiple 
+            Management Servers you should enter a load balanced IP address that is reachable via 
+            the private network.</para></entry>
+        </row>
+        <row>
+          <entry><para>default.page.size</para></entry>
+          <entry><para>Maximum number of items per page that can be returned by a CloudStack API command. 
+            The limit applies at the cloud level and can vary from cloud to cloud. You can override this 
+            with a lower value on a particular API call by using the page and pagesize API command parameters. 
+            For more information, see the Developer's Guide. Default: 500.</para></entry>
+        </row>
+        <row>
+          <entry><para>ha.tag</para></entry>
+          <entry><para>The label you want to use throughout the cloud to designate certain hosts as dedicated 
+            HA hosts. These hosts will be used only for HA-enabled VMs that are restarting due to the failure 
+            of another host. For example, you could set this to ha_host. Specify the ha.tag value as a host tag 
+            when you add a new host to the cloud.</para></entry>
+        </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </section>
 </chapter>

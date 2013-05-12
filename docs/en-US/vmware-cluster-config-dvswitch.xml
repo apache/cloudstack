@@ -47,11 +47,12 @@
       </listitem>
       <listitem>
         <para>VMware VDS does not support multiple VDS per traffic type. If a user has many VDS
-          switches, only one can be used for Guest traffic and one for Public traffic.</para>
+          switches, only one can be used for Guest traffic and another one for Public
+          traffic.</para>
       </listitem>
       <listitem>
-        <para>Management and Storage network does not support VDS and use Standard Switch for these
-          networks.</para>
+        <para>Management and Storage network does not support VDS. Therefore, use Standard Switch
+          for these networks.</para>
       </listitem>
     </itemizedlist>
   </section>
@@ -64,7 +65,7 @@
       Additionally, &PRODUCT; uses VDS for virtual network infrastructure if the value of
       vmware.use.dvswitch parameter is true and the value of vmware.use.nexus.dvswitch parameter is
       false.</para>
-    <para>&PRODUCT; supports configuring virtual networks in a deployment with a mix of Virtual
+    <para>&PRODUCT; supports orchestration of virtual networks in a deployment with a mix of Virtual
       Distributed Switch, Standard Virtual Switch and Nexus 1000v Virtual Switch. </para>
   </section>
   <section id="config-dvswitch">
@@ -100,8 +101,8 @@
           </row>
           <row>
             <entry><para>vCenter Host</para></entry>
-            <entry><para>Enter the host name or the IP address of the vCenter host where you have
-                deployed the Nexus virtual switch.</para></entry>
+            <entry><para>Enter the name or the IP address of the vCenter host where you have deployed the VMware
+                VDS.</para></entry>
           </row>
           <row>
             <entry><para>vCenter User name</para></entry>
@@ -125,13 +126,13 @@
           <row>
             <entry><para>Public Traffic vSwitch Type</para></entry>
             <entry><para>This option is displayed only if you enable the Override Public Traffic
-                option. Select VMware vNetwork Distributed Virtual Switch. If the
-                vmware.use.dvswitch global parameter is true, the default option will be VMware
-                vNetwork Distributed Virtual Switch.</para></entry>
+                option. Select VMware vNetwork Distributed Virtual Switch. </para>
+              <para>If the vmware.use.dvswitch global parameter is true, the default option will be
+                VMware vNetwork Distributed Virtual Switch.</para></entry>
           </row>
           <row>
             <entry><para>Public Traffic vSwitch Name</para></entry>
-            <entry><para>Specify a name to identify the switch.</para></entry>
+            <entry><para>Name of virtual switch to be used for the public traffic.</para></entry>
           </row>
           <row>
             <entry><para>Override Guest Traffic</para></entry>
@@ -141,24 +142,24 @@
           <row>
             <entry><para>Guest Traffic vSwitch Type</para></entry>
             <entry><para>This option is displayed only if you enable the Override Guest Traffic
-                option. Select VMware vNetwork Distributed Virtual Switch. If the
-                vmware.use.dvswitch global parameter is true, the default option will be VMware
-                vNetwork Distributed Virtual Switch.</para></entry>
+                option. Select VMware vNetwork Distributed Virtual Switch. </para>
+              <para>If the vmware.use.dvswitch global parameter is true, the default option will be
+                VMware vNetwork Distributed Virtual Switch.</para></entry>
           </row>
           <row>
             <entry><para>Guest Traffic vSwitch Name</para></entry>
-            <entry><para>Specify a name to identify the switch.</para></entry>
+            <entry><para>Name of virtual switch to be used for guest traffic.</para></entry>
           </row>
         </tbody>
       </tgroup>
     </informaltable>
   </section>
   <section id="vmware-dvswitch-remove">
-    <title>Removing Nexus Virtual Switch</title>
+    <title>Removing VMware Virtual Switch</title>
     <orderedlist>
       <listitem>
-        <para>In the vCenter datacenter that is served by the VMware dvSwitch, ensure that you
-          delete all the hosts in the corresponding cluster.</para>
+        <para>In the vCenter datacenter that is served by the VDS, ensure that you delete all the
+          hosts in the corresponding cluster.</para>
       </listitem>
       <listitem>
         <para>Log in with Admin permissions to the &PRODUCT; administrator UI.</para>

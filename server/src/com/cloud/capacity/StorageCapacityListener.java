@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.capacity;
 
+import java.math.BigDecimal;
 import java.util.List;
 
+import com.cloud.storage.StorageManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
@@ -39,14 +41,11 @@ import com.cloud.utils.db.SearchCriteria;
 public class StorageCapacityListener implements Listener {
     
     CapacityDao _capacityDao;
-    float _overProvisioningFactor = 1.0f;    
+    StorageManager _storageMgr;
 
-
-    public StorageCapacityListener(CapacityDao _capacityDao,
-            float _overProvisioningFactor) {
-        super();
-        this._capacityDao = _capacityDao;
-        this._overProvisioningFactor = _overProvisioningFactor;
+    public StorageCapacityListener(CapacityDao capacityDao, StorageManager storageMgr) {
+        this._capacityDao = capacityDao;
+        this._storageMgr =  storageMgr;
     }
 
 
@@ -79,9 +78,10 @@ public class StorageCapacityListener implements Listener {
 
         StartupStorageCommand ssCmd = (StartupStorageCommand) startup;
         if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {
+            BigDecimal overProvFactor = _storageMgr.getStorageOverProvisioningFactor(server.getDataCenterId());
             CapacityVO capacity = new CapacityVO(server.getId(),
                     server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L,
-                    (long) (server.getTotalSize() * _overProvisioningFactor),
+                    (overProvFactor.multiply(new BigDecimal(server.getTotalSize()))).longValue(),
                     CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
             _capacityDao.persist(capacity);
         }

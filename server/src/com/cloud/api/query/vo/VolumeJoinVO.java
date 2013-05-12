@@ -117,6 +117,9 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="data_center_name")
     private String dataCenterName;
+    
+    @Column(name="data_center_type")
+    private String dataCenterType;
 
     @Column(name="vm_id")
     private long vmId;
@@ -203,7 +206,7 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     private Storage.TemplateType templateType;
 
     @Column(name="job_id")
-    private long jobId;
+    private Long jobId;
 
     @Column(name="job_uuid")
     private String jobUuid;
@@ -814,13 +817,13 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
 
-    public long getJobId() {
+    public Long getJobId() {
         return jobId;
     }
 
 
 
-    public void setJobId(long jobId) {
+    public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 
@@ -1004,7 +1007,19 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.dataCenterName = dataCenterName;
     }
 
+       
+        
+    public String getDataCenterType() {
+        return dataCenterType;
+    }
 
+
+
+    public void setDataCenterType(String dataCenterType) {
+        this.dataCenterType = dataCenterType;
+    }
+    
+    
 
     public long getPodId() {
         return podId;
