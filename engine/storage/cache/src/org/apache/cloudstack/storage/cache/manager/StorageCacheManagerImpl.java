@@ -39,6 +39,7 @@ import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.Manager;
@@ -50,6 +51,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     List<StorageCacheAllocator> storageCacheAllocator;
     @Inject
     DataMotionService dataMotionSvr;
+
     @Override
     public DataStore getCacheStorage(Scope scope) {
         for (StorageCacheAllocator allocator : storageCacheAllocator) {
@@ -131,16 +133,10 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 	@Override
 	public DataObject createCacheObject(DataObject data, Scope scope) {
 		DataStore cacheStore = this.getCacheStorage(scope);
+		//TODO: consider multiple thread to create
 		DataObject objOnCacheStore = cacheStore.create(data);
 
 		AsyncCallFuture<CopyCommandResult> future = new AsyncCallFuture<CopyCommandResult>();
-		/*
-		CreateCacheObjectContext<CopyCommandResult> context = new CreateCacheObjectContext<CopyCommandResult>(null, future);
-		AsyncCallbackDispatcher<StorageCacheManagerImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
-		caller.setContext(context);
-		caller.setCallback(future);
-		*/
-
 		CopyCommandResult result = null;
 		try {
 		    objOnCacheStore.processEvent(Event.CreateOnlyRequested);

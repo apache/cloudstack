@@ -46,6 +46,7 @@ public class LocalNfsSecondaryStorageResource extends
         ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
         _storage = new JavaStorageLayer();
         this._inSystemVM = false;
+        System.setProperty("paths.script", "/Users/minc/dev/cloud-asf"); //This is just for my testing, not for QA build
     }
 
     @Override

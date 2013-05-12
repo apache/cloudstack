@@ -55,6 +55,7 @@ import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -237,7 +238,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         try {
 
-            final File downloadDirectory = _storage.getFile(determineStorageTemplatePath(storagePath, destPath));
+            String downloadPath = determineStorageTemplatePath(storagePath, destPath);
+            final File downloadDirectory = _storage.getFile(downloadPath);
             downloadDirectory.mkdirs();
 
             if (!downloadDirectory.exists()) {
@@ -267,12 +269,59 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new CopyCmdAnswer("Can't find template");
             }
 
+            // do post processing to unzip the file if it is compressed
+            String scriptsDir = "scripts/storage/secondary";
+            String createTmpltScr = Script.findScript(scriptsDir, "createtmplt.sh");
+            if (createTmpltScr == null) {
+                throw new ConfigurationException("Unable to find createtmplt.sh");
+            }
+            s_logger.info("createtmplt.sh found in " + createTmpltScr);
+            String createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
+            if (createVolScr == null) {
+                throw new ConfigurationException("Unable to find createvolume.sh");
+            }
+            s_logger.info("createvolume.sh found in " + createVolScr);
+            String script = srcData.getObjectType() == DataObjectType.TEMPLATE ? createTmpltScr : createVolScr;
+
+            int installTimeoutPerGig = 180 * 60 * 1000;
+            int imgSizeGigs = (int) Math.ceil(destFile.length() * 1.0d / (1024 * 1024 * 1024));
+            imgSizeGigs++; // add one just in case
+            long timeout = imgSizeGigs * installTimeoutPerGig;
+
+            String origPath = destFile.getAbsolutePath();
+            String extension = null;
+            if ( srcData.getObjectType() == DataObjectType.TEMPLATE){
+                extension = ((TemplateObjectTO)srcData).getFormat().getFileExtension();
+            } else{
+                extension = ((VolumeObjectTO)srcData).getDiskType().toString().toLowerCase();
+            }
+
+            String templateName = UUID.randomUUID().toString();
+            String templateFilename = templateName + "." + extension;
+            Script scr = new Script(script, timeout, s_logger);
+            scr.add("-s", Integer.toString(imgSizeGigs)); // not used for now
+            scr.add("-n", templateFilename);
+
+            scr.add("-t", downloadPath);
+            scr.add("-f", origPath); // this is the temporary
+                                                      // template file downloaded
+            String result;
+            result = scr.execute();
+
+            if (result != null) {
+                // script execution failure
+                throw new CloudRuntimeException("Failed to run script " + script);
+            }
+
+            String finalFileName = templateFilename;
+            String finalDownloadPath = destPath + File.separator + templateFilename;
+
             DataTO newDestTO = null;
 
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                 TemplateObjectTO newTemplTO = new TemplateObjectTO();
-                newTemplTO.setPath(destPath + File.separator + destFile.getName());
-                newTemplTO.setName(destFile.getName());
+                newTemplTO.setPath(finalDownloadPath);
+                newTemplTO.setName(finalFileName);
                 newDestTO = newTemplTO;
             } else {
                 return new CopyCmdAnswer("not implemented yet");
