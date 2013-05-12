@@ -1062,7 +1062,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCALE, eventDescription = "scaling Vm")
-    public UserVm
+    public boolean
     upgradeVirtualMachine(ScaleVMCmd cmd) throws InvalidParameterValueException, ResourceAllocationException {
 
         Long vmId = cmd.getId();
@@ -1076,7 +1076,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         if(vmInstance.getState().equals(State.Stopped)){
-            return upgradeStoppedVirtualMachine(vmId, newServiceOfferingId);
+            upgradeStoppedVirtualMachine(vmId, newServiceOfferingId);
+            return true;
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
