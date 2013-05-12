@@ -31,4 +31,5 @@ public interface PortableIpDao  extends GenericDao<PortableIpVO, Long> {
 
     List<PortableIpVO> listByRangeIdAndState(long rangeId, PortableIp.State state);
 
+    List<PortableIpVO> listByRegionIdAndState(int regionId, PortableIp.State state);
 }

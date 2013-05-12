@@ -44,6 +44,7 @@ import com.cloud.dc.*;
 import com.cloud.dc.dao.*;
 import com.cloud.user.*;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.utils.db.*;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -164,10 +165,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
@@ -4523,6 +4520,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Invalid vlan id " + vlanId);
             }
         }
+        GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
+        portableIpLock.lock(5);
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -4539,7 +4538,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         txn.commit();
-
+        portableIpLock.unlock();
         return portableIpRange;
     }
 

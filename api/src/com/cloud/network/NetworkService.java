@@ -52,7 +52,7 @@ public interface NetworkService {
     IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException,
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
-    IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId) throws ResourceAllocationException,
+    IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId) throws ResourceAllocationException,
             InsufficientAddressCapacityException, ConcurrentOperationException;
 
     boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;

@@ -58,6 +58,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.region.PortableIp;
 
 /**
  * NetworkManager manages the network for the different end users.
@@ -322,6 +323,9 @@ public interface NetworkManager  {
 	IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId,
 			DataCenter zone) throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
 
+
+    IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID)
+            throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
 
 	Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering,
 			Long physicalNetworkId);

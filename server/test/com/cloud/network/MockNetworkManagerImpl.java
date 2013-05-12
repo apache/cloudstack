@@ -49,7 +49,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.GuestVlan;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -68,21 +67,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
-import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
-import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 
 @Component
@@ -859,8 +845,15 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
-    public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    public IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID)
+            throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
         return null;// TODO Auto-generated method stub
+    }
+
+    @Override
+    public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId) throws ResourceAllocationException,
+            InsufficientAddressCapacityException, ConcurrentOperationException {
+        return null;
     }
 
     @Override

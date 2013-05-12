@@ -105,6 +105,10 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.*;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpDao;
+import org.apache.cloudstack.region.PortableIpVO;
+import org.apache.cloudstack.region.Region;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -251,6 +255,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     UserIpv6AddressDao _ipv6Dao;
     @Inject
     Ipv6AddressManager _ipv6Mgr;
+    @Inject
+    PortableIpDao _portableIpDao;
 
     protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -694,6 +700,62 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
         }
         return ip;
+    }
+
+    @Override
+    @DB
+    public IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID)
+            throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
+
+        Transaction txn = Transaction.currentTxn();
+        GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
+        PortableIpVO allocatedPortableIp;
+        IPAddressVO ipaddr;
+
+        try {
+            portableIpLock.lock(5);
+
+            txn.start();
+            //TODO: get the region ID corresponding to running management server
+            List<PortableIpVO> portableIpVOs = _portableIpDao.listByRegionIdAndState(1, PortableIp.State.Free);
+            if (portableIpVOs == null || portableIpVOs.isEmpty()) {
+                InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException
+                        ("Unable to find available portable IP addresses", Region.class, new Long(1));
+                throw ex;
+            }
+
+            // allocate first portable IP to the user
+            allocatedPortableIp =   portableIpVOs.get(0);
+            allocatedPortableIp.setAllocatedTime(new Date());
+            allocatedPortableIp.setAllocatedToAccountId(ipOwner.getAccountId());
+            allocatedPortableIp.setAllocatedInDomainId(ipOwner.getDomainId());
+            allocatedPortableIp.setState(PortableIp.State.Allocated);
+            _portableIpDao.update(allocatedPortableIp.getId(), allocatedPortableIp);
+
+            // provision portable IP range VLAN
+            long physicalNetworkId = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Public).getId();
+            Network network = _networkModel.getNetwork(physicalNetworkId);
+            String range = allocatedPortableIp.getAddress() + "-" + allocatedPortableIp.getAddress();
+            VlanVO vlan = new VlanVO(VlanType.VirtualNetwork, allocatedPortableIp.getVlan(), allocatedPortableIp.getGateway(),
+                    allocatedPortableIp.getNetmask(), dcId, range, network.getId(), network.getId(), null, null, null);
+            vlan = _vlanDao.persist(vlan);
+
+            // provision the portable IP in to user_ip_address table
+            ipaddr = new IPAddressVO(new Ip(allocatedPortableIp.getAddress()), dcId, networkId, vpcID, network.getId(),
+                    network.getId(), vlan.getId(), true);
+            ipaddr.setState(State.Allocated);
+            ipaddr.setAllocatedTime(new Date());
+            ipaddr.setAllocatedInDomainId(ipOwner.getDomainId());
+            ipaddr.setAllocatedToAccountId(ipOwner.getId());
+            ipaddr= _ipAddressDao.persist(ipaddr);
+
+            txn.commit();
+
+        } finally {
+            portableIpLock.unlock();
+        }
+
+        return ipaddr;
     }
 
     protected IPAddressVO getExistingSourceNatInNetwork(long ownerId, Long networkId) {

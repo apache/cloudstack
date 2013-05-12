@@ -51,6 +51,7 @@ public class PortableIpDaoImpl extends GenericDaoBase<PortableIpVO, Long> implem
     private final SearchBuilder<PortableIpVO> listByRegionIDSearch;
     private final SearchBuilder<PortableIpVO> listByRangeIDSearch;
     private final SearchBuilder<PortableIpVO> listByRangeIDAndStateSearch;
+    private final SearchBuilder<PortableIpVO> listByRegionIDAndStateSearch;
 
     public PortableIpDaoImpl() {
         listByRegionIDSearch = createSearchBuilder();
@@ -65,6 +66,11 @@ public class PortableIpDaoImpl extends GenericDaoBase<PortableIpVO, Long> implem
         listByRangeIDAndStateSearch.and("rangeId", listByRangeIDAndStateSearch.entity().getRangeId(), SearchCriteria.Op.EQ);
         listByRangeIDAndStateSearch.and("state", listByRangeIDAndStateSearch.entity().getState(), SearchCriteria.Op.EQ);
         listByRangeIDAndStateSearch.done();
+
+        listByRegionIDAndStateSearch = createSearchBuilder();
+        listByRegionIDAndStateSearch.and("regionId", listByRegionIDAndStateSearch.entity().getRangeId(), SearchCriteria.Op.EQ);
+        listByRegionIDAndStateSearch.and("state", listByRegionIDAndStateSearch.entity().getState(), SearchCriteria.Op.EQ);
+        listByRegionIDAndStateSearch.done();
     }
 
     @Override
@@ -85,6 +91,14 @@ public class PortableIpDaoImpl extends GenericDaoBase<PortableIpVO, Long> implem
     public List<PortableIpVO> listByRangeIdAndState(long rangeId, PortableIp.State state) {
         SearchCriteria<PortableIpVO> sc = listByRangeIDAndStateSearch.create();
         sc.setParameters("rangeId", rangeId);
+        sc.setParameters("state", state);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<PortableIpVO> listByRegionIdAndState(int regionId, PortableIp.State state) {
+        SearchCriteria<PortableIpVO> sc = listByRegionIDAndStateSearch.create();
+        sc.setParameters("regionId", regionId);
         sc.setParameters("state", state);
         return listBy(sc);
     }
