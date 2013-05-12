@@ -90,8 +90,6 @@ public interface QueryService {
     public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
             String affinityGroupType, Long vmId, Long startIndex, Long pageSize);
 
-    public List<VolumeDetailResponse> searchForVolumeDetails(ListVolumeDetailsCmd cmd);
-
     List<NicDetailResponse> searchForNicDetails(ListNicDetailsCmd ListNicDetailsCmd);
 
     public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd);

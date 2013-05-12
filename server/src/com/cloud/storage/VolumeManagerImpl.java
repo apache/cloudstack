@@ -1793,65 +1793,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         return volume;
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETAIL_UPDATE, eventDescription = "updating volume detail", async = true)
-    public void updateVolumeDetails(UpdateVolumeDetailCmd cmd){
-        UserContext.current().setEventDetails("Volume Id: "+cmd.getId());
-        Account caller = UserContext.current().getCaller();
-        Long volumeId = cmd.getId();
-        String name = cmd.getName();
-        String value = cmd.getValue();
-
-        VolumeVO volume = _volsDao.findById(volumeId);
-        _accountMgr.checkAccess(caller, null, true, volume);
-        VolumeDetailVO volDetail = _volDetailDao.findDetail(volumeId, name);
-        if(volDetail != null){
-            volDetail.setValue(value);
-             _volDetailDao.update(volDetail.getId(), volDetail);
-        }else{
-            throw new InvalidParameterValueException("This detail doesnt exist for the volume ");
-        }
-
-    }
-
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETAIL_REMOVE, eventDescription = "removing volume detail", async = true)
-    public void removeVolumeDetail(RemoveVolumeDetailCmd cmd){
-        UserContext.current().setEventDetails("Volume Id: "+cmd.getId());
-        Account caller = UserContext.current().getCaller();
-        Long volumeId = cmd.getId();
-        String name = cmd.getName();
-
-        VolumeVO volume = _volsDao.findById(volumeId);
-        _accountMgr.checkAccess(caller, null, true, volume);
-        VolumeDetailVO volDetail = _volDetailDao.findDetail(volumeId, name);
-        if(volDetail != null){
-            _volDetailDao.remove(volDetail.getId());
-        }else{
-            throw new InvalidParameterValueException("This detail doesnt exist for the volume ");
-        }
-
-    }
-
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETAIL_ADD, eventDescription = "adding volume detail", async = true)
-    public void addVolumeDetail(AddVolumeDetailCmd cmd){
-
-        Account caller = UserContext.current().getCaller();
-        UserContext.current().setEventDetails("Volume Id: "+ cmd.getId());
-
-        Long volumeId = cmd.getId();
-        String name = cmd.getName();
-        String value = cmd.getValue();
-
-        VolumeVO volume = _volsDao.findById(volumeId);
-        _accountMgr.checkAccess(caller, null, true, volume);
-        VolumeDetailVO volDetail = new VolumeDetailVO(volumeId, name, value);
-        _volDetailDao.persist(volDetail);
-    }
-
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async = true)

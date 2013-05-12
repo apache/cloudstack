@@ -1533,35 +1533,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     @Override
-    public List<VolumeDetailResponse> searchForVolumeDetails(ListVolumeDetailsCmd cmd){
-
-        Long id = cmd.getId();
-        String name = cmd.getName();
-
-        List<VolumeDetailVO> volumeDetailList;
-        if(name == null){
-            volumeDetailList = _volumeDetailDao.findDetails(id);
-        }else{
-            VolumeDetailVO volumeDetail = _volumeDetailDao.findDetail(id, name);
-            volumeDetailList = new LinkedList<VolumeDetailVO>();
-            volumeDetailList.add(volumeDetail);
-        }
-
-        List<VolumeDetailResponse> volumeDetailResponseList = new ArrayList<VolumeDetailResponse>();
-        for (VolumeDetailVO volumeDetail : volumeDetailList ){
-            VolumeDetailResponse volumeDetailResponse = new VolumeDetailResponse();
-            String uuid = ApiDBUtils.findVolumeById(id).getUuid();
-            volumeDetailResponse.setId(uuid);
-            volumeDetailResponse.setName(volumeDetail.getName());
-            volumeDetailResponse.setValue(volumeDetail.getValue());
-            volumeDetailResponse.setObjectName("volumedetail");
-            volumeDetailResponseList.add(volumeDetailResponse);
-        }
-
-        return volumeDetailResponseList;
-    }
-
-    @Override
     public List<NicDetailResponse> searchForNicDetails(ListNicDetailsCmd cmd){
         Long id = cmd.getId();
         String name = cmd.getName();

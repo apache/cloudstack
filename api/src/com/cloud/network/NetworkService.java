@@ -175,10 +175,4 @@ public interface NetworkService {
     /* lists the nic informaton */
     List<? extends Nic> listNics(ListNicsCmd listNicsCmd);
 
-    void removeNicDetail(RemoveNicDetailCmd removeNicDetailCmd);
-
-    void addNicDetail(AddNicDetailCmd cmd);
-
-    void updateNicDetail(UpdateNicDetailCmd cmd);
-
 }

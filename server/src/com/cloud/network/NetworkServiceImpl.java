@@ -3836,18 +3836,4 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         return _networkMgr.listVmNics(vmId, nicId);
     }
 
-    @Override
-    public void removeNicDetail(RemoveNicDetailCmd removeNicDetailCmd) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void addNicDetail(AddNicDetailCmd addNicDetailCmd) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void updateNicDetail(UpdateNicDetailCmd updateNicDetailCmd) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
 }

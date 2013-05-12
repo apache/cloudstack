@@ -897,21 +897,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
-    public void removeNicDetail(RemoveNicDetailCmd removeNicDetailCmd) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void addNicDetail(AddNicDetailCmd addNicDetailCmd) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void updateNicDetail(UpdateNicDetailCmd updateNicDetailCmd) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
     public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc,
             Pod pod, Account caller, String requestedIp)
             throws InsufficientAddressCapacityException {

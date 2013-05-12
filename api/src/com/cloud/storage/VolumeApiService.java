@@ -75,11 +75,5 @@ public interface VolumeApiService {
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
 
-    void updateVolumeDetails(UpdateVolumeDetailCmd updateVolumeDetailCmd);
-
-    void removeVolumeDetail(RemoveVolumeDetailCmd removeVolumeDetailCmd);
-
-    void addVolumeDetail(AddVolumeDetailCmd addVolumeDetailCmd);
-
     Volume updateVolume(UpdateVolumeCmd updateVolumeCmd);
 }
