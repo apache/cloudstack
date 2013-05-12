@@ -138,10 +138,28 @@ class deployDataCenters():
         if secondaryStorages is None:
             return
         for secondary in secondaryStorages:
-            secondarycmd = addSecondaryStorage.addSecondaryStorageCmd()
+            secondarycmd = addImageStore.addImageStoreCmd()
             secondarycmd.url = secondary.url
-            secondarycmd.zoneid = zoneId
-            self.apiClient.addSecondaryStorage(secondarycmd)
+            secondarycmd.provider = secondary.providerName
+            secondarycmd.details = []
+            for item in secondary.details:
+                secondarycmd.details.append(item.__dict__)
+            if secondarycmd.provider == "NFS":
+                secondarycmd.zoneid = zoneId
+            self.apiClient.addImageStore(secondarycmd)
+
+    def createCacheStorages(self, cacheStorages, zoneId):
+        if cacheStorages is None:
+            return
+        for cache in cacheStorages:
+            cachecmd = createCacheStore.createCacheStoreCmd()
+            cachecmd.url = cache.url
+            cachecmd.provider = cache.providerName
+            cachecmd.zoneid = zoneId
+            cachecmd.details = []
+            for item in cache.details:
+                cachecmd.details.append(item.__dict__)
+            self.apiClient.createCacheStore(cachecmd)
 
     def createnetworks(self, networks, zoneId):
         if networks is None:
@@ -328,6 +346,7 @@ class deployDataCenters():
                                         zoneId)
 
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
+            self.createCacheStorages(zone.cacheStorages, zoneId)            
             
             enabled = getattr(zone, 'enabled', 'True')
             if enabled == 'True' or enabled is None:

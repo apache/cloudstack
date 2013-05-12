@@ -463,7 +463,9 @@ public class TemplateServiceImpl implements TemplateService {
         if (callbackResult.isFailed()) {
             template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
             result.setResult(callbackResult.getResult());
-            parentCallback.complete(result);
+            if ( parentCallback != null ){
+                parentCallback.complete(result);
+            }
             return null;
         }
 
@@ -471,7 +473,9 @@ public class TemplateServiceImpl implements TemplateService {
             template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (Exception e) {
             result.setResult(e.toString());
-            parentCallback.complete(result);
+            if ( parentCallback != null ){
+                parentCallback.complete(result);
+            }
             return null;
         }
 
