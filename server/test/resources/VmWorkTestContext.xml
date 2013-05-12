@@ -46,8 +46,15 @@
   <bean id="VmWorkJobDispatcher" class="com.cloud.vm.VmWorkJobDispatcher">
     <property name="name" value="VmWorkJobDispatcher" />
   </bean>
-  <bean id="TestJobDispatcher" class="com.cloud.vm.VmWorkTestJobDispatcher">
-    <property name="name" value="TestJobDispatcher" />
+  <bean id="VmWorkJobWakeupDispatcher" class="com.cloud.vm.VmWorkJobWakeupDispatcher">
+    <property name="name" value="VmWorkJobWakeupDispatcher" />
+  </bean>
+  
+  <bean id="TestApiJobDispatcher" class="com.cloud.vm.VmWorkTestApiJobDispatcher">
+    <property name="name" value="TestApiJobDispatcher" />
+  </bean>
+  <bean id="TestWorkJobDispatcher" class="com.cloud.vm.VmWorkTestWorkJobDispatcher">
+    <property name="name" value="TestWorkJobDispatcher" />
   </bean>
   
   <bean id="messageBus" class = "org.apache.cloudstack.framework.messagebus.MessageBusBase" />

@@ -25,6 +25,8 @@ import com.cloud.async.SyncQueueManager;
 import com.cloud.async.SyncQueueManagerImpl;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.dao.AsyncJobDaoImpl;
+import com.cloud.async.dao.AsyncJobJoinMapDao;
+import com.cloud.async.dao.AsyncJobJoinMapDaoImpl;
 import com.cloud.async.dao.AsyncJobJournalDao;
 import com.cloud.async.dao.AsyncJobJournalDaoImpl;
 import com.cloud.async.dao.SyncQueueDao;
@@ -37,6 +39,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dao.EntityManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Configuration
 public class VmWorkTestConfiguration {
@@ -109,5 +112,15 @@ public class VmWorkTestConfiguration {
 	@Bean
 	public AsyncJobJournalDao jobJournalDao() {
 		return new AsyncJobJournalDaoImpl();
+	}
+	
+	@Bean
+	public AsyncJobJoinMapDao jobJoinMapDao()  {
+		return new AsyncJobJoinMapDaoImpl();
+	}
+	
+	@Bean
+	public VMInstanceDao vmInstanceDao() {
+		return Mockito.mock(VMInstanceDao.class);
 	}
 }

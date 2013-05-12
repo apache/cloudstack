@@ -40,6 +40,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 	private final SearchBuilder<AsyncJobVO> pendingAsyncJobsSearch;	
 	private final SearchBuilder<AsyncJobVO> expiringAsyncJobSearch;	
 	private final SearchBuilder<AsyncJobVO> pseudoJobSearch;
+	private final SearchBuilder<AsyncJobVO> pseudoJobCleanupSearch;
 	
 	public AsyncJobDaoImpl() {
 		pendingAsyncJobSearch = createSearchBuilder();
@@ -70,6 +71,10 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 		pseudoJobSearch.and("instanceType", pseudoJobSearch.entity().getInstanceType(), Op.EQ);
 		pseudoJobSearch.and("instanceId", pseudoJobSearch.entity().getInstanceId(), Op.EQ);
 		pseudoJobSearch.done();
+		
+		pseudoJobCleanupSearch = createSearchBuilder();
+		pseudoJobCleanupSearch.and("initMsid", pseudoJobCleanupSearch.entity().getInitMsid(), Op.EQ);
+		pseudoJobCleanupSearch.done();
 	}
 	
 	public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
@@ -114,6 +119,12 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 		}
 		
 		return null;
+	}
+	
+	public void cleanupPseduoJobs(long msid) {
+		SearchCriteria<AsyncJobVO> sc = pseudoJobCleanupSearch.create();
+		sc.setParameters("initMsid", msid);
+		this.expunge(sc);
 	}
 	
 	public List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit) {

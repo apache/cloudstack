@@ -17,23 +17,44 @@
 
 package com.cloud.vm;
 
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import javax.inject.Inject;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobDispatcher;
+import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.Transaction;
 
-public class VmWorkTestJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
+public class VmWorkTestApiJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
 
 	@Inject AsyncJobManager _jobMgr;
 	
 	@Override
 	public void runJob(AsyncJob job) {
+		
+		// drop constraint check in order to do single table test
+		Statement stat = null;
+		try {
+			stat = Transaction.currentTxn().getConnection().createStatement();
+			stat.execute("SET foreign_key_checks = 0;");
+		} catch (SQLException e) {
+		} finally {
+			if(stat != null) {
+				try {
+					stat.close();
+				} catch (SQLException e) {
+				}
+			}
+		}
+		
 		VmWorkJobVO workJob = new VmWorkJobVO();
     	
-		workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+		workJob.setDispatcher("TestWorkJobDispatcher");
 		workJob.setCmd(VmWorkConstants.VM_WORK_START);
 		
 		workJob.setAccountId(1L);
@@ -57,5 +78,6 @@ public class VmWorkTestJobDispatcher extends AdapterBase implements AsyncJobDisp
 				VmWorkConstants.VM_WORK_JOB_WAKEUP_DISPATCHER, 
 				new String[] {}, 
 				3000, 120000);
+		AsyncJobExecutionContext.getCurrentExecutionContext().resetSyncSource();
 	}
 }

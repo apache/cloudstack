@@ -77,7 +77,7 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
 		
 		String sql = "SELECT i.id, i.queue_id, i.content_type, i.content_id, i.created " +
 					 " FROM sync_queue AS q JOIN sync_queue_item AS i ON q.id = i.queue_id " +
-                     " WHERE q.queue_size <= q.queue_size_limit AND i.queue_proc_number IS NULL " +
+                     " WHERE i.queue_proc_number IS NULL " +
 					 " GROUP BY q.id " +
 					 " ORDER BY i.id " +
 					 " LIMIT 0, ?";

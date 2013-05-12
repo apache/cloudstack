@@ -24,13 +24,12 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.framework.async.Void;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.async.AsyncJob.JournalType;
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -59,7 +58,8 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManager {
-
+    private static final Logger s_logger = Logger.getLogger(VmWorkMockVirtualMachineManagerImpl.class);
+	
 	@Inject MessageBus _msgBus;
 	
 	@Override
@@ -394,11 +394,23 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
     public <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
     	
+		try {
+			Thread.sleep(120000);
+		} catch (InterruptedException e) {
+		}
+    	
     	return vm;
     }
-	
+
+	int wakeupCount = 0;
 	public void processVmStartWakeup() {
-		System.out.println("processVmStartWakeup. job-" + AsyncJobExecutionContext.getCurrentExecutionContext().getJob().getId());
+		s_logger.info("processVmStartWakeup. job-" + AsyncJobExecutionContext.getCurrentExecutionContext().getJob().getId());
+		
+		if(wakeupCount++ < 3) {
+			AsyncJobExecutionContext.getCurrentExecutionContext().resetSyncSource();
+		} else {
+			AsyncJobExecutionContext.getCurrentExecutionContext().completeAsyncJob(AsyncJobConstants.STATUS_SUCCEEDED, 0, null);
+		}
 	}
 	
 	@Override

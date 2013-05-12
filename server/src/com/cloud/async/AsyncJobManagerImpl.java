@@ -235,8 +235,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
             job.setLastUpdated(DateUtil.currentGMTTime());
             _jobDao.update(jobId, job);
-            txn.commit();
             
+        	List<Long> wakeupList = _joinMapDao.wakeupByJoinedJobCompletion(jobId);
+            _joinMapDao.disjoinAllJobs(jobId);
+            
+            txn.commit();
+
+            for(Long id : wakeupList) {
+            	// TODO, we assume that all jobs in this category is API job only
+            	AsyncJobVO jobToWakeup = _jobDao.findById(id);
+            	if(jobToWakeup != null && (jobToWakeup.getPendingSignals() & AsyncJobConstants.SIGNAL_MASK_WAKEUP) != 0)
+            	    scheduleExecution(jobToWakeup, false);
+            }
+             
             _messageBus.publish(null, TopicConstants.JOB_STATE, PublishScope.GLOBAL, (Long)jobId);
         } catch(Exception e) {
             s_logger.error("Unexpected exception while completing async job-" + jobId, e);
@@ -487,6 +498,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 	    			if(dispatcher.getName().equals(joinRecord.getWakeupDispatcher()))
 	    				return dispatcher;
 	    		}
+    		} else {
+    			s_logger.warn("job-" + job.getId() + " is scheduled for wakeup run, but there is no joining info anymore");
     		}
     	}
     	return null;
@@ -689,7 +702,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         }
                     }
               
-                    _joinMapDao.wakeupScan();
+                    List<Long> standaloneWakeupJobs = _joinMapDao.wakeupScan();
+                    for(Long jobId : standaloneWakeupJobs) {
+                    	// TODO, we assume that all jobs in this category is API job only
+                    	AsyncJobVO job = _jobDao.findById(jobId);
+                    	if(job != null && (job.getPendingSignals() & AsyncJobConstants.SIGNAL_MASK_WAKEUP) != 0)
+                    	    scheduleExecution(job, false);
+                    }
                 } catch(Throwable e) {
                     s_logger.error("Unexpected exception when trying to execute queue item, ", e);
                 } finally {
@@ -857,6 +876,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public boolean start() {
         try {
+        	_jobDao.cleanupPseduoJobs(getMsid());
+        	
             List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
             cleanupPendingJobs(l);
             _jobDao.resetJobProcess(getMsid(), ApiErrorCode.INTERNAL_ERROR.getHttpCode(), getSerializedErrorMessage("job cancelled because of management server restart"));

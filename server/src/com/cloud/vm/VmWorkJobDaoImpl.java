@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 
+import com.cloud.async.AsyncJobConstants;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -32,6 +34,7 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobSearch;
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobByCommandSearch;
+    protected SearchBuilder<VmWorkJobVO> ExpungeWorkJobSearch;
 	
 	public VmWorkJobDaoImpl() {
 	}
@@ -50,6 +53,11 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		PendingWorkJobByCommandSearch.and("step", PendingWorkJobByCommandSearch.entity().getStep(), Op.NEQ);
 		PendingWorkJobByCommandSearch.and("cmd", PendingWorkJobByCommandSearch.entity().getCmd(), Op.EQ);
 		PendingWorkJobByCommandSearch.done();
+		
+		ExpungeWorkJobSearch = createSearchBuilder();
+		ExpungeWorkJobSearch.and("lastUpdated", ExpungeWorkJobSearch.entity().getLastUpdated(), Op.LT);
+		ExpungeWorkJobSearch.and("status", ExpungeWorkJobSearch.entity().getStatus(), Op.NEQ);
+		ExpungeWorkJobSearch.done();
 	}
 	
 	public VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId) {
@@ -95,5 +103,13 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		jobVo.setStep(step);
 		jobVo.setLastUpdated(DateUtil.currentGMTTime());
 		update(workJobId, jobVo);
+	}
+	
+	public void expungeCompletedWorkJobs(Date cutDate) {
+		SearchCriteria<VmWorkJobVO> sc = ExpungeWorkJobSearch.create();
+		sc.setParameters("lastUpdated",cutDate);
+		sc.setParameters("status", AsyncJobConstants.STATUS_IN_PROGRESS);
+		
+		expunge(sc);
 	}
 }

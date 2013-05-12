@@ -63,7 +63,8 @@ public class VmWorkTest extends TestCase {
 	
 	@Before
 	public void setup() {
-		LogUtils.initLog4j("cloud-log4j.xml");
+		LogUtils.initLog4j("log4j-vmops.xml");
+		
     	ComponentContext.initComponentsLifeCycle();
        	_vmMgr = Mockito.spy(_vmMgr);
        	Mockito.when(_clusterMgr.getManagementNodeId()).thenReturn(1L);
@@ -117,7 +118,6 @@ public class VmWorkTest extends TestCase {
 		Assert.assertTrue(work.getParams().get(VirtualMachineProfile.Param.HaTag).equals(workClone.getParams().get(VirtualMachineProfile.Param.HaTag)));
 	}
 	
-	@Test
 	public void testVmWorkDispatcher() {
 		VmWorkJobVO workJob = new VmWorkJobVO();
 		workJob.setDispatcher("VmWorkJobDispatcher");
@@ -146,7 +146,7 @@ public class VmWorkTest extends TestCase {
 	public void testVmWorkWakeup() {
 		AsyncJobVO mainJob = new AsyncJobVO();
 		
-		mainJob.setDispatcher("TestJobDispatcher");
+		mainJob.setDispatcher("TestApiJobDispatcher");
 		mainJob.setAccountId(1L);
 		mainJob.setUserId(1L);
 		mainJob.setCmd("Dummy");

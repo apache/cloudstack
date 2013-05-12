@@ -44,6 +44,10 @@ public class AsyncJobExecutionContext  {
 		return _job.getSyncSource();
 	}
 	
+	public void resetSyncSource() {
+		_job.setSyncSource(null);
+	}
+	
 	public AsyncJob getJob() {
 		if(_job == null) {
 			_job = _jobMgr.getPseudoJob();

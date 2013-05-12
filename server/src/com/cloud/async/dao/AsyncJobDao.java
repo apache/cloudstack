@@ -27,6 +27,7 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
 	List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId);
 	
 	AsyncJobVO findPseudoJob(long threadId, long msid);
+	void cleanupPseduoJobs(long msid);
 	
 	List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit);
 	void resetJobProcess(long msid, int jobResultCode, String jobResultMessage);

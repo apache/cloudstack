@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.Date;
 import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
@@ -24,6 +25,8 @@ import com.cloud.vm.VmWorkJobVO.Step;
 public interface VmWorkJobDao extends GenericDao<VmWorkJobVO, Long> {
 	VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId);
 	List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId);
-	public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd);
+	List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd);
+	
 	void updateStep(long workJobId, Step step);
+	void expungeCompletedWorkJobs(Date cutDate);
 }

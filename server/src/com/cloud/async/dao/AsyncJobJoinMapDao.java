@@ -27,11 +27,13 @@ public interface AsyncJobJoinMapDao extends GenericDao<AsyncJobJoinMapVO, Long> 
 		long wakeupIntervalMs, long expirationMs,
 		Long syncSourceId, String wakeupHandler, String wakeupDispatcher);
 	void disjoinJob(long jobId, long joinedJobId);
+	void disjoinAllJobs(long jobId);
 	
 	AsyncJobJoinMapVO getJoinRecord(long jobId, long joinJobId);
 	List<AsyncJobJoinMapVO> listJoinRecords(long jobId);
 	
 	void completeJoin(long joinJobId, int joinStatus, String joinResult, long completeMsid);
 	
-	void wakeupScan();
+	List<Long> wakeupScan();
+	List<Long> wakeupByJoinedJobCompletion(long joinedJobId);
 }
