@@ -65,6 +65,7 @@ import org.testng.AssertJUnit;
 import org.testng.annotations.Test;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Command;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -78,6 +79,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceManager;
@@ -85,6 +87,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
@@ -140,6 +143,8 @@ public class VolumeTest extends CloudStackTestNGBase {
     VolumeDataFactory volFactory;
     @Inject
     EndPointSelector epSelector;
+    @Inject
+    HypervisorGuruManager hyGuruMgr;
     long primaryStoreId;
     VMTemplateVO image;
     String imageStoreName = "testImageStore";
@@ -192,7 +197,7 @@ public class VolumeTest extends CloudStackTestNGBase {
             imageStore = new ImageStoreVO();
             imageStore.setName(imageStoreName);
             imageStore.setDataCenterId(dcId);
-            imageStore.setProviderName("CloudStack ImageStore Provider");
+            imageStore.setProviderName(DataStoreProvider.NFS_IMAGE);
             imageStore.setRole(DataStoreRole.Image);
             imageStore.setUrl(this.getSecondaryStorage());
             imageStore.setUuid(UUID.randomUUID().toString());
@@ -236,6 +241,7 @@ public class VolumeTest extends CloudStackTestNGBase {
         DataObject templateOnStore = store.create(template);
         TemplateObjectTO to = new TemplateObjectTO();
         to.setPath(this.getImageInstallPath());
+        to.setFormat(ImageFormat.VHD);
         CopyCmdAnswer answer = new CopyCmdAnswer(to);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
         templateOnStore.processEvent(Event.OperationSuccessed, answer);
@@ -253,6 +259,7 @@ public class VolumeTest extends CloudStackTestNGBase {
         Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
+        Mockito.when(hyGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(this.host.getId());
     }
 
     public DataStore createPrimaryDataStore() {
@@ -297,7 +304,7 @@ public class VolumeTest extends CloudStackTestNGBase {
             pool.setPoolType(StoragePoolType.NetworkFilesystem);
             pool.setPodId(podId);
             pool.setScope(ScopeType.CLUSTER);
-            pool.setStorageProviderName("cloudstack primary data store provider");
+            pool.setStorageProviderName(DataStoreProvider.DEFAULT_PRIMARY);
             pool = this.primaryStoreDao.persist(pool);
             DataStore store = this.dataStoreMgr.getPrimaryDataStore(pool.getId());
             return store;

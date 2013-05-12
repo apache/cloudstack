@@ -59,6 +59,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.auth.UserAuthenticator;
@@ -250,6 +251,11 @@ public class ChildTestConfiguration extends TestConfiguration {
     @Bean
     public AlertManager alertMgr() {
         return Mockito.mock(AlertManager.class);
+    }
+    
+    @Bean
+    public HypervisorGuruManager hypervisorGuruMgr() {
+    	return Mockito.mock(HypervisorGuruManager.class);
     }
 
     public static class Library implements TypeFilter {

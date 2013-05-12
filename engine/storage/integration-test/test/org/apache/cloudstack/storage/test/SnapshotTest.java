@@ -64,6 +64,7 @@ import org.testng.AssertJUnit;
 import org.testng.annotations.Test;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Command;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -75,6 +76,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
@@ -87,6 +89,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.dao.SnapshotDao;
@@ -132,6 +135,8 @@ public class SnapshotTest extends CloudStackTestNGBase {
     PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
     AgentManager agentMgr;
+    @Inject
+    HypervisorGuruManager hyGuruMgr;
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
@@ -244,6 +249,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         DataObject templateOnStore = store.create(template);
         TemplateObjectTO to = new TemplateObjectTO();
         to.setPath(this.getImageInstallPath());
+        to.setFormat(ImageFormat.VHD);
         CopyCmdAnswer answer = new CopyCmdAnswer(to);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
         templateOnStore.processEvent(Event.OperationSuccessed, answer);
@@ -261,6 +267,8 @@ public class SnapshotTest extends CloudStackTestNGBase {
         Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
+        Mockito.when(hyGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(this.host.getId());
+        
     }
 
     public DataStore createPrimaryDataStore() {

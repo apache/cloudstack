@@ -179,7 +179,6 @@ CREATE TABLE  `cloud`.`snapshot_store_ref` (
   `update_count` bigint unsigned,
   `updated` datetime,   
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_snapshot_store_ref__store_id` FOREIGN KEY `fk_snapshot_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
   INDEX `i_snapshot_store_ref__store_id`(`store_id`),
   CONSTRAINT `fk_snapshot_store_ref__snapshot_id` FOREIGN KEY `fk_snapshot_store_ref__snapshot_id` (`snapshot_id`) REFERENCES `snapshots` (`id`),
   INDEX `i_snapshot_store_ref__snapshot_id`(`snapshot_id`)

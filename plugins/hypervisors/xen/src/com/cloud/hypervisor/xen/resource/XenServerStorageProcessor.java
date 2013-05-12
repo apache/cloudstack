@@ -853,6 +853,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 TemplateObjectTO newVol = new TemplateObjectTO();
                 newVol.setUuid(snapshotvdi.getUuid(conn));
                 newVol.setPath(newVol.getUuid());
+                newVol.setFormat(ImageFormat.VHD);
                 return new CopyCmdAnswer(newVol);
             }
         }catch (Exception e) {

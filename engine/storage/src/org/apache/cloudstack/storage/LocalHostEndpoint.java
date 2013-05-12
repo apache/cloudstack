@@ -24,6 +24,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.resource.LocalNfsSecondaryStorageResource;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
@@ -37,7 +38,7 @@ public class LocalHostEndpoint implements EndPoint {
 	private ScheduledExecutorService executor;
 	ServerResource resource;
 	public LocalHostEndpoint() {
-//FIXME		resource = new LocalNfsSecondaryStorageResource();
+        resource = new LocalNfsSecondaryStorageResource();
 		executor = Executors.newScheduledThreadPool(10);
 	}
 	@Override
