@@ -52,6 +52,7 @@ public class PortableIpDaoImpl extends GenericDaoBase<PortableIpVO, Long> implem
     private final SearchBuilder<PortableIpVO> listByRangeIDSearch;
     private final SearchBuilder<PortableIpVO> listByRangeIDAndStateSearch;
     private final SearchBuilder<PortableIpVO> listByRegionIDAndStateSearch;
+    private final SearchBuilder<PortableIpVO> findByIpAddressSearch;
 
     public PortableIpDaoImpl() {
         listByRegionIDSearch = createSearchBuilder();
@@ -71,6 +72,10 @@ public class PortableIpDaoImpl extends GenericDaoBase<PortableIpVO, Long> implem
         listByRegionIDAndStateSearch.and("regionId", listByRegionIDAndStateSearch.entity().getRangeId(), SearchCriteria.Op.EQ);
         listByRegionIDAndStateSearch.and("state", listByRegionIDAndStateSearch.entity().getState(), SearchCriteria.Op.EQ);
         listByRegionIDAndStateSearch.done();
+
+        findByIpAddressSearch = createSearchBuilder();
+        findByIpAddressSearch.and("address", findByIpAddressSearch.entity().getAddress(), SearchCriteria.Op.EQ);
+        findByIpAddressSearch.done();
     }
 
     @Override
@@ -101,5 +106,26 @@ public class PortableIpDaoImpl extends GenericDaoBase<PortableIpVO, Long> implem
         sc.setParameters("regionId", regionId);
         sc.setParameters("state", state);
         return listBy(sc);
+    }
+
+    @Override
+    public PortableIpVO findByIpAddress(String ipAddress) {
+        SearchCriteria<PortableIpVO> sc = findByIpAddressSearch.create();
+        sc.setParameters("address", ipAddress);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public void unassignIpAddress(long ipAddressId) {
+        PortableIpVO address = createForUpdate();
+        address.setAllocatedToAccountId(null);
+        address.setAllocatedInDomainId(null);
+        address.setAllocatedTime(null);
+        address.setState(PortableIp.State.Free);
+        address.setAssociatedWithNetworkId(null);
+        address.setAssociatedDataCenterId(null);
+        address.setAssociatedWithVpcId(null);
+        address.setPhysicalNetworkId(null);
+        update(ipAddressId, address);
     }
 }

@@ -940,10 +940,40 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         if (success) {
+            if (ip.isPortable()) {
+                releasePortableIpAddress(addrId);
+            }
             s_logger.debug("Released a public ip id=" + addrId);
         }
 
         return success;
+    }
+
+    @DB
+    private void releasePortableIpAddress(long addrId) {
+        Transaction txn = Transaction.currentTxn();
+        GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
+
+        txn.start();
+        try {
+            portableIpLock.lock(5);
+            IPAddressVO ip = _ipAddressDao.findById(addrId);
+
+            // unassign portable IP
+            PortableIpVO portableIp = _portableIpDao.findByIpAddress(ip.getAddress().addr());
+            _portableIpDao.unassignIpAddress(portableIp.getId());
+
+            // removed the provisioned vlan
+            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+            _vlanDao.expunge(vlan.getId());
+
+            // remove the provisioned public ip address
+            _ipAddressDao.expunge(ip.getId());
+
+            txn.commit();
+        } finally {
+            portableIpLock.releaseRef();
+        }
     }
 
     @Override

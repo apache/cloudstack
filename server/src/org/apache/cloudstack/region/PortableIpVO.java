@@ -68,7 +68,7 @@ public class PortableIpVO  implements PortableIp  {
     private Long physicalNetworkId;
 
     @Column(name="data_center_id")
-    private long dataCenterId;
+    private Long dataCenterId;
 
     @Column(name="network_id")
     private Long networkId;

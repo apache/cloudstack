@@ -846,6 +846,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         boolean success = _networkMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
 
         if (success) {
+            if (!ipVO.isPortable()) {
+                return success;
+            }
             Long networkId = ipVO.getAssociatedWithNetworkId();
             if (networkId != null) {
                 Network guestNetwork = getNetwork(networkId);
@@ -861,7 +864,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
         return success;
     }
-
 
     @Override
     @DB
