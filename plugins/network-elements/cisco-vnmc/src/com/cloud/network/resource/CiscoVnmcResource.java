@@ -72,7 +72,7 @@ public class CiscoVnmcResource implements ServerResource {
     private String _username;
     private String _password;
     private String _guid;
-    private Integer _numRetries;
+    private Integer _numRetries = 1;
 
     private CiscoVnmcConnectionImpl _connection;
 
@@ -155,9 +155,9 @@ public class CiscoVnmcResource implements ServerResource {
 
             // Open a socket and login
             _connection = new CiscoVnmcConnectionImpl(_ip, _username, _password);
-            //if (!refreshVnmcConnection()) {
-            //    throw new ConfigurationException("Unable to open a connection to the VNMC.");
-            //}
+            if (!refreshVnmcConnection()) {
+                throw new ConfigurationException("Unable to connect to VNMC, check if ip/username/password is valid.");
+            }
 
             return true;
         } catch (Exception e) {
