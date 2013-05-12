@@ -347,7 +347,7 @@
                 title:'Delete Alerts',
                 desc: '',
                 fields: {
-                  type: { label: 'By event type' , docID:'helpAlertsDeleteType'},
+                  type: { label: 'By Alert type' , docID:'helpAlertsDeleteType'},
                   date: { label: 'By date (older than)' ,docID:'helpAlertsDeleteDate', isDatepicker: true }
                 }
               },
@@ -393,7 +393,7 @@
                 title:'Archive Alerts',
                 desc: '',
                 fields: {
-                  type: { label: 'By event type', docID:'helpAlertsArchiveType' },
+                  type: { label: 'By Alert type', docID:'helpAlertsArchiveType' },
                   date: { label: 'By date (older than)' , docID:'helpAlertsArchiveDate', isDatepicker: true }
                 }
               },
