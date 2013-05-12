@@ -1879,7 +1879,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         // check if we have already image stores from other different providers, we currently are not supporting image stores from different
         // providers co-existing
-        List<ImageStoreVO> imageStores = _imageStoreDao.listAll();
+        List<ImageStoreVO> imageStores = _imageStoreDao.listImageStores();
         for ( ImageStoreVO store : imageStores){
             if (!store.getProviderName().equalsIgnoreCase(providerName)){
                 throw new InvalidParameterValueException("You can only add new image stores from the same provider " + store.getProviderName() + " already added");
