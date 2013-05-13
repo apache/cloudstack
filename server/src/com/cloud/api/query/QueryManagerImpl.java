@@ -43,7 +43,6 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
-import org.apache.cloudstack.api.command.user.network.ListNicDetailsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
@@ -53,7 +52,6 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
-import org.apache.cloudstack.api.command.user.volume.ListVolumeDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.*;
@@ -1533,35 +1531,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         response.setResponses(volumeResponses, result.second());
         return response;
     }
-
-    @Override
-    public List<NicDetailResponse> searchForNicDetails(ListNicDetailsCmd cmd){
-        Long id = cmd.getId();
-        String name = cmd.getName();
-
-        List<NicDetailVO> nicDetailList;
-        if(name == null){
-            nicDetailList = _nicDetailDao.findDetails(id);
-        }else {
-            NicDetailVO nicDetail = _nicDetailDao.findDetail(id, name);
-            nicDetailList = new LinkedList<NicDetailVO>();
-            nicDetailList.add(nicDetail);
-        }
-
-        List<NicDetailResponse> nicDetailResponseList = new ArrayList<NicDetailResponse>();
-        for(NicDetailVO nicDetail : nicDetailList){
-            NicDetailResponse nicDetailResponse = new NicDetailResponse();
-            //String uuid = ApiDBUtils.findN
-            nicDetailResponse.setName(nicDetail.getName());
-            nicDetailResponse.setValue(nicDetail.getValue());
-            nicDetailResponse.setObjectName("nicdetail");
-            nicDetailResponseList.add(nicDetailResponse);
-        }
-
-        return nicDetailResponseList;
-
-    }
-
 
 
     private Pair<List<VolumeJoinVO>, Integer> searchForVolumesInternal(ListVolumesCmd cmd) {
