@@ -38,6 +38,9 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -58,7 +61,7 @@ import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class AgentShell implements IAgentShell {
+public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class
             .getName());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
@@ -376,7 +379,17 @@ public class AgentShell implements IAgentShell {
 
         return true;
     }
-
+    
+    @Override
+    public void init(DaemonContext dc) throws DaemonInitException {
+        s_logger.debug("Initializing AgentShell from JSVC");
+        try {
+            init(dc.getArguments());
+        } catch (ConfigurationException ex) {
+            throw new DaemonInitException("Initialization failed", ex);
+        }
+    }
+    
     public void init(String[] args) throws ConfigurationException {
 
     	// PropertiesUtil is used both in management server and agent packages,
@@ -629,6 +642,7 @@ public class AgentShell implements IAgentShell {
 
     public static void main(String[] args) {
         try {
+            s_logger.debug("Initializing AgentShell from main");
             AgentShell shell = new AgentShell();
             shell.init(args);
             shell.start();
@@ -636,4 +650,5 @@ public class AgentShell implements IAgentShell {
             System.out.println(e.getMessage());
         }
     }
+
 }
