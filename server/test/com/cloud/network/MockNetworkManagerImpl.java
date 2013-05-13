@@ -98,6 +98,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
+    public boolean isPortableIpTransferableFromNetwork(long ipAddrId, long networkId) {
+        return false;
+    }
+
+    @Override
     public boolean releaseIpAddress(long ipAddressId) {
         // TODO Auto-generated method stub
         return false;

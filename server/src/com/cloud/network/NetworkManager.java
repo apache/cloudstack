@@ -245,6 +245,8 @@ public interface NetworkManager  {
     IPAddressVO disassociatePortableIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException,
             InsufficientAddressCapacityException, ConcurrentOperationException;
 
+    boolean isPortableIpTransferableFromNetwork(long ipAddrId, long networkId);
+
     /**
      * @param network
      * @param provider

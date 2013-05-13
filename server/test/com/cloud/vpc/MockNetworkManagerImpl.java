@@ -213,6 +213,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         return false;// TODO Auto-generated method stub
     }
 
+    @Override
+    public boolean isPortableIpTransferableFromNetwork(long ipAddrId, long networkId) {
+        return false;
+    }
+
     /* (non-Javadoc)
     * @see com.cloud.network.NetworkService#releaseIpAddress(long)
     */

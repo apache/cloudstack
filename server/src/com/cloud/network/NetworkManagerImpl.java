@@ -990,6 +990,33 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
+    public boolean isPortableIpTransferableFromNetwork(long ipAddrId, long networkId) {
+        Network network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Invalid network id is given");
+        }
+
+        IPAddressVO ip = _ipAddressDao.findById(ipAddrId);
+        if (ip == null) {
+            throw new InvalidParameterValueException("Invalid network id is given");
+        }
+
+        // Check if IP has any services (rules) associated in the network
+        List<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
+        PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
+        ipList.add(publicIp);
+        Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(ipList, false, true);
+        if (ipToServices != null & !ipToServices.isEmpty()) {
+            Set<Service> ipServices = ipToServices.get(publicIp);
+            if (ipServices != null && !ipServices.isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
     @DB
     public boolean disassociatePublicIpAddress(long addrId, long userId, Account caller) {
 
