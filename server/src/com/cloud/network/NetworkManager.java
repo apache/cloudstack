@@ -239,6 +239,11 @@ public interface NetworkManager  {
     IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException, 
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
+    IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
+            InsufficientAddressCapacityException, ConcurrentOperationException;
+
+    IPAddressVO disassociatePortableIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException,
+            InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * @param network

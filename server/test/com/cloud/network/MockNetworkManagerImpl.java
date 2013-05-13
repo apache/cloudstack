@@ -88,6 +88,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
+    public IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException {
+        return null;// TODO Auto-generated method stub
+    }
+
+    @Override
+    public IPAddressVO disassociatePortableIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        return null;  // TODO Auto-generated method stub
+    }
+
+    @Override
     public boolean releaseIpAddress(long ipAddressId) {
         // TODO Auto-generated method stub
         return false;
@@ -854,6 +864,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId) throws ResourceAllocationException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
         return null;
+    }
+
+    @Override
+    public boolean releasePortableIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        return false;// TODO Auto-generated method stub
     }
 
     @Override

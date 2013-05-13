@@ -208,6 +208,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         return null;
     }
 
+    @Override
+    public boolean releasePortableIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        return false;// TODO Auto-generated method stub
+    }
+
     /* (non-Javadoc)
     * @see com.cloud.network.NetworkService#releaseIpAddress(long)
     */
@@ -1117,13 +1122,20 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         return null;
     }
 
+    @Override
+    public IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException {
+        return null;// TODO Auto-generated method stub
+    }
 
-
+    @Override
+    public IPAddressVO disassociatePortableIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        return null;// TODO Auto-generated method stub
+    }
 
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#setupDns(com.cloud.network.Network, com.cloud.network.Network.Provider)
-     */
+    * @see com.cloud.network.NetworkManager#setupDns(com.cloud.network.Network, com.cloud.network.Network.Provider)
+    */
     @Override
     public boolean setupDns(Network network, Provider provider) {
         // TODO Auto-generated method stub

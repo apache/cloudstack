@@ -797,12 +797,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
 
             DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-            if (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced) {
-                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                    _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
-                } else {
-                    throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if " +
-                        "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
+            if (zone.getNetworkType() == NetworkType.Advanced) {
+                if (network.getGuestType() == Network.GuestType.Shared) {
+                    if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+                        _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
+                    } else {
+                        throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if " +
+                                "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
+                    }
                 }
             } else {
                 _accountMgr.checkAccess(caller, null, true, ipToAssoc);
@@ -900,6 +902,92 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
     }
 
+    @Override
+    public IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
+            InsufficientAddressCapacityException, ConcurrentOperationException {
+        return associateIPToGuestNetwork(ipAddrId, networkId, releaseOnFailure);
+    }
+
+    @DB
+    @Override
+    public IPAddressVO disassociatePortableIPToGuestNetwork(long ipId, long networkId)
+            throws ResourceAllocationException, ResourceUnavailableException,
+            InsufficientAddressCapacityException, ConcurrentOperationException {
+
+        Account caller = UserContext.current().getCaller();
+        Account owner = null;
+
+        Network network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Invalid network id is given");
+        }
+
+        IPAddressVO ipToAssoc = _ipAddressDao.findById(ipId);
+        if (ipToAssoc != null) {
+
+            if (ipToAssoc.getAssociatedWithNetworkId() == null) {
+                throw new InvalidParameterValueException("IP " + ipToAssoc + " is not assocaited with any network");
+            }
+
+            if (ipToAssoc.getAssociatedWithNetworkId() != network.getId()) {
+                throw new InvalidParameterValueException("IP " + ipToAssoc + " is not assocaited with network id" + networkId);
+            }
+
+            DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+            if (zone.getNetworkType() == NetworkType.Advanced) {
+                if (network.getGuestType() == Network.GuestType.Shared) {
+                    assert (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()));
+                    _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
+                }
+            } else {
+                _accountMgr.checkAccess(caller, null, true, ipToAssoc);
+            }
+            owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
+        } else {
+            s_logger.debug("Unable to find ip address by id: " + ipId);
+            return null;
+        }
+
+        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+
+        // Check that network belongs to IP owner - skip this check
+        //     - if zone is basic zone as there is just one guest network,
+        //     - if shared network in Advanced zone
+        //     - and it belongs to the system
+        if (network.getAccountId() != owner.getId()) {
+            if (zone.getNetworkType() != NetworkType.Basic && !(zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Shared)) {
+                throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
+            }
+        }
+
+        // Check if IP has any services (rules) associated in the network
+        List<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
+        PublicIp publicIp = PublicIp.createFromAddrAndVlan(ipToAssoc, _vlanDao.findById(ipToAssoc.getVlanId()));
+        ipList.add(publicIp);
+        Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(ipList, false, true);
+        if (ipToServices != null & !ipToServices.isEmpty()) {
+            Set<Service> services = ipToServices.get(publicIp);
+            if (services != null && !services.isEmpty()) {
+                throw new InvalidParameterValueException("IP " + ipToAssoc + " has services and rules associated in the network " +  networkId);
+            }
+        }
+
+        IPAddressVO ip = _ipAddressDao.findById(ipId);
+        ip.setAssociatedWithNetworkId(null);
+        _ipAddressDao.update(ipId, ip);
+
+        try {
+            boolean success = applyIpAssociations(network, false);
+            if (success) {
+                s_logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
+            } else {
+                s_logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
+            }
+            return ip;
+        } finally {
+
+        }
+    }
 
     @Override
     @DB

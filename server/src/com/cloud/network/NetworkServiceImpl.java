@@ -571,6 +571,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RELEASE, eventDescription = "disassociating portable Ip", async = true)
+    public boolean releasePortableIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        return releaseIpAddressInternal(ipAddressId);
+    }
+
+    @Override
     @DB
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _configs = _configDao.getConfiguration("Network", params);
@@ -805,9 +811,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     }
 
     @Override
-    @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "disassociating Ip", async = true)
     public boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        return releaseIpAddressInternal(ipAddressId);
+    }
+
+    @DB
+    private boolean releaseIpAddressInternal(long ipAddressId) throws InsufficientAddressCapacityException {
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
 
