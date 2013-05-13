@@ -305,6 +305,10 @@ public class TemplateServiceImpl implements TemplateService {
                         tmpltStore.setSize(tmpltInfo.getSize());
                         tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
                         tmpltStore.setLastUpdated(new Date());
+                        // update size in vm_template table
+                        VMTemplateVO tmlpt = _templateDao.findById(tmplt.getId());
+                        tmlpt.setSize(tmpltInfo.getSize());
+                        _templateDao.update(tmplt.getId(), tmlpt);
 
                         if (tmpltInfo.getSize() > 0) {
                             long accountId = tmplt.getAccountId();
