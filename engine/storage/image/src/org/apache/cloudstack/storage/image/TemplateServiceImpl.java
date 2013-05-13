@@ -282,7 +282,7 @@ public class TemplateServiceImpl implements TemplateService {
                 TemplateProp tmpltInfo = templateInfos.remove(uniqueName);
                 toBeDownloaded.remove(tmplt);
                 if (tmpltStore != null) {
-                    s_logger.info("Template Sync found " + uniqueName + " already in the template host table");
+                    s_logger.info("Template Sync found " + uniqueName + " already in the image store");
                     if (tmpltStore.getDownloadState() != Status.DOWNLOADED) {
                         tmpltStore.setErrorString("");
                     }
@@ -335,10 +335,10 @@ public class TemplateServiceImpl implements TemplateService {
                 continue;
             }
             if (tmpltStore != null && tmpltStore.getDownloadState() != Status.DOWNLOADED) {
-                s_logger.info("Template Sync did not find " + uniqueName + " ready on server " + storeId + ", will request download to start/resume shortly");
+                s_logger.info("Template Sync did not find " + uniqueName + " ready on image store " + storeId + ", will request download to start/resume shortly");
 
             } else if (tmpltStore == null) {
-                s_logger.info("Template Sync did not find " + uniqueName + " on the server " + storeId + ", will request download shortly");
+                s_logger.info("Template Sync did not find " + uniqueName + " on the image store " + storeId + ", will request download shortly");
                 TemplateDataStoreVO templtStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
                 _vmTemplateStoreDao.persist(templtStore);
                 associateTemplateToZone(tmplt.getId(), zoneId);
@@ -380,7 +380,6 @@ public class TemplateServiceImpl implements TemplateService {
                         continue;
                     }
                     s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + store.getName());
-                    //TODO: we should pass a callback here
                     TemplateInfo tmpl = _templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
                     createTemplateAsync(tmpl, store, null);
                 }
