@@ -150,8 +150,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      */
     boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
 
-    boolean releasePublicIpRange(long userId, long vlanDbId, Account caller);
-
     /**
      * Converts a comma separated list of tags to a List
      * 

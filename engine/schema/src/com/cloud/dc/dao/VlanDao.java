@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import java.util.List;
-
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.utils.db.GenericDao;
+
+import java.util.List;
 
 public interface VlanDao extends GenericDao<VlanVO, Long> {
 	
@@ -52,4 +52,6 @@ public interface VlanDao extends GenericDao<VlanVO, Long> {
 	List<VlanVO> listVlansByPhysicalNetworkId(long physicalNetworkId);
 
         List<VlanVO> listZoneWideNonDedicatedVlans(long zoneId);
+
+    List<VlanVO> listVlansByNetworkIdAndGateway(long networkid, String gateway);
 }

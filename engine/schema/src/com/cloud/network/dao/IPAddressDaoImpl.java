@@ -16,26 +16,12 @@
 // under the License.
 package com.cloud.network.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Date;
-import java.util.List;
-
-import javax.annotation.PostConstruct;
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.network.IpAddress.State;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -46,6 +32,16 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.Ip;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.Local;
+import javax.inject.Inject;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Date;
+import java.util.List;
 
 @Component
 @Local(value = { IPAddressDao.class })
@@ -193,6 +189,14 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
 
     @Override
+    public IPAddressVO findByIpAndVlanId(String ipAddress, long vlanid) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("vlan", vlanid);
+        return findOneBy(sc);
+    }
+
+    @Override
     public IPAddressVO findByIpAndDcId(long dcId, String ipAddress) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("dataCenterId", dcId);
@@ -330,6 +334,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         sc.setParameters("state", State.Free);
         sc.setJoinParameters("vlans", "vlanType", VlanType.VirtualNetwork);
         return customSearch(sc, null).get(0);       
+    }
+
+    @Override
+    public long countFreeIpsInVlan(long vlanDbId) {
+          SearchCriteria<IPAddressVO> sc =  VlanDbIdSearchUnallocated.create();
+          sc.setParameters("vlanDbId", vlanDbId);
+          return listBy(sc).size();
     }
 
     @Override

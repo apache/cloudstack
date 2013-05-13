@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.element.DhcpServiceProvider;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 
 import com.cloud.dc.DataCenter;
@@ -349,4 +350,7 @@ public interface NetworkManager  {
 
     NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType);
 
+    DhcpServiceProvider getDhcpServiceProvider(Network network);
+
+    PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
 }
