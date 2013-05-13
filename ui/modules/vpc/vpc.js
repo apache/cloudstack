@@ -62,10 +62,69 @@
       return $router;
     },
 
-    tierPlaceholder: function() {
+    tierPlaceholder: function(args) {
+      var context = args.context;
       var $placeholder = $('<div>').addClass('tier-placeholder');
 
       $placeholder.append($('<span>').append('Create network'));
+      $placeholder.click(function() {
+        var addAction = cloudStack.vpc.tiers.actions.add;
+        var form = cloudStack.dialog.createForm({
+          context: context,
+          form: addAction.createForm,
+          after: function(args) {
+            var $loading = $('<div>').addClass('loading-overlay')
+              .prependTo($placeholder);
+
+            addAction.action({
+              context: context,
+              data: args.data,
+              response: {
+                success: function(args) {
+                  var tier = args.data;
+
+                  cloudStack.ui.notifications.add(
+                    // Notification
+                    {
+                      desc: addAction.label
+                    },
+
+                    // Success
+                    function(args) {
+                      $loading.remove();
+                      // addNewTier({
+                      //   ipAddresses: ipAddresses,
+                      //   $browser: $browser,
+                      //   tierDetailView: tierDetailView,
+                      //   context: $.extend(true, {}, context, {
+                      //     networks: [tier]
+                      //   }),
+                      //   tier: tier,
+                      //   acl: acl,
+                      //   $tiers: $tiers,
+                      //   actions: actions,
+                      //   actionPreFilter: actionPreFilter,
+                      //   vmListView: vmListView
+                      // });
+                    },
+
+                    {},
+
+                    // Error
+                    function(args) {
+                      $loading.remove();
+                    }
+                  );
+                },
+                error: function(errorMsg) {
+                  cloudStack.dialog.notice({ message: _s(errorMsg) });
+                  $loading.remove();
+                }
+              }
+            });
+          }
+        });
+      });
       
       return $placeholder;
     },
@@ -168,7 +227,9 @@
             });
 
             // Add placeholder tier
-            $tiers.append(elems.tierPlaceholder());
+            $tiers.append(elems.tierPlaceholder({
+              context: context
+            }));
           }
         }
       });
