@@ -275,6 +275,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isSystem, null);
     }
 
+    @Override
+    public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
+        return fetchNewPublicIp(dcId, podId, vlanDbIds , owner, type, networkId, false, true, requestedIp, isSystem, null);
+    }
     @DB
     public PublicIp fetchNewPublicIp(long dcId, Long podId, List<Long> vlanDbIds, Account owner, VlanType vlanUse,
             Long guestNetworkId, boolean sourceNat, boolean assign, String requestedIp, boolean isSystem, Long vpcId)
@@ -1608,7 +1612,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
     }
 
-    protected void prepareElement(NetworkElement element, NetworkVO network,
+    protected boolean prepareElement(NetworkElement element, NetworkVO network,
             NicProfile profile, VirtualMachineProfile<? extends VMInstanceVO> vmProfile,
             DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
@@ -1618,6 +1622,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
                     element instanceof DhcpServiceProvider) {
                 DhcpServiceProvider sp = (DhcpServiceProvider) element;
+                if (!sp.configDhcpSupportForSubnet(network, profile, vmProfile, dest, context)) {
+                     return false;
+                }
                 sp.addDhcpEntry(network, profile, vmProfile, dest, context);
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
@@ -1627,6 +1634,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
             }
         }
+        return true;
     }
 
     @DB
@@ -1729,7 +1737,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
             }
-            prepareElement(element, network, profile, vmProfile, dest, context);
+            if(!prepareElement(element, network, profile, vmProfile, dest, context)) {
+                throw new InsufficientAddressCapacityException("unable to configure the dhcp service, due to insufficiant address capacity",Network.class, network.getId());
+            }
         }
 
         profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
@@ -1988,7 +1998,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 if ( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
                     throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
                 }
-                if ( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup)) {
+                if (!( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup))) {
                     throw new InvalidParameterValueException("network must have SecurityGroup provider in security group enabled zone");
                 }
             }
@@ -2851,6 +2861,20 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         return (UserDataServiceProvider)_networkModel.getElementImplementingProvider(SSHKeyProvider);
     }
+
+    @Override
+    public DhcpServiceProvider getDhcpServiceProvider(Network network) {
+        String DhcpProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+
+        if (DhcpProvider == null) {
+            s_logger.debug("Network " + network + " doesn't support service " + Service.Dhcp.getName());
+            return null;
+        }
+
+        return (DhcpServiceProvider)_networkModel.getElementImplementingProvider(DhcpProvider);
+
+    }
+
 
     protected boolean isSharedNetworkWithServices(Network network) {
         assert(network != null);

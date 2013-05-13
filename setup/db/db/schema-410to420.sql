@@ -1581,4 +1581,22 @@ INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, creat
 INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (2, UUID(), 0, "Default Network ACL Allow All", "default_allow");
 INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (3, UUID(), 2, "Active", "all", now(), "Ingress", "0.0.0.0/0", 1, "Allow");
 INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (4, UUID(), 2, "Active", "all", now(), "Egress", "0.0.0.0/0", 2, "Allow");
->>>>>>> master
+
+CREATE  TABLE `cloud`.`nic_ip_alias` (
+  `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT ,
+  `uuid`  VARCHAR(40) NOT NULL ,
+  `nic_id` BIGINT(20) UNSIGNED NULL ,
+  `ip4_address` CHAR(40) NULL ,
+  `ip6_address` CHAR(40) NULL ,
+  `netmask` CHAR(40) NULL ,
+  `gateway` CHAR(40) NULL ,
+  `start_ip_of_subnet` CHAR(40),
+  `network_id` BIGINT(20) UNSIGNED NULL ,
+  `vmId` BIGINT(20) UNSIGNED NULL   ,
+  `alias_count` BIGINT(20) UNSIGNED NULL ,
+  `created` DATETIME NOT NULL ,
+  `account_id` BIGINT(20) UNSIGNED NOT NULL ,
+  `domain_id` BIGINT(20) UNSIGNED NOT NULL ,
+  `state`  char(32)  NOT NULL,
+  PRIMARY KEY (`id`) ,
+  UNIQUE INDEX `id_UNIQUE` (`id` ASC) );

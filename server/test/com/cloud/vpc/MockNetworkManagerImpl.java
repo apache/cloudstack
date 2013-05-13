@@ -67,10 +67,7 @@ import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.element.LoadBalancingServiceProvider;
-import com.cloud.network.element.NetworkElement;
-import com.cloud.network.element.StaticNatServiceProvider;
-import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.element.*;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -1420,13 +1417,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
 
-
-
-
-
-
-
-
     @Override
     public boolean removeVmSecondaryIpsOfNic(long nicId) {
         // TODO Auto-generated method stub
@@ -1434,13 +1424,20 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
 
-
-
-
     @Override
     public NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public DhcpServiceProvider getDhcpServiceProvider(Network network) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
 

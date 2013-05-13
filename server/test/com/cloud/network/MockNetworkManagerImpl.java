@@ -50,6 +50,7 @@ import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.GuestVlan;
+import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -918,5 +919,15 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     public NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public DhcpServiceProvider getDhcpServiceProvider(Network network) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }

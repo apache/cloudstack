@@ -16,12 +16,6 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import java.util.List;
-
-import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
-
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -32,6 +26,10 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.State;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import java.util.List;
 
 @Component
 @Local(value=NicDao.class)
@@ -117,6 +115,15 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("instance", instanceId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public NicVO findByInstanceIdAndIpAddressAndVmtype(long instanceId, String ipaddress, VirtualMachine.Type type) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("address", ipaddress);
+        sc.setParameters("vmType", type);
         return findOneBy(sc);
     }
     
