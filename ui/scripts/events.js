@@ -36,9 +36,10 @@
           label: 'label.menu.events',
           fields: {            
             description: { label: 'label.description' },
-						level: { label: 'label.level' },
+	    level: { label: 'label.level' },
+            type: {label:'Type'},
             domain: { label: 'label.domain' },
-						account: { label: 'label.account' },
+	    account: { label: 'label.account' },
             created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
           },
 
@@ -329,6 +330,7 @@
           label: 'label.menu.alerts',
           fields: {
             description: { label: 'label.description' },
+            type: {label:'Type'},
             sent: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
           },
 
