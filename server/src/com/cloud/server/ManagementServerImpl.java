@@ -276,14 +276,21 @@ import org.apache.cloudstack.api.command.user.nat.DeleteIpForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.nat.DisableStaticNatCmd;
 import org.apache.cloudstack.api.command.user.nat.EnableStaticNatCmd;
 import org.apache.cloudstack.api.command.user.nat.ListIpForwardingRulesCmd;
+import org.apache.cloudstack.api.command.user.network.*;
+
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.ReplaceNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
@@ -363,6 +370,7 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
+import org.apache.cloudstack.api.command.user.volume.*;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
@@ -1625,6 +1633,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             paramCountCheck++;
         }
 
+
         if (paramCountCheck > 1) {
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
@@ -2811,6 +2820,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AttachVolumeCmd.class);
         cmdList.add(CreateVolumeCmd.class);
         cmdList.add(DeleteVolumeCmd.class);
+        cmdList.add(UpdateVolumeCmd.class);
         cmdList.add(DetachVolumeCmd.class);
         cmdList.add(ExtractVolumeCmd.class);
         cmdList.add(ListVolumesCmd.class);
@@ -2873,12 +2883,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAffinityGroupsCmd.class);
         cmdList.add(UpdateVMAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupTypesCmd.class);
+
+        cmdList.add(AddResourceDetailCmd.class);
+        cmdList.add(RemoveResourceDetailCmd.class);
+        cmdList.add(ListResourceDetailsCmd.class);
         cmdList.add(StopInternalLBVMCmd.class);
         cmdList.add(StartInternalLBVMCmd.class);
         cmdList.add(ListInternalLBVMsCmd.class);
         cmdList.add(ListNetworkIsolationMethodsCmd.class);
         cmdList.add(ListNetworkIsolationMethodsCmd.class);
-
+        cmdList.add(CreateNetworkACLListCmd.class);
+        cmdList.add(DeleteNetworkACLListCmd.class);
+        cmdList.add(ListNetworkACLListsCmd.class);
+        cmdList.add(ReplaceNetworkACLListCmd.class);
+        cmdList.add(UpdateNetworkACLItemCmd.class);
         return cmdList;
     }
 

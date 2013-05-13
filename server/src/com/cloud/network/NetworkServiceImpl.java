@@ -18,6 +18,8 @@ package com.cloud.network;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetAddress;
+import java.net.Inet6Address;
 import java.net.UnknownHostException;
 import java.security.InvalidParameterException;
 import java.sql.PreparedStatement;
@@ -43,6 +45,12 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.*;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
@@ -50,6 +58,11 @@ import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.bouncycastle.util.IPAddress;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -301,6 +314,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     DataCenterVnetDao _datacneter_vnet;
     @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
+    @Inject
+    NetworkACLDao _networkACLDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -930,6 +945,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String endIPv6 = cmd.getEndIpv6();
         String ip6Gateway = cmd.getIp6Gateway();
         String ip6Cidr = cmd.getIp6Cidr();
+        Boolean displayNetwork = cmd.getDisplayNetwork();
+        Long aclId = cmd.getAclId();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -957,6 +974,14 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (zoneId == null) {
             zoneId = pNtwk.getDataCenterId();
+        }
+
+        if(displayNetwork != null){
+            if(!_accountMgr.isRootAdmin(caller.getType())){
+                throw new PermissionDeniedException("Only admin allowed to update displaynetwork parameter");
+            }
+        }else{
+            displayNetwork = true;
         }
 
         DataCenter zone = _dcDao.findById(zoneId);
@@ -1212,7 +1237,22 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Network offering can't be used for VPC networks");
             }
             network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId,
-                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, caller);
+                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, aclId, caller, displayNetwork);
+            if(aclId == null){
+                //Use default deny all ACL, when aclId is not specified
+                aclId = NetworkACL.DEFAULT_DENY;
+            } else {
+                NetworkACL acl = _networkACLDao.findById(aclId);
+                if(acl == null){
+                    throw new InvalidParameterValueException("Unable to find specified NetworkACL");
+                }
+
+                if(vpcId != acl.getVpcId()){
+                    throw new InvalidParameterValueException("ACL: "+aclId+" do not belong to the VPC");
+                }
+            }
+            network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
+                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, aclId, caller, displayNetwork);
         } else {
             if (_configMgr.isOfferingForVpc(ntwkOff)){
                 throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -1222,7 +1262,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
 
             network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId,
-            		networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr);
+            		networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork);
         }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan) {
@@ -1834,7 +1874,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
     public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
-            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr) {
+            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork) {
+
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -1876,6 +1917,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (displayText != null) {
             network.setDisplayText(displayText);
+        }
+
+        if(displayNetwork != null){
+            if(!_accountMgr.isRootAdmin(callerAccount.getType())){
+                throw new PermissionDeniedException("Only admin allowed to update displaynetwork parameter");
+            }
+            network.setDisplayNetwork(displayNetwork);
         }
 
         // network offering and domain suffix can be updated for Isolated networks only in 3.0
@@ -3761,7 +3809,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (privateNetwork == null) {
             //create Guest network
             privateNetwork = _networkMgr.createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, vlan,
-                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null, null, null);
+                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null, null, null, true);
+
             s_logger.debug("Created private network " + privateNetwork);
         } else {
             s_logger.debug("Private network already exists: " + privateNetwork);
@@ -3821,4 +3870,5 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         _accountMgr.checkAccess(caller, null, true, userVm);
         return _networkMgr.listVmNics(vmId, nicId);
     }
+
 }

@@ -157,6 +157,7 @@
   </section>
   <section id="gslb-workflow">
     <title>Configuring GSLB</title>
+<<<<<<< HEAD
     <para>A GSLB deployment is the logical collection of GSLB virtual server, GSLB service, LB
       virtual server, service, domain, and ADNS service. To create a GSLB site, you must configure
       load balancing in the zone. You must create GSLB vservers and GSLB services for each site. You
@@ -180,6 +181,17 @@
       on the two appliances at the two different sites are identical, although each sites
       load-balancing configuration is specific to that site.</para>
     <para>Perform the following as a cloud administrator. As per the above example, the
+=======
+    <para>To configure a GSLB deployment, you must first configure a standard load balancing setup
+      for each zone. This enables you to balance load across the different servers in each zone in
+      the region. Then on the NetScaler side, configure both NetScaler appliances that you plan to
+      add to each zone as authoritative DNS (ADNS) servers. Next, create a GSLB site for each zone,
+      configure GSLB virtual servers for each site, create GLSB services, and bind the GSLB services
+      to the GSLB virtual servers. Finally, bind the domain to the GSLB virtual servers. The GSLB
+      configurations on the two appliances at the two different zones are identical, although each
+      sites load-balancing configuration is specific to that site.</para>
+    <para>Perform the following as a cloud administrator. As per the example given above, the
+>>>>>>> master
       administrator of xyztelco is the one who sets up GSLB:</para>
     <orderedlist>
       <listitem>
@@ -200,7 +212,13 @@
                 >Configuring an Authoritative DNS Service</ulink>.</para>
           </listitem>
           <listitem>
+<<<<<<< HEAD
             <para>Configure a GSLB site with site name formed from the domain name details.</para>
+=======
+            <para>Configure a GSLB site with the site name formed from the domain name.</para>
+            <para>As per the example given above, the site names are A.xyztelco.com and
+              B.xyztelco.com.</para>
+>>>>>>> master
             <para>For more information, see <ulink
                 url="http://support.citrix.com/proddocs/topic/netscaler-traffic-management-10-map/ns-gslb-config-basic-site-tsk.html"
                 >Configuring a Basic GSLB Site</ulink>.</para>
@@ -459,7 +477,10 @@
     </section>
     <section id="assign-lb-gslb">
       <title>Assigning Load Balancing Rules to GSLB</title>
+<<<<<<< HEAD
       <para/>
+=======
+>>>>>>> master
       <orderedlist>
         <listitem>
           <para>Log in to the &PRODUCT; UI as a domain administrator or user.</para>

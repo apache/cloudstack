@@ -19,9 +19,13 @@
 try:
     from setuptools import setup, find_packages
 except ImportError:
-    from distribute_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, find_packages
+    try:
+        from distribute_setup import use_setuptools
+        use_setuptools()
+        from setuptools import setup, find_packages
+    except ImportError:
+        raise RuntimeError("python setuptools is required to build Marvin")
+
 
 VERSION = '0.1.0'
 
@@ -35,10 +39,10 @@ setup(name="Marvin",
     author="Edison Su",
     author_email="Edison.Su@citrix.com",
     maintainer="Prasanna Santhanam",
-    maintainer_email="Prasanna.Santhanam@citrix.com",
+    maintainer_email="tsp@apache.org",
     long_description="Marvin is the Apache CloudStack python client written around the unittest framework",
     platforms=("Any",),
-    url="https://builds.apache.org/view/CloudStack/job/cloudstack-marvin/",
+    url="https://builds.apache.org/job/cloudstack-marvin/",
     packages=["marvin", "marvin.cloudstackAPI", "marvin.integration",
               "marvin.integration.lib", "marvin.sandbox",
               "marvin.sandbox.advanced", "marvin.sandbox.basic"],

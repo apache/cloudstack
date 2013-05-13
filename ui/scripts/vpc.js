@@ -743,12 +743,28 @@
             netmask: {
               label: 'label.netmask', validation: { required: true },
               docID: 'helpVPCGatewayNetmask'
+            },
+             sourceNat:{
+              label:'Source NAT',
+              isBoolean:true,
+              isChecked:false
+
             }
+
+         
           }
         },
         action: function(args) {
+           var array1=[];
+            if(args.$form.find('.form-item[rel=sourceNat]').find('input[type=checkbox]').is(':Checked')== true)  {
+               array1.push("&sourcenatsupported=true");
+             }
+             else
+              array1.push("&sourcenatsupported=false");
+
+
           $.ajax({
-            url: createURL('createPrivateGateway'),
+            url: createURL('createPrivateGateway'+ array1.join("")),
             data: {
 						  physicalnetworkid: args.data.physicalnetworkid,
               vpcid: args.context.vpc[0].id,
@@ -837,15 +853,32 @@
             netmask: {
               label: 'label.netmask', validation: { required: true },
               docID: 'helpVPCGatewayNetmask'
+            },
+
+             sourceNat:{
+              label:'Source NAT',
+              isBoolean:true,
+              isChecked:false
+
             }
+
           }
 
 
 
             },
             action:function(args){
+
+             var array1=[];
+            if(args.$form.find('.form-item[rel=sourceNat]').find('input[type=checkbox]').is(':Checked')== true)  {
+               array1.push("&sourcenatsupported=true");
+             }
+             else
+              array1.push("&sourcenatsupported=false");
+
+
                        $.ajax({
-            url: createURL('createPrivateGateway'),
+            url: createURL('createPrivateGateway'+ array1.join("")),
             data: {
                                                   physicalnetworkid: args.data.physicalnetworkid,
               vpcid: args.context.vpc[0].id,
@@ -943,7 +976,14 @@
                       id: { label: 'label.id' },
                       zonename: { label: 'label.zone' },
                       domain: { label: 'label.domain' },
-                      account: { label: 'label.account' }
+                      account: { label: 'label.account' },
+                      sourcenatsupported:{
+                       label: 'SourceNAT Supported' ,
+                        converter: function(str) {
+                          return str ? 'Yes' : 'No';
+                        }
+                      }
+
                     }
                   ],
                   dataProvider: function(args) {

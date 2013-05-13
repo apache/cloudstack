@@ -275,6 +275,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isSystem, null);
     }
 
+    @Override
+    public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
+        return fetchNewPublicIp(dcId, podId, vlanDbIds , owner, type, networkId, false, true, requestedIp, isSystem, null);
+    }
     @DB
     public PublicIp fetchNewPublicIp(long dcId, Long podId, List<Long> vlanDbIds, Account owner, VlanType vlanUse,
             Long guestNetworkId, boolean sourceNat, boolean assign, String requestedIp, boolean isSystem, Long vpcId)
@@ -1116,14 +1120,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, 
             String displayText, boolean isDefault)
             throws ConcurrentOperationException {
-        return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null, null);
+        return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null, null, true);
     }
 
     @Override
     @DB
     public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan 
             plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
-            ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException {
+            ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException {
 
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
@@ -1198,6 +1202,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(),
                         related, name, displayText, predefined.getNetworkDomain(), offering.getGuestType(),
                         plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(), vpcId);
+                vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
                 networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
                         finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 
@@ -1607,7 +1612,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
     }
 
-    protected void prepareElement(NetworkElement element, NetworkVO network,
+    protected boolean prepareElement(NetworkElement element, NetworkVO network,
             NicProfile profile, VirtualMachineProfile<? extends VMInstanceVO> vmProfile,
             DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
@@ -1617,6 +1622,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
                     element instanceof DhcpServiceProvider) {
                 DhcpServiceProvider sp = (DhcpServiceProvider) element;
+                if (!sp.configDhcpSupportForSubnet(network, profile, vmProfile, dest, context)) {
+                     return false;
+                }
                 sp.addDhcpEntry(network, profile, vmProfile, dest, context);
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
@@ -1626,6 +1634,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
             }
         }
+        return true;
     }
 
     @DB
@@ -1728,7 +1737,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
             }
-            prepareElement(element, network, profile, vmProfile, dest, context);
+            if(!prepareElement(element, network, profile, vmProfile, dest, context)) {
+                throw new InsufficientAddressCapacityException("unable to configure the dhcp service, due to insufficiant address capacity",Network.class, network.getId());
+            }
         }
 
         profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
@@ -1887,9 +1898,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     @DB
-    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, 
-            String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr)
+    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway,
+                                      String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
+                                      PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr, Boolean isDisplayNetworkEnabled)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1987,7 +1998,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 if ( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
                     throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
                 }
-                if ( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup)) {
+                if (!( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup))) {
                     throw new InvalidParameterValueException("network must have SecurityGroup provider in security group enabled zone");
                 }
             }
@@ -2148,7 +2159,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
         
         List<NetworkVO> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId,
-                aclType, subdomainAccess, vpcId);
+                aclType, subdomainAccess, vpcId, isDisplayNetworkEnabled);
 
         Network network = null;
         if (networks == null || networks.isEmpty()) {
@@ -2686,7 +2697,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         //apply network ACLs
-        if (!_networkACLMgr.applyNetworkACLs(networkId, caller)) {
+        if (!_networkACLMgr.applyACLToNetwork(networkId)) {
             s_logger.warn("Failed to reapply network ACLs as a part of  of network id=" + networkId + " restart");
             success = false;
         }
@@ -2747,7 +2758,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 guestNetwork = createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network"
                         , owner.getAccountName() + "-network", null, null, null, null, owner, null, physicalNetwork,
                         zoneId, ACLType.Account,
-                        null, null, null, null);
+                        null, null, null, null, true);
                 if (guestNetwork == null) {
                     s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                     throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT " +
@@ -2850,6 +2861,20 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         return (UserDataServiceProvider)_networkModel.getElementImplementingProvider(SSHKeyProvider);
     }
+
+    @Override
+    public DhcpServiceProvider getDhcpServiceProvider(Network network) {
+        String DhcpProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+
+        if (DhcpProvider == null) {
+            s_logger.debug("Network " + network + " doesn't support service " + Service.Dhcp.getName());
+            return null;
+        }
+
+        return (DhcpServiceProvider)_networkModel.getElementImplementingProvider(DhcpProvider);
+
+    }
+
 
     protected boolean isSharedNetworkWithServices(Network network) {
         assert(network != null);
@@ -3157,7 +3182,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         //revoke all network ACLs for network
         try {
-            if (_networkACLMgr.revokeAllNetworkACLsForNetwork(networkId, callerUserId, caller)) {
+            if (_networkACLMgr.revokeACLItemsForNetwork(networkId, callerUserId, caller)) {
                 s_logger.debug("Successfully cleaned up NetworkACLs for network id=" + networkId);
             } else {
                 success = false;
@@ -3310,27 +3335,25 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             success = false;
         }
 
-        //revoke all Network ACLs for the network w/o applying them in the DB
-        List<FirewallRuleVO> networkACLs = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.NetworkACL);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing " + networkACLs.size() + " Network ACLs for network id=" + networkId +
-                    " as a part of shutdownNetworkRules");
-        }
+        if(network.getVpcId() != null){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Releasing Network ACL Items for network id=" + networkId +
+                        " as a part of shutdownNetworkRules");
+            }
 
-        for (FirewallRuleVO networkACL : networkACLs) {
-            s_logger.trace("Marking network ACL " + networkACL + " with Revoke state");
-            networkACL.setState(FirewallRule.State.Revoke);
-        }
-
-        try {
-            if (!_firewallMgr.applyRules(networkACLs, true, false)) {
-                s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules");
+            try {
+                //revoke all Network ACLs for the network w/o applying them in the DB
+                if (!_networkACLMgr.revokeACLItemsForNetwork(networkId, callerUserId, caller)) {
+                    s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules");
+                    success = false;
+                }
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules due to ", ex);
                 success = false;
             }
-        } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules due to ", ex);
-            success = false;
+
         }
+
 
         //release all static nats for the network
         if (!_rulesMgr.applyStaticNatForNetwork(networkId, false, caller, true)) {

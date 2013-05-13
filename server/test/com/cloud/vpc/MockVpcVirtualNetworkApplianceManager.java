@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.vpc.NetworkACLItem;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.springframework.stereotype.Component;
 
@@ -211,6 +212,16 @@ VpcVirtualNetworkApplianceService {
         return false;
     }
 
+    @Override
+    public boolean configDhcpForSubnet(Network network, NicProfile nic, VirtualMachineProfile<UserVm> uservm, DeployDestination dest, List<DomainRouterVO> routers) throws ResourceUnavailableException {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean removeDhcpSupportForSubnet(Network network, List<DomainRouterVO> routers) throws ResourceUnavailableException {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.VirtualNetworkApplianceService#startRouter(long, boolean)
      */
@@ -336,14 +347,9 @@ VpcVirtualNetworkApplianceService {
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.router.VpcVirtualNetworkApplianceManager#applyNetworkACLs(com.cloud.network.Network, java.util.List, java.util.List)
-     */
     @Override
-    public boolean applyNetworkACLs(Network network, List<? extends FirewallRule> rules,
-            List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers,  boolean privateGateway) throws ResourceUnavailableException {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /* (non-Javadoc)

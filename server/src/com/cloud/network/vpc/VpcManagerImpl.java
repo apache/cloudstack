@@ -87,6 +87,7 @@ import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -180,6 +181,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     DataCenterDao _dcDao;
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    NetworkACLDao _networkAclDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
@@ -1315,7 +1318,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating vpc private gateway", create=true)
     public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress,
-                                                  String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat) throws ResourceAllocationException,
+           String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat, Long aclId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
         
         //Validate parameters
@@ -1342,10 +1345,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
         Network privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
                 vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat);
-        
+
+        long networkAclId = NetworkACL.DEFAULT_DENY;
+        if (aclId != null) {
+            if ( _networkAclDao.findById(aclId) == null) {
+                throw new InvalidParameterValueException("Invalid network acl id passed ");
+            }
+            networkAclId = aclId;
+        }
+
         //2) create gateway entry
         VpcGatewayVO gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
-                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat);
+                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat, networkAclId);
         _vpcGatewayDao.persist(gatewayVO);
         
         s_logger.debug("Created vpc gateway entry " + gatewayVO);
@@ -1967,9 +1978,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     
     @DB
     @Override
-    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, 
-            String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) 
+    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway,
+                                         String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
+                                         PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller, Boolean isDisplayNetworkEnabled)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         Vpc vpc = getActiveVpc(vpcId);
@@ -1993,9 +2004,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         validateNtwkOffForNtwkInVpc(null, ntwkOffId, cidr, networkDomain, vpc, gateway, owner);
 
         //2) Create network
-        Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
-                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null);
+        Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId,
+                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled);
 
+
+        if(guestNetwork != null){
+            guestNetwork.setNetworkACLId(aclId);
+            _ntwkDao.update(guestNetwork.getId(), (NetworkVO)guestNetwork);
+        }
         return guestNetwork;
     }
     

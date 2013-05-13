@@ -56,7 +56,12 @@ public class ApiConstants {
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String DISK_SIZE = "disksize";
     public static final String DISPLAY_NAME = "displayname";
+    public static final String DISPLAY_NETWORK = "displaynetwork";
+    public static final String DISPLAY_NIC = "displaynic";
     public static final String DISPLAY_TEXT = "displaytext";
+    public static final String DISPLAY_VM = "displayvm";
+    public static final String DISPLAY_OFFERING = "displayoffering";
+    public static final String DISPLAY_VOLUME = "displayvolume";
     public static final String DNS1 = "dns1";
     public static final String DNS2 = "dns2";
     public static final String IP6_DNS1 = "ip6dns1";
@@ -490,6 +495,8 @@ public class ApiConstants {
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
     public static final String AFFINITY_GROUP_ID = "affinitygroupid";
+    public static final String ACL_ID = "aclid";
+    public static final String NUMBER = "number";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
