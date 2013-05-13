@@ -39,6 +39,7 @@ public class TemplateObjectTO implements DataTO {
     private  DataStoreTO imageDataStore;
     private  String name;
     private String guestOsType;
+    private Long size;
 
     public TemplateObjectTO() {
 
@@ -159,4 +160,12 @@ public class TemplateObjectTO implements DataTO {
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
     }
+
+	public Long getSize() {
+		return size;
+	}
+
+	public void setSize(Long size) {
+		this.size = size;
+	}
 }

@@ -367,10 +367,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             loc.create(1, true, templateName);
             loc.addFormat(info);
             loc.save();
-
+            TemplateProp prop = loc.getTemplateInfo();
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(destData.getPath() + File.separator + templateName);
             newTemplate.setFormat(ImageFormat.VHD);
+            newTemplate.setSize(prop.getSize());
             return new CopyCmdAnswer(newTemplate);
         } catch (ConfigurationException e) {
             s_logger.debug("Failed to create template from snapshot: " + e.toString());
