@@ -142,8 +142,10 @@ class deployDataCenters():
             secondarycmd.url = secondary.url
             secondarycmd.provider = secondary.providerName
             secondarycmd.details = []
-            for item in secondary.details:
-                secondarycmd.details.append(item.__dict__)
+            
+            if isinstance(secondary.details, list): 
+                for item in secondary.details:
+                    secondarycmd.details.append(item.__dict__)
             if secondarycmd.provider == "NFS":
                 secondarycmd.zoneid = zoneId
             self.apiClient.addImageStore(secondarycmd)

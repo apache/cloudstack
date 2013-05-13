@@ -146,7 +146,7 @@ public class RemoteHostEndPoint implements EndPoint {
         @Override
         public int getTimeout() {
             // TODO Auto-generated method stub
-            return 0;
+            return -1;
         }
 
         @Override
