@@ -43,7 +43,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand;
@@ -57,7 +56,6 @@ import com.cloud.storage.Upload.Status;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.dao.UploadDao;
-import com.cloud.storage.download.DownloadListener;
 import com.cloud.storage.upload.UploadState.UploadEvent;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -477,10 +475,6 @@ public class UploadListener implements Listener {
         @Override
         public void complete(Answer answer) {
             listener.processAnswers(id, -1, new Answer[] {answer});
-            if (listener instanceof DownloadListener) {
-                DownloadListener dwldListener = (DownloadListener)listener;
-                dwldListener.getCallback().complete((DownloadAnswer)answer);
-            }
         }
     }
 }
