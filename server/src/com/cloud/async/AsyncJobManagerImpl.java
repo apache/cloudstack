@@ -92,6 +92,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject private AsyncJobJoinMapDao _joinMapDao;
     @Inject private List<AsyncJobDispatcher> _jobDispatchers;
     @Inject private MessageBus _messageBus;
+    @Inject private AsyncJobMonitor _jobMonitor;
 
     // property
     private String defaultDispatcher;
@@ -524,6 +525,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         s_logger.warn("Unable to register active job " + job.getId() + " to JMX monitoring due to exception " + ExceptionUtil.toString(e));
                     }
                     
+                    _jobMonitor.registerActiveTask(job.getId());
                     AsyncJobExecutionContext.setCurrentExecutionContext(
                     	(AsyncJobExecutionContext)ComponentContext.inject(new AsyncJobExecutionContext(job))
                     );
@@ -560,6 +562,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             	} finally {
             		// guard final clause as well
                     try {
+                    	AsyncJobVO jobToUpdate = _jobDao.findById(job.getId());
+                    	jobToUpdate.setExecutingMsid(null);
+                    	_jobDao.update(job.getId(), jobToUpdate);
+                    	
                     	if (job.getSyncSource() != null) {
                             _queueMgr.purgeItem(job.getSyncSource().getId());
                             checkQueue(job.getSyncSource().getQueueId());
@@ -569,6 +575,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     	// clean execution environment
                     	//
                         AsyncJobExecutionContext.setCurrentExecutionContext(null);
+                        _jobMonitor.unregisterActiveTask(job.getId());
                    	
                     	try {
                     		JmxUtil.unregisterMBean("AsyncJobManager", "Active Job " + job.getId());
@@ -608,7 +615,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             job.setSyncSource(item);
             
             job.setExecutingMsid(getMsid());
-            job.setCompleteMsid(getMsid());
             _jobDao.update(job.getId(), job);
 
             try {
@@ -616,10 +622,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             } catch(RejectedExecutionException e) {
                 s_logger.warn("Execution for job-" + job.getId() + " is rejected, return it to the queue for next turn");
                 _queueMgr.returnItem(item.getId());
-            } finally {
+                
             	job.setExecutingMsid(null);
             	_jobDao.update(job.getId(), job);
-            }
+            } 
 
         } else {
             if(s_logger.isDebugEnabled()) {
@@ -838,7 +844,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             int poolSize = (cloudMaxActive * 2) / 3;
 
             s_logger.info("Start AsyncJobManager thread pool in size " + poolSize);
-            _executor = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory("Job-Executor"));
+            _executor = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory(AsyncJobConstants.JOB_POOL_THREAD_PREFIX));
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to load db.properties to configure AsyncJobManagerImpl");
         }

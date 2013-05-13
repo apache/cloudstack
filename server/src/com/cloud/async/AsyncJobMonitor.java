@@ -105,10 +105,12 @@ public class AsyncJobMonitor extends ManagerBase {
 		return true;
 	}
 	
-	public void registerActiveTask(long jobId, long threadId, boolean fromPoolThread) {
+	public void registerActiveTask(long jobId) {
 		synchronized(this) {
 			assert(_activeTasks.get(jobId) == null);
 			
+			long threadId = Thread.currentThread().getId();
+			boolean fromPoolThread = Thread.currentThread().getName().contains(AsyncJobConstants.JOB_POOL_THREAD_PREFIX);
 			ActiveTaskRecord record = new ActiveTaskRecord(threadId, jobId, fromPoolThread);
 			_activeTasks.put(jobId, record);
 			if(fromPoolThread)

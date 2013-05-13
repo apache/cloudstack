@@ -24,6 +24,8 @@ public interface AsyncJobConstants {
 	public static final String JOB_DISPATCHER_PSEUDO = "pseudoJobDispatcher";
 	public static final String PSEUDO_JOB_INSTANCE_TYPE = "Thread";
 	
+	public static final String JOB_POOL_THREAD_PREFIX = "Job-Executor";
+	
 	// Although we may have detailed masks for each individual wakeup event, i.e.
 	// periodical timer, matched topic from message bus, it seems that we don't
 	// need to distinguish them to such level. Therefore, only one wakeup signal

@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.cloud.api.ApiDispatcher;
+import com.cloud.async.AsyncJobMonitor;
 import com.cloud.async.SyncQueueManager;
 import com.cloud.async.SyncQueueManagerImpl;
 import com.cloud.async.dao.AsyncJobDao;
@@ -122,5 +123,10 @@ public class VmWorkTestConfiguration {
 	@Bean
 	public VMInstanceDao vmInstanceDao() {
 		return Mockito.mock(VMInstanceDao.class);
+	}
+	
+	@Bean
+	public AsyncJobMonitor jobMonitor() {
+		return Mockito.mock(AsyncJobMonitor.class);
 	}
 }
