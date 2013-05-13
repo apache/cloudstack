@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.user;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
@@ -29,8 +31,10 @@ import org.apache.cloudstack.region.RegionManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
+import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -49,7 +53,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -82,6 +85,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private ProjectManager _projectMgr;
     @Inject
     private RegionManager _regionMgr;
+    @Inject
+    private ResourceLimitDao _resourceLimitDao;
 
     @Override
     public Domain getDomain(long domainId) {
@@ -329,6 +334,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domainId);
         if (accountsForCleanup.isEmpty()) {
             deleteDomainSuccess = _domainDao.remove(domainId);
+
+            // Delete resource count and resource limits entries set for this domain (if there are any).
+            _resourceCountDao.removeEntriesByOwner(domainId, ResourceOwnerType.Domain);
+            _resourceLimitDao.removeEntriesByOwner(domainId, ResourceOwnerType.Domain);
         } else {
             s_logger.debug("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
         }
