@@ -1602,4 +1602,4 @@ CREATE  TABLE `cloud`.`nic_ip_alias` (
   UNIQUE INDEX `id_UNIQUE` (`id` ASC) );
 
 alter table `cloud`.`vpc_gateways` add column network_acl_id bigint unsigned default 1 NOT NULL;
-update table cloud.vpc_gateways set network_acl_id = 2;
+update `cloud`.`vpc_gateways` set network_acl_id = 2;
