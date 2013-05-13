@@ -16,5 +16,8 @@
 // under the License.
 (function($, cloudStack) {
   cloudStack.modules = [
+    'infrastructure',
+    'vnmcNetworkProvider',
+    'vnmcAsa1000v'
   ];
 }(jQuery, cloudStack));
