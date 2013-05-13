@@ -82,6 +82,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     @Inject
     StoragePoolHostDao poolHostDao;
 
+    @Inject
     private VolumeDao volumeDao;
 
     public	 PrimaryDataStoreImpl() {

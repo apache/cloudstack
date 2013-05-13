@@ -6,12 +6,14 @@ import static java.util.Arrays.asList;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 
 import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
@@ -109,6 +111,26 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
             return new Answer(cmd, false, "Swift is not currently support DownloadCommand");
         } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
+        }
+    }
+
+    @Override
+    synchronized public String getRootDir(String secUrl) {
+        try {
+            URI uri = new URI(secUrl);
+            String nfsHost = uri.getHost();
+
+            InetAddress nfsHostAddr = InetAddress.getByName(nfsHost);
+            String nfsHostIp = nfsHostAddr.getHostAddress();
+            String nfsPath = nfsHostIp + ":" + uri.getPath();
+            String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes()).toString();
+            String root = _parent + "/" + dir;
+            mount(root, nfsPath);
+            return root;
+        } catch (Exception e) {
+            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(msg);
         }
     }
 

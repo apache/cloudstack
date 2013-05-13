@@ -158,7 +158,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private String _storageNetmask;
     private String _storageGateway;
     private final List<String> nfsIps = new ArrayList<String>();
-    private String _parent = "/mnt/SecStorage";
+    protected String _parent = "/mnt/SecStorage";
     final private String _tmpltDir = "/var/cloudstack/template";
     final private String _tmpltpp = "template.properties";
     private String createTemplateFromSnapshotXenScript;
