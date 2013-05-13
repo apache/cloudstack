@@ -179,7 +179,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
             podId = pod.getId();
             //create xen cluster
             ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
-            cluster.setHypervisorType(HypervisorType.XenServer.toString());
+            cluster.setHypervisorType(this.getHypervisor().toString());
             cluster.setClusterType(ClusterType.CloudManaged);
             cluster.setManagedState(ManagedState.Managed);
             cluster = clusterDao.persist(cluster);
@@ -197,7 +197,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
             host.setPodId(podId);
             host.setLastPinged(0);
             host.setResourceState(ResourceState.Enabled);
-            host.setHypervisorType(HypervisorType.XenServer);
+            host.setHypervisorType(this.getHypervisor());
             host.setClusterId(cluster.getId());
 
             host = hostDao.persist(host);

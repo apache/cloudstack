@@ -50,6 +50,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.vmware.VmwareServerDiscoverer;
 import com.cloud.hypervisor.xen.resource.XcpOssResource;
 import com.cloud.resource.ServerResource;
@@ -122,6 +123,16 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
              } catch (ConfigurationException e) {
                  logger.debug("Failed to load resource:" + e.toString());
              }
+        } else if (host.getHypervisorType() == HypervisorType.KVM) {
+        	resource = new LibvirtComputingResource();
+        	try {
+        		params.put("public.network.device", "cloudbr0");
+        		params.put("private.network.device", "cloudbr0");
+				resource.configure(host.getName(), params);
+			} catch (ConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         } else if (host.getHypervisorType() == HypervisorType.VMware) {
             ClusterVO cluster = clusterDao.findById(host.getClusterId());
             String url = clusterDetailsDao.findDetail(cluster.getId(), "url").getValue();

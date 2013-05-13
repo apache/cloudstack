@@ -450,7 +450,15 @@ public class Script implements Callable<String> {
 
         }
 
-        file = new File(System.getProperty("paths.script") + File.separator + path + File.separator + script);
+        search = System.getProperty("paths.script");
+        
+        search += File.separatorChar + path + File.separator;
+        do {
+            search = search.substring(0, search.lastIndexOf(File.separator));
+            file = new File(search + File.separator + script);
+            s_logger.debug("Looking for " + script + " in " + file.getAbsolutePath());
+        } while (!file.exists() && search.lastIndexOf(File.separator) != -1);
+
         if (file.exists()) {
             return file.getAbsolutePath();
         }

@@ -142,7 +142,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     	DataTO destData = cmd.getDestTO();
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataStoreTO imageStore = template.getDataStore();
-        VolumeObjectTO volume = (VolumeObjectTO)destData;
+        TemplateObjectTO volume = (TemplateObjectTO)destData;
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
         
         if (!(imageStore instanceof NfsTO)) {
@@ -195,10 +195,10 @@ public class KVMStorageProcessor implements StorageProcessor {
             KVMPhysicalDisk primaryVol = storagePoolMgr.copyPhysicalDisk(
                     tmplVol, UUID.randomUUID().toString(), primaryPool);
 
-            VolumeObjectTO newVol = new VolumeObjectTO();
-            newVol.setPath(primaryVol.getName());
-            newVol.setSize(primaryVol.getSize());
-            return new CopyCmdAnswer(newVol);
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+            newTemplate.setPath(primaryVol.getName());
+            newTemplate.setFormat(ImageFormat.QCOW2);
+            return new CopyCmdAnswer(newTemplate);
         } catch (CloudRuntimeException e) {
             return new CopyCmdAnswer(e.toString());
         } finally {
@@ -273,14 +273,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(),
                     primaryStore.getUuid());
 
-            String templatePath = null;
-            if (imageStore instanceof NfsTO) {
-                NfsTO nfsImageStore = (NfsTO)imageStore;
-                templatePath = nfsImageStore.getUrl();
-            } else {
-                s_logger.debug("Failed to create volume: ");
-                return new CopyCmdAnswer("Unsupported protocol");
-            }
+            String templatePath = template.getPath();
              
             if(primaryPool.getType() == StoragePoolType.CLVM) { 
                 vol = templateToPrimaryDownload(templatePath, primaryPool);
@@ -321,9 +314,9 @@ public class KVMStorageProcessor implements StorageProcessor {
     	DataTO srcData = cmd.getSrcTO();
     	DataTO destData = cmd.getDestTO();
     	int wait = cmd.getWait();
-        TemplateObjectTO template = (TemplateObjectTO)srcData;
+        TemplateObjectTO template = (TemplateObjectTO)destData;
         DataStoreTO imageStore = template.getDataStore();
-        VolumeObjectTO volume = (VolumeObjectTO)destData;
+        VolumeObjectTO volume = (VolumeObjectTO)srcData;
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
         
         if (!(imageStore instanceof NfsTO)) {
@@ -425,7 +418,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             loc.save();
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
-            newTemplate.setPath(templateFolder + templateName + ".qcow2");
+            newTemplate.setPath(templateFolder + File.separator + templateName + ".qcow2");
             return new CopyCmdAnswer(newTemplate);
         } catch (Exception e) {
            s_logger.debug("Failed to create template from volume: " + e.toString());
@@ -783,8 +776,9 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer createSnapshot(CreateObjectCommand cmd) {
-        VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
+    	SnapshotObjectTO snapshotTO = (SnapshotObjectTO)cmd.getData();
+        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)snapshotTO.getDataStore();
+        VolumeObjectTO volume = snapshotTO.getVolume();
         String snapshotName = UUID.randomUUID().toString();
         String vmName = volume.getVmName();
         try {

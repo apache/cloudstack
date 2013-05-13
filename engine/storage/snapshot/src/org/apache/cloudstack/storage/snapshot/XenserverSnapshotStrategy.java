@@ -209,10 +209,6 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public boolean canHandle(Snapshot snapshot) {
-        if (snapshot.getHypervisorType() == HypervisorType.XenServer) {
-            return true;
-        } else {
-            return false;
-        }
+       return true;
     }
 }

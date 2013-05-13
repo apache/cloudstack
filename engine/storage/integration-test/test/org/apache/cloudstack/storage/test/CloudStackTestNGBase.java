@@ -24,6 +24,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 
@@ -38,6 +39,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     private String secondaryStorage;
     private String imageInstallPath;
     private String scriptPath;
+    private HypervisorType hypervisor;
     private Transaction txn;
 
     private String s3AccessKey;
@@ -72,11 +74,14 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
 
     @Parameters({"devcloud-host-uuid", "devcloud-host-gateway", "devcloud-host-cidr",
         "devcloud-host-ip", "template-url", "devcloud-local-storage-uuid",
-        "primary-storage-want-to-add", "devcloud-secondary-storage", "s3-accesskey", "s3-secretkey", "s3-endpoint", "s3-template-bucket", "s3-usehttps", "image-install-path", "primary-storage-uuid-want-to-add", "script-path"})
+        "primary-storage-want-to-add", "devcloud-secondary-storage", "s3-accesskey", "s3-secretkey", "s3-endpoint", 
+        "s3-template-bucket", "s3-usehttps", "image-install-path", "primary-storage-uuid-want-to-add", "script-path",
+        "hypervisor"})
     protected void setup(String hostuuid, String gateway, String cidr,
             String hostIp, String templateUrl, String localStorageUuid,
             String primaryStorage, String secondaryStorage, String s3_accessKey, String s3_secretKey, String s3_endpoint, String s3_template_bucket,
-            String s3_usehttps, String imageInstallPath, String primaryStorageUuid, String scriptPath) {
+            String s3_usehttps, String imageInstallPath, String primaryStorageUuid, String scriptPath,
+            String hypervisor) {
         this.hostGuid = hostuuid;
         this.hostGateway = gateway;
         this.hostCidr = cidr;
@@ -86,6 +91,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
         this.primaryStorageUrl = primaryStorage;
         this.primaryStorageUuid = primaryStorageUuid;
         this.imageInstallPath = imageInstallPath;
+        this.hypervisor = HypervisorType.getType(hypervisor);
         this.setSecondaryStorage(secondaryStorage);
         // set S3 parameters
         this.s3AccessKey = s3_accessKey;
@@ -179,6 +185,14 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     public void setScriptPath(String scriptPath) {
         this.scriptPath = scriptPath;
     }
+
+	public HypervisorType getHypervisor() {
+		return hypervisor;
+	}
+
+	public void setHypervisor(HypervisorType hypervisor) {
+		this.hypervisor = hypervisor;
+	}
 
 
 }

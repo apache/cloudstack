@@ -461,7 +461,7 @@ ServerResource {
     }
 
     protected String getDefaultDomrScriptsDir() {
-        return "scripts/network/domr/kvm";
+        return "scripts/network/domr";
     }
 
     protected String getNetworkDirectSourceMode() {
@@ -682,7 +682,7 @@ ServerResource {
 
         _localStorageUUID = (String) params.get("local.storage.uuid");
         if (_localStorageUUID == null) {
-            throw new ConfigurationException("local.storage.uuid is not set! Please set this to a valid UUID");
+        	_localStorageUUID = UUID.nameUUIDFromBytes(_localStoragePath.getBytes()).toString();
         }
 
         value = (String) params.get("scripts.timeout");
