@@ -16,19 +16,23 @@
 // under the License.
 package com.cloud.api.query;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.server.ResourceMetaDataService;
+import com.cloud.server.ResourceTag;
+import com.cloud.server.TaggedResourceService;
+import com.cloud.vm.NicDetailVO;
+import com.cloud.vm.dao.NicDetailDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
+
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
@@ -47,27 +51,10 @@ import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCm
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -248,7 +235,19 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private DomainRouterDao _routerDao;
 
     @Inject
+    private VolumeDetailsDao _volumeDetailDao;
+
+    @Inject
+    private NicDetailDao _nicDetailDao;
+
+    @Inject
     private HighAvailabilityManager _haMgr;
+
+    @Inject
+    private ResourceMetaDataService _resourceMetaDataMgr;
+
+    @Inject
+    private TaggedResourceService _taggedResourceMgr;
 
     @Inject
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -992,6 +991,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         response.setResponses(routerResponses, result.second());
         return response;
     }
+
     
     @Override
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
@@ -2463,6 +2463,67 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         List<AffinityGroupJoinVO> ags = _affinityGroupJoinDao.searchByIds(agIds);
         return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
+    }
+
+
+    public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd){
+
+        String key = cmd.getKey();
+        ResourceTag.TaggedResourceType resourceType = cmd.getResourceType();
+        String resourceId = cmd.getResourceId();
+        Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
+
+        if(resourceType == ResourceTag.TaggedResourceType.Volume){
+
+            List<VolumeDetailVO> volumeDetailList;
+            if(key == null){
+                volumeDetailList = _volumeDetailDao.findDetails(id);
+            }else{
+                VolumeDetailVO volumeDetail = _volumeDetailDao.findDetail(id, key);
+                volumeDetailList = new LinkedList<VolumeDetailVO>();
+                volumeDetailList.add(volumeDetail);
+            }
+
+            List<ResourceDetailResponse> volumeDetailResponseList = new ArrayList<ResourceDetailResponse>();
+            for (VolumeDetailVO volumeDetail : volumeDetailList ){
+                ResourceDetailResponse volumeDetailResponse = new ResourceDetailResponse();
+                volumeDetailResponse.setResourceId(id.toString());
+                volumeDetailResponse.setName(volumeDetail.getName());
+                volumeDetailResponse.setValue(volumeDetail.getValue());
+                volumeDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Volume.toString());
+                volumeDetailResponse.setObjectName("volumedetail");
+                volumeDetailResponseList.add(volumeDetailResponse);
+            }
+
+            return volumeDetailResponseList;
+
+        }  else {
+
+
+            List<NicDetailVO> nicDetailList;
+            if(key == null){
+                nicDetailList = _nicDetailDao.findDetails(id);
+            }else {
+                NicDetailVO nicDetail = _nicDetailDao.findDetail(id, key);
+                nicDetailList = new LinkedList<NicDetailVO>();
+                nicDetailList.add(nicDetail);
+            }
+
+            List<ResourceDetailResponse> nicDetailResponseList = new ArrayList<ResourceDetailResponse>();
+            for(NicDetailVO nicDetail : nicDetailList){
+                ResourceDetailResponse nicDetailResponse = new ResourceDetailResponse();
+                //String uuid = ApiDBUtils.findN
+                nicDetailResponse.setName(nicDetail.getName());
+                nicDetailResponse.setValue(nicDetail.getValue());
+                nicDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Nic.toString());
+                nicDetailResponse.setObjectName("nicdetail");
+                nicDetailResponseList.add(nicDetailResponse);
+            }
+
+            return nicDetailResponseList;
+
+        }
+
     }
 
 }

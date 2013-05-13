@@ -80,6 +80,10 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private Boolean sourceNat;
 
 
+    @SerializedName(ApiConstants.ACL_ID) @Param(description = "ACL Id set for private gateway")
+    private String aclId;
+
+
     @Override
     public String getObjectId() {
         return this.id;
@@ -153,6 +157,11 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     public void setSourceNat(Boolean sourceNat) {
         this.sourceNat = sourceNat;
     }
+
+    public void setAclId(String aclId) {
+        this.aclId = aclId;
+    }
+
 
 
 }

@@ -52,4 +52,6 @@ public interface VpcProvider extends NetworkElement{
     boolean deletePrivateGateway(PrivateGateway privateGateway) throws ConcurrentOperationException, ResourceUnavailableException;
 
     boolean applyStaticRoutes(Vpc vpc, List<StaticRouteProfile> routes) throws ResourceUnavailableException;
+
+    boolean applyACLItemsToPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException;
 }

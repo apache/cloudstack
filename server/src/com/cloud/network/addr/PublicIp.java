@@ -228,4 +228,8 @@ public class PublicIp implements PublicIpAddress {
     public void setPortable(boolean portable) {
         _addr.setPortable(portable);
     }
+
+    public Long getIpMacAddress() {
+        return  _addr.getMacAddress();
+    }
 }

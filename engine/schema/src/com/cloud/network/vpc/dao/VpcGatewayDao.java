@@ -23,4 +23,6 @@ import com.cloud.utils.db.GenericDao;
 public interface VpcGatewayDao extends GenericDao<VpcGatewayVO, Long>{
     VpcGatewayVO getPrivateGatewayForVpc(long vpcId);
     VpcGatewayVO getVpnGatewayForVpc(long vpcId);
+
+    Long getNetworkAclIdForPrivateIp(long vpcId, long networkId, String ipaddr);
 }

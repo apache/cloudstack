@@ -81,4 +81,9 @@ public interface VpcGateway extends Identity, ControlledEntity, InternalIdentity
      * @return
      */
     boolean getSourceNat();
+
+    /**
+     * @return
+     */
+    long getNetworkACLId();
 }

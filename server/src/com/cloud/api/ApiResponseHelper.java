@@ -34,6 +34,18 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.vm.*;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -43,9 +55,102 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.response.*;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.CapabilityResponse;
+import org.apache.cloudstack.api.response.CapacityResponse;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.ConditionResponse;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ControlledEntityResponse;
+import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
+import org.apache.cloudstack.api.response.CounterResponse;
+import org.apache.cloudstack.api.response.CreateCmdResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.FirewallResponse;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
+import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IsolationMethodResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckResponse;
+import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
+import org.apache.cloudstack.api.response.LBStickinessResponse;
+import org.apache.cloudstack.api.response.LDAPConfigResponse;
+import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.PortableIpRangeResponse;
+import org.apache.cloudstack.api.response.PortableIpResponse;
+import org.apache.cloudstack.api.response.PrivateGatewayResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ProviderResponse;
+import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
+import org.apache.cloudstack.api.response.ResourceCountResponse;
+import org.apache.cloudstack.api.response.ResourceLimitResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.S3Response;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceResponse;
+import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
+import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
+import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
+import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
+import org.apache.cloudstack.api.response.StaticRouteResponse;
+import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
+import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.SwiftResponse;
+import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
+import org.apache.cloudstack.api.response.SystemVmResponse;
+import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VMSnapshotResponse;
+import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
+import org.apache.cloudstack.api.response.VlanIpRangeResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.api.response.VpnUsersResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -142,10 +247,6 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -2302,6 +2403,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getAclType() != null) {
             response.setAclType(network.getAclType().toString());
         }
+        response.setDisplayNetwork(network.getDisplayNetwork());
         response.setState(network.getState().toString());
         response.setRestartRequired(network.isRestartRequired());
         NetworkVO nw = ApiDBUtils.findNetworkById(network.getRelated());
@@ -2461,37 +2563,43 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public NetworkACLResponse createNetworkACLResponse(FirewallRule networkACL) {
-        NetworkACLResponse response = new NetworkACLResponse();
+    public NetworkACLItemResponse createNetworkACLItemResponse(NetworkACLItem aclItem) {
+        NetworkACLItemResponse response = new NetworkACLItemResponse();
 
-        response.setId(networkACL.getUuid());
-        response.setProtocol(networkACL.getProtocol());
-        if (networkACL.getSourcePortStart() != null) {
-            response.setStartPort(Integer.toString(networkACL.getSourcePortStart()));
+        response.setId(aclItem.getUuid());
+        response.setProtocol(aclItem.getProtocol());
+        if (aclItem.getSourcePortStart() != null) {
+            response.setStartPort(Integer.toString(aclItem.getSourcePortStart()));
         }
 
-        if (networkACL.getSourcePortEnd() != null) {
-            response.setEndPort(Integer.toString(networkACL.getSourcePortEnd()));
+        if (aclItem.getSourcePortEnd() != null) {
+            response.setEndPort(Integer.toString(aclItem.getSourcePortEnd()));
         }
 
-        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(networkACL.getId());
-        response.setCidrList(StringUtils.join(cidrs, ","));
+        response.setCidrList(StringUtils.join(aclItem.getSourceCidrList(), ","));
 
-        response.setTrafficType(networkACL.getTrafficType().toString());
+        response.setTrafficType(aclItem.getTrafficType().toString());
 
-        FirewallRule.State state = networkACL.getState();
+        NetworkACLItem.State state = aclItem.getState();
         String stateToSet = state.toString();
-        if (state.equals(FirewallRule.State.Revoke)) {
+        if (state.equals(NetworkACLItem.State.Revoke)) {
             stateToSet = "Deleting";
         }
 
-        response.setIcmpCode(networkACL.getIcmpCode());
-        response.setIcmpType(networkACL.getIcmpType());
+        response.setIcmpCode(aclItem.getIcmpCode());
+        response.setIcmpType(aclItem.getIcmpType());
 
         response.setState(stateToSet);
+        response.setNumber(aclItem.getNumber());
+        response.setAction(aclItem.getAction().toString());
+
+        NetworkACL acl = ApiDBUtils.findByNetworkACLId(aclItem.getAclId());
+        if(acl != null){
+            response.setAclId(acl.getUuid());
+        }
 
         //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.NetworkACL, networkACL.getId());
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.NetworkACL, aclItem.getId());
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
@@ -3060,6 +3168,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateDomain(response, result.getDomainId());
         response.setState(result.getState().toString());
         response.setSourceNat(result.getSourceNat());
+
+        NetworkACL acl =  ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
+        if (acl != null) {
+            response.setAclId(acl.getUuid());
+        }
 
         response.setObjectName("privategateway");
 
@@ -3808,6 +3921,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         IsolationMethodResponse response = new IsolationMethodResponse();
         response.setIsolationMethodName(method.toString());
         response.setObjectName("isolationmethod");
+        return response;
+    }
+
+
+    public NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL) {
+        NetworkACLResponse response = new NetworkACLResponse();
+        response.setId(networkACL.getUuid());
+        response.setName(networkACL.getName());
+        response.setDescription(networkACL.getDescription());
+        Vpc vpc = ApiDBUtils.findVpcById(networkACL.getVpcId());
+        if(vpc != null){
+            response.setVpcId(vpc.getUuid());
+        }
+        response.setObjectName("networkacllist");
         return response;
     }
 }

@@ -322,9 +322,14 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     boolean getSpecifyIpRanges();
 
+    boolean getDisplayNetwork();
+
     /**
      * @return
      */
     Long getVpcId();
 
+    Long getNetworkACLId();
+
+    void setNetworkACLId(Long networkACLId);
 }
