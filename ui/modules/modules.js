@@ -16,7 +16,7 @@
 // under the License.
 (function($, cloudStack) {
   cloudStack.modules = [
-    'vpc'
+    'vpc',
     'infrastructure',
     'vnmcNetworkProvider',
     'vnmcAsa1000v'
