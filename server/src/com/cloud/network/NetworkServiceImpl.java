@@ -1019,6 +1019,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         	throw new InvalidParameterValueException("Can only support create Private VLAN network with advance shared network!");
         }
         
+        if (isolatedPvlan != null && ipv6) {
+        	throw new InvalidParameterValueException("Can only support create Private VLAN network with IPv4!");
+        }
+        
         // Regular user can create Guest Isolated Source Nat enabled network only
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL
                 && (ntwkOff.getTrafficType() != TrafficType.Guest || ntwkOff.getGuestType() != Network.GuestType.Isolated
