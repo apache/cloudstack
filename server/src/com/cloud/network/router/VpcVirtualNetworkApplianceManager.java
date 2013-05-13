@@ -48,13 +48,15 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
             ResourceUnavailableException;
 
     /**
+     *
      * @param network
      * @param rules
      * @param routers
+     * @param privateGateway
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers)
+    boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers, boolean privateGateway)
             throws ResourceUnavailableException;
 
     /**

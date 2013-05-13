@@ -29,6 +29,7 @@ import com.cloud.network.vpc.NetworkACLManagerImpl;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -180,6 +181,11 @@ public class NetworkACLManagerTest extends TestCase{
         @Bean
         public NetworkACLServiceProvider networkElements() {
             return Mockito.mock(NetworkACLServiceProvider.class);
+        }
+
+        @Bean
+        public VpcGatewayDao vpcGatewayDao () {
+            return Mockito.mock(VpcGatewayDao.class);
         }
 
         public static class Library implements TypeFilter {

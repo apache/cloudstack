@@ -26,10 +26,11 @@ import com.cloud.user.UserContext;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-@APICommand(name = "replaceNetworkACLList", description="Replaces ACL associated with a Network", responseObject=SuccessResponse.class)
+@APICommand(name = "replaceNetworkACLList", description="Replaces ACL associated with a Network or private gateway", responseObject=SuccessResponse.class)
 public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReplaceNetworkACLListCmd.class.getName());
     private static final String s_name = "replacenetworkacllistresponse";
@@ -43,8 +44,12 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     private long aclId;
 
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            required=true, description="the ID of the network")
-    private long networkId;
+            description="the ID of the network")
+    private Long networkId;
+
+    @Parameter(name=ApiConstants.GATEWAY_ID, type=CommandType.UUID, entityType = PrivateGatewayResponse.class,
+            description="the ID of the private gateway")
+    private Long privateGatewayId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -54,8 +59,12 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
         return aclId;
     }
 
-    public long getNetworkId(){
+    public Long getNetworkId(){
         return networkId;
+    }
+
+    public Long getPrivateGatewayId() {
+        return privateGatewayId;
     }
 
     /////////////////////////////////////////////////////
@@ -84,8 +93,21 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
+        if (getNetworkId() == null && getPrivateGatewayId() == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Network id and private gateway can't be null at  the same time");
+        }
+
+        if (getNetworkId() != null && getPrivateGatewayId() != null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Network id and private gateway can't be passed  at  the same time");
+        }
+
         UserContext.current().setEventDetails("Network ACL Id: " + aclId);
-        boolean result = _networkACLService.replaceNetworkACL(aclId, networkId);
+        boolean result = false;
+        if (getPrivateGatewayId() != null) {
+            result = _networkACLService.replaceNetworkACLonPrivateGw(aclId, privateGatewayId);
+        } else {
+            result = _networkACLService.replaceNetworkACL(aclId, networkId);
+        }
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

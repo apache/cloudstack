@@ -1159,6 +1159,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
         String routerIp = getRouterSshControlIp(cmd);
 
         String[] results = new String[cmd.getRules().length];
@@ -1177,19 +1178,37 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             NicTO nic = cmd.getNic();
             int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, nic.getMac());
             String args = "";
-            args += " -d " + "eth" + ethDeviceNum;
-            args += " -i " + nic.getIp();
-            args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-            args += " -a " + sb.toString();
+            Pair<Boolean, String> result;
 
-            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
-                    "/opt/cloud/bin/vpc_acl.sh " + args);
+            if (privateGw != null) {
+                s_logger.debug("Private gateway configuration is set");
+                args += " -d " + "eth" + ethDeviceNum;
+                args += " -a " + sb.toString();
+                result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                        "/opt/cloud/bin/vpc_privategw_acl.sh " + args);
 
-            if (!result.first()) {
-                String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
-                s_logger.error(msg);
+                if (!result.first()) {
+                    String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
+                    s_logger.error(msg);
+                }
 
                 return new SetNetworkACLAnswer(cmd, false, results);
+            } else {
+                args="";
+                args += " -d " + "eth" + ethDeviceNum;
+                args += " -i " + nic.getIp();
+                args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+                args += " -a " + sb.toString();
+
+                result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                        "/opt/cloud/bin/vpc_acl.sh " + args);
+
+                if (!result.first()) {
+                    String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
+                    s_logger.error(msg);
+
+                    return new SetNetworkACLAnswer(cmd, false, results);
+                }
             }
 
             return new SetNetworkACLAnswer(cmd, true, results);

@@ -1643,6 +1643,7 @@ ServerResource {
         Connect conn;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
 
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
@@ -1660,7 +1661,7 @@ ServerResource {
 
             String rule =  sb.toString();
             String result = _virtRouterResource.assignNetworkACL(routerIp,
-                    dev, nic.getIp(), netmask, rule);
+                    dev, nic.getIp(), netmask, rule, privateGw);
 
             if (result != null) {
                 for (int i=0; i < results.length; i++) {

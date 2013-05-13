@@ -1521,8 +1521,8 @@ ALTER TABLE `cloud`.`account_details` MODIFY value varchar(255);
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.apiserver.address', 'http://localhost:8081', 'Specify the address at which the Midonet API server can be contacted (if using Midonet)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.providerrouter.id', 'd7c5e6a3-e2f4-426b-b728-b7ce6a0448e5', 'Specifies the UUID of the Midonet provider router (if using Midonet)');
 
-alter table cloud.vpc_gateways add column source_nat boolean default false;
-alter table cloud.private_ip_address add column source_nat boolean default false;
+alter table `cloud`.`vpc_gateways` add column `source_nat` boolean default false;
+alter table `cloud`.`private_ip_address` add column `source_nat` boolean default false;
 
 CREATE TABLE `cloud`.`account_vnet_map` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
@@ -1600,3 +1600,6 @@ CREATE  TABLE `cloud`.`nic_ip_alias` (
   `state`  char(32)  NOT NULL,
   PRIMARY KEY (`id`) ,
   UNIQUE INDEX `id_UNIQUE` (`id` ASC) );
+
+alter table `cloud`.`vpc_gateways` add column network_acl_id bigint unsigned default 1 NOT NULL;
+update table cloud.vpc_gateways set network_acl_id = 2;

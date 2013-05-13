@@ -892,12 +892,17 @@ public class VirtualRoutingResource implements Manager {
     }
 
     public String assignNetworkACL(final String routerIP, final String dev,
-            final String routerGIP, final String netmask, final String rule){
+                                   final String routerGIP, final String netmask, final String rule, String privateGw){
         String args = " -d " + dev;
-        args += " -i " + routerGIP;
-        args += " -m " + netmask;
-        args += " -a " + rule;
-        return routerProxy("vpc_acl.sh", routerIP, args);
+        if (privateGw != null) {
+            args += " -a " + rule;
+            return routerProxy("vpc_privategw_acl.sh", routerIP, args);
+        } else {
+            args += " -i " + routerGIP;
+            args += " -m " + netmask;
+            args += " -a " + rule;
+            return routerProxy("vpc_acl.sh", routerIP, args);
+        }
     }
 
     public String assignSourceNat(final String routerIP, final String pubIP, final String dev) {

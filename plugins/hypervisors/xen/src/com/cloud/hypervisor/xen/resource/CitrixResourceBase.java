@@ -2326,7 +2326,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 result = callHostPlugin(conn, "vmops", "routerProxy", "args", snatArgs);
                 if (result == null || result.isEmpty()) {
-                    throw new InternalErrorException("Xen plugin \"vcp_privateGateway\" failed.");
+                    throw new InternalErrorException("Xen plugin \"vpc_privateGateway\" failed.");
                 }
             }
 
@@ -8153,6 +8153,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
+
         try {
             VM router = getVM(conn, routerName);
             String [][] rules = cmd.generateFwRules();
@@ -8163,20 +8165,41 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 sb.append(aclRules[i]).append(',');
             }
 
+            if (privateGw != null) {
+                s_logger.debug("Private gateway configuration is set");
+            }
             NicTO nic = cmd.getNic();
             VIF vif = getVifByMac(conn, router, nic.getMac());
-            String args = "vpc_acl.sh " + routerIp;
-            args += " -d " + "eth" + vif.getDevice(conn);
-            args += " -i " + nic.getIp();
-            args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-            args += " -a " + sb.toString();
-            callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
-            if (callResult == null || callResult.isEmpty()) {
-                //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
-                for (int i=0; i < results.length; i++) {
-                    results[i] = "Failed";
+
+            if (privateGw != null) {
+                s_logger.debug("Private gateway configuration is set");
+                String args = "vpc_privategw_acl.sh " + routerIp;
+                args += " -d " + "eth" + vif.getDevice(conn);
+                args += " -a " + sb.toString();
+
+                callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                if (callResult == null || callResult.isEmpty()) {
+                    //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+                    for (int i=0; i < results.length; i++) {
+                        results[i] = "Failed";
+                    }
+                    return new SetNetworkACLAnswer(cmd, false, results);
                 }
-                return new SetNetworkACLAnswer(cmd, false, results);
+            } else {
+                String args = "vpc_acl.sh " + routerIp;
+                args += " -d " + "eth" + vif.getDevice(conn);
+                args += " -i " + nic.getIp();
+                args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+                args += " -a " + sb.toString();
+
+                callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                if (callResult == null || callResult.isEmpty()) {
+                    //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+                    for (int i=0; i < results.length; i++) {
+                        results[i] = "Failed";
+                    }
+                    return new SetNetworkACLAnswer(cmd, false, results);
+                }
             }
             return new SetNetworkACLAnswer(cmd, true, results);
         } catch (Exception e) {

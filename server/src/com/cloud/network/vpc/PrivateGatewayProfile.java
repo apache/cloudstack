@@ -105,4 +105,10 @@ public class PrivateGatewayProfile implements PrivateGateway {
     public boolean getSourceNat() {
         return vpcGateway.getSourceNat();
     }
+
+    @Override
+    public long getNetworkACLId() {
+        return vpcGateway.getNetworkACLId();
+    }
+
 }

@@ -3163,6 +3163,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(result.getState().toString());
         response.setSourceNat(result.getSourceNat());
 
+        NetworkACL acl =  ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
+        if (acl != null) {
+            response.setAclId(acl.getUuid());
+        }
+
         response.setObjectName("privategateway");
 
 

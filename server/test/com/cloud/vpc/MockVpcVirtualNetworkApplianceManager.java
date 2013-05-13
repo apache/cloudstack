@@ -348,7 +348,7 @@ VpcVirtualNetworkApplianceService {
     }
 
     @Override
-    public boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+    public boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers,  boolean privateGateway) throws ResourceUnavailableException {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 

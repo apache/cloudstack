@@ -24,23 +24,20 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 
 
-class TestNetworkACL(cloudstackTestCase):
-    networkOfferingId = 11
-    networkId = None
-    vmId = None
-    vpcId = None
-    aclId = None
-
-    zoneId = 1
-    serviceOfferingId = 1 
-    templateId = 5
-
+class TestPrivateGwACL(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
+        self.networkOfferingId = 11
+        self.networkId = None
+        self.vmId = None
+        self.vpcId = None
+        self.aclId = None
+        self.zoneId = 1
+        self.serviceOfferingId = 1
+        self.templateId = 5
+        self.privateGwId = None
 
-
-    
-    def test_networkAcl(self):
+    def test_privategw_acl(self):
 
         # 1) Create VPC
         self.createVPC()
@@ -53,16 +50,20 @@ class TestNetworkACL(cloudstackTestCase):
 
         # 4) Create network with ACL
         self.createNetwork()
-        # 5) Deploy a vm
-        self.deployVm()
+
+        # 5) create private gw
+        self.createPvtGw()
+
+        # 6) update acl id
+        self.replaceacl()
 
     def createACL(self):
         createAclCmd = createNetworkACLList.createNetworkACLListCmd()
         createAclCmd.name = "acl1"
         createAclCmd.description = "new acl"
-        createAclCmd.vpcId = TestNetworkACL.vpcId
+        createAclCmd.vpcid = self.vpcId
         createAclResponse = self.apiClient.createNetworkACLList(createAclCmd)
-        TestNetworkACL.aclId = createAclResponse.id
+        self.aclId = createAclResponse.id
 
     def createACLItem(self):
         createAclItemCmd = createNetworkACL.createNetworkACLCmd()
@@ -70,7 +71,7 @@ class TestNetworkACL(cloudstackTestCase):
         createAclItemCmd.protocol = "TCP"
         createAclItemCmd.number = "10"
         createAclItemCmd.action = "Deny"
-        createAclItemCmd.aclId = TestNetworkACL.aclId
+        createAclItemCmd.aclid = self.aclId
         createAclItemResponse = self.apiClient.createNetworkACL(createAclItemCmd)
         self.assertIsNotNone(createAclItemResponse.id, "Network failed to aclItem")
 
@@ -82,7 +83,7 @@ class TestNetworkACL(cloudstackTestCase):
         createVPCCmd.vpcofferingid = 1
         createVPCCmd.zoneid = self.zoneId
         createVPCResponse = self.apiClient.createVPC(createVPCCmd)
-        TestNetworkACL.vpcId = createVPCResponse.id
+        self.vpcId = createVPCResponse.id
 
 
     def createNetwork(self):
@@ -92,13 +93,22 @@ class TestNetworkACL(cloudstackTestCase):
         createNetworkCmd.netmask = "255.255.255.0"
         createNetworkCmd.gateway = "10.1.1.1"
         createNetworkCmd.zoneid = self.zoneId
-        createNetworkCmd.vpcid = TestNetworkACL.vpcId
-        createNetworkCmd.networkofferingid = TestNetworkACL.networkOfferingId
-        createNetworkCmd.aclId = TestNetworkACL.aclId
+        createNetworkCmd.vpcid = self.vpcId
+        createNetworkCmd.networkofferingid = self.networkOfferingId
+        createNetworkCmd.aclid = self.aclId
         createNetworkResponse = self.apiClient.createNetwork(createNetworkCmd)
-        TestNetworkACL.networkId = createNetworkResponse.id
 
         self.assertIsNotNone(createNetworkResponse.id, "Network failed to create")
+        self.networkId = createNetworkResponse.id
+
+    def deployVm(self):
+        deployVirtualMachineCmd = deployVirtualMachine.deployVirtualMachineCmd()
+        deployVirtualMachineCmd.networkids = self.networkId
+        deployVirtualMachineCmd.serviceofferingid = self.serviceOfferingId
+        deployVirtualMachineCmd.zoneid = self.zoneId
+        deployVirtualMachineCmd.templateid = self.templateId
+        deployVirtualMachineCmd.hypervisor = "XenServer"
+        deployVMResponse = self.apiClient.deployVirtualMachine(deployVirtualMachineCmd)
 
     def deployVm(self):
         deployVirtualMachineCmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -109,10 +119,30 @@ class TestNetworkACL(cloudstackTestCase):
         deployVirtualMachineCmd.hypervisor = "XenServer"
         deployVMResponse = self.apiClient.deployVirtualMachine(deployVirtualMachineCmd)
         TestNetworkACL.vmId = deployVMResponse.id
+        self.vmId = deployVMResponse.id
+
+    def createPvtGw(self):
+        createPrivateGatewayCmd = createPrivateGateway.createPrivateGatewayCmd()
+        createPrivateGatewayCmd.physicalnetworkid = 200
+        createPrivateGatewayCmd.gateway = "10.147.30.1"
+        createPrivateGatewayCmd.netmask = "255.255.255.0"
+        createPrivateGatewayCmd.ipaddress = "10.147.30.200"
+        createPrivateGatewayCmd.vlan = "30"
+        createPrivateGatewayCmd.vpcid = self.vpcId
+        createPrivateGatewayCmd.sourcenatsupported = "true"
+        createPrivateGatewayCmd.aclid = self.aclId
+        privateGatewayResponse =  self.apiClient.createPrivateGateway(createPrivateGatewayCmd)
+        self.privateGwId = privateGatewayResponse.id
+
+    def replaceacl(self):
+        replaceNetworkACLListCmd = replaceNetworkACLList.replaceNetworkACLListCmd()
+        replaceNetworkACLListCmd.aclid = self.aclId
+        replaceNetworkACLListCmd.gatewayid = self.privateGwId
+        successResponse = self.apiClient.replaceNetworkACLList(replaceNetworkACLListCmd);
 
     def tearDown(self):
         #destroy the vm
-        if TestNetworkACL.vmId is not None:
+        if self.vmId is not None:
             destroyVirtualMachineCmd = destroyVirtualMachine.destroyVirtualMachineCmd()
-            destroyVirtualMachineCmd.id = TestNetworkACL.vmId
+            destroyVirtualMachineCmd.id = self.vmId
             destroyVirtualMachineResponse = self.apiClient.destroyVirtualMachine(destroyVirtualMachineCmd)

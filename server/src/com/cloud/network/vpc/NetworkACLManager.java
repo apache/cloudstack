@@ -139,4 +139,17 @@ public interface NetworkACLManager{
     NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
                                         String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd,
                                         Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
+
+    /**
+     * Associates acl with a network and applies the ACLItems
+     * @param acl
+     * @param gateway
+     * @return
+     */
+
+    boolean replaceNetworkACLForPrivateGw(NetworkACL acl, PrivateGateway gateway) throws ResourceUnavailableException;
+
+    boolean revokeACLItemsForPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException;
+
+    boolean applyACLToPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException;
 }

@@ -24,6 +24,7 @@ import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.ResourceTagVO;
@@ -65,8 +66,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     @Inject
     NetworkModel _networkMgr;
     @Inject
-    VpcManager _vpcMgr;
-    @Inject
     ResourceTagDao _resourceTagDao;
     @Inject
     NetworkACLDao _networkACLDao;
@@ -78,6 +77,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     NetworkDao _networkDao;
     @Inject
     NetworkACLManager _networkAclMgr;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    VpcManager _vpcMgr;
 
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
@@ -149,6 +152,46 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         _accountMgr.checkAccess(caller, null, true, vpc);
         return _networkAclMgr.deleteNetworkACL(acl);
+    }
+    @Override
+    public boolean replaceNetworkACLonPrivateGw(long aclId, long privateGatewayId) throws ResourceUnavailableException {
+        Account caller = UserContext.current().getCaller();
+        VpcGateway gateway = _vpcGatewayDao.findById(privateGatewayId);
+        if (gateway == null) {
+            throw new InvalidParameterValueException("Unable to find specified private gateway");
+        }
+
+        VpcGatewayVO vo = _vpcGatewayDao.findById(privateGatewayId);
+        if (vo.getState() != VpcGateway.State.Ready) {
+            throw new InvalidParameterValueException("Gateway is not in Ready state");
+        }
+
+
+        NetworkACL acl = _networkACLDao.findById(aclId);
+        if(acl == null){
+            throw new InvalidParameterValueException("Unable to find specified NetworkACL");
+        }
+
+        if (gateway.getVpcId() == null) {
+            throw new InvalidParameterValueException("Unable to find specified vpc id");
+        }
+
+        if(aclId != NetworkACL.DEFAULT_DENY || aclId != NetworkACL.DEFAULT_ALLOW) {
+            Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
+            if(vpc == null){
+                throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
+            }
+            _accountMgr.checkAccess(caller, null, true, vpc);
+            if(gateway.getVpcId() != acl.getVpcId()){
+                throw new InvalidParameterValueException("private gateway: "+privateGatewayId+" and ACL: "+aclId+" do not belong to the same VPC");
+            }
+        }
+
+        PrivateGateway privateGateway = _vpcMgr.getVpcPrivateGateway(privateGatewayId);
+        _accountMgr.checkAccess(caller, null, true, privateGateway);
+
+        return  _networkAclMgr.replaceNetworkACLForPrivateGw(acl, privateGateway);
+
     }
 
     @Override

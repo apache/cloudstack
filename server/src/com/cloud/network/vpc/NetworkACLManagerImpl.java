@@ -25,8 +25,10 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkACLServiceProvider;
+import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.NetworkACLItem.State;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -40,6 +42,7 @@ import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -66,6 +69,10 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     NetworkModel _networkModel;
     @Inject
     NetworkDao _networkDao;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    NetworkModel _ntwkModel;
 
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
@@ -111,6 +118,17 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             throw new CloudRuntimeException("ACL is not empty. Cannot delete network ACL: "+acl.getUuid());
         }
         return _networkACLDao.remove(acl.getId());
+    }
+
+    @Override
+    public boolean replaceNetworkACLForPrivateGw(NetworkACL acl, PrivateGateway gateway) throws ResourceUnavailableException {
+        VpcGatewayVO vpcGatewayVo = _vpcGatewayDao.findById(gateway.getId());
+        vpcGatewayVo.setNetworkACLId(acl.getId());
+        if (_vpcGatewayDao.update(vpcGatewayVo.getId(),vpcGatewayVo)) {
+            return applyACLToPrivateGw(gateway);
+
+        }
+        return false;
     }
 
     @Override
@@ -226,6 +244,36 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
+    public boolean revokeACLItemsForPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException {
+
+        List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(gateway.getNetworkACLId());
+        if (aclItems.isEmpty()) {
+            s_logger.debug("Found no network ACL Items for private gateway  id=" + gateway.getId());
+            return true;
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + aclItems.size() + " Network ACL Items for private gateway  id=" + gateway.getId());
+        }
+
+        for (NetworkACLItemVO aclItem : aclItems) {
+            // Mark all Network ACLs rules as Revoke, but don't update in DB
+            if (aclItem.getState() == State.Add || aclItem.getState() == State.Active) {
+                aclItem.setState(State.Revoke);
+            }
+        }
+
+        boolean success = applyACLItemsToPrivateGw(gateway, aclItems);
+
+        if (s_logger.isDebugEnabled() && success) {
+            s_logger.debug("Successfully released Network ACLs for private gateway id=" + gateway.getId() + " and # of rules now = "
+                    + aclItems.size());
+        }
+
+        return success;
+    }
+
+    @Override
     public List<NetworkACLItemVO> listNetworkACLItems(long guestNtwkId) {
         Network network = _networkMgr.getNetwork(guestNtwkId);
         return _networkACLItemDao.listByACL(network.getNetworkACLId());
@@ -234,6 +282,28 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     private void removeRule(NetworkACLItem rule) {
         //remove the rule
         _networkACLItemDao.remove(rule.getId());
+    }
+
+    @Override
+    public boolean applyACLToPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException {
+        VpcGatewayVO vpcGatewayVO = _vpcGatewayDao.findById(gateway.getId());
+        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(vpcGatewayVO.getNetworkACLId());
+        return applyACLItemsToPrivateGw(gateway, rules);
+    }
+
+    private boolean applyACLItemsToPrivateGw(PrivateGateway gateway, List<NetworkACLItemVO> rules) throws ResourceUnavailableException {
+        List<VpcProvider> vpcElements = null;
+        vpcElements = new ArrayList<VpcProvider>();
+        vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName()));
+
+        if (vpcElements == null) {
+            throw new CloudRuntimeException("Failed to initialize vpc elements");
+        }
+
+        for (VpcProvider provider: vpcElements){
+            return provider.applyACLItemsToPrivateGw(gateway);
+            }
+        return false;
     }
 
     @Override
