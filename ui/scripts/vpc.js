@@ -290,7 +290,7 @@
             args.response.success({ data: [] });
           }
         }
-      }
+      },
       
       // Private gateways
       privateGateways: function() {
