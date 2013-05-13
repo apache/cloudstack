@@ -81,10 +81,13 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     public List<ImageStoreVO> findByScope(ZoneScope scope) {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
         sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
-        SearchCriteria<ImageStoreVO> scc = createSearchCriteria();
-        scc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);
-        scc.addOr("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
-        sc.addAnd("scope", SearchCriteria.Op.SC, scc);
+        if (scope.getScopeId() != null) {
+            SearchCriteria<ImageStoreVO> scc = createSearchCriteria();
+            scc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);
+            scc.addOr("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
+            sc.addAnd("scope", SearchCriteria.Op.SC, scc);
+        }
+        // we should return all image stores if cross-zone scope is passed (scopeId = null)
         return listBy(sc);
     }
 
