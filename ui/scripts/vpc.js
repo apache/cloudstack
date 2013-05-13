@@ -219,7 +219,7 @@
               args.response.success({
                 _custom: {
                   jobId: jobID,
-                  getUpdatedItem: function() {
+                  getUpdateIdtem: function() {
                     $(window).trigger('cloudStack.fullRefresh');
                   }
                 },
@@ -279,6 +279,19 @@
   cloudStack.vpc = {
     // nTier sections
     sections: {
+      // Internal load balancers
+      tierLoadBalancers: {
+        listView: {
+          fields: {
+            name: { label: 'label.name' },
+            total: { label: 'label.total' }
+          },
+          dataProvider: function(args) {
+            args.response.success({ data: [] });
+          }
+        }
+      }
+      
       // Private gateways
       privateGateways: function() {
         return cloudStack.vpc.gateways.listView()
