@@ -53,6 +53,7 @@ public class NetworkProfile implements Network {
     private boolean specifyIpRanges;
     private Long vpcId;
     private boolean displayNetwork;
+    private Long networkAclId;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -83,6 +84,7 @@ public class NetworkProfile implements Network {
         this.specifyIpRanges = network.getSpecifyIpRanges();
         this.vpcId = network.getVpcId();
         this.displayNetwork = network.getDisplayNetwork();
+        this.networkAclId = network.getNetworkACLId();
     }
 
     public String getDns1() {
@@ -241,6 +243,16 @@ public class NetworkProfile implements Network {
     @Override
     public Long getVpcId() {
         return vpcId;
+    }
+
+    @Override
+    public Long getNetworkACLId() {
+        return networkAclId;
+    }
+
+    @Override
+    public void setNetworkACLId(Long networkACLId) {
+        this.networkAclId = networkACLId;
     }
 
     @Override

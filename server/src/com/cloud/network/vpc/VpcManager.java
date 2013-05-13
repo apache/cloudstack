@@ -106,7 +106,8 @@ public interface VpcManager extends VpcService{
      */
     Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr,
                                   String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk, long zoneId,
-                                  ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller, Boolean displayNetworkEnabled)
+                                  ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller, Boolean displayNetworkEnabled)
+
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
 

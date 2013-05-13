@@ -25,10 +25,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.*;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
@@ -57,7 +54,7 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean applyNetworkACLs(Network network, List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers) 
+    boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException;
 
     /**

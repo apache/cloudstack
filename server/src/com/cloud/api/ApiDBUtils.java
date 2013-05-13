@@ -25,6 +25,21 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.network.vpc.VpcGatewayVO;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcProvisioningService;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -187,16 +202,6 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
-import com.cloud.network.vpc.StaticRouteVO;
-import com.cloud.network.vpc.VpcGatewayVO;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcOffering;
-import com.cloud.network.vpc.VpcProvisioningService;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.StaticRouteDao;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -397,6 +402,7 @@ public class ApiDBUtils {
     static AffinityGroupDao _affinityGroupDao;
     static AffinityGroupJoinDao _affinityGroupJoinDao;
     static GlobalLoadBalancingRulesService _gslbService;
+    static NetworkACLDao _networkACLDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -506,6 +512,7 @@ public class ApiDBUtils {
     @Inject private AffinityGroupDao affinityGroupDao;
     @Inject private AffinityGroupJoinDao affinityGroupJoinDao;
     @Inject private GlobalLoadBalancingRulesService gslbService;
+    @Inject private NetworkACLDao networkACLDao;
 
     @PostConstruct
     void init() {
@@ -615,6 +622,7 @@ public class ApiDBUtils {
         _gslbService = gslbService;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
+        _networkACLDao = networkACLDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1290,6 +1298,9 @@ public class ApiDBUtils {
         return _vpcOfferingDao.findById(offeringId);
     }
 
+    public static NetworkACL findByNetworkACLId(long aclId){
+        return _networkACLDao.findById(aclId);
+    }
 
     public static AsyncJob findAsyncJobById(long jobId){
         return _asyncJobDao.findById(jobId);

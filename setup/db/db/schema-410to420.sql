@@ -1539,3 +1539,46 @@ CREATE TABLE `cloud`.`account_vnet_map` (
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN account_vnet_map_id bigint unsigned;
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__account_vnet_map_id` FOREIGN KEY `fk_op_dc_vnet_alloc__account_vnet_map_id` (`account_vnet_map_id`) REFERENCES `account_vnet_map` (`id`);
+
+CREATE TABLE `cloud`.`network_acl` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of the network acl',
+  `uuid` varchar(40),
+  `vpc_id` bigint unsigned COMMENT 'vpc this network acl belongs to',
+  `description` varchar(1024),
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_acl_item` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `acl_id` bigint unsigned NOT NULL COMMENT 'network acl id',
+  `start_port` int(10) COMMENT 'starting port of a port range',
+  `end_port` int(10) COMMENT 'end port of a port range',
+  `state` char(32) NOT NULL COMMENT 'current state of this rule',
+  `protocol` char(16) NOT NULL default 'TCP' COMMENT 'protocol to open these ports for',
+  `created` datetime COMMENT 'Date created',
+  `icmp_code` int(10) COMMENT 'The ICMP code (if protocol=ICMP). A value of -1 means all codes for the given ICMP type.',
+  `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.',
+  `traffic_type` char(32) COMMENT 'the traffic type of the rule, can be Ingress or Egress',
+  `cidr` varchar(255) COMMENT 'comma seperated cidr list',
+  `number` int(10) NOT NULL COMMENT 'priority number of the acl item',
+  `action` varchar(10) NOT NULL COMMENT 'rule action, allow or deny',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY (`acl_id`, `number`),
+  CONSTRAINT `fk_network_acl_item__acl_id` FOREIGN KEY(`acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_network_acl_item__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`networks` add column `network_acl_id` bigint unsigned COMMENT 'network acl id';
+
+-- Add Default ACL deny_all
+INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (1, UUID(), 0, "Default Network ACL Deny All", "default_deny");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (1, UUID(), 1, "Active", "all", now(), "Ingress", "0.0.0.0/0", 1, "Deny");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (2, UUID(), 1, "Active", "all", now(), "Egress", "0.0.0.0/0", 2, "Deny");
+
+-- Add Default ACL allow_all
+INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (2, UUID(), 0, "Default Network ACL Allow All", "default_allow");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (3, UUID(), 2, "Active", "all", now(), "Ingress", "0.0.0.0/0", 1, "Allow");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (4, UUID(), 2, "Active", "all", now(), "Egress", "0.0.0.0/0", 2, "Allow");
+>>>>>>> master

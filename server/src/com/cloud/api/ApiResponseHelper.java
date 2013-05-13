@@ -34,6 +34,18 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.vm.*;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -84,6 +96,7 @@ import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -230,10 +243,6 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -2548,37 +2557,43 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public NetworkACLResponse createNetworkACLResponse(FirewallRule networkACL) {
-        NetworkACLResponse response = new NetworkACLResponse();
+    public NetworkACLItemResponse createNetworkACLItemResponse(NetworkACLItem aclItem) {
+        NetworkACLItemResponse response = new NetworkACLItemResponse();
 
-        response.setId(networkACL.getUuid());
-        response.setProtocol(networkACL.getProtocol());
-        if (networkACL.getSourcePortStart() != null) {
-            response.setStartPort(Integer.toString(networkACL.getSourcePortStart()));
+        response.setId(aclItem.getUuid());
+        response.setProtocol(aclItem.getProtocol());
+        if (aclItem.getSourcePortStart() != null) {
+            response.setStartPort(Integer.toString(aclItem.getSourcePortStart()));
         }
 
-        if (networkACL.getSourcePortEnd() != null) {
-            response.setEndPort(Integer.toString(networkACL.getSourcePortEnd()));
+        if (aclItem.getSourcePortEnd() != null) {
+            response.setEndPort(Integer.toString(aclItem.getSourcePortEnd()));
         }
 
-        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(networkACL.getId());
-        response.setCidrList(StringUtils.join(cidrs, ","));
+        response.setCidrList(StringUtils.join(aclItem.getSourceCidrList(), ","));
 
-        response.setTrafficType(networkACL.getTrafficType().toString());
+        response.setTrafficType(aclItem.getTrafficType().toString());
 
-        FirewallRule.State state = networkACL.getState();
+        NetworkACLItem.State state = aclItem.getState();
         String stateToSet = state.toString();
-        if (state.equals(FirewallRule.State.Revoke)) {
+        if (state.equals(NetworkACLItem.State.Revoke)) {
             stateToSet = "Deleting";
         }
 
-        response.setIcmpCode(networkACL.getIcmpCode());
-        response.setIcmpType(networkACL.getIcmpType());
+        response.setIcmpCode(aclItem.getIcmpCode());
+        response.setIcmpType(aclItem.getIcmpType());
 
         response.setState(stateToSet);
+        response.setNumber(aclItem.getNumber());
+        response.setAction(aclItem.getAction().toString());
+
+        NetworkACL acl = ApiDBUtils.findByNetworkACLId(aclItem.getAclId());
+        if(acl != null){
+            response.setAclId(acl.getUuid());
+        }
 
         //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.NetworkACL, networkACL.getId());
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.NetworkACL, aclItem.getId());
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
@@ -3809,7 +3824,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
     }
 
-    
+
     @Override
     public InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result) {
         if (result.getType() != VirtualRouterProvider.VirtualRouterProviderType.InternalLbVm) {
@@ -3827,12 +3842,26 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
-    
+
     @Override
     public IsolationMethodResponse createIsolationMethodResponse(IsolationType method) {
         IsolationMethodResponse response = new IsolationMethodResponse();
         response.setIsolationMethodName(method.toString());
         response.setObjectName("isolationmethod");
+        return response;
+    }
+
+
+    public NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL) {
+        NetworkACLResponse response = new NetworkACLResponse();
+        response.setId(networkACL.getUuid());
+        response.setName(networkACL.getName());
+        response.setDescription(networkACL.getDescription());
+        Vpc vpc = ApiDBUtils.findVpcById(networkACL.getVpcId());
+        if(vpc != null){
+            response.setVpcId(vpc.getUuid());
+        }
+        response.setObjectName("networkacllist");
         return response;
     }
 }

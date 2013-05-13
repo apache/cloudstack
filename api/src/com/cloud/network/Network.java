@@ -329,4 +329,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
      */
     Long getVpcId();
 
+    Long getNetworkACLId();
+
+    void setNetworkACLId(Long networkACLId);
 }

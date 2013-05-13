@@ -246,6 +246,8 @@
   <bean id="mockVMDaoImpl" class="com.cloud.simulator.dao.MockVMDaoImpl" />
   <bean id="mockVolumeDaoImpl" class="com.cloud.simulator.dao.MockVolumeDaoImpl" />
   <bean id="networkAccountDaoImpl" class="com.cloud.network.dao.NetworkAccountDaoImpl" />
+  <bean id="networkACLDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLDaoImpl" />
+  <bean id="networkACLItemDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLItemDaoImpl" />
   <bean id="networkDaoImpl" class="com.cloud.network.dao.NetworkDaoImpl" />
   <bean id="networkDomainDaoImpl" class="com.cloud.network.dao.NetworkDomainDaoImpl" />
   <bean id="networkExternalFirewallDaoImpl" class="com.cloud.network.dao.NetworkExternalFirewallDaoImpl" />
@@ -690,6 +692,7 @@
   <bean id="keystoreManagerImpl" class="com.cloud.keystore.KeystoreManagerImpl" />
   <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" />
   <bean id="networkACLManagerImpl" class="com.cloud.network.vpc.NetworkACLManagerImpl" />
+  <bean id="networkACLServiceImpl" class="com.cloud.network.vpc.NetworkACLServiceImpl" />
   <bean id="networkServiceImpl" class="com.cloud.network.NetworkServiceImpl" />
   <bean id="networkUsageManagerImpl" class="com.cloud.network.NetworkUsageManagerImpl" />
   <bean id="oCFS2ManagerImpl" class="com.cloud.storage.OCFS2ManagerImpl" />

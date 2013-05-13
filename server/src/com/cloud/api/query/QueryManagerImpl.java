@@ -32,6 +32,7 @@ import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VolumeDetailsDao;
+
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
@@ -992,6 +993,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         response.setResponses(routerResponses, result.second());
         return response;
     }
+
     
     @Override
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {

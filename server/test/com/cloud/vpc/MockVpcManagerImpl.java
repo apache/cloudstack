@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
@@ -298,14 +299,9 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
 
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcManager#createVpcGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, long, com.cloud.user.Account)
-     */
     @Override
-    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk,
-                                         long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller, Boolean displayNetworkEnabled) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
-        // TODO Auto-generated method stub
-        return null;
+    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller, Boolean displayNetworkEnabled) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /* (non-Javadoc)

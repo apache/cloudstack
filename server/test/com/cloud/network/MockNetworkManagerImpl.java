@@ -640,8 +640,12 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
-    public Network createPrivateNetwork(String s, String s2, long l, String s3, String s4, String s5, String s6, String s7, long l2, Long aLong, Boolean aBoolean) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+
+    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
+                                        String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
+                    throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     /* (non-Javadoc)

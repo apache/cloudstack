@@ -950,7 +950,14 @@
                       id: { label: 'label.id' },
                       zonename: { label: 'label.zone' },
                       domain: { label: 'label.domain' },
-                      account: { label: 'label.account' }
+                      account: { label: 'label.account' },
+                      sourcenatsupported:{
+                       label: 'SourceNAT Supported' ,
+                        converter: function(str) {
+                          return str ? 'Yes' : 'No';
+                        }
+                      }
+
                     }
                   ],
                   dataProvider: function(args) {

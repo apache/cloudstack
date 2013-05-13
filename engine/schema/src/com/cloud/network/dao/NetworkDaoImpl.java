@@ -104,6 +104,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
+        AllFieldsSearch.and("aclId", AllFieldsSearch.entity().getNetworkACLId(), Op.EQ);
         SearchBuilder<NetworkOfferingVO> join1 = _ntwkOffDao.createSearchBuilder();
         join1.and("isSystem", join1.entity().isSystemOnly(), Op.EQ);
         join1.and("isRedundant", join1.entity().getRedundantRouter(), Op.EQ);
@@ -616,6 +617,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public List<NetworkVO> listRedundantNetworks() {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setJoinParameters("offerings", "isRedundant", true);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByAclId(long aclId) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("aclId", aclId);
+
         return listBy(sc, null);
     }
 }
