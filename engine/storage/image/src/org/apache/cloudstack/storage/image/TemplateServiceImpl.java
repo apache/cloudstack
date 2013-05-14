@@ -185,11 +185,27 @@ public class TemplateServiceImpl implements TemplateService {
             toBeDownloaded.add(rtngTmplt);
         }
 
+        List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(store.getScope().getScopeId());
+        if (availHypers.isEmpty()) {
+            /*
+             * This is for cloudzone, local secondary storage resource
+             * started before cluster created
+             */
+            availHypers.add(HypervisorType.KVM);
+        }
+        /* Baremetal need not to download any template */
+        availHypers.remove(HypervisorType.BareMetal);
+        availHypers.add(HypervisorType.None); // bug 9809: resume ISO
+                                              // download.
+
         for (VMTemplateVO template : toBeDownloaded) {
-            TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
-            if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-            	TemplateInfo tmplt = _templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
-                createTemplateAsync(tmplt, store, null);
+            if (availHypers.contains(template.getHypervisorType())) {
+                // only download sys template applicable for current hypervisor
+                TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
+                if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                    TemplateInfo tmplt = _templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
+                    createTemplateAsync(tmplt, store, null);
+                }
             }
         }
     }
