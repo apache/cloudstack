@@ -26,7 +26,8 @@
       }
 
       return hiddenFields; // Returns fields to be hidden
-    },
+    },     
+    reorder: cloudStack.api.actions.sort('updateAclRule', 'multiRule'),
     fields: {
       'cidrlist': { edit: true, label: 'label.cidr' },
       'protocol': {
@@ -45,28 +46,34 @@
             var $otherFields = $inputs.filter(function() {
               var name = $(this).attr('name');
 
-              return name != 'icmptype' && name != 'icmpcode' && name != 'cidrlist';
+              return name != 'protocolnumber' &&
+                     name != 'icmptype' &&
+                     name != 'icmpcode' &&
+                     name != 'cidrlist';
             });
 
-            var $protocolinput = args.$form.find('th,td');
+            var $protocolinput = args.$form.find('td input');
             var $protocolFields = $protocolinput.filter(function(){
-             var name = $(this).attr('rel');
+             var name = $(this).attr('name');
 
              return  $.inArray(name,['protocolnumber']) > -1;
             });
 
-           if($(this).val() == 'protocolnumber' ){
-
-             $protocolFields.show();
+            if($(this).val() == 'protocolnumber' ){
+              $icmpFields.hide();
+              $otherFields.hide();
+              $protocolFields.show();
             }
             else{
-             $protocolFields.hide();
+              $protocolFields.hide();
+              $icmpFields.show();
+              $otherFields.show();
             }
-
 
             if ($(this).val() == 'icmp') {
               $icmpFields.show();
               $icmpFields.attr('disabled', false);
+              $protocolFields.hide();
               $otherFields.attr('disabled', 'disabled');
               $otherFields.hide();
               $otherFields.parent().find('label.error').hide();
@@ -77,6 +84,7 @@
               $icmpFields.attr('disabled', 'disabled');
               $icmpFields.hide();
               $icmpFields.parent().find('label.error').hide();
+              $protocolFields.hide();
             }
           });
 
@@ -93,7 +101,7 @@
         }
       },
 
-      'protocolnumber': {label:'Protocol Number',isDisabled:true,isHidden:true,edit:true},
+      'protocolnumber': {label:'Protocol Number',edit:true},
       'startport': { edit: true, label: 'label.start.port' },
       'endport': { edit: true, label: 'label.end.port' },
       'networkid': {
@@ -305,12 +313,67 @@
       // Network ACL lists
       networkACLLists: {
         listView: {
+          id: 'aclLists',
           fields: {
             name: { label: 'label.name' },
             total: { label: 'label.total' }
           },
           dataProvider: function(args) {
-            args.response.success({ data: [] });
+            args.response.success({
+              data: [
+                { name: 'ACL list 1', total: 3 },
+                { name: 'ACL list 2', total: 2 }
+              ]
+            });
+          },
+
+          detailView: {
+            isMaximized: true,
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name', isEditable: true }
+                  }
+                ],
+                dataProvider: function(args) {
+                  args.response.success({ data: args.context.aclLists[0] });
+                }
+              },
+
+              aclRules: {
+                title: 'label.acl.rules',
+                custom: function(args) {
+                  return $('<div>').multiEdit($.extend(true, {}, aclMultiEdit, {
+                    context: args.context,
+                    fields: {
+                      networkid: false
+                    },
+                    dataProvider: function(args) {
+                      args.response.success({
+                        data: [
+                          {
+                            cidrlist: '10.1.1.0/24',
+                            protocol: 'TCP',
+                            startport: 22, endport: 22,
+                            networkid: 0,
+                            traffictype: 'Egress'
+                          },
+                          {
+                            cidrlist: '10.2.1.0/24',
+                            protocol: 'UDP',
+                            startport: 56, endport: 72,
+                            networkid: 0,
+                            trafficType: 'Ingress'
+                          }
+                        ] 
+                      });
+                    } 
+                  }));
+                }
+              }
+            }
           }
         }
       }
