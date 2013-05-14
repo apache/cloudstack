@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -17,8 +17,6 @@
 package org.apache.cloudstack.engine.cloud.entity.dao;
 
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,20 +24,17 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
-import org.apache.cloudstack.engine.cloud.entity.VMReservationVO;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
+import org.apache.cloudstack.engine.cloud.entity.VMReservationVO;
 
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
-import com.cloud.vm.NicProfile;
 
 
 
@@ -158,7 +153,7 @@ public class VMEntityDaoImpl extends GenericDaoBase<VMEntityVO, Long> implements
             return;
         }
 
-        _vmComputeTagDao.persist(vmId, computeTags);        
+        _vmComputeTagDao.persist(vmId, computeTags);
     }
 
     private void saveVmReservation(VMEntityVO vm) {
