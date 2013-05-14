@@ -98,7 +98,7 @@
   </section>
   <section>
     <title>Adding a XenServer or KVM Host</title>
-    <itemizedlist>
+    <orderedlist>
       <listitem>
         <para>If you have not already done so, install the hypervisor software on the host. You will
           need to know which version of the hypervisor software version is supported by &PRODUCT;
@@ -152,6 +152,6 @@
       <listitem>
         <para>Repeat for additional hosts. </para>
       </listitem>
-    </itemizedlist>
+    </orderedlist>
   </section>
 </section>
