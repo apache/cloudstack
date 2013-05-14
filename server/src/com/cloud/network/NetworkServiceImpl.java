@@ -3777,12 +3777,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // VALIDATE IP INFO
         // if end ip is not specified, default it to startIp
         if (!NetUtils.isValidIp(startIp)) {
-            throw new InvalidParameterValueException("Invalid format for the startIp parameter");
+            throw new InvalidParameterValueException("Invalid format for the ip address parameter");
         }
         if (endIp == null) {
             endIp = startIp;
         } else if (!NetUtils.isValidIp(endIp)) {
-            throw new InvalidParameterValueException("Invalid format for the endIp parameter");
+            throw new InvalidParameterValueException("Invalid format for the endIp address parameter");
         }
 
         String cidr = null;

@@ -176,7 +176,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Unable to find specified vpc id");
         }
 
-        if(aclId != NetworkACL.DEFAULT_DENY || aclId != NetworkACL.DEFAULT_ALLOW) {
+        if(aclId != NetworkACL.DEFAULT_DENY && aclId != NetworkACL.DEFAULT_ALLOW) {
             Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
             if(vpc == null){
                 throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
