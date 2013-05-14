@@ -8600,7 +8600,7 @@
                          dataType:"json",
                          success:function(json){
                              var dedicatedObj = json.dedicatepodresponse.host;
-                             args.response.success({data:item});
+                             args.response.success({ data: $.extend(item, dedicatedObj)});
 
                          },
 
