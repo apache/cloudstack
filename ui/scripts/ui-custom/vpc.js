@@ -152,6 +152,7 @@
 
                   addAction.action({
                     data: data,
+                    $form:args.$form,
                     context: gateways.context,
                     response: {
                       success: function(args) {

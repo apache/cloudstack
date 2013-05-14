@@ -323,23 +323,30 @@
         preFilter: function(args) {
           var $form = args.$form;
 
-          if (args.data['network-model'] == 'Basic') {
+          if (args.data['network-model'] == 'Basic') { //Basic zone
             args.$form.find('[rel=networkOfferingId]').show();
             args.$form.find('[rel=guestcidraddress]').hide();						
-						args.$form.find('[rel=ip6dns1]').hide();
-						args.$form.find('[rel=ip6dns2]').hide();
+	    
+            args.$form.find('[rel=ip6dns1]').hide();
+	    args.$form.find('[rel=ip6dns2]').hide();
           }
-          else { //args.data['network-model'] == 'Advanced'
+          else { //Advanced zone
             args.$form.find('[rel=networkOfferingId]').hide();
 						
-						if(args.data["zone-advanced-sg-enabled"] !=	"on")
+	    if(args.data["zone-advanced-sg-enabled"] !=	"on") { //Advanced SG-disabled zone
               args.$form.find('[rel=guestcidraddress]').show();
-						else //args.data["zone-advanced-sg-enabled"] ==	"on
-						  args.$form.find('[rel=guestcidraddress]').hide();
-          					  
-						args.$form.find('[rel=ip6dns1]').show();
-						args.$form.find('[rel=ip6dns2]').show();
-					}													
+              					  
+	      args.$form.find('[rel=ip6dns1]').show();
+	      args.$form.find('[rel=ip6dns2]').show();
+            }
+	    else { //Advanced SG-enabled zone
+	      args.$form.find('[rel=guestcidraddress]').hide();
+
+              args.$form.find('[rel=ip6dns1]').hide();
+	      args.$form.find('[rel=ip6dns2]').hide();
+            }
+          
+	  }													
 										
           setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
@@ -653,7 +660,18 @@
           },
           privateinterface: {
             label: 'label.private.interface'
+          },		
+					gslbprovider: {
+            label: 'GSLB service',
+            isBoolean: true,
+            isChecked: true
           },
+					gslbproviderpublicip: {
+            label: 'GSLB service Public IP'
+          },
+					gslbproviderprivateip: {
+            label: 'GSLB service Private IP'
+          },		
           numretries: {
             label: 'label.numretries',
             defaultValue: '2'
@@ -2358,6 +2376,110 @@
                             });
 														// ***** Virtual Router ***** (end) *****
 														
+							// ***** Internal LB ***** (begin) *****
+							var internalLbProviderId;
+							$.ajax({
+								url: createURL("listNetworkServiceProviders&name=Internallbvm&physicalNetworkId=" + thisPhysicalNetwork.id),
+								dataType: "json",
+								async: false,
+								success: function(json) {
+									var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+									if(items != null && items.length > 0) {
+										internalLbProviderId = items[0].id;
+									}
+								}
+							});
+							if(internalLbProviderId == null) {
+								alert("error: listNetworkServiceProviders API doesn't return internalLb provider ID");
+								return;
+							}
+
+							var internalLbElementId;
+							$.ajax({
+								url: createURL("listInternalLoadBalancerElements&nspid=" + internalLbProviderId),
+								dataType: "json",
+								async: false,
+								success: function(json) {
+									var items = json.listinternalloadbalancerelementsresponse.internalloadbalancerelement;
+									if(items != null && items.length > 0) {
+										internalLbElementId = items[0].id;
+									}
+								}
+							});
+							if(internalLbElementId == null) {
+								alert("error: listInternalLoadBalancerElements API doesn't return Internal LB Element Id");
+								return;
+							}
+
+							$.ajax({
+								url: createURL("configureInternalLoadBalancerElement&enabled=true&id=" + internalLbElementId),
+								dataType: "json",
+								async: false,
+								success: function(json) {
+									var jobId = json.configureinternalloadbalancerelementresponse.jobid;                                
+									var enableInternalLbElementIntervalID = setInterval(function() { 	
+										$.ajax({
+											url: createURL("queryAsyncJobResult&jobId="+jobId),
+											dataType: "json",
+											success: function(json) {
+												var result = json.queryasyncjobresultresponse;
+												if (result.jobstatus == 0) {
+													return; //Job has not completed
+												}
+												else {                                        
+													clearInterval(enableInternalLbElementIntervalID); 
+													
+													if (result.jobstatus == 1) { //configureVirtualRouterElement succeeded
+														$.ajax({
+															url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + internalLbProviderId),
+															dataType: "json",
+															async: false,
+															success: function(json) {
+																var jobId = json.updatenetworkserviceproviderresponse.jobid;                                             
+																var enableInternalLbProviderIntervalID = setInterval(function() { 	
+																	$.ajax({
+																		url: createURL("queryAsyncJobResult&jobId="+jobId),
+																		dataType: "json",
+																		success: function(json) {
+																			var result = json.queryasyncjobresultresponse;
+																			if (result.jobstatus == 0) {
+																				return; //Job has not completed
+																			}
+																			else {                                                      
+																				clearInterval(enableInternalLbProviderIntervalID); 
+																				
+																				if (result.jobstatus == 1) { //Internal LB has been enabled successfully
+																					//don't need to do anything here
+																				}
+																				else if (result.jobstatus == 2) {
+																					alert("failed to enable Internal LB Provider. Error: " + _s(result.jobresult.errortext));
+																				}
+																			}
+																		},
+																		error: function(XMLHttpResponse) {
+																			var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																			alert("failed to enable Internal LB Provider. Error: " + errorMsg);
+																		}
+																	});                                              
+																}, g_queryAsyncJobResultInterval); 	
+															}
+														});
+													}
+													else if (result.jobstatus == 2) {
+														alert("configureVirtualRouterElement failed. Error: " + _s(result.jobresult.errortext));
+													}
+												}
+											},
+											error: function(XMLHttpResponse) {
+												var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+												alert("configureVirtualRouterElement failed. Error: " + errorMsg);
+											}
+										});                                
+									}, g_queryAsyncJobResultInterval); 	
+								}
+							});
+							// ***** Internal LB ***** (end) *****
+                            
 														if(args.data.zone.sgEnabled != true) { //Advanced SG-disabled zone
 															// ***** VPC Virtual Router ***** (begin) *****
 															var vpcVirtualRouterProviderId;
@@ -2593,7 +2715,10 @@
           array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
           array1.push("&username=" + todb(args.data.basicPhysicalNetwork.username));
           array1.push("&password=" + todb(args.data.basicPhysicalNetwork.password));
-          array1.push("&networkdevicetype=" + todb(args.data.basicPhysicalNetwork.networkdevicetype));
+          array1.push("&networkdevicetype=" + todb(args.data.basicPhysicalNetwork.networkdevicetype));					
+					array1.push("&gslbprovider=" + (args.data.basicPhysicalNetwork.gslbprovider == "on"));
+					array1.push("&gslbproviderpublicip=" + todb(args.data.basicPhysicalNetwork.gslbproviderpublicip));
+					array1.push("&gslbproviderprivateip=" + todb(args.data.basicPhysicalNetwork.gslbproviderprivateip));
 
           //construct URL starts here
           var url = [];
@@ -3038,16 +3163,16 @@
               success: function(json) {
                 args.data.returnedGuestNetwork.returnedVlanIpRange = json.createvlaniprangeresponse.vlan;
                 
-								//when hypervisor is BareMetal (begin)   						
-								if(args.data.cluster.hypervisor == "BareMetal") {
-								  alert('Zone creation is completed. Please refresh this page.');
+								if(args.data.zone.hypervisor == "BareMetal") { //if hypervisor is BareMetal, zone creation is completed at this point.										  
+									complete({
+										data: args.data
+									});									
 								}								
 								else {
 									stepFns.addCluster({
 										data: args.data
 									});
-								}
-								//when hypervisor is BareMetal (end)   
+								}								
               },
               error: function(XMLHttpResponse) {
                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);

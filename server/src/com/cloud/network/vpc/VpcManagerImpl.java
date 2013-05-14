@@ -44,6 +44,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.event.ActionEvent;
@@ -92,6 +93,7 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -115,7 +117,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -175,12 +176,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     ResourceLimitService _resourceLimitMgr;
     @Inject
     VpcServiceMapDao _vpcSrvcDao;
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
-    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp);
+    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler);
  
+
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
@@ -202,6 +208,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (svc == Service.Lb) {
                     Set<Provider> lbProviders = new HashSet<Provider>();
                     lbProviders.add(Provider.VPCVirtualRouter);
+                    lbProviders.add(Provider.InternalLbVm);
                     svcProviderMap.put(svc, lbProviders);
                 } else {
                     svcProviderMap.put(svc, defaultProviders);
@@ -210,7 +217,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, 
                     true, State.Enabled);
         }
-                
+
+        //configure default vpc offering with Netscaler as LB Provider
+        if (_vpcOffDao.findByUniqueName(VpcOffering.defaultVPCNSOfferingName ) == null) {
+            s_logger.debug("Creating default VPC offering with Netscaler as LB Provider" + VpcOffering.defaultVPCNSOfferingName);
+            Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
+            Set<Provider> defaultProviders = new HashSet<Provider>();
+            defaultProviders.add(Provider.VPCVirtualRouter);
+            for (Service svc : getSupportedServices()) {
+                if (svc == Service.Lb) {
+                    Set<Provider> lbProviders = new HashSet<Provider>();
+                    lbProviders.add(Provider.Netscaler);
+                    lbProviders.add(Provider.InternalLbVm);
+                    svcProviderMap.put(svc, lbProviders);
+                } else {
+                    svcProviderMap.put(svc, defaultProviders);
+                }
+            }
+            createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName,
+                    svcProviderMap, false, State.Enabled);
+        }
+
         txn.commit();
         
         Map<String, String> configs = _configDao.getConfiguration(params);
@@ -577,7 +604,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             // 2) If null, generate networkDomain using domain suffix from the global config variables
             if (networkDomain == null) {
-                networkDomain = "cs" + Long.toHexString(owner.getId()) + _ntwkModel.getDefaultNetworkDomain();
+                networkDomain = "cs" + Long.toHexString(owner.getId()) + _ntwkModel.getDefaultNetworkDomain(zoneId);
             }
         }
         
@@ -1033,16 +1060,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        //4) Only one network in the VPC can support LB
-        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
+        //4) Only one network in the VPC can support public LB inside the VPC. Internal LB can be supported on multiple VPC tiers
+        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb) && guestNtwkOff.getPublicLb()) {
             List<? extends Network> networks = getVpcNetworks(vpc.getId());
             for (Network network : networks) {
                 if (networkId != null && network.getId() == networkId.longValue()) {
                     //skip my own network
                     continue;
                 } else {
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
-                        throw new InvalidParameterValueException("LB service is already supported " +
+                    NetworkOffering otherOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb()) {
+                        throw new InvalidParameterValueException("Public LB service is already supported " +
                         		"by network " + network + " in VPC " + vpc);
                     }
                 }
@@ -1079,6 +1107,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (guestNtwkOff.isConserveMode()) {
             throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
         }
+
+       //5) If Netscaler is LB provider make sure it is in dedicated mode
+        if ( providers.contains(Provider.Netscaler)  && !guestNtwkOff.getDedicatedLB() ) {
+            throw new InvalidParameterValueException("Netscaler only with Dedicated LB can belong to VPC");
+        }
+        return ;
     }
 
     @DB
@@ -1280,8 +1314,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating vpc private gateway", create=true)
-    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, 
-            String gateway, String netmask, long gatewayOwnerId) throws ResourceAllocationException, 
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress,
+                                                  String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
         
         //Validate parameters
@@ -1307,11 +1341,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         //1) create private network
         String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
         Network privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
-                vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId);
+                vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat);
         
         //2) create gateway entry
         VpcGatewayVO gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
-                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId());
+                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat);
         _vpcGatewayDao.persist(gatewayVO);
         
         s_logger.debug("Created vpc gateway entry " + gatewayVO);
@@ -1653,6 +1687,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (NetUtils.isNetworksOverlap(vpc.getCidr(), NetUtils.getLinkLocalCIDR())) {
             throw new InvalidParameterValueException("CIDR should be outside of link local cidr " + NetUtils.getLinkLocalCIDR());
         }
+        
+        //3) Verify against blacklisted routes
+        if (isCidrBlacklisted(cidr, vpc.getZoneId())) {
+            throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the blacklisted routes of the zone the VPC belongs to");
+        }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1671,6 +1710,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         txn.commit();
 
         return newRoute;
+    }
+
+    protected boolean isCidrBlacklisted(String cidr, long zoneId) {
+        String routesStr = _configServer.getConfigValue(Config.BlacklistedRoutes.key(), Config.ConfigurationParameterScope.zone.toString(), zoneId);
+        if (routesStr != null && !routesStr.isEmpty()) {
+            String[] cidrBlackList = routesStr.split(",");
+            
+            if (cidrBlackList != null && cidrBlackList.length > 0) {
+                for (String blackListedRoute : cidrBlackList) {
+                    if (NetUtils.isNetworksOverlap(blackListedRoute, cidr)) {
+                        return true;
+                    }
+                }
+            }
+        }
+       
+        return false;
     }
 
     @Override

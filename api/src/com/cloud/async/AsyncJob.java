@@ -32,6 +32,39 @@ public interface AsyncJob extends Identity, InternalIdentity {
     String getDispatcher();
 
     int getPendingSignals();
+    public enum Type {
+        None,
+        VirtualMachine,
+        DomainRouter,
+        Volume,
+        ConsoleProxy,
+        Snapshot,
+        Template,
+        Iso,
+        SystemVm,
+        Host,
+        StoragePool,
+        IpAddress,
+        SecurityGroup,
+        PhysicalNetwork,
+        TrafficType,
+        PhysicalNetworkServiceProvider,
+        FirewallRule,
+        Account,
+        User,
+        PrivateGateway,
+        StaticRoute,
+        Counter,
+        Condition,
+        AutoScalePolicy,
+        AutoScaleVmProfile,
+        AutoScaleVmGroup,
+        GlobalLoadBalancerRule,
+        LoadBalancerRule,
+        AffinityGroup,
+        InternalLbVm,
+        DedicatedGuestVlanRange
+    }
     
     long getUserId();
 

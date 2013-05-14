@@ -102,7 +102,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected StorageManager _storageMgr;
     @Inject DataStoreManager dataStoreMgr;
     @Inject protected ClusterDetailsDao _clusterDetailsDao;
-    
+
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
 		return _storagePoolAllocators;
@@ -157,41 +157,48 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         if(plan.getHostId() != null && haVmTag == null){
             Long hostIdSpecified = plan.getHostId();
             if (s_logger.isDebugEnabled()){
-                s_logger.debug("DeploymentPlan has host_id specified, making no checks on this host, looks like admin test: "+hostIdSpecified);
+                s_logger.debug("DeploymentPlan has host_id specified, choosing this host and making no checks on this host: "
+                        + hostIdSpecified);
             }
             HostVO host = _hostDao.findById(hostIdSpecified);
-            if (s_logger.isDebugEnabled()) {
-                if(host == null){
-                    s_logger.debug("The specified host cannot be found");
-                }else{
+            if (host == null) {
+                s_logger.debug("The specified host cannot be found");
+            } else if (avoid.shouldAvoid(host)) {
+                s_logger.debug("The specified host is in avoid set");
+            } else {
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Looking for suitable pools for this host under zone: "+host.getDataCenterId() +", pod: "+ host.getPodId()+", cluster: "+ host.getClusterId());
                 }
-            }
 
-            //search for storage under the zone, pod, cluster of the host.
-            DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), hostIdSpecified, plan.getPoolId(), null, plan.getReservationContext());
+                // search for storage under the zone, pod, cluster of the host.
+                DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(),
+                        host.getClusterId(), hostIdSpecified, plan.getPoolId(), null, plan.getReservationContext());
 
-            Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
-            Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
-            List<Volume> readyAndReusedVolumes = result.second();
+                Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile,
+                        lastPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
+                Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+                List<Volume> readyAndReusedVolumes = result.second();
 
-            //choose the potential pool for this VM for this host
-            if(!suitableVolumeStoragePools.isEmpty()){
-                List<Host> suitableHosts = new ArrayList<Host>();
-                suitableHosts.add(host);
+                // choose the potential pool for this VM for this host
+                if (!suitableVolumeStoragePools.isEmpty()) {
+                    List<Host> suitableHosts = new ArrayList<Host>();
+                    suitableHosts.add(host);
 
-                Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools);
-                if(potentialResources != null){
-                    Pod pod = _podDao.findById(host.getPodId());
-                    Cluster cluster = _clusterDao.findById(host.getClusterId());
-                    Map<Volume, StoragePool> storageVolMap = potentialResources.second();
-                    // remove the reused vol<->pool from destination, since we don't have to prepare this volume.
-                    for(Volume vol : readyAndReusedVolumes){
-                        storageVolMap.remove(vol);
+                    Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
+                            suitableHosts, suitableVolumeStoragePools);
+                    if (potentialResources != null) {
+                        Pod pod = _podDao.findById(host.getPodId());
+                        Cluster cluster = _clusterDao.findById(host.getClusterId());
+                        Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+                        // remove the reused vol<->pool from destination, since
+                        // we don't have to prepare this volume.
+                        for (Volume vol : readyAndReusedVolumes) {
+                            storageVolMap.remove(vol);
+                        }
+                        DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap);
+                        s_logger.debug("Returning Deployment Destination: " + dest);
+                        return dest;
                     }
-                    DeployDestination dest =  new DeployDestination(dc, pod, cluster, host, storageVolMap);
-                    s_logger.debug("Returning Deployment Destination: "+ dest);
-                    return dest;
                 }
             }
             s_logger.debug("Cannnot deploy to specified host, returning.");
@@ -407,9 +414,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     }
 
     /**
-     * This method should reorder the given list of Cluster Ids by applying any necessary heuristic 
+     * This method should reorder the given list of Cluster Ids by applying any necessary heuristic
      * for this planner
-     * For FirstFitPlanner there is no specific heuristic to be applied 
+     * For FirstFitPlanner there is no specific heuristic to be applied
      * other than the capacity based ordering which is done by default.
      * @return List<Long> ordered list of Cluster Ids
      */
@@ -419,9 +426,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     }
 
     /**
-     * This method should reorder the given list of Pod Ids by applying any necessary heuristic 
+     * This method should reorder the given list of Pod Ids by applying any necessary heuristic
      * for this planner
-     * For FirstFitPlanner there is no specific heuristic to be applied 
+     * For FirstFitPlanner there is no specific heuristic to be applied
      * other than the capacity based ordering which is done by default.
      * @return List<Long> ordered list of Pod Ids
      */
@@ -443,33 +450,17 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     private List<Long> listDisabledPods(long zoneId){
         List<Long> disabledPods = _podDao.listDisabledPods(zoneId);
         return disabledPods;
-    }    
-
-    private Map<Short,Float> getCapacityThresholdMap(){
-        // Lets build this real time so that the admin wont have to restart MS if he changes these values
-        Map<Short,Float> disableThresholdMap = new HashMap<Short, Float>();
-
-        String cpuDisableThresholdString = _configDao.getValue(Config.CPUCapacityDisableThreshold.key());
-        float cpuDisableThreshold = NumbersUtil.parseFloat(cpuDisableThresholdString, 0.85F);
-        disableThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, cpuDisableThreshold);
-
-        String memoryDisableThresholdString = _configDao.getValue(Config.MemoryCapacityDisableThreshold.key());
-        float memoryDisableThreshold = NumbersUtil.parseFloat(memoryDisableThresholdString, 0.85F);
-        disableThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, memoryDisableThreshold);
-
-        return disableThresholdMap;
     }
 
     private List<Short> getCapacitiesForCheckingThreshold(){
-        List<Short> capacityList = new ArrayList<Short>();    	
+        List<Short> capacityList = new ArrayList<Short>();
         capacityList.add(Capacity.CAPACITY_TYPE_CPU);
-        capacityList.add(Capacity.CAPACITY_TYPE_MEMORY);    	
+        capacityList.add(Capacity.CAPACITY_TYPE_MEMORY);
         return capacityList;
     }
 
     private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
 
-        Map<Short,Float> capacityThresholdMap = getCapacityThresholdMap();
         List<Short> capacityList = getCapacitiesForCheckingThreshold();
         List<Long> clustersCrossingThreshold = new ArrayList<Long>();
 
@@ -479,30 +470,29 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
         // 	For each capacity get the cluster list crossing the threshold and remove it from the clusterList that will be used for vm allocation.
         for(short capacity : capacityList){
-        	
+
         	if (clusterListForVmAllocation == null || clusterListForVmAllocation.size() == 0){
            		return;
            	}
             if (capacity == Capacity.CAPACITY_TYPE_CPU) {
-           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
-           				capacityThresholdMap.get(capacity), cpu_requested);
+                clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), Config.CPUCapacityDisableThreshold.key(), cpu_requested);
             }
             else if (capacity == Capacity.CAPACITY_TYPE_MEMORY ) {
                 clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
-                        capacityThresholdMap.get(capacity), ram_requested );
+                        Config.MemoryCapacityDisableThreshold.key(), ram_requested );
             }
 
-           	
+
            	if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0){
                	// addToAvoid Set
            		avoid.addClusterList(clustersCrossingThreshold);
            		// Remove clusters crossing disabled threshold
                	clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
-               	
-           		s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
-           				" crosses the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping these clusters");
+
+                   s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
+                           " crosses the disable capacity threshold defined at each cluster/ at global value for capacity Type : " + capacity + ", skipping these clusters");
            	}
-           	           	           	
+
         }
     }
 
@@ -652,7 +642,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             public int compare(Volume v1, Volume v2) {
                 if(v1.getSize() < v2.getSize())
                     return 1;
-                else 
+                else
                     return -1;
             }
         });
@@ -741,37 +731,43 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             //If the plan specifies a poolId, it means that this VM's ROOT volume is ready and the pool should be reused.
             //In this case, also check if rest of the volumes are ready and can be reused.
             if(plan.getPoolId() != null){
-                s_logger.debug("Volume has pool already allocated, checking if pool can be reused, poolId: "+toBeCreated.getPoolId());
+                s_logger.debug("Volume has pool(" + plan.getPoolId() + ") already allocated, checking if pool can be reused, poolId: "+toBeCreated.getPoolId());
                 List<StoragePool> suitablePools = new ArrayList<StoragePool>();
                 StoragePool pool = null;
                 if(toBeCreated.getPoolId() != null){
+                    s_logger.debug("finding pool by id '" + toBeCreated.getPoolId() + "'");
                     pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
                 }else{
+                    s_logger.debug("finding pool by id '" + plan.getPoolId() + "'");
                     pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
                 }
-                
-                if(!pool.isInMaintenance()){
-                    if(!avoid.shouldAvoid(pool)){
-                        long exstPoolDcId = pool.getDataCenterId();
 
-                        long exstPoolPodId = pool.getPodId() != null ? pool.getPodId() : -1;
-                        long exstPoolClusterId = pool.getClusterId() != null ? pool.getClusterId() : -1;
-                        if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){
-                            s_logger.debug("Planner need not allocate a pool for this volume since its READY");
-                            suitablePools.add(pool);
-                            suitableVolumeStoragePools.put(toBeCreated, suitablePools);
-                            if (!(toBeCreated.getState() == Volume.State.Allocated || toBeCreated.getState() == Volume.State.Creating)) {
-                                readyAndReusedVolumes.add(toBeCreated);
+                if(pool != null){
+                    if(!pool.isInMaintenance()){
+                        if(!avoid.shouldAvoid(pool)){
+                            long exstPoolDcId = pool.getDataCenterId();
+
+                            long exstPoolPodId = pool.getPodId() != null ? pool.getPodId() : -1;
+                            long exstPoolClusterId = pool.getClusterId() != null ? pool.getClusterId() : -1;
+                            if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){
+                                s_logger.debug("Planner need not allocate a pool for this volume since its READY");
+                                suitablePools.add(pool);
+                                suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+                                if (!(toBeCreated.getState() == Volume.State.Allocated || toBeCreated.getState() == Volume.State.Creating)) {
+                                    readyAndReusedVolumes.add(toBeCreated);
+                                }
+                                continue;
+                            }else{
+                                s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
                             }
-                            continue;
                         }else{
-                            s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
+                            s_logger.debug("Pool of the volume is in avoid set, need to reallocate a pool for this volume");
                         }
                     }else{
-                        s_logger.debug("Pool of the volume is in avoid set, need to reallocate a pool for this volume");
+                        s_logger.debug("Pool of the volume is in maintenance, need to reallocate a pool for this volume");
                     }
                 }else{
-                    s_logger.debug("Pool of the volume is in maintenance, need to reallocate a pool for this volume");
+                    s_logger.debug("Unable to find pool by provided id");
                 }
             }
 
@@ -781,13 +777,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             if(!isRootAdmin(plan.getReservationContext())){
                 if(!isEnabledForAllocation(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId())){
                     if(s_logger.isDebugEnabled()){
-                        s_logger.debug("Cannot allocate new storagepool for this volume in this cluster, allocation state is disabled");                    
+                        s_logger.debug("Cannot allocate new storagepool for this volume in this cluster, allocation state is disabled");
                         s_logger.debug("Cannot deploy to this specified plan, allocation state is disabled, returning.");
                     }
-                    //Cannot find suitable storage pools under this cluster for this volume since allocation_state is disabled. 
+                    //Cannot find suitable storage pools under this cluster for this volume since allocation_state is disabled.
                     //- remove any suitable pools found for other volumes.
                     //All volumes should get suitable pools under this cluster; else we cant use this cluster.
-                    suitableVolumeStoragePools.clear();                
+                    suitableVolumeStoragePools.clear();
                     break;
                 }
             }
@@ -877,7 +873,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         super.configure(name, params);
         _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
         return true;
-    }    
+    }
 
     private boolean isEnabledForAllocation(long zoneId, Long podId, Long clusterId){
         // Check if the zone exists in the system

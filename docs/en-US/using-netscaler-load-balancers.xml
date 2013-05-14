@@ -3,58 +3,88 @@
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
-
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
 -->
-
 <section id="using-netscaler-load-balancers">
-    <title>About Using a NetScaler Load Balancer</title>
-    <para>Citrix NetScaler is supported as an external network element for load balancing in zones that use advanced networking (also called advanced zones). Set up an external load balancer when you want to provide load balancing through means other than &PRODUCT;’s provided virtual router.</para>
-    <para>The NetScaler can be set up in direct (outside the firewall) mode. It must be added before any load balancing rules are deployed on guest VMs in the zone.</para>
-    <para>The functional behavior of the NetScaler with &PRODUCT; is the same as described in the &PRODUCT; documentation for using an F5 external load balancer. The only exception is that the F5 supports routing domains, and NetScaler does not. NetScaler can not yet be used as a firewall.</para>
-    <para>The Citrix NetScaler comes in three varieties. The following table summarizes how these variants are treated in &PRODUCT;.</para>
-    <informaltable>
-        <tgroup cols="3" align="left" colsep="1" rowsep="1">
-            <thead>
-                <row>
-                    <entry><para>NetScaler ADC Type</para></entry>
-                    <entry><para>Description of Capabilities</para></entry>
-                    <entry><para>&PRODUCT; Supported Features</para></entry>
-                </row>    
-            </thead>
-            <tbody>
-                <row>
-                    <entry><para>MPX</para></entry>
-                    <entry><para>Physical appliance. Capable of deep packet inspection. Can act as application firewall and load balancer</para></entry>
-                    <entry><para>In advanced zones, load balancer functionality fully supported without limitation. In basic zones, static NAT, elastic IP (EIP), and elastic load balancing (ELB) are also provided</para></entry>
-                    
-                </row>
-                <row>
-                    <entry><para>VPX</para></entry>
-                    <entry><para>Virtual appliance. Can run as VM on XenServer, ESXi, and Hyper-V hypervisors. Same functionality as MPX</para></entry>
-                    <entry><para>Supported only on ESXi. Same functional support as for MPX. &PRODUCT; will treat VPX and MPX as the same device type</para></entry>
-                </row>
-                <row>
-                    <entry><para>SDX</para></entry>
-                    <entry><para>Physical appliance. Can create multiple fully isolated VPX instances on a single appliance to support multi-tenant usage</para></entry>
-                    <entry><para>&PRODUCT; will dynamically provision, configure, and manage the lifecycle of VPX instances on the SDX. Provisioned instances are added into &PRODUCT; automatically – no manual configuration by the administrator is required. Once a VPX instance is added into &PRODUCT;, it is treated the same as a VPX on an ESXi host.</para></entry>
-                </row>
-            </tbody>
-        </tgroup>
-    </informaltable>
+  <title>About Using a NetScaler Load Balancer</title>
+  <para>Citrix NetScaler is supported as an external network element for load balancing in zones
+    that use isolated networking in advanced zones. Set up an external load balancer when you want
+    to provide load balancing through means other than &PRODUCT;’s provided virtual router.</para>
+  <note>
+    <para>In a Basic zone, load balancing service is supported only if Elastic IP or Elastic LB
+      services are enabled.</para>
+  </note>
+  <para>When NetScaler load balancer is used to provide EIP or ELB services in a Basic zone, ensure
+    that all guest VM traffic must enter and exit through the NetScaler device. When inbound traffic
+    goes through the NetScaler device, traffic is routed by using the NAT protocol depending on the
+    EIP/ELB configured on the public IP to the private IP. The traffic that is originated from the
+    guest VMs usually goes through the layer 3 router. To ensure that outbound traffic goes through
+    NetScaler device providing EIP/ELB, layer 3 router must have a policy-based routing. A
+    policy-based route must be set up so that all traffic originated from the guest VM's are
+    directed to NetScaler device. This is required to ensure that the outbound traffic from the
+    guest VM's is routed to a public IP by using NAT.For more information on Elastic IP, see <xref
+      linkend="elastic-ip"/>. </para>
+  <para>The NetScaler can be set up in direct (outside the firewall) mode. It must be added before
+    any load balancing rules are deployed on guest VMs in the zone.</para>
+  <para>The functional behavior of the NetScaler with &PRODUCT; is the same as described in the
+    &PRODUCT; documentation for using an F5 external load balancer. The only exception is that the
+    F5 supports routing domains, and NetScaler does not. NetScaler can not yet be used as a
+    firewall.</para>
+  <para>To install and enable an external load balancer for &PRODUCT; management, see <phrase
+      condition="install"><xref linkend="external-guest-lb-integration"/>.</phrase>
+    <phrase condition="admin">External Guest Load Balancer Integration in the Installation
+      Guide.</phrase>
+  </para>
+  <para>The Citrix NetScaler comes in three varieties. The following table summarizes how these
+    variants are treated in &PRODUCT;.</para>
+  <informaltable>
+    <tgroup cols="3" align="left" colsep="1" rowsep="1">
+      <thead>
+        <row>
+          <entry><para>NetScaler ADC Type</para></entry>
+          <entry><para>Description of Capabilities</para></entry>
+          <entry><para>&PRODUCT; Supported Features</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para>MPX</para></entry>
+          <entry><para>Physical appliance. Capable of deep packet inspection. Can act as application
+              firewall and load balancer</para></entry>
+          <entry><para>In advanced zones, load balancer functionality fully supported without
+              limitation. In basic zones, static NAT, elastic IP (EIP), and elastic load balancing
+              (ELB) are also provided.</para></entry>
+        </row>
+        <row>
+          <entry><para>VPX</para></entry>
+          <entry><para>Virtual appliance. Can run as VM on XenServer, ESXi, and Hyper-V hypervisors.
+              Same functionality as MPX</para></entry>
+          <entry><para>Supported on ESXi and XenServer. Same functional support as for MPX.
+              &PRODUCT; will treat VPX and MPX as the same device type.</para></entry>
+        </row>
+        <row>
+          <entry><para>SDX</para></entry>
+          <entry><para>Physical appliance. Can create multiple fully isolated VPX instances on a
+              single appliance to support multi-tenant usage</para></entry>
+          <entry><para>&PRODUCT; will dynamically provision, configure, and manage the life cycle of
+              VPX instances on the SDX. Provisioned instances are added into &PRODUCT; automatically
+              – no manual configuration by the administrator is required. Once a VPX instance is
+              added into &PRODUCT;, it is treated the same as a VPX on an ESXi host.</para></entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
 </section>

@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="delete-event-alerts">
+  <title>Deleting and Archiving Events and Alerts</title>
+  <para>&PRODUCT; provides you the ability to delete or archive the existing alerts and events that
+    you no longer want to implement. You can regularly delete or archive any alerts or events that
+    you cannot, or do not want to resolve from the database.</para>
+  <para>You can delete or archive individual alerts or events either directly by using the Quickview
+    or by using the Details page. If you want to delete multiple alerts or events at the same time,
+    you can use the respective context menu. You can delete alerts or events by category for a time
+    period.</para>
+  <para>In order to support the delete or archive alerts, the following global parameters have been
+    added:</para>
+  <itemizedlist>
+    <listitem>
+      <para><emphasis role="bold">alert.purge.delay</emphasis>: The alerts older than specified
+        number of days are purged. Set the value to 0 to never purge alerts automatically.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">alert.purge.interval</emphasis>: The interval in seconds to wait
+        before running the alert purge thread. The default is 86400 seconds (one day).</para>
+    </listitem>
+  </itemizedlist>
+  <note>
+    <para>Archived alerts or events cannot be viewed in the UI, or by using the API. They are
+      maintained in the database for auditing or compliance purposes.</para>
+  </note>
+  <formalpara>
+    <title>Permissions</title>
+    <para>Consider the following:</para>
+  </formalpara>
+  <itemizedlist>
+    <listitem>
+      <para>The root admin can delete or archive one or multiple alerts or events.</para>
+    </listitem>
+    <listitem>
+      <para>The domain admin or end user can delete or archive one or multiple events.</para>
+    </listitem>
+  </itemizedlist>
+</section>

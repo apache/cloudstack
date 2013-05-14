@@ -52,7 +52,7 @@
     how to <ulink url="http://rlandmann.fedorapeople.org/pug/sect-Users_Guide-Preparing_a_document_for_translation.html">prepare</ulink> a document for translation.</para>
     <para>The basic command to execute to build the pot files for the developer guide is:</para>
     <programlisting>publican update_pot --config=publican-devguide.cfg</programlisting>
-    <para>This will create a pot directory with pot files in it, one for each corresponding xml files needed to build the guide. Once genereated, all pots files need to be configured for translation using transifex this is best done by using the transifex client that you can install with the following command (For RHEL and its derivatives):</para>
+    <para>This will create a pot directory with pot files in it, one for each corresponding xml files needed to build the guide. Once generated, all pots files need to be configured for translation using transifex this is best done by using the transifex client that you can install with the following command (For RHEL and its derivatives):</para>
     <programlisting>yum install transifex-client</programlisting>
     <para>The transifex client is also available via PyPi and you can install it like this:</para>
     <programlisting>easy_install transifex-client</programlisting>

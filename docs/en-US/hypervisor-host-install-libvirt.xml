@@ -24,11 +24,11 @@
 
 <section id="hypervisor-host-install-libvirt">
     <title>Install and Configure libvirt</title>
-    <para>&PRODUCT; uses libvirt for managing virtual machines. Therefore it is vital that libvirt is configured correctly. Libvirt is a dependency of cloud-agent and should already be installed.</para>
+    <para>&PRODUCT; uses libvirt for managing virtual machines. Therefore it is vital that libvirt is configured correctly. Libvirt is a dependency of cloudstack-agent and should already be installed.</para>
     <orderedlist>
         <listitem>
             <para>In order to have live migration working libvirt has to listen for unsecured TCP connections. We also need to turn off libvirts attempt to use Multicast DNS advertising. Both of these settings are in <filename>/etc/libvirt/libvirtd.conf</filename></para>
-            <para>Set the following paramaters:</para>
+            <para>Set the following parameters:</para>
             <programlisting>listen_tls = 0</programlisting>
             <programlisting>listen_tcp = 1</programlisting>
             <programlisting>tcp_port = "16509"</programlisting>

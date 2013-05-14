@@ -55,6 +55,8 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the physical network")
     private String vlan;
+    @Parameter(name=ApiConstants.REMOVE_VLAN, type = CommandType.STRING, description ="The vlan range we want to remove")
+    private String removevlan;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -80,6 +82,10 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
         return vlan;
     }
 
+    public String getRemoveVlan(){
+        return removevlan;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -96,7 +102,7 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(),getNetworkSpeed(), getTags(), getVlan(), getState());
+        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(),getNetworkSpeed(), getTags(), getVlan(), getState(), getRemoveVlan());
         PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

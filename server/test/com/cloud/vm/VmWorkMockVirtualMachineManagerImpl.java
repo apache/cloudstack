@@ -24,8 +24,10 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -49,6 +51,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -193,6 +196,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 		return null;
 	}
 	
+    @Override
     public <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm) {
 		// TODO Auto-generated method stub
     	return null;
@@ -414,8 +418,15 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 	
 	@Override
-    public <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account) 
+    public <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account)
         throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
     	return true;
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T migrateWithStorage(T vm, long srcId, long destId, Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException,
+            ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

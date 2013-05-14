@@ -25,11 +25,11 @@
 <section id="source-build">
     <title>Building &PRODUCT; from Source</title>
     <note>
-        <para>Prior to the 4.0.0 incubating release, Ant was used to build &PRODUCT;. Starting with 4.0.0 a migration to Maven is underway.</para>
+        <para>Prior to the 4.0.0 incubating release, Ant was used to build &PRODUCT;. A migration to Maven started in the 4.0.0 cycle, and has completed in 4.1.0.</para>
         <para>The website and the wiki contain up to date information on the build procedure at:</para>
             <itemizedlist>
                 <listitem><para><ulink url="https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html">https://cwiki.apache.org/CLOUDSTACK/building-with-maven.html</ulink></para></listitem>
-                <listitem><para><ulink url="http://incubator.apache.org/cloudstack/develop/environment.html">http://incubator.apache.org/cloudstack/develop/environment.html</ulink></para></listitem>
+                <listitem><para><ulink url="https://cwiki.apache.org/CLOUDSTACK/setting-up-cloudstack-development-environment.html">https://cwiki.apache.org/CLOUDSTACK/setting-up-cloudstack-development-environment.html</ulink></para></listitem>
             </itemizedlist>
     </note>
     <para>The overarching steps to build &PRODUCT; are:.</para>

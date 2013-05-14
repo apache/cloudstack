@@ -194,21 +194,10 @@ public class PublicIp implements PublicIpAddress {
     public boolean getSystem() {
         return _addr.getSystem();
     }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.IpAddress#getVpcId()
-     */
+	
     @Override
     public Long getVpcId() {
        return _addr.getVpcId();
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.IpAddress#setVpcId(java.lang.Long)
-     */
-    @Override
-    public void setVpcId(Long vpcId) {
-        _addr.setVpcId(vpcId);
     }
 
     @Override
@@ -229,10 +218,5 @@ public class PublicIp implements PublicIpAddress {
     @Override
     public String getVmIp() {
         return _addr.getVmIp();
-    }
-
-    @Override
-    public void setVmIp(String vmIp) {
-        _addr.setVmIp(vmIp);
     }
 }

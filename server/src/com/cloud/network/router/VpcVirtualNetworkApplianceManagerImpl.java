@@ -440,7 +440,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             defaultDns2 = guestNic.getDns2();
         }
         
-        Nic nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
+        Nic nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
         String networkDomain = network.getNetworkDomain();
         String dhcpRange = getGuestDhcpRange(guestNic, network, _configMgr.getZone(network.getDataCenterId()));
         
@@ -1178,8 +1178,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
             for (final PrivateIpAddress ipAddr : ipAddrList) {
                 Network network = _networkModel.getNetwork(ipAddr.getNetworkId());
-                IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false, 
-                        false, ipAddr.getVlanTag(), ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(),
+                IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false,
+                        ipAddr.getSourceNat(), ipAddr.getVlanTag(), ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(),
                         null, false);
 
                 ip.setTrafficType(network.getTrafficType());

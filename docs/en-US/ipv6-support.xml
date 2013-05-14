@@ -75,8 +75,8 @@
       </listitem>
       <listitem>
         <para>Use the System VM template exclusively designed to support IPv6. Download the System
-          VM template from <ulink url="http://nfs1.lab.vmops.com/templates/routing/debian/ipv6/"
-            >http://nfs1.lab.vmops.com/templates/routing/debian/ipv6/</ulink>.</para>
+          VM template from <ulink url="http://cloudstack.apt-get.eu/systemvm/"
+            >http://cloudstack.apt-get.eu/systemvm/</ulink>.</para>
       </listitem>
       <listitem>
         <para>The concept of Default Network applies to IPv6 networks. However, unlike IPv4

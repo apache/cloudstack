@@ -34,7 +34,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-@APICommand(name = "deleteTags", description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "Burbank")
+@APICommand(name = "deleteTags", description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0")
 public class DeleteTagsCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteTagsCmd.class.getName());
 

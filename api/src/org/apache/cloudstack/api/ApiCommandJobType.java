@@ -44,5 +44,9 @@ public enum ApiCommandJobType {
     AutoScalePolicy,
     AutoScaleVmProfile,
     AutoScaleVmGroup,
-    GlobalLoadBalancerRule
+    GlobalLoadBalancerRule,
+    LoadBalancerRule,
+    AffinityGroup,
+    InternalLbVm,
+    DedicatedGuestVlanRange
 }

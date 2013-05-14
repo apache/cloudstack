@@ -728,7 +728,11 @@
     };
     $dashboardNavItem.bind('click', event);
 
-    pageElems.selector(args);
+    if (args.alreadySelected) {
+      showDashboard();
+    } else {
+      pageElems.selector(args);
+    }
   };
 
   /**

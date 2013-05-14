@@ -1,3 +1,4 @@
+
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -28,6 +29,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -541,8 +543,15 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
                 _fwRulesDao.loadSourceCidrs((FirewallRuleVO)rule);
             }
-            IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-            FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
+            FirewallRuleTO ruleTO;
+            if (rule.getPurpose() == Purpose.Firewall && rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                String guestVlanTag = network.getBroadcastUri().getHost();
+                String guestCidr = network.getCidr();
+                ruleTO = new FirewallRuleTO(rule, guestVlanTag, rule.getTrafficType());
+            } else {
+                IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
+                ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
+            }
             rulesTO.add(ruleTO);
         }
 
@@ -707,8 +716,17 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         if (pNetwork.getVnet() == null) {
             throw new CloudRuntimeException("Could not find vlan range for physical Network " + physicalNetworkId + ".");
         }
-        String vlanRange[] = pNetwork.getVnet().split("-");
-        int lowestVlanTag = Integer.valueOf(vlanRange[0]);
+        Integer lowestVlanTag = null;
+        List<Pair<Integer, Integer>> vnetList = pNetwork.getVnet();
+        //finding the vlanrange in which the vlanTag lies.
+        for (Pair <Integer,Integer> vnet : vnetList){
+            if (vlanTag >= vnet.first() && vlanTag <= vnet.second()){
+                lowestVlanTag = vnet.first();
+            }
+        }
+        if (lowestVlanTag == null) {
+            throw new InvalidParameterValueException ("The vlan tag does not belong to any of the existing vlan ranges");
+        }
         return vlanTag - lowestVlanTag;
     }
     

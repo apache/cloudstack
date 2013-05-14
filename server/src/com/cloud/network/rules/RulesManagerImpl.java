@@ -50,8 +50,11 @@ import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
@@ -77,15 +80,18 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value = { RulesManager.class, RulesService.class })
@@ -102,6 +108,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     IPAddressDao _ipAddressDao;
     @Inject
     UserVmDao _vmDao;
+    @Inject
+    VMInstanceDao _vmInstanceDao;
     @Inject
     AccountManager _accountMgr;
     @Inject
@@ -128,6 +136,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     VpcManager _vpcMgr;
     @Inject
     NicSecondaryIpDao _nicSecondaryDao;
+    @Inject
+    LoadBalancerVMMapDao _loadBalancerVMMapDao;
 
     @Override
     public void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) {
@@ -416,7 +426,12 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ENABLE_STATIC_NAT, eventDescription = "enabling static nat")
-    public boolean enableStaticNat(long ipId, long vmId, long networkId, boolean isSystemVm, String vmGuestIp)
+    public boolean enableStaticNat(long ipId, long vmId, long networkId, String vmGuestIp)
+            throws NetworkRuleConflictException, ResourceUnavailableException {
+        return enableStaticNat(ipId, vmId, networkId, false, vmGuestIp);
+    }
+
+    private boolean enableStaticNat(long ipId, long vmId, long networkId, boolean isSystemVm, String vmGuestIp)
             throws NetworkRuleConflictException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
@@ -1215,11 +1230,13 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         Network guestNetwork = _networkModel.getNetwork(ipAddress.getAssociatedWithNetworkId());
         NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
         if (offering.getElasticIp()) {
-            getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
-            return true;
-        } else {
-            return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
+            if (offering.getAssociatePublicIP()) {
+                getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
+                return true;
+            }
         }
+
+        return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
     }
 
     @Override
@@ -1368,7 +1385,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new CloudRuntimeException("Ip address is not associated with any network");
         }
 
-        UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
+        VMInstanceVO vm = _vmInstanceDao.findById(sourceIp.getAssociatedWithVmId());
         Network network = _networkModel.getNetwork(networkId);
         if (network == null) {
             CloudRuntimeException ex = new CloudRuntimeException("Unable to find an ip address to map to specified vm id");
@@ -1410,6 +1427,11 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             Network guestNetwork = _networkModel.getNetwork(nic.getNetworkId());
             NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
             if (offering.getElasticIp()) {
+                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
+                // for user VM's associate public IP only if offering is marked to associate a public IP by default on start of VM
+                if (!isSystemVM && !offering.getAssociatePublicIP()) {
+                    continue;
+                }
                 // check if there is already static nat enabled
                 if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null && !getNewIp) {
                     s_logger.debug("Vm " + vm + " already has ip associated with it in guest network " + guestNetwork);
@@ -1424,7 +1446,6 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
                 s_logger.debug("Allocated system ip " + ip + ", now enabling static nat on it for vm " + vm);
 
-                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
                 try {
                     success = enableStaticNat(ip.getId(), vm.getId(), guestNetwork.getId(), isSystemVM, null);
                 } catch (NetworkRuleConflictException ex) {
@@ -1451,5 +1472,37 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     protected void removePFRule(PortForwardingRuleVO rule) {
         _portForwardingDao.remove(rule.getId());
+    }
+    
+    @Override
+    public List<FirewallRuleVO> listAssociatedRulesForGuestNic(Nic nic){
+        List<FirewallRuleVO> result = new ArrayList<FirewallRuleVO>();
+        // add PF rules
+        result.addAll(_portForwardingDao.listByDestIpAddr(nic.getIp4Address()));
+        // add static NAT rules
+        List<FirewallRuleVO> staticNatRules = _firewallDao.listStaticNatByVmId(nic.getInstanceId());
+        for(FirewallRuleVO rule : staticNatRules){
+            if(rule.getNetworkId() == nic.getNetworkId())
+                result.add(rule);
+        }
+        List<? extends IpAddress> staticNatIps = _ipAddressDao.listStaticNatPublicIps(nic.getNetworkId());
+        for(IpAddress ip : staticNatIps){
+            if(ip.getVmIp() != null && ip.getVmIp().equals(nic.getIp4Address())){
+                VMInstanceVO vm = _vmInstanceDao.findById(nic.getInstanceId());
+                // generate a static Nat rule on the fly because staticNATrule does not persist into db anymore
+                // FIX ME
+                FirewallRuleVO staticNatRule = new FirewallRuleVO(null, ip.getId(), 0, 65535, NetUtils.ALL_PROTO.toString(), 
+                        nic.getNetworkId(), vm.getAccountId(), vm.getDomainId(), Purpose.StaticNat, null, null, null, null, null);
+                result.add(staticNatRule);
+            }
+        }
+        // add LB rules
+        List<LoadBalancerVMMapVO> lbMapList = _loadBalancerVMMapDao.listByInstanceId(nic.getInstanceId());
+        for(LoadBalancerVMMapVO lb : lbMapList){
+            FirewallRuleVO lbRule = _firewallDao.findById(lb.getLoadBalancerId());
+            if(lbRule.getNetworkId() == nic.getNetworkId())
+                result.add(lbRule);
+        }
+        return result;
     }
 }

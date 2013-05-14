@@ -64,7 +64,6 @@ class Services:
                          "ostype": "CentOS 5.3 (64-bit)",
                          "sleep": 60,
                          "timeout": 10,
-                         "mode": 'advanced', #Networking mode: Basic, Advanced
                         }
 
 
@@ -81,6 +80,7 @@ class TestRouterServices(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -102,8 +102,8 @@ class TestRouterServices(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
@@ -143,8 +143,8 @@ class TestRouterServices(cloudstackTestCase):
         # Find router associated with user account
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -205,8 +205,8 @@ class TestRouterServices(cloudstackTestCase):
         # Find router associated with user account
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -284,8 +284,8 @@ class TestRouterServices(cloudstackTestCase):
         # Find router associated with user account
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -302,8 +302,8 @@ class TestRouterServices(cloudstackTestCase):
         while True:
             networks = list_networks(
                                  self.apiclient,
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
             self.assertEqual(
                             isinstance(networks, list),
@@ -332,8 +332,8 @@ class TestRouterServices(cloudstackTestCase):
         # Get router details after restart
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -364,8 +364,8 @@ class TestRouterServices(cloudstackTestCase):
         while True:
             networks = list_networks(
                                  self.apiclient,
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
             self.assertEqual(
                             isinstance(networks, list),
@@ -394,8 +394,8 @@ class TestRouterServices(cloudstackTestCase):
         # Get router details after restart
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -462,8 +462,8 @@ class TestRouterServices(cloudstackTestCase):
 
         list_router_response = list_routers(
                                         self.apiclient,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -528,8 +528,8 @@ class TestRouterServices(cloudstackTestCase):
 
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -609,8 +609,8 @@ class TestRouterServices(cloudstackTestCase):
 
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -653,8 +653,8 @@ class TestRouterServices(cloudstackTestCase):
 
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -698,8 +698,8 @@ class TestRouterServices(cloudstackTestCase):
 
         list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_router_response, list),
@@ -755,8 +755,8 @@ class TestRouterServices(cloudstackTestCase):
 
         list_vms = list_virtual_machines(
                                          self.apiclient,
-                                         account=self.account.account.name,
-                                         domainid=self.account.account.domainid
+                                         account=self.account.name,
+                                         domainid=self.account.domainid
                                          )
         self.assertEqual(
                             isinstance(list_vms, list),
@@ -809,8 +809,8 @@ class TestRouterServices(cloudstackTestCase):
             #Check status of network router
             list_router_response = list_routers(
                                     self.apiclient,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
             if isinstance(list_router_response, list):
                 break

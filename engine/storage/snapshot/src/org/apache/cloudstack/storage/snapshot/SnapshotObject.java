@@ -106,7 +106,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public Long getSize() {
-    	return this.getSize();
+    	return this.snapshot.getSize();
     }
 
     @Override

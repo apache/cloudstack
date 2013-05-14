@@ -16,17 +16,9 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
-import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
-import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.ConsoleProxyVO;
-public interface ConsoleProxyManager extends Manager {
+public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 	
 	public static final int DEFAULT_PROXY_CAPACITY = 50;
 	public static final int DEFAULT_STANDBY_CAPACITY = 10;
@@ -45,16 +37,9 @@ public interface ConsoleProxyManager extends Manager {
     public ConsoleProxyManagementState getManagementState();
     public void resumeLastManagementState();
 	
-	public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId);
-	
 	public ConsoleProxyVO startProxy(long proxyVmId);
 	public boolean stopProxy(long proxyVmId);
 	public boolean rebootProxy(long proxyVmId);
 	public boolean destroyProxy(long proxyVmId);
-
-	public void onLoadReport(ConsoleProxyLoadReportCommand cmd);
-	public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd);
 	
-    public void onAgentConnect(HostVO host, StartupCommand cmd);
-	public void onAgentDisconnect(long agentId, Status state);
 }

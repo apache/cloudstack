@@ -25,7 +25,7 @@
   <bookinfo id="book-installation">
     <title>&PRODUCT; Installation Guide</title>
     <productname>Apache CloudStack</productname>
-    <productnumber>4.0.0</productnumber>
+        <productnumber>4.2.0</productnumber>
     <edition>1</edition>
     <pubsnumber/>
     <abstract>

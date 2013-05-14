@@ -42,6 +42,9 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name for the router")
     private String zoneName;
 
+    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description = "network type of the availability zone")
+    private String zoneType;   
+    
     @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the router")
     private String dns1;
 
@@ -150,8 +153,11 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @SerializedName("scriptsversion") @Param(description="the version of scripts")
     private String scriptsVersion;
 
-    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
+    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the router belongs to")
     private String vpcId;
+    
+    @SerializedName(ApiConstants.ROLE) @Param(description="role of the domain router")
+    private String role;
 
     @SerializedName("nic")  @Param(description="the list of nics associated with the router",
             responseObject = NicResponse.class, since="4.0")
@@ -161,14 +167,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         nics = new LinkedHashSet<NicResponse>();
     }
 
-
-
     @Override
     public String getObjectId() {
         return this.getId();
     }
-
-
 
     public String getId() {
         return id;
@@ -186,6 +188,14 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.zoneName = zoneName;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
+    }        
+    
     public void setDns1(String dns1) {
         this.dns1 = dns1;
     }
@@ -361,4 +371,8 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 	public void setIp6Dns2(String ip6Dns2) {
 		this.ip6Dns2 = ip6Dns2;
 	}
+	
+	public void setRole(String role) {
+        this.role = role;
+    }
 }

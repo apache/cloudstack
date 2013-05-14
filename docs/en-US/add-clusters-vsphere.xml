@@ -71,38 +71,106 @@
       <para>In Hypervisor, choose VMware.</para>
     </listitem>
     <listitem>
-      <para>Provide the following information in the dialog. The fields below make reference to
+      <para>Provide the following information in the dialog. The fields below make reference to the
         values from vCenter.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="./images/add-cluster.png"/>
+        </imageobject>
+        <textobject>
+          <phrase>addcluster.png: add a cluster</phrase>
+        </textobject>
+      </mediaobject>
       <itemizedlist>
         <listitem>
-          <para>Cluster Name. Enter the name of the cluster you created in vCenter. For example,
-            "cloud.cluster.2.2.1"</para>
+          <para><emphasis role="bold">Cluster Name</emphasis>: Enter the name of the cluster you
+            created in vCenter. For example, "cloud.cluster.2.2.1"</para>
         </listitem>
         <listitem>
-          <para>vCenter Host. Enter the hostname or IP address of the vCenter server. </para>
+          <para><emphasis role="bold">vCenter Username</emphasis>: Enter the username that &PRODUCT;
+            should use to connect to vCenter. This user must have all the administrative
+            privileges.</para>
         </listitem>
         <listitem>
-          <para>vCenter Username. Enter the username that &PRODUCT; should use to connect to
-            vCenter. This user must have all administrative privileges.</para>
+          <para><emphasis role="bold">CPU overcommit ratio</emphasis>: Enter the CPU overcommit
+            ratio for the cluster. The value you enter determines the CPU consumption of each VM in
+            the selected cluster. By increasing the over-provisioning ratio, more resource capacity
+            will be used. If no value is specified, the value is defaulted to 1, which implies no
+            over-provisioning is done.</para>
         </listitem>
         <listitem>
-          <para>vCenter Password. Enter the password for the user named above</para>
+          <para><emphasis role="bold">RAM overcommit ratio</emphasis>: Enter the RAM overcommit
+            ratio for the cluster. The value you enter determines the memory consumption of each VM
+            in the selected cluster. By increasing the over-provisioning ratio, more resource
+            capacity will be used. If no value is specified, the value is defaulted to 1, which
+            implies no over-provisioning is done.</para>
         </listitem>
         <listitem>
-          <para>vCenter Datacenter. Enter the vCenter datacenter that the cluster is in. For
-            example, "cloud.dc.VM".</para>
+          <para><emphasis role="bold">vCenter Host</emphasis>: Enter the hostname or IP address of
+            the vCenter server.</para>
         </listitem>
         <listitem>
-          <mediaobject>
-            <imageobject>
-              <imagedata fileref="./images/add-cluster.png"/>
-            </imageobject>
-            <textobject>
-              <phrase>addcluster.png: add cluster</phrase>
-            </textobject>
-          </mediaobject>
+          <para><emphasis role="bold">vCenter Password</emphasis>: Enter the password for the user
+            named above.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">vCenter Datacenter</emphasis>: Enter the vCenter datacenter
+            that the cluster is in. For example, "cloud.dc.VM".</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Override Public Traffic</emphasis>: Enable this option to
+            override the zone-wide public traffic for the cluster you are creating.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Public Traffic vSwitch Type</emphasis>: This option is
+            displayed only if you enable the Override Public Traffic option. Select a desirable
+            switch. If the vmware.use.dvswitch global parameter is true, the default option will be
+            VMware vNetwork Distributed Virtual Switch.</para>
+          <para>If you have enabled Nexus dvSwitch in the environment, the following parameters for
+            dvSwitch configuration are displayed:</para>
+          <itemizedlist>
+            <listitem>
+              <para>Nexus dvSwitch IP Address: The IP address of the Nexus VSM appliance.</para>
+            </listitem>
+            <listitem>
+              <para>Nexus dvSwitch Username: The username required to access the Nexus VSM
+                appliance.</para>
+            </listitem>
+            <listitem>
+              <para>Nexus dvSwitch Password: The password associated with the username specified
+                above.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Override Guest Traffic</emphasis>: Enable this option to
+            override the zone-wide guest traffic for the cluster you are creating.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Guest Traffic vSwitch Type</emphasis>: This option is
+            displayed only if you enable the Override Guest Traffic option. Select a desirable
+            switch. </para>
+          <para>If the vmware.use.dvswitch global parameter is true, the default option will be
+            VMware vNetwork Distributed Virtual Switch.</para>
+          <para>If you have enabled Nexus dvSwitch in the environment, the following parameters for
+            dvSwitch configuration are displayed:</para>
+          <itemizedlist>
+            <listitem>
+              <para>Nexus dvSwitch IP Address: The IP address of the Nexus VSM appliance.</para>
+            </listitem>
+            <listitem>
+              <para>Nexus dvSwitch Username: The username required to access the Nexus VSM
+                appliance.</para>
+            </listitem>
+            <listitem>
+              <para>Nexus dvSwitch Password: The password associated with the username specified
+                above.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+        <listitem>
           <para>There might be a slight delay while the cluster is provisioned. It will
-            automatically display in the UI</para>
+            automatically display in the UI.</para>
         </listitem>
       </itemizedlist>
     </listitem>

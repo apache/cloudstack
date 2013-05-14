@@ -1,0 +1,193 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="vmware-cluster-config-dvswitch">
+  <title>Configuring a vSphere Cluster with VMware Distributed Virtual Switch</title>
+  <para>&PRODUCT;supports VMware vNetwork Distributed Switch (VDS) for virtual network configuration
+    in a VMware vSphere environment. This section helps you configure VMware VDS in a &PRODUCT;
+    deployment. Each vCenter server instance can support up to 128 VDS instances and each VDS
+    instance can manage up to 500 VMware hosts.</para>
+  <section id="about-dvswitch">
+    <title>About VMware Distributed Virtual Switch</title>
+    <para>VMware VDS is an aggregation of host-level virtual switches on a VMware vCenter server.
+      VDS abstracts the configuration of individual virtual switches that span across a large number
+      of hosts, and enables centralized provisioning, administration, and monitoring for your entire
+      datacenter from a centralized interface. In effect, a VDS acts as a single virtual switch at
+      the datacenter level and manages networking for a number of hosts in a datacenter from a
+      centralized VMware vCenter server. Each VDS maintains network runtime state for VMs as they
+      move across multiple hosts, enabling inline monitoring and centralized firewall services. A
+      VDS can be deployed with or without Virtual Standard Switch and a Nexus 1000V virtual
+      switch.</para>
+  </section>
+  <section id="prereq-dvswitch">
+    <title>Prerequisites and Guidelines</title>
+    <itemizedlist>
+      <listitem>
+        <para>Do not attempt to configure VDS by altering VMware traffic label when configuring
+          physical networks. This will only work for Standard Virtual Switch and should not be
+          distributed.</para>
+      </listitem>
+      <listitem>
+        <para>VMware VDS does not support multiple VDS per traffic type. If a user has many VDS
+          switches, only one can be used for Guest traffic and another one for Public
+          traffic.</para>
+      </listitem>
+      <listitem>
+        <para>Management and Storage network does not support VDS. Therefore, use Standard Switch
+          for these networks.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="enable-dvswitch">
+    <title>Enabling Virtual Distributed Switch in &PRODUCT;</title>
+    <para>To make a &PRODUCT; deployment VDS enabled, set the vmware.use.dvswitch parameter to true
+      by using the Global Settings page in the &PRODUCT; UI and restart the Management Server.
+      Unless you enable the vmware.use.dvswitch parameter, you cannot see any UI options specific to
+      VDS, and &PRODUCT; ignores the VDS-specific parameters given in the AddClusterCmd API call.
+      Additionally, &PRODUCT; uses VDS for virtual network infrastructure if the value of
+      vmware.use.dvswitch parameter is true and the value of vmware.use.nexus.dvswitch parameter is
+      false.</para>
+    <para>&PRODUCT; supports orchestration of virtual networks in a deployment with a mix of Virtual
+      Distributed Switch, Standard Virtual Switch and Nexus 1000v Virtual Switch. </para>
+  </section>
+  <section id="config-dvswitch">
+    <title>Configuring Distributed Virtual Switch in &PRODUCT;</title>
+    <para>You can configure VDS by adding the necessary resources while a zone is created.</para>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="./images/dvSwitch-config.png"/>
+      </imageobject>
+      <textobject>
+        <phrase>dvSwitchConfig.png: Configuring dvSwitch</phrase>
+      </textobject>
+    </mediaobject>
+    <para>Alternatively, you can create an additional cluster with VDS enabled in the existing zone.
+      Use the Add Cluster option. For information as given in <xref linkend="add-clusters-vsphere"
+      />.</para>
+    <para>In both these cases, you must specify the following parameters to configure VDS:</para>
+    <informaltable frame="all">
+      <tgroup cols="2" align="left" colsep="1" rowsep="1">
+        <colspec colname="c1"/>
+        <colspec colname="c2"/>
+        <thead>
+          <row>
+            <entry><para>Parameters</para></entry>
+            <entry><para>Description</para></entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><para>Cluster Name</para></entry>
+            <entry><para>Enter the name of the cluster you created in vCenter. For example,
+                &quot;cloud.cluster&quot;.</para></entry>
+          </row>
+          <row>
+            <entry><para>vCenter Host</para></entry>
+            <entry><para>Enter the name or the IP address of the vCenter host where you have deployed the VMware
+                VDS.</para></entry>
+          </row>
+          <row>
+            <entry><para>vCenter User name</para></entry>
+            <entry><para>Enter the username that &PRODUCT; should use to connect to vCenter. This
+                user must have all administrative privileges.</para></entry>
+          </row>
+          <row>
+            <entry><para>vCenter Password</para></entry>
+            <entry><para>Enter the password for the user named above.</para></entry>
+          </row>
+          <row>
+            <entry><para>vCenter Datacenter</para></entry>
+            <entry><para>Enter the vCenter datacenter that the cluster is in. For example,
+                &quot;cloud.dc.VM&quot;.</para></entry>
+          </row>
+          <row>
+            <entry><para>Override Public Traffic</para></entry>
+            <entry><para>Enable this option to override the zone-wide public traffic for the cluster
+                you are creating. </para></entry>
+          </row>
+          <row>
+            <entry><para>Public Traffic vSwitch Type</para></entry>
+            <entry><para>This option is displayed only if you enable the Override Public Traffic
+                option. Select VMware vNetwork Distributed Virtual Switch. </para>
+              <para>If the vmware.use.dvswitch global parameter is true, the default option will be
+                VMware vNetwork Distributed Virtual Switch.</para></entry>
+          </row>
+          <row>
+            <entry><para>Public Traffic vSwitch Name</para></entry>
+            <entry><para>Name of virtual switch to be used for the public traffic.</para></entry>
+          </row>
+          <row>
+            <entry><para>Override Guest Traffic</para></entry>
+            <entry><para>Enable the option to override the zone-wide guest traffic for the cluster
+                you are creating.</para></entry>
+          </row>
+          <row>
+            <entry><para>Guest Traffic vSwitch Type</para></entry>
+            <entry><para>This option is displayed only if you enable the Override Guest Traffic
+                option. Select VMware vNetwork Distributed Virtual Switch. </para>
+              <para>If the vmware.use.dvswitch global parameter is true, the default option will be
+                VMware vNetwork Distributed Virtual Switch.</para></entry>
+          </row>
+          <row>
+            <entry><para>Guest Traffic vSwitch Name</para></entry>
+            <entry><para>Name of virtual switch to be used for guest traffic.</para></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </section>
+  <section id="vmware-dvswitch-remove">
+    <title>Removing VMware Virtual Switch</title>
+    <orderedlist>
+      <listitem>
+        <para>In the vCenter datacenter that is served by the VDS, ensure that you delete all the
+          hosts in the corresponding cluster.</para>
+      </listitem>
+      <listitem>
+        <para>Log in with Admin permissions to the &PRODUCT; administrator UI.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation bar, select Infrastructure.</para>
+      </listitem>
+      <listitem>
+        <para>In the Infrastructure page, click View all under Clusters.</para>
+      </listitem>
+      <listitem>
+        <para>Select the cluster where you want to remove the virtual switch.</para>
+      </listitem>
+      <listitem>
+        <para>In the VMware dvSwitch tab, click the name of the virtual switch.</para>
+      </listitem>
+      <listitem>
+        <para> In the Details page, click Delete VMware dvSwitch icon. <inlinemediaobject>
+            <imageobject>
+              <imagedata fileref="./images/delete-button.png"/>
+            </imageobject>
+            <textobject>
+              <phrase>DeleteButton.png: button to delete dvSwitch</phrase>
+            </textobject>
+          </inlinemediaobject>
+        </para>
+        <para>Click Yes in the confirmation dialog box.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+</section>

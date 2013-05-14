@@ -52,5 +52,5 @@ public interface IpAddrAllocator extends Adapter {
 	public IpAddr getPrivateIpAddress(String macAddr, long dcId, long podId);
 	public boolean releasePublicIpAddress(String ip, long dcId, long podId);
 	public boolean releasePrivateIpAddress(String ip, long dcId, long podId);
-	public boolean exteralIpAddressAllocatorEnabled();
+	public boolean externalIpAddressAllocatorEnabled();
 }

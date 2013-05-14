@@ -89,7 +89,7 @@
       closeRegionSelector({
         complete: function() {
           $('#container').prepend($('<div>').addClass('loading-overlay'));
-          window.name = g_loginCmdText;
+          //window.name = g_loginCmdText;
           document.location.href = url;
         }
       });

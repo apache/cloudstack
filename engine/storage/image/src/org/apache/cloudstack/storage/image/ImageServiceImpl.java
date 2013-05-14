@@ -21,11 +21,13 @@ package org.apache.cloudstack.storage.image;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -37,6 +39,7 @@ import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.cloudstack.storage.motion.DataMotionService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -49,6 +52,8 @@ public class ImageServiceImpl implements ImageService {
     ObjectInDataStoreManager objectInDataStoreMgr;
     @Inject
     DataObjectManager dataObjectMgr;
+    @Inject
+    DataMotionService motionSrv;
     
     class CreateTemplateContext<T> extends AsyncRpcConext<T> {
         final TemplateInfo srcTemplate;
@@ -140,17 +145,91 @@ public class ImageServiceImpl implements ImageService {
         return null;
     }
 
+    private class CopyTemplateContext<T> extends AsyncRpcConext<T> {
+        final AsyncCallFuture<CommandResult> future;
+        final DataObject object;
+        /**
+         * @param callback
+         */
+        public CopyTemplateContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CommandResult> future, DataObject object) {
+            super(callback);
+            this.future = future;
+            this.object = object;
+        }
+        
+    }
     @Override
     public AsyncCallFuture<CommandResult> createTemplateFromSnapshotAsync(
             SnapshotInfo snapshot, TemplateInfo template, DataStore store) {
-        // TODO Auto-generated method stub
+        AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
+        DataObject templateOnStore = null;
+        try {
+            templateOnStore = store.create(template);
+            templateOnStore.processEvent(Event.CreateOnlyRequested);
+
+            CopyTemplateContext<CommandResult> context = new CopyTemplateContext<CommandResult>(null, future, templateOnStore);
+            AsyncCallbackDispatcher<ImageServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copyTemplateAsyncCallback(null, null))
+            .setContext(context);
+            this.motionSrv.copyAsync(snapshot, templateOnStore, caller);
+        } catch (Exception e) {
+            s_logger.debug("Failed to create template: " + template.getId() + "from snapshot: " + snapshot.getId() + ", due to " + e.toString());
+            if (templateOnStore != null) {
+                try {
+                templateOnStore.processEvent(Event.OperationFailed);
+                } catch (Exception e1) {
+                    
+                }
+            }
+            CommandResult result = new CommandResult();
+            result.setResult(e.toString());
+            future.complete(result);
+        }
+        return future;
+    }
+    
+    protected Void copyTemplateAsyncCallback(AsyncCallbackDispatcher<ImageServiceImpl, CopyCommandResult> callback, CopyTemplateContext<CommandResult> context) {
+        CopyCommandResult result = callback.getResult();
+        AsyncCallFuture<CommandResult> future = context.future;
+        DataObject object = context.object;
+        CommandResult res = new CommandResult();
+        if (result.isFailed()) {
+            res.setResult(result.getResult());
+            object.processEvent(Event.OperationFailed);
+        } else {
+            object.processEvent(Event.OperationSuccessed);
+        }
+        future.complete(res);
         return null;
     }
 
     @Override
     public AsyncCallFuture<CommandResult> createTemplateFromVolumeAsync(
             VolumeInfo volume, TemplateInfo template, DataStore store) {
-        // TODO Auto-generated method stub
-        return null;
+        AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
+        DataObject templateOnStore = null;
+        try {
+            templateOnStore = store.create(template);
+            templateOnStore.processEvent(Event.CreateOnlyRequested);
+
+            CopyTemplateContext<CommandResult> context = new CopyTemplateContext<CommandResult>(null, future, templateOnStore);
+            AsyncCallbackDispatcher<ImageServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copyTemplateAsyncCallback(null, null))
+            .setContext(context);
+            this.motionSrv.copyAsync(volume, templateOnStore, caller);
+        } catch (Exception e) {
+            s_logger.debug("Failed to create template: " + template.getId() + "from volume: " + volume.getId() + ", due to " + e.toString());
+            if (templateOnStore != null) {
+                try {
+                templateOnStore.processEvent(Event.OperationFailed);
+                } catch (Exception e1) {
+                    
+                }
+            }
+            CommandResult result = new CommandResult();
+            result.setResult(e.toString());
+            future.complete(result);
+        }
+        return future;
     }
 }

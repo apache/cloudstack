@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+<!ENTITY % xinclude SYSTEM "http://www.docbook.org/xml/4.4/xinclude.mod">
+%xinclude;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0.
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="plugin-midonet-ui">
+    <title>Enabling the MidoNet service provider via the UI</title>
+    <para>To allow &PRODUCT; to use the MidoNet Plugin the network service provider needs to be enabled on the physical network.
+    </para>
+
+    <para>
+    The steps to enable via the UI are as follows:
+    <orderedlist>
+        <listitem><para>
+        In the left navbar, click Infrastructure
+        </para></listitem>
+
+        <listitem><para>
+        In Zones, click View All
+        </para></listitem>
+
+        <listitem><para>
+        Click the name of the Zone on which you are setting up MidoNet
+        </para></listitem>
+
+        <listitem><para>
+        Click the Physical Network tab
+        </para></listitem>
+
+        <listitem><para>
+        Click the Name of the Network on which you are setting up MidoNet
+        </para></listitem>
+
+        <listitem><para>
+        Click Configure on the Network Service Providers box
+        </para></listitem>
+
+        <listitem><para>
+        Click on the name MidoNet
+        </para></listitem>
+
+        <listitem><para>
+        Click the Enable Provider button in the Network tab
+        </para></listitem>
+
+    </orderedlist>
+    </para>
+</section>

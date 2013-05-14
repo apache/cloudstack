@@ -79,8 +79,6 @@ class Services:
             "timeout": 10,
             "ostype": "CentOS 5.3 (64-bit)",
             # CentOS 5.3 (64 bit)
-            "mode": 'advanced'
-            # Networking mode: Basic or Advanced
         }
 
 
@@ -93,6 +91,7 @@ class TestCreateIso(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
+        self.services['mode'] = self.zone.networktype
         self.services["domainid"] = self.domain.id
         self.services["iso_2"]["zoneid"] = self.zone.id
         
@@ -140,8 +139,8 @@ class TestCreateIso(cloudstackTestCase):
         iso = Iso.create(
                          self.apiclient, 
                          self.services["iso_2"],
-                         account=self.account.account.name,
-                         domainid=self.account.account.domainid
+                         account=self.account.name,
+                         domainid=self.account.domainid
                          )
         self.debug("ISO created with ID: %s" % iso.id)
         
@@ -215,7 +214,7 @@ class TestISO(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         # Finding the OsTypeId from Ostype
         ostypes = list_os_types(
                     cls.api_client,
@@ -231,8 +230,8 @@ class TestISO(cloudstackTestCase):
         cls.iso_1 = Iso.create(
                                cls.api_client, 
                                cls.services["iso_1"],
-                               account=cls.account.account.name,
-                               domainid=cls.account.account.domainid
+                               account=cls.account.name,
+                               domainid=cls.account.domainid
                                )
         try:
             cls.iso_1.download(cls.api_client)
@@ -243,8 +242,8 @@ class TestISO(cloudstackTestCase):
         cls.iso_2 = Iso.create(
                                cls.api_client, 
                                cls.services["iso_2"],
-                               account=cls.account.account.name,
-                               domainid=cls.account.account.domainid
+                               account=cls.account.name,
+                               domainid=cls.account.domainid
                                )
         try:
             cls.iso_2.download(cls.api_client)
@@ -449,8 +448,8 @@ class TestISO(cloudstackTestCase):
         list_iso_response = list_isos(
                                       self.apiclient,
                                       id=self.iso_2.id,
-                                      account=self.account.account.name,
-                                      domainid=self.account.account.domainid
+                                      account=self.account.name,
+                                      domainid=self.account.domainid
                                       )
         self.assertEqual(
                             isinstance(list_iso_response, list),

@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.host;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -38,6 +39,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 
 @APICommand(name = "listHosts", description="Lists hosts.", responseObject=HostResponse.class)
 public class ListHostsCmd extends BaseListCmd {
@@ -74,6 +76,9 @@ public class ListHostsCmd extends BaseListCmd {
             description="the Zone ID for the host")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String zoneType;
+    
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
             required=false, description="lists hosts in the same cluster as this VM and flag hosts with enough CPU/RAm to host this VM")
     private Long virtualMachineId;
@@ -123,6 +128,10 @@ public class ListHostsCmd extends BaseListCmd {
         return zoneId;
     }
 
+    public String getZoneType() {
+        return zoneType;
+    }
+    
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
@@ -171,8 +180,8 @@ public class ListHostsCmd extends BaseListCmd {
         } else {
             Pair<List<? extends Host>,Integer> result;
             List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
-
-            Pair<Pair<List<? extends Host>,Integer>, List<? extends Host>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
+            Ternary<Pair<List<? extends Host>,Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
+                    _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
             result = hostsForMigration.first();
             hostsWithCapacity = hostsForMigration.second();
 
@@ -193,6 +202,5 @@ public class ListHostsCmd extends BaseListCmd {
         }
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-
     }
 }

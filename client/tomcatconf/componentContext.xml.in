@@ -31,6 +31,7 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">                     
 
+
 <!--
  
   OSS deployment configuration
@@ -155,7 +156,6 @@
           <ref bean="FirstFitPlanner" />
           <ref bean="UserDispersingPlanner" />
           <ref bean="UserConcentratedPodPlanner" />
-
 <!--
           <ref bean="BareMetalPlanner" />
 -->
@@ -197,6 +197,8 @@
           <ref bean="elasticLoadBalancerElement"/>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
+          <ref bean="NiciraNvp"/>
+          <ref bean="InternalLbVm"/>
       </list>
     </property>
   </bean>
@@ -240,6 +242,7 @@
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp" />
           <ref bean="MidoNetElement"/>
+          <ref bean="InternalLbVm"/>
 <!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
@@ -249,5 +252,20 @@
     </property>
   </bean>
 
-
+  <!--
+   AffinityGroup Processors
+  -->
+  <bean id="HostAntiAffinityProcessor" class="org.apache.cloudstack.affinity.HostAntiAffinityProcessor">
+   	<property name="name" value="HostAntiAffinityProcessor"/>
+   	<property name="type" value="host anti-affinity"/>
+  </bean>
+  
+  <bean id="affinityProcessors" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="HostAntiAffinityProcessor" />
+      </list>
+    </property>
+  </bean>
+  
 </beans>

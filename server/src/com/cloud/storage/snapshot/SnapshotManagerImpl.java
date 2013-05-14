@@ -48,7 +48,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DownloadSnapshotFromS3Command;
-import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
+import com.cloud.agent.api.DownloadSnapshotFromSwiftCommand;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.alert.AlertManager;
@@ -58,6 +58,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -181,9 +182,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     private ResourceTagDao _resourceTagDao;
     @Inject
     private ConfigurationDao _configDao;
-
-    @Inject 
-    private VMSnapshotDao _vmSnapshotDao;
+    @Inject  
+    private PrimaryDataStoreDao _primaryDataStoreDao;
     String _name;
 
     @Inject TemplateManager templateMgr;
@@ -384,7 +384,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         String parent = null;
         try {
             for (String backupUuid : BackupUuids) {
-                downloadSnapshotFromSwiftCommand cmd = new downloadSnapshotFromSwiftCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
+                DownloadSnapshotFromSwiftCommand cmd = new DownloadSnapshotFromSwiftCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
                 Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
                 if ((answer == null) || !answer.getResult()) {
                     throw new CloudRuntimeException("downloadSnapshotsFromSwift failed ");
@@ -572,6 +572,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         String keyword = cmd.getKeyword();
         String snapshotTypeStr = cmd.getSnapshotType();
         String intervalTypeStr = cmd.getIntervalType();
+        String zoneType = cmd.getZoneType();
         Map<String, String> tags = cmd.getTags();
         
         Account caller = UserContext.current().getCaller();
@@ -603,17 +604,23 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
         
         if (tags != null && !tags.isEmpty()) {
-        SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-        for (int count=0; count < tags.size(); count++) {
-            tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-            tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
-            tagSearch.cp();
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
-        tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-        sb.groupBy(sb.entity().getId());
-        sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
-    }
 
+        if(zoneType != null) {
+            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+        
         SearchCriteria<SnapshotVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -631,6 +638,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
         }
 
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+        }
+        
         if (name != null) {
             sc.setParameters("name", "%" + name + "%");
         }
@@ -694,11 +705,11 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             S3TO s3 = _s3Mgr.getS3TO();
 
             checkObjectStorageConfiguration(swift, s3);
-
+            StoragePoolVO pool = _primaryDataStoreDao.findById(volume.getPoolId());
             if (swift == null && s3 == null) {
                 for (HostVO ssHost : ssHosts) {
                     DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                            null, null, ssHost.getStorageUrl(), dcId,
+                            pool,null, null, ssHost.getStorageUrl(), dcId,
                             accountId, volumeId, "", true);
                     Answer answer = null;
                     try {
@@ -717,7 +728,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 }
             } else {
                 DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                        swift, s3, "", dcId, accountId, volumeId, "", true);
+                        pool,swift, s3, "", dcId, accountId, volumeId, "", true);
                 Answer answer = null;
                 try {
                     answer = _agentMgr.sendToSSVM(dcId, cmd);

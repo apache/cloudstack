@@ -278,6 +278,8 @@ cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib
 install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/cloud-usage-%{_maventag}.jar
+install -D usage/target/transformed/db.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/db.properties
+install -D usage/target/transformed/log4j-cloud_usage.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
 install -D packaging/centos63/cloud-usage.rc ${RPM_BUILD_ROOT}/%{_sysconfdir}/init.d/%{name}-usage
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
@@ -438,6 +440,13 @@ if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
 fi
 
+%post usage
+if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
+    echo Replacing db.properties with management server db.properties
+    rm -f %{_sysconfdir}/%{name}/usage/db.properties
+    ln -s %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/usage/db.properties
+fi
+
 #%post awsapi
 #if [ -d "%{_datadir}/%{name}-management" ] ; then
 #   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
@@ -532,8 +541,9 @@ fi
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-usage
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
-%dir /var/log/%{name}/usage
-%dir %{_sysconfdir}/%{name}/usage
+%dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/usage
+%attr(0644,root,root) %{_sysconfdir}/%{name}/usage/db.properties
+%attr(0644,root,root) %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 %{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 

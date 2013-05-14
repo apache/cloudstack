@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.offering;
 
+import java.util.Map;
+
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -38,6 +40,11 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
         Disabled,
         Enabled
     }
+    
+    public enum Detail {
+        InternalLbProvider,
+        PublicLbProvider
+    }
 
     public final static String SystemPublicNetwork = "System-Public-Network";
     public final static String SystemControlNetwork = "System-Control-Network";
@@ -46,6 +53,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String SystemPrivateGatewayNetworkOffering = "System-Private-Gateway-Network-Offering";
 
     public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
+    public final static String QuickCloudNoServices = "QuickCloudNoServices";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";
     public final static String DefaultSharedNetworkOffering = "DefaultSharedNetworkOffering";
@@ -106,6 +114,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     boolean getElasticIp();
 
+    boolean getAssociatePublicIP();
+
     boolean getElasticLb();
 
     boolean getSpecifyIpRanges();
@@ -113,5 +123,9 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean isInline();
 
     boolean getIsPersistent();
+    
+    boolean getInternalLb();
+
+    boolean getPublicLb();
 
 }

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
+import com.cloud.vm.NicSecondaryIp;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
@@ -64,15 +65,16 @@ public class AddIpToVmNicTest extends TestCase {
 
         NetworkService networkService = Mockito.mock(NetworkService.class);
         AddIpToVmNicCmd ipTonicCmd = Mockito.mock(AddIpToVmNicCmd.class);
+        NicSecondaryIp secIp = Mockito.mock(NicSecondaryIp.class);
 
         Mockito.when(
-                networkService.allocateSecondaryGuestIP(Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString())).thenReturn("10.1.1.2");
+                networkService.allocateSecondaryGuestIP(Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString())).thenReturn(secIp);
 
         ipTonicCmd._networkService = networkService;
         responseGenerator = Mockito.mock(ResponseGenerator.class);
 
         NicSecondaryIpResponse ipres = Mockito.mock(NicSecondaryIpResponse.class);
-        Mockito.when(responseGenerator.createSecondaryIPToNicResponse(Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(ipres);
+        Mockito.when(responseGenerator.createSecondaryIPToNicResponse(secIp)).thenReturn(ipres);
 
         ipTonicCmd._responseGenerator = responseGenerator;
         ipTonicCmd.execute();

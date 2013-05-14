@@ -17,6 +17,8 @@
 package com.cloud.consoleproxy;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -34,6 +36,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.consoleproxy.util.Logger;
+import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
 
@@ -282,8 +285,17 @@ public class ConsoleProxy {
         InputStream confs = ConsoleProxy.class.getResourceAsStream("/conf/consoleproxy.properties");
         Properties props = new Properties();
         if (confs == null) {
-            s_logger.info("Can't load consoleproxy.properties from classpath, will use default configuration");
-        } else {
+            final File file = PropertiesUtil.findConfigFile("consoleproxy.properties");
+            if (file == null)
+                s_logger.info("Can't load consoleproxy.properties from classpath, will use default configuration");
+            else
+                try {
+                    confs = new FileInputStream(file);
+                } catch (FileNotFoundException e) {
+                    s_logger.info("Ignoring file not found exception and using defaults");
+                }
+        } 
+        if (confs != null) {
             try {
                 props.load(confs);
                 

@@ -45,6 +45,7 @@ setup(name="Marvin",
     license="LICENSE.txt",
     install_requires=[
         "mysql-connector-python",
+        "requests",
         "paramiko",
         "nose"
     ],

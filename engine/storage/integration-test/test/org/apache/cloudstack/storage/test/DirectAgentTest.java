@@ -23,7 +23,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.to.ImageDataStoreTO;
-import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
+import org.apache.cloudstack.storage.to.ImageOnPrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateTO;
 import org.mockito.Mockito;
@@ -126,7 +126,7 @@ public class DirectAgentTest extends CloudStackTestNGBase {
     
     @Test
     public void testDownloadTemplate() {
-        ImageOnPrimayDataStoreTO image = Mockito.mock(ImageOnPrimayDataStoreTO.class);
+        ImageOnPrimaryDataStoreTO image = Mockito.mock(ImageOnPrimaryDataStoreTO.class);
         PrimaryDataStoreTO primaryStore = Mockito.mock(PrimaryDataStoreTO.class);
         Mockito.when(primaryStore.getUuid()).thenReturn(this.getLocalStorageUuid());
         Mockito.when(image.getPrimaryDataStore()).thenReturn(primaryStore);

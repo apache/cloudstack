@@ -78,16 +78,10 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity 
 
     boolean getSystem();
 
-    /**
-     * @return
-     */
     Long getVpcId();
 
-    /**
-     * @param vpcId
-     */
-    void setVpcId(Long vpcId);
     String getVmIp();
-    void setVmIp(String vmIp);
+    
+    Long getNetworkId();
 
 }

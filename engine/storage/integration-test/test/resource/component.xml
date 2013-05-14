@@ -75,7 +75,7 @@
   </bean>
 
  
-  <bean id="ExteralIpAddressAllocator" class="com.cloud.network.ExteralIpAddressAllocator">
+  <bean id="ExternalIpAddressAllocator" class="com.cloud.network.ExternalIpAddressAllocator">
     <property name="name" value="Basic"/>
   </bean>
 

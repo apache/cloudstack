@@ -40,9 +40,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -172,6 +173,7 @@ import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
@@ -183,6 +185,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSVO;
@@ -217,6 +220,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
@@ -228,13 +232,13 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmWork;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
+import com.cloud.vm.VmWork;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -286,6 +290,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     AccountManager _accountMgr;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    ConfigurationServer _configServer;
     @Inject
     ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
@@ -1589,7 +1595,26 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             HypervisorType hType = iter.next();
             try {
                 s_logger.debug("Allocating the domR with the hypervisor type " + hType);
-                VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
+                String templateName = null;
+                switch (hType) {
+                    case XenServer:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case KVM:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case VMware:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case Hyperv:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    case LXC:
+                        templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                        break;
+                    default: break;
+                }
+                VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
                 if (template == null) {
                     s_logger.debug(hType + " won't support system vm, skip it");
@@ -2095,7 +2120,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             boolean useExtDns = !dnsProvided;
             /* For backward compatibility */
-            String use_external_dns =  _configDao.getValue(Config.UseExternalDnsServers.key());
+            String use_external_dns = _configServer.getConfigValue(Config.UseExternalDnsServers.key(), Config.ConfigurationParameterScope.zone.toString(), dc.getId());
             if (use_external_dns != null && use_external_dns.equals("true")) {
                 useExtDns = true;
             }
@@ -2389,7 +2414,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
             }
    
-            List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(guestNetworkId);
+            List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(guestNetworkId, Scheme.Public);
             List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
             if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Lb, provider)) {
                 // Re-apply load balancing rules
@@ -2397,7 +2422,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                     List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
                     List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
-                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
+                    Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp);
                     lbRules.add(loadBalancing);
                 }
             }
@@ -3015,7 +3041,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             String algorithm = rule.getAlgorithm();
             String uuid = rule.getUuid();
 
-            String srcIp = _networkModel.getIp(rule.getSourceIpAddressId()).getAddress().addr();
+            String srcIp = rule.getSourceIp().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
             List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
@@ -3030,7 +3056,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
         
         Network guestNetwork = _networkModel.getNetwork(guestNetworkId);
-        Nic nic = _nicDao.findByInstanceIdAndNetworkId(guestNetwork.getId(), router.getId());
+        Nic nic = _nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), router.getId());
         NicProfile nicProfile = new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), 
                 _networkModel.getNetworkRate(guestNetwork.getId(), router.getId()), 
                 _networkModel.isSecurityGroupSupportedInNetwork(guestNetwork), 
@@ -3123,7 +3149,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
 
             if (createVmData) {
-                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(guestNetworkId, vm.getId());
+                NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
                 if (nic != null) {
                     s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
                     createVmDataCommand(router, vm, nic, null, cmds);
@@ -3176,7 +3202,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 createDhcp = false;
             }
             if (createDhcp) {
-                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(guestNetworkId, vm.getId());
+                NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
                 if (nic != null) {
                     s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
                     createDhcpEntryCommand(router, vm, nic, cmds);
@@ -3294,13 +3320,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
                     // for load balancer we have to resend all lb rules for the network
-                    List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(network.getId());
+                    List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(network.getId(), Scheme.Public);
                     List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
                     for (LoadBalancerVO lb : lbs) {
                         List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                         List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                        List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId() );
-                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList);
+                        List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+                        Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp);
                         lbRules.add(loadBalancing);
                     }
                     return sendLBRules(router, lbRules, network.getId());
@@ -3314,6 +3341,32 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
                     return false;
                 }
+            }
+        });
+    }
+
+    
+    @Override
+    public boolean applyLoadBalancingRules(Network network, final List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        if (rules == null || rules.isEmpty()) {
+            s_logger.debug("No lb rules to be applied for network " + network.getId());
+            return true;
+        }
+        return applyRules(network, routers, "loadbalancing rules", false, null, false, new RuleApplier() {
+            @Override
+            public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
+                // for load balancer we have to resend all lb rules for the network
+                List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(network.getId(), Scheme.Public);
+                List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+                for (LoadBalancerVO lb : lbs) {
+                    List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                    List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+                    List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+                    Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp);
+                    lbRules.add(loadBalancing);
+                }
+                return sendLBRules(router, lbRules, network.getId());  
             }
         });
     }
@@ -3720,5 +3773,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     
     @Override
     public void vmWorkStop(VmWork work) {
+    }
+
+
+    @Override
+    public VirtualRouter findRouter(long routerId) {
+        return _routerDao.findById(routerId);
     }
 }

@@ -36,6 +36,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.org.Grouping.AllocationState;
@@ -59,7 +60,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param name
      * @param value
      */
-    void updateConfiguration(long userId, String name, String category, String value);
+    String updateConfiguration(long userId, String name, String category, String value, String scope, Long id);
 
     /**
      * Creates a new service offering
@@ -149,6 +150,8 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      */
     boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
 
+    boolean releasePublicIpRange(long userId, long vlanDbId, Account caller);
+
     /**
      * Converts a comma separated list of tags to a List
      * 
@@ -176,8 +179,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param trafficType
      * @param tags
      * @param specifyVlan
-     * @param isPersistent
-     *            ;
      * @param networkRate
      *            TODO
      * @param serviceProviderMap
@@ -193,14 +194,16 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      *            ;
      * @param specifyIpRanges
      *            TODO
+     * @param isPersistent
+     *            ;
+     * @param details TODO
      * @param id
-     * 
      * @return network offering object
      */
 
     NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap,
             boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap,
-            boolean specifyIpRanges, boolean isPersistent);
+            boolean specifyIpRanges, boolean isPersistent, Map<NetworkOffering.Detail,String> details);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
@@ -210,7 +213,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     ClusterVO getCluster(long id);
 
-    boolean deleteAccountSpecificVirtualRanges(long accountId);
+    boolean releaseAccountSpecificVirtualRanges(long accountId);
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.

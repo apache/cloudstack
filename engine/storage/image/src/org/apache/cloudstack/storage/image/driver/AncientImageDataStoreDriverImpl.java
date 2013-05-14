@@ -33,6 +33,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.log4j.Logger;
 
@@ -45,8 +47,8 @@ import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.RegisterVolumePayload;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -80,6 +82,7 @@ public class AncientImageDataStoreDriverImpl implements ImageDataStoreDriver {
     @Inject SnapshotDao snapshotDao;
     @Inject AgentManager agentMgr;
     @Inject SnapshotManager snapshotMgr;
+    @Inject PrimaryDataStoreDao primaryDataStoreDao;
 	@Inject
     private SwiftManager _swiftMgr;
     @Inject 
@@ -196,9 +199,10 @@ public class AncientImageDataStoreDriverImpl implements ImageDataStoreDriver {
     		}
     		SwiftTO swift = _swiftMgr.getSwiftTO(snapshot.getSwiftId());
     		S3TO s3 = _s3Mgr.getS3TO();
-
+            VolumeVO volume = volumeDao.findById(volumeId);
+            StoragePoolVO pool = primaryDataStoreDao.findById(volume.getPoolId());
     		DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-    				swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+    				pool, swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
     				backupOfSnapshot, false);
     		Answer answer = agentMgr.sendToSSVM(dcId, cmd);
 

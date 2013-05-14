@@ -42,7 +42,7 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     @Inject
     PrimaryDataStoreProviderManager storeMgr;
 
-    protected DataStoreLifeCycle lifecyle;
+    protected DataStoreLifeCycle lifecycle;
     protected String uuid;
     protected long id;
     @Override
@@ -52,12 +52,12 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
 
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {
-        return this.lifecyle;
+        return this.lifecycle;
     }
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        lifecyle = ComponentContext.inject(DefaultPrimaryDataStoreLifeCycleImpl.class);
+        lifecycle = ComponentContext.inject(DefaultPrimaryDataStoreLifeCycleImpl.class);
         driver = ComponentContext.inject(DefaultPrimaryDataStoreDriverImpl.class);
         listener = ComponentContext.inject(DefaultHostListener.class);
         return true;

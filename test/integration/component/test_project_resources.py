@@ -64,7 +64,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "memory": 128,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Tiny Disk Offering",
@@ -134,7 +134,6 @@ class Services:
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced',
                     }
 
 
@@ -149,6 +148,7 @@ class TestOfferings(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone and template
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -220,8 +220,8 @@ class TestOfferings(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -263,8 +263,8 @@ class TestOfferings(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -329,6 +329,7 @@ class TestNetwork(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone and template
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -399,8 +400,8 @@ class TestNetwork(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid
+                                 account=self.account.name,
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -516,6 +517,7 @@ class TestTemplates(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -544,10 +546,10 @@ class TestTemplates(cloudstackTestCase):
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         # Create Service offering and disk offerings etc
         cls.service_offering = ServiceOffering.create(
@@ -745,6 +747,7 @@ class TestSnapshots(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -768,10 +771,10 @@ class TestSnapshots(cloudstackTestCase):
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         # Create Service offering and disk offerings etc
         cls.service_offering = ServiceOffering.create(
@@ -869,8 +872,8 @@ class TestSnapshots(cloudstackTestCase):
 
         snapshots = Snapshot.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
-                                  domainid=self.account.account.domainid
+                                  account=self.account.name,
+                                  domainid=self.account.domainid
                                   )
         self.assertEqual(
                     snapshots,
@@ -891,6 +894,7 @@ class TestPublicIpAddress(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -914,10 +918,10 @@ class TestPublicIpAddress(cloudstackTestCase):
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         # Create Service offering and disk offerings etc
         cls.service_offering = ServiceOffering.create(
@@ -1033,7 +1037,7 @@ class TestPublicIpAddress(cloudstackTestCase):
 
         #Create Load Balancer rule and assign VMs to rule
         self.debug("Created LB rule for public IP: %s" %
-                                        public_ip.ipaddress.ipaddress)
+                                        public_ip.ipaddress)
         lb_rule = LoadBalancerRule.create(
                                           self.apiclient,
                                           self.services["lbrule"],
@@ -1108,13 +1112,13 @@ class TestPublicIpAddress(cloudstackTestCase):
                     "Check end port of firewall rule"
                     )
 
-        self.debug("Deploying VM for account: %s" % self.account.account.name)
+        self.debug("Deploying VM for account: %s" % self.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account.account.name,
-                                domainid=self.account.account.domainid,
+                                accountid=self.account.name,
+                                domainid=self.account.domainid,
                                 serviceofferingid=self.service_offering.id,
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -1138,17 +1142,17 @@ class TestPublicIpAddress(cloudstackTestCase):
                                   )
 
         self.debug("Creating LB rule for public IP: %s outside project" %
-                                                public_ip.ipaddress.ipaddress)
+                                                public_ip.ipaddress)
         with self.assertRaises(Exception):
             LoadBalancerRule.create(
                                           self.apiclient,
                                           self.services["lbrule"],
                                           public_ip.ipaddress.id,
-                                          accountid=self.account.account.name
+                                          accountid=self.account.name
                                           )
         self.debug(
                 "Creating firewall rule for public IP: %s outside project" %
-                                                public_ip.ipaddress.ipaddress)
+                                                public_ip.ipaddress)
         with self.assertRaises(Exception):
             FireWallRule.create(
                             self.apiclient,
@@ -1190,6 +1194,7 @@ class TestSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -1214,10 +1219,10 @@ class TestSecurityGroup(cloudstackTestCase):
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
-                                 account=cls.account.account.name,
-                                 domainid=cls.account.account.domainid
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
                                  )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls._cleanup = [
                         cls.project,
@@ -1312,8 +1317,8 @@ class TestSecurityGroup(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["server"],
                                     serviceofferingid=self.service_offering.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     securitygroupids=[security_group.id],
                                 )
         return
