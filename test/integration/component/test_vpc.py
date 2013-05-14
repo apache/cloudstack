@@ -2567,8 +2567,7 @@ class TestVPCHostMaintenance(cloudstackTestCase):
                                      )
                 if hosts_states[0].resourcestate != 'Enabled':
                     raise Exception(
-                    "Failed to cancel maintenance mode on %s, e" % (
-                                                                host.name, e))
+                    "Failed to cancel maintenance mode on %s" % (host.name))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

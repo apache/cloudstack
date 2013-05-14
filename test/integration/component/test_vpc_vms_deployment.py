@@ -1900,7 +1900,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 vpcid=vpc.id
                                 )
         self.debug("Associated %s with network %s" % (
-                                        public_ip.ipaddress.ipaddress,
+                                        public_ip_1.ipaddress.ipaddress,
                                         network_1.id
                                         ))
 
@@ -2365,7 +2365,7 @@ class TestVMDeployVPC(cloudstackTestCase):
 
             self.debug("Verifying if we can ping to outside world from VM?")
             # Ping to outsite world
-            res = ssh_5.execute("ping -c 1 www.google.com")
+            res = ssh_4.execute("ping -c 1 www.google.com")
             # res = 64 bytes from maa03s17-in-f20.1e100.net (74.125.236.212):
             # icmp_req=1 ttl=57 time=25.9 ms
             # --- www.l.google.com ping statistics ---

@@ -878,7 +878,7 @@ class TestRVRInternals(cloudstackTestCase):
                                 )
         else:
             result = get_process_status(
-                                host.ipaddress,
+                                master_host.ipaddress,
                                 self.services['host']["publicport"],
                                 self.services['host']["username"],
                                 self.services['host']["password"],
@@ -914,7 +914,7 @@ class TestRVRInternals(cloudstackTestCase):
                                 )
         else:
             result = get_process_status(
-                                host.ipaddress,
+                                backup_host.ipaddress,
                                 self.services['host']["publicport"],
                                 self.services['host']["username"],
                                 self.services['host']["password"],
@@ -1107,7 +1107,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Stopping the MASTER router")
         try:
-            cmd = stopRouter.stopRouter(cmd)
+            cmd = stopRouter.stopRouterCmd()
             cmd.id = master_router.id
             self.apiclient.stopRouter(cmd)
         except Exception as e:
@@ -1234,7 +1234,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Stopping the BACKUP router")
         try:
-            cmd = stopRouter.stopRouter(cmd)
+            cmd = stopRouter.stopRouterCmd()
             cmd.id = backup_router.id
             self.apiclient.stopRouter(cmd)
         except Exception as e:
@@ -1355,7 +1355,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Rebooting the master router")
         try:
-            cmd = rebootRouter.rebootRouter(cmd)
+            cmd = rebootRouter.rebootRouterCmd()
             cmd.id = master_router.id
             self.apiclient.rebootRouter(cmd)
         except Exception as e:
@@ -1449,7 +1449,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Rebooting the backuo router")
         try:
-            cmd = rebootRouter.rebootRouter(cmd)
+            cmd = rebootRouter.rebootRouterCmd()
             cmd.id = backup_router.id
             self.apiclient.rebootRouter(cmd)
         except Exception as e:
@@ -1543,7 +1543,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Stopping the backup router")
         try:
-            cmd = stopRouter.stopRouter(cmd)
+            cmd = stopRouter.stopRouterCmd()
             cmd.id = backup_router.id
             self.apiclient.stopRouter(cmd)
         except Exception as e:
@@ -1574,9 +1574,9 @@ class TestRedundancy(cloudstackTestCase):
                                   accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(network.id)]
+                                  networkids=[str(self.network.id)]
                                   )
-        self.debug("Deployed VM in network: %s" % network.id)
+        self.debug("Deployed VM in network: %s" % self.network.id)
 
         vms = VirtualMachine.list(
                                   self.apiclient,
