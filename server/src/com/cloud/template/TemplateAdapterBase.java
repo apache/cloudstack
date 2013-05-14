@@ -87,7 +87,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject DataStoreManager storeMgr;
 	@Inject TemplateManager templateMgr;
 	@Inject ConfigurationServer _configServer;
-	
+
 	@Override
 	public boolean stop() {
 		return true;
@@ -239,14 +239,9 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	    Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 	    _accountMgr.checkAccess(caller, null, true, owner);
 
-	    HypervisorType hyperType = HypervisorType.None;
-	    if ( cmd.getOsTypeId() != null ){
-	        hyperType = _osHyperDao.findHypervisorTypeByGuestOsId(cmd.getOsTypeId());
-	    }
-
 		return prepare(true, UserContext.current().getCallerUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
 					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
-					cmd.getZoneId(), hyperType, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false);
+					cmd.getZoneId(), HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false);
 	}
 
 	protected VMTemplateVO persistTemplate(TemplateProfile profile) {
