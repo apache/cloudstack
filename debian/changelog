@@ -1,3 +1,9 @@
+cloudstack (4.2.0) unstable; urgency=low
+
+  * Update the version to 4.2.0 to be in sync with Maven (again)
+
+ -- Wido den Hollander <wido@widodh.nl>  Tue, 14 May 2013 15:56:42 +0200
+
 cloudstack (4.2.0-incubating-0.0.snapshot) unstable; urgency=low
 
   * Update the version to 4.2.0 to be in sync with Maven
