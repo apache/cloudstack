@@ -165,4 +165,6 @@ public interface VpcManager extends VpcService{
      * @param networkOwner TODO
      */
     void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner);
+
+    List<PrivateGateway> getVpcPrivateGateways(long id);
 }

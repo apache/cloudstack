@@ -27,6 +27,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import java.util.List;
+
 @Component
 @Local(value = VpcGatewayDao.class)
 @DB(txn = false)
@@ -76,5 +78,12 @@ public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implem
         }
     }
 
+    @Override
+    public List<VpcGatewayVO> listByVpcIdAndType(long vpcId, VpcGateway.Type type) {
+        SearchCriteria<VpcGatewayVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        sc.setParameters("type", type);
+        return listBy(sc);
+    }
 
 }
