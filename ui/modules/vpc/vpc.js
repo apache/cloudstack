@@ -193,16 +193,10 @@
         var $chart = $('<div>').addClass('vpc-network-chart');
         var $tiers = $('<div>').addClass('tiers');
         var $toolbar = $('<div>').addClass('toolbar');
-        var $refresh = $('<div>').addClass('button refresh');
 
-        $refresh.appendTo($toolbar);
         $toolbar.appendTo($chart);
         $tiers.appendTo($chart);
 
-        $refresh.click(function() {
-          $('.vpc-network-chart').trigger('reload');
-        });
-        
         // Get tiers
         var $loading = $('<div>').addClass('loading-overlay').prependTo($chart);
         vpc.tiers.dataProvider({
