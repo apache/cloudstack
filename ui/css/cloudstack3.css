@@ -6299,6 +6299,10 @@ label.error {
   left: 9px;
 }
 
+.multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode {
+  display: none;
+}
+
 .multi-wizard.zone-wizard .select-network-model .select-area.disabled .isolation-mode {
   /*+opacity:50%;*/
   filter: alpha(opacity=50);
@@ -6336,6 +6340,10 @@ label.error {
   border-radius: 7px;
   border-radius: 7px 7px 7px 7px;
   line-height: 19px;
+}
+
+.multi-wizard.zone-wizard .select-network-model .select-area.advanced-zone .desc {
+  height: 120px;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area.basic-zone .desc {
