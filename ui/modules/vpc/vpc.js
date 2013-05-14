@@ -27,7 +27,10 @@
                 $browser: $browser,
                 context: $.extend(true, {}, context, {
                   networks: [tier]
-                })
+                }),
+                onActionComplete: function() {
+                  $tier.closest('.vpc-network-chart').trigger('reload');
+                }
               })
             );
 
@@ -92,6 +95,8 @@
                     // Success
                     function(args) {
                       $loading.remove();
+                      $placeholder.closest('.vpc-network-chart').trigger('reload');
+                      
                       // addNewTier({
                       //   ipAddresses: ipAddresses,
                       //   $browser: $browser,
@@ -181,90 +186,120 @@
     var vpcChart = function(args) {
       var context = args.context;
       var vpcItem = context.vpc[0];
-      var $chart = $('<div>').addClass('vpc-network-chart');
-      var $tiers = $('<div>').addClass('tiers');
-      var $toolbar = $('<div>').addClass('toolbar');
-
-      $toolbar.appendTo($chart);
-      $tiers.appendTo($chart);
       
-      // Get tiers
-      vpc.tiers.dataProvider({
-        context: context,
-        response: {
-          success: function(data) {
-            var tiers = data.tiers;
+      var chart = function(args) {
+        args = args ? args : {};
 
-            $(tiers).map(function(index, tier) {
-              var $tier = elems.tier({
-                context: context,
-                tier: tier,
-                dashboardItems: [
-                  {
-                    id: 'tierLoadBalancers',
-                    name: 'Load balancers',
-                    total: 5
-                  },
-                  {
-                    id: 'tierPortForwarders',
-                    name: 'Port forwarders',
-                    total: 4
-                  },
-                  {
-                    id: 'tierStaticNATs',
-                    name: 'Static NATs',
-                    total: 3
-                  },
-                  {
-                    id: 'tierVMs',
-                    name: 'Virtual Machines',
-                    total: 300
-                  }
-                ]
+        var $chart = $('<div>').addClass('vpc-network-chart');
+        var $tiers = $('<div>').addClass('tiers');
+        var $toolbar = $('<div>').addClass('toolbar');
+        var $refresh = $('<div>').addClass('button refresh');
+
+        $refresh.appendTo($toolbar);
+        $toolbar.appendTo($chart);
+        $tiers.appendTo($chart);
+
+        $refresh.click(function() {
+          $('.vpc-network-chart').trigger('reload');
+        });
+        
+        // Get tiers
+        var $loading = $('<div>').addClass('loading-overlay').prependTo($chart);
+        vpc.tiers.dataProvider({
+          context: context,
+          response: {
+            success: function(data) {
+              var tiers = data.tiers;
+
+              $(tiers).map(function(index, tier) {
+                var $tier = elems.tier({
+                  context: context,
+                  tier: tier,
+                  dashboardItems: [
+                    {
+                      id: 'tierLoadBalancers',
+                      name: 'Load balancers',
+                      total: 5
+                    },
+                    {
+                      id: 'tierPortForwarders',
+                      name: 'Port forwarders',
+                      total: 4
+                    },
+                    {
+                      id: 'tierStaticNATs',
+                      name: 'Static NATs',
+                      total: 3
+                    },
+                    {
+                      id: 'tierVMs',
+                      name: 'Virtual Machines',
+                      total: 300
+                    }
+                  ]
+                });
+
+                $tier.appendTo($tiers);
               });
 
-              $tier.appendTo($tiers);
-            });
+              // Add placeholder tier
+              $tiers.append(elems.tierPlaceholder({
+                context: context
+              }));
 
-            // Add placeholder tier
-            $tiers.append(elems.tierPlaceholder({
-              context: context
-            }));
+              $loading.remove();
+              
+              if (args.complete) {
+                args.complete($chart);
+              }
+            }
           }
-        }
-      });
+        });
 
-      // Router
-      $router = elems.router({
-        context: context,
-        dashboardItems: [
-          {
-            id: 'privateGateways',
-            name: 'Private gateways',
-            total: 1
-          },
-          {
-            id: 'publicIPs',
-            name: 'Public IP addresses',
-            total: 2
-          },
-          {
-            id: 'siteToSiteVPNs',
-            name: 'Site-to-site VPNs',
-            total: 3
-          },
-          {
-            id: 'networkACLLists',
-            name: 'Network ACL lists',
-            total: 2
-          }
-        ]
-      }).appendTo($chart);
-      
+        // Router
+        $router = elems.router({
+          context: context,
+          dashboardItems: [
+            {
+              id: 'privateGateways',
+              name: 'Private gateways',
+              total: 1
+            },
+            {
+              id: 'publicIPs',
+              name: 'Public IP addresses',
+              total: 2
+            },
+            {
+              id: 'siteToSiteVPNs',
+              name: 'Site-to-site VPNs',
+              total: 3
+            },
+            {
+              id: 'networkACLLists',
+              name: 'Network ACL lists',
+              total: 2
+            }
+          ]
+        }).appendTo($chart);
+
+        $chart.bind('reload', function() {
+          chart({
+            complete: function($newChart) {
+              $chart.replaceWith($newChart);              
+            }
+          });
+        });
+
+        return $chart;
+      };
+
       $('#browser .container').cloudBrowser('addPanel', {
         title: vpcItem.displaytext ? vpcItem.displaytext : vpcItem.name,
         maximizeIfSelected: true,
         complete: function($panel) {
+          var $chart = chart();
+
           $chart.appendTo($panel);
         }
       });
