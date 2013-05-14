@@ -399,6 +399,8 @@ if [ -L $oldserverxml ] ; then
         if [ -L $serverxml ]; then rm -f $serverxml; fi
         ln -s %{_sysconfdir}/%{name}/management/server-ssl.xml $serverxml
     fi
+else
+    echo "Unable to determine ssl settings for server.xml, please run cloudstack-setup-management manually"
 fi
 
 tomcatconf=%{_sysconfdir}/%{name}/management/tomcat6.conf
@@ -411,6 +413,8 @@ if [ -L $oldtomcatconf ] ; then
         if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
         ln -s %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf $tomcatconf
     fi
+else
+    echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
 fi
 
 %preun agent
