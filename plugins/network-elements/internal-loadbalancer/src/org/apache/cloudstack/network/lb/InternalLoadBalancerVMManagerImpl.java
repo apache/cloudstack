@@ -117,6 +117,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
+
 @Component
 @Local(value = { InternalLoadBalancerVMManager.class, InternalLoadBalancerVMService.class})
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
@@ -543,11 +544,14 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     
     @Override
     public VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, long callerUserId) throws ConcurrentOperationException,
-    ResourceUnavailableException {
+                                        ResourceUnavailableException {
         DomainRouterVO internalLbVm = _internalLbVmDao.findById(vmId);
         if (internalLbVm == null || internalLbVm.getRole() != Role.INTERNAL_LB_VM) {
             throw new InvalidParameterValueException("Can't find internal lb vm by id specified");
         }
+        
+        //check permissions
+        _accountMgr.checkAccess(caller, null, true, internalLbVm);
         
         return stopInternalLbVm(internalLbVm, forced, caller, callerUserId);
     }
@@ -945,6 +949,9 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         if (internalLbVm == null || internalLbVm.getRole() != Role.INTERNAL_LB_VM) {
             throw new InvalidParameterValueException("Can't find internal lb vm by id specified");
         }
+        
+        //check permissions
+        _accountMgr.checkAccess(caller, null, true, internalLbVm);
         
         return startInternalLbVm(internalLbVm, caller, callerUserId, null);
     }

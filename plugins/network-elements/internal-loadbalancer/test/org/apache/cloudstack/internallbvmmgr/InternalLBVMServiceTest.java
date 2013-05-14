@@ -47,11 +47,15 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.user.UserContext;
+import com.cloud.user.dao.AccountDao;
+
 
 /**
  * Set of unittests for InternalLoadBalancerVMService
@@ -70,6 +74,7 @@ public class InternalLBVMServiceTest extends TestCase {
     @Inject ServiceOfferingDao _svcOffDao;
     @Inject DomainRouterDao _domainRouterDao;
     @Inject VirtualMachineManager _itMgr;
+    @Inject AccountDao _accountDao;
     
     long validVmId = 1L;
     long nonExistingVmId = 2L;
@@ -85,6 +90,12 @@ public class InternalLBVMServiceTest extends TestCase {
         Mockito.when(_svcOffDao.persistSystemServiceOffering(Mockito.any(ServiceOfferingVO.class))).thenReturn(off);
         
         ComponentContext.initComponentsLifeCycle();
+        
+        Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
+        Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
+        Mockito.when(_accountDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(new AccountVO(2));
+        UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
+        
         
         DomainRouterVO validVm = new DomainRouterVO(validVmId,off.getId(),1,"alena",1,HypervisorType.XenServer,1,1,1,
                 false, 0,false,null,false,false,
@@ -145,12 +156,6 @@ public class InternalLBVMServiceTest extends TestCase {
         } catch (ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (InvalidParameterValueException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The non-existing internal lb vm was attempted to start"
-        + expectedExcText, expectedExcText, "Can't find internal lb vm by id specified");
         }
     }
     
@@ -171,12 +176,6 @@ public class InternalLBVMServiceTest extends TestCase {
         } catch (ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }catch (InvalidParameterValueException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The existing vm of not Internal lb vm type was attempted to start"
-        + expectedExcText, expectedExcText, "Can't find internal lb vm by id specified");
         }
     }
     
@@ -218,12 +217,6 @@ public class InternalLBVMServiceTest extends TestCase {
         } catch (ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (InvalidParameterValueException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The non-existing internal lb vm was attempted to stop"
-        + expectedExcText, expectedExcText, "Can't find internal lb vm by id specified");
         }
     }
     
@@ -242,12 +235,6 @@ public class InternalLBVMServiceTest extends TestCase {
         } catch (ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }catch (InvalidParameterValueException e) {
-            expectedExcText = e.getMessage();
-            throw e;
-        } finally {
-            assertEquals("Test failed. The existing vm of not Internal lb vm type was attempted to stop"
-        + expectedExcText, expectedExcText, "Can't find internal lb vm by id specified");
         }
     }
     

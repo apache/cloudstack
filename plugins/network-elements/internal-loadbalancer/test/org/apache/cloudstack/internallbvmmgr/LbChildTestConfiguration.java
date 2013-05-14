@@ -50,6 +50,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.user.dao.AccountDao;
 
 
 @Configuration
@@ -160,6 +161,13 @@ import com.cloud.vm.dao.NicDao;
             public ConfigurationServer configurationServer() {
                 return Mockito.mock(ConfigurationServer.class);
             }
+            
+            @Bean
+            public AccountDao accountDao() {
+                return Mockito.mock(AccountDao.class);
+            }
+            
+            
             
             @Override
             public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
