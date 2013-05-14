@@ -1024,6 +1024,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw new CloudRuntimeException("Failed to find a nic profile for the existing default network. This is bad and probably means some sort of configuration corruption");
         }
 
+        Network oldDefaultNetwork = null;
+        oldDefaultNetwork = _networkModel.getDefaultNetworkForVm(vmId);
+        long oldNetworkOfferingId = -1L;
+
+        if(oldDefaultNetwork!=null) {
+            oldNetworkOfferingId = oldDefaultNetwork.getNetworkOfferingId();
+        }
         NicVO existingVO = _nicDao.findById(existing.id);
         Integer chosenID = nic.getDeviceId();
         Integer existingID = existing.getDeviceId();
@@ -1055,6 +1062,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw new CloudRuntimeException("Failed to change default nic to " + nic + " and now we have no default");
         } else if (newdefault.getId() == nic.getNetworkId()) {
             s_logger.debug("successfully set default network to " + network + " for " + vmInstance);
+            String nicIdString = Long.toString(nic.getId());
+            long newNetworkOfferingId = network.getNetworkOfferingId();
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), nicIdString, oldNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                     vmInstance.getId(), nicIdString, newNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), nicIdString, newNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                     vmInstance.getId(), nicIdString, oldNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid());
             return _vmDao.findById(vmInstance.getId());
         }
 
