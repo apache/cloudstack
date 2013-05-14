@@ -28,6 +28,9 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
@@ -42,13 +45,14 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.NetworkUsageService;
 import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleService;
 import com.cloud.network.firewall.FirewallService;
-import com.cloud.network.firewall.NetworkACLService;
+import com.cloud.network.vpc.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
@@ -138,7 +142,12 @@ public abstract class BaseCmd {
     @Inject public VMSnapshotService _vmSnapshotService;
     @Inject public DataStoreProviderApiService dataStoreProviderApiService;
     @Inject public VpcProvisioningService _vpcProvSvc;
+    @Inject public ApplicationLoadBalancerService _newLbSvc;
+    @Inject public ApplicationLoadBalancerService _appLbService;
     @Inject public AffinityGroupService _affinityGroupService;
+    @Inject public InternalLoadBalancerElementService _internalLbElementSvc;
+    @Inject public InternalLoadBalancerVMService _internalLbSvc;
+    @Inject public NetworkModel _ntwkModel;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 

@@ -37,8 +37,7 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install sysstat
   # apache
   apt-get --no-install-recommends -q -y --force-yes install apache2 ssl-cert
-  # haproxy
-  apt-get --no-install-recommends -q -y --force-yes install haproxy
+
   # dnsmasq
   apt-get --no-install-recommends -q -y --force-yes install dnsmasq dnsmasq-utils
   # nfs client
@@ -78,6 +77,11 @@ install_packages() {
   # cd $PREV
   # rm -fr /opt/vmware-tools-distrib
   # apt-get -q -y --force-yes purge build-essential
+
+  # haproxy. Wheezy doesn't have haproxy, install from backports
+  #apt-get --no-install-recommends -q -y --force-yes install haproxy
+  wget http://ftp.us.debian.org/debian/pool/main/h/haproxy/haproxy_1.4.8-1_i386.deb
+  dpkg -i haproxy_1.4.8-1_i386.deb
 }
 
 setup_accounts() {

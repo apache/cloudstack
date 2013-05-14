@@ -28,7 +28,7 @@ import org.apache.cloudstack.framework.transport.TransportEndpoint;
 import org.apache.cloudstack.framework.transport.TransportEndpointSite;
 import org.apache.cloudstack.framework.transport.TransportProvider;
 
-import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.concurrency.NamedThreadFactory; 
 
 public class ClientTransportProvider implements TransportProvider {
 	public static final int DEFAULT_WORKER_POOL_SIZE = 5;

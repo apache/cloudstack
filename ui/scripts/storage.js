@@ -1612,7 +1612,7 @@
     if(jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
       allowedActions.push("takeSnapshot");
       allowedActions.push("recurringSnapshot");
-      if((jsonObj.hypervisor == "XenServer" || jsonObj.hypervisor == "KVM" || jsonObj.hypervisor == "VMware") && jsonObj.type == "DATADISK") {
+      if(jsonObj.type == "DATADISK") {
     	  allowedActions.push("resize");
       }
     }

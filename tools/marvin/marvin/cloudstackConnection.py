@@ -113,7 +113,7 @@ class cloudConnection(object):
         )
         signature = base64.encodestring(hmac.new(
             self.securityKey, hashStr, hashlib.sha1).digest()).strip()
-        self.logging.info("Computed Signature by Marvin: %s" % signature)
+        self.logging.debug("Computed Signature by Marvin: %s" % signature)
         return signature
 
     def request(self, command, auth=True, payload={}, method='GET'):

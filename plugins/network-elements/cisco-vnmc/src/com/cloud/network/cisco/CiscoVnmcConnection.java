@@ -140,23 +140,23 @@ public interface CiscoVnmcConnection {
     public boolean createTenantVDCIngressAclRule(String tenantName,
             String identifier, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp,
-            String destStartPort, String destEndPort, String destIp)
+            String destStartPort, String destEndPort)
             throws ExecutionException;
 
     public boolean createTenantVDCIngressAclRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String sourceStartIp, String sourceEndIp, String destIp)
+            String protocol, String sourceStartIp, String sourceEndIp)
             throws ExecutionException;
 
     public boolean createTenantVDCEgressAclRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String sourceStartPort, String sourceEndPort, String sourceIp,
-            String destStartIp, String destEndIp)
+            String protocol, String destStartIp, String destEndIp,
+            String destStartPort, String destEndPort)
             throws ExecutionException;
 
     public boolean createTenantVDCEgressAclRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String sourceIp, String destStartIp, String destEndIp)
+            String protocol, String destStartIp, String destEndIp)
             throws ExecutionException;
 
     public boolean deleteTenantVDCAclRule(String tenantName,

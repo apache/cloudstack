@@ -18,6 +18,7 @@ package org.apache.cloudstack.query;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
@@ -101,4 +102,6 @@ public interface QueryService {
 
     public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
             String affinityGroupType, Long vmId, Long startIndex, Long pageSize);
+
+    ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd);
 }

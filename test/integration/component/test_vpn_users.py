@@ -138,8 +138,8 @@ class TestVPNUsers(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["virtual_machine"],
                                 templateid=self.template.id,
-                                accountid=self.account.account.name,
-                                domainid=self.account.account.domainid,
+                                accountid=self.account.name,
+                                domainid=self.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.public_ip = PublicIPAddress.create(
@@ -170,8 +170,8 @@ class TestVPNUsers(cloudstackTestCase):
             # Assign VPN to Public IP
             vpn = Vpn.create(self.apiclient,
                          self.public_ip.ipaddress.id,
-                         account=self.account.account.name,
-                         domainid=self.account.account.domainid)
+                         account=self.account.name,
+                         domainid=self.account.domainid)
 
             self.debug("Verifying the remote VPN access")
             vpns = Vpn.list(self.apiclient,
@@ -190,7 +190,7 @@ class TestVPNUsers(cloudstackTestCase):
         """Creates VPN users for the network"""
 
         self.debug("Creating VPN users for account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         if api_client is None:
             api_client = self.apiclient
         try:
@@ -198,8 +198,8 @@ class TestVPNUsers(cloudstackTestCase):
                                  api_client,
                                  self.services["vpn_user"]["username"],
                                  self.services["vpn_user"]["password"],
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid,
+                                 account=self.account.name,
+                                 domainid=self.account.domainid,
                                  rand_name=rand_name
                                  )
 
@@ -240,7 +240,7 @@ class TestVPNUsers(cloudstackTestCase):
         limit = int(configs[0].value)
 
         self.debug("Enabling the VPN access for IP: %s" %
-                                            self.public_ip.ipaddress.ipaddress)
+                                            self.public_ip.ipaddress)
 
         self.create_VPN(self.public_ip)
         self.debug("Creating %s VPN users" % limit)
@@ -278,7 +278,7 @@ class TestVPNUsers(cloudstackTestCase):
                          "List NAT rules should return a valid response")
 
         self.debug("Enabling the VPN connection for IP: %s" %
-                                            self.public_ip.ipaddress.ipaddress)
+                                            self.public_ip.ipaddress)
         with self.assertRaises(Exception):
             self.create_VPN(self.public_ip)
         self.debug("Create VPN connection failed! Test successful!")
@@ -295,7 +295,7 @@ class TestVPNUsers(cloudstackTestCase):
         #    saying that VPN is enabled over port 1701
 
         self.debug("Enabling the VPN connection for IP: %s" %
-                                            self.public_ip.ipaddress.ipaddress)
+                                            self.public_ip.ipaddress)
         self.create_VPN(self.public_ip)
 
         self.debug("Creating a port forwarding rule on port 1701")
@@ -321,12 +321,12 @@ class TestVPNUsers(cloudstackTestCase):
         #    the newly added user credential.
 
         self.debug("Enabling the VPN connection for IP: %s" %
-                                            self.public_ip.ipaddress.ipaddress)
+                                            self.public_ip.ipaddress)
         self.create_VPN(self.public_ip)
 
         try:
             self.debug("Adding new VPN user to account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
             self.create_VPN_Users()
 
             # TODO: Verify the VPN connection
@@ -348,11 +348,11 @@ class TestVPNUsers(cloudstackTestCase):
         # 3. Adding this VPN user should fail.
 
         self.debug("Enabling the VPN connection for IP: %s" %
-                                            self.public_ip.ipaddress.ipaddress)
+                                            self.public_ip.ipaddress)
         self.create_VPN(self.public_ip)
 
         self.debug("Adding new VPN user to account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.create_VPN_Users(rand_name=False)
 
         # TODO: Verify the VPN connection
@@ -378,22 +378,22 @@ class TestVPNUsers(cloudstackTestCase):
         #   establish VPN connection that will give access all VMs of this user
 
         self.debug("Enabling VPN connection to account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.create_VPN(self.public_ip)
         self.debug("Creating VPN user for the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.create_VPN_Users()
 
         self.debug("Creating a global admin account")
         admin = Account.create(self.apiclient,
                                self.services["account"],
                                admin=True,
-                               domainid=self.account.account.domainid)
+                               domainid=self.account.domainid)
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
         api_client = self.testClient.createUserApiClient(
-                                    UserName=self.account.account.name,
-                                    DomainName=self.account.account.domain)
+                                    UserName=self.account.name,
+                                    DomainName=self.account.domain)
 
         self.debug("Adding new user to VPN as a global admin: %s" %
                                                             admin.account.name)
@@ -421,21 +421,21 @@ class TestVPNUsers(cloudstackTestCase):
         #   establish VPN connection that will give access all VMs of this user
 
         self.debug("Enabling VPN connection to account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.create_VPN(self.public_ip)
         self.debug("Creating VPN user for the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.create_VPN_Users()
 
         self.debug("Creating a domain admin account")
         admin = Account.create(self.apiclient,
                                self.services["account"],
-                               domainid=self.account.account.domainid)
+                               domainid=self.account.domainid)
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
         api_client = self.testClient.createUserApiClient(
-                                    UserName=self.account.account.name,
-                                    DomainName=self.account.account.domain)
+                                    UserName=self.account.name,
+                                    DomainName=self.account.domain)
 
         self.debug("Adding new user to VPN as a domain admin: %s" %
                                                             admin.account.name)

@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.vpc.NetworkACLItemDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -117,6 +118,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     StaticRouteDao _staticRouteDao;
     @Inject
     VMSnapshotDao _vmSnapshotDao;
+    @Inject
+    NetworkACLItemDao _networkACLItemDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -133,7 +136,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         _daoMap.put(TaggedResourceType.PublicIpAddress, _publicIpDao);
         _daoMap.put(TaggedResourceType.Project, _projectDao);
         _daoMap.put(TaggedResourceType.Vpc, _vpcDao);
-        _daoMap.put(TaggedResourceType.NetworkACL, _firewallDao);
+        _daoMap.put(TaggedResourceType.NetworkACL, _networkACLItemDao);
         _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
         _daoMap.put(TaggedResourceType.VMSnapshot, _vmSnapshotDao);
         _daoMap.put(TaggedResourceType.RemoteAccessVpn, _vpnDao);

@@ -30,7 +30,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.*;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -74,6 +73,13 @@ import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterIpAddressVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -1638,10 +1644,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 	private Object dispatchToStateAdapters(ResourceStateAdapter.Event event,
 			boolean singleTaker, Object... args) {
         synchronized (_resourceStateAdapters) {
-            Iterator it = _resourceStateAdapters.entrySet().iterator();
+            Iterator<Map.Entry<String, ResourceStateAdapter>> it = _resourceStateAdapters.entrySet().iterator();
             Object result = null;
             while (it.hasNext()) {
-				Map.Entry<String, ResourceStateAdapter> item = (Map.Entry<String, ResourceStateAdapter>) it
+				Map.Entry<String, ResourceStateAdapter> item = it
 						.next();
                 ResourceStateAdapter adapter = item.getValue();
 

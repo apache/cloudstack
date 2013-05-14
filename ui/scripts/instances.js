@@ -934,7 +934,7 @@
                         var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
                         var items = [];
                         $(serviceofferings).each(function() {
-                          items.push({id: this.id, description: this.displaytext});
+                          items.push({id: this.id, description: this.name});
                         });
                         args.response.success({data: items});
                       }
@@ -1247,7 +1247,7 @@
                 dataType: "json",
                 async: true,
                 success: function(json) {
-                  var jid = json.scalevirtualmachineresponse.jobid;
+                //  var jid = json.scalevirtualmachineresponse.jobid;
                   args.response.success();
                    /* {_custom:
                      {jobId: jid,

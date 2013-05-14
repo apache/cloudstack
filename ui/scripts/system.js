@@ -1018,12 +1018,7 @@
                     dataType: "json",
                     success: function(json) {
                       var jobId = json.updatephysicalnetworkresponse.jobid;
-
-                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
-
-                      updateTrafficLabels(trafficType, args.data, function() {
                         args.response.success({ _custom: { jobId: jobId }});
-                      });
                    },
 
                     error:function(json){
@@ -1071,10 +1066,7 @@
                     dataType: "json",
                     success: function(json) {
                       var jobId = json.updatephysicalnetworkresponse.jobid;
-                      var trafficType = getTrafficType(selectedPhysicalNetworkObj, 'Guest');
-                      updateTrafficLabels(trafficType, args.data, function() {
                         args.response.success({ _custom: { jobId: jobId }});
-                      });
                    },
 
                    error:function(json){
@@ -5421,9 +5413,9 @@
                 dataType: "json",
                 async: true,
                 success: function(json) {
-                  var jid = json.scalevirtualmachineresponse.jobid;
-                  args.response.success(
-                    {_custom:
+                 // var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success();
+                   /* {_custom:
                      {jobId: jid,
                       getUpdatedItem: function(json) {
                         return json.queryasyncjobresultresponse.jobresult.virtualmachine;
@@ -5433,8 +5425,8 @@
                          }
                           
                        }
-                    }
-                  );
+                    } */
+
                 },
                  error:function(json){
                      args.response.error(parseXMLHttpResponse(json));
@@ -6305,9 +6297,9 @@
                 dataType: "json",
                 async: true,
                 success: function(json) {
-                  var jid = json.scalevirtualmachineresponse.jobid;
-                  args.response.success(
-                    {_custom:
+               //   var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success();
+                 /*   {_custom:
                      {jobId: jid,
                       getUpdatedItem: function(json) {
                         return json.queryasyncjobresultresponse.jobresult.virtualmachine;
@@ -6316,8 +6308,8 @@
                         return vmActionfilter;
                         }
                      }
-                    }
-                  );
+                    }*/
+                  
                 },
                  error:function(json){
                      args.response.error(parseXMLHttpResponse(json));

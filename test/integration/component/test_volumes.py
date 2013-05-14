@@ -52,7 +52,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "memory": 128,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -121,7 +121,7 @@ class TestAttachVolume(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -129,8 +129,8 @@ class TestAttachVolume(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                 )
         cls._cleanup = [
@@ -162,13 +162,13 @@ class TestAttachVolume(cloudstackTestCase):
                                    self.apiclient,
                                    self.services["volume"],
                                    zoneid=self.zone.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid,
+                                   account=self.account.name,
+                                   domainid=self.account.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
             self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name
+                                                self.account.name
                                                 ))
             # Check List Volume response for newly created volume
             list_volume_response = list_volumes(
@@ -311,13 +311,13 @@ class TestAttachVolume(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["volume"],
                                 zoneid=self.zone.id,
-                                account=self.account.account.name,
-                                domainid=self.account.account.domainid,
+                                account=self.account.name,
+                                domainid=self.account.domainid,
                                 diskofferingid=self.disk_offering.id
                                )
         self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name
+                                                self.account.name
                                                 ))
         # Check List Volume response for newly created volume
         list_volume_response = list_volumes(
@@ -392,7 +392,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -400,8 +400,8 @@ class TestAttachDetachVolume(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                 )
         cls._cleanup = [
@@ -449,13 +449,13 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                    self.apiclient,
                                    self.services["volume"],
                                    zoneid=self.zone.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid,
+                                   account=self.account.name,
+                                   domainid=self.account.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
             self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name
+                                                self.account.name
                                                 ))
             self.cleanup.append(volume)
             volumes.append(volume)
@@ -639,7 +639,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -647,8 +647,8 @@ class TestAttachVolumeISO(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                 )
         cls._cleanup = [
@@ -694,13 +694,13 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                    self.apiclient,
                                    self.services["volume"],
                                    zoneid=self.zone.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid,
+                                   account=self.account.name,
+                                   domainid=self.account.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
             self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name
+                                                self.account.name
                                                 ))
             # Check List Volume response for newly created volume
             list_volume_response = list_volumes(
@@ -749,12 +749,12 @@ class TestAttachVolumeISO(cloudstackTestCase):
         iso = Iso.create(
                          self.apiclient,
                          self.services["iso"],
-                         account=self.account.account.name,
-                         domainid=self.account.account.domainid,
+                         account=self.account.name,
+                         domainid=self.account.domainid,
                          )
         self.debug("Created ISO with ID: %s for account: %s" % (
                                                     iso.id,
-                                                    self.account.account.name
+                                                    self.account.name
                                                     ))
 
         try:
@@ -831,7 +831,7 @@ class TestVolumes(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -839,8 +839,8 @@ class TestVolumes(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                 )
 
@@ -848,8 +848,8 @@ class TestVolumes(cloudstackTestCase):
                                    cls.api_client,
                                    cls.services["volume"],
                                    zoneid=cls.zone.id,
-                                   account=cls.account.account.name,
-                                   domainid=cls.account.account.domainid,
+                                   account=cls.account.name,
+                                   domainid=cls.account.domainid,
                                    diskofferingid=cls.disk_offering.id
                                    )
         cls._cleanup = [
@@ -1071,7 +1071,7 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -1137,8 +1137,8 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
             Volume.create_custom_disk(
                                     self.apiclient,
                                     self.services["custom_volume"],
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     diskofferingid=self.disk_offering.id
                                     )
         self.debug("Create volume failed!")
@@ -1149,8 +1149,8 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
             Volume.create_custom_disk(
                                     self.apiclient,
                                     self.services["custom_volume"],
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     diskofferingid=self.disk_offering.id
                                     )
         self.debug("Create volume failed!")
@@ -1163,8 +1163,8 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
             Volume.create_custom_disk(
                                     self.apiclient,
                                     self.services["custom_volume"],
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
                                     diskofferingid=self.disk_offering.id
                                     )
             self.debug("Create volume of cust disk size succeeded")

@@ -48,7 +48,7 @@ class Services:
                 "cpunumber": 1,
                 "cpuspeed": 100,
                 # in MHz
-                "memory": 64,
+                "memory": 128,
                 # In MBs
             },
             "ostype": 'CentOS 5.3 (64-bit)',
@@ -187,7 +187,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         @classmethod
         def tearDown(cls):
             try:
-                cls.api_client = super(TestDeployVmWithAffinityGroup, cls).getClsTestClient().getApiClient()
+                #cls.api_client = super(TestDeployVmWithAffinityGroup, cls).getClsTestClient().getApiClient()
                 #Clean up, terminate the created templates
                 cleanup_resources(cls.api_client, cls.cleanup)
             except Exception as e:

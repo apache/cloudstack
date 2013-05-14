@@ -35,6 +35,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -46,6 +47,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.ElasticLoadBalancerManager;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.component.AdapterBase;
@@ -68,10 +70,23 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     boolean _enabled;
     TrafficType _frontEndTrafficType = TrafficType.Guest;
     
-    private boolean canHandle(Network network) {
+    private boolean canHandle(Network network, List<LoadBalancingRule> rules) {
         if (network.getGuestType() != Network.GuestType.Shared|| network.getTrafficType() != TrafficType.Guest) {
             s_logger.debug("Not handling network with type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
             return false;
+        }
+        
+        Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
+        if (!lbCaps.isEmpty()) {
+            String schemeCaps = lbCaps.get(Capability.LbSchemes);
+            if (schemeCaps != null) {
+                for (LoadBalancingRule rule : rules) {
+                    if (!schemeCaps.contains(rule.getScheme().toString())) {
+                        s_logger.debug("Scheme " + rules.get(0).getScheme() + " is not supported by the provider " + this.getName());
+                        return false;
+                    }
+                }
+            }
         }
         
         return true;
@@ -94,6 +109,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
         lbCapabilities.put(Capability.SupportedLBIsolation, "shared");
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
+        lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
         
         capabilities.put(Service.Lb, lbCapabilities);   
         return capabilities;
@@ -139,10 +155,10 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
-        if (!canHandle(network)) {
+        if (!canHandle(network, rules)) {
             return false;
         }
-        
+                
         return _lbMgr.applyLoadBalancerRules(network, rules);
     }
 

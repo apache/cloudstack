@@ -339,7 +339,7 @@ CREATE TABLE `cloud`.`vm_snapshots` (
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `vm_snapshot_enabled` tinyint(1) DEFAULT 0 NOT NULL COMMENT 'Whether VM snapshot is supported by hypervisor';
 UPDATE `cloud`.`hypervisor_capabilities` SET `vm_snapshot_enabled`=1 WHERE `hypervisor_type` in ('VMware', 'XenServer');
 
-			
+      
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
     select 
@@ -450,7 +450,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         async_job.uuid job_uuid,
         async_job.job_status job_status,
         async_job.account_id job_account_id,
-		affinity_group.id affinity_group_id,
+    affinity_group.id affinity_group_id,
         affinity_group.uuid affinity_group_uuid,
         affinity_group.name affinity_group_name,
         affinity_group.description affinity_group_description
@@ -515,7 +515,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
             and async_job.job_status = 0
             left join
         `cloud`.`affinity_group_vm_map` ON vm_instance.id = affinity_group_vm_map.instance_id
-			left join
+      left join
         `cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id;
 
 DROP VIEW IF EXISTS `cloud`.`affinity_group_view`;
@@ -844,7 +844,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         domain_router.scripts_version scripts_version,
         domain_router.is_redundant_router is_redundant_router,
         domain_router.redundant_state redundant_state,
-        domain_router.stop_pending stop_pending
+        domain_router.stop_pending stop_pending,
+        domain_router.role role
     from
         `cloud`.`domain_router`
             inner join
@@ -919,7 +920,7 @@ CREATE TABLE `cloud`.`network_asa1000v_map` (
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `eip_associate_public_ip` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if public IP is associated with user VM creation by default when EIP service is enabled.' AFTER `elastic_ip_service`;
 
 -- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;			
+SET foreign_key_checks = 1;     
 
 
 -- Add "default" field to account/user tables
@@ -1115,6 +1116,41 @@ CREATE VIEW `cloud`.`account_view` AS
             and async_job.instance_type = 'Account'
             and async_job.job_status = 0;
 
+
+
+ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `source_ip_address` varchar(40) COMMENT 'source ip address for the load balancer rule';
+ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `source_ip_address_network_id` bigint unsigned COMMENT 'the id of the network where source ip belongs to';
+ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `scheme` varchar(40) NOT NULL COMMENT 'load balancer scheme; can be Internal or Public';
+UPDATE `cloud`.`load_balancing_rules` SET `scheme`='Public';
+
+
+
+-- Add details talbe for the network offering
+CREATE TABLE `cloud`.`network_offering_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_offering_details__network_offering_id` FOREIGN KEY `fk_network_offering_details__network_offering_id`(`network_offering_id`) REFERENCES `network_offerings`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Change the constraint for the network service map table. Now we support multiple provider for the same service
+ALTER TABLE `cloud`.`ntwk_service_map` DROP FOREIGN KEY `fk_ntwk_service_map__network_id`;
+ALTER TABLE `cloud`.`ntwk_service_map` DROP INDEX `network_id`;
+
+ALTER TABLE `cloud`.`ntwk_service_map` ADD UNIQUE `network_id` (`network_id`,`service`,`provider`);
+ALTER TABLE `cloud`.`ntwk_service_map` ADD  CONSTRAINT `fk_ntwk_service_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE;
+
+
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `internal_lb` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering supports Internal lb service';
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `public_lb` int(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if the network offering supports Public lb service';
+UPDATE `cloud`.`network_offerings` SET public_lb=1 where id IN (SELECT DISTINCT network_offering_id FROM `cloud`.`ntwk_offering_service_map` WHERE service='Lb');
+
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'internallbvm.service.offering', null, 'Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used');
+
+
 alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;
 ALTER TABLE `cloud`.`data_center_details` MODIFY value varchar(1024);
 ALTER TABLE `cloud`.`cluster_details` MODIFY value varchar(255);
@@ -1126,3 +1162,61 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'manage
 
 alter table cloud.vpc_gateways add column source_nat boolean default false;
 alter table cloud.private_ip_address add column source_nat boolean default false;
+
+CREATE TABLE `cloud`.`account_vnet_map` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `uuid` varchar(255) UNIQUE,
+  `vnet_range` varchar(255) NOT NULL COMMENT 'dedicated guest vlan range',
+  `account_id` bigint unsigned NOT NULL COMMENT 'account id. foreign key to account table',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id. foreign key to the the physical network table',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_account_vnet_map__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network` (`id`) ON DELETE CASCADE,
+  INDEX `i_account_vnet_map__physical_network_id`(`physical_network_id`),
+  CONSTRAINT `fk_account_vnet_map__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  INDEX `i_account_vnet_map__account_id`(`account_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN account_vnet_map_id bigint unsigned;
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__account_vnet_map_id` FOREIGN KEY `fk_op_dc_vnet_alloc__account_vnet_map_id` (`account_vnet_map_id`) REFERENCES `account_vnet_map` (`id`);
+
+CREATE TABLE `cloud`.`network_acl` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of the network acl',
+  `uuid` varchar(40),
+  `vpc_id` bigint unsigned COMMENT 'vpc this network acl belongs to',
+  `description` varchar(1024),
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_acl_item` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `acl_id` bigint unsigned NOT NULL COMMENT 'network acl id',
+  `start_port` int(10) COMMENT 'starting port of a port range',
+  `end_port` int(10) COMMENT 'end port of a port range',
+  `state` char(32) NOT NULL COMMENT 'current state of this rule',
+  `protocol` char(16) NOT NULL default 'TCP' COMMENT 'protocol to open these ports for',
+  `created` datetime COMMENT 'Date created',
+  `icmp_code` int(10) COMMENT 'The ICMP code (if protocol=ICMP). A value of -1 means all codes for the given ICMP type.',
+  `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.',
+  `traffic_type` char(32) COMMENT 'the traffic type of the rule, can be Ingress or Egress',
+  `cidr` varchar(255) COMMENT 'comma seperated cidr list',
+  `number` int(10) NOT NULL COMMENT 'priority number of the acl item',
+  `action` varchar(10) NOT NULL COMMENT 'rule action, allow or deny',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY (`acl_id`, `number`),
+  CONSTRAINT `fk_network_acl_item__acl_id` FOREIGN KEY(`acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_network_acl_item__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`networks` add column `network_acl_id` bigint unsigned COMMENT 'network acl id';
+
+-- Add Default ACL deny_all
+INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (1, UUID(), 0, "Default Network ACL Deny All", "default_deny");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (1, UUID(), 1, "Active", "all", now(), "Ingress", "0.0.0.0/0", 1, "Deny");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (2, UUID(), 1, "Active", "all", now(), "Egress", "0.0.0.0/0", 2, "Deny");
+
+-- Add Default ACL allow_all
+INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (2, UUID(), 0, "Default Network ACL Allow All", "default_allow");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (3, UUID(), 2, "Active", "all", now(), "Ingress", "0.0.0.0/0", 1, "Allow");
+INSERT INTO `cloud`.`network_acl_item` (id, uuid, acl_id, state, protocol, created, traffic_type, cidr, number, action) values (4, UUID(), 2, "Active", "all", now(), "Egress", "0.0.0.0/0", 2, "Allow");
