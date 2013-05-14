@@ -685,6 +685,7 @@ class Volume:
                 timeout = timeout - 1
         return
 
+    @classmethod
     def migrate(cls, apiclient, **kwargs):
         """Migrate a volume"""
         cmd = migrateVolume.migrateVolumeCmd()
