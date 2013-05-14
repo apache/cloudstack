@@ -8714,6 +8714,71 @@
                 }
               },
 
+                dedicate:{
+                   label: 'Dedicate Pod',
+                messages: {
+                  confirm: function(args) {
+                    return 'Do you really want to dedicate this pod to a domain/account? ';
+                  },
+                  notification: function(args) {
+                    return 'Pod Dedicated';
+                  }
+                },
+                createForm:{
+                   title:'Dedicate Pod',
+                   fields:{
+                         domainId:{
+                      label:'Domain',
+                      validation:{required:true},
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                       }
+                   },
+
+                   accountId:{
+                     label:'Account',
+                    // docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  }
+
+
+                     }
+                },
+                action: function(args) {
+                    $.ajax({
+                    url: createURL("dedicatePod&podId=" + args.context.pods[0].id),
+                    dataType: "json",
+                    success: function(json) {
+                      var item = json.dedicatepodresponse.pod;
+                      args.response.success({
+                        actionFilter: podActionfilter,
+                        data:item
+                      });
+                    }
+                  });
+                }
+
+              },
+
               disable: {
                 label: 'label.action.disable.pod',
                 messages: {
@@ -12557,6 +12622,7 @@
     var podObj = args.context.item;
     var allowedActions = [];
     allowedActions.push("edit");
+     allowedActions.push("dedicate");
     if(podObj.allocationstate == "Disabled")
       allowedActions.push("enable");
     else if(podObj.allocationstate == "Enabled")
