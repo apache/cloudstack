@@ -150,7 +150,7 @@ class TestEIP(cloudstackTestCase):
         else:
             raise Exception(
                     "No Source NAT IP found for guest network: %s" %
-                                                            guest_network.id)
+                                                            cls.guest_network.id)
         cls._cleanup = [
                         cls.account,
                         cls.service_offering,
@@ -759,7 +759,7 @@ class TestEIP(cloudstackTestCase):
         with self.assertRaises(Exception):
             cmd = disassociateIpAddress.disassociateIpAddressCmd()
             cmd.id = static_nat.id
-            apiclient.disassociateIpAddress(cmd)
+            self.api_client.disassociateIpAddress(cmd)
 
         self.debug("Disassociate system IP failed")
         return

@@ -1236,8 +1236,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             if (!_configMgr.isOfferingForVpc(ntwkOff)){
                 throw new InvalidParameterValueException("Network offering can't be used for VPC networks");
             }
-            network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId,
-                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, aclId, caller, displayNetwork);
+
             if(aclId == null){
                 //Use default deny all ACL, when aclId is not specified
                 aclId = NetworkACL.DEFAULT_DENY;
@@ -3778,12 +3777,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // VALIDATE IP INFO
         // if end ip is not specified, default it to startIp
         if (!NetUtils.isValidIp(startIp)) {
-            throw new InvalidParameterValueException("Invalid format for the startIp parameter");
+            throw new InvalidParameterValueException("Invalid format for the ip address parameter");
         }
         if (endIp == null) {
             endIp = startIp;
         } else if (!NetUtils.isValidIp(endIp)) {
-            throw new InvalidParameterValueException("Invalid format for the endIp parameter");
+            throw new InvalidParameterValueException("Invalid format for the endIp address parameter");
         }
 
         String cidr = null;

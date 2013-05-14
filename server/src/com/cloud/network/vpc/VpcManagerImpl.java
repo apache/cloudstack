@@ -1236,14 +1236,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         //4) Delete private gateway
-        PrivateGateway gateway = getVpcPrivateGateway(vpcId);
-        if (gateway != null) {
-            s_logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
-            if (!deleteVpcPrivateGateway(gateway.getId())) {
-                success = false;
-                s_logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
-            } else {
-                s_logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+        List<PrivateGateway> gateways = getVpcPrivateGateways(vpcId);
+        if (gateways != null) {
+            for (PrivateGateway gateway: gateways) {
+                if (gateway != null) {
+                    s_logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    if (!deleteVpcPrivateGateway(gateway.getId())) {
+                        success = false;
+                        s_logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    } else {
+                        s_logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    }
+                }
             }
         }
         
@@ -1293,7 +1297,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }  
     }
     
-    
+
+    @Override
+    public List<PrivateGateway> getVpcPrivateGateways(long id) {
+        List<VpcGatewayVO> gateways = _vpcGatewayDao.listByVpcIdAndType(id, VpcGateway.Type.Private);
+
+        if (gateways != null) {
+            List<PrivateGateway> pvtGateway = new ArrayList();
+            for (VpcGatewayVO gateway: gateways) {
+                pvtGateway.add(getPrivateGatewayProfile(gateway));
+            }
+            return pvtGateway;
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public PrivateGateway getVpcPrivateGateway(long id) {
         VpcGateway gateway = _vpcGatewayDao.findById(id);

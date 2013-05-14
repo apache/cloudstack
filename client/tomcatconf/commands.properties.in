@@ -603,9 +603,9 @@ listLoadBalancers=15
 deleteLoadBalancer=15
 
 #Internal Load Balancer Element commands
-configureInternalLoadBalancerElement=1
-createInternalLoadBalancerElement=1
-listInternalLoadBalancerElements=1
+configureInternalLoadBalancerElement=7
+createInternalLoadBalancerElement=7
+listInternalLoadBalancerElements=7
 
 
 #### Affinity group commands
