@@ -23,6 +23,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -140,12 +141,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ts = templateDataStoreDao.persist(ts);
                 break;
             case SNAPSHOT:
+            	SnapshotInfo snapshot = (SnapshotInfo)obj;
                 SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
                 ss.setSnapshotId(obj.getId());
                 ss.setDataStoreId(dataStore.getId());
                 ss.setRole(dataStore.getRole());
                 ss.setRole(dataStore.getRole());
-                ss.setInstallPath(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
+                ss.setInstallPath(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + snapshotDao.findById(obj.getId()).getAccountId() + "/" + snapshot.getVolumeId());
                 ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ss = snapshotDataStoreDao.persist(ss);
                 break;
