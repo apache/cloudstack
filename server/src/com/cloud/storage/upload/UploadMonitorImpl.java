@@ -38,6 +38,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -229,7 +230,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
     	    // Create Symlink at ssvm
 	    	String path = vmTemplateHost.getInstallPath();
 	    	String uuid = UUID.randomUUID().toString() + "." + template.getFormat().getFileExtension(); // adding "." + vhd/ova... etc.
-	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreVO)store).getParent(), path, uuid);
+	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid);
 	    	Answer ans = ep.sendMessage(cmd);
 	        if (ans == null || !ans.getResult()) {
     	        errorString = "Unable to create a link for " +type+ " id:"+template.getId() + "," + ans.getDetails();

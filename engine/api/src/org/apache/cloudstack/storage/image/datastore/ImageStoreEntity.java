@@ -34,4 +34,5 @@ public interface ImageStoreEntity extends DataStore, ImageStore {
     SnapshotInfo getSnapshot(long snapshotId);
     boolean exists(DataObject object);
     Set<TemplateInfo> listTemplates();
+    String getMountPoint(); // get the mount point on ssvm.
 }

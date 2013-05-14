@@ -177,8 +177,9 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return getDriver().getStoreTO(this);
     }
 
-    public ImageStoreVO getImageStoreVO(){
-        return this.imageDataStoreVO;
+    @Override
+    public String getMountPoint(){
+        return this.imageDataStoreVO.getParent();
     }
 
 }
