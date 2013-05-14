@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api;
 
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
+import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;

@@ -26,15 +26,19 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.datacenter.entity.EngineClusterVO;
+import org.apache.cloudstack.engine.datacenter.entity.EngineDataCenterVO;
+import org.apache.cloudstack.engine.datacenter.entity.EngineHostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.EngineHostVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.HostEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineClusterDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineDataCenterDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostPodDao;
+import org.apache.cloudstack.engine.datacenter.entity.dao.EngineClusterDao;
+import org.apache.cloudstack.engine.datacenter.entity.dao.EngineDataCenterDao;
+import org.apache.cloudstack.engine.datacenter.entity.dao.EngineHostDao;
+import org.apache.cloudstack.engine.datacenter.entity.dao.EngineHostPodDao;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,10 +47,6 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineClusterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineDataCenterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
 
 import com.cloud.dc.DataCenter.NetworkType;
 

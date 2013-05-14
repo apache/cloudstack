@@ -23,7 +23,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
+import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;

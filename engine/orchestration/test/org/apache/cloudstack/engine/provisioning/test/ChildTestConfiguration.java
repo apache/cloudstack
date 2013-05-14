@@ -17,10 +17,11 @@
 package org.apache.cloudstack.engine.provisioning.test;
 
 
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineClusterDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineDataCenterDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostPodDao;
+import org.apache.cloudstack.engine.datacenter.entity.dao.EngineClusterDao;
+import org.apache.cloudstack.engine.datacenter.entity.dao.EngineDataCenterDao;
+import org.apache.cloudstack.engine.datacenter.entity.dao.EngineHostDao;
+import org.apache.cloudstack.engine.datacenter.entity.dao.EngineHostPodDao;
+
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 

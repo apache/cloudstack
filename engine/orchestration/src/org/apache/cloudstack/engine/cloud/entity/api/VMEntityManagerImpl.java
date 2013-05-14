@@ -24,10 +24,10 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMEntityDao;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
+import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
+import org.apache.cloudstack.engine.cloud.entity.VMReservationVO;
+import org.apache.cloudstack.engine.cloud.entity.dao.VMEntityDao;
+import org.apache.cloudstack.engine.cloud.entity.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.springframework.stereotype.Component;

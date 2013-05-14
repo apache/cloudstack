@@ -19,8 +19,6 @@
 package org.apache.cloudstack.engine.datacenter.entity.api;
 
 import javax.ws.rs.GET;
-
-
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
 
@@ -30,14 +28,14 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
 /**
- * This interface specifies the states and operations all physical 
- * and virtual resources in the data center must implement. 
+ * This interface specifies the states and operations all physical
+ * and virtual resources in the data center must implement.
  */
 @Produces({"application/json", "application/xml"})
 public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<DataCenterResourceEntity.State> {
 
     /**
-     * This is the state machine for how CloudStack should interact with 
+     * This is the state machine for how CloudStack should interact with
      *
      */
     public enum State {
@@ -66,12 +64,15 @@ public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<
             s_fsm.addTransition(Deactivated, Event.ActivatedRequest, Enabled);
         }
 
+        public static StateMachine2<State, Event, DataCenterResourceEntity> getStateMachine() {
+            return s_fsm;
+        }
     }
 
     /**
      * Prepare the resource to take new on new demands.
      */
-    @POST 
+    @POST
     boolean enable();
 
     /**
