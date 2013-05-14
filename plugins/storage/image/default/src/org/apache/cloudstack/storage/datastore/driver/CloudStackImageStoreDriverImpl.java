@@ -309,6 +309,12 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
                     }
                 }
              }
+        } else{
+            // cannot delete iso due to some VMs are using this
+            s_logger.debug("Cannot delete iso since some user vms are referencing it");
+            CommandResult result = new CommandResult();
+            result.setResult("Cannot delete iso since some user vms are referencing it");
+            callback.complete(result);
         }
 
     }
