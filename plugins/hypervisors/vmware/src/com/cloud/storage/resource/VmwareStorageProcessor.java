@@ -44,6 +44,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -980,6 +981,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
 				VolumeObjectTO newVol = new VolumeObjectTO();
 				newVol.setPath(volumeUuid);
+				newVol.setSize(volume.getSize() / (1024L * 1024L));
 				return new CreateObjectAnswer(newVol);
 			} finally {
 				s_logger.info("Destroy dummy VM after volume creation");
@@ -1153,5 +1155,121 @@ public class VmwareStorageProcessor implements StorageProcessor {
 			s_logger.error(msg, e);
 			return new Answer(cmd, false, msg);
 		}
+	}
+	
+	 private Long restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName,
+		        String secStorageUrl, String secStorageDir, String backupName) throws Exception {
+
+		        String secondaryMountPoint = mountService.getMountPoint(secStorageUrl);
+		        String srcOVAFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
+		            + backupName + "." + ImageFormat.OVA.getFileExtension();
+		        String snapshotDir = "";
+		        if (backupName.contains("/")){
+		            snapshotDir = backupName.split("/")[0];
+		        }
+
+		        File ovafile = new File(srcOVAFileName);
+		        String srcOVFFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
+		                + backupName + ".ovf";
+		        File ovfFile = new File(srcOVFFileName);
+		        // String srcFileName = getOVFFilePath(srcOVAFileName);
+		        if (!ovfFile.exists()) {
+		            srcOVFFileName = getOVFFilePath(srcOVAFileName);
+		            if(srcOVFFileName == null && ovafile.exists() ) {  // volss: ova file exists; o/w can't do tar
+		                Script command = new Script("tar", 0, s_logger);
+		                command.add("--no-same-owner");
+		                command.add("-xf", srcOVAFileName);
+		                command.setWorkDir(secondaryMountPoint + "/" +  secStorageDir + "/" + snapshotDir);
+		                s_logger.info("Executing command: " + command.toString());
+		                String result = command.execute();
+		                if(result != null) {
+		                        String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
+		                        s_logger.error(msg);
+		                        throw new Exception(msg);
+		                }
+		            } else {
+		               String msg = "Unable to find snapshot OVA file at: " + srcOVAFileName;
+		               s_logger.error(msg);
+		               throw new Exception(msg);
+		           }
+
+		           srcOVFFileName = getOVFFilePath(srcOVAFileName);
+		        }
+		        if(srcOVFFileName == null) {
+		            String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
+		            s_logger.error(msg);
+		            throw new Exception(msg);
+		        }
+
+		        VirtualMachineMO clonedVm = null;
+		        try {
+		            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin");
+		            clonedVm = hyperHost.findVmOnHyperHost(newVolumeName);
+		            if(clonedVm == null)
+		                throw new Exception("Unable to create container VM for volume creation");
+
+		            clonedVm.moveAllVmDiskFiles(primaryDsMo, "", false);
+		            clonedVm.detachAllDisks();
+		            return _storage.getSize(srcOVFFileName);
+		        } finally {
+		            if(clonedVm != null) {
+		                clonedVm.detachAllDisks();
+		                clonedVm.destroy();
+		            }
+		        }
+		    }
+
+	@Override
+	public Answer createVolumeFromSnapshot(CopyCommand cmd) {
+		DataTO srcData = cmd.getSrcTO();
+		SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
+		DataTO destData = cmd.getDestTO();
+		PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
+		DataStoreTO imageStore = srcData.getDataStore();
+
+
+		if (!(imageStore instanceof NfsTO)) {
+			return new CopyCmdAnswer("unsupported protocol");
+		}
+
+		NfsTO nfsImageStore = (NfsTO)imageStore;
+		String primaryStorageNameLabel = pool.getUuid();
+	
+        String secondaryStorageUrl = nfsImageStore.getUrl();
+		String backedUpSnapshotUuid = snapshot.getPath();
+		int index = backedUpSnapshotUuid.lastIndexOf(File.separator);
+		String backupPath = backedUpSnapshotUuid.substring(0, index);
+		backedUpSnapshotUuid = backedUpSnapshotUuid.substring(index + 1);
+		String details = null;
+		String newVolumeName = UUID.randomUUID().toString().replaceAll("-", "");
+
+		VmwareContext context = hostService.getServiceContext(cmd);
+		try {
+			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+			ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost,
+					primaryStorageNameLabel);
+			if (morPrimaryDs == null) {
+				String msg = "Unable to find datastore: " + primaryStorageNameLabel;
+				s_logger.error(msg);
+				throw new Exception(msg);
+			}
+
+			DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
+			Long size = restoreVolumeFromSecStorage(hyperHost, primaryDsMo,
+					newVolumeName, secondaryStorageUrl, backupPath, backedUpSnapshotUuid);
+
+			VolumeObjectTO newVol = new VolumeObjectTO();
+			newVol.setPath(newVolumeName);
+			newVol.setSize(size);
+			return new CopyCmdAnswer(newVol);
+		} catch (Throwable e) {
+			if (e instanceof RemoteException) {
+				hostService.invalidateServiceContext(context);
+			}
+
+			s_logger.error("Unexpecpted exception ", e);
+			details = "CreateVolumeFromSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
+		}
+		return new CopyCmdAnswer(details);
 	}
 }

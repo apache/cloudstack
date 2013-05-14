@@ -55,6 +55,7 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -1402,4 +1403,71 @@ public class XenServerStorageProcessor implements StorageProcessor {
         }
         return new CopyCmdAnswer(details);
     }
+
+	@Override
+	public Answer createVolumeFromSnapshot(CopyCommand cmd) {
+		Connection conn = this.hypervisorResource.getConnection();
+		DataTO srcData = cmd.getSrcTO();
+		SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
+		DataTO destData = cmd.getDestTO();
+		PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
+		DataStoreTO imageStore = srcData.getDataStore();
+
+		if (!(imageStore instanceof NfsTO)) {
+			return new CopyCmdAnswer("unsupported protocol");
+		}
+
+		NfsTO nfsImageStore = (NfsTO)imageStore;
+		String primaryStorageNameLabel = pool.getUuid();
+		String secondaryStorageUrl = nfsImageStore.getUrl();
+		int wait = cmd.getWait();
+		boolean result = false;
+		// Generic error message.
+		String details = null;
+		String volumeUUID = null;
+
+		if (secondaryStorageUrl == null) {
+			details += " because the URL passed: " + secondaryStorageUrl + " is invalid.";
+			return new CopyCmdAnswer(details);
+		}
+		try {
+			SR primaryStorageSR = this.hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
+			if (primaryStorageSR == null) {
+				throw new InternalErrorException("Could not create volume from snapshot because the primary Storage SR could not be created from the name label: "
+						+ primaryStorageNameLabel);
+			}
+			// Get the absolute path of the snapshot on the secondary storage.
+			String snapshotInstallPath = snapshot.getPath();
+			int index = snapshotInstallPath.lastIndexOf(File.separator);
+			String snapshotName = snapshotInstallPath.substring(index + 1);
+		
+			if (!snapshotName.startsWith("VHD-") && !snapshotName.endsWith(".vhd")) {
+				snapshotInstallPath = snapshotInstallPath + ".vhd";
+			}
+			URI snapshotURI = new URI(secondaryStorageUrl + File.separator + snapshotInstallPath);
+			String snapshotPath = snapshotURI.getHost() + ":" + snapshotURI.getPath();
+			String srUuid = primaryStorageSR.getUuid(conn);
+			volumeUUID = copy_vhd_from_secondarystorage(conn, snapshotPath, srUuid, wait);
+			result = true;
+			VDI volume = VDI.getByUuid(conn, volumeUUID);
+			VDI.Record vdir = volume.getRecord(conn);
+			VolumeObjectTO newVol = new VolumeObjectTO();
+			newVol.setPath(volumeUUID);
+			newVol.setSize(vdir.virtualSize);
+			return new CopyCmdAnswer(newVol);
+		} catch (XenAPIException e) {
+			details += " due to " + e.toString();
+			s_logger.warn(details, e);
+		} catch (Exception e) {
+			details += " due to " + e.getMessage();
+			s_logger.warn(details, e);
+		}
+		if (!result) {
+			// Is this logged at a higher level?
+			s_logger.error(details);
+		}
+
+		// In all cases return something.
+		return new CopyCmdAnswer(details);
+	}
 }

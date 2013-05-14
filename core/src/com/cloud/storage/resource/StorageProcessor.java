@@ -42,4 +42,5 @@ public interface StorageProcessor {
     public Answer createVolume(CreateObjectCommand cmd);
     public Answer createSnapshot(CreateObjectCommand cmd);
     public Answer deleteVolume(DeleteCommand cmd);
+    public Answer createVolumeFromSnapshot(CopyCommand cmd);
 }

@@ -20,7 +20,6 @@ package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.MessageFormat;
@@ -47,9 +46,9 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -58,37 +57,28 @@ import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.BackupSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.storage.JavaStorageLayer;
-import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageLayer;
 import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.cloud.vm.DiskProfile;
 
 public class KVMStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(KVMStorageProcessor.class);
@@ -868,6 +858,48 @@ public class KVMStorageProcessor implements StorageProcessor {
             s_logger.debug("Failed to delete volume: " + e.toString());
             return new Answer(null, false, e.toString());
         }
+    }
+
+    @Override
+    public Answer createVolumeFromSnapshot(CopyCommand cmd) {
+    	try {
+    		DataTO srcData = cmd.getSrcTO();
+    		SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
+    		DataTO destData = cmd.getDestTO();
+    		PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
+    		DataStoreTO imageStore = srcData.getDataStore();
+
+
+    		if (!(imageStore instanceof NfsTO)) {
+    			return new CopyCmdAnswer("unsupported protocol");
+    		}
+
+    		NfsTO nfsImageStore = (NfsTO)imageStore;
+
+    		String snapshotPath = snapshot.getPath();
+    		int index = snapshotPath.lastIndexOf("/");
+    		snapshotPath = snapshotPath.substring(0, index);
+    		String snapshotName = snapshotPath.substring(index + 1);
+    		KVMStoragePool secondaryPool = storagePoolMgr.getStoragePoolByURI(
+    				nfsImageStore.getUrl() + File.separator + snapshotPath);
+    		KVMPhysicalDisk snapshotDisk = secondaryPool.getPhysicalDisk(snapshotName);
+
+    		String primaryUuid = pool.getUuid();
+    		KVMStoragePool primaryPool = storagePoolMgr
+    				.getStoragePool(pool.getPoolType(),
+    						primaryUuid);
+    		String volUuid = UUID.randomUUID().toString();
+    		KVMPhysicalDisk disk = storagePoolMgr.copyPhysicalDisk(snapshotDisk,
+    				volUuid, primaryPool);
+    		VolumeObjectTO newVol = new VolumeObjectTO();
+    		newVol.setPath(disk.getName());
+    		newVol.setSize(disk.getVirtualSize());
+    		return new CopyCmdAnswer(
+    				newVol);
+    	} catch (CloudRuntimeException e) {
+    		return new CopyCmdAnswer(e.toString()
+    				);
+    	}
     }
 
 }

@@ -539,7 +539,11 @@ public class VolumeServiceImpl implements VolumeService {
     	}
 
     	try {
-    		volume.processEvent(event);
+    		if (result.isSuccess()) {
+    			volume.processEvent(event, result.getAnswer());
+    		} else {
+    			volume.processEvent(event);
+    		}
     		snapshot.processEvent(event);
     	} catch (Exception e) {
     		s_logger.debug("create volume from snapshot failed", e);

@@ -360,7 +360,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         return null;
     }
 
-    @Test
+    //@Test
     public void createSnapshot() {
         VolumeInfo vol = createCopyBaseImage();
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
@@ -394,7 +394,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         return image;
     }
 
-    @Test
+    //@Test
     public void createTemplateFromSnapshot() {
         VolumeInfo vol = createCopyBaseImage();
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
@@ -415,5 +415,25 @@ public class SnapshotTest extends CloudStackTestNGBase {
         TemplateInfo tmpl = this.templateFactory.getTemplate(templateVO.getId(), DataStoreRole.Image);
         DataStore imageStore = this.dataStoreMgr.getImageStore(this.dcId);
         this.imageService.createTemplateFromSnapshotAsync(snapshot, tmpl, imageStore);
+    }
+    
+    @Test
+    public void createVolumeFromSnapshot() {
+        VolumeInfo vol = createCopyBaseImage();
+        SnapshotVO snapshotVO = createSnapshotInDb(vol);
+        SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
+        boolean result = false;
+        for (SnapshotStrategy strategy : this.snapshotStrategies) {
+            if (strategy.canHandle(snapshot)) {
+                snapshot = strategy.takeSnapshot(snapshot);
+                result = true;
+            }
+        }
+
+        AssertJUnit.assertTrue(result);
+
+        VolumeVO volVO = createVolume(vol.getTemplateId(), vol.getPoolId());
+        VolumeInfo newVol = this.volFactory.getVolume(volVO.getId());
+        this.volumeService.createVolumeFromSnapshot(newVol, newVol.getDataStore(), snapshot);
     }
 }

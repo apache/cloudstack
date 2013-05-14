@@ -231,12 +231,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                             .getDefaultValue()));
 
             CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait);
-
-
-            Answer answer = storageMgr
-                    .sendToPool(pool, cmd);
+            EndPoint ep = selector.select(snapObj, volObj);
+            Answer answer = ep.sendMessage(cmd);
+           
            return answer;
-        } catch (StorageUnavailableException e) {
+        } catch (Exception e) {
             s_logger.error(basicErrMsg, e);
             throw new CloudRuntimeException(basicErrMsg);
         } finally {
@@ -300,7 +299,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             } else if (srcData.getType() == DataObjectType.SNAPSHOT &&
             		destData.getType() == DataObjectType.SNAPSHOT) {
             	answer = copySnapshot(srcData, destData);
-            }
+            } 
 
             if (answer != null && !answer.getResult()) {
                 errMsg = answer.getDetails();
