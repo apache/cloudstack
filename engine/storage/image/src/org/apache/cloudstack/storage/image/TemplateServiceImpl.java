@@ -340,11 +340,15 @@ public class TemplateServiceImpl implements TemplateService {
             }
             if (tmpltStore != null && tmpltStore.getDownloadState() != Status.DOWNLOADED) {
                 s_logger.info("Template Sync did not find " + uniqueName + " ready on image store " + storeId + ", will request download to start/resume shortly");
+                s_logger.info("Removing template " + uniqueName + " from template store table");
+                // remove those leftover entries
+                _vmTemplateStoreDao.remove(tmpltStore.getId());
 
             } else if (tmpltStore == null) {
                 s_logger.info("Template Sync did not find " + uniqueName + " on the image store " + storeId + ", will request download shortly");
-                TemplateDataStoreVO templtStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
-                _vmTemplateStoreDao.persist(templtStore);
+                // persist template_zone_ref table
+                // TODO: we may have some bugs in removing these entries in case of failure, maybe we should pass another callback below in invoking createTemplateAsync
+                // to just clear those entries.
                 associateTemplateToZone(tmplt.getId(), zoneId);
             }
 
@@ -370,20 +374,21 @@ public class TemplateServiceImpl implements TemplateService {
                     continue;
                 }
                 // check if there is a record for this template in this store
-                TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
+                TemplateDataStoreVO tmpltStoreVO = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
 
                 // if this is private template, and there is no record for this
                 // template in this store, skip
+                // TODO: don't understand this logic. What happens if we have a record for this template, still download?
                 if (!tmplt.isPublicTemplate() && !tmplt.isFeatured()) {
-                    if (tmpltHost == null) {
+                    if (tmpltStoreVO == null) {
                         continue;
                     }
                 }
                 if (availHypers.contains(tmplt.getHypervisorType())) {
-                     if (tmpltHost != null ) {
+                     if (tmpltStoreVO != null && tmpltStoreVO.getDownloadState() == Status.DOWNLOADED) {
                         continue;
                     }
-                    s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + store.getName());
+                    s_logger.info("Downloading template " + tmplt.getUniqueName() + " to image store " + store.getName());
                     TemplateInfo tmpl = _templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
                     createTemplateAsync(tmpl, store, null);
                 }

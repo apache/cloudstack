@@ -169,7 +169,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
 	@Override
 	public VMTemplateVO create(TemplateProfile profile) {
-	    // persist entry in vm_template, vm_template_details and template_zone_ref tables
+	    // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
 		VMTemplateVO template = persistTemplate(profile);
 
 		if (template == null) {
