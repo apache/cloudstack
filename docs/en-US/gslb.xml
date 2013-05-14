@@ -503,7 +503,7 @@
       </orderedlist>
     </section>
   </section>
-  <section id="limitation-gslb">
+  <section id="limit-gslb">
     <title>Known Limitation</title>
     <para>Currently, &PRODUCT; does not support orchestration of services across the zones. The
       notion of services and service providers in region are to be introduced.</para>
