@@ -155,7 +155,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
         cls.network = Network.create(
                                     cls.api_client,
                                     cls.services["network"],
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     domainid=cls.account.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
@@ -165,14 +165,14 @@ class TestLbStickyPolicy(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
         cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network.id
@@ -242,7 +242,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
@@ -331,7 +331,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
@@ -420,7 +420,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
@@ -511,7 +511,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
@@ -602,7 +602,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
@@ -693,7 +693,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
@@ -784,7 +784,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
@@ -875,7 +875,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
@@ -966,7 +966,7 @@ class TestLbStickyPolicy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)

@@ -330,7 +330,7 @@ class TestCreateRvRNetwork(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -368,13 +368,13 @@ class TestCreateRvRNetwork(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -537,7 +537,7 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
@@ -586,13 +586,13 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -759,7 +759,7 @@ class TestRVRInternals(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -797,13 +797,13 @@ class TestRVRInternals(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -1018,19 +1018,19 @@ class TestRedundancy(cloudstackTestCase):
         self.network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
         self.debug("Created network with ID: %s" % self.network.id)
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         self.virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -1571,7 +1571,7 @@ class TestRedundancy(cloudstackTestCase):
         vm_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -1711,7 +1711,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -1749,13 +1749,13 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -1799,7 +1799,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -1868,7 +1868,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip_2 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -1900,7 +1900,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip_3 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -1917,7 +1917,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip_3.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=network.id
                                 )
 
@@ -2036,7 +2036,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -2074,13 +2074,13 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -2124,7 +2124,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -2135,25 +2135,25 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                                         ))
 
         self.debug("Creating a remote access VPN for account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
 
         try:
             vpn = Vpn.create(
                          self.apiclient,
                          publicipid=public_ip.ipaddress.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         except Exception as e:
             self.fail("Failed to create VPN for account: %s - %s" % (
-                                                 self.account.account.name, e))
+                                                 self.account.name, e))
 
         try:
             vpnuser = VpnUser.create(
                                  self.apiclient,
                                  username="root",
                                  password="password",
-                                 account=self.account.account.name,
+                                 account=self.account.name,
                                  domainid=self.account.account.domainid
                                  )
         except Exception as e:
@@ -2162,7 +2162,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         self.debug("Checking if the remote access VPN is created or not?")
         remote_vpns = Vpn.list(
                                self.apiclient,
-                               account=self.account.account.name,
+                               account=self.account.name,
                                domainid=self.account.account.domainid,
                                publicipid=public_ip.ipaddress.id,
                                listall=True
@@ -2173,7 +2173,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                          "List remote VPNs should not return empty response"
                          )
         self.debug("Deleting the remote access VPN for account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
 
         try:
             vpn.delete(self.apiclient)
@@ -2183,7 +2183,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         self.debug("Checking if the remote access VPN is created or not?")
         remote_vpns = Vpn.list(
                                self.apiclient,
-                               account=self.account.account.name,
+                               account=self.account.name,
                                domainid=self.account.account.domainid,
                                publicipid=public_ip.ipaddress.id,
                                listall=True
@@ -2305,7 +2305,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -2343,13 +2343,13 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -2410,7 +2410,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -2479,7 +2479,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip_2 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -2511,7 +2511,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip_3 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -2528,7 +2528,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip_3.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=network.id
                                 )
 
@@ -2693,7 +2693,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -2731,13 +2731,13 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -2788,7 +2788,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -2849,7 +2849,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip_2 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -2870,7 +2870,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip_3 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -2887,7 +2887,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip_3.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=network.id
                                 )
 
@@ -3057,7 +3057,7 @@ class TestRestartRvRNetworkWithoutCleanup(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -3095,13 +3095,13 @@ class TestRestartRvRNetworkWithoutCleanup(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -3278,7 +3278,7 @@ class TestRestartRvRNetworkWithCleanup(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -3316,13 +3316,13 @@ class TestRestartRvRNetworkWithCleanup(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -3499,7 +3499,7 @@ class TestDeleteRvRNetwork(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -3537,13 +3537,13 @@ class TestDeleteRvRNetwork(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -3590,13 +3590,13 @@ class TestDeleteRvRNetwork(cloudstackTestCase):
 
         self.debug("Network delete failed!")
         self.debug("Destroying the user VMs for account: %s" %
-                                        self.account.account.name)
+                                        self.account.name)
 
         try:
             virtual_machine.delete(self.apiclient)
         except Exception as e:
             self.fail("Failed to delete guest Vm from account: %s - %s" %
-                                            (self.account.account.name, e))
+                                            (self.account.name, e))
 
         interval = list_configurations(
                                     self.apiclient,
@@ -3614,7 +3614,7 @@ class TestDeleteRvRNetwork(cloudstackTestCase):
         time.sleep((delay + exp) * 2)
 
         self.debug("Trying to delete guest network for account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             network.delete(self.apiclient)
         except Exception as e:
@@ -3718,7 +3718,7 @@ class TestNetworkGCRvR(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -3756,13 +3756,13 @@ class TestNetworkGCRvR(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -3998,7 +3998,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -4036,13 +4036,13 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -4093,7 +4093,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -4154,7 +4154,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip_2 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -4175,7 +4175,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip_3 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network.id
@@ -4192,7 +4192,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip_3.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=network.id
                                 )
 
@@ -4438,7 +4438,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=network_off_vr.id,
                                 zoneid=self.zone.id
@@ -4464,19 +4464,19 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
                     "The network should be in allocated state after creation"
                     )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
         self.debug("Deployed VM in the account: %s" %
-                                    self.account.account.name)
+                                    self.account.name)
 
         vms = VirtualMachine.list(
                                   self.apiclient,
@@ -4496,10 +4496,10 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
                          )
 
         self.debug("Listing routers for account: %s" %
-                                        self.account.account.name)
+                                        self.account.name)
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               listall=True
                               )
@@ -4524,10 +4524,10 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
             self.fail("Failed to upgrade the network from VR to RVR: %s" % e)
 
         self.debug("Listing routers for account: %s" %
-                                        self.account.account.name)
+                                        self.account.name)
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               listall=True
                               )
@@ -4573,7 +4573,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -4599,19 +4599,19 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
                     "The network should be in allocated state after creation"
                     )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
         self.debug("Deployed VM in the account: %s" %
-                                    self.account.account.name)
+                                    self.account.name)
 
         vms = VirtualMachine.list(
                                   self.apiclient,
@@ -4631,10 +4631,10 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
                          )
 
         self.debug("Listing routers for account: %s" %
-                                        self.account.account.name)
+                                        self.account.name)
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               listall=True
                               )
@@ -4672,10 +4672,10 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
             self.fail("Failed to upgrade the network from VR to RVR: %s" % e)
 
         self.debug("Listing routers for account: %s" %
-                                        self.account.account.name)
+                                        self.account.name)
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               listall=True
                               )
@@ -4807,7 +4807,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -4845,13 +4845,13 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -4971,7 +4971,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -5009,13 +5009,13 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
             "Routers should not be spawned when network is in allocated state"
             )
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -5207,7 +5207,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -5258,13 +5258,13 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                          )
         host = hosts[0]
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)],
@@ -5448,7 +5448,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
@@ -5499,13 +5499,13 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                          )
         host = hosts[0]
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)],

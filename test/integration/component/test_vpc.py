@@ -309,13 +309,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -341,13 +341,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -372,7 +372,7 @@ class TestVPC(cloudstackTestCase):
         network_1 = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
@@ -396,7 +396,7 @@ class TestVPC(cloudstackTestCase):
         network_2 = Network.create(
                             self.apiclient,
                             self.services["network"],
-                            accountid=self.account.account.name,
+                            accountid=self.account.name,
                             domainid=self.account.account.domainid,
                             networkofferingid=self.network_offering_no_lb.id,
                             zoneid=self.zone.id,
@@ -425,13 +425,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -468,13 +468,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -499,7 +499,7 @@ class TestVPC(cloudstackTestCase):
         network_1 = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
@@ -523,7 +523,7 @@ class TestVPC(cloudstackTestCase):
         network_2 = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering_no_lb.id,
                                 zoneid=self.zone.id,
@@ -574,7 +574,7 @@ class TestVPC(cloudstackTestCase):
         self.debug("Check if VR is deleted or not?")
         routers = Router.list(
                             self.apiclient,
-                            account=self.account.account.name,
+                            account=self.account.name,
                             domainid=self.account.account.domainid,
                             listall=True
                             )
@@ -606,13 +606,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc_1 = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc_1)
@@ -623,7 +623,7 @@ class TestVPC(cloudstackTestCase):
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc_2)
@@ -713,7 +713,7 @@ class TestVPC(cloudstackTestCase):
                         self.apiclient,
                         supportedservices='Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
                         listall=True,
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid
                         )
         self.assertEqual(
@@ -732,7 +732,7 @@ class TestVPC(cloudstackTestCase):
                         self.apiclient,
                         restartrequired=True,
                         listall=True,
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid
                         )
         if vpcs is not None:
@@ -747,7 +747,7 @@ class TestVPC(cloudstackTestCase):
                         self.apiclient,
                         restartrequired=False,
                         listall=True,
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid
                         )
         self.assertEqual(
@@ -782,13 +782,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc_1 = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc_1)
@@ -861,14 +861,14 @@ class TestVPC(cloudstackTestCase):
         vpc_off.update(self.apiclient, state='Enabled')
 
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -897,7 +897,7 @@ class TestVPC(cloudstackTestCase):
         network_1 = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering_no_lb.id,
                                 zoneid=self.zone.id,
@@ -912,7 +912,7 @@ class TestVPC(cloudstackTestCase):
         network_2 = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
@@ -926,7 +926,7 @@ class TestVPC(cloudstackTestCase):
         vm_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
@@ -936,7 +936,7 @@ class TestVPC(cloudstackTestCase):
         vm_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
@@ -948,7 +948,7 @@ class TestVPC(cloudstackTestCase):
         vm_3 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
@@ -958,7 +958,7 @@ class TestVPC(cloudstackTestCase):
         vm_4 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
@@ -968,7 +968,7 @@ class TestVPC(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network_1.name)
         public_ip_1 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network_1.id,
@@ -1000,7 +1000,7 @@ class TestVPC(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network_1.name)
         public_ip_2 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network_1.id,
@@ -1030,7 +1030,7 @@ class TestVPC(cloudstackTestCase):
                                     networkid=network_1.id,
                                     listall=True,
                                     isstaticnat=True,
-                                    account=self.account.account.name,
+                                    account=self.account.name,
                                     domainid=self.account.account.domainid
                                   )
         self.assertEqual(
@@ -1047,7 +1047,7 @@ class TestVPC(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % vpc.name)
         public_ip_3 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network_2.id,
@@ -1065,7 +1065,7 @@ class TestVPC(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip_3.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=network_2.id,
                                     vpcid=vpc.id,
                                     domainid=self.account.account.domainid
@@ -1206,14 +1206,14 @@ class TestVPC(cloudstackTestCase):
         vpc_off.update(self.apiclient, state='Enabled')
 
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -1242,7 +1242,7 @@ class TestVPC(cloudstackTestCase):
         network_1 = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering_no_lb.id,
                                 zoneid=self.zone.id,
@@ -1257,7 +1257,7 @@ class TestVPC(cloudstackTestCase):
         network_2 = Network.create(
                             self.apiclient,
                             self.services["network"],
-                            accountid=self.account.account.name,
+                            accountid=self.account.name,
                             domainid=self.account.account.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id,
@@ -1271,7 +1271,7 @@ class TestVPC(cloudstackTestCase):
         vm_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
@@ -1281,7 +1281,7 @@ class TestVPC(cloudstackTestCase):
         vm_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
@@ -1293,7 +1293,7 @@ class TestVPC(cloudstackTestCase):
         vm_3 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
@@ -1303,7 +1303,7 @@ class TestVPC(cloudstackTestCase):
         vm_4 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
@@ -1313,7 +1313,7 @@ class TestVPC(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network_1.name)
         public_ip_1 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network_1.id,
@@ -1345,7 +1345,7 @@ class TestVPC(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % network_1.name)
         public_ip_2 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network_1.id,
@@ -1375,7 +1375,7 @@ class TestVPC(cloudstackTestCase):
                                     networkid=network_1.id,
                                     listall=True,
                                     isstaticnat=True,
-                                    account=self.account.account.name,
+                                    account=self.account.name,
                                     domainid=self.account.account.domainid
                                   )
         self.assertEqual(
@@ -1392,7 +1392,7 @@ class TestVPC(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % vpc.name)
         public_ip_3 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=network_2.id,
@@ -1410,7 +1410,7 @@ class TestVPC(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip_3.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=network_2.id,
                                     vpcid=vpc.id,
                                     domainid=self.account.account.domainid
@@ -1551,13 +1551,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -1573,7 +1573,7 @@ class TestVPC(cloudstackTestCase):
         self.debug("Verify if the Router has started")
         routers = Router.list(
                   self.apiclient,
-                  account=self.account.account.name,
+                  account=self.account.name,
                   domainid=self.account.account.domainid,
                               listall=True
                   )
@@ -1589,7 +1589,7 @@ class TestVPC(cloudstackTestCase):
 
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
-                                        account=self.account.account.name,
+                                        account=self.account.name,
                                         domainid=self.account.account.domainid,
                                         listall=True,
                                         issourcenat=True,
@@ -1607,13 +1607,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("Creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc_1 = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc_1)
@@ -1621,27 +1621,27 @@ class TestVPC(cloudstackTestCase):
         self.services["vpc"]["cidr"] = "10.2.1.1/16"
         self.debug(
                 "Creating a non-overlapping VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc_2 = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc_2)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("Creating a overlapping VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         try:
             vpc_3 = VPC.create(
                      self.apiclient,
                      self.services["vpc"],
                      vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
             self.debug("%s" % vpc_3)
@@ -1669,14 +1669,14 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -1700,7 +1700,7 @@ class TestVPC(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
@@ -1713,7 +1713,7 @@ class TestVPC(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -1728,7 +1728,7 @@ class TestVPC(cloudstackTestCase):
         src_nat_ip_addr = PublicIPAddress.create(
                                     self.apiclient,
                                     zoneid=self.zone.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     networkid=network.id,
                                     vpcid=vpc.id
@@ -1816,13 +1816,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -1851,7 +1851,7 @@ class TestVPC(cloudstackTestCase):
             Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
@@ -1871,14 +1871,14 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         netdomain = "cl2.internal"
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid,
                          networkDomain=netdomain
                          )
@@ -1903,7 +1903,7 @@ class TestVPC(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
@@ -1916,7 +1916,7 @@ class TestVPC(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
@@ -2346,7 +2346,7 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
 
         # Create VPC without vpcOffering param
         with self.assertRaises(Exception):
@@ -2354,7 +2354,7 @@ class TestVPC(cloudstackTestCase):
                              self.apiclient,
                              self.services["vpc"],
                              zoneid=self.zone.id,
-                             account=self.account.account.name,
+                             account=self.account.name,
                              domainid=self.account.account.domainid
                              )
 
@@ -2366,7 +2366,7 @@ class TestVPC(cloudstackTestCase):
                              self.services["vpc_no_name"],
                              vpcofferingid=self.vpc_off.id,
                              zoneid=self.zone.id,
-                             account=self.account.account.name,
+                             account=self.account.name,
                              domainid=self.account.account.domainid
                              )
 
@@ -2376,7 +2376,7 @@ class TestVPC(cloudstackTestCase):
                              self.apiclient,
                              self.services["vpc"],
                              vpcofferingid=self.vpc_off.id,
-                             account=self.account.account.name,
+                             account=self.account.name,
                              domainid=self.account.account.domainid
                              )
 
@@ -2391,7 +2391,7 @@ class TestVPC(cloudstackTestCase):
                              vpc_wo_cidr,
                              vpcofferingid=self.vpc_off.id,
                              zoneid=self.zone.id,
-                             account=self.account.account.name,
+                             account=self.account.name,
                              domainid=self.account.account.domainid
                              )
 
@@ -2407,13 +2407,13 @@ class TestVPC(cloudstackTestCase):
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc)
@@ -2438,7 +2438,7 @@ class TestVPC(cloudstackTestCase):
         network = Network.create(
                                 self.apiclient,
                                 self.services["network"],
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
@@ -2664,14 +2664,14 @@ class TestVPCHostMaintenance(cloudstackTestCase):
         # 3. VPC will be created but will be in "Disabled" state
 
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc, state='Disabled')
@@ -2690,14 +2690,14 @@ class TestVPCHostMaintenance(cloudstackTestCase):
         #    get deleted
 
         self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.validate_vpc_network(vpc, state='Disabled')

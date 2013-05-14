@@ -244,20 +244,20 @@ class TestLbSourceNat(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -287,13 +287,13 @@ class TestLbSourceNat(cloudstackTestCase):
                         )
 
         self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -324,7 +324,7 @@ class TestLbSourceNat(cloudstackTestCase):
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
-                                        account=self.account.account.name,
+                                        account=self.account.name,
                                         domainid=self.account.account.domainid,
                                         listall=True,
                                         issourcenat=True,
@@ -350,7 +350,7 @@ class TestLbSourceNat(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=src_nat.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                 )
         return
 
@@ -453,20 +453,20 @@ class TestLbOnIpWithPf(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -496,13 +496,13 @@ class TestLbOnIpWithPf(cloudstackTestCase):
                         )
 
         self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -533,7 +533,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
         self.debug("Associating public IP for network: %s" % self.network.id)
         ip_with_nat_rule = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
                                     domainid=self.account.account.domainid,
                                     networkid=self.network.id
@@ -561,7 +561,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_nat_rule.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                     )
         return
 
@@ -664,20 +664,20 @@ class TestPfOnIpWithLb(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -707,13 +707,13 @@ class TestPfOnIpWithLb(cloudstackTestCase):
                         )
 
         self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -745,7 +745,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
 
         ip_with_lb_rule = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=self.network.id
@@ -761,7 +761,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_lb_rule.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -876,20 +876,20 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -919,13 +919,13 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
                         )
 
         self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -957,7 +957,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
 
         ip_with_lb_rule = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=self.network.id
@@ -973,7 +973,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_lb_rule.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -1096,20 +1096,20 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -1139,13 +1139,13 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
                         )
 
         self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -1177,7 +1177,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
 
         ip_with_lb_rule = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=self.network.id
@@ -1193,7 +1193,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=ip_with_lb_rule.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -1370,20 +1370,20 @@ class TestMultipleLbRules(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -1413,13 +1413,13 @@ class TestMultipleLbRules(cloudstackTestCase):
                         )
 
         self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -1453,7 +1453,7 @@ class TestMultipleLbRules(cloudstackTestCase):
 
         public_ip_1 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=self.network.id
@@ -1472,7 +1472,7 @@ class TestMultipleLbRules(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip_1.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -1499,7 +1499,7 @@ class TestMultipleLbRules(cloudstackTestCase):
 
         public_ip_2 = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=self.network.id
@@ -1518,7 +1518,7 @@ class TestMultipleLbRules(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip_2.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -1687,20 +1687,20 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
         self.network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -1730,13 +1730,13 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                         )
 
         self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
 
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -1770,7 +1770,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
 
         public_ip = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=self.network.id
@@ -1789,7 +1789,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -1823,7 +1823,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.debug("Create LB rule on same port failed!")
@@ -1838,7 +1838,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -1952,7 +1952,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         cls.network = Network.create(
                                     cls.api_client,
                                     cls.services["network"],
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     domainid=cls.account.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
@@ -1962,14 +1962,14 @@ class TestLoadBalancingRule(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
         cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network.id
@@ -1978,7 +1978,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=cls.public_ip.ipaddress.id,
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     networkid=cls.network.id
                                 )
         cls._cleanup = [
@@ -2176,7 +2176,7 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
         cls.network = Network.create(
                                     cls.api_client,
                                     cls.services["network"],
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     domainid=cls.account.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
@@ -2186,14 +2186,14 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
         cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
         cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network.id
@@ -2231,7 +2231,7 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.cleanup = []
@@ -2267,7 +2267,7 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=self.public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
 
@@ -2315,7 +2315,7 @@ class TestVmWithLb(cloudstackTestCase):
         cls.network = Network.create(
                                     cls.api_client,
                                     cls.services["network"],
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     domainid=cls.account.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
@@ -2325,7 +2325,7 @@ class TestVmWithLb(cloudstackTestCase):
         cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
@@ -2333,14 +2333,14 @@ class TestVmWithLb(cloudstackTestCase):
         cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
         cls.public_ip_1 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network.id
@@ -2349,12 +2349,12 @@ class TestVmWithLb(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=cls.public_ip_1.ipaddress.id,
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     networkid=cls.network.id
                                 )
         cls.public_ip_2 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network.id
@@ -2363,7 +2363,7 @@ class TestVmWithLb(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=cls.public_ip_2.ipaddress.id,
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     networkid=cls.network.id
                                 )
         cls._cleanup = [

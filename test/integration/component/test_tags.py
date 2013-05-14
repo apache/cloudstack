@@ -215,7 +215,7 @@ class TestResourceTags(cloudstackTestCase):
         cls.vm_1 = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.zone.networktype
@@ -223,7 +223,7 @@ class TestResourceTags(cloudstackTestCase):
         cls.vm_2 = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     domainid=cls.account.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.zone.networktype
@@ -276,10 +276,10 @@ class TestResourceTags(cloudstackTestCase):
         # 3. Delete the LB rule
 
         self.debug("Fetching the network details for account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 listall=True
                                 )
@@ -290,12 +290,12 @@ class TestResourceTags(cloudstackTestCase):
                          )
         network = networks[0]
         self.debug("Network for the account: %s is %s" %
-                                    (self.account.account.name, network.name))
+                                    (self.account.name, network.name))
 
         self.debug("Associating public IP for network: %s" % network.id)
         public_ip = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
                                     domainid=self.account.account.domainid,
                                     networkid=network.id
@@ -310,7 +310,7 @@ class TestResourceTags(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                     )
 
         # Check if the LB rule created successfully
@@ -345,7 +345,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='LoadBalancer',
                         key='LB',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         value=40
                         )
@@ -392,7 +392,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='LoadBalancer',
                         key='LB',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid
                         )
 
@@ -419,10 +419,10 @@ class TestResourceTags(cloudstackTestCase):
         # 3. Delete the PF rule
 
         self.debug("Fetching the network details for account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 listall=True
                                 )
@@ -433,12 +433,12 @@ class TestResourceTags(cloudstackTestCase):
                          )
         network = networks[0]
         self.debug("Network for the account: %s is %s" %
-                                    (self.account.account.name, network.name))
+                                    (self.account.name, network.name))
 
         self.debug("Associating public IP for network: %s" % network.id)
         public_ip = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
                                     domainid=self.account.account.domainid,
                                     networkid=network.id
@@ -483,7 +483,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='portForwardingRule',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='PF',
                         value=40
@@ -528,7 +528,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='portForwardingRule',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='PF',
                         value=40
@@ -556,10 +556,10 @@ class TestResourceTags(cloudstackTestCase):
         # 3. Delete the firewall rule
 
         self.debug("Fetching the network details for account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 listall=True
                                 )
@@ -570,12 +570,12 @@ class TestResourceTags(cloudstackTestCase):
                          )
         network = networks[0]
         self.debug("Network for the account: %s is %s" %
-                                    (self.account.account.name, network.name))
+                                    (self.account.name, network.name))
 
         self.debug("Associating public IP for network: %s" % network.id)
         public_ip = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
                                     domainid=self.account.account.domainid,
                                     networkid=network.id
@@ -625,7 +625,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='FirewallRule',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='FW',
                         value='40'
@@ -670,7 +670,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='FirewallRule',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='FW',
                         value='40'
@@ -700,10 +700,10 @@ class TestResourceTags(cloudstackTestCase):
         # 3. Delete the VPN rule
 
         self.debug("Fetching the network details for account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 listall=True
                                 )
@@ -714,12 +714,12 @@ class TestResourceTags(cloudstackTestCase):
                          )
         network = networks[0]
         self.debug("Network for the account: %s is %s" %
-                                    (self.account.account.name, network.name))
+                                    (self.account.name, network.name))
 
         self.debug("Associating public IP for network: %s" % network.id)
         public_ip = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
                                     domainid=self.account.account.domainid,
                                     networkid=network.id
@@ -753,7 +753,7 @@ class TestResourceTags(cloudstackTestCase):
             vpn = Vpn.create(
                         self.apiclient,
                         public_ip.ipaddress.id,
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid
                         )
 
@@ -791,7 +791,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='VPN',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='protocol',
                         value='L2TP'
@@ -822,7 +822,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='VPN',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='protocol',
                         value='L2TP'
@@ -862,7 +862,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -906,7 +906,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -977,7 +977,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='Template',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='OS',
                         value='CentOS'
@@ -1018,7 +1018,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='Template',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='OS',
                         value='CentOS'
@@ -1041,7 +1041,7 @@ class TestResourceTags(cloudstackTestCase):
         iso = Iso.create(
                          self.apiclient,
                          self.services["iso"],
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
         self.debug("ISO created with ID: %s" % iso.id)
@@ -1069,7 +1069,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='ISO',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='OS',
                         value='CentOS'
@@ -1114,7 +1114,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='ISO',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='OS',
                         value='CentOS'
@@ -1135,12 +1135,12 @@ class TestResourceTags(cloudstackTestCase):
         # 2. Delete above created tag using deleteTags API
 
         self.debug("Creating volume for account: %s " %
-                                                self.account.account.name)
+                                                self.account.name)
         volume = Volume.create(
                                self.apiclient,
                                self.services["volume"],
                                zoneid=self.zone.id,
-                               account=self.account.account.name,
+                               account=self.account.name,
                                domainid=self.account.account.domainid,
                                diskofferingid=self.disk_offering.id
                                )
@@ -1161,7 +1161,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='volume',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -1204,7 +1204,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='volume',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region'
                         )
@@ -1261,7 +1261,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='snapshot',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='type',
                         value='manual'
@@ -1311,7 +1311,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='snapshot',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='type',
                         value='manual'
@@ -1333,10 +1333,10 @@ class TestResourceTags(cloudstackTestCase):
         # 2. Delete above created tag using deleteTags API
 
         self.debug("Fetching the network details for account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 listall=True
                                 )
@@ -1347,7 +1347,7 @@ class TestResourceTags(cloudstackTestCase):
                          )
         network = networks[0]
         self.debug("Network for the account: %s is %s" %
-                                    (self.account.account.name, network.name))
+                                    (self.account.name, network.name))
 
         self.debug("Creating a tag for load balancer rule")
         tag = Tag.create(
@@ -1362,7 +1362,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='Network',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -1380,7 +1380,7 @@ class TestResourceTags(cloudstackTestCase):
         
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 listall=True,
                                 key='region',
@@ -1408,7 +1408,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='Network',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -1478,7 +1478,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -1515,7 +1515,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -1549,7 +1549,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -1595,7 +1595,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -1641,7 +1641,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -1690,7 +1690,7 @@ class TestResourceTags(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.account.account.name,
+                                 account=self.account.name,
                                  domainid=self.account.account.domainid
                                  )
         # Cleanup created project at end of test
@@ -1757,7 +1757,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='project',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -1798,7 +1798,7 @@ class TestResourceTags(cloudstackTestCase):
         iso = Iso.create(
                          self.apiclient,
                          self.services["iso"],
-                         account=user_account.account.name,
+                         account=user_account.name,
                          domainid=user_account.account.domainid
                          )
         self.debug("ISO created with ID: %s" % iso.id)
@@ -1826,7 +1826,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='ISO',
-                        account=user_account.account.name,
+                        account=user_account.name,
                         domainid=user_account.account.domainid,
                         key='region',
                         )
@@ -1848,7 +1848,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='ISO',
-                        account=other_user_account.account.name,
+                        account=other_user_account.name,
                         domainid=other_user_account.account.domainid,
                         key='region',
                         )
@@ -1883,7 +1883,7 @@ class TestResourceTags(cloudstackTestCase):
         iso = Iso.create(
                          self.apiclient,
                          self.services["iso"],
-                         account=user_account.account.name,
+                         account=user_account.name,
                          domainid=user_account.account.domainid
                          )
         self.debug("ISO created with ID: %s" % iso.id)
@@ -1911,7 +1911,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='ISO',
-                        account=user_account.account.name,
+                        account=user_account.name,
                         domainid=user_account.account.domainid,
                         key='region',
                         )
@@ -2008,7 +2008,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -2041,7 +2041,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -2064,7 +2064,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -2097,12 +2097,12 @@ class TestResourceTags(cloudstackTestCase):
         "Test creation of same tag on multiple resources"
 
         self.debug("Creating volume for account: %s " %
-                                                self.account.account.name)
+                                                self.account.name)
         volume = Volume.create(
                                self.apiclient,
                                self.services["volume"],
                                zoneid=self.zone.id,
-                               account=self.account.account.name,
+                               account=self.account.name,
                                domainid=self.account.account.domainid,
                                diskofferingid=self.disk_offering.id
                                )
@@ -2123,7 +2123,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='volume',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         )
@@ -2151,7 +2151,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -2184,7 +2184,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -2245,7 +2245,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'
@@ -2294,7 +2294,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid,
                         key='region',
                         value='India'

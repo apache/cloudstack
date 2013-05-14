@@ -236,7 +236,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                          cls.services["vpc"],
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
-                         account=cls.account.account.name,
+                         account=cls.account.name,
                          domainid=cls.account.account.domainid
                          )
 
@@ -252,7 +252,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         cls.network_1 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
@@ -271,7 +271,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         cls.network_2 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.nw_off_no_lb.id,
                                 zoneid=cls.zone.id,
@@ -282,7 +282,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
@@ -291,7 +291,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
@@ -299,7 +299,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         cls.vm_3 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_2.id)]
@@ -307,7 +307,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
 
         cls.public_ip_1 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network_1.id,
@@ -317,7 +317,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=cls.public_ip_1.ipaddress.id,
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
                                     domainid=cls.account.account.domainid
@@ -326,7 +326,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
 
         cls.public_ip_2 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network_1.id,
@@ -515,7 +515,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         self.debug("Check if deployed VMs are in running state?")
         vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   listall=True
                                   )
@@ -543,7 +543,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         # 2. Rules should be still configured on virtual router.
 
         self.debug("Stopping the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.stop(self.apiclient)
             self.vm_2.stop(self.apiclient)
@@ -588,7 +588,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         # 3. Make sure that we are able to access google.com from this user Vm
 
         self.debug("Starting the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.start(self.apiclient)
             self.vm_2.start(self.apiclient)
@@ -614,7 +614,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Starting the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.reboot(self.apiclient)
             self.vm_2.reboot(self.apiclient)
@@ -638,7 +638,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Destroying the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.delete(self.apiclient)
             self.vm_2.delete(self.apiclient)
@@ -683,7 +683,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         # 3. Make sure that we are able to access google.com from this user Vm
 
         self.debug("Recovering the expunged virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.recover(self.apiclient)
             self.vm_2.recover(self.apiclient)
@@ -874,7 +874,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Delete virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.delete(self.apiclient)
             self.vm_2.delete(self.apiclient)
@@ -965,7 +965,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                          cls.services["vpc"],
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
-                         account=cls.account.account.name,
+                         account=cls.account.name,
                          domainid=cls.account.account.domainid
                          )
 
@@ -981,7 +981,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         cls.network_1 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
@@ -1005,7 +1005,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         cls.network_2 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.shared_nw_off.id,
                                 zoneid=cls.zone.id,
@@ -1016,7 +1016,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id),
@@ -1026,7 +1026,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id),
@@ -1035,7 +1035,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         cls.vm_3 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id),
@@ -1043,7 +1043,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                   )
         cls.public_ip_1 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network_1.id,
@@ -1053,7 +1053,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=cls.public_ip_1.ipaddress.id,
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
                                     domainid=cls.account.account.domainid
@@ -1062,7 +1062,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
         cls.public_ip_2 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network_1.id,
@@ -1241,7 +1241,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         self.debug("Check if deployed VMs are in running state?")
         vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   listall=True
                                   )
@@ -1275,7 +1275,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Stopping one of the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_2.stop(self.apiclient)
         except Exception as e:
@@ -1316,7 +1316,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Starting one of the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_2.start(self.apiclient)
         except Exception as e:
@@ -1357,7 +1357,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Restarting the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.reboot(self.apiclient)
             self.vm_2.reboot(self.apiclient)
@@ -1367,7 +1367,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         self.debug("Check if the instance is in stopped state?")
         vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   listall=True
                                   )
@@ -1397,7 +1397,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         # 2. Rules should be still configured on virtual router.
 
         self.debug("Destroying one of the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_2.delete(self.apiclient)
         except Exception as e:
@@ -1438,7 +1438,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         # 3. Make sure that we are able to access google.com from this user Vm
 
         self.debug("Recovering the expunged virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_2.recover(self.apiclient)
         except Exception as e:
@@ -1662,7 +1662,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Delete virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_2.delete(self.apiclient)
         except Exception as e:
@@ -1681,7 +1681,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
         self.debug(
             "Deleting the rest of the virtual machines in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         try:
             self.vm_1.delete(self.apiclient)
             self.vm_3.delete(self.apiclient)
@@ -1772,7 +1772,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                          cls.services["vpc"],
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
-                         account=cls.account.account.name,
+                         account=cls.account.name,
                          domainid=cls.account.account.domainid
                          )
 
@@ -1788,7 +1788,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
         cls.network_1 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
@@ -1808,7 +1808,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
         cls.network_2 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.nw_off_no_lb.id,
                                 zoneid=cls.zone.id,
@@ -1964,7 +1964,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
             VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_1.id),
@@ -1989,7 +1989,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                                                         self.network_1.name)
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               networkid=self.network_1.id,
                               listall=True
@@ -2032,7 +2032,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
             vm = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_1.id)]
@@ -2110,7 +2110,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                          cls.services["vpc"],
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
-                         account=cls.account.account.name,
+                         account=cls.account.name,
                          domainid=cls.account.account.domainid
                          )
 
@@ -2126,7 +2126,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         cls.network_1 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
@@ -2145,7 +2145,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         cls.network_2 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.nw_off_no_lb.id,
                                 zoneid=cls.zone.id,
@@ -2156,7 +2156,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
@@ -2165,7 +2165,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
@@ -2173,7 +2173,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         cls.vm_3 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_2.id)]
@@ -2181,7 +2181,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
         cls.public_ip_1 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network_1.id,
@@ -2191,7 +2191,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=cls.public_ip_1.ipaddress.id,
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
                                     domainid=cls.account.account.domainid
@@ -2200,7 +2200,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
         cls.public_ip_2 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network_1.id,
@@ -2404,7 +2404,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         self.debug("Check if deployed VMs are in running state?")
         vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   listall=True
                                   )
@@ -2432,7 +2432,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         # 2. Rules should be still configured on virtual router.
 
         self.debug("Stopping the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.stop(self.apiclient)
             self.vm_2.stop(self.apiclient)
@@ -2478,7 +2478,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         # 3. Make sure that we are able to access google.com from this user Vm
 
         self.debug("Starting the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.start(self.apiclient)
             self.vm_2.start(self.apiclient)
@@ -2505,7 +2505,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Starting the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.reboot(self.apiclient)
             self.vm_2.reboot(self.apiclient)
@@ -2530,7 +2530,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Destroying the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.delete(self.apiclient)
             self.vm_2.delete(self.apiclient)
@@ -2576,7 +2576,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         # 3. Make sure that we are able to access google.com from this user Vm
 
         self.debug("Recovering the expunged virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.recover(self.apiclient)
             self.vm_2.recover(self.apiclient)
@@ -2771,7 +2771,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Delete virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.delete(self.apiclient)
             self.vm_2.delete(self.apiclient)
@@ -2867,7 +2867,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                          cls.services["vpc"],
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
-                         account=cls.account.account.name,
+                         account=cls.account.name,
                          domainid=cls.account.account.domainid
                          )
 
@@ -2883,7 +2883,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         cls.network_1 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
@@ -2902,7 +2902,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         cls.network_2 = Network.create(
                                 cls.api_client,
                                 cls.services["network"],
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 domainid=cls.account.account.domainid,
                                 networkofferingid=cls.nw_off_no_lb.id,
                                 zoneid=cls.zone.id,
@@ -2913,7 +2913,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering_1.id,
                                   networkids=[str(cls.network_1.id)]
@@ -2922,7 +2922,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering_1.id,
                                   networkids=[str(cls.network_1.id)]
@@ -2930,7 +2930,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         cls.vm_3 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering_2.id,
                                   networkids=[str(cls.network_2.id)]
@@ -2938,7 +2938,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
 
         cls.public_ip_1 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network_1.id,
@@ -2948,7 +2948,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=cls.public_ip_1.ipaddress.id,
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
                                     domainid=cls.account.account.domainid
@@ -2957,7 +2957,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
 
         cls.public_ip_2 = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network_1.id,
@@ -3056,7 +3056,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
 
         vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   networkid=self.network_1.id,
                                   listall=True
@@ -3071,7 +3071,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
 
         vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   networkid=self.network_2.id,
                                   listall=True
@@ -3203,7 +3203,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.debug("Check if deployed VMs are in running state?")
         vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   listall=True
                                   )
@@ -3231,7 +3231,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         # 2. Rules should be still configured on virtual router.
 
         self.debug("Stopping the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.stop(self.apiclient)
             self.vm_2.stop(self.apiclient)
@@ -3276,7 +3276,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         # 3. Make sure that we are able to access google.com from this user Vm
 
         self.debug("Starting the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.start(self.apiclient)
             self.vm_2.start(self.apiclient)
@@ -3302,7 +3302,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Starting the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.reboot(self.apiclient)
             self.vm_2.reboot(self.apiclient)
@@ -3326,7 +3326,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Destroying the virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.delete(self.apiclient)
             self.vm_2.delete(self.apiclient)
@@ -3371,7 +3371,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         # 3. Make sure that we are able to access google.com from this user Vm
 
         self.debug("Recovering the expunged virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.recover(self.apiclient)
             self.vm_2.recover(self.apiclient)
@@ -3562,7 +3562,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.validate_network_rules()
 
         self.debug("Delete virtual machines in account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         try:
             self.vm_1.delete(self.apiclient)
             self.vm_2.delete(self.apiclient)

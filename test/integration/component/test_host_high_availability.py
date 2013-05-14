@@ -189,7 +189,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering_with_ha.id
                                   )
@@ -234,7 +234,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         virtual_machine_with_ha = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering_with_ha.id
                                   )
@@ -288,7 +288,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         virtual_machine_without_ha = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering_without_ha.id
                                   )
@@ -357,7 +357,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         virtual_machine_with_ha = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering_with_ha.id
                                   )
@@ -463,7 +463,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         virtual_machine_with_ha = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering_with_ha.id
                                   )
@@ -572,7 +572,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         virtual_machine_with_ha = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering_with_ha.id
                                   )
@@ -704,7 +704,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         virtual_machine_without_ha = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering_without_ha.id
                                   )

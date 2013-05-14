@@ -2134,7 +2134,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
         cls.network = Network.create(
                                     cls.api_client,
                                     cls.services["network"],
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     domainid=cls.account.account.domainid,
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
@@ -2144,7 +2144,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
         cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
@@ -2152,14 +2152,14 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
         cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
+                                  accountid=cls.account.name,
                                   domainid=cls.account.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
         cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
-                                accountid=cls.account.account.name,
+                                accountid=cls.account.name,
                                 zoneid=cls.zone.id,
                                 domainid=cls.account.account.domainid,
                                 networkid=cls.network.id
@@ -2168,7 +2168,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["lbrule"],
                                     ipaddressid=cls.public_ip.ipaddress.id,
-                                    accountid=cls.account.account.name,
+                                    accountid=cls.account.name,
                                     networkid=cls.network.id
                                 )
         cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
@@ -2237,7 +2237,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
 
         self.debug(
             "Stopping all the VM instances for the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
 
         self.vm_1.stop(self.apiclient)
         self.vm_2.stop(self.apiclient)
@@ -2311,7 +2311,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
 
         self.debug(
             "starting one VM instances for the account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         self.vm_1.start(self.apiclient)
 
         vms = VirtualMachine.list(
@@ -2657,7 +2657,7 @@ class TestServiceProvider(cloudstackTestCase):
             Network.create(
                             self.apiclient,
                             self.services["network"],
-                            accountid=self.account.account.name,
+                            accountid=self.account.name,
                             domainid=self.account.account.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
@@ -2690,7 +2690,7 @@ class TestServiceProvider(cloudstackTestCase):
             Network.create(
                             self.apiclient,
                             self.services["network"],
-                            accountid=self.account.account.name,
+                            accountid=self.account.name,
                             domainid=self.account.account.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
@@ -2720,20 +2720,20 @@ class TestServiceProvider(cloudstackTestCase):
         self.network = Network.create(
                             self.apiclient,
                             self.services["network"],
-                            accountid=self.account.account.name,
+                            accountid=self.account.name,
                             domainid=self.account.account.domainid,
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                             )
         self.debug("Created network with ID: %s" % self.network.id)
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
@@ -2764,7 +2764,7 @@ class TestServiceProvider(cloudstackTestCase):
         self.debug("Acquiring a public IP for Network: %s" % self.network.name)
         public_ip = PublicIPAddress.create(
                                 self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=self.network.id
@@ -2777,7 +2777,7 @@ class TestServiceProvider(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
         self.debug("Created the load balancing rule for public IP: %s" %
@@ -2806,13 +2806,13 @@ class TestServiceProvider(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=self.network.id
                                 )
             VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]

@@ -214,12 +214,12 @@ class TestHighAvailability(cloudstackTestCase):
                                                        hosts[0].name,
                                                        hosts[1].name
                                                        ))
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
@@ -247,7 +247,7 @@ class TestHighAvailability(cloudstackTestCase):
                          )
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 listall=True
                                 )
@@ -259,10 +259,10 @@ class TestHighAvailability(cloudstackTestCase):
         network = networks[0]
 
         self.debug("Associating public IP for account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
         public_ip = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
                                     domainid=self.account.account.domainid,
                                     networkid=network.id
@@ -289,7 +289,7 @@ class TestHighAvailability(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                     )
         self.debug("Created LB rule with ID: %s" % lb_rule.id)
 
@@ -366,12 +366,12 @@ class TestHighAvailability(cloudstackTestCase):
             self.fail("SSH Access failed for %s: %s" % \
                       (virtual_machine.ipaddress, e)
                       )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
         # Spawn an instance on other host
         virtual_machine_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
@@ -423,7 +423,7 @@ class TestHighAvailability(cloudstackTestCase):
         while True:
             vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   listall=True
                                   )
@@ -463,7 +463,7 @@ class TestHighAvailability(cloudstackTestCase):
         while True:
             vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   listall=True
                                   )
@@ -512,7 +512,7 @@ class TestHighAvailability(cloudstackTestCase):
         virtual_machine_3 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
@@ -609,12 +609,12 @@ class TestHighAvailability(cloudstackTestCase):
                                                        hosts[0].name,
                                                        hosts[1].name
                                                        ))
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
@@ -642,7 +642,7 @@ class TestHighAvailability(cloudstackTestCase):
                          )
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 listall=True
                                 )
@@ -654,10 +654,10 @@ class TestHighAvailability(cloudstackTestCase):
         network = networks[0]
 
         self.debug("Associating public IP for account: %s" %
-                                            self.account.account.name)
+                                            self.account.name)
         public_ip = PublicIPAddress.create(
                                     self.apiclient,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     zoneid=self.zone.id,
                                     domainid=self.account.account.domainid,
                                     networkid=network.id
@@ -684,7 +684,7 @@ class TestHighAvailability(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name
+                                    accountid=self.account.name
                                     )
         self.debug("Created LB rule with ID: %s" % lb_rule.id)
 
@@ -827,12 +827,12 @@ class TestHighAvailability(cloudstackTestCase):
             self.fail("SSH Access failed for %s: %s" % \
                       (virtual_machine.ipaddress, e)
                       )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
         # Spawn an instance on other host
         virtual_machine_2 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
@@ -951,7 +951,7 @@ class TestHighAvailability(cloudstackTestCase):
         while True:
             vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   listall=True
                                   )
@@ -989,7 +989,7 @@ class TestHighAvailability(cloudstackTestCase):
         while True:
             vms = VirtualMachine.list(
                                   self.apiclient,
-                                  account=self.account.account.name,
+                                  account=self.account.name,
                                   domainid=self.account.account.domainid,
                                   listall=True
                                   )
@@ -1036,7 +1036,7 @@ class TestHighAvailability(cloudstackTestCase):
         virtual_machine_3 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
+                                  accountid=self.account.name,
                                   domainid=self.account.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )

@@ -183,11 +183,11 @@ class TestDeployVM(cloudstackTestCase):
         #    should be "Running".
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
@@ -195,7 +195,7 @@ class TestDeployVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -237,11 +237,11 @@ class TestDeployVM(cloudstackTestCase):
         #    should be "Running".
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=True,
@@ -250,7 +250,7 @@ class TestDeployVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -294,11 +294,11 @@ class TestDeployVM(cloudstackTestCase):
         #    return empty response
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
@@ -306,7 +306,7 @@ class TestDeployVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -331,7 +331,7 @@ class TestDeployVM(cloudstackTestCase):
         )
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               listall=True
                               )
@@ -384,11 +384,11 @@ class TestDeployVM(cloudstackTestCase):
         # 3. Attach volume should be successful
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
@@ -396,7 +396,7 @@ class TestDeployVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -420,16 +420,16 @@ class TestDeployVM(cloudstackTestCase):
             "VM should be in Stopped state after deployment with startvm=false"
         )
         self.debug("Creating a volume in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         volume = Volume.create(
                                 self.apiclient,
                                 self.services["volume"],
                                 zoneid=self.zone.id,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 diskofferingid=self.disk_offering.id
                                 )
-        self.debug("Created volume in account: %s" % self.account.account.name)
+        self.debug("Created volume in account: %s" % self.account.name)
         self.debug("Attaching volume to instance: %s" %
                                                 self.virtual_machine.name)
         try:
@@ -452,11 +452,11 @@ class TestDeployVM(cloudstackTestCase):
         # 4. Change service offering
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
@@ -464,7 +464,7 @@ class TestDeployVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -488,16 +488,16 @@ class TestDeployVM(cloudstackTestCase):
             "VM should be in Stopped state after deployment with startvm=false"
         )
         self.debug("Creating a volume in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         volume = Volume.create(
                                 self.apiclient,
                                 self.services["volume"],
                                 zoneid=self.zone.id,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 diskofferingid=self.disk_offering.id
                                 )
-        self.debug("Created volume in account: %s" % self.account.account.name)
+        self.debug("Created volume in account: %s" % self.account.name)
         self.debug("Attaching volume to instance: %s" %
                                                 self.virtual_machine.name)
         try:
@@ -565,11 +565,11 @@ class TestDeployVM(cloudstackTestCase):
         # 4. Detach volume from instance. Detach should be successful
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
@@ -577,7 +577,7 @@ class TestDeployVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -601,16 +601,16 @@ class TestDeployVM(cloudstackTestCase):
             "VM should be in Stopped state after deployment with startvm=false"
         )
         self.debug("Creating a volume in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         volume = Volume.create(
                                 self.apiclient,
                                 self.services["volume"],
                                 zoneid=self.zone.id,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid,
                                 diskofferingid=self.disk_offering.id
                                 )
-        self.debug("Created volume in account: %s" % self.account.account.name)
+        self.debug("Created volume in account: %s" % self.account.name)
         self.debug("Attaching volume to instance: %s" %
                                                 self.virtual_machine.name)
         try:
@@ -648,11 +648,11 @@ class TestDeployVM(cloudstackTestCase):
         # 3. Attach ISO to the instance. Attach ISO should be successful
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
@@ -660,7 +660,7 @@ class TestDeployVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -684,11 +684,11 @@ class TestDeployVM(cloudstackTestCase):
             "VM should be in Stopped state after deployment with startvm=false"
         )
         self.debug("Registering a ISO in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         iso = Iso.create(
                          self.apiclient,
                          self.services["iso"],
-                         account=self.account.account.name,
+                         account=self.account.name,
                          domainid=self.account.account.domainid
                          )
 
@@ -741,18 +741,18 @@ class TestDeployVM(cloudstackTestCase):
         # 4. Attach the volume to first virtual machine.
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine_1 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine_1.id
@@ -777,18 +777,18 @@ class TestDeployVM(cloudstackTestCase):
         )
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine_2 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine_2.id
@@ -818,7 +818,7 @@ class TestDeployVM(cloudstackTestCase):
         volumes = Volume.list(
                               self.apiclient,
                               type='DATADISK',
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               listall=True
                               )
@@ -938,11 +938,11 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         #    should be "Created".
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
@@ -950,7 +950,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -989,7 +989,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         self.iso = Iso.create(
                                 self.apiclient,
                                 self.services["iso"],
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid
                                 )
         try:
@@ -1002,11 +1002,11 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
 
         self.debug("Registered ISO: %s" % self.iso.name)
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     templateid=self.iso.id,
                                     serviceofferingid=self.service_offering.id,
@@ -1015,7 +1015,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -1052,11 +1052,11 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         #    should be "Stopped".
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
@@ -1064,7 +1064,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -1170,11 +1170,11 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         #    should be "Running".
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine_1 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
@@ -1182,7 +1182,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine_1.id
@@ -1209,7 +1209,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         self.debug("Checking the router state after VM deployment")
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               listall=True
                               )
@@ -1220,11 +1220,11 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                          )
         self.debug(
             "Deploying another instance (startvm=true) in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine_2 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
@@ -1232,7 +1232,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine_2.id
@@ -1259,7 +1259,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         self.debug("Checking the router state after VM deployment")
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               listall=True
                               )
@@ -1294,7 +1294,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         self.debug("Checking the router state after VM deployment")
         routers = Router.list(
                               self.apiclient,
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               listall=True
                               )
@@ -1392,11 +1392,11 @@ class TestDeployVMBasicZone(cloudstackTestCase):
                          "Zone must be configured in basic networking mode"
                          )
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=True,
@@ -1405,7 +1405,7 @@ class TestDeployVMBasicZone(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance ion account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -1450,11 +1450,11 @@ class TestDeployVMBasicZone(cloudstackTestCase):
                          "Zone must be configured in basic networking mode"
                          )
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
@@ -1462,7 +1462,7 @@ class TestDeployVMBasicZone(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -1569,7 +1569,7 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                                         self.apiclient,
                                         self.services["template"],
                                         zoneid=self.zone.id,
-                                        account=self.account.account.name,
+                                        account=self.account.name,
                                         domainid=self.account.account.domainid
                                         )
         try:
@@ -1601,11 +1601,11 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
         #    and running state
 
         self.debug("Deploying instance in the account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     templateid=self.template.id,
@@ -1613,7 +1613,7 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                                 )
 
         self.debug("Deployed instance in account: %s" %
-                                                    self.account.account.name)
+                                                    self.account.name)
         list_vm_response = list_virtual_machines(
                                                  self.apiclient,
                                                  id=self.virtual_machine.id
@@ -1738,24 +1738,24 @@ class TestVMAccountLimit(cloudstackTestCase):
 
         self.debug(
             "Updating instance resource limit for account: %s" %
-                                                self.account.account.name)
+                                                self.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
                               0,    # Instance
-                              account=self.account.account.name,
+                              account=self.account.name,
                               domainid=self.account.account.domainid,
                               max=1
                               )
         self.debug(
             "Deploying VM instance in account: %s" %
-                                        self.account.account.name)
+                                        self.account.name)
 
         virtual_machine = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["virtual_machine"],
                                 templateid=self.template.id,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 serviceofferingid=self.service_offering.id,
                                 startvm=False
@@ -1774,7 +1774,7 @@ class TestVMAccountLimit(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["virtual_machine"],
                                 templateid=self.template.id,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 serviceofferingid=self.service_offering.id,
                                 startvm=False
@@ -1860,7 +1860,7 @@ class TestUploadAttachVolume(cloudstackTestCase):
                                self.apiclient,
                                self.services["volume"],
                                zoneid=self.zone.id,
-                               account=self.account.account.name,
+                               account=self.account.name,
                                domainid=self.account.account.domainid
                                )
             self.debug("Uploading the volume: %s" % volume.name)
@@ -1871,13 +1871,13 @@ class TestUploadAttachVolume(cloudstackTestCase):
 
         self.debug(
             "Deploying VM instance in account: %s" %
-                                        self.account.account.name)
+                                        self.account.name)
 
         virtual_machine = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["virtual_machine"],
                                 templateid=self.template.id,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 domainid=self.account.account.domainid,
                                 serviceofferingid=self.service_offering.id,
                                 startvm=False
@@ -1998,7 +1998,7 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     hostid=host.id
@@ -2012,7 +2012,7 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
                                 self.apiclient,
                                 id=vm.id,
                                 listall=True,
-                                account=self.account.account.name,
+                                account=self.account.name,
                                 domainid=self.account.account.domainid
                                 )
 

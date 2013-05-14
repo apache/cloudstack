@@ -236,14 +236,14 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.debug("Enabling the VPC offering created")
         self.vpc_off.update(self.apiclient, state='Enabled')
 
-        self.debug("Creating a VPC network in the account: %s" % self.account.account.name)
+        self.debug("Creating a VPC network in the account: %s" % self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         self.vpc = VPC.create(
                         self.apiclient,
                         self.services["vpc"],
                         vpcofferingid=self.vpc_off.id,
                         zoneid=self.zone.id,
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid
                         )
         return
@@ -263,7 +263,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     def get_Router_For_VPC(self):
         routers = list_routers(self.apiclient,
-                            account=self.account.account.name,
+                            account=self.account.name,
                             domainid=self.account.account.domainid,
                             )
         self.assertEqual(isinstance(routers, list),
@@ -286,7 +286,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.apiclient.stopRouter(cmd)
 
         routers = list_routers(self.apiclient,
-                            account=self.account.account.name,
+                            account=self.account.name,
                             domainid=self.account.account.domainid,
                             )
         self.assertEqual(isinstance(routers, list),
@@ -307,7 +307,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.apiclient.startRouter(cmd)
 
         routers = list_routers(self.apiclient,
-                            account=self.account.account.name,
+                            account=self.account.name,
                             domainid=self.account.account.domainid,
                             zoneid=self.zone.id
                             )
@@ -389,7 +389,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def acquire_Public_IP(self, network):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(self.apiclient,
-                                accountid=self.account.account.name,
+                                accountid=self.account.name,
                                 zoneid=self.zone.id,
                                 domainid=self.account.account.domainid,
                                 networkid=None, #network.id,
@@ -412,14 +412,14 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
 
-        self.debug("Creating a VPC network in the account: %s" % self.account.account.name)
+        self.debug("Creating a VPC network in the account: %s" % self.account.name)
         self.services["vpc"]["cidr"] = cidr
         vpc = VPC.create(
                         self.apiclient,
                         self.services["vpc"],
                         vpcofferingid=vpc_off.id,
                         zoneid=self.zone.id,
-                        account=self.account.account.name,
+                        account=self.account.name,
                         domainid=self.account.account.domainid
                         )
         return vpc
@@ -441,7 +441,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             self.debug('Adding Network=%s' % self.services["network"])
             obj_network = Network.create(self.apiclient,
                                     self.services["network"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=nw_off.id,
                                     zoneid=self.zone.id,
@@ -459,7 +459,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             vm = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     networkids=[str(network.id)],
@@ -484,7 +484,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     self.apiclient,
                                     objservices,
                                     ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.account.name,
+                                    accountid=self.account.name,
                                     networkid=network.id,
                                     vpcid=self.vpc.id,
                                     domainid=self.account.account.domainid
