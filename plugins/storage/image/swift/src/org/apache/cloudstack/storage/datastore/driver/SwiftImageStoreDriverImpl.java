@@ -58,6 +58,8 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.host.dao.HostDao;
@@ -105,6 +107,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
     private S3Manager _s3Mgr;
     @Inject AccountDao _accountDao;
     @Inject UserVmDao _userVmDao;
+    @Inject UserVmJoinDao _userVmJoinDao;
     @Inject
     SecondaryStorageVmManager _ssvmMgr;
     @Inject
@@ -281,7 +284,7 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
 
         UsageEventUtils.publishUsageEvent(eventType, account.getId(), sZoneId, templateId, null, null, null);
 
-        List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(templateId);
+        List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
         // check if there is any VM using this ISO.
         if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
              // get installpath of this template on image store

@@ -43,7 +43,9 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.VirtualMachine.State;
 
 
 @Component
@@ -55,6 +57,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
     private ConfigurationDao  _configDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
+    private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
 
     protected UserVmJoinDaoImpl() {
 
@@ -64,8 +67,23 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
         this._count = "select count(distinct id) from user_vm_view WHERE ";
 
-
+        activeVmByIsoSearch = createSearchBuilder();
+        activeVmByIsoSearch.and("isoId", activeVmByIsoSearch.entity().getIsoId(), SearchCriteria.Op.EQ);
+        activeVmByIsoSearch.and("stateNotIn", activeVmByIsoSearch.entity().getState(), SearchCriteria.Op.NIN);
+        activeVmByIsoSearch.done();
     }
+
+
+    @Override
+    public List<UserVmJoinVO> listActiveByIsoId(Long isoId) {
+        SearchCriteria<UserVmJoinVO> sc = activeVmByIsoSearch.create();
+        sc.setParameters("isoId", isoId);
+        State[] states = new State[2];
+        states[0] = State.Error;
+        states[1] = State.Expunging;
+        return listBy(sc);
+    }
+
 
     @Override
     public UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
