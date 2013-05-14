@@ -723,9 +723,32 @@
               isBoolean:true,
               isChecked:false
 
-            }
+            },
+      
+             aclid:{
+              label:'ACL',
+              select:function(args){
+                $.ajax({
+                 url: createURL('listNetworkACLLists'),
+                 dataType: 'json',
+                 async: true,
+                 success: function(json) {
+                      var objs = json.listnetworkacllistsresponse.networkacllist;
+                      var items = [];
+                      $(objs).each(function() {
+                          if(this.name == "default_deny")
+                           items.unshift({id:this.id,description:this.name});
+                          else
+                          items.push({id: this.id, description: this.name});
 
-         
+
+                           });
+                     args.response.success({data: items});
+                 }
+              });
+
+               }
+             }
           }
         },
         action: function(args) {
@@ -745,7 +768,9 @@
               ipaddress: args.data.ipaddress,
               gateway: args.data.gateway,
               netmask: args.data.netmask,
-              vlan: args.data.vlan
+              vlan: args.data.vlan,
+              aclid:args.data.aclid
+
             },
             success: function(json) {
               var jid = json.createprivategatewayresponse.jobid;
@@ -834,11 +859,34 @@
               isBoolean:true,
               isChecked:false
 
-            }
+            },
+
+             aclid:{
+              label:'ACL',
+              select:function(args){
+                $.ajax({
+                 url: createURL('listNetworkACLLists'),
+                 dataType: 'json',
+                 async: true,
+                 success: function(json) {
+                      var objs = json.listnetworkacllistsresponse.networkacllist;
+                      var items = [];
+                      $(objs).each(function() {
+                          if(this.name == "default_deny")
+                           items.unshift({id:this.id,description:this.name});
+                          else
+                          items.push({id: this.id, description: this.name});
+
+
+                           });
+                     args.response.success({data: items});
+                 }
+              });
+
+               }
+             }
 
           }
-
-
 
             },
             action:function(args){
@@ -851,15 +899,17 @@
               array1.push("&sourcenatsupported=false");
 
 
-                       $.ajax({
+           $.ajax({
             url: createURL('createPrivateGateway'+ array1.join("")),
             data: {
-                                                  physicalnetworkid: args.data.physicalnetworkid,
+              physicalnetworkid: args.data.physicalnetworkid,
               vpcid: args.context.vpc[0].id,
               ipaddress: args.data.ipaddress,
               gateway: args.data.gateway,
               netmask: args.data.netmask,
-              vlan: args.data.vlan
+              vlan: args.data.vlan,
+              aclid:args.data.aclid
+
             },
             success: function(json) {
               var jid = json.createprivategatewayresponse.jobid;
@@ -933,7 +983,77 @@
                   notification: {
                     poll: pollAsyncJobResult
                   }
+                },
+                 
+               replaceACL:{
+                  label:'Replace ACL',
+                  createForm:{
+                    title:'Replace ACL',
+                    label:'Replace ACL',
+                   fields:{
+                    aclid:{
+                 label:'ACL',
+                 select:function(args){
+                 $.ajax({
+                 url: createURL('listNetworkACLLists'),
+                 dataType: 'json',
+                 async: true,
+                 success: function(json) {
+                      var objs = json.listnetworkacllistsresponse.networkacllist;
+                      var items = [];
+                      $(objs).each(function() {
+
+                          items.push({id: this.id, description: this.name});
+                           });
+                     args.response.success({data: items});
+                       }
+                     });
+                    }
                 }
+              }
+             },
+           
+               action: function(args) {
+                    $.ajax({
+                      url: createURL("replaceNetworkACLList&gatewayid=" + args.context.vpcGateways[0].id + "&aclid=" + args.data.aclid ),
+                      dataType: "json",
+                      success: function(json) {
+                        var jid = json.replacenetworkacllistresponse.jobid;
+                        args.response.success(
+
+                          {_custom:
+                           {
+                             jobId: jid,
+                             getUpdatedItem: function(json) {
+                               var item = json.queryasyncjobresultresponse.jobresult.aclid;
+                               return {data:item};
+                             }
+                           }
+                          }
+
+                       )
+                      },
+
+                      error:function(json){
+
+                         args.response.error(parseXMLHttpResponse(json));
+                     }
+                    });
+                  },
+
+                   notification: {
+                  poll: pollAsyncJobResult
+                },
+
+                    messages: {
+                    confirm: function(args) {
+                      return 'Do you want to replace the ACL with a new one ?';
+                    },
+                    notification: function(args) {
+                      return 'ACL replaced';
+                    }
+                  }
+                 }
               },
               tabs: {
                 details: {
@@ -975,6 +1095,8 @@
                             var allowedActions = [];
                             if(isAdmin()) {
                               allowedActions.push("remove");
+                              allowedActions.push("replaceACL");
+
                             }
                             return allowedActions;
                           }
