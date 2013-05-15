@@ -70,6 +70,7 @@ public interface PrivateIpDao extends GenericDao<PrivateIpVO, Long>{
      */
     PrivateIpVO findByIpAndVpcId(long vpcId, String ip4Address);
 
-    
 
+
+    PrivateIpVO findByIpAndSourceNetworkIdAndVpcId(long networkId, String ip4Address, long vpcId);
 }
