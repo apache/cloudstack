@@ -191,25 +191,25 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         self.debug(
             "Updating instance resource limit for account: %s" %
-                                                self.account_1.account.name)
+                                                self.account_1.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
                               0, # Instance
-                              account=self.account_1.account.name,
-                              domainid=self.account_1.account.domainid,
+                              account=self.account_1.name,
+                              domainid=self.account_1.domainid,
                               max=1
                               )
         self.debug(
             "Deploying VM instance in account: %s" %
-                                        self.account_1.account.name)
+                                        self.account_1.name)
 
         virtual_machine = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_1.account.name,
-                                domainid=self.account_1.account.domainid,
+                                accountid=self.account_1.name,
+                                domainid=self.account_1.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine)
@@ -227,20 +227,20 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_1.account.name,
-                                domainid=self.account_1.account.domainid,
+                                accountid=self.account_1.name,
+                                domainid=self.account_1.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.debug(
             "Deploying VM instance in account: %s" %
-                                        self.account_2.account.name)
+                                        self.account_2.name)
         # Start 2 instances for account_2
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_2.account.name,
-                                domainid=self.account_2.account.domainid,
+                                accountid=self.account_2.name,
+                                domainid=self.account_2.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -253,13 +253,13 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         self.debug(
             "Deploying VM instance in account: %s" %
-                                        self.account_2.account.name)
+                                        self.account_2.name)
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_2.account.name,
-                                domainid=self.account_2.account.domainid,
+                                accountid=self.account_2.name,
+                                domainid=self.account_2.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)
@@ -287,25 +287,25 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         self.debug(
             "Updating public IP resource limit for account: %s" %
-                                                self.account_1.account.name)
+                                                self.account_1.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
                               1, # Public Ip
-                              account=self.account_1.account.name,
-                              domainid=self.account_1.account.domainid,
+                              account=self.account_1.name,
+                              domainid=self.account_1.domainid,
                               max=2
                               )
 
         self.debug(
             "Deploying VM instance in account: %s" %
-                                        self.account_1.account.name)
+                                        self.account_1.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_1.account.name,
-                                domainid=self.account_1.account.domainid,
+                                accountid=self.account_1.name,
+                                domainid=self.account_1.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -318,14 +318,14 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         self.debug(
             "Deploying VM instance in account: %s" %
-                                        self.account_2.account.name)
+                                        self.account_2.name)
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_2.account.name,
-                                domainid=self.account_2.account.domainid,
+                                accountid=self.account_2.name,
+                                domainid=self.account_2.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)
@@ -431,25 +431,25 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         self.debug(
             "Updating public IP resource limit for account: %s" %
-                                                self.account_1.account.name)
+                                                self.account_1.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
                               3, # Snapshot
-                              account=self.account_1.account.name,
-                              domainid=self.account_1.account.domainid,
+                              account=self.account_1.name,
+                              domainid=self.account_1.domainid,
                               max=1
                               )
 
         self.debug(
             "Deploying VM instance in account: %s" %
-                                        self.account_1.account.name)
+                                        self.account_1.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_1.account.name,
-                                domainid=self.account_1.account.domainid,
+                                accountid=self.account_1.name,
+                                domainid=self.account_1.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -462,14 +462,14 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         self.debug(
             "Deploying VM instance in account: %s" %
-                                        self.account_1.account.name)
+                                        self.account_1.name)
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_2.account.name,
-                                domainid=self.account_2.account.domainid,
+                                accountid=self.account_2.name,
+                                domainid=self.account_2.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)
@@ -498,8 +498,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # Create a snapshot from the ROOTDISK (Account 1)
         snapshot_1 = Snapshot.create(self.apiclient,
                             volumes[0].id,
-                            account=self.account_1.account.name,
-                            domainid=self.account_1.account.domainid,
+                            account=self.account_1.name,
+                            domainid=self.account_1.domainid,
                             )
         self.cleanup.append(snapshot_1)
         # Verify Snapshot state
@@ -516,8 +516,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         with self.assertRaises(Exception):
             Snapshot.create(self.apiclient,
                             volumes[0].id,
-                            account=self.account_1.account.name,
-                            domainid=self.account_1.account.domainid,
+                            account=self.account_1.name,
+                            domainid=self.account_1.domainid,
                             )
 
         # Get the Root disk of VM
@@ -538,8 +538,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # Create a snapshot from the ROOTDISK (Account 2)
         snapshot_2 = Snapshot.create(self.apiclient,
                             volumes[0].id,
-                            account=self.account_2.account.name,
-                            domainid=self.account_2.account.domainid,
+                            account=self.account_2.name,
+                            domainid=self.account_2.domainid,
                             )
         self.cleanup.append(snapshot_2)
         # Verify Snapshot state
@@ -556,8 +556,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # Create a second snapshot from the ROOTDISK (Account 2)
         snapshot_3 = Snapshot.create(self.apiclient,
                             volumes[0].id,
-                            account=self.account_2.account.name,
-                            domainid=self.account_2.account.domainid,
+                            account=self.account_2.name,
+                            domainid=self.account_2.domainid,
                             )
         self.cleanup.append(snapshot_3)
         # Verify Snapshot state
@@ -587,25 +587,25 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         self.debug(
             "Updating volume resource limit for account: %s" %
-                                                self.account_1.account.name)
+                                                self.account_1.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
                               2, # Volume
-                              account=self.account_1.account.name,
-                              domainid=self.account_1.account.domainid,
+                              account=self.account_1.name,
+                              domainid=self.account_1.domainid,
                               max=2
                               )
 
         self.debug(
-            "Deploying VM for account: %s" % self.account_1.account.name)
+            "Deploying VM for account: %s" % self.account_1.name)
 
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_1.account.name,
-                                domainid=self.account_1.account.domainid,
+                                accountid=self.account_1.name,
+                                domainid=self.account_1.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -617,15 +617,15 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
 
         self.debug(
-            "Deploying VM for account: %s" % self.account_2.account.name)
+            "Deploying VM for account: %s" % self.account_2.name)
 
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_2.account.name,
-                                domainid=self.account_2.account.domainid,
+                                accountid=self.account_2.name,
+                                domainid=self.account_2.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)
@@ -637,13 +637,13 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
 
         self.debug(
-            "Create a data volume for account: %s" % self.account_1.account.name)
+            "Create a data volume for account: %s" % self.account_1.name)
         volume_1 = Volume.create(
                                    self.apiclient,
                                    self.services["volume"],
                                    zoneid=self.zone.id,
-                                   account=self.account_1.account.name,
-                                   domainid=self.account_1.account.domainid,
+                                   account=self.account_1.name,
+                                   domainid=self.account_1.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
         self.cleanup.append(volume_1)
@@ -663,20 +663,20 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                           self.apiclient,
                           self.services["volume"],
                           zoneid=self.zone.id,
-                          account=self.account_1.account.name,
-                          domainid=self.account_1.account.domainid,
+                          account=self.account_1.name,
+                          domainid=self.account_1.domainid,
                           diskofferingid=self.disk_offering.id
                         )
 
         self.debug(
-            "Create a data volume for account: %s" % self.account_2.account.name)
+            "Create a data volume for account: %s" % self.account_2.name)
         # Create volume for Account 2
         volume_2 = Volume.create(
                                    self.apiclient,
                                    self.services["volume"],
                                    zoneid=self.zone.id,
-                                   account=self.account_2.account.name,
-                                   domainid=self.account_2.account.domainid,
+                                   account=self.account_2.name,
+                                   domainid=self.account_2.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
         self.cleanup.append(volume_2)
@@ -691,14 +691,14 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
 
         self.debug(
-            "Create a data volume for account: %s" % self.account_2.account.name)
+            "Create a data volume for account: %s" % self.account_2.name)
         # Create a second volume from the ROOTDISK (Account 2)
         volume_3 = Volume.create(
                                    self.apiclient,
                                    self.services["volume"],
                                    zoneid=self.zone.id,
-                                   account=self.account_2.account.name,
-                                   domainid=self.account_2.account.domainid,
+                                   account=self.account_2.name,
+                                   domainid=self.account_2.domainid,
                                    diskofferingid=self.disk_offering.id
                                    )
         self.cleanup.append(volume_3)
@@ -727,25 +727,25 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         self.debug(
             "Updating template resource limit for account: %s" %
-                                                self.account_1.account.name)
+                                                self.account_1.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
                               4, # Template
-                              account=self.account_1.account.name,
-                              domainid=self.account_1.account.domainid,
+                              account=self.account_1.name,
+                              domainid=self.account_1.domainid,
                               max=1
                               )
 
         self.debug(
             "Updating volume resource limit for account: %s" %
-                                                self.account_1.account.name)
+                                                self.account_1.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_1.account.name,
-                                domainid=self.account_1.account.domainid,
+                                accountid=self.account_1.name,
+                                domainid=self.account_1.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_1)
@@ -758,14 +758,14 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         self.debug(
             "Deploying virtual machine for account: %s" %
-                                                self.account_2.account.name)
+                                                self.account_2.name)
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account_2.account.name,
-                                domainid=self.account_2.account.domainid,
+                                accountid=self.account_2.name,
+                                domainid=self.account_2.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.cleanup.append(virtual_machine_2)
@@ -798,8 +798,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
-                            account=self.account_1.account.name,
-                            domainid=self.account_1.account.domainid,
+                            account=self.account_1.name,
+                            domainid=self.account_1.domainid,
                             )
 
         self.cleanup.append(template_1)
@@ -816,8 +816,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
-                            account=self.account_1.account.name,
-                            domainid=self.account_1.account.domainid,
+                            account=self.account_1.name,
+                            domainid=self.account_1.domainid,
                             )
         virtual_machine_2.stop(self.apiclient)
         # Get the Root disk of VM
@@ -841,8 +841,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
-                            account=self.account_2.account.name,
-                            domainid=self.account_2.account.domainid,
+                            account=self.account_2.name,
+                            domainid=self.account_2.domainid,
                             )
 
         self.cleanup.append(template_2)
@@ -859,8 +859,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             self.apiclient,
                             self.services["template"],
                             volumeid=volume.id,
-                            account=self.account_2.account.name,
-                            domainid=self.account_2.account.domainid,
+                            account=self.account_2.name,
+                            domainid=self.account_2.domainid,
                             )
 
         self.cleanup.append(template_3)
