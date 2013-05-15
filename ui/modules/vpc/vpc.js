@@ -18,7 +18,9 @@
   var elems = {
     tier: function(args) {
       var tier = args.tier;
-      var context = args.context;
+      var context = $.extend(true, {}, args.context, {
+        networks: [tier]
+      });
       var dashboardItems = args.dashboardItems;
       var $tier = $('<div>').addClass('tier-item');
       var $header = $('<div>').addClass('header');
@@ -41,9 +43,7 @@
             var $detailView = $('<div>').detailView(
               $.extend(true, {}, cloudStack.vpc.tiers.detailView, {
                 $browser: $browser,
-                context: $.extend(true, {}, context, {
-                  networks: [tier]
-                }),
+                context: context,
                 onActionComplete: function() {
                   $tier.closest('.vpc-network-chart').trigger('reload');
                 }
@@ -153,6 +153,7 @@
     dashboard: function(args) {
       var $dashboard = $('<div>').addClass('dashboard');
       var context = args.context;
+      var tier = context.networks[0];
 
       $(args.dashboardItems).map(function(index, dashboardItem) {
         var $dashboardItem = $('<div>').addClass('dashboard-item');
@@ -167,7 +168,7 @@
 
         $dashboardItem.click(function() {
           $('#browser .container').cloudBrowser('addPanel', {
-            title: dashboardItem.name,
+            title: tier.name + ' - ' + dashboardItem.name,
             maximizeIfSelected: true,
             complete: function($panel) {
               var section = cloudStack.vpc.sections[id];

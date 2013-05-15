@@ -204,6 +204,14 @@
 					  affinitygroupid: args.context.affinityGroups[0].id
 					});		
 				}
+
+        if("vpc" in args.context &&
+           "networks" in args.context) {
+          $.extend(data, {
+            vpcid: args.context.vpc[0].id,
+            networkid: args.context.networks[0].id
+          });
+        }
               
         $.ajax({
           url: createURL('listVirtualMachines'),

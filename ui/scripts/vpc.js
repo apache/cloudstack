@@ -294,6 +294,26 @@
   cloudStack.vpc = {
     // nTier sections
     sections: {
+      tierVMs: function() {
+        var list = $.extend(true, {}, cloudStack.sections.instances);
+
+        list.listView.actions.add.action.custom = cloudStack.uiCustom.instanceWizard(
+          $.extend(true, {}, cloudStack.instanceWizard, {
+            pluginForm: { name: 'vpcTierInstanceWizard' }
+          })
+        );
+        
+        return list;
+      },
+
+      tierPortForwarders: function() {
+        return cloudStack.vpc.ipAddresses.listView();
+      },
+
+      tierStaticNATs: function() {
+        return cloudStack.vpc.ipAddresses.listView();
+      },
+      
       // Internal load balancers
       tierLoadBalancers: {
         listView: {
