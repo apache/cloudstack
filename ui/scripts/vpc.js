@@ -298,11 +298,57 @@
       tierLoadBalancers: {
         listView: {
           fields: {
-            name: { label: 'label.name' },
-            total: { label: 'label.total' }
+            ipaddress: { label: 'label.ip.address' },
+            type: { label: 'label.type' }
           },
           dataProvider: function(args) {
-            args.response.success({ data: [] });
+            args.response.success({
+              data: [
+                { ipaddress: '10.3.2.1', type: 'Internal' },
+                { ipaddress: '10.3.2.3', type: 'Internal' },
+                { ipaddress: '10.232.1.4', type: 'Public' }
+              ]
+            });
+          },
+          actions: {
+            add: {
+              label: 'Add new LB',
+              createForm: {
+                title: 'Add new LB',
+                desc: 'Please specify the type of load balancer you would like to create.',
+                fields: {
+                  type: {
+                    label: 'label.type',
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'internal', description: 'Internal' },
+                          { id: 'public', description: 'Public' }
+                        ]
+                      });
+                    }
+                  }
+                }
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Add LB to VPC network';
+                }
+              },
+              action: function(args) {
+                args.response.success();
+              },
+              notification: {
+                poll: function(args) {
+                  args.complete({
+                    data: {
+                      ipaddress: '10.0.3.2',
+                      type: 'Internal'
+                    }
+                  });
+                }
+              }
+            }
           }
         }
       },
