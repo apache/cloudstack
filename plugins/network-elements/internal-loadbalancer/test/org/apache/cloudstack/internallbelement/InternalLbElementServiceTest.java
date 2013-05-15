@@ -175,7 +175,6 @@ public class InternalLbElementServiceTest {
         
     }
     
-    @Test (expected = InvalidParameterValueException.class)
     public void addToInvalidProvider() {
         _lbElSvc.addInternalLoadBalancerElement(invalidProviderId);   
     }

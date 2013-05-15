@@ -219,4 +219,8 @@ public class PublicIp implements PublicIpAddress {
     public String getVmIp() {
         return _addr.getVmIp();
     }
+
+    public Long getIpMacAddress() {
+        return  _addr.getMacAddress();
+    }
 }

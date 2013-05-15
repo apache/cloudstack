@@ -46,14 +46,17 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.user.dao.AccountDao;
+
 
 @Configuration
 @ComponentScan(
     basePackageClasses={
-        AccountVlanMapDaoImpl.class
+            NetUtils.class,
     },
     includeFilters={@Filter(value=LbChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
     useDefaultFilters=false
@@ -158,6 +161,13 @@ import com.cloud.vm.dao.NicDao;
             public ConfigurationServer configurationServer() {
                 return Mockito.mock(ConfigurationServer.class);
             }
+            
+            @Bean
+            public AccountDao accountDao() {
+                return Mockito.mock(AccountDao.class);
+            }
+            
+            
             
             @Override
             public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {

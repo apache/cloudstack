@@ -128,6 +128,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="limit_cpu_use", updatable=true, nullable=true)
     private boolean limitCpuUse;
 
+    @Column(name="display_vm", updatable=true, nullable=false)
+    protected boolean displayVm = true;
+
     @Column(name="last_host_id", updatable=true, nullable=true)
     private Long lastHostId;
 
@@ -780,6 +783,13 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
         limitCpuUse = value;
     }
 
+    public boolean isDisplayVm() {
+        return displayVm;
+    }
+
+    public void setDisplayVm(boolean displayVm) {
+        this.displayVm = displayVm;
+    }
 
     public String getDataCenterUuid() {
         return dataCenterUuid;

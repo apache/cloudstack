@@ -38,11 +38,13 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.net.NetUtils;
+
 
 @Configuration
 @ComponentScan(
     basePackageClasses={
-        AccountVlanMapDaoImpl.class
+        NetUtils.class
     },
     includeFilters={@Filter(value=ChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
     useDefaultFilters=false

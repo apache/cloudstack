@@ -988,7 +988,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
-        self.services['mode'] = cls.zone.networktype
+        self.services['mode'] = self.zone.networktype
 
         template = get_template(
                             self.apiclient,
@@ -1234,7 +1234,7 @@ class TestIngressRule(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
-        self.services['mode'] = cls.zone.networktype
+        self.services['mode'] = self.zone.networktype
 
         template = get_template(
                             self.apiclient,

@@ -30,6 +30,8 @@ import com.cloud.network.*;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.*;
 import com.midokura.midonet.client.resource.Bridge;
 import com.cloud.utils.net.NetUtils;
@@ -46,11 +48,15 @@ import com.cloud.vm.Nic.ReservationStrategy;
 
 import javax.ejb.Local;
 import java.util.UUID;
+import javax.inject.Inject;
 
 @Component
 @Local(value = NetworkGuru.class)
 public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(MidoNetGuestNetworkGuru.class);
+
+    @Inject
+    AccountDao _accountDao;
 
     public MidoNetGuestNetworkGuru() {
         super();
@@ -118,7 +124,8 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
             implemented.setCidr(network.getCidr());
         }
 
-        String accountIdStr = String.valueOf(network.getAccountId());
+        AccountVO acc = _accountDao.findById(network.getAccountId());
+        String accountUUIDStr = acc.getUuid();
         String routerName = "";
         if (network.getVpcId() != null) {
             routerName = "VPC" + String.valueOf(network.getVpcId());
@@ -126,7 +133,9 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
             routerName = String.valueOf(network.getId());
         }
 
-        String broadcastUriStr = accountIdStr + "." + String.valueOf(network.getId()) + ":" + routerName;
+        String broadcastUriStr = accountUUIDStr + "."
+                                 + String.valueOf(network.getId())
+                                 + ":" + routerName;
 
         implemented.setBroadcastUri(Networks.BroadcastDomainType.Mido.toUri(broadcastUriStr));
         s_logger.debug("Broadcast URI set to " + broadcastUriStr);

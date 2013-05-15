@@ -48,6 +48,22 @@
               return name != 'icmptype' && name != 'icmpcode' && name != 'cidrlist';
             });
 
+            var $protocolinput = args.$form.find('th,td');
+            var $protocolFields = $protocolinput.filter(function(){
+             var name = $(this).attr('rel');
+
+             return  $.inArray(name,['protocolnumber']) > -1;
+            });
+
+           if($(this).val() == 'protocolnumber' ){
+
+             $protocolFields.show();
+            }
+            else{
+             $protocolFields.hide();
+            }
+
+
             if ($(this).val() == 'icmp') {
               $icmpFields.show();
               $icmpFields.attr('disabled', false);
@@ -68,13 +84,18 @@
             data: [
               { name: 'tcp', description: 'TCP' },
               { name: 'udp', description: 'UDP' },
-              { name: 'icmp', description: 'ICMP' }
+              { name: 'icmp', description: 'ICMP' },
+              { name: 'all', description: 'ALL'},
+              { name: 'protocolnumber', description: 'Protocol Number'}
+
             ]
           });
         }
       },
-      'startport': { edit: true, label: 'label.start.port' },
-      'endport': { edit: true, label: 'label.end.port' },
+
+      'protocolnumber': {label:'Protocol Number',isDisabled:true,isHidden:true,edit:true},
+      'startport': { edit: true, label: 'label.start.port' , isOptional:true },
+      'endport': { edit: true, label: 'label.end.port' , isOptional:true},
       'networkid': {
         label: 'Select Tier',
         select: function(args) {
@@ -136,7 +157,26 @@
       label: 'label.add',
       action: function(args) {
         var $multi = args.$multi;
-        
+        //Support for Protocol Number between 0 to 255
+        if(args.data.protocol == 'protocolnumber'){
+            $.extend(args.data,{protocol:args.data.protocolnumber});
+            delete args.data.protocolnumber;
+        }
+        else
+          delete args.data.protocolnumber;
+
+
+       
+        if((args.data.protocol == 'tcp' || args.data.protocol == 'udp' || args.data.protocol == 'all') && (args.data.startport=="" || args.data.startport == undefined)){
+         cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
+          $(window).trigger('cloudStack.fullRefresh');
+        }
+        else if((args.data.protocol == 'tcp' || args.data.protocol == 'udp' || args.data.protocol == 'all')  && (args.data.endport=="" || args.data.endport == undefined)){
+         cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
+          $(window).trigger('cloudStack.fullRefresh');
+        }
+
+       else{       
         $.ajax({
           url: createURL('createNetworkACL'),
           data: $.extend(args.data, {
@@ -172,6 +212,7 @@
             args.response.error(parseXMLHttpResponse(data));
           }
         });
+      }
       }
     },
     actions: {
@@ -688,19 +729,60 @@
             netmask: {
               label: 'label.netmask', validation: { required: true },
               docID: 'helpVPCGatewayNetmask'
-            }
+            },
+             sourceNat:{
+              label:'Source NAT',
+              isBoolean:true,
+              isChecked:false
+
+            },
+      
+             aclid:{
+              label:'ACL',
+              select:function(args){
+                $.ajax({
+                 url: createURL('listNetworkACLLists'),
+                 dataType: 'json',
+                 async: true,
+                 success: function(json) {
+                      var objs = json.listnetworkacllistsresponse.networkacllist;
+                      var items = [];
+                      $(objs).each(function() {
+                          if(this.name == "default_deny")
+                           items.unshift({id:this.id,description:this.name});
+                          else
+                          items.push({id: this.id, description: this.name});
+
+
+                           });
+                     args.response.success({data: items});
+                 }
+              });
+
+               }
+             }
           }
         },
         action: function(args) {
+           var array1=[];
+            if(args.$form.find('.form-item[rel=sourceNat]').find('input[type=checkbox]').is(':Checked')== true)  {
+               array1.push("&sourcenatsupported=true");
+             }
+             else
+              array1.push("&sourcenatsupported=false");
+
+
           $.ajax({
-            url: createURL('createPrivateGateway'),
+            url: createURL('createPrivateGateway'+ array1.join("")),
             data: {
 						  physicalnetworkid: args.data.physicalnetworkid,
               vpcid: args.context.vpc[0].id,
               ipaddress: args.data.ipaddress,
               gateway: args.data.gateway,
               netmask: args.data.netmask,
-              vlan: args.data.vlan
+              vlan: args.data.vlan,
+              aclid:args.data.aclid
+
             },
             success: function(json) {
               var jid = json.createprivategatewayresponse.jobid;
@@ -782,22 +864,64 @@
             netmask: {
               label: 'label.netmask', validation: { required: true },
               docID: 'helpVPCGatewayNetmask'
-            }
+            },
+
+             sourceNat:{
+              label:'Source NAT',
+              isBoolean:true,
+              isChecked:false
+
+            },
+
+             aclid:{
+              label:'ACL',
+              select:function(args){
+                $.ajax({
+                 url: createURL('listNetworkACLLists'),
+                 dataType: 'json',
+                 async: true,
+                 success: function(json) {
+                      var objs = json.listnetworkacllistsresponse.networkacllist;
+                      var items = [];
+                      $(objs).each(function() {
+                          if(this.name == "default_deny")
+                           items.unshift({id:this.id,description:this.name});
+                          else
+                          items.push({id: this.id, description: this.name});
+
+
+                           });
+                     args.response.success({data: items});
+                 }
+              });
+
+               }
+             }
+
           }
-
-
 
             },
             action:function(args){
-                       $.ajax({
-            url: createURL('createPrivateGateway'),
+
+             var array1=[];
+            if(args.$form.find('.form-item[rel=sourceNat]').find('input[type=checkbox]').is(':Checked')== true)  {
+               array1.push("&sourcenatsupported=true");
+             }
+             else
+              array1.push("&sourcenatsupported=false");
+
+
+           $.ajax({
+            url: createURL('createPrivateGateway'+ array1.join("")),
             data: {
-                                                  physicalnetworkid: args.data.physicalnetworkid,
+              physicalnetworkid: args.data.physicalnetworkid,
               vpcid: args.context.vpc[0].id,
               ipaddress: args.data.ipaddress,
               gateway: args.data.gateway,
               netmask: args.data.netmask,
-              vlan: args.data.vlan
+              vlan: args.data.vlan,
+              aclid:args.data.aclid
+
             },
             success: function(json) {
               var jid = json.createprivategatewayresponse.jobid;
@@ -871,7 +995,77 @@
                   notification: {
                     poll: pollAsyncJobResult
                   }
+                },
+                 
+               replaceACL:{
+                  label:'Replace ACL',
+                  createForm:{
+                    title:'Replace ACL',
+                    label:'Replace ACL',
+                   fields:{
+                    aclid:{
+                 label:'ACL',
+                 select:function(args){
+                 $.ajax({
+                 url: createURL('listNetworkACLLists'),
+                 dataType: 'json',
+                 async: true,
+                 success: function(json) {
+                      var objs = json.listnetworkacllistsresponse.networkacllist;
+                      var items = [];
+                      $(objs).each(function() {
+
+                          items.push({id: this.id, description: this.name});
+                           });
+                     args.response.success({data: items});
+                       }
+                     });
+                    }
                 }
+              }
+             },
+           
+               action: function(args) {
+                    $.ajax({
+                      url: createURL("replaceNetworkACLList&gatewayid=" + args.context.vpcGateways[0].id + "&aclid=" + args.data.aclid ),
+                      dataType: "json",
+                      success: function(json) {
+                        var jid = json.replacenetworkacllistresponse.jobid;
+                        args.response.success(
+
+                          {_custom:
+                           {
+                             jobId: jid,
+                             getUpdatedItem: function(json) {
+                               var item = json.queryasyncjobresultresponse.jobresult.aclid;
+                               return {data:item};
+                             }
+                           }
+                          }
+
+                       )
+                      },
+
+                      error:function(json){
+
+                         args.response.error(parseXMLHttpResponse(json));
+                     }
+                    });
+                  },
+
+                   notification: {
+                  poll: pollAsyncJobResult
+                },
+
+                    messages: {
+                    confirm: function(args) {
+                      return 'Do you want to replace the ACL with a new one ?';
+                    },
+                    notification: function(args) {
+                      return 'ACL replaced';
+                    }
+                  }
+                 }
               },
               tabs: {
                 details: {
@@ -888,7 +1082,16 @@
                       id: { label: 'label.id' },
                       zonename: { label: 'label.zone' },
                       domain: { label: 'label.domain' },
-                      account: { label: 'label.account' }
+                      account: { label: 'label.account' },
+                      sourcenatsupported:{
+                       label: 'SourceNAT Supported' ,
+                        converter: function(str) {
+                          return str ? 'Yes' : 'No';
+                        }
+                      },
+                      aclid:{label:'ACL id'}
+
+
                     }
                   ],
                   dataProvider: function(args) {
@@ -906,6 +1109,8 @@
                             var allowedActions = [];
                             if(isAdmin()) {
                               allowedActions.push("remove");
+                              allowedActions.push("replaceACL");
+
                             }
                             return allowedActions;
                           }
@@ -2139,15 +2344,16 @@
                           var items;
                           if(networkSupportingLbExists == true) {
                             items = $.grep(networkOfferings, function(networkOffering) {
-                              var includingLbService = false;
+                              var includingPublicLbService = false;
                               $(networkOffering.service).each(function(){
                                 var thisService = this;
-                                if(thisService.name == "Lb") {
-                                  includingLbService = true;
+                                //only one tier is allowed to have PublicLb provider in a VPC
+                                if(thisService.name == "Lb" && lbProviderMap.publicLb.vpc.indexOf(thisService.provider[0].name) != -1) {                                  
+                                  includingPublicLbService = true;
                                   return false; //break $.each() loop
                                 }
                               });
-                              return !includingLbService;
+                              return !includingPublicLbService;
                             });
                           }
                           else {

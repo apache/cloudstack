@@ -29,5 +29,6 @@
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="ongoing-config-of-external-firewalls-lb.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="load-balancer-rules.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="autoscale.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>

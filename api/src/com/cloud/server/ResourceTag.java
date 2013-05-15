@@ -29,6 +29,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         Volume,
         Snapshot,
         Network,
+        Nic,
         LoadBalancer,
         PortForwardingRule,
         FirewallRule,

@@ -772,9 +772,8 @@ public class VolumeServiceImpl implements VolumeService {
 			return future;
 		}
 		 CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volume, future);
-	        AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
-	        caller.setCallback(caller.getTarget().registerVolumeCallback(null, null))
-	        .setContext(context);
+        AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().resizeVolumeCallback(caller, context)).setContext(context);
 		volume.getDataStore().getDriver().resize(volume, caller);
 		return future;
 	}

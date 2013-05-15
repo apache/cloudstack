@@ -40,12 +40,13 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.DomainRouterDao;
 
 @Configuration
 @ComponentScan(
     basePackageClasses={
-        AccountVlanMapDaoImpl.class
+            NetUtils.class,
     },
     includeFilters={@Filter(value=ElementChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
     useDefaultFilters=false

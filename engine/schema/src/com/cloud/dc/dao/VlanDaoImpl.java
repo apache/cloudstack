@@ -16,19 +16,6 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.springframework.stereotype.Component;
-
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
@@ -43,6 +30,17 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Local(value={VlanDao.class})
@@ -59,6 +57,8 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     protected SearchBuilder<VlanVO> NetworkVlanSearch;
     protected SearchBuilder<VlanVO> PhysicalNetworkVlanSearch;
     protected SearchBuilder<VlanVO> ZoneWideNonDedicatedVlanSearch;
+    protected SearchBuilder<VlanVO> VlanGatewaysearch;
+    protected SearchBuilder<VlanVO> DedicatedVlanSearch;
 
     protected SearchBuilder<AccountVlanMapVO> AccountVlanMapSearch;
 
@@ -103,6 +103,11 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         PhysicalNetworkVlanSearch = createSearchBuilder();
         PhysicalNetworkVlanSearch.and("physicalNetworkId", PhysicalNetworkVlanSearch.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
         PhysicalNetworkVlanSearch.done();
+
+        VlanGatewaysearch = createSearchBuilder();
+        VlanGatewaysearch.and("gateway", VlanGatewaysearch.entity().getVlanGateway(), SearchCriteria.Op.EQ);
+        VlanGatewaysearch.and("networkid", VlanGatewaysearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        VlanGatewaysearch.done();
     }
 
     @Override
@@ -207,6 +212,13 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         AccountVlanMapSearch.and("accountId", AccountVlanMapSearch.entity().getAccountId(), SearchCriteria.Op.NULL);
         ZoneWideNonDedicatedVlanSearch.join("AccountVlanMapSearch", AccountVlanMapSearch, ZoneWideNonDedicatedVlanSearch.entity().getId(), AccountVlanMapSearch.entity().getVlanDbId(), JoinBuilder.JoinType.LEFTOUTER);
         ZoneWideNonDedicatedVlanSearch.done();
+        AccountVlanMapSearch.done();
+
+        DedicatedVlanSearch = createSearchBuilder();
+        AccountVlanMapSearch = _accountVlanMapDao.createSearchBuilder();
+        AccountVlanMapSearch.and("accountId", AccountVlanMapSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        DedicatedVlanSearch.join("AccountVlanMapSearch", AccountVlanMapSearch, DedicatedVlanSearch.entity().getId(), AccountVlanMapSearch.entity().getVlanDbId(), JoinBuilder.JoinType.LEFTOUTER);
+        DedicatedVlanSearch.done();
         AccountVlanMapSearch.done();
 
         return result;
@@ -318,6 +330,14 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     }
 
     @Override
+    public List<VlanVO> listVlansByNetworkIdAndGateway(long networkid, String gateway){
+        SearchCriteria<VlanVO> sc =  VlanGatewaysearch.create();
+        sc.setParameters("networkid", networkid);
+        sc.setParameters("gateway", gateway);
+        return listBy(sc);
+    }
+
+    @Override
     public List<VlanVO> listVlansByPhysicalNetworkId(long physicalNetworkId) {
         SearchCriteria<VlanVO> sc = PhysicalNetworkVlanSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
@@ -328,6 +348,13 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     public List<VlanVO> listZoneWideNonDedicatedVlans(long zoneId) {
         SearchCriteria<VlanVO> sc = ZoneWideNonDedicatedVlanSearch.create();
         sc.setParameters("ZoneWideNonDedicatedVlanSearch", "zoneId", zoneId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VlanVO> listDedicatedVlans(long accountId) {
+        SearchCriteria<VlanVO> sc = DedicatedVlanSearch.create();
+        sc.setJoinParameters("AccountVlanMapSearch", "accountId", accountId);
         return listBy(sc);
     }
 

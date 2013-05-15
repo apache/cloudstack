@@ -19,54 +19,68 @@
 
 package com.cloud.network.element;
 
-import com.cloud.network.*;
-import com.cloud.network.element.SimpleFirewallRule;
 import com.cloud.agent.api.to.FirewallRuleTO;
-import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.addr.PublicIp;
+import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.*;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import com.google.common.collect.*;
-import com.cloud.user.AccountManager;
 import com.midokura.midonet.client.MidonetApi;
 import com.midokura.midonet.client.dto.DtoRule;
-import com.midokura.midonet.client.resource.*;
+import com.midokura.midonet.client.resource.Bridge;
+import com.midokura.midonet.client.resource.BridgePort;
+import com.midokura.midonet.client.resource.DhcpHost;
+import com.midokura.midonet.client.resource.DhcpSubnet;
+import com.midokura.midonet.client.resource.Port;
+import com.midokura.midonet.client.resource.ResourceCollection;
+import com.midokura.midonet.client.resource.Route;
+import com.midokura.midonet.client.resource.Router;
+import com.midokura.midonet.client.resource.RouterPort;
+import com.midokura.midonet.client.resource.Rule;
+import com.midokura.midonet.client.resource.RuleChain;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.apache.log4j.Logger;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcManager;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.inject.Inject;
-import java.util.*;
-import java.lang.Class;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 
 @Component
@@ -118,14 +132,14 @@ public class MidoNetElement extends AdapterBase implements
     @Inject
     AccountManager _accountMgr;
     @Inject
-    NetworkServiceMapDao _ntwkSrvcDao;
+    AccountDao _accountDao;
 
     public void setMidonetApi(MidonetApi api) {
         this.api = api;
     }
 
-    public void setNtwkSrvcDao(NetworkServiceMapDao ntwkSrvcDao){
-        this._ntwkSrvcDao = ntwkSrvcDao;
+    public void setAccountDao(AccountDao aDao) {
+        this._accountDao = aDao;
     }
 
     @Override
@@ -159,10 +173,13 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     public boolean midoInNetwork(Network network) {
-        for (String pname : _ntwkSrvcDao.getDistinctProviders(network.getId())) {
-            if (pname.equals(getProvider().getName())) {
-                return true;
-            }
+        if((network.getTrafficType() == Networks.TrafficType.Public) &&
+           (network.getBroadcastDomainType() == Networks.BroadcastDomainType.Mido)){
+            return true;
+        }
+        if((network.getTrafficType() == Networks.TrafficType.Guest) &&
+           (network.getBroadcastDomainType() == Networks.BroadcastDomainType.Mido)){
+            return true;
         }
         return false;
     }
@@ -267,6 +284,11 @@ public class MidoNetElement extends AdapterBase implements
         post.addRule().type(DtoRule.RevDNAT).flowAction(DtoRule.Accept).create();
     }
 
+    public String getAccountUuid(Network network) {
+        AccountVO acc = _accountDao.findById(network.getAccountId());
+        return acc.getUuid();
+    }
+
     public boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress)
         throws ResourceUnavailableException {
 
@@ -303,7 +325,7 @@ public class MidoNetElement extends AdapterBase implements
                     tenantUplink = ports[0];
                     providerDownlink = ports[1];
 
-                    accountIdStr = String.valueOf(network.getAccountId());
+                    accountIdStr = getAccountUuid(network);
                     boolean isVpc = getIsVpc(network);
                     long id = getRouterId(network, isVpc);
                     routerName = getRouterName(isVpc, id);
@@ -430,6 +452,16 @@ public class MidoNetElement extends AdapterBase implements
         }
 
         return true;
+    }
+
+    @Override
+    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean removeDhcpSupportForSubnet(Network network) {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     private void removeMidonetStaticNAT(RuleChain preFilter, RuleChain preNat, RuleChain postNat,
@@ -588,7 +620,7 @@ public class MidoNetElement extends AdapterBase implements
         RuleChain preNat = null;
         RuleChain post = null;
 
-        String accountIdStr = String.valueOf(network.getAccountId());
+        String accountIdStr = getAccountUuid(network);
         String networkUUIDStr = String.valueOf(network.getId());
 
         for (StaticNat rule : rules) {
@@ -636,7 +668,7 @@ public class MidoNetElement extends AdapterBase implements
             return false;
         }
         if (canHandle(config, Service.Firewall)) {
-            String accountIdStr = String.valueOf(config.getAccountId());
+            String accountIdStr = getAccountUuid(config);
             String networkUUIDStr = String.valueOf(config.getId());
             RuleChain preFilter = getChain(accountIdStr, networkUUIDStr, RuleChainCode.TR_PREFILTER);
             RuleChain preNat = getChain(accountIdStr, networkUUIDStr, RuleChainCode.TR_PRENAT);
@@ -924,7 +956,7 @@ public class MidoNetElement extends AdapterBase implements
             return false;
         }
 
-        String accountIdStr = String.valueOf(network.getAccountId());
+        String accountIdStr = getAccountUuid(network);
         String networkUUIDStr = String.valueOf(network.getId());
         RuleChain preNat = getChain(accountIdStr, networkUUIDStr, RuleChainCode.TR_PRENAT);
         RuleChain postNat = getChain(accountIdStr, networkUUIDStr, RuleChainCode.TR_POST);
@@ -1147,16 +1179,16 @@ public class MidoNetElement extends AdapterBase implements
         return routerName + "-tenantrouter-" + chain;
     }
 
-    protected RuleChain getChain(String accountID, String routerName, RuleChainCode chainCode){
-        return getChain("", accountID, routerName, chainCode);
+    protected RuleChain getChain(String accountUuid, String routerName, RuleChainCode chainCode){
+        return getChain("", accountUuid, routerName, chainCode);
     }
 
-    protected RuleChain getChain(String networkId, String accountID,
+    protected RuleChain getChain(String networkId, String accountUuid,
                                String routerName, RuleChainCode chainCode){
         String chainName = getChainName(networkId, routerName, chainCode);
 
         MultivaluedMap findChain = new MultivaluedMapImpl();
-        findChain.add("tenant_id", accountID);
+        findChain.add("tenant_id", accountUuid);
 
         ResourceCollection<RuleChain> ruleChains = api.getChains(findChain);
 
@@ -1280,7 +1312,7 @@ public class MidoNetElement extends AdapterBase implements
         String routerName = getRouterName(isVpc, id);
 
         RuleChain egressChain = getChain(String.valueOf(network.getId()),
-                                         String.valueOf(network.getAccountId()),
+                                         getAccountUuid(network),
                                          routerName,
                                          RuleChainCode.ACL_EGRESS);
 
@@ -1302,7 +1334,7 @@ public class MidoNetElement extends AdapterBase implements
         String routerName = getRouterName(isVpc, id);
 
         RuleChain egressChain = getChain(String.valueOf(network.getId()),
-                                         String.valueOf(network.getAccountId()),
+                                         getAccountUuid(network),
                                          routerName,
                                          RuleChainCode.ACL_EGRESS);
 
@@ -1332,6 +1364,14 @@ public class MidoNetElement extends AdapterBase implements
             .position(pos++)
             .create();
 
+        // If it is ICMP to the router, accept that
+        egressChain.addRule().type(DtoRule.Accept)
+            .nwProto(SimpleFirewallRule.stringToProtocolNumber("icmp"))
+            .nwDstAddress(network.getGateway())
+            .nwDstLength(32)
+            .position(pos++)
+            .create();
+
         // Everything else gets dropped
         egressChain.addRule()
             .type(DtoRule.Drop)
@@ -1346,7 +1386,7 @@ public class MidoNetElement extends AdapterBase implements
         boolean isVpc = getIsVpc(network);
         long id = getRouterId(network, isVpc);
         String routerName = getRouterName(isVpc, id);
-        String accountIdStr = String.valueOf(network.getAccountId());
+        String accountIdStr = getAccountUuid(network);
 
         // Add interior port on bridge side
         BridgePort bridgePort = netBridge.addInteriorPort().create();
@@ -1380,6 +1420,14 @@ public class MidoNetElement extends AdapterBase implements
             // If it is ARP, accept it
             inc.addRule().type(DtoRule.Accept)
                          .dlType((short)0x0806)
+                         .position(pos++)
+                         .create();
+
+            // If it is ICMP to the router, accept that
+            inc.addRule().type(DtoRule.Accept)
+                   .nwProto(SimpleFirewallRule.stringToProtocolNumber("icmp"))
+                         .nwDstAddress(network.getGateway())
+                         .nwDstLength(32)
                          .position(pos++)
                          .create();
 
@@ -1426,27 +1474,25 @@ public class MidoNetElement extends AdapterBase implements
 
     private Bridge getOrCreateNetworkBridge(Network network){
         // Find the single bridge for this network, create if doesn't exist
-        return getOrCreateNetworkBridge(network.getId(), network.getAccountId());
+        return getOrCreateNetworkBridge(network.getId(), getAccountUuid(network));
     }
 
-    private Bridge getOrCreateNetworkBridge(long networkID, long accountID){
-        Bridge netBridge = getNetworkBridge(networkID, accountID);
+    private Bridge getOrCreateNetworkBridge(long networkID, String accountUuid){
+        Bridge netBridge = getNetworkBridge(networkID, accountUuid);
         if(netBridge == null){
 
-            String accountIdStr = String.valueOf(accountID);
             String networkUUIDStr = String.valueOf(networkID);
 
-            netBridge = api.addBridge().tenantId(accountIdStr).name(networkUUIDStr).create();
+            netBridge = api.addBridge().tenantId(accountUuid).name(networkUUIDStr).create();
         }
         return netBridge;
     }
 
-    private Bridge getNetworkBridge(long networkID, long accountID){
+    private Bridge getNetworkBridge(long networkID, String accountUuid){
 
         MultivaluedMap qNetBridge = new MultivaluedMapImpl();
-        String accountIdStr = String.valueOf(accountID);
         String networkUUIDStr = String.valueOf(networkID);
-        qNetBridge.add("tenant_id", accountIdStr);
+        qNetBridge.add("tenant_id", accountUuid);
 
         for (Bridge b : this. api.getBridges(qNetBridge)) {
             if(b.getName().equals(networkUUIDStr)){
@@ -1474,7 +1520,7 @@ public class MidoNetElement extends AdapterBase implements
         boolean isVpc = getIsVpc(network);
         long id = getRouterId(network, isVpc);
 
-        return getOrCreateGuestNetworkRouter(id, network.getAccountId(), isVpc);
+        return getOrCreateGuestNetworkRouter(id, getAccountUuid(network), isVpc);
 
     }
 
@@ -1486,29 +1532,28 @@ public class MidoNetElement extends AdapterBase implements
         }
     }
 
-    protected Router createRouter(long id, long accountID, boolean isVpc) {
+    protected Router createRouter(long id, String accountUuid, boolean isVpc) {
 
-        String accountIdStr = String.valueOf(accountID);
         String routerName = getRouterName(isVpc, id);
 
         //Set up rule chains
         RuleChain pre = api.addChain()
                             .name(getChainName(routerName, RuleChainCode.TR_PRE))
-                            .tenantId(accountIdStr)
+                            .tenantId(accountUuid)
                             .create();
         RuleChain post = api.addChain()
                             .name(getChainName(routerName, RuleChainCode.TR_POST))
-                            .tenantId(accountIdStr)
+                            .tenantId(accountUuid)
                             .create();
 
         // Set up NAT and filter chains for pre-routing
         RuleChain preFilter = api.addChain()
                                   .name(getChainName(routerName, RuleChainCode.TR_PREFILTER))
-                                  .tenantId(accountIdStr)
+                                  .tenantId(accountUuid)
                                   .create();
         RuleChain preNat = api.addChain()
                                   .name(getChainName(routerName, RuleChainCode.TR_PRENAT))
-                                  .tenantId(accountIdStr)
+                                  .tenantId(accountUuid)
                                   .create();
 
         // Hook the chains in - first jump to Filter chain, then jump to Nat chain
@@ -1522,28 +1567,27 @@ public class MidoNetElement extends AdapterBase implements
                      .create();
 
         return api.addRouter()
-                   .tenantId(accountIdStr)
+                   .tenantId(accountUuid)
                    .name(routerName)
                    .inboundFilterId(pre.getId())
                    .outboundFilterId(post.getId())
                    .create();
     }
 
-    private Router getOrCreateGuestNetworkRouter(long id, long accountID, boolean isVpc) {
-        Router tenantRouter = getGuestNetworkRouter(id, accountID, isVpc);
+    private Router getOrCreateGuestNetworkRouter(long id, String accountUuid, boolean isVpc) {
+        Router tenantRouter = getGuestNetworkRouter(id, accountUuid, isVpc);
         if(tenantRouter == null){
-            tenantRouter = createRouter(id, accountID, isVpc);
+            tenantRouter = createRouter(id, accountUuid, isVpc);
         }
         return tenantRouter;
     }
 
-    private Router getGuestNetworkRouter(long id, long accountID, boolean isVpc){
+    private Router getGuestNetworkRouter(long id, String accountUuid, boolean isVpc){
 
         MultivaluedMap qNetRouter = new MultivaluedMapImpl();
-        String accountIdStr = String.valueOf(accountID);
         String routerName = getRouterName(isVpc, id);
 
-        qNetRouter.add("tenant_id", accountIdStr);
+        qNetRouter.add("tenant_id", accountUuid);
 
         for (Router router : api.getRouters(qNetRouter)) {
             if(router.getName().equals(routerName)){
@@ -1590,10 +1634,10 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     private void deleteNetworkBridges(Network network){
-        long accountID = network.getAccountId();
+        String accountUuid = getAccountUuid(network);
         long networkID = network.getId();
 
-        Bridge netBridge = getNetworkBridge(networkID, accountID);
+        Bridge netBridge = getNetworkBridge(networkID, accountUuid);
         if(netBridge != null){
 
             cleanBridge(netBridge);
@@ -1609,11 +1653,11 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     private void deleteGuestNetworkRouters(Network network){
-        long accountID = network.getAccountId();
+        String accountUuid = getAccountUuid(network);
         boolean isVpc = getIsVpc(network);
         long id = getRouterId(network, isVpc);
 
-        Router tenantRouter = getGuestNetworkRouter(id, accountID, isVpc);
+        Router tenantRouter = getGuestNetworkRouter(id, accountUuid, isVpc);
 
         // Delete any peer ports corresponding to this router
         for(Port peerPort : tenantRouter.getPeerPorts((new MultivaluedMapImpl()))){
@@ -1654,7 +1698,7 @@ public class MidoNetElement extends AdapterBase implements
             }
 
             // Remove inbound and outbound filter chains
-            String accountIdStr = String.valueOf(accountID);
+            String accountIdStr = String.valueOf(accountUuid);
             String routerName = getRouterName(isVpc, id);
 
             RuleChain pre = api.getChain(tenantRouter.getInboundFilterId());

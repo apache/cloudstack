@@ -90,6 +90,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         userVmResponse.setDomainName(userVm.getDomainName());
 
         userVmResponse.setCreated(userVm.getCreated());
+        userVmResponse.setDisplayVm(userVm.isDisplayVm());
 
         if (userVm.getState() != null) {
             userVmResponse.setState(userVm.getState().toString());

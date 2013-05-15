@@ -18,12 +18,13 @@
  */
 
 import com.cloud.network.element.MidoNetElement;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import junit.framework.TestCase;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 import com.midokura.midonet.client.MidonetApi;
 import com.midokura.midonet.client.resource.*;
-import com.cloud.network.dao.NetworkServiceMapDao;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.cloud.network.*;
 import com.cloud.vm.*;
@@ -46,10 +47,6 @@ public class MidoNetElementTest extends TestCase {
 
         //mockMgmt
         MidonetApi api = mock(MidonetApi.class, RETURNS_DEEP_STUBS);
-        ArrayList<String> arr = new ArrayList<String>();
-        arr.add("MidoNet");
-        NetworkServiceMapDao mockNSMD = mock(NetworkServiceMapDao.class);
-        when(mockNSMD.getDistinctProviders(anyLong())).thenReturn(arr);
 
         //mockDhcpHost
         DhcpHost mockDhcpHost = mock(DhcpHost.class);
@@ -82,6 +79,14 @@ public class MidoNetElementTest extends TestCase {
         when(mockNetwork.getGateway()).thenReturn("1.2.3.4");
         when(mockNetwork.getCidr()).thenReturn("1.2.3.0/24");
         when(mockNetwork.getId()).thenReturn((long)2);
+        when(mockNetwork.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Mido);
+        when(mockNetwork.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+
+        //mockAccountDao
+        AccountDao mockAccountDao = mock(AccountDao.class);
+        AccountVO mockAccountVO = mock(AccountVO.class);
+        when(mockAccountDao.findById(anyLong())).thenReturn(mockAccountVO);
+        when(mockAccountVO.getUuid()).thenReturn("1");
 
         //mockNic
         NicProfile mockNic = mock(NicProfile.class);
@@ -96,8 +101,8 @@ public class MidoNetElementTest extends TestCase {
         when(mockVm.getType()).thenReturn(VirtualMachine.Type.User);
 
         MidoNetElement elem = new MidoNetElement();
-        elem.setNtwkSrvcDao(mockNSMD);
         elem.setMidonetApi(api);
+        elem.setAccountDao(mockAccountDao);
 
         boolean result = false;
         try {
@@ -119,14 +124,16 @@ public class MidoNetElementTest extends TestCase {
     public void testImplement() {
         //mock
         MidonetApi api = mock(MidonetApi.class, RETURNS_DEEP_STUBS);
-        ArrayList<String> arr = new ArrayList<String>();
-        arr.add("MidoNet");
-        NetworkServiceMapDao mockNSMD = mock(NetworkServiceMapDao.class);
-        when(mockNSMD.getDistinctProviders(anyLong())).thenReturn(arr);
 
+        //mockAccountDao
+        AccountDao mockAccountDao = mock(AccountDao.class);
+        AccountVO mockAccountVO = mock(AccountVO.class);
+        when(mockAccountDao.findById(anyLong())).thenReturn(mockAccountVO);
+        when(mockAccountVO.getUuid()).thenReturn("1");
         MidoNetElement elem = new MidoNetElement();
-        elem.setNtwkSrvcDao(mockNSMD);
+
         elem.setMidonetApi(api);
+        elem.setAccountDao(mockAccountDao);
 
         //mockRPort
         RouterPort mockRPort = mock(RouterPort.class);
@@ -161,6 +168,8 @@ public class MidoNetElementTest extends TestCase {
         when(mockNetwork.getGateway()).thenReturn("1.2.3.4");
         when(mockNetwork.getCidr()).thenReturn("1.2.3.0/24");
         when(mockNetwork.getId()).thenReturn((long)2);
+        when(mockNetwork.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Mido);
+        when(mockNetwork.getTrafficType()).thenReturn(Networks.TrafficType.Public);
 
         boolean result = false;
         try {

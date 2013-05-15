@@ -155,7 +155,7 @@ KEYBOARD_TYPE_JP = "jp";
 KEYBOARD_TYPE_UK = "uk";
 
 //JP keyboard type
-//
+
 var	keyboardTables = [
            {tindex: 0, keyboardType: KEYBOARD_TYPE_COOKED, mappingTable:
                {X11: [ {keycode: 222, entry: X11_KEY_CIRCUMFLEX_ACCENT},
@@ -220,15 +220,31 @@ var	keyboardTables = [
                   {keycode: JS_KEY_SHIFT,				entry : X11_KEY_SHIFT},
                   {keycode: JS_KEY_CTRL,				entry : X11_KEY_CTRL},
                   {keycode: JS_KEY_ALT,					entry : X11_KEY_ALT},
-                  {keycode: JS_KEY_GRAVE_ACCENT,		entry : X11_KEY_GRAVE_ACCENT},
-                  {keycode: JS_KEY_SUBSTRACT,			entry : X11_KEY_SUBSTRACT},
-                  {keycode: JS_KEY_ADD,					entry : X11_KEY_ADD},
-                  {keycode: JS_KEY_OPEN_BRACKET,		entry : X11_KEY_OPEN_BRACKET},
-                  {keycode: JS_KEY_CLOSE_BRACKET,		entry : X11_KEY_CLOSE_BRACKET},
+                  //{keycode: JS_KEY_GRAVE_ACCENT,		entry : X11_KEY_GRAVE_ACCENT},
+                  //[192 / 64 = "' @"]
+                  {keycode: 192,	entry : 0x5b,	browser: "IE"},
+                  {keycode: 64,		entry : 0x5b, 	browser: "Firefox"},
+                  //{keycode: JS_KEY_ADD,					entry : X11_KEY_ADD},
+                  //[187 / 59 = "; +"]
+                  {keycode: 187,	entry : 0x3a,	browser: "IE"},
+                  {keycode: 59,		entry : 0x3b, 	browser: "Firefox"},
+                  //{keycode: JS_KEY_OPEN_BRACKET,		entry : X11_KEY_OPEN_BRACKET},
+                  //[219 = "[{"]
+                  {keycode: 219,	entry : 0x5d,	browser: "IE"},
+                  {keycode: 219,	entry : 0x5d, 	browser: "Firefox"},
+                  //{keycode: JS_KEY_CLOSE_BRACKET,		entry : X11_KEY_CLOSE_BRACKET},
+                  //[221 = "]}"]
+                  {keycode: 221,	entry : 0x5c,	browser: "IE"},
+                  {keycode: 221,	entry : 0x5c,	browser: "Firefox"},
                   {keycode: JS_KEY_BACK_SLASH,			entry : X11_KEY_BACK_SLASH},
-                  {keycode: JS_KEY_SINGLE_QUOTE,		entry : X11_KEY_SINGLE_QUOTE},
+                  //{keycode: JS_KEY_SINGLE_QUOTE,		entry : X11_KEY_SINGLE_QUOTE},
+                  //[222 / 160 = "~^"]
+                  {keycode: 222,		entry : 0x3d,	browser: "IE"},
+                  {keycode: 160,		entry : 0x3d,	browser: "Firefox"},
+                  //[173 = "-=" ] specific to Firefox browser
+                  {keycode: 173,		entry : 0x2d,	browser: "Firefox"},
                   {keycode: JS_KEY_COMMA,				entry : X11_KEY_COMMA},
-                  {keycode: JS_KEY_PERIOD,				entry : X11_KEY_PERIOD},
+                  {keycode: JS_KEY_PERIOD, 				entry : X11_KEY_PERIOD},
                   {keycode: JS_KEY_FORWARD_SLASH,		entry : X11_KEY_FORWARD_SLASH},
                   {keycode: JS_KEY_DASH,				entry : X11_KEY_DASH},
                   {keycode: JS_KEY_SEMI_COLON,			entry : X11_KEY_SEMI_COLON},
@@ -243,8 +259,16 @@ var	keyboardTables = [
                   {keycode: JS_KEY_NUMPAD8,				entry : X11_KEY_NUMPAD8},
                   {keycode: JS_KEY_NUMPAD9,				entry : X11_KEY_NUMPAD9},
                   {keycode: JS_KEY_DECIMAL_POINT,		entry : X11_KEY_DECIMAL_POINT},
-                  {keycode: JS_KEY_DIVIDE,				entry : X11_KEY_DIVIDE},
-
+                  {keycode: JS_KEY_DIVIDE,				entry : 0xffaf},
+                  {keycode: JS_KEY_MULTIPLY,			entry : 0xffaa},
+                  {keycode: JS_KEY_ADD,					entry : 0xffab},
+                  {keycode: JS_KEY_SUBSTRACT,			entry : 0xffad},
+                  //Kanji Key = 243 / 244
+                  {keycode: 243,	entry : 0x7e,	browser: "IE"},
+                  {keycode: 244,	entry : 0x7e,	browser: "IE"},
+                  //Caps Lock = 240
+                  {keycode: 240,			entry : 0xffe5},
+                  /*
                   {keycode: JS_KEY_MULTIPLY,    entry : [
                                                          {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0 },
                                                          {type: KEY_DOWN, code: X11_KEY_ASTERISK, modifiers: 0 },
@@ -252,21 +276,17 @@ var	keyboardTables = [
                                                          {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0 }
                                                          ]},
                   {keycode: JS_KEY_ADD,         entry : false}
-            ],
-            keyPress: [
-                  {keycode: 61,      entry:  [
-                                              {type: KEY_DOWN, code: X11_KEY_ADD, modifiers: 0, shift: false },
-                                              {type: KEY_UP, code: X11_KEY_ADD, modifiers: 0, shift: false }
-                                              ]},
-                  {keycode: 43,      entry: [
-                                             {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
-                                             {type: KEY_DOWN, code: X11_KEY_ADD, modifiers: 0, shift: false },
-                                             {type: KEY_UP, code: X11_KEY_ADD, modifiers: 0, shift: false },
-                                             {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0, shift: false },
-                                             {type: KEY_DOWN, code: X11_KEY_ADD, modifiers: 0, shift: true },
-                                             {type: KEY_UP, code: X11_KEY_ADD, modifiers: 0, shift: true }
-                                             ]}
-                  ]
+                   */
+                  //[186 / 58 = "~^"]
+                  {keycode: 186,		entry : 0x22, browser: "IE"},
+                  {keycode: 58,		entry : 0x22, browser: "Firefox"},
+                  ],
+                  keyPress: [
+                             {keycode: 61,      entry:  [
+                                                         {type: KEY_DOWN, code: X11_KEY_ADD, modifiers: 0, shift: false },
+                                                         {type: KEY_UP, code: X11_KEY_ADD, modifiers: 0, shift: false }
+                                                         ]},
+                                                         ]
            }
            }, {tindex: 2, keyboardType: KEYBOARD_TYPE_UK, mappingTable:
            {X11: [],

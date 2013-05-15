@@ -104,6 +104,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
+        AllFieldsSearch.and("aclId", AllFieldsSearch.entity().getNetworkACLId(), Op.EQ);
         SearchBuilder<NetworkOfferingVO> join1 = _ntwkOffDao.createSearchBuilder();
         join1.and("isSystem", join1.entity().isSystemOnly(), Op.EQ);
         join1.and("isRedundant", join1.entity().getRedundantRouter(), Op.EQ);
@@ -161,6 +162,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         CountBy.and("offeringId", CountBy.entity().getNetworkOfferingId(), Op.EQ);
         CountBy.and("vpcId", CountBy.entity().getVpcId(), Op.EQ);
         CountBy.and("removed", CountBy.entity().getRemoved(), Op.NULL);
+        SearchBuilder<NetworkOfferingVO> ntwkOffJoin = _ntwkOffDao.createSearchBuilder();
+        ntwkOffJoin.and("isSystem", ntwkOffJoin.entity().isSystemOnly(), Op.EQ);
+        CountBy.join("offerings", ntwkOffJoin, CountBy.entity().getNetworkOfferingId(), ntwkOffJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         CountBy.done();
 
         PhysicalNetworkSearch = createSearchBuilder();
@@ -617,5 +621,23 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setJoinParameters("offerings", "isRedundant", true);
         return listBy(sc, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByAclId(long aclId) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("aclId", aclId);
+
+        return listBy(sc, null);
+    }
+    
+    
+    @Override
+    public int getNonSystemNetworkCountByVpcId(long vpcId) {
+        SearchCriteria<Integer> sc = CountBy.create();
+        sc.setParameters("vpcId", vpcId);
+        sc.setJoinParameters("offerings", "isSystem", false);
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
     }
 }

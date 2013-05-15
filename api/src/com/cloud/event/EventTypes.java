@@ -113,6 +113,10 @@ public class EventTypes {
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";
     public static final String EVENT_NIC_DELETE = "NIC.DELETE";
     public static final String EVENT_NIC_UPDATE = "NIC.UPDATE";
+    public static final String EVENT_NIC_DETAIL_ADD = "NIC.DETAIL.ADD";
+    public static final String EVENT_NIC_DETAIL_UPDATE = "NIC.DETAIL.UPDATE";
+    public static final String EVENT_NIC_DETAIL_REMOVE = "NIC.DETAIL.REMOVE";
+
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
@@ -176,6 +180,9 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPLOAD = "VOLUME.UPLOAD";
     public static final String EVENT_VOLUME_MIGRATE = "VOLUME.MIGRATE";
     public static final String EVENT_VOLUME_RESIZE = "VOLUME.RESIZE";
+    public static final String EVENT_VOLUME_DETAIL_UPDATE = "VOLUME.DETAIL.UPDATE";
+    public static final String EVENT_VOLUME_DETAIL_ADD = "VOLUME.DETAIL.ADD";
+    public static final String EVENT_VOLUME_DETAIL_REMOVE = "VOLUME.DETAIL.REMOVE";
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -344,6 +351,14 @@ public class EventTypes {
     public static final String EVENT_VPC_DELETE = "VPC.DELETE";
     public static final String EVENT_VPC_RESTART = "VPC.RESTART";
 
+    // Network ACL
+    public static final String EVENT_NETWORK_ACL_CREATE = "NETWORK.ACL.CREATE";
+    public static final String EVENT_NETWORK_ACL_DELETE = "NETWORK.ACL.DELETE";
+    public static final String EVENT_NETWORK_ACL_REPLACE = "NETWORK.ACL.REPLACE";
+    public static final String EVENT_NETWORK_ACL_ITEM_CREATE = "NETWORK.ACL.ITEM.CREATE";
+    public static final String EVENT_NETWORK_ACL_ITEM_UPDATE = "NETWORK.ACL.ITEM.UPDATE";
+    public static final String EVENT_NETWORK_ACL_ITEM_DELETE = "NETWORK.ACL.ITEM.DELETE";
+
     // VPC offerings
     public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
     public static final String EVENT_VPC_OFFERING_UPDATE = "VPC.OFFERING.UPDATE";
@@ -360,6 +375,10 @@ public class EventTypes {
     // tag related events
     public static final String EVENT_TAGS_CREATE = "CREATE_TAGS";
     public static final String EVENT_TAGS_DELETE = "DELETE_TAGS";
+
+    // meta data related events
+    public static final String EVENT_RESOURCE_DETAILS_CREATE = "CREATE_RESOURCE_DETAILS";
+    public static final String EVENT_RESOURCE_DETAILS_DELETE = "DELETE_RESOURCE_DETAILS";
 
 	// vm snapshot events
     public static final String EVENT_VM_SNAPSHOT_CREATE = "VMSNAPSHOT.CREATE";

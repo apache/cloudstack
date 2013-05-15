@@ -16,32 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.nio.channels.SocketChannel;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -111,6 +85,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
@@ -131,7 +107,11 @@ import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.api.routing.CreateIpAliasCommand;
+import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
@@ -198,10 +178,10 @@ import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
-import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareGuestOsMapper;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.network.DnsMasqConfigurator;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
@@ -254,9 +234,7 @@ import com.vmware.vim25.PerfMetricIntSeries;
 import com.vmware.vim25.PerfMetricSeries;
 import com.vmware.vim25.PerfQuerySpec;
 import com.vmware.vim25.PerfSampleInfo;
-import com.vmware.vim25.RuntimeFault;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
-import com.vmware.vim25.ToolsUnavailable;
 import com.vmware.vim25.ToolsUnavailableFaultMsg;
 import com.vmware.vim25.VimPortType;
 import com.vmware.vim25.VirtualDevice;
@@ -272,6 +250,30 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
+import javax.naming.ConfigurationException;
+import java.io.File;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.channels.SocketChannel;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.TimeZone;
+import java.util.UUID;
 
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
@@ -365,6 +367,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((SavePasswordCommand) cmd);
             } else if (clz == DhcpEntryCommand.class) {
                 answer = execute((DhcpEntryCommand) cmd);
+            } else if (clz == CreateIpAliasCommand.class) {
+                return execute((CreateIpAliasCommand) cmd);
+            } else if (clz == DnsMasqConfigCommand.class) {
+                return execute((DnsMasqConfigCommand) cmd);
+            } else if (clz == DeleteIpAliasCommand.class) {
+                return execute((DeleteIpAliasCommand) cmd);
             } else if (clz == VmDataCommand.class) {
                 answer = execute((VmDataCommand) cmd);
             } else if (clz == ReadyCommand.class) {
@@ -485,6 +493,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((ResizeVolumeCommand) cmd);
             } else if (clz == UnregisterVMCommand.class) {
                 return execute((UnregisterVMCommand) cmd);
+            } else if (clz == ScaleVmCommand.class) {
+                return execute((ScaleVmCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1149,6 +1159,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
         String routerIp = getRouterSshControlIp(cmd);
 
         String[] results = new String[cmd.getRules().length];
@@ -1167,19 +1178,37 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             NicTO nic = cmd.getNic();
             int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, nic.getMac());
             String args = "";
-            args += " -d " + "eth" + ethDeviceNum;
-            args += " -i " + nic.getIp();
-            args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-            args += " -a " + sb.toString();
+            Pair<Boolean, String> result;
 
-            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
-                    "/opt/cloud/bin/vpc_acl.sh " + args);
+            if (privateGw != null) {
+                s_logger.debug("Private gateway configuration is set");
+                args += " -d " + "eth" + ethDeviceNum;
+                args += " -a " + sb.toString();
+                result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                        "/opt/cloud/bin/vpc_privategw_acl.sh " + args);
 
-            if (!result.first()) {
-                String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
-                s_logger.error(msg);
+                if (!result.first()) {
+                    String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
+                    s_logger.error(msg);
+                }
 
                 return new SetNetworkACLAnswer(cmd, false, results);
+            } else {
+                args="";
+                args += " -d " + "eth" + ethDeviceNum;
+                args += " -i " + nic.getIp();
+                args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+                args += " -a " + sb.toString();
+
+                result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                        "/opt/cloud/bin/vpc_acl.sh " + args);
+
+                if (!result.first()) {
+                    String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
+                    s_logger.error(msg);
+
+                    return new SetNetworkACLAnswer(cmd, false, results);
+                }
             }
 
             return new SetNetworkACLAnswer(cmd, true, results);
@@ -1833,6 +1862,141 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new Answer(cmd);
     }
 
+    protected Answer execute(final CreateIpAliasCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing createipAlias command: " + _gson.toJson(cmd));
+        }
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
+        String args=routerIp+" ";
+        for (IpAliasTO ipaliasto : ipAliasTOs) {
+            args = args + ipaliasto.getAlias_count()+":"+ipaliasto.getRouterip()+":"+ipaliasto.getNetmask()+"-";
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/createipAlias " + args);
+        }
+
+        try {
+            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            String controlIp = getRouterSshControlIp(cmd);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                    "/root/createipAlias.sh " + args);
+
+            if (!result.first()) {
+                s_logger.error("ipAlias command on domr " + controlIp + " failed, message: " + result.second());
+
+                return new Answer(cmd, false, "createipAlias failed due to " + result.second());
+            }
+
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("createipAlias command on domain router " + controlIp + " completed");
+            }
+
+        } catch (Throwable e) {
+            String msg = "createipAlias failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd);
+    }
+
+    protected Answer execute(final DeleteIpAliasCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
+        List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing deleteipAlias command: " + _gson.toJson(cmd));
+        }
+        String args=routerIp+" ";
+        for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
+            args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
+        }
+        args = args + " " ;
+        for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
+            args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/deleteipAlias " + args);
+        }
+
+        try {
+            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            String controlIp = getRouterSshControlIp(cmd);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                    "/root/deleteipAlias.sh " + args);
+
+            if (!result.first()) {
+                s_logger.error("ipAlias command on domr " + controlIp + " failed, message: " + result.second());
+
+                return new Answer(cmd, false, "deleteipAlias failed due to " + result.second());
+            }
+
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("deleteipAlias command on domain router " + controlIp + " completed");
+            }
+
+        } catch (Throwable e) {
+            String msg = "deleteipAlias failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd);
+    }
+
+    protected Answer execute(final DnsMasqConfigCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing deleteipAlias command: " + _gson.toJson(cmd));
+        }
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String controlIp = getRouterSshControlIp(cmd);
+
+        assert(controlIp != null);
+
+        DnsMasqConfigurator configurator = new DnsMasqConfigurator();
+        String [] config = configurator.generateConfiguration(cmd);
+        String tmpConfigFilePath = "/tmp/"+ routerIp.replace(".","-")+".cfg";
+        String tmpConfigFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpConfigFileContents += config[i];
+            tmpConfigFileContents += "\n";
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/dnsmasq.sh " +"config file at" + tmpConfigFilePath);
+        }
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        File keyFile = mgr.getSystemVMKeyFile();
+
+        try {
+            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpConfigFileContents.getBytes(), routerIp.replace('.', '_') + ".cfg", null);
+
+            try {
+
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "scp" + tmpConfigFilePath + "/root/dnsmasq.sh");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Run command on domain router " + routerIp + ",  /root/dnsmasq.sh");
+                }
+
+                if (!result.first()) {
+                    s_logger.error("Unable to copy dnsmasq configuration file");
+                    return new Answer(cmd, false, "dnsmasq config failed due to uanble to copy dnsmasq configuration file");
+                }
+
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("dnsmasq config command on domain router " + routerIp + " completed");
+                }
+            } finally {
+                SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "rm " + tmpConfigFilePath);
+            }
+
+            return new Answer(cmd);
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString(), e);
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to " + VmwareHelper.getExceptionMessage(e));
+        }
+    }
+
     protected CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Executing resource CheckS2SVpnConnectionsCommand: " + _gson.toJson(cmd));
@@ -2088,6 +2252,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return validatedDisks.toArray(new VolumeTO[0]);
     }
 
+    protected ScaleVmAnswer execute(ScaleVmCommand cmd) {
+
+        VmwareContext context = getServiceContext();
+        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        try{
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            int ramMb = (int) (vmSpec.getMinRam());
+
+            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getSpeed(), vmSpec.getSpeed(),(int) (vmSpec.getMaxRam()), ramMb, vmSpec.getLimitCpuUse());
+
+            if(!vmMo.configureVm(vmConfigSpec)) {
+                throw new Exception("Unable to execute ScaleVmCommand");
+            }
+        }catch(Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new ScaleVmAnswer(cmd, false, "Unable to execute ScaleVmCommand due to " + e.toString());
+        }
+        return new ScaleVmAnswer(cmd, true, null);
+    }
+
     protected StartAnswer execute(StartCommand cmd) {
 
         if (s_logger.isInfoEnabled()) {
@@ -2191,7 +2377,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
             vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024*1024)), ramMb,
             translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), vmSpec.getLimitCpuUse());
-           
+
+            vmConfigSpec.setMemoryHotAddEnabled(true);
+            vmConfigSpec.setCpuHotAddEnabled(true);
+
             if ("true".equals(vmSpec.getDetails().get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG))) {
                 s_logger.debug("Nested Virtualization enabled in configuration, checking hypervisor capability");
                 ManagedObjectReference hostMor = vmMo.getRunningHost().getMor();

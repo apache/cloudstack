@@ -136,6 +136,7 @@ known_categories = {
     'Condition': 'AutoScale',
     'Api': 'API Discovery',
     'Region': 'Region',
+    'Detail': 'Resource metadata',
     'addIpToNic': 'Nic',
     'removeIpFromNic': 'Nic',
     'listNics':'Nic',

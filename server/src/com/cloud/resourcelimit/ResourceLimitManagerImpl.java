@@ -46,6 +46,8 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dao.EntityManager;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -53,6 +55,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.projects.Project;
@@ -141,6 +144,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private VMTemplateHostDao _vmTemplateHostDao;
+    @Inject
+    private VlanDao _vlanDao;
 
     protected GenericSearchBuilder<VMTemplateHostVO, SumCount> templateSizeSearch;
 
@@ -814,7 +819,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else if (type == Resource.ResourceType.snapshot) {
             newCount = _snapshotDao.countSnapshotsForAccount(accountId);
         } else if (type == Resource.ResourceType.public_ip) {
-            newCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
+            newCount = calculatePublicIpForAccount(accountId);
         } else if (type == Resource.ResourceType.template) {
             newCount = _vmTemplateDao.countTemplatesForAccount(accountId);
         } else if (type == Resource.ResourceType.project) {
@@ -904,6 +909,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         return totalVolumesSize + totalSnapshotsSize + totalTemplatesSize;
+    }
+
+    private long calculatePublicIpForAccount(long accountId) {
+        Long dedicatedCount = 0L;
+        Long allocatedCount = 0L;
+
+        List<VlanVO> dedicatedVlans = _vlanDao.listDedicatedVlans(accountId);
+        for (VlanVO dedicatedVlan : dedicatedVlans) {
+            List<IPAddressVO> ips = _ipAddressDao.listByVlanId(dedicatedVlan.getId());
+            dedicatedCount += new Long(ips.size());
+        }
+        allocatedCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
+        if (dedicatedCount > allocatedCount)
+            return dedicatedCount;
+        else
+            return allocatedCount;
     }
 
     @Override
