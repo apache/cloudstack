@@ -14,21 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs;
 
-public interface AsyncJobConstants {
-	public static final int STATUS_IN_PROGRESS = 0;
-	public static final int STATUS_SUCCEEDED = 1;
-	public static final int STATUS_FAILED = 2;
-	
-	public static final String JOB_DISPATCHER_PSEUDO = "pseudoJobDispatcher";
-	public static final String PSEUDO_JOB_INSTANCE_TYPE = "Thread";
-	
-	public static final String JOB_POOL_THREAD_PREFIX = "Job-Executor";
-	
-	// Although we may have detailed masks for each individual wakeup event, i.e.
-	// periodical timer, matched topic from message bus, it seems that we don't
-	// need to distinguish them to such level. Therefore, only one wakeup signal
-	// is defined
-	public static final int SIGNAL_MASK_WAKEUP = 1;
+public interface AsyncJobMBean {
+	public long getAccountId();
+	public long getUserId();
+	public String getCmd();
+	public String getCmdInfo();
+	public String getStatus();
+	public int getProcessStatus();
+	public int getResultCode();
+	public String getResult();
+	public String getInstanceType();
+	public String getInstanceId();
+	public String getInitMsid();
+	public String getCreateTime();
+	public String getLastUpdateTime();
+	public String getLastPollTime();
+	public String getSyncQueueId();
+	public String getSyncQueueContentType();
+	public String getSyncQueueContentId();
 }

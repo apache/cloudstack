@@ -18,15 +18,11 @@ package com.cloud.network.dao;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.async.AsyncInstanceCreateStatus;
-import com.google.gson.annotations.Expose;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
@@ -49,11 +45,6 @@ public class NetworkRuleConfigVO implements InternalIdentity {
     @Column(name="protocol")
     private String protocol;
     
-    @Expose
-    @Column(name="create_status", updatable = true, nullable=false)
-    @Enumerated(value=EnumType.STRING)
-    private AsyncInstanceCreateStatus createStatus;
-
     public NetworkRuleConfigVO() {}
 
     public NetworkRuleConfigVO(long securityGroupId, String publicPort, String privatePort, String protocol) {
@@ -63,6 +54,7 @@ public class NetworkRuleConfigVO implements InternalIdentity {
         this.protocol = protocol;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -81,13 +73,5 @@ public class NetworkRuleConfigVO implements InternalIdentity {
 
     public String getProtocol() {
         return protocol;
-    }
-    
-    public AsyncInstanceCreateStatus getCreateStatus() {
-    	return createStatus;
-    }
-    
-    public void setCreateStatus(AsyncInstanceCreateStatus createStatus) {
-    	this.createStatus = createStatus;
     }
 }

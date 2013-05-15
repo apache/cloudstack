@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,9 +28,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 
 @APICommand(name = "listStoragePools", description="Lists storage pools.", responseObject=StoragePoolResponse.class)
 public class ListStoragePoolsCmd extends BaseListCmd {

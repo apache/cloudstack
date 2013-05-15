@@ -14,28 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs.dao;
 
-public interface SyncQueueItem {
-    public final String AsyncJobContentType = "AsyncJob";
+import java.util.Date;
+import java.util.List;
 
-    /**
-     * @return queue item id
-     */
-    long getId();
+import org.apache.cloudstack.framework.jobs.AsyncJobVO;
 
-    /**
-     * @return queue id
-     */
-    Long getQueueId();
+import com.cloud.utils.db.GenericDao;
 
-    /**
-     * @return subject object type pointed by the queue item
-     */
-    String getContentType();
-    
-    /**
-     * @return subject object id pointed by the queue item
-     */
-    Long getContentId();
+public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
+	AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
+	List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId);
+	
+	AsyncJobVO findPseudoJob(long threadId, long msid);
+	void cleanupPseduoJobs(long msid);
+	
+	List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit);
+	void resetJobProcess(long msid, int jobResultCode, String jobResultMessage);
 }

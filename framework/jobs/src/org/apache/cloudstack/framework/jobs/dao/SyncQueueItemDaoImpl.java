@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.async.dao;
+package org.apache.cloudstack.framework.jobs.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,7 +27,8 @@ import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.SyncQueueItemVO;
+import org.apache.cloudstack.framework.jobs.SyncQueueItemVO;
+
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;

@@ -14,17 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs;
+
+import java.util.Date;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-import java.util.Date;
 
 public interface AsyncJob extends Identity, InternalIdentity {
+
+    public static interface Topics {
+        public static final String JOB_HEARTBEAT = "job.heartbeat";
+        public static final String JOB_STATE = "job.state";
+    }
 	
-	public enum JournalType { 
-		SUCCESS, FAILURE 
+	public enum JournalType {
+		SUCCESS, FAILURE
 	};
 	
     String getType();

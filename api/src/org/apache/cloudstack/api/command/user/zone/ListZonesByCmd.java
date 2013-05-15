@@ -16,21 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.zone;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
-
-import com.cloud.dc.DataCenter;
 
 @APICommand(name = "listZones", description="Lists zones", responseObject=ZoneResponse.class)
 public class ListZonesByCmd extends BaseListCmd {

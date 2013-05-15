@@ -14,24 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs;
 
-public interface AsyncJobMBean {
-	public long getAccountId();
-	public long getUserId();
-	public String getCmd();
-	public String getCmdInfo();
-	public String getStatus();
-	public int getProcessStatus();
-	public int getResultCode();
-	public String getResult();
-	public String getInstanceType();
-	public String getInstanceId();
-	public String getInitMsid();
-	public String getCreateTime();
-	public String getLastUpdateTime();
-	public String getLastPollTime();
-	public String getSyncQueueId();
-	public String getSyncQueueContentType();
-	public String getSyncQueueContentId();
+public interface SyncQueueItem {
+    public final String AsyncJobContentType = "AsyncJob";
+
+    /**
+     * @return queue item id
+     */
+    long getId();
+
+    /**
+     * @return queue id
+     */
+    Long getQueueId();
+
+    /**
+     * @return subject object type pointed by the queue item
+     */
+    String getContentType();
+    
+    /**
+     * @return subject object id pointed by the queue item
+     */
+    Long getContentId();
 }

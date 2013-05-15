@@ -34,6 +34,9 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -59,7 +62,6 @@ import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.ControlledEntityResponse;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
-import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -134,14 +136,13 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -163,8 +164,6 @@ import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
@@ -296,8 +295,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     public final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
-    @Inject private EntityManager _entityMgr = null;
-    @Inject private UsageService _usageSvc = null;
+    @Inject private final EntityManager _entityMgr = null;
+    @Inject private final UsageService _usageSvc = null;
     @Inject NetworkModel _ntwkModel;
 
     @Override
@@ -434,7 +433,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
             if (zone != null) {
             	snapshotResponse.setZoneName(zone.getName());
-            	snapshotResponse.setZoneType(zone.getNetworkType().toString());                
+            	snapshotResponse.setZoneType(zone.getNetworkType().toString());
             }
         }
         snapshotResponse.setCreated(snapshot.getCreated());
@@ -827,7 +826,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 capacityResponse.setCapacityType(capacity.getCapacityType());
                 capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
-                    capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity())));
+                    capacityResponse.setCapacityTotal(new Long((capacity.getTotalCapacity())));
                 } else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                     List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(null, pod.getId(), null);
                     capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
@@ -1820,12 +1819,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     }
 
-    @Override
-    public String toSerializedString(CreateCmdResponse response, String responseType) {
-        return ApiResponseSerializer.toSerializedString(response, responseType);
-    }
-
-    @Override
     public AsyncJobResponse createAsyncJobResponse(AsyncJob job) {
         AsyncJobJoinVO vJob = ApiDBUtils.newAsyncJobView(job);
         return ApiDBUtils.newAsyncJobResponse(vJob);
@@ -2375,7 +2368,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         // populate network offering information
-        NetworkOffering networkOffering = (NetworkOffering) ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
+        NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
         if (networkOffering != null) {
             response.setNetworkOfferingId(networkOffering.getUuid());
             response.setNetworkOfferingName(networkOffering.getName());
@@ -3665,6 +3658,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    @Override
     public NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result) {
         NicSecondaryIpResponse response = new NicSecondaryIpResponse();
         NicVO nic = _entityMgr.findById(NicVO.class, result.getNicId());
@@ -3677,6 +3671,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    @Override
     public NicResponse createNicResponse(Nic result) {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());

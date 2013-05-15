@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs;
 
 import java.util.List;
 
@@ -32,12 +32,13 @@ public interface AsyncJobManager extends Manager {
 	long submitAsyncJob(AsyncJob job);
 	long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext);
 	long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId);
-	AsyncJobResult queryAsyncJobResult(long jobId);
+
+//	AsyncJobResult queryAsyncJobResult(long jobId);
 
     void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject);
     void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject);
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
-    void logJobJournal(long jobId, AsyncJob.JournalType journalType, String 
+    void logJobJournal(long jobId, AsyncJob.JournalType journalType, String
     	journalText, String journalObjJson);
     
 	/**
@@ -58,9 +59,9 @@ public interface AsyncJobManager extends Manager {
      * Due to the amount of legacy code that relies on synchronized-call semantics, this form of joinJob
      * is used mostly
      * 
-     *  
+     * 
      * @param jobId upper job that is going to wait the completion of a down-level job
-     * @param joinJobId down-level job 
+     * @param joinJobId down-level job
 	 */
 	void joinJob(long jobId, long joinJobId);
 	
@@ -70,10 +71,10 @@ public interface AsyncJobManager extends Manager {
      * rescheduled to execute periodically or on wakeup events detected from message bus
      * 
      * @param jobId upper job that is going to wait the completion of a down-level job
-     * @param joinJobId down-level job 
-     * @Param wakeupHandler	wakeup handler 
+     * @param joinJobId down-level job
+     * @Param wakeupHandler	wakeup handler
      * @Param wakeupDispatcher wakeup dispatcher
-     * @param wakeupTopcisOnMessageBus 
+     * @param wakeupTopcisOnMessageBus
      * @param wakeupIntervalInMilliSeconds
      * @param timeoutInMilliSeconds
      */
@@ -92,7 +93,7 @@ public interface AsyncJobManager extends Manager {
      * Used by down-level job to notify its completion to upper level jobs
      * 
      * @param joinJobId down-level job for upper level job to join with
-     * @param joinStatus AsyncJobConstants status code to indicate success or failure of the 
+     * @param joinStatus AsyncJobConstants status code to indicate success or failure of the
      * 					down-level job
      * @param joinResult object-stream serialized result object
      * 					this is primarily used by down-level job to pass error exception objects
@@ -116,7 +117,7 @@ public interface AsyncJobManager extends Manager {
      * 			false, wait is timed out
      */
     @Deprecated
-    boolean waitAndCheck(String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds, 
+    boolean waitAndCheck(String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds,
     	long timeoutInMiliseconds, Predicate predicate);
     
     /**

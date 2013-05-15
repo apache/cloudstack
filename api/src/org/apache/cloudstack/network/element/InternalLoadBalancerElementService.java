@@ -18,7 +18,6 @@ package org.apache.cloudstack.network.element;
 
 import java.util.List;
 
-
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.utils.component.PluggableService;
 

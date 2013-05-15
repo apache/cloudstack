@@ -18,7 +18,13 @@ package com.cloud.async;
 
 import javax.inject.Inject;
 
-import com.cloud.async.dao.AsyncJobJoinMapDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.SyncQueueItem;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -26,7 +32,7 @@ import com.cloud.serializer.SerializerHelper;
 import com.cloud.utils.component.ComponentContext;
 
 public class AsyncJobExecutionContext  {
-	private AsyncJob _job;
+    private AsyncJob _job;
 	
 	@Inject private AsyncJobManager _jobMgr;
 	@Inject private AsyncJobJoinMapDao _joinMapDao;
@@ -36,7 +42,7 @@ public class AsyncJobExecutionContext  {
 	public AsyncJobExecutionContext() {
 	}
 	
-	public AsyncJobExecutionContext(AsyncJob job) {
+    public AsyncJobExecutionContext(AsyncJob job) {
 		_job = job;
 	}
 	
@@ -48,7 +54,7 @@ public class AsyncJobExecutionContext  {
 		_job.setSyncSource(null);
 	}
 	
-	public AsyncJob getJob() {
+    public AsyncJob getJob() {
 		if(_job == null) {
 			_job = _jobMgr.getPseudoJob();
 		}
@@ -56,7 +62,7 @@ public class AsyncJobExecutionContext  {
 		return _job;
 	}
 	
-	public void setJob(AsyncJob job) {
+    public void setJob(AsyncJob job) {
 		_job = job;
 	}
 	
@@ -75,7 +81,7 @@ public class AsyncJobExecutionContext  {
     	_jobMgr.updateAsyncJobAttachment(_job.getId(), instanceType, instanceId);
     }
 	
-	public void logJobJournal(AsyncJob.JournalType journalType, String 
+    public void logJobJournal(AsyncJob.JournalType journalType, String
 	    journalText, String journalObjJson) {
 		assert(_job != null);
 		_jobMgr.logJobJournal(_job.getId(), journalType, journalText, journalObjJson);
@@ -89,14 +95,14 @@ public class AsyncJobExecutionContext  {
     public void joinJob(long joinJobId, String wakeupHandler, String wakeupDispatcher,
     		String[] wakeupTopcisOnMessageBus, long wakeupIntervalInMilliSeconds, long timeoutInMilliSeconds) {
     	assert(_job != null);
-    	_jobMgr.joinJob(_job.getId(), joinJobId, wakeupHandler, wakeupDispatcher, wakeupTopcisOnMessageBus, 
+    	_jobMgr.joinJob(_job.getId(), joinJobId, wakeupHandler, wakeupDispatcher, wakeupTopcisOnMessageBus,
     		wakeupIntervalInMilliSeconds, timeoutInMilliSeconds);
     }
     
     //
 	// check failure exception before we disjoin the worker job
 	// TODO : it is ugly and this will become unnecessary after we switch to full-async mode
-	// 
+	//
     public void disjoinJob(long joinedJobId) throws InsufficientCapacityException,
 		ConcurrentOperationException, ResourceUnavailableException {
     	assert(_job != null);

@@ -22,11 +22,12 @@ import java.sql.Statement;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.async.AsyncJob;
-import com.cloud.async.AsyncJobDispatcher;
 import com.cloud.async.AsyncJobExecutionContext;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
 
@@ -35,7 +36,7 @@ public class VmWorkTestApiJobDispatcher extends AdapterBase implements AsyncJobD
 	@Inject AsyncJobManager _jobMgr;
 	
 	@Override
-	public void runJob(AsyncJob job) {
+    public void runJob(AsyncJob job) {
 		
 		// drop constraint check in order to do single table test
 		Statement stat = null;
@@ -74,9 +75,9 @@ public class VmWorkTestApiJobDispatcher extends AdapterBase implements AsyncJobD
 		
 		_jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, 1L);
 		
-		_jobMgr.joinJob(job.getId(), workJob.getId(), "processVmStartWakeup", 
-				VmWorkConstants.VM_WORK_JOB_WAKEUP_DISPATCHER, 
-				new String[] {}, 
+		_jobMgr.joinJob(job.getId(), workJob.getId(), "processVmStartWakeup",
+				VmWorkConstants.VM_WORK_JOB_WAKEUP_DISPATCHER,
+				new String[] {},
 				3000, 120000);
 		AsyncJobExecutionContext.getCurrentExecutionContext().resetSyncSource();
 	}

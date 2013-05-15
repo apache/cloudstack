@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.user;
 
-import com.cloud.utils.component.ComponentContext;
 import javax.inject.Inject;
+
+import com.cloud.utils.component.ComponentContext;
 
 public class UserContext {
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();

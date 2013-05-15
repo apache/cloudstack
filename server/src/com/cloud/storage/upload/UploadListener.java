@@ -42,10 +42,10 @@ import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.AsyncJobConstants;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;

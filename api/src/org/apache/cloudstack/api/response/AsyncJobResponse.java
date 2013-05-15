@@ -18,16 +18,17 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.amazonaws.services.importexport.model.Job;
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.ResponseObject;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=AsyncJob.class)
+@EntityReference(value=Job.class)
 @SuppressWarnings("unused")
 public class AsyncJobResponse extends BaseResponse {
 

@@ -24,11 +24,12 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.async.AsyncJob;
-import com.cloud.async.AsyncJobConstants;
-import com.cloud.async.AsyncJobDispatcher;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -43,10 +44,10 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     @Inject private AccountDao _accountDao;
     @Inject private VMInstanceDao _instanceDao;
     
-    private Map<String, Method> _handlerMap = new HashMap<String, Method>();
+    private final Map<String, Method> _handlerMap = new HashMap<String, Method>();
 
 	@Override
-	public void runJob(AsyncJob job) {
+    public void runJob(AsyncJob job) {
         try {
         	String cmd = job.getCmd();
         	assert(cmd != null);

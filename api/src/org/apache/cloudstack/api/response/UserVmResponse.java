@@ -17,9 +17,10 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,7 +31,6 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.serializer.Param;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value={VirtualMachine.class, UserVm.class, VirtualRouter.class})

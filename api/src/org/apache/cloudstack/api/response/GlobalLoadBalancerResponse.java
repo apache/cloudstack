@@ -16,14 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.region.ha.GlobalLoadBalancerRule;
-import com.cloud.serializer.Param;
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import java.util.List;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
+import com.cloud.serializer.Param;
 
 @EntityReference(value= GlobalLoadBalancerRule.class)
 public class GlobalLoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {

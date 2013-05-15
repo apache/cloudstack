@@ -24,7 +24,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
-import com.cloud.async.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.AsyncJobVO;
+
 
 @Entity
 @Table(name="vm_work_job")

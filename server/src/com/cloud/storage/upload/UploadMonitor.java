@@ -17,7 +17,8 @@
 package com.cloud.storage.upload;
 
 
-import com.cloud.async.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+
 import com.cloud.host.HostVO;
 import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.Upload.Status;

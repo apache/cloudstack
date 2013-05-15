@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.admin.domain;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,11 +28,9 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
-import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 
 @APICommand(name = "updateDomain", description="Updates a domain with a new name", responseObject=DomainResponse.class)

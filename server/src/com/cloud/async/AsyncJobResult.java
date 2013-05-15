@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.async;
 
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+
 import com.cloud.api.ApiSerializerHelper;
 
 public class AsyncJobResult {

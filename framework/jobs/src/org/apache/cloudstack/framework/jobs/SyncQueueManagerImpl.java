@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,8 +23,9 @@ import java.util.List;
 import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.dao.SyncQueueDao;
-import com.cloud.async.dao.SyncQueueItemDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
+
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;

@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupC
 import org.apache.cloudstack.api.command.user.securitygroup.DeleteSecurityGroupCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
-import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;

@@ -14,11 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async.dao;
+package org.apache.cloudstack.framework.jobs.dao;
 
 import java.util.List;
 
-import com.cloud.async.SyncQueueItemVO;
+import org.apache.cloudstack.framework.jobs.SyncQueueItemVO;
+
 import com.cloud.utils.db.GenericDao;
 
 public interface SyncQueueItemDao extends GenericDao<SyncQueueItemVO, Long> {

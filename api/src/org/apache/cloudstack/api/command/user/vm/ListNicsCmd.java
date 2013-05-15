@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -40,7 +39,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.Nic;
-import com.cloud.vm.NicSecondaryIp;
 
 @APICommand(name = "listNics", description = "list the vm nics  IP to NIC", responseObject = NicResponse.class)
 public class ListNicsCmd extends BaseListCmd {

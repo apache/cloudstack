@@ -35,8 +35,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import junit.framework.TestCase;
 
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
@@ -50,6 +48,9 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VmWorkJobVO.Step;
 import com.google.gson.Gson;
+
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.AsyncJobVO;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/VmWorkTestContext.xml")

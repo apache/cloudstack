@@ -26,11 +26,12 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.async.AsyncJob;
-import com.cloud.async.AsyncJobDispatcher;
-import com.cloud.async.AsyncJobJoinMapVO;
-import com.cloud.async.dao.AsyncJobJoinMapDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -46,14 +47,14 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
     @Inject private VMInstanceDao _instanceDao;
     @Inject private VirtualMachineManager _vmMgr;
 
-    private Map<String, Method> _handlerMap = new HashMap<String, Method>();
+    private final Map<String, Method> _handlerMap = new HashMap<String, Method>();
     
 	@Override
-	public void runJob(AsyncJob job) {
+    public void runJob(AsyncJob job) {
 		try {
 			List<AsyncJobJoinMapVO> joinRecords =_joinMapDao.listJoinRecords(job.getId());
 			if(joinRecords.size() != 1) {
-				s_logger.warn("Job-" + job.getId() 
+                s_logger.warn("AsyncJob-" + job.getId()
 				    + " received wakeup call with un-supported joining job number: " + joinRecords.size());
 
 				// if we fail wakeup-execution for any reason, avoid release sync-source if there is any

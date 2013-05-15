@@ -33,20 +33,34 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
+import org.apache.cloudstack.framework.jobs.AsyncJobJournalVO;
+import org.apache.cloudstack.framework.jobs.AsyncJobMBeanImpl;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.AsyncJobMonitor;
+import org.apache.cloudstack.framework.jobs.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.SyncQueueItem;
+import org.apache.cloudstack.framework.jobs.SyncQueueItemVO;
+import org.apache.cloudstack.framework.jobs.SyncQueueManager;
+import org.apache.cloudstack.framework.jobs.SyncQueueVO;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.messagebus.TopicConstants;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.dao.AsyncJobJoinMapDao;
-import com.cloud.async.dao.AsyncJobJournalDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -122,12 +136,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     
     @Override @DB
 	public AsyncJob getPseudoJob() {
-    	AsyncJobVO job = _jobDao.findPseudoJob(Thread.currentThread().getId(), this.getMsid());
+    	AsyncJobVO job = _jobDao.findPseudoJob(Thread.currentThread().getId(), getMsid());
     	if(job == null) {
 	    	job = new AsyncJobVO();
 	    	job.setAccountId(_accountMgr.getSystemAccount().getId());
 	    	job.setUserId(_accountMgr.getSystemUser().getId());
-	    	job.setInitMsid(this.getMsid());
+	    	job.setInitMsid(getMsid());
 	    	job.setDispatcher(AsyncJobConstants.JOB_DISPATCHER_PSEUDO);
 	    	job.setInstanceType(AsyncJobConstants.PSEUDO_JOB_INSTANCE_TYPE);
 	    	job.setInstanceId(Thread.currentThread().getId());
@@ -249,7 +263,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             	    scheduleExecution(jobToWakeup, false);
             }
              
-            _messageBus.publish(null, TopicConstants.JOB_STATE, PublishScope.GLOBAL, (Long)jobId);
+            _messageBus.publish(null, TopicConstants.JOB_STATE, PublishScope.GLOBAL, jobId);
         } catch(Exception e) {
             s_logger.error("Unexpected exception while completing async job-" + jobId, e);
             txn.rollback();
@@ -314,7 +328,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
     
     @Override @DB
-    public void logJobJournal(long jobId, AsyncJob.JournalType journalType, String 
+    public void logJobJournal(long jobId, AsyncJob.JournalType journalType, String
         journalText, String journalObjJson) {
     	AsyncJobJournalVO journal = new AsyncJobJournalVO();
     	journal.setJobId(jobId);
@@ -327,7 +341,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     
     @Override @DB
 	public void joinJob(long jobId, long joinJobId) {
-    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid(), 0, 0, null, null, null);
+    	_joinMapDao.joinJob(jobId, joinJobId, getMsid(), 0, 0, null, null, null);
     }
     
     @Override @DB
@@ -341,7 +355,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     		syncSourceId = context.getJob().getSyncSource().getQueueId();
     	}
     	
-    	_joinMapDao.joinJob(jobId, joinJobId, this.getMsid(), 
+    	_joinMapDao.joinJob(jobId, joinJobId, getMsid(),
     		wakeupIntervalInMilliSeconds, timeoutInMilliSeconds,
     		syncSourceId, wakeupHandler, wakeupDispatcher);
     }
@@ -353,7 +367,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     
     @Override @DB
     public void completeJoin(long joinJobId, int joinStatus, String joinResult) {
-    	_joinMapDao.completeJoin(joinJobId, joinStatus, joinResult, this.getMsid());
+    	_joinMapDao.completeJoin(joinJobId, joinStatus, joinResult, getMsid());
     }
     
     @Override
@@ -411,7 +425,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return _jobDao.findById(cmd.getId());
     }
 
-    @Override @DB
+    @DB
     public AsyncJobResult queryAsyncJobResult(long jobId) {
         if(s_logger.isTraceEnabled()) {
             s_logger.trace("Query async-job status, job-" + jobId);
@@ -479,7 +493,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     
     private AsyncJobDispatcher getDispatcher(String dispatcherName) {
     	if(dispatcherName == null || dispatcherName.isEmpty())
-    		dispatcherName = this.defaultDispatcher;
+    		dispatcherName = defaultDispatcher;
     	
     	if(_jobDispatchers != null) {
     		for(AsyncJobDispatcher dispatcher : _jobDispatchers) {
@@ -492,7 +506,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     
     private AsyncJobDispatcher getWakeupDispatcher(AsyncJob job) {
     	if(_jobDispatchers != null) {
-    		List<AsyncJobJoinMapVO> joinRecords = this._joinMapDao.listJoinRecords(job.getId());
+    		List<AsyncJobJoinMapVO> joinRecords = _joinMapDao.listJoinRecords(job.getId());
     		if(joinRecords.size() > 0) {
     			AsyncJobJoinMapVO joinRecord = joinRecords.get(0);
 	    		for(AsyncJobDispatcher dispatcher : _jobDispatchers) {
@@ -625,7 +639,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 
             	job.setExecutingMsid(null);
             	_jobDao.update(job.getId(), job);
-            } 
+            }
 
         } else {
             if(s_logger.isDebugEnabled()) {
@@ -653,7 +667,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     	}
     }
     
-    public boolean waitAndCheck(String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds, 
+    @Override
+    public boolean waitAndCheck(String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds,
         long timeoutInMiliseconds, Predicate predicate) {
     	
     	MessageDetector msgDetector = new MessageDetector();
@@ -724,7 +739,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         s_logger.error("Unexpected exception", e);
                 	}
                 }
-            }  
+            }
         };
     }
 

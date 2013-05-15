@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import com.cloud.async.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;

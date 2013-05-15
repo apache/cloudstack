@@ -14,21 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs.dao;
 
 import java.util.List;
 
-import com.cloud.utils.component.Manager;
+import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
 
-public interface SyncQueueManager extends Manager {
-    public SyncQueueVO queue(String syncObjType, long syncObjId, String itemType, long itemId, long queueSizeLimit);
-    public SyncQueueItemVO dequeueFromOne(long queueId, Long msid);
-    public List<SyncQueueItemVO> dequeueFromAny(Long msid, int maxItems);
-    public void purgeItem(long queueItemId);
-    public void returnItem(long queueItemId);
+import com.cloud.utils.db.GenericDao;
 
-	public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
-    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive);
-
-    void purgeAsyncJobQueueItemId(long asyncJobId);
+public interface AsyncJobJoinMapDao extends GenericDao<AsyncJobJoinMapVO, Long> {
+	
+	Long joinJob(long jobId, long joinJobId, long joinMsid, 
+		long wakeupIntervalMs, long expirationMs,
+		Long syncSourceId, String wakeupHandler, String wakeupDispatcher);
+	void disjoinJob(long jobId, long joinedJobId);
+	void disjoinAllJobs(long jobId);
+	
+	AsyncJobJoinMapVO getJoinRecord(long jobId, long joinJobId);
+	List<AsyncJobJoinMapVO> listJoinRecords(long jobId);
+	
+	void completeJoin(long joinJobId, int joinStatus, String joinResult, long completeMsid);
+	
+	List<Long> wakeupScan();
+	List<Long> wakeupByJoinedJobCompletion(long joinedJobId);
 }

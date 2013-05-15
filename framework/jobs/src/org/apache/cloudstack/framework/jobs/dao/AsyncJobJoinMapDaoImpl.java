@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async.dao;
+package org.apache.cloudstack.framework.jobs.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,8 +26,9 @@ import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJobConstants;
-import com.cloud.async.AsyncJobJoinMapVO;
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
+
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

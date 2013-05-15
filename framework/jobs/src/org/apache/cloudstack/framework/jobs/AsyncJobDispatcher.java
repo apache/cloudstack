@@ -14,11 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs;
 
-public enum AsyncInstanceCreateStatus {
-    Creating,
-    Created,
-    Corrupted,
-    Failed;
+import com.cloud.utils.component.Adapter;
+
+public interface AsyncJobDispatcher extends Adapter {
+	void runJob(AsyncJob job);
 }

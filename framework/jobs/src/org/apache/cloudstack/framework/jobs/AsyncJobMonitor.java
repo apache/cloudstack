@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,11 +24,11 @@ import java.util.TimerTask;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
-import org.apache.cloudstack.messagebus.TopicConstants;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
 
@@ -37,8 +37,8 @@ public class AsyncJobMonitor extends ManagerBase {
     
     @Inject private MessageBus _messageBus;
 	
-	private Map<Long, ActiveTaskRecord> _activeTasks = new HashMap<Long, ActiveTaskRecord>();
-	private Timer _timer = new Timer();
+	private final Map<Long, ActiveTaskRecord> _activeTasks = new HashMap<Long, ActiveTaskRecord>();
+	private final Timer _timer = new Timer();
 	
 	private volatile int _activePoolThreads = 0;
 	private volatile int _activeInplaceThreads = 0;
@@ -66,11 +66,11 @@ public class AsyncJobMonitor extends ManagerBase {
 		_inactivityWarningThresholdMs = thresholdMs;
 	}
 	
-	@MessageHandler(topic=TopicConstants.JOB_HEARTBEAT)
+    @MessageHandler(topic = AsyncJob.Topics.JOB_HEARTBEAT)
 	public void onJobHeartbeatNotify(String subject, String senderAddress, Object args) {
 		if(args != null && args instanceof Long) {
 			synchronized(this) {
-				ActiveTaskRecord record = _activeTasks.get((Long)args);
+				ActiveTaskRecord record = _activeTasks.get(args);
 				if(record != null) {
 					record.updateJobHeartbeatTick();
 				}
@@ -82,7 +82,7 @@ public class AsyncJobMonitor extends ManagerBase {
 		synchronized(this) {
 			for(Map.Entry<Long, ActiveTaskRecord> entry : _activeTasks.entrySet()) {
 				if(entry.getValue().millisSinceLastJobHeartbeat() > _inactivityWarningThresholdMs) {
-					s_logger.warn("Task (job-" + entry.getValue().getJobId() + ") has been pending for " 
+					s_logger.warn("Task (job-" + entry.getValue().getJobId() + ") has been pending for "
 						+ entry.getValue().millisSinceLastJobHeartbeat()/1000 + " seconds");
 				}
 			}
@@ -93,7 +93,7 @@ public class AsyncJobMonitor extends ManagerBase {
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 		
-		_messageBus.subscribe(TopicConstants.JOB_HEARTBEAT, MessageDispatcher.getDispatcher(this));
+        _messageBus.subscribe(AsyncJob.Topics.JOB_HEARTBEAT, MessageDispatcher.getDispatcher(this));
 		_timer.scheduleAtFixedRate(new TimerTask() {
 
 			@Override

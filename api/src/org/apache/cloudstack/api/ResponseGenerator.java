@@ -37,7 +37,6 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
-import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -113,7 +112,6 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.usage.Usage;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ResourceCount;
@@ -290,10 +288,6 @@ public interface ResponseGenerator {
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
     ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode);
-
-    String toSerializedString(CreateCmdResponse response, String responseType);
-
-    AsyncJobResponse createAsyncJobResponse(AsyncJob job);
 
     EventResponse createEventResponse(Event event);
 

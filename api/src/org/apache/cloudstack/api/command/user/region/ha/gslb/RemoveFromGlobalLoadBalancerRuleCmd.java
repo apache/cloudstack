@@ -17,6 +17,22 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
+import java.util.List;
+
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
@@ -24,14 +40,6 @@ import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.util.List;
 
 @APICommand(name = "removeFromGlobalLoadBalancerRule", description="Removes a load balancer rule association with" +
         " global load balancer rule", responseObject=SuccessResponse.class)
