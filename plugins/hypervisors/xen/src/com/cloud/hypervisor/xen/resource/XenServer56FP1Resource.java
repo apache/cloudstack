@@ -142,8 +142,17 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         record.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
         record.memoryDynamicMax = vmSpec.getMaxRam();
         record.memoryDynamicMin = vmSpec.getMinRam();
-        record.memoryStaticMax = 8589934592L; //128GB
-        record.memoryStaticMin = 134217728L; //128MB
+        Map<String, String> hostParams = new HashMap<String, String>();
+        hostParams = host.getLicenseParams(conn);
+        if (hostParams.get("restrict_dmc").equalsIgnoreCase("false")) {
+            record.memoryStaticMax = 8589934592L; //8GB
+            record.memoryStaticMin = 134217728L; //128MB
+        } else {
+            s_logger.warn("Host "+ _host.uuid + " does not support Dynamic Memory Control, so we cannot scale up the vm");
+            record.memoryStaticMax = vmSpec.getMaxRam();
+            record.memoryStaticMin = vmSpec.getMinRam();
+        }
+
         if (guestOsTypeName.toLowerCase().contains("windows")) {
             record.VCPUsMax = (long) vmSpec.getCpus();
         } else {
