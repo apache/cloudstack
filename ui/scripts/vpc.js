@@ -27,7 +27,13 @@
 
       return hiddenFields; // Returns fields to be hidden
     },     
-    reorder: cloudStack.api.actions.sort('updateAclRule', 'multiRule'),
+    reorder: {
+      moveDrag: {
+        action: function(args) {
+          args.response.success();
+        }
+      }
+    },
     fields: {
       'cidrlist': { edit: true, label: 'label.cidr' },
       'protocol': {

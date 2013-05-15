@@ -41,30 +41,6 @@
 
       // Add reorder actions
       if (reorder) {
-        var sort = function($tr, action) {
-          var $listView = $tr.closest('.data-body');
-          var viewArgs = $listView.data('view-args');
-          var context = $.extend(
-            true, {},
-            options.context
-          );
-          var rowIndex = $tr.closest('.data-body').find('.data-item').size() - ($tr.closest('.data-item').index());
-
-          context[viewArgs.activeSection] = $tr.data('json-obj');
-
-          action.action({
-            context: context,
-            index: rowIndex,
-            response: {
-              success: function(args) {},
-              error: function(args) {
-                // Move back to previous position
-                rowActions.moveTo($tr, rowIndex);
-              }
-            }
-          });
-        };
-
         $('<td>').addClass('actions reorder').appendTo($tr).append(function() {
           var $td = $(this);
 
@@ -99,27 +75,6 @@
               });
           });
         });
-
-        // Draggable action
-        var initDraggable = function($dataItem) {
-          var originalIndex;
-
-          return $dataItem.sortable({
-            handle: '.action.moveDrag',
-            start: function(event, ui) {
-              originalIndex = ui.item.index();
-            },
-            stop: function(event, ui) {
-              $dataItem.closest('.data-body').find('.data-item').each(function() {
-                sort($(this), reorder.moveDrag);
-              });
-            }
-          });
-        };
-
-        if (reorder && reorder.moveDrag) {
-          initDraggable($tr.closest('.data-item'));
-        }
       }
 
 
@@ -872,6 +827,9 @@ $.fn.multiEdit = function(args) {
   if (reorder) {
     $('<th>').addClass('reorder').appendTo($thead);
     $('<td>').addClass('reorder').appendTo($inputForm);
+    $multi.find('.data-body').sortable({
+      handle: '.action.moveDrag'
+    });
   }
 
   $.each(args.fields, function(fieldName, field) {
