@@ -7974,6 +7974,15 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 .multi-edit .header-fields input[type=submit] {
 }
 
+/* Sortable */
+.multi-edit table tbody tr td.reorder,
+.multi-edit table thead tr th.reorder {
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+}
+
+
 /*Security Rules*/
 .security-rules .multi-edit input {
   width: 69px;
