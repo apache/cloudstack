@@ -639,7 +639,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (vmSpec.getLimitCpuUse()) {
                 long utilization = 0; // max CPU cap, default is unlimited
                 utilization = ((long)speed * 100 * vmSpec.getCpus()) / _host.speed ;
-                vm.addToVCPUsParamsLive(conn, "cap", Long.toString(utilization));
+                //vm.addToVCPUsParamsLive(conn, "cap", Long.toString(utilization)); currently xenserver doesnot support Xapi to add VCPUs params live.
+                callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", Long.toString(utilization), "vmname", vmSpec.getName() );
             }
             //vm.addToVCPUsParamsLive(conn, "weight", Integer.toString(cpuWeight));
             callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", Integer.toString(cpuWeight), "vmname", vmSpec.getName() );
@@ -672,6 +673,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (VM vm : vms) {
                 VM.Record vmr = vm.getRecord(conn);
                 try {
+                    Map<String, String> hostParams = new HashMap<String, String>();
+                    hostParams = host.getLicenseParams(conn);
+                    if (hostParams.get("restrict_dmc").equalsIgnoreCase("true")) {
+                        throw new CloudRuntimeException("Host "+ _host.uuid + " does not support Dynamic Memory Control, so we cannot scale up the vm");
+                    }
                     scaleVM(conn, vm, vmSpec, host);
 
                 } catch (Exception e) {

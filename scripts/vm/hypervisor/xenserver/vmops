@@ -48,7 +48,7 @@ def add_to_VCPUs_params_live(session, args):
     value = args['value']
     vmname = args['vmname']
     try:
-        cmd = ["bash", "/opt/xensource/bin/Add-To-VCPUs-Params-Live.sh", vmname, key, value]
+        cmd = ["bash", "/opt/xensource/bin/add_to_vcpus_params_live.sh", vmname, key, value]
         txt = util.pread2(cmd)
     except:
         return 'false'
