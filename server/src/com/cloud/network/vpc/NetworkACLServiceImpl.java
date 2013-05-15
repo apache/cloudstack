@@ -216,8 +216,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Network ACL can be created just for networks of type " + Networks.TrafficType.Guest);
         }
 
-        if(aclId != NetworkACL.DEFAULT_DENY) {
-            //ACL is not default DENY
+        if(aclId != NetworkACL.DEFAULT_DENY && aclId != NetworkACL.DEFAULT_ALLOW) {
+            //ACL is not default DENY/ALLOW
             // ACL should be associated with a VPC
             Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
             if(vpc == null){
@@ -252,6 +252,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         NetworkACL acl = _networkAclMgr.getNetworkACL(aclId);
         if(acl == null){
             throw new InvalidParameterValueException("Unable to find specified ACL");
+        }
+
+        if((aclId == NetworkACL.DEFAULT_DENY) || (aclId == NetworkACL.DEFAULT_ALLOW)){
+            throw new InvalidParameterValueException("Default ACL cannot be modified");
         }
 
         Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
