@@ -364,7 +364,8 @@ public class CiscoVnmcResource implements ServerResource {
                     } else {
                         String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
                         if (rule.getTrafficType() == TrafficType.Ingress) {
-                            if (!rule.getProtocol().equalsIgnoreCase("icmp")) {
+                            if (!rule.getProtocol().equalsIgnoreCase("icmp")
+                                    && rule.getSrcPortRange() != null) {
                                 if (!_connection.createTenantVDCIngressAclRule(tenant,
                                         Long.toString(rule.getId()), policyIdentifier,
                                         rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1],
@@ -379,7 +380,8 @@ public class CiscoVnmcResource implements ServerResource {
                                 }
                             }
                         } else {
-                            if (rule.getProtocol().equalsIgnoreCase("tcp") || rule.getProtocol().equalsIgnoreCase("udp")) {
+                            if ((rule.getProtocol().equalsIgnoreCase("tcp") || rule.getProtocol().equalsIgnoreCase("udp"))
+                                    && rule.getSrcPortRange() != null) {
                                 if (!_connection.createTenantVDCEgressAclRule(tenant,
                                         Long.toString(rule.getId()), policyIdentifier,
                                         rule.getProtocol().toUpperCase(),
@@ -477,7 +479,7 @@ public class CiscoVnmcResource implements ServerResource {
                             throw new Exception("Failed to delete ACL ingress rule for DNAT in VNMC for guest network with vlan " + vlanId);
                         }
                     } else {
-                        if (!_connection.createTenantVDCDNatIpPool(tenant, policyIdentifier + "-" + rule.getId(), rule.getDstIp())) {
+                        if (!_connection.createTenantVDCDNatIpPool(tenant, Long.toString(rule.getId()), rule.getDstIp())) {
                             throw new Exception("Failed to create DNAT ip pool in VNMC for guest network with vlan " + vlanId);
                         }
 
@@ -572,10 +574,10 @@ public class CiscoVnmcResource implements ServerResource {
                             throw new Exception("Failed to delete ACL ingress rule for PF in VNMC for guest network with vlan " + vlanId);
                         }
                     } else {
-                        if (!_connection.createTenantVDCPFIpPool(tenant, policyIdentifier + "-" + rule.getId(), rule.getDstIp())) {
+                        if (!_connection.createTenantVDCPFIpPool(tenant, Long.toString(rule.getId()), rule.getDstIp())) {
                             throw new Exception("Failed to create PF ip pool in VNMC for guest network with vlan " + vlanId);
                         }
-                        if (!_connection.createTenantVDCPFPortPool(tenant, policyIdentifier + "-" + rule.getId(),
+                        if (!_connection.createTenantVDCPFPortPool(tenant, Long.toString(rule.getId()),
                                 Integer.toString(rule.getDstPortRange()[0]), Integer.toString(rule.getDstPortRange()[1]))) {
                             throw new Exception("Failed to create PF port pool in VNMC for guest network with vlan " + vlanId);
                         }
