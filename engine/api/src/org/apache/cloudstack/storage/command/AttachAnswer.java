@@ -26,8 +26,9 @@ public class AttachAnswer extends Answer {
     public AttachAnswer() {
         super(null);
     }
-    
+
     public AttachAnswer(DiskTO disk) {
+        super(null);
         this.setDisk(disk);
     }
     public AttachAnswer(String errMsg) {
