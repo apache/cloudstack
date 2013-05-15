@@ -423,6 +423,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         SearchCriteria.Op.EQ);
                 volumeSB.and("removed", volumeSB.entity().getRemoved(),
                         SearchCriteria.Op.NULL);
+                volumeSB.and("state", volumeSB.entity().getState(), SearchCriteria.Op.NIN);
 
                 SearchBuilder<VMInstanceVO> activeVmSB = _vmInstanceDao
                         .createSearchBuilder();
@@ -434,6 +435,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                 SearchCriteria<VolumeVO> volumeSC = volumeSB.create();
                 volumeSC.setParameters("poolId", PrimaryDataStoreVO.getId());
+                volumeSC.setParameters("state", Volume.State.Expunging, Volume.State.Destroy);
                 volumeSC.setJoinParameters("activeVmSB", "state",
                         State.Starting, State.Running, State.Stopping,
                         State.Migrating);
@@ -456,13 +458,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(
         		vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-        	
+
         	ExcludeList avoidList = new ExcludeList();
         	for(StoragePool pool : avoid){
         		avoidList.addPool(pool.getId());
         	}
         	DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), clusterId, hostId, null, null);
-        	
+
         	final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, 1);
         	if (poolList != null && !poolList.isEmpty()) {
         		return (StoragePool)this.dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
@@ -629,6 +631,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SearchCriteria.Op.EQ);
         volumeSearch.and("poolId", volumeSearch.entity().getPoolId(),
                 SearchCriteria.Op.EQ);
+        volumeSearch.and("state", volumeSearch.entity().getState(), SearchCriteria.Op.EQ);
         StoragePoolSearch.join("vmVolume", volumeSearch, volumeSearch.entity()
                 .getInstanceId(), StoragePoolSearch.entity().getId(),
                 JoinBuilder.JoinType.INNER);
@@ -651,7 +654,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return true;
     }
 
-    
+
     @Override
     public String getStoragePoolTags(long poolId) {
         return _configMgr.listToCsvTags(_storagePoolDao
@@ -680,7 +683,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         return true;
     }
-    
+
     @DB
     @Override
     public DataStore createLocalStorage(Host host, StoragePoolInfo pInfo) throws ConnectionException {
@@ -694,7 +697,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             StoragePoolVO pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), pInfo.getHostPath(), pInfo.getUuid());
             if(pool == null && host.getHypervisorType() == HypervisorType.VMware) {
                 // perform run-time upgrade. In versions prior to 2.2.12, there is a bug that we don't save local datastore info (host path is empty), this will cause us
-                // not able to distinguish multiple local datastores that may be available on the host, to support smooth migration, we 
+                // not able to distinguish multiple local datastores that may be available on the host, to support smooth migration, we
                 // need to perform runtime upgrade here
                 if(pInfo.getHostPath().length() > 0) {
                     pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), "", pInfo.getUuid());
@@ -714,13 +717,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 params.put("details", pInfo.getDetails());
                 params.put("uuid", pInfo.getUuid());
                 params.put("providerName", provider.getName());
-                
+
                 store = lifeCycle.initialize(params);
             } else {
                 store = (DataStore) dataStoreMgr.getDataStore(pool.getId(),
                         DataStoreRole.Primary);
             }
-            
+
             HostScope scope = new HostScope(host.getId());
             lifeCycle.attachHost(store, scope, pInfo);
         } catch (Exception e) {
@@ -990,7 +993,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
             CapacityState capacityState = (allocationState == AllocationState.Disabled) ?
                     CapacityState.Disabled : CapacityState.Enabled;
-            
+
             capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         } else {
@@ -1130,7 +1133,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }finally {
                     scanLock.unlock();
                 }
-            } 
+            }
         }finally {
             scanLock.releaseRef();
         }
@@ -1462,7 +1465,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStore store = dataStoreMgr.getDataStore(
                 primaryStorage.getId(), DataStoreRole.Primary);
         lifeCycle.cancelMaintain(store);
-        
+
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(
                 primaryStorage.getId(), DataStoreRole.Primary);
     }
@@ -1610,7 +1613,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 DataStoreRole.Primary);
     }
 
-   
+
 
     @Override
     @DB
@@ -1618,6 +1621,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         SearchCriteria<VMInstanceVO> sc = StoragePoolSearch.create();
         sc.setJoinParameters("vmVolume", "volumeType", Volume.Type.ROOT);
         sc.setJoinParameters("vmVolume", "poolId", storagePoolId);
+        sc.setJoinParameters("vmVolume", "state", Volume.State.Ready);
         return _vmInstanceDao.search(sc, null);
     }
 
@@ -1691,7 +1695,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return secHost;
     }
 
-    
+
 
     @Override
     public HypervisorType getHypervisorTypeFromFormat(ImageFormat format) {
