@@ -297,6 +297,7 @@
       // Internal load balancers
       tierLoadBalancers: {
         listView: {
+          id: 'ipAddresses',
           fields: {
             ipaddress: { label: 'label.ip.address' },
             type: { label: 'label.type' }
@@ -346,6 +347,121 @@
                       type: 'Internal'
                     }
                   });
+                }
+              }
+            }
+          },
+          detailView: {
+            isMaximized: true,
+            tabs: {
+              loadBalancing: {
+                title: 'label.load.balancing',
+                custom: function(args) {
+                  var context = args.context;
+                  var $multi = $('<div>').addClass('loadBalancer');
+
+                  $multi.multiEdit({
+                    context: context,
+                    listView: $.extend(true, {}, cloudStack.sections.instances, {
+                      listView: {
+                        fields: {
+                          name: { label: 'label.name' },
+                          displayname: { label: 'label.display.name' },
+                          zonename: { label: 'label.zone.name' },
+                          state: {
+                            label: 'label.state',
+                            indicator: {
+                              'Running': 'on',
+                              'Stopped': 'off',
+                              'Destroyed': 'off',
+                              'Error': 'off'
+                            }
+                          }
+                        },
+                        filters: false,
+                        dataProvider: function(args) {
+                          args.response.success({ data: [] });
+                        }
+                      }
+                    }),
+                    
+                    multipleAdd: true,
+
+                    fields: {
+                      'name': { edit: true, label: 'label.name', isEditable: true },
+                      'publicport': { edit: true, label: 'label.public.port' },
+                      'privateport': { edit: true, label: 'label.private.port' },
+                      'algorithm': {
+                        label: 'label.algorithm',
+                        isEditable: true,
+                        select: function(args) {
+                          args.response.success({
+                            data: [
+                              { id: 'roundrobin', name: 'roundrobin', description: _l('label.round.robin') },
+                              { id: 'leastconn', name: 'leastconn', description: _l('label.least.connections') },
+                              { id: 'source', name: 'source', description: _l('label.source') }
+                            ]
+                          });
+                        }
+                      },
+
+                      'sticky': {
+                        label: 'label.stickiness',
+                        custom: {
+                          buttonLabel: 'label.configure',
+                          action: cloudStack.lbStickyPolicy.dialog()
+                        }
+                      },
+
+                      'add-vm': {
+                        label: 'label.add.vms',
+                        addButton: true
+                      }
+                    },
+
+                    tags: cloudStack.api.tags({ resourceType: 'LoadBalancer', contextId: 'multiRule' }),
+
+                    add: {
+                      label: 'label.add.vms',
+                      action: function(args) {  											  
+                        args.response.success();
+                      }
+                    },
+                    actions: {
+                      edit: {
+                        label: 'label.edit',
+                        action: function(args) {
+                          args.response.success();
+                        }
+                      },
+                      destroy:  {
+                        label: 'label.action.delete.load.balancer',
+                        action: function(args) {
+                          args.response.success();
+                        }
+                      }
+                    },
+                    
+                    itemActions: {
+                      add: {
+                        label: 'label.add.vms.to.lb',
+                        action: function(args) {
+                          args.response.success();
+                        }
+                      },
+                      destroy: {
+                        label: 'label.remove.vm.from.lb',
+                        action: function(args) {
+                          args.response.success();
+                        }
+                      }
+                    },
+                    dataProvider: function(args) {
+                      args.respons.success({ data: [] });
+                    }
+                  });
+
+                  return $multi;
                 }
               }
             }
