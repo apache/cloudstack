@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.event;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cloud.configuration.Configuration;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -23,8 +26,18 @@ import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
 import com.cloud.host.Host;
-import com.cloud.network.*;
-import com.cloud.network.as.*;
+import com.cloud.network.GuestVlan;
+import com.cloud.network.Network;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.as.AutoScaleCounter;
+import com.cloud.network.as.AutoScalePolicy;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.AutoScaleVmProfile;
+import com.cloud.network.as.Condition;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StaticNat;
@@ -42,9 +55,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.vm.VirtualMachine;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class EventTypes {
 
@@ -103,6 +113,10 @@ public class EventTypes {
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";
     public static final String EVENT_NIC_DELETE = "NIC.DELETE";
     public static final String EVENT_NIC_UPDATE = "NIC.UPDATE";
+    public static final String EVENT_NIC_DETAIL_ADD = "NIC.DETAIL.ADD";
+    public static final String EVENT_NIC_DETAIL_UPDATE = "NIC.DETAIL.UPDATE";
+    public static final String EVENT_NIC_DETAIL_REMOVE = "NIC.DETAIL.REMOVE";
+
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
@@ -166,6 +180,9 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPLOAD = "VOLUME.UPLOAD";
     public static final String EVENT_VOLUME_MIGRATE = "VOLUME.MIGRATE";
     public static final String EVENT_VOLUME_RESIZE = "VOLUME.RESIZE";
+    public static final String EVENT_VOLUME_DETAIL_UPDATE = "VOLUME.DETAIL.UPDATE";
+    public static final String EVENT_VOLUME_DETAIL_ADD = "VOLUME.DETAIL.ADD";
+    public static final String EVENT_VOLUME_DETAIL_REMOVE = "VOLUME.DETAIL.REMOVE";
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -334,6 +351,14 @@ public class EventTypes {
     public static final String EVENT_VPC_DELETE = "VPC.DELETE";
     public static final String EVENT_VPC_RESTART = "VPC.RESTART";
 
+    // Network ACL
+    public static final String EVENT_NETWORK_ACL_CREATE = "NETWORK.ACL.CREATE";
+    public static final String EVENT_NETWORK_ACL_DELETE = "NETWORK.ACL.DELETE";
+    public static final String EVENT_NETWORK_ACL_REPLACE = "NETWORK.ACL.REPLACE";
+    public static final String EVENT_NETWORK_ACL_ITEM_CREATE = "NETWORK.ACL.ITEM.CREATE";
+    public static final String EVENT_NETWORK_ACL_ITEM_UPDATE = "NETWORK.ACL.ITEM.UPDATE";
+    public static final String EVENT_NETWORK_ACL_ITEM_DELETE = "NETWORK.ACL.ITEM.DELETE";
+
     // VPC offerings
     public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
     public static final String EVENT_VPC_OFFERING_UPDATE = "VPC.OFFERING.UPDATE";
@@ -350,6 +375,10 @@ public class EventTypes {
     // tag related events
     public static final String EVENT_TAGS_CREATE = "CREATE_TAGS";
     public static final String EVENT_TAGS_DELETE = "DELETE_TAGS";
+
+    // meta data related events
+    public static final String EVENT_RESOURCE_DETAILS_CREATE = "CREATE_RESOURCE_DETAILS";
+    public static final String EVENT_RESOURCE_DETAILS_DELETE = "DELETE_RESOURCE_DETAILS";
 
 	// vm snapshot events
     public static final String EVENT_VM_SNAPSHOT_CREATE = "VMSNAPSHOT.CREATE";
@@ -389,10 +418,14 @@ public class EventTypes {
     public static final String EVENT_AFFINITY_GROUP_ASSIGN = "AG.ASSIGN";
     public static final String EVENT_AFFINITY_GROUP_REMOVE = "AG.REMOVE";
     public static final String EVENT_VM_AFFINITY_GROUP_UPDATE = "VM.AG.UPDATE";
+    
+    public static final String EVENT_INTERNAL_LB_VM_START = "INTERNALLBVM.START";
+    public static final String EVENT_INTERNAL_LB_VM_STOP = "INTERNALLBVM.STOP";
 
     // Dedicated guest vlan range
     public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE  = "GUESTVLANRANGE.DEDICATE";
     public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE  = "GUESTVLANRANGE.RELEASE";
+
 
     static {
 

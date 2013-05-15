@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.network.router;
 
-import java.util.List;
-import java.util.Map;
-
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -28,6 +25,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.user.Account;
@@ -37,6 +35,9 @@ import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * NetworkManager manages the network for the different end users.
@@ -103,4 +104,12 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 	
 	boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, 
 	        List<DomainRouterVO> routers) throws ResourceUnavailableException;
+
+    boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+
+
+    boolean configDhcpForSubnet(Network network, NicProfile nic, VirtualMachineProfile<UserVm> uservm, DeployDestination dest, List<DomainRouterVO> routers) throws ResourceUnavailableException ;
+
+    boolean removeDhcpSupportForSubnet(Network network, List<DomainRouterVO> routers) throws ResourceUnavailableException;
+
 }

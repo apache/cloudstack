@@ -27,6 +27,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import java.util.List;
+
 @Component
 @Local(value = VpcGatewayDao.class)
 @DB(txn = false)
@@ -37,6 +39,8 @@ public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implem
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("networkid", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ipaddress", AllFieldsSearch.entity().getIp4Address(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -57,6 +61,29 @@ public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implem
         sc.setParameters("type", VpcGateway.Type.Vpn);
 
         return findOneBy(sc);
+    }
+
+    @Override
+    public Long getNetworkAclIdForPrivateIp (long vpcId, long networkId, String ipaddr) {
+        SearchCriteria<VpcGatewayVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        sc.setParameters("networkid", networkId);
+        sc.setParameters("ipaddress", ipaddr);
+
+        VpcGateway vpcGateway = findOneBy(sc);
+        if (vpcGateway != null) {
+            return vpcGateway.getNetworkACLId();
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public List<VpcGatewayVO> listByVpcIdAndType(long vpcId, VpcGateway.Type type) {
+        SearchCriteria<VpcGatewayVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        sc.setParameters("type", type);
+        return listBy(sc);
     }
 
 }

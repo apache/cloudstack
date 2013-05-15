@@ -21,9 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.*;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -73,7 +71,7 @@ public interface NetworkService {
     IpAddress getIp(long id);
 
     Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser,
-            String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr);
+                               String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork);
 
     PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, 
             List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags, String name);
@@ -165,7 +163,7 @@ public interface NetworkService {
      * @throws ResourceAllocationException
      */
     Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
-                                 String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
+                                     String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /* Requests an IP address for the guest nic */
@@ -176,4 +174,5 @@ public interface NetworkService {
 
     /* lists the nic informaton */
     List<? extends Nic> listNics(ListNicsCmd listNicsCmd);
+
 }

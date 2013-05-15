@@ -44,6 +44,7 @@ class Services:
                                     "password": "password",
                          },
                         "name": "testphysicalnetwork",
+
                         "vlan": "2118-2120",
                     }
 
@@ -157,4 +158,3 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
                         "Check vlan range is not available in listDedicatedGuestVlanRanges"
 
                         )                    
-        

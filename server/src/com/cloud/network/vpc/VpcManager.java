@@ -82,6 +82,7 @@ public interface VpcManager extends VpcService{
     /**
      * Creates guest network in the VPC
      * 
+     *
      * @param ntwkOffId
      * @param name
      * @param displayText
@@ -97,14 +98,16 @@ public interface VpcManager extends VpcService{
      * @param subdomainAccess
      * @param vpcId
      * @param caller
+     * @param displayNetworkEnabled
      * @return
      * @throws ConcurrentOperationException
      * @throws InsufficientCapacityException
      * @throws ResourceAllocationException
      */
-    Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, 
-            String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk, long zoneId,
-            ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) 
+    Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr,
+                                  String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk, long zoneId,
+                                  ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller, Boolean displayNetworkEnabled)
+
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
 
@@ -162,4 +165,6 @@ public interface VpcManager extends VpcService{
      * @param networkOwner TODO
      */
     void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner);
+
+    List<PrivateGateway> getVpcPrivateGateways(long id);
 }

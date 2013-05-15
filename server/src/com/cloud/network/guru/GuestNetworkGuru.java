@@ -223,48 +223,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             nic.deallocate();
         }
     }
-
-    public Ip4Address acquireIp4Address(Network network, Ip4Address requestedIp, String reservationId) {
-        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        String[] cidr = network.getCidr().split("/");
-        SortedSet<Long> usedIps = new TreeSet<Long>();
-
-        if (requestedIp != null && requestedIp.equals(network.getGateway())) {
-            s_logger.warn("Requested ip address " + requestedIp + " is used as a gateway address in network " + network);
-            return null;
-        }
-
-        for (String ip : ips) {
-            usedIps.add(NetUtils.ip2Long(ip));
-        }
-
-        if (network.getGateway() != null) {
-            usedIps.add(NetUtils.ip2Long(network.getGateway()));
-        }
-
-        if (requestedIp != null) {
-            if (usedIps.contains(requestedIp.toLong())) {
-                s_logger.warn("Requested ip address " + requestedIp + " is already in used in " + network);
-                return null;
-            }
-            //check that requested ip has the same cidr
-            boolean isSameCidr = NetUtils.sameSubnetCIDR(requestedIp.ip4(), cidr[0], Integer.parseInt(cidr[1]));
-            if (!isSameCidr) {
-                s_logger.warn("Requested ip address " + requestedIp + " doesn't belong to the network " + network + " cidr");
-                return null;
-            }
-
-            return requestedIp;
-        }
-
-        long ip = NetUtils.getRandomIpFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
-        if (ip == -1) {
-            s_logger.warn("Unable to allocate any more ip address in " + network);
-            return null;
-        }
-
-        return new Ip4Address(ip);
-    }
+    
 
     public int getVlanOffset(long physicalNetworkId, int vlanTag) {
         PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);

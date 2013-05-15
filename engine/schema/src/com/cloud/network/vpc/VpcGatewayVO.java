@@ -87,6 +87,11 @@ public class VpcGatewayVO implements VpcGateway {
     @Column(name="source_nat")
     boolean sourceNat;
 
+    @Column(name="network_acl_id")
+    long networkACLId;
+
+
+
     protected VpcGatewayVO(){
         this.uuid = UUID.randomUUID().toString();
     }
@@ -106,7 +111,7 @@ public class VpcGatewayVO implements VpcGateway {
      * @param sourceNat
      */
     public VpcGatewayVO(String ip4Address, Type type, Long vpcId, long zoneId, Long networkId, String vlanTag, 
-            String gateway, String netmask, long accountId, long domainId, boolean sourceNat) {
+            String gateway, String netmask, long accountId, long domainId, boolean sourceNat, long networkACLId) {
         this.ip4Address = ip4Address;
         this.type = type;
         this.vpcId = vpcId;
@@ -120,6 +125,8 @@ public class VpcGatewayVO implements VpcGateway {
         this.domainId = domainId;
         this.state = State.Creating;
         this.sourceNat = sourceNat;
+        this.networkACLId = networkACLId;
+
     }
 
     @Override
@@ -203,4 +210,12 @@ public class VpcGatewayVO implements VpcGateway {
         return this.sourceNat;
     }
 
+    public void setNetworkACLId(long networkACLId) {
+        this.networkACLId = networkACLId;
+    }
+
+    @Override
+    public long getNetworkACLId() {
+        return networkACLId;
+    }
 }

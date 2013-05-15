@@ -67,7 +67,7 @@ getVMPassword=15
 restoreVirtualMachine=15
 changeServiceForVirtualMachine=15
 scaleVirtualMachine=15
-assignVirtualMachine=1
+assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
 recoverVirtualMachine=7
@@ -278,6 +278,11 @@ listVolumes=15
 extractVolume=15
 migrateVolume=15
 resizeVolume=15
+updateVolume=1
+addVolumeDetail=1
+updateVolumeDetail=1
+removeVolumeDetail=1
+listVolumeDetails=1
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
@@ -348,6 +353,10 @@ updateNetwork=15
 addNicToVirtualMachine=15
 removeNicFromVirtualMachine=15
 updateDefaultNicForVirtualMachine=15
+addNicDetail=1
+updateNicDetail=1
+removeNicDetail=1
+listNicDetails=1
 
 ####
 addIpToNic=15
@@ -439,8 +448,14 @@ deletePrivateGateway=1
 
 #### Network ACL commands
 createNetworkACL=15
+updateNetworkACLItem=15
 deleteNetworkACL=15
 listNetworkACLs=15
+createNetworkACLList=15
+deleteNetworkACLList=15
+replaceNetworkACLList=15
+listNetworkACLLists=15
+
 
 #### Static route commands
 createStaticRoute=15
@@ -451,6 +466,11 @@ listStaticRoutes=15
 createTags=15
 deleteTags=15
 listTags=15
+
+#### Meta Data commands
+addResourceDetail=1
+removeResourceDetail=1
+listResourceDetails=1
 
 ### Site-to-site VPN commands
 createVpnCustomerGateway=15
@@ -583,6 +603,17 @@ revertToVMSnapshot=15
 #### Baremetal commands
 addBaremetalHost=1
 
+#### New Load Balancer commands
+createLoadBalancer=15
+listLoadBalancers=15
+deleteLoadBalancer=15
+
+#Internal Load Balancer Element commands
+configureInternalLoadBalancerElement=7
+createInternalLoadBalancerElement=7
+listInternalLoadBalancerElements=7
+
+
 #### Affinity group commands
 createAffinityGroup=15
 deleteAffinityGroup=15
@@ -599,6 +630,11 @@ listCiscoVnmcResources=1
 addCiscoAsa1000vResource=1
 deleteCiscoAsa1000vResource=1
 listCiscoAsa1000vResources=1
+
+#### Internal LB VM commands
+stopInternalLoadBalancerVM=1
+startInternalLoadBalancerVM=1
+listInternalLoadBalancerVMs=1
 
 ### Network Isolation methods listing
 listNetworkIsolationMethods=1

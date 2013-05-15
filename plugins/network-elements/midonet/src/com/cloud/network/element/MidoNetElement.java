@@ -19,54 +19,67 @@
 
 package com.cloud.network.element;
 
-import com.cloud.network.*;
-import com.cloud.network.element.SimpleFirewallRule;
 import com.cloud.agent.api.to.FirewallRuleTO;
-import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.addr.PublicIp;
+import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.*;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import com.google.common.collect.*;
-import com.cloud.user.AccountManager;
 import com.midokura.midonet.client.MidonetApi;
 import com.midokura.midonet.client.dto.DtoRule;
-import com.midokura.midonet.client.resource.*;
+import com.midokura.midonet.client.resource.Bridge;
+import com.midokura.midonet.client.resource.BridgePort;
+import com.midokura.midonet.client.resource.DhcpHost;
+import com.midokura.midonet.client.resource.DhcpSubnet;
+import com.midokura.midonet.client.resource.Port;
+import com.midokura.midonet.client.resource.ResourceCollection;
+import com.midokura.midonet.client.resource.Route;
+import com.midokura.midonet.client.resource.Router;
+import com.midokura.midonet.client.resource.RouterPort;
+import com.midokura.midonet.client.resource.Rule;
+import com.midokura.midonet.client.resource.RuleChain;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.apache.log4j.Logger;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcManager;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.inject.Inject;
-import java.util.*;
-import java.lang.Class;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 
 @Component
@@ -430,6 +443,16 @@ public class MidoNetElement extends AdapterBase implements
         }
 
         return true;
+    }
+
+    @Override
+    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean removeDhcpSupportForSubnet(Network network) {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     private void removeMidonetStaticNAT(RuleChain preFilter, RuleChain preNat, RuleChain postNat,

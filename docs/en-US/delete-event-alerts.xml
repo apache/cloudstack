@@ -27,7 +27,10 @@
   <para>You can delete or archive individual alerts or events either directly by using the Quickview
     or by using the Details page. If you want to delete multiple alerts or events at the same time,
     you can use the respective context menu. You can delete alerts or events by category for a time
-    period.</para>
+    period. For example, you can select categories such as <emphasis role="bold"
+      >USER.LOGOUT</emphasis>, <emphasis role="bold">VM.DESTROY</emphasis>, <emphasis role="bold"
+      >VM.AG.UPDATE</emphasis>, <emphasis role="bold">CONFIGURATION.VALUE.EDI</emphasis>, and so on.
+    You can also view the number of events or alerts archived or deleted.</para>
   <para>In order to support the delete or archive alerts, the following global parameters have been
     added:</para>
   <itemizedlist>

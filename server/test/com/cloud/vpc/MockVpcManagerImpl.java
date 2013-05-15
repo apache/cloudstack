@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
@@ -160,15 +161,14 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
         return null;
     }
 
+    @Override
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId, Boolean isSoruceNat, Long aclId) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.vpc.VpcService#createVpcPrivateGateway(long, java.lang.Long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, long)
      */
-    @Override
-    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat) throws ResourceAllocationException,
-    ConcurrentOperationException, InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpc.VpcService#applyVpcPrivateGateway(long, boolean)
@@ -298,14 +298,9 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
 
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcManager#createVpcGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, long, com.cloud.user.Account)
-     */
     @Override
-    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk,
-            long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
-        // TODO Auto-generated method stub
-        return null;
+    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller, Boolean displayNetworkEnabled) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /* (non-Javadoc)
@@ -381,6 +376,11 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
     public void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner) {
         // TODO Auto-generated method stub
         
+    }
+
+    @Override
+    public List<PrivateGateway> getVpcPrivateGateways(long id) {
+        return null;
     }
 
 }

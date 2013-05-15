@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import java.util.List;
-
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
+
+import java.util.List;
 
 public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listByVmId(long instanceId);
@@ -30,7 +30,7 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     
     List<NicVO> listByNetworkId(long networkId);
     
-    NicVO findByInstanceIdAndNetworkId(long networkId, long instanceId);
+    NicVO findByNtwkIdAndInstanceId(long networkId, long instanceId);
     
     NicVO findByInstanceIdAndNetworkIdIncludingRemoved(long networkId, long instanceId);
     
@@ -66,4 +66,6 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listPlaceholderNicsByNetworkId(long networkId);
     
     List<NicVO> listPlaceholderNicsByNetworkIdAndVmType(long networkId, VirtualMachine.Type vmType);
+
+    NicVO findByInstanceIdAndIpAddressAndVmtype(long instanceId, String ipaddress, VirtualMachine.Type type);
 }

@@ -205,6 +205,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/awsapi
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
+mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}-management
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
@@ -259,6 +260,7 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/work
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
+chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}-management
 
 # KVM Agent
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent
@@ -397,6 +399,8 @@ if [ -L $oldserverxml ] ; then
         if [ -L $serverxml ]; then rm -f $serverxml; fi
         ln -s %{_sysconfdir}/%{name}/management/server-ssl.xml $serverxml
     fi
+else
+    echo "Unable to determine ssl settings for server.xml, please run cloudstack-setup-management manually"
 fi
 
 tomcatconf=%{_sysconfdir}/%{name}/management/tomcat6.conf
@@ -409,6 +413,8 @@ if [ -L $oldtomcatconf ] ; then
         if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
         ln -s %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf $tomcatconf
     fi
+else
+    echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
 fi
 
 %preun agent
@@ -510,6 +516,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
+%dir %attr(0770,root,root) %{_localstatedir}/log/%{name}-management
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 

@@ -32,9 +32,6 @@ import javax.persistence.Transient;
 import org.apache.cloudstack.acl.ControlledEntity;
 
 import com.cloud.network.Network;
-import com.cloud.network.Networks;
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -162,6 +159,12 @@ public class NetworkVO implements Network {
 
     @Column(name="ip6_cidr")
     String ip6Cidr;
+
+    @Column(name="display_network", updatable=true, nullable=false)
+    protected boolean displayNetwork = true;
+
+    @Column(name="network_acl_id")
+    Long networkACLId;
 
     public NetworkVO() {
     	this.uuid = UUID.randomUUID().toString();
@@ -540,4 +543,23 @@ public class NetworkVO implements Network {
 	public void setIp6Gateway(String ip6Gateway) {
 		this.ip6Gateway = ip6Gateway;
 	}
+
+    @Override()
+    public boolean getDisplayNetwork() {
+        return displayNetwork;
+    }
+
+    public void setDisplayNetwork(boolean displayNetwork) {
+        this.displayNetwork = displayNetwork;
+    }
+
+    @Override
+    public void setNetworkACLId(Long networkACLId) {
+        this.networkACLId = networkACLId;
+    }
+
+    @Override
+    public Long getNetworkACLId() {
+        return networkACLId;
+    }
 }

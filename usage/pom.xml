@@ -40,7 +40,7 @@
     <dependency>
     	<groupId>commons-daemon</groupId>
     	<artifactId>commons-daemon</artifactId>
-    	<version>1.0.10</version>
+    	<version>${cs.daemon.version}</version>
     </dependency>
   </dependencies>
   <build>

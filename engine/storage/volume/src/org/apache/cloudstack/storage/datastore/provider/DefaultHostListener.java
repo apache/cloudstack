@@ -56,7 +56,7 @@ public class DefaultHostListener implements HypervisorHostListener {
         }
 
         if (!answer.getResult()) {
-            String msg = "Add host failed due to ModifyStoragePoolCommand failed" + answer.getDetails();
+            String msg = "Unable to attach storage pool" + poolId + " to the host" + hostId;
             alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
             throw new CloudRuntimeException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails() + pool.getId());
         }

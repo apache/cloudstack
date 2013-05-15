@@ -70,6 +70,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -104,6 +105,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.resource.CiscoVnmcResource;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
@@ -113,6 +115,7 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -338,10 +341,31 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                 publicGateways.add(vlanVO.getVlanGateway());
             }
 
+            // due to VNMC limitation of not allowing source NAT ip as the outside ip of firewall,
+            // an additional public ip needs to acquired for assigning as firewall outside ip
+            IpAddress outsideIp = null;
+            try {
+                Account caller = UserContext.current().getCaller();
+                long callerUserId = UserContext.current().getCallerUserId();
+                outsideIp = _networkMgr.allocateIp(owner, false, caller, callerUserId, zone);
+            } catch (ResourceAllocationException e) {
+                s_logger.error("Unable to allocate additional public Ip address. Exception details " + e);
+                return false;
+            }
+
+            try {
+                outsideIp = _networkMgr.associateIPToGuestNetwork(outsideIp.getId(), network.getId(), true);
+            } catch (ResourceAllocationException e) {
+                s_logger.error("Unable to assign allocated additional public Ip " + outsideIp.getAddress().addr() + " to network with vlan " + vlanId + ". Exception details " + e);
+                return false;
+            }
+
             // create logical edge firewall in VNMC
             String gatewayNetmask = NetUtils.getCidrNetmask(network.getCidr());
+            // due to ASA limitation of allowing single subnet to be assigned to firewall interfaces,
+            // all public ip addresses must be from same subnet, this essentially means single public subnet in zone
             if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), gatewayNetmask,
-                    sourceNatIp.getAddress().addr(), sourceNatIp.getNetmask(), publicGateways, ciscoVnmcHost.getId())) {
+                    outsideIp.getAddress().addr(), sourceNatIp.getNetmask(), publicGateways, ciscoVnmcHost.getId())) {
                 s_logger.error("Failed to create logical edge firewall in Cisco VNMC device for network " + network.getName());
                 return false;
             }
@@ -356,10 +380,10 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             }
 
             // configure source NAT
-            //if (!configureSourceNat(vlanId, network.getCidr(), sourceNatIp, ciscoVnmcHost.getId())) {
-            //    s_logger.error("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
-            //    return false;
-            //}
+            if (!configureSourceNat(vlanId, network.getCidr(), sourceNatIp, ciscoVnmcHost.getId())) {
+                s_logger.error("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
+                return false;
+            }
 
             // associate Asa 1000v instance with logical edge firewall
             if (!associateAsaWithLogicalEdgeFirewall(vlanId, assignedAsa.getManagementIp(), ciscoVnmcHost.getId())) {
@@ -654,8 +678,12 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
         for (FirewallRule rule : rules) {
-            IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-            FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr(), rule.getPurpose(), rule.getTrafficType());
+            String address = "0.0.0.0";
+            if (rule.getTrafficType() == TrafficType.Ingress) {
+                IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
+                address = sourceIp.getAddress().addr();
+            }
+            FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, address, rule.getPurpose(), rule.getTrafficType());
             rulesTO.add(ruleTO);
         }
 

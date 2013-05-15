@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -83,6 +84,10 @@ public class NetworkOfferingResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.IS_PERSISTENT) @Param(description="true if network offering supports persistent networks, false otherwise")
     private Boolean isPersistent;
+    
+    @SerializedName(ApiConstants.DETAILS) @Param(description="additional key/value details tied with network offering", since="4.2.0")
+    private Map details;
+
 
     public void setId(String id) {
         this.id = id;
@@ -155,6 +160,10 @@ public class NetworkOfferingResponse extends BaseResponse {
 
     public void setIsPersistent(Boolean isPersistent) {
         this.isPersistent = isPersistent;
+    }
+    
+    public void setDetails(Map details) {
+        this.details = details;
     }
 
 }

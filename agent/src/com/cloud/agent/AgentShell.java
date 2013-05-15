@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +37,9 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -47,7 +49,6 @@ import org.apache.log4j.xml.DOMConfigurator;
 import com.cloud.agent.Agent.ExitStatus;
 import com.cloud.agent.dao.StorageComponent;
 import com.cloud.agent.dao.impl.PropertiesStorage;
-import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
@@ -58,7 +59,7 @@ import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class AgentShell implements IAgentShell {
+public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class
             .getName());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
@@ -79,7 +80,6 @@ public class AgentShell implements IAgentShell {
     private int _nextAgentId = 1;
     private volatile boolean _exit = false;
     private int _pingRetries;
-    private Thread _consoleProxyMain = null;
     private final List<Agent> _agents = new ArrayList<Agent>();
 
     public AgentShell() {
@@ -376,7 +376,17 @@ public class AgentShell implements IAgentShell {
 
         return true;
     }
-
+    
+    @Override
+    public void init(DaemonContext dc) throws DaemonInitException {
+        s_logger.debug("Initializing AgentShell from JSVC");
+        try {
+            init(dc.getArguments());
+        } catch (ConfigurationException ex) {
+            throw new DaemonInitException("Initialization failed", ex);
+        }
+    }
+    
     public void init(String[] args) throws ConfigurationException {
 
     	// PropertiesUtil is used both in management server and agent packages,
@@ -402,11 +412,13 @@ public class AgentShell implements IAgentShell {
         loadProperties();
         parseCommand(args);
 
-        List<String> properties = Collections.list((Enumeration<String>)_properties.propertyNames());
-        for (String property:properties){
-            s_logger.debug("Found property: " + property);
+        if (s_logger.isDebugEnabled()) {
+            List<String> properties = Collections.list((Enumeration<String>)_properties.propertyNames());
+            for (String property:properties){
+                s_logger.debug("Found property: " + property);
+            }
         }
-
+            
         s_logger.info("Defaulting to using properties file for storage");
         _storage = new PropertiesStorage();
         _storage.configure("Storage", new HashMap<String, Object>());
@@ -432,71 +444,6 @@ public class AgentShell implements IAgentShell {
         }
 
         launchAgentFromTypeInfo();
-    }
-
-    private boolean needConsoleProxy() {
-        for (Agent agent : _agents) {
-            if (agent.getResource().getType().equals(Host.Type.ConsoleProxy)
-                    || agent.getResource().getType().equals(Host.Type.Routing))
-                return true;
-        }
-        return false;
-    }
-
-    private int getConsoleProxyPort() {
-        int port = NumbersUtil.parseInt(
-                getProperty(null, "consoleproxy.httpListenPort"), 443);
-        return port;
-    }
-
-    private void openPortWithIptables(int port) {
-        // TODO
-    }
-
-    private void launchConsoleProxy() throws ConfigurationException {
-        if (!needConsoleProxy()) {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Storage only agent, no need to start console proxy on it");
-            return;
-        }
-
-        int port = getConsoleProxyPort();
-        openPortWithIptables(port);
-
-        _consoleProxyMain = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
-
-                    try {
-                        Method method = consoleProxyClazz.getMethod("start",
-                                Properties.class);
-                        method.invoke(null, _properties);
-                    } catch (SecurityException e) {
-                        s_logger.error("Unable to launch console proxy due to SecurityException");
-                        System.exit(ExitStatus.Error.value());
-                    } catch (NoSuchMethodException e) {
-                        s_logger.error("Unable to launch console proxy due to NoSuchMethodException");
-                        System.exit(ExitStatus.Error.value());
-                    } catch (IllegalArgumentException e) {
-                        s_logger.error("Unable to launch console proxy due to IllegalArgumentException");
-                        System.exit(ExitStatus.Error.value());
-                    } catch (IllegalAccessException e) {
-                        s_logger.error("Unable to launch console proxy due to IllegalAccessException");
-                        System.exit(ExitStatus.Error.value());
-                    } catch (InvocationTargetException e) {
-                        s_logger.error("Unable to launch console proxy due to InvocationTargetException");
-                        System.exit(ExitStatus.Error.value());
-                    }
-                } catch (final ClassNotFoundException e) {
-                    s_logger.error("Unable to launch console proxy due to ClassNotFoundException");
-                    System.exit(ExitStatus.Error.value());
-                }
-            }
-        }, "Console-Proxy-Main");
-        _consoleProxyMain.setDaemon(true);
-        _consoleProxyMain.start();
     }
 
     private void launchAgentFromClassInfo(String resourceClassNames)
@@ -591,14 +538,6 @@ public class AgentShell implements IAgentShell {
 
             launchAgent();
 
-            //
-            // For both KVM & Xen-Server hypervisor, we have switched to
-            // VM-based console proxy solution, disable launching
-            // of console proxy here
-            //
-            // launchConsoleProxy();
-            //
-
             try {
                 while (!_exit)
                     Thread.sleep(1000);
@@ -618,9 +557,6 @@ public class AgentShell implements IAgentShell {
 
     public void stop() {
         _exit = true;
-        if (_consoleProxyMain != null) {
-            _consoleProxyMain.interrupt();
-        }
     }
 
     public void destroy() {
@@ -629,6 +565,7 @@ public class AgentShell implements IAgentShell {
 
     public static void main(String[] args) {
         try {
+            s_logger.debug("Initializing AgentShell from main");
             AgentShell shell = new AgentShell();
             shell.init(args);
             shell.start();
@@ -636,4 +573,5 @@ public class AgentShell implements IAgentShell {
             System.out.println(e.getMessage());
         }
     }
+
 }

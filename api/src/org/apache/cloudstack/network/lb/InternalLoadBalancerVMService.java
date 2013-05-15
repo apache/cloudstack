@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -14,38 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.firewall;
+package org.apache.cloudstack.network.lb;
 
-
-import java.util.List;
-
-import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
-
-import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-public interface NetworkACLService {
-    FirewallRule getNetworkACL(long ruleId);
-    boolean applyNetworkACLs(long networkId, Account caller) throws ResourceUnavailableException;
+public interface InternalLoadBalancerVMService {
 
-    /**
-     * @param createNetworkACLCmd
-     * @return
-     */
-    FirewallRule createNetworkACL(FirewallRule acl) throws NetworkRuleConflictException;
-    /**
-     * @param ruleId
-     * @param apply
-     * @return
-     */
-    boolean revokeNetworkACL(long ruleId, boolean apply);
-    /**
-     * @param listNetworkACLsCmd
-     * @return
-     */
-    Pair<List<? extends FirewallRule>, Integer> listNetworkACLs(ListNetworkACLsCmd cmd);
+    VirtualRouter startInternalLbVm(long internalLbVmId, Account caller, long callerUserId) 
+            throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+
+    VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, long callerUserId)
+            throws ConcurrentOperationException, ResourceUnavailableException;
 
 }

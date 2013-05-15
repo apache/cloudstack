@@ -85,6 +85,11 @@
       <artifactId>cloud-plugin-network-midonet</artifactId>
       <version>${project.version}</version>
     </dependency>
+  <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-network-internallb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-xen</artifactId>

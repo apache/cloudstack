@@ -205,6 +205,7 @@
         <ref bean="Ovs"/>
         <ref bean="SecurityGroupProvider"/>
         <ref bean="VpcVirtualRouter"/>
+        <ref bean="InternalLbVm"/>
         <!--
                   <ref bean="BareMetalDhcp"/>
                   <ref bean="BareMetalPxe"/>

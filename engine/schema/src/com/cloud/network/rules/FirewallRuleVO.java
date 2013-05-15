@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import javax.inject.Inject;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
@@ -35,7 +34,6 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 

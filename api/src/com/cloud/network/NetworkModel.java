@@ -33,6 +33,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.user.Account;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -264,5 +265,11 @@ public interface NetworkModel {
 
     Nic getPlaceholderNicForRouter(Network network, Long podId);
     
+    IpAddress getPublicIpAddress(String ipAddress, long zoneId);
+
+    List<String> getUsedIpsInNetwork(Network network);
+
+    Map<Detail, String> getNtwkOffDetails(long offId);
+
     Networks.IsolationType[] listNetworkIsolationMethods();
 }

@@ -27,6 +27,24 @@ import java.util.TreeSet;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.PrivateIpAddress;
+import com.cloud.network.vpc.PrivateIpVO;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcGateway;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.PrivateIpDao;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -90,23 +108,6 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.vpc.NetworkACLManager;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.PrivateIpAddress;
-import com.cloud.network.vpc.PrivateIpVO;
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.PrivateIpDao;
-import com.cloud.network.vpc.dao.StaticRouteDao;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
@@ -161,6 +162,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     FirewallRulesDao _firewallDao;
     @Inject
     Site2SiteVpnManager _s2sVpnMgr;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    NetworkACLItemDao _networkACLItemDao;
     
     @Override
     public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, 
@@ -440,7 +445,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             defaultDns2 = guestNic.getDns2();
         }
         
-        Nic nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
+        Nic nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
         String networkDomain = network.getNetworkDomain();
         String dhcpRange = getGuestDhcpRange(guestNic, network, _configMgr.getZone(network.getDataCenterId()));
         
@@ -704,7 +709,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
     
     @Override
-    public boolean applyNetworkACLs(Network network, final List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers)
+    public boolean applyNetworkACLs(Network network, final List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers, final boolean isPrivateGateway)
             throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
             s_logger.debug("No network ACLs to be applied for network " + network.getId());
@@ -713,21 +718,21 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return applyRules(network, routers, "network acls", false, null, false, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
-                return sendNetworkACLs(router, rules, network.getId());     
+                return sendNetworkACLs(router, rules, network.getId(), isPrivateGateway);
             }
         });
     }
 
     
-    protected boolean sendNetworkACLs(VirtualRouter router, List<? extends FirewallRule> rules, long guestNetworkId) 
+    protected boolean sendNetworkACLs(VirtualRouter router, List<? extends NetworkACLItem> rules, long guestNetworkId, boolean isPrivateGateway)
             throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
-        createNetworkACLsCommands(rules, router, cmds, guestNetworkId);
+        createNetworkACLsCommands(rules, router, cmds, guestNetworkId, isPrivateGateway);
         return sendCommandsToRouter(router, cmds);
     }
     
-    private void createNetworkACLsCommands(List<? extends FirewallRule> rules, VirtualRouter router, Commands cmds, 
-            long guestNetworkId) {
+    private void createNetworkACLsCommands(List<? extends NetworkACLItem> rules, VirtualRouter router, Commands cmds,
+                                           long guestNetworkId, boolean privateGateway) {
         List<NetworkACLTO> rulesTO = null;
         String guestVlan = null;
         Network guestNtwk = _networkDao.findById(guestNetworkId);
@@ -739,11 +744,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (rules != null) {
             rulesTO = new ArrayList<NetworkACLTO>();
             
-            for (FirewallRule rule : rules) {
-                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
-                    _firewallDao.loadSourceCidrs((FirewallRuleVO)rule);
-                }
-                NetworkACLTO ruleTO = new NetworkACLTO(rule, guestVlan, rule.getTrafficType());
+            for (NetworkACLItem rule : rules) {
+//                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
+//                    _firewallDao.loadSourceCidrs((FirewallRuleVO)rule);
+//                }
+                NetworkACLTO ruleTO = new NetworkACLTO((NetworkACLItemVO)rule, guestVlan, rule.getTrafficType());
                 rulesTO.add(ruleTO);
             }
         }
@@ -755,6 +760,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        if (privateGateway) {
+            cmd.setAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY, String.valueOf(VpcGateway.Type.Private));
+        }
+
         cmds.addCommand(cmd);
     }
 
@@ -863,7 +872,18 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
                     privateIps.add(ip);
                     createVpcAssociatePrivateIPCommands(router, privateIps, cmds, true);
-                } 
+
+                    Long privateGwAclId = _vpcGatewayDao.getNetworkAclIdForPrivateIp(ipVO.getVpcId(), ipVO.getNetworkId(), ipVO.getIpAddress());
+
+                    if (privateGwAclId != null) {
+                        //set network acl on private gateway
+                        List<NetworkACLItemVO> networkACLs = _networkACLItemDao.listByACL(privateGwAclId);
+                        s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router
+                                + " start for private gateway ip = " + ipVO.getIpAddress());
+
+                        createNetworkACLsCommands(networkACLs, router, cmds, ipVO.getNetworkId(), true);
+                    }
+                }
             }
         } catch (Exception ex) {
             s_logger.warn("Failed to add router " + router + " to network due to exception ", ex);
@@ -929,11 +949,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         if (router.getVpcId() != null) {
             if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
-                List<? extends FirewallRule> networkACLs = _networkACLMgr.listNetworkACLs(guestNetworkId);
+                List<NetworkACLItemVO> networkACLs = _networkACLMgr.listNetworkACLItems(guestNetworkId);
                 s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 
                         + " start for guest network id=" + guestNetworkId);
                 if (!networkACLs.isEmpty()) {
-                    createNetworkACLsCommands(networkACLs, router, cmds, guestNetworkId);
+                    createNetworkACLsCommands(networkACLs, router, cmds, guestNetworkId, false);
                 }
             }
         }
@@ -1029,11 +1049,16 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             s_logger.warn("Failed to release private ip for gateway " + gateway + " on router " + router);
             return false;
         }
-        
+
+        //revoke network acl on the private gateway.
+        if (!_networkACLMgr.revokeACLItemsForPrivateGw(gateway)) {
+            s_logger.debug("Failed to delete network acl items on " + gateway +" from router " +  router);
+            return false;
+        }
+
         s_logger.debug("Removing router " + router + " from private network " + privateNetwork + " as a part of delete private gateway");
         result = result && _itMgr.removeVmFromNetwork(router, privateNetwork, null);
         s_logger.debug("Private gateawy " + gateway + " is removed from router " + router);
-        
         return result;
     }
     

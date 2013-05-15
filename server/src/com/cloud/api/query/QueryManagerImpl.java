@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,10 +32,21 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.BaseCmd;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.server.ResourceMetaDataService;
+import com.cloud.server.ResourceTag;
+import com.cloud.server.TaggedResourceService;
+import com.cloud.vm.NicDetailVO;
+import com.cloud.vm.dao.NicDetailDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
+
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
@@ -53,29 +65,10 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -275,6 +268,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private DomainRouterDao _routerDao;
 
     @Inject
+    private VolumeDetailsDao _volumeDetailDao;
+
+    @Inject
+    private NicDetailDao _nicDetailDao;
+
+    @Inject
     private HighAvailabilityManager _haMgr;
 
     @Inject
@@ -283,8 +282,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     @Inject
     private TemplateJoinDao _templateJoinDao;
 
+    @Inject ResourceManager _resourceMgr;
+    @Inject private ResourceMetaDataService _resourceMetaDataMgr;
+
     @Inject
-    ResourceManager _resourceMgr;
+    private TaggedResourceService _taggedResourceMgr;
+
+    @Inject
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
     @Inject
@@ -1017,7 +1021,22 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Override
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
-        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd);
+        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
+                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getZoneType());
+        ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
+
+        List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
+        response.setResponses(routerResponses, result.second());
+        return response;
+    }
+
+    
+    @Override
+    public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
+        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
+                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getZoneType());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
@@ -1026,18 +1045,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
 
-    private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(ListRoutersCmd cmd) {
-        Long id = cmd.getId();
-        String name = cmd.getRouterName();
-        String state = cmd.getState();
-        Long zoneId = cmd.getZoneId();
-        String zoneType = cmd.getZoneType();
-        Long pod = cmd.getPodId();
-        Long hostId = cmd.getHostId();
-        String keyword = cmd.getKeyword();
-        Long networkId = cmd.getNetworkId();
-        Long vpcId = cmd.getVpcId();
-        Boolean forVpc = cmd.getForVpc();
+    private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
+            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role, String zoneType) {
+       
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1068,6 +1078,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+        sb.and("role", sb.entity().getRole(), SearchCriteria.Op.EQ);
 
         if (forVpc != null) {
             if (forVpc) {
@@ -1109,12 +1120,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("dataCenterId", zoneId);
         }
 
-        if (zoneType != null) {
-            sc.setParameters("dataCenterType", zoneType);
+        if (podId != null) {
+            sc.setParameters("podId", podId);
         }
 
-        if (pod != null) {
-            sc.setParameters("podId", pod);
+        if (zoneType != null) {
+            sc.setParameters("dataCenterType", zoneType);
         }
 
         if (hostId != null) {
@@ -1127,6 +1138,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (vpcId != null) {
             sc.setParameters("vpcId", vpcId);
+        }
+        
+        if (role != null) {
+            sc.setParameters("role", role);
         }
 
         // search VR details by ids
@@ -2873,4 +2888,66 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<AffinityGroupJoinVO> ags = _affinityGroupJoinDao.searchByIds(agIds);
         return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
     }
+
+
+    public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd){
+
+        String key = cmd.getKey();
+        ResourceTag.TaggedResourceType resourceType = cmd.getResourceType();
+        String resourceId = cmd.getResourceId();
+        Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
+
+        if(resourceType == ResourceTag.TaggedResourceType.Volume){
+
+            List<VolumeDetailVO> volumeDetailList;
+            if(key == null){
+                volumeDetailList = _volumeDetailDao.findDetails(id);
+            }else{
+                VolumeDetailVO volumeDetail = _volumeDetailDao.findDetail(id, key);
+                volumeDetailList = new LinkedList<VolumeDetailVO>();
+                volumeDetailList.add(volumeDetail);
+            }
+
+            List<ResourceDetailResponse> volumeDetailResponseList = new ArrayList<ResourceDetailResponse>();
+            for (VolumeDetailVO volumeDetail : volumeDetailList ){
+                ResourceDetailResponse volumeDetailResponse = new ResourceDetailResponse();
+                volumeDetailResponse.setResourceId(id.toString());
+                volumeDetailResponse.setName(volumeDetail.getName());
+                volumeDetailResponse.setValue(volumeDetail.getValue());
+                volumeDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Volume.toString());
+                volumeDetailResponse.setObjectName("volumedetail");
+                volumeDetailResponseList.add(volumeDetailResponse);
+            }
+
+            return volumeDetailResponseList;
+
+        }  else {
+
+
+            List<NicDetailVO> nicDetailList;
+            if(key == null){
+                nicDetailList = _nicDetailDao.findDetails(id);
+            }else {
+                NicDetailVO nicDetail = _nicDetailDao.findDetail(id, key);
+                nicDetailList = new LinkedList<NicDetailVO>();
+                nicDetailList.add(nicDetail);
+            }
+
+            List<ResourceDetailResponse> nicDetailResponseList = new ArrayList<ResourceDetailResponse>();
+            for(NicDetailVO nicDetail : nicDetailList){
+                ResourceDetailResponse nicDetailResponse = new ResourceDetailResponse();
+                //String uuid = ApiDBUtils.findN
+                nicDetailResponse.setName(nicDetail.getName());
+                nicDetailResponse.setValue(nicDetail.getValue());
+                nicDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Nic.toString());
+                nicDetailResponse.setObjectName("nicdetail");
+                nicDetailResponseList.add(nicDetailResponse);
+            }
+
+            return nicDetailResponseList;
+
+        }
+
+    }
+
 }

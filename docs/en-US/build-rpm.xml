@@ -26,7 +26,7 @@ under the License.
     <title>Building RPMs from Source</title>
     <para>As mentioned previously in <xref linkend="sect-source-prereq" />, you will need to install several prerequisites before you can build packages for &PRODUCT;. Here we'll assume you're working with a 64-bit build of CentOS or Red Hat Enterprise Linux.</para>
     <para><programlisting># yum groupinstall "Development Tools"</programlisting></para>
-    <para><programlisting># yum install java-1.6.0-openjdk-devel.x86_64 genisoimage mysql mysql-server ws-common-utils MySQL-python tomcat6 createrepo</programlisting></para>
+    <para><programlisting># yum install java-1.6.0-openjdk-devel.x86_64 genisoimage mysql mysql-server ws-commons-util MySQL-python tomcat6 createrepo</programlisting></para>
     <para>Next, you'll need to install build-time dependencies for CloudStack with 
         Maven. We're using Maven 3, so you'll want to 
         <ulink url="http://maven.apache.org/download.cgi">grab a Maven 3 tarball</ulink> 

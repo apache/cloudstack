@@ -25,7 +25,20 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.network.vpc.VpcGatewayVO;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcProvisioningService;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -37,8 +50,8 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -54,6 +67,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
@@ -163,6 +177,8 @@ import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
+import com.cloud.network.dao.AccountGuestVlanMapDao;
+import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -187,20 +203,11 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
-import com.cloud.network.vpc.StaticRouteVO;
-import com.cloud.network.vpc.VpcGatewayVO;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcOffering;
-import com.cloud.network.vpc.VpcProvisioningService;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.StaticRouteDao;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -210,6 +217,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
@@ -402,6 +410,7 @@ public class ApiDBUtils {
     static AffinityGroupDao _affinityGroupDao;
     static AffinityGroupJoinDao _affinityGroupJoinDao;
     static GlobalLoadBalancingRulesService _gslbService;
+    static NetworkACLDao _networkACLDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -507,9 +516,11 @@ public class ApiDBUtils {
     @Inject private VMSnapshotDao vmSnapshotDao;
     @Inject private NicSecondaryIpDao nicSecondaryIpDao;
     @Inject private VpcProvisioningService vpcProvSvc;
+    @Inject private ApplicationLoadBalancerRuleDao _appLbDao;
     @Inject private AffinityGroupDao affinityGroupDao;
     @Inject private AffinityGroupJoinDao affinityGroupJoinDao;
     @Inject private GlobalLoadBalancingRulesService gslbService;
+    @Inject private NetworkACLDao networkACLDao;
 
     @PostConstruct
     void init() {
@@ -619,6 +630,7 @@ public class ApiDBUtils {
         _gslbService = gslbService;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
+        _networkACLDao = networkACLDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1263,6 +1275,9 @@ public class ApiDBUtils {
         return _vpcOfferingDao.findById(offeringId);
     }
 
+    public static NetworkACL findByNetworkACLId(long aclId){
+        return _networkACLDao.findById(aclId);
+    }
 
     public static AsyncJob findAsyncJobById(long jobId){
         return _asyncJobDao.findById(jobId);

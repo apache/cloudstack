@@ -66,6 +66,7 @@
     <module>storage/volume/sample</module>
     <module>alert-handlers/snmp-alerts</module>
     <module>alert-handlers/syslog-alerts</module>
+    <module>network-elements/internal-loadbalancer</module>
   </modules>
 
   <dependencies>

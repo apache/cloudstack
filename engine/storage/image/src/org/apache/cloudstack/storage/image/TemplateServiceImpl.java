@@ -349,6 +349,11 @@ public class TemplateServiceImpl implements TemplateService {
                     tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
                     tmpltStore.setDataStoreRole(store.getRole());
                     _vmTemplateStoreDao.persist(tmpltStore);
+                    
+                    // update size in vm_template table
+                    VMTemplateVO tmlpt = _templateDao.findById(tmplt.getId());
+                    tmlpt.setSize(tmpltInfo.getSize());
+                    _templateDao.update(tmplt.getId(), tmlpt);
                     associateTemplateToZone(tmplt.getId(), zoneId);
                 }
 

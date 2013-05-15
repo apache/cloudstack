@@ -87,6 +87,7 @@ import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -180,12 +181,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     DataCenterDao _dcDao;
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    NetworkACLDao _networkAclDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
-    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp);
-     
+    private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler);
+ 
+
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
@@ -207,6 +211,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (svc == Service.Lb) {
                     Set<Provider> lbProviders = new HashSet<Provider>();
                     lbProviders.add(Provider.VPCVirtualRouter);
+                    lbProviders.add(Provider.InternalLbVm);
                     svcProviderMap.put(svc, lbProviders);
                 } else {
                     svcProviderMap.put(svc, defaultProviders);
@@ -215,7 +220,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, 
                     true, State.Enabled);
         }
-                
+
+        //configure default vpc offering with Netscaler as LB Provider
+        if (_vpcOffDao.findByUniqueName(VpcOffering.defaultVPCNSOfferingName ) == null) {
+            s_logger.debug("Creating default VPC offering with Netscaler as LB Provider" + VpcOffering.defaultVPCNSOfferingName);
+            Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
+            Set<Provider> defaultProviders = new HashSet<Provider>();
+            defaultProviders.add(Provider.VPCVirtualRouter);
+            for (Service svc : getSupportedServices()) {
+                if (svc == Service.Lb) {
+                    Set<Provider> lbProviders = new HashSet<Provider>();
+                    lbProviders.add(Provider.Netscaler);
+                    lbProviders.add(Provider.InternalLbVm);
+                    svcProviderMap.put(svc, lbProviders);
+                } else {
+                    svcProviderMap.put(svc, defaultProviders);
+                }
+            }
+            createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName,
+                    svcProviderMap, false, State.Enabled);
+        }
+
         txn.commit();
         
         Map<String, String> configs = _configDao.getConfiguration(params);
@@ -1038,16 +1063,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        //4) Only one network in the VPC can support LB
-        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
+        //4) Only one network in the VPC can support public LB inside the VPC. Internal LB can be supported on multiple VPC tiers
+        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb) && guestNtwkOff.getPublicLb()) {
             List<? extends Network> networks = getVpcNetworks(vpc.getId());
             for (Network network : networks) {
                 if (networkId != null && network.getId() == networkId.longValue()) {
                     //skip my own network
                     continue;
                 } else {
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
-                        throw new InvalidParameterValueException("LB service is already supported " +
+                    NetworkOffering otherOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb()) {
+                        throw new InvalidParameterValueException("Public LB service is already supported " +
                         		"by network " + network + " in VPC " + vpc);
                     }
                 }
@@ -1084,6 +1110,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (guestNtwkOff.isConserveMode()) {
             throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
         }
+
+       //5) If Netscaler is LB provider make sure it is in dedicated mode
+        if ( providers.contains(Provider.Netscaler)  && !guestNtwkOff.getDedicatedLB() ) {
+            throw new InvalidParameterValueException("Netscaler only with Dedicated LB can belong to VPC");
+        }
+        return ;
     }
 
     @DB
@@ -1204,14 +1236,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         //4) Delete private gateway
-        PrivateGateway gateway = getVpcPrivateGateway(vpcId);
-        if (gateway != null) {
-            s_logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
-            if (!deleteVpcPrivateGateway(gateway.getId())) {
-                success = false;
-                s_logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
-            } else {
-                s_logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+        List<PrivateGateway> gateways = getVpcPrivateGateways(vpcId);
+        if (gateways != null) {
+            for (PrivateGateway gateway: gateways) {
+                if (gateway != null) {
+                    s_logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    if (!deleteVpcPrivateGateway(gateway.getId())) {
+                        success = false;
+                        s_logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    } else {
+                        s_logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    }
+                }
             }
         }
         
@@ -1261,7 +1297,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }  
     }
     
-    
+
+    @Override
+    public List<PrivateGateway> getVpcPrivateGateways(long id) {
+        List<VpcGatewayVO> gateways = _vpcGatewayDao.listByVpcIdAndType(id, VpcGateway.Type.Private);
+
+        if (gateways != null) {
+            List<PrivateGateway> pvtGateway = new ArrayList();
+            for (VpcGatewayVO gateway: gateways) {
+                pvtGateway.add(getPrivateGatewayProfile(gateway));
+            }
+            return pvtGateway;
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public PrivateGateway getVpcPrivateGateway(long id) {
         VpcGateway gateway = _vpcGatewayDao.findById(id);
@@ -1286,7 +1337,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating vpc private gateway", create=true)
     public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress,
-                                                  String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat) throws ResourceAllocationException,
+           String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat, Long aclId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
         
         //Validate parameters
@@ -1313,10 +1364,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
         Network privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
                 vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat);
-        
+
+        long networkAclId = NetworkACL.DEFAULT_DENY;
+        if (aclId != null) {
+            if ( _networkAclDao.findById(aclId) == null) {
+                throw new InvalidParameterValueException("Invalid network acl id passed ");
+            }
+            networkAclId = aclId;
+        }
+
         //2) create gateway entry
         VpcGatewayVO gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
-                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat);
+                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat, networkAclId);
         _vpcGatewayDao.persist(gatewayVO);
         
         s_logger.debug("Created vpc gateway entry " + gatewayVO);
@@ -1938,9 +1997,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     
     @DB
     @Override
-    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, 
-            String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) 
+    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway,
+                                         String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
+                                         PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller, Boolean isDisplayNetworkEnabled)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         Vpc vpc = getActiveVpc(vpcId);
@@ -1964,9 +2023,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         validateNtwkOffForNtwkInVpc(null, ntwkOffId, cidr, networkDomain, vpc, gateway, owner);
 
         //2) Create network
-        Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
-                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null);
+        Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId,
+                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled);
 
+
+        if(guestNetwork != null){
+            guestNetwork.setNetworkACLId(aclId);
+            _ntwkDao.update(guestNetwork.getId(), (NetworkVO)guestNetwork);
+        }
         return guestNetwork;
     }
     

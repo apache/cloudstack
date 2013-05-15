@@ -143,12 +143,6 @@ public class SnapshotCommandTest {
     }
 
     @Test
-    public void testGetPrimaryStoragePoolNameLabel() {
-        String label = ssc.getPrimaryStoragePoolNameLabel();
-        assertTrue(label.equals("bed9f83e-cac3-11e1-ac8a-0050568b007e"));
-    }
-
-    @Test
     public void testGetSecondaryStorageUrl() {
         String url = ssc.getSecondaryStorageUrl();
         assertTrue(url.equals("http://secondary.Storage.Url"));

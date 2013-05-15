@@ -91,28 +91,28 @@ class Services:
 
 
 class TestVPNUsers(cloudstackTestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.api_client = super(TestVPNUsers,
-                               cls).getClsTestClient().getApiClient()
+            cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-   cls.services["mode"] = cls.zone.networktype
 
-   cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+        cls.services["mode"] = cls.zone.networktype
+
+        cls.template = get_template(
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.services["service_offering"]
+        )
 
         cls._cleanup = [cls.service_offering, ]
         return

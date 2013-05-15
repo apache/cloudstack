@@ -198,6 +198,7 @@
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp"/>
+          <ref bean="InternalLbVm"/>
       </list>
     </property>
   </bean>
@@ -241,6 +242,7 @@
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp" />
           <ref bean="MidoNetElement"/>
+          <ref bean="InternalLbVm"/>
 <!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>

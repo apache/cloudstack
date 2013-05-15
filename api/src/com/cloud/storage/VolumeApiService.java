@@ -18,12 +18,7 @@
  */
 package com.cloud.storage;
 
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.*;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -85,4 +80,5 @@ public interface VolumeApiService {
 	
 	Snapshot allocSnapshot(Long volumeId, Long policyId)
             throws ResourceAllocationException;
+    Volume updateVolume(UpdateVolumeCmd updateVolumeCmd);
 }
