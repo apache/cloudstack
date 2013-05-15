@@ -505,7 +505,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     StoragePool p = conn.storagePoolLookupByName(poolname);
                     LibvirtStoragePoolDef pdef = getStoragePoolDef(conn, p);
 
-                    if (pdef.getTargetPath().equals(path)) {
+                    String targetPath = pdef.getTargetPath();
+                    if (targetPath != null && targetPath.equals(path)) {
                         s_logger.debug("Storage pool utilizing path '" + path + "' already exists as pool "
                                        + poolname + ", undefining so we can re-define with correct name " + name);
                         if (p.isPersistent() == 1) {
