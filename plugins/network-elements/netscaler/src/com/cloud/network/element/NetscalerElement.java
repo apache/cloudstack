@@ -240,7 +240,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return false;
         }
         
-        if (canHandleLbRules(rules)) {
+        if (!canHandleLbRules(rules)) {
             return false;
         }
 
