@@ -8599,7 +8599,7 @@
                          url:createURL("dedicatePod&podId=" +podId +"&domainId=" +args.data.domainId + array2.join("")),
                          dataType:"json",
                          success:function(json){
-                             var dedicatedObj = json.dedicatepodresponse.host;
+                             var dedicatedObj = json.dedicatepodresponse.pod;
                              args.response.success({ data: $.extend(item, dedicatedObj)});
 
                          },
@@ -10354,21 +10354,48 @@
 										});									
                   }
                 }
-
+             
+                var hostId = null;
                 $.ajax({
                   url: createURL("addHost"),
                   type: "POST",
 									data: data,
                   success: function(json) {
                     var item = json.addhostresponse.host[0];
-                    args.response.success({
+                    hostId = json.addhostresponse.host[0].id;
+
+               /*     args.response.success({
                       data: item
                     });
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                     args.response.error(errorMsg);
-                  }
+                  }*/
+
+                       //EXPLICIT DEDICATION
+                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+                    }
+
+                    if(hostId != null){
+                      $.ajax({
+                         url:createURL("dedicateHost&hostId=" +hostId +"&domainId=" +args.data.domainId + array2.join("")),
+                         dataType:"json",
+                         success:function(json){
+                             var dedicatedObj = json.dedicatehostresponse.host;
+                             args.response.success({  data: $.extend(item, dedicatedObj) });
+
+                         },
+
+                         error:function(json){
+                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                         }
+                       });
+                   }
+                 }
                 });
               },
 
