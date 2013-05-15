@@ -110,6 +110,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
         Answer answer = null;
         if (data.getObjectType() == DataObjectType.VOLUME) {
             answer = processor.deleteVolume(cmd);
+        } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
+        	answer = processor.deleteSnapshot(cmd);
         } else {
             answer = new Answer(cmd, false, "unsupported type");
         }

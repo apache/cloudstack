@@ -51,6 +51,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 @Component
 public class MockLocalNfsSecondaryStorageResource extends
@@ -67,6 +68,8 @@ public class MockLocalNfsSecondaryStorageResource extends
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        
+        createTemplateFromSnapshotXenScript = Script.findScript(getDefaultScriptsDir(), "create_privatetemplate_from_snapshot_xen.sh");
 
         /*
         _storage = new JavaStorageLayer();

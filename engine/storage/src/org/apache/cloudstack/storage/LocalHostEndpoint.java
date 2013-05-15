@@ -36,7 +36,7 @@ import com.cloud.storage.download.DownloadListener;
 
 public class LocalHostEndpoint implements EndPoint {
 	private ScheduledExecutorService executor;
-	ServerResource resource;
+	protected ServerResource resource;
 	public LocalHostEndpoint() {
         resource = new LocalNfsSecondaryStorageResource();
 		executor = Executors.newScheduledThreadPool(10);

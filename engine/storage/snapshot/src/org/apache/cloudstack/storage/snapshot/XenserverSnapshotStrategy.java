@@ -139,7 +139,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 	        SnapshotInfo child = snapshot.getChild();
 	        SnapshotInfo parent = snapshot.getParent();
 	        if (child == null) {
-	            if (!parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
+	            if (parent == null || !parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
 	                this.snapshotSvr.deleteSnapshot(snapshot);
 	                snapshot = parent;
 	                continue;
@@ -178,9 +178,10 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         }
 		
 		try {
+			/*
 		    if (snapshotOnPrimary != null) {
 		        deleteSnapshotChain(snapshotOnPrimary);
-		    }
+		    }*/
 
 		    SnapshotInfo snapshotOnImage = this.snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
 		    if (snapshotOnImage != null) {

@@ -45,6 +45,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.template.DownloadManager;
@@ -161,7 +162,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltDir = "/var/cloudstack/template";
     final private String _tmpltpp = "template.properties";
-    private String createTemplateFromSnapshotXenScript;
+    protected String createTemplateFromSnapshotXenScript;
 
     @Override
     public void disconnected() {
@@ -223,7 +224,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
-
+    
     protected Answer copyFromS3ToNfs(CopyCommand cmd, DataTO srcData, S3TO s3, DataTO destData, NfsTO destImageStore) {
         final String storagePath = destImageStore.getUrl();
         final String destPath = destData.getPath();
@@ -353,7 +354,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             command.add("-s", snapshotName);
             command.add("-n", templateName);
             command.add("-t", destPath);
-            command.execute();
+            String result = command.execute();
+            
+            if (result != null && !result.equalsIgnoreCase("")) {
+            	return new CopyCmdAnswer(result);
+            }
 
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
@@ -1109,9 +1114,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private String deleteSnapshotBackupFromLocalFileSystem(final String secondaryStorageUrl, final Long accountId, final Long volumeId,
             final String name, final Boolean deleteAllFlag) {
-
-        final String lPath = determineSnapshotLocalDirectory(secondaryStorageUrl, accountId, volumeId) + File.pathSeparator
-                + (deleteAllFlag ? "*" : "*" + name + "*");
+    	 String lPath = null;
+    	 int index = name.lastIndexOf(File.separator);
+    	 String snapshotPath = name.substring(0, index);
+    	if (deleteAllFlag) {
+    		lPath = this.getRootDir(secondaryStorageUrl) + File.separator + snapshotPath + File.separator + "*";
+    	} else {
+    		lPath = this.getRootDir(secondaryStorageUrl) + File.separator + name + "*";
+    	}
 
         final String result = deleteLocalFile(lPath);
 

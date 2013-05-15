@@ -48,6 +48,7 @@ import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -101,8 +102,6 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     private S3Manager _s3Mgr;
     @Inject AccountDao _accountDao;
-    @Inject UserVmDao _userVmDao;
-    @Inject UserVmJoinDao _userVmJoinDao;
     @Inject
     SecondaryStorageVmManager _ssvmMgr;
     @Inject
@@ -280,45 +279,36 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
 
         UsageEventUtils.publishUsageEvent(eventType, account.getId(), sZoneId, templateId, null, null, null);
 
-        List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
-        // check if there is any VM using this ISO.
-        if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
-             // get installpath of this template on image store
-            TemplateDataStoreVO tmplStore = _templateStoreDao.findByStoreTemplate(storeId, templateId);
-            String installPath = tmplStore.getInstallPath();
-            if (installPath != null) {
-                DeleteTemplateCommand cmd = new DeleteTemplateCommand(store.getTO(), installPath, template.getId(), template.getAccountId());
-                EndPoint ep = _epSelector.select(templateObj);
-                Answer answer = ep.sendMessage(cmd);
+        // get installpath of this template on image store
+        TemplateDataStoreVO tmplStore = _templateStoreDao.findByStoreTemplate(storeId, templateId);
+        String installPath = tmplStore.getInstallPath();
+        if (installPath != null) {
+        	DeleteTemplateCommand cmd = new DeleteTemplateCommand(store.getTO(), installPath, template.getId(), template.getAccountId());
+        	EndPoint ep = _epSelector.select(templateObj);
+        	Answer answer = ep.sendMessage(cmd);
 
-                if (answer == null || !answer.getResult()) {
-                    s_logger.debug("Failed to deleted template at store: " + store.getName());
-                    CommandResult result = new CommandResult();
-                    result.setSuccess(false);
-                    result.setResult("Delete template failed");
-                    callback.complete(result);
+        	if (answer == null || !answer.getResult()) {
+        		s_logger.debug("Failed to deleted template at store: " + store.getName());
+        		CommandResult result = new CommandResult();
+        		result.setSuccess(false);
+        		result.setResult("Delete template failed");
+        		callback.complete(result);
 
-                } else {
-                    s_logger.debug("Deleted template at: " + installPath);
-                    CommandResult result = new CommandResult();
-                    result.setSuccess(true);
-                    callback.complete(result);
-                }
+        	} else {
+        		s_logger.debug("Deleted template at: " + installPath);
+        		CommandResult result = new CommandResult();
+        		result.setSuccess(true);
+        		callback.complete(result);
+        	}
 
-                List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, templateId);
-                if (templateZones != null) {
-                    for (VMTemplateZoneVO templateZone : templateZones) {
-                        templateZoneDao.remove(templateZone.getId());
-                    }
-                }
-             }
-        } else{
-            // cannot delete iso due to some VMs are using this
-            s_logger.debug("Cannot delete iso since some user vms are referencing it");
-            CommandResult result = new CommandResult();
-            result.setResult("Cannot delete iso since some user vms are referencing it");
-            callback.complete(result);
+        	List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, templateId);
+        	if (templateZones != null) {
+        		for (VMTemplateZoneVO templateZone : templateZones) {
+        			templateZoneDao.remove(templateZone.getId());
+        		}
+        	}
         }
+
 
     }
 
@@ -336,29 +326,17 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     	}
 
     	try {
-    		/*String secondaryStoragePoolUrl = secStore.getUri();
-    		Long dcId = snapshot.getDataCenterId();
-    		Long accountId = snapshot.getAccountId();
-    		Long volumeId = snapshot.getVolumeId();
-
-    		String backupOfSnapshot = snapshotObj;
-    		if (backupOfSnapshot == null) {
-    			callback.complete(result);
-    			return;
-    		}
+    		String secondaryStoragePoolUrl = secStore.getUri();
 
     		DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-    				secStore.getTO(), secondaryStoragePoolUrl, dcId, accountId, volumeId,
-    				backupOfSnapshot, false);
+    				secStore.getTO(), secondaryStoragePoolUrl, null, null, null,
+    				snapshotObj.getPath(), false);
     		EndPoint ep = _epSelector.select(secStore);
     		Answer answer = ep.sendMessage(cmd);
 
-    		if ((answer != null) && answer.getResult()) {
-    			snapshot.setBackupSnapshotId(null);
-    			snapshotDao.update(snapshotObj.getId(), snapshot);
-    		} else if (answer != null) {
+    		if (answer != null && !answer.getResult()) {
     			result.setResult(answer.getDetails());
-    		}*/
+    		}
     	} catch (Exception e) {
     		s_logger.debug("failed to delete snapshot: " + snapshotObj.getId() + ": " + e.toString());
     		result.setResult(e.toString());

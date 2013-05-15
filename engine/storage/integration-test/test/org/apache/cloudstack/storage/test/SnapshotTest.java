@@ -156,6 +156,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
     long primaryStoreId;
     VMTemplateVO image;
     String imageStoreName = "testImageStore";
+    RemoteHostEndPoint remoteEp;
     @Test(priority = -1)
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
@@ -250,6 +251,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         TemplateObjectTO to = new TemplateObjectTO();
         to.setPath(this.getImageInstallPath());
         to.setFormat(ImageFormat.VHD);
+        to.setSize(1000L);
         CopyCmdAnswer answer = new CopyCmdAnswer(to);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
         templateOnStore.processEvent(Event.OperationSuccessed, answer);
@@ -263,10 +265,10 @@ public class SnapshotTest extends CloudStackTestNGBase {
         hosts.add(this.host);
         Mockito.when(resourceMgr.listAllUpAndEnabledHosts((Type) Mockito.any(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(hosts);
 
-        RemoteHostEndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress());
-        Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(ep);
-        Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(ep);
-        Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
+        remoteEp = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress());
+        Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(remoteEp);
+        Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(remoteEp);
+        Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(remoteEp);
         Mockito.when(hyGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(this.host.getId());
         
     }
@@ -360,20 +362,35 @@ public class SnapshotTest extends CloudStackTestNGBase {
         return null;
     }
 
-    //@Test
+    @Test
     public void createSnapshot() {
         VolumeInfo vol = createCopyBaseImage();
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
+        SnapshotInfo newSnapshot = null;
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
             if (strategy.canHandle(snapshot)) {
-                strategy.takeSnapshot(snapshot);
+            	newSnapshot = strategy.takeSnapshot(snapshot);
             }
         }
+        AssertJUnit.assertNotNull(newSnapshot);
+        
+        LocalHostEndpoint ep = new MockLocalHostEndPoint();
+        ep.setResource(new MockLocalNfsSecondaryStorageResource());
+        Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
+        
+        //delete snapshot
+        for (SnapshotStrategy strategy : this.snapshotStrategies) {
+            if (strategy.canHandle(snapshot)) {
+            	strategy.deleteSnapshot(newSnapshot.getId());
+            }
+        }
+        
+        Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(remoteEp);
     }
 
     private VMTemplateVO createTemplateInDb() {
-        image = new VMTemplateVO();
+    	VMTemplateVO image = new VMTemplateVO();
         image.setTemplateType(TemplateType.USER);
 
         image.setUniqueName(UUID.randomUUID().toString());
@@ -393,8 +410,50 @@ public class SnapshotTest extends CloudStackTestNGBase {
         image = imageDataDao.persist(image);
         return image;
     }
+    
+    @Test
+    public void createVolumeFromSnapshot() {
+        VolumeInfo vol = createCopyBaseImage();
+        SnapshotVO snapshotVO = createSnapshotInDb(vol);
+        SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
+        boolean result = false;
+        for (SnapshotStrategy strategy : this.snapshotStrategies) {
+            if (strategy.canHandle(snapshot)) {
+                snapshot = strategy.takeSnapshot(snapshot);
+                result = true;
+            }
+        }
 
-    //@Test
+        AssertJUnit.assertTrue(result);
+
+        VolumeVO volVO = createVolume(vol.getTemplateId(), vol.getPoolId());
+        VolumeInfo newVol = this.volFactory.getVolume(volVO.getId());
+        this.volumeService.createVolumeFromSnapshot(newVol, newVol.getDataStore(), snapshot);
+    }
+    
+    @Test
+    public void deleteSnapshot() {
+    	VolumeInfo vol = createCopyBaseImage();
+        SnapshotVO snapshotVO = createSnapshotInDb(vol);
+        SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
+        SnapshotInfo newSnapshot = null;
+        for (SnapshotStrategy strategy : this.snapshotStrategies) {
+            if (strategy.canHandle(snapshot)) {
+            	newSnapshot = strategy.takeSnapshot(snapshot);
+            }
+        }
+        AssertJUnit.assertNotNull(newSnapshot);
+        
+        //create another snapshot
+        for (SnapshotStrategy strategy : this.snapshotStrategies) {
+            if (strategy.canHandle(snapshot)) {
+            	strategy.deleteSnapshot(newSnapshot.getId());
+            }
+        }
+        
+    }
+
+    @Test
     public void createTemplateFromSnapshot() {
         VolumeInfo vol = createCopyBaseImage();
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
@@ -417,23 +476,5 @@ public class SnapshotTest extends CloudStackTestNGBase {
         this.imageService.createTemplateFromSnapshotAsync(snapshot, tmpl, imageStore);
     }
     
-    @Test
-    public void createVolumeFromSnapshot() {
-        VolumeInfo vol = createCopyBaseImage();
-        SnapshotVO snapshotVO = createSnapshotInDb(vol);
-        SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
-        boolean result = false;
-        for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
-                snapshot = strategy.takeSnapshot(snapshot);
-                result = true;
-            }
-        }
-
-        AssertJUnit.assertTrue(result);
-
-        VolumeVO volVO = createVolume(vol.getTemplateId(), vol.getPoolId());
-        VolumeInfo newVol = this.volFactory.getVolume(volVO.getId());
-        this.volumeService.createVolumeFromSnapshot(newVol, newVol.getDataStore(), snapshot);
-    }
+   
 }

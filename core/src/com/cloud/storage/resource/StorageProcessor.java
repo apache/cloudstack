@@ -25,8 +25,6 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DiskTO;
 
 public interface StorageProcessor {
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd);
@@ -43,4 +41,5 @@ public interface StorageProcessor {
     public Answer createSnapshot(CreateObjectCommand cmd);
     public Answer deleteVolume(DeleteCommand cmd);
     public Answer createVolumeFromSnapshot(CopyCommand cmd);
+    public Answer deleteSnapshot(DeleteCommand cmd);
 }

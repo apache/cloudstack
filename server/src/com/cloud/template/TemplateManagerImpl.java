@@ -88,6 +88,8 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;
@@ -253,6 +255,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject VolumeManager _volumeMgr;
     @Inject ImageStoreDao _imageStoreDao;
     @Inject EndPointSelector _epSelector;
+    @Inject UserVmJoinDao _userVmJoinDao;
 
     @Inject
     ConfigurationServer _configServer;
@@ -1122,6 +1125,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     	if (template.getFormat() != ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid iso.");
     	}
+    	
+    	 List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
+         // check if there is any VM using this ISO.
+         if (!userVmUsingIso.isEmpty()) {
+        	 throw new InvalidParameterValueException("Unable to delete iso, as it's used by other vms");
+         }
 
     	if (zoneId != null && (this._dataStoreMgr.getImageStore(zoneId) == null)) {
     		throw new InvalidParameterValueException("Failed to find a secondary storage store in the specified zone.");

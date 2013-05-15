@@ -409,6 +409,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(templateFolder + File.separator + templateName + ".qcow2");
+            newTemplate.setSize(info.virtualSize);
+            newTemplate.setFormat(ImageFormat.QCOW2);
             return new CopyCmdAnswer(newTemplate);
         } catch (Exception e) {
            s_logger.debug("Failed to create template from volume: " + e.toString());
@@ -902,4 +904,8 @@ public class KVMStorageProcessor implements StorageProcessor {
     	}
     }
 
+	@Override
+	public Answer deleteSnapshot(DeleteCommand cmd) {
+		return new Answer(cmd);
+	}
 }

@@ -69,6 +69,7 @@ import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
@@ -579,6 +580,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 			TemplateObjectTO newTemplate = new TemplateObjectTO();
 			newTemplate.setPath(template.getName());
 			newTemplate.setFormat(ImageFormat.OVA);
+			newTemplate.setSize(result.third());
 			return new CopyCmdAnswer(newTemplate);
 
 		} catch (Throwable e) {
@@ -1271,5 +1273,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
 			details = "CreateVolumeFromSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
 		}
 		return new CopyCmdAnswer(details);
+	}
+
+	@Override
+	public Answer deleteSnapshot(DeleteCommand cmd) {
+		SnapshotObjectTO snapshot = (SnapshotObjectTO)cmd.getData();
+		DataStoreTO store = snapshot.getDataStore();
+		if (store.getRole() == DataStoreRole.Primary) {
+			return new Answer(cmd);
+		} else {
+			return new Answer(cmd, false, "unsupported command");
+		}
 	}
 }

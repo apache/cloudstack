@@ -299,6 +299,9 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 		try {
 			SnapshotResult res = future.get();
+			if (res.isFailed()) {
+				throw new CloudRuntimeException(res.getResult());
+			}
 			SnapshotInfo destSnapshot = res.getSnashot();
 			return destSnapshot;
 		} catch (InterruptedException e) {
@@ -319,6 +322,12 @@ public class SnapshotServiceImpl implements SnapshotService {
 		AsyncCallFuture<SnapshotResult> future = context.future;
 		SnapshotResult snapResult = new SnapshotResult(destSnapshot, result.getAnswer());
 		if (result.isFailed()) {
+			try {
+				destSnapshot.processEvent(Event.OperationFailed);
+				srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
+			} catch (NoTransitionException e) {
+				s_logger.debug("Failed to update state: " + e.toString());
+			}
 			snapResult.setResult(result.getResult());
 			future.complete(snapResult);
 			return null;
@@ -397,7 +406,33 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 	@Override
 	public boolean deleteSnapshot(SnapshotInfo snapInfo) {
-		return true;
+		snapInfo.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
+
+		AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
+		DeleteSnapshotContext<CommandResult> context = new DeleteSnapshotContext<CommandResult>(null,
+				snapInfo, future);
+		AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller = AsyncCallbackDispatcher
+				.create(this);
+		caller.setCallback(
+				caller.getTarget().deleteSnapshotCallback(null, null))
+				.setContext(context);
+		DataStore store = snapInfo.getDataStore();
+		store.getDriver().deleteAsync(snapInfo, caller);
+
+		SnapshotResult result = null;
+		try {
+			result = future.get();
+			if (result.isFailed()) {
+				throw new CloudRuntimeException(result.getResult());
+			}
+			return true;
+		} catch (InterruptedException e) {
+			s_logger.debug("delete snapshot is failed: " + e.toString());
+		} catch (ExecutionException e) {
+			s_logger.debug("delete snapshot is failed: " + e.toString());
+		}
+		
+		return false;
 
 	}
 

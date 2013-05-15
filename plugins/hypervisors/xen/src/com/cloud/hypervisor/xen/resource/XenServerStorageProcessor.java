@@ -66,6 +66,7 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.resource.StorageProcessor;
@@ -1389,6 +1390,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             TemplateObjectTO newTemplate = new TemplateObjectTO();
             newTemplate.setPath(installPath);
             newTemplate.setFormat(ImageFormat.VHD);
+            newTemplate.setSize(virtualSize);
             CopyCmdAnswer answer = new CopyCmdAnswer(newTemplate);
             return answer;
         } catch (Exception e) {
@@ -1469,5 +1471,33 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
 		// In all cases return something.
 		return new CopyCmdAnswer(details);
+	}
+
+	@Override
+	public Answer deleteSnapshot(DeleteCommand cmd) {
+		SnapshotObjectTO snapshot = (SnapshotObjectTO)cmd.getData();
+		DataStoreTO store = snapshot.getDataStore();
+		if (store.getRole() == DataStoreRole.Primary) {
+			Connection conn = this.hypervisorResource.getConnection();
+			VDI snapshotVdi = getVDIbyUuid(conn, snapshot.getPath()); 
+			if (snapshotVdi == null) {
+				return new Answer(null);
+			}
+			String errMsg = null;
+			try {
+				this.deleteVDI(conn, snapshotVdi);
+			} catch (BadServerResponse e) {
+				s_logger.debug("delete snapshot failed:" + e.toString());
+				errMsg = e.toString();
+			} catch (XenAPIException e) {
+				s_logger.debug("delete snapshot failed:" + e.toString());
+				errMsg = e.toString();
+			} catch (XmlRpcException e) {
+				s_logger.debug("delete snapshot failed:" + e.toString());
+				errMsg = e.toString();
+			}
+			return new Answer(cmd, false, errMsg);
+		}
+		return new Answer(cmd, false, "unsupported storage type");
 	}
 }
