@@ -26,8 +26,9 @@ public class DettachAnswer extends Answer {
     public DettachAnswer() {
         super(null);
     }
-    
+
     public DettachAnswer(DiskTO disk) {
+        super(null);
         this.setDisk(disk);
     }
     public DettachAnswer(String errMsg) {
