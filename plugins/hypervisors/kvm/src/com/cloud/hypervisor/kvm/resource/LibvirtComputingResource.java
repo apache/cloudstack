@@ -3146,6 +3146,8 @@ ServerResource {
         if (vmTO.getOs().startsWith("Windows")) {
             clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
             clock.setTimer("rtc", "catchup", null);
+        } else if (vmTO.getType() != VirtualMachine.Type.User) {
+            clock.setTimer("kvmclock", "catchup", null);
         }
 
         vm.addComp(clock);
