@@ -2525,7 +2525,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
         VMTemplateVO template = null;
 
-        // verify templateId parameter
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, startIndex, pageSize);
+        SearchCriteria<TemplateJoinVO> sc = _templateJoinDao.createSearchCriteria();
+
+        // verify templateId parameter and specially handle it
         if (templateId != null) {
             template = _templateDao.findById(templateId);
             if (template == null) {
@@ -2550,167 +2555,160 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 Account owner = _accountMgr.getAccount(template.getAccountId());
                 _accountMgr.checkAccess(caller, null, true, owner);
             }
-        }
 
-        DomainVO domain = null;
-        if (!permittedAccounts.isEmpty()) {
-            domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
+            // if templateId is specified, then we will just use the id to
+            // search and ignore other query parameters
+            sc.addAnd("id", SearchCriteria.Op.EQ, templateId);
         } else {
-            domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
-        }
 
-        List<HypervisorType> hypers = null;
-        if (!isIso) {
-            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
-        }
+            DomainVO domain = null;
+            if (!permittedAccounts.isEmpty()) {
+                domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
+            } else {
+                domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
+            }
 
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? true : isAscending);
-        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, startIndex, pageSize);
-        SearchCriteria<TemplateJoinVO> sc = _templateJoinDao.createSearchCriteria();
+            List<HypervisorType> hypers = null;
+            if (!isIso) {
+                hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
+            }
 
-        // add criteria for project or not
-        if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
-            sc.addAnd("accountType", SearchCriteria.Op.NEQ, Account.ACCOUNT_TYPE_PROJECT);
-        } else if (listProjectResourcesCriteria == ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-            sc.addAnd("accountType", SearchCriteria.Op.EQ, Account.ACCOUNT_TYPE_PROJECT);
-        }
+            // add criteria for project or not
+            if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+                sc.addAnd("accountType", SearchCriteria.Op.NEQ, Account.ACCOUNT_TYPE_PROJECT);
+            } else if (listProjectResourcesCriteria == ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+                sc.addAnd("accountType", SearchCriteria.Op.EQ, Account.ACCOUNT_TYPE_PROJECT);
+            }
 
-        // add criteria for domain path in case of domain admin
-        if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable)
-                && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
-            sc.addAnd("domainPath", SearchCriteria.Op.LIKE, domain.getPath() + "%");
-        }
+            // add criteria for domain path in case of domain admin
+            if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable)
+                    && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
+                sc.addAnd("domainPath", SearchCriteria.Op.LIKE, domain.getPath() + "%");
+            }
 
-        List<Long> relatedDomainIds = new ArrayList<Long>();
-        List<Long> permittedAccountIds = new ArrayList<Long>();
-        if (!permittedAccounts.isEmpty()) {
-            for (Account account : permittedAccounts) {
-                permittedAccountIds.add(account.getId());
-                DomainVO accountDomain = _domainDao.findById(account.getDomainId());
+            List<Long> relatedDomainIds = new ArrayList<Long>();
+            List<Long> permittedAccountIds = new ArrayList<Long>();
+            if (!permittedAccounts.isEmpty()) {
+                for (Account account : permittedAccounts) {
+                    permittedAccountIds.add(account.getId());
+                    DomainVO accountDomain = _domainDao.findById(account.getDomainId());
 
-                // get all parent domain ID's all the way till root domain
-                DomainVO domainTreeNode = accountDomain;
-                relatedDomainIds.add(domainTreeNode.getId());
-                while (domainTreeNode.getParent() != null) {
-                    domainTreeNode = _domainDao.findById(domainTreeNode.getParent());
+                    // get all parent domain ID's all the way till root domain
+                    DomainVO domainTreeNode = accountDomain;
                     relatedDomainIds.add(domainTreeNode.getId());
-                }
+                    while (domainTreeNode.getParent() != null) {
+                        domainTreeNode = _domainDao.findById(domainTreeNode.getParent());
+                        relatedDomainIds.add(domainTreeNode.getId());
+                    }
 
-                // get all child domain ID's
-                if (_accountMgr.isAdmin(account.getType())) {
-                    List<DomainVO> allChildDomains = _domainDao.findAllChildren(accountDomain.getPath(), accountDomain.getId());
-                    for (DomainVO childDomain : allChildDomains) {
-                        relatedDomainIds.add(childDomain.getId());
+                    // get all child domain ID's
+                    if (_accountMgr.isAdmin(account.getType())) {
+                        List<DomainVO> allChildDomains = _domainDao.findAllChildren(accountDomain.getPath(), accountDomain.getId());
+                        for (DomainVO childDomain : allChildDomains) {
+                            relatedDomainIds.add(childDomain.getId());
+                        }
                     }
                 }
             }
-        }
 
-        if (!isIso) {
-            // add hypervisor criteria for template case
-            if (hypers != null && !hypers.isEmpty()) {
-                String[] relatedHypers = new String[hypers.size()];
-                for (int i = 0; i < hypers.size(); i++) {
-                    relatedHypers[i] = hypers.get(i).toString();
+            if (!isIso) {
+                // add hypervisor criteria for template case
+                if (hypers != null && !hypers.isEmpty()) {
+                    String[] relatedHypers = new String[hypers.size()];
+                    for (int i = 0; i < hypers.size(); i++) {
+                        relatedHypers[i] = hypers.get(i).toString();
+                    }
+                    sc.addAnd("hypervisorType", SearchCriteria.Op.IN, relatedHypers);
                 }
-                sc.addAnd("hypervisorType", SearchCriteria.Op.IN, relatedHypers);
             }
-        }
 
-        // control different template filters
-        if (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community) {
-            sc.addAnd("publicTemplate", SearchCriteria.Op.EQ, true);
-            if (templateFilter == TemplateFilter.featured) {
-                sc.addAnd("featured", SearchCriteria.Op.EQ, true);
-            } else {
-                sc.addAnd("featured", SearchCriteria.Op.EQ, false);
-            }
-            if (!permittedAccounts.isEmpty()) {
-                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                scc.addOr("domainId", SearchCriteria.Op.IN, relatedDomainIds.toArray());
-                scc.addOr("domainId", SearchCriteria.Op.NULL);
-                sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
-
-                if (!_accountMgr.isAdmin(caller.getType())) {
-                    // for non-root users, we should only show featured and
-                    // community templates that they can see
+            // control different template filters
+            if (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community) {
+                sc.addAnd("publicTemplate", SearchCriteria.Op.EQ, true);
+                if (templateFilter == TemplateFilter.featured) {
+                    sc.addAnd("featured", SearchCriteria.Op.EQ, true);
+                } else {
+                    sc.addAnd("featured", SearchCriteria.Op.EQ, false);
+                }
+                if (!permittedAccounts.isEmpty()) {
+                    SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+                    scc.addOr("domainId", SearchCriteria.Op.IN, relatedDomainIds.toArray());
+                    scc.addOr("domainId", SearchCriteria.Op.NULL);
+                    sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+                }
+            } else if (templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) {
+                if (!permittedAccounts.isEmpty()) {
                     sc.addAnd("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
                 }
-            }
-        } else if (templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) {
-            if (!permittedAccounts.isEmpty()) {
-                sc.addAnd("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
-            }
-        } else if (templateFilter == TemplateFilter.sharedexecutable || templateFilter == TemplateFilter.shared) {
-            SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-            scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
-            scc.addOr("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
-            sc.addAnd("accountId", SearchCriteria.Op.SC, scc);
-        } else if (templateFilter == TemplateFilter.executable) {
-            SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-            scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
-            if (!permittedAccounts.isEmpty()) {
+            } else if (templateFilter == TemplateFilter.sharedexecutable || templateFilter == TemplateFilter.shared) {
+                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
                 scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
-            }
-            sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
-        }
-
-        // add tags criteria
-        if (tags != null && !tags.isEmpty()) {
-            SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-            int count = 0;
-            for (String key : tags.keySet()) {
-                SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
-                scTag.addAnd("tagKey", SearchCriteria.Op.EQ, key);
-                scTag.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
-                if (isIso) {
-                    scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.ISO);
-                } else {
-                    scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.Template);
+                scc.addOr("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
+                sc.addAnd("accountId", SearchCriteria.Op.SC, scc);
+            } else if (templateFilter == TemplateFilter.executable) {
+                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+                scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
+                if (!permittedAccounts.isEmpty()) {
+                    scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
                 }
-                scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
-                count++;
+                sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
             }
-            sc.addAnd("tagKey", SearchCriteria.Op.SC, scc);
-        }
 
-        // other criteria
-        if (templateId != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, templateId);
-        } else if (keyword != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-        } else if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.EQ, name);
-        }
+            // add tags criteria
+            if (tags != null && !tags.isEmpty()) {
+                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+                int count = 0;
+                for (String key : tags.keySet()) {
+                    SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
+                    scTag.addAnd("tagKey", SearchCriteria.Op.EQ, key);
+                    scTag.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
+                    if (isIso) {
+                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.ISO);
+                    } else {
+                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.Template);
+                    }
+                    scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
+                    count++;
+                }
+                sc.addAnd("tagKey", SearchCriteria.Op.SC, scc);
+            }
 
-        if (isIso) {
-            sc.addAnd("format", SearchCriteria.Op.EQ, "ISO");
+            // other criteria
 
-        } else {
-            sc.addAnd("format", SearchCriteria.Op.NEQ, "ISO");
-        }
+            if (keyword != null) {
+                sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            } else if (name != null) {
+                sc.addAnd("name", SearchCriteria.Op.EQ, name);
+            }
 
-        if (!hyperType.equals(HypervisorType.None)) {
-            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
-        }
+            if (isIso) {
+                sc.addAnd("format", SearchCriteria.Op.EQ, "ISO");
 
-        if (bootable != null) {
-            sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
-        }
+            } else {
+                sc.addAnd("format", SearchCriteria.Op.NEQ, "ISO");
+            }
 
-        if (onlyReady) {
-            sc.addAnd("downloadState", SearchCriteria.Op.EQ, Status.DOWNLOADED);
-            sc.addAnd("destroyed", SearchCriteria.Op.EQ, false);
-        }
+            if (!hyperType.equals(HypervisorType.None)) {
+                sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
+            }
 
-        if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
-        }
+            if (bootable != null) {
+                sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
+            }
 
-        if (!showDomr) {
-            // excluding system template
-            sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
+            if (onlyReady) {
+                sc.addAnd("downloadState", SearchCriteria.Op.EQ, Status.DOWNLOADED);
+                sc.addAnd("destroyed", SearchCriteria.Op.EQ, false);
+            }
+
+            if (zoneId != null) {
+                sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            }
+
+            if (!showDomr) {
+                // excluding system template
+                sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
+            }
         }
 
         // don't return removed template, this should not be needed since we
