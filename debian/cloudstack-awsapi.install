@@ -16,3 +16,7 @@
 # under the License.
 
 /var/log/cloudstack/awsapi
+/usr/share/cloudstack-bridge/*
+/usr/bin/cloudstack-aws-api-register
+/usr/bin/cloudstack-setup-bridge
+/usr/share/cloudstack-management/webapps7080/awsapi
