@@ -570,6 +570,16 @@
               });
             }
           },
+
+           accountId:{
+                     label:'Account',
+                     isHidden:true,
+                     dependsOn:'ispublic',
+                     //docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  },
+
           localstorageenabled: {
             label: 'label.local.storage.enabled',
             isBoolean: true,
@@ -1593,6 +1603,8 @@
 					
           if(args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
             array1.push("&domain=" + todb(args.data.zone.networkdomain));
+          
+          var dedicatedZoneid = null;
 
           $.ajax({
             url: createURL("createZone" + array1.join("")),
@@ -1604,6 +1616,33 @@
                   returnedZone: json.createzoneresponse.zone
                 })
               });
+
+               dedicatedZoneId = json.createzoneresponse.zone.id;
+                //EXPLICIT ZONE DEDICATION
+                if(args.data.pluginFrom == null && args.data.zone.ispublic == null){
+                      var array2 = [];
+                      if(args.data.zone.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.zone.accountId));
+
+                      if(dedicatedZoneId != null){
+                      $.ajax({
+                         url:createURL("dedicateZone&ZoneId=" +ZoneId +"&domain=" +args.data.zone.domain + array2.join("")),
+                         dataType:"json",
+                         success:function(json){
+                             var dedicatedObj = json.dedicatezoneresponse.zone;
+                             //args.response.success({ data: $.extend(item, dedicatedObj)});
+
+                         },
+
+                         error:function(json){
+
+                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                         }
+                       });
+
+                     }
+                    }
+
             },
             error: function(XMLHttpResponse) {
               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
