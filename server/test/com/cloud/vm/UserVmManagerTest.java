@@ -246,8 +246,8 @@ public class UserVmManagerTest {
 
     }
 
-    // Test scaleVm on incompatible HV.
-    //@Test(expected=InvalidParameterValueException.class)
+    // Test scaleVm on equal service offerings.
+    @Test(expected=InvalidParameterValueException.class)
     public void testScaleVMF2()  throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
@@ -261,14 +261,11 @@ public class UserVmManagerTest {
         serviceOfferingIdField.setAccessible(true);
         serviceOfferingIdField.set(cmd, 1L);
 
-        //UserContext.current().setEventDetails("Vm Id: "+getId());
-       // Account account = (Account) new AccountVO("testaccount", 1L, "networkdomain", (short) 0, 1);
-        //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
-       // UserContext.registerContext(1, account, null, true);
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
 
+        doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
         doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
 
@@ -285,8 +282,8 @@ public class UserVmManagerTest {
 
     }
 
-    // Test scaleVm for Stopped vm. Full positive test.
-    //@Test
+    // Test scaleVm for Stopped vm.
+    @Test(expected=InvalidParameterValueException.class)
     public void testScaleVMF3()  throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
@@ -316,10 +313,12 @@ public class UserVmManagerTest {
         when(_configMgr.getServiceOffering(1L)).thenReturn(so1);
 
         doReturn(VirtualMachine.State.Stopped).when(_vmInstance).getState();
+        when(_vmDao.findById(anyLong())).thenReturn(null);
+
 
         doReturn(true).when(_itMgr).upgradeVmDb(anyLong(),anyLong());
 
-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+        //when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
 
         _userVmMgr.upgradeVirtualMachine(cmd);
 
