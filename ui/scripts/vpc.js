@@ -59,21 +59,14 @@
              return  $.inArray(name,['protocolnumber']) > -1;
             });
 
-            if($(this).val() == 'protocolnumber' ){
+            if ($(this).val() == 'protocolnumber' ){
               $icmpFields.hide();
               $otherFields.hide();
-              $protocolFields.show();
-            }
-            else{
-              $protocolFields.hide();
-              $icmpFields.show();
-              $otherFields.show();
-            }
-
-            if ($(this).val() == 'icmp') {
+              $protocolFields.show().addClass('required');
+            } else if ($(this).val() == 'icmp') {
               $icmpFields.show();
               $icmpFields.attr('disabled', false);
-              $protocolFields.hide();
+              $protocolFields.hide().removeClass('required');
               $otherFields.attr('disabled', 'disabled');
               $otherFields.hide();
               $otherFields.parent().find('label.error').hide();
@@ -84,7 +77,7 @@
               $icmpFields.attr('disabled', 'disabled');
               $icmpFields.hide();
               $icmpFields.parent().find('label.error').hide();
-              $protocolFields.hide();
+              $protocolFields.hide().removeClass('required');
             }
           });
 
@@ -98,6 +91,8 @@
 
             ]
           });
+
+          setTimeout(function() { args.$select.trigger('change'); }, 100);
         }
       },
 
