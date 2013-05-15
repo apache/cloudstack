@@ -20,6 +20,7 @@ import urllib
 import base64
 import hmac
 import hashlib
+import logging
 import time
 import cloudstackException
 from cloudstackAPI import *
@@ -37,6 +38,7 @@ class cloudConnection(object):
                  apiKey=None, securityKey=None,
                  asyncTimeout=3600, logging=None, scheme='http',
                  path='client/api'):
+        self.loglevel() #Turn off requests logs
         self.apiKey = apiKey
         self.securityKey = securityKey
         self.mgtSvr = mgtSvr
@@ -64,6 +66,13 @@ class cloudConnection(object):
                                self.apiKey, self.securityKey,
                                self.asyncTimeout, self.logging, self.protocol,
                                self.path)
+
+    def loglevel(self, lvl=logging.WARNING):
+        """
+        Turns off the INFO/DEBUG logs from `requests`
+        """
+        requests_log = logging.getLogger("requests")
+        requests_log.setLevel(lvl)
 
     def poll(self, jobid, response):
         """
