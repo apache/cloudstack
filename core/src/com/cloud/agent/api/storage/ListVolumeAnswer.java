@@ -26,7 +26,7 @@ public class ListVolumeAnswer extends Answer {
     private Map<Long, TemplateProp> templateInfos;
 
 	public ListVolumeAnswer() {
-
+	    super();
 	}
 
 	public ListVolumeAnswer(String secUrl, Map<Long, TemplateProp> templateInfos) {

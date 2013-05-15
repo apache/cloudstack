@@ -26,7 +26,7 @@ public class ListTemplateAnswer extends Answer  {
     private Map<String, TemplateProp> templateInfos;
 
 	public ListTemplateAnswer() {
-
+	    super();
 	}
 
 	public ListTemplateAnswer(String secUrl, Map<String, TemplateProp> templateInfos) {

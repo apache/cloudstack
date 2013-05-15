@@ -21,7 +21,9 @@ import com.cloud.agent.api.Command;
 
 public class UpgradeDiskAnswer extends Answer {
 
-    public UpgradeDiskAnswer() {}
+    public UpgradeDiskAnswer() {
+        super();
+    }
 
     public UpgradeDiskAnswer(Command cmd, boolean success, String details) {
         super(cmd, success, details);

@@ -22,7 +22,7 @@ public class ResizeVolumeAnswer extends Answer {
     private long newSize;
 
     protected ResizeVolumeAnswer() {
-
+        super();
     }
 
     public ResizeVolumeAnswer(ResizeVolumeCommand cmd, boolean result, String details, long newSize) {

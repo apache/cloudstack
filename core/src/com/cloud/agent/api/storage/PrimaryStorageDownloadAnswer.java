@@ -23,6 +23,7 @@ public class PrimaryStorageDownloadAnswer extends Answer  {
     private long templateSize = 0L;
 
 	protected PrimaryStorageDownloadAnswer() {
+	    super();
 	}
 
     public PrimaryStorageDownloadAnswer(String detail) {

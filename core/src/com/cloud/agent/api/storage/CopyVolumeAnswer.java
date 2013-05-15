@@ -24,6 +24,7 @@ public class CopyVolumeAnswer extends Answer {
 	private String volumePath;
 
 	protected CopyVolumeAnswer() {
+	    super();
     }
 
 	public CopyVolumeAnswer(Command command, boolean success, String details, String volumeFolder, String volumePath) {
