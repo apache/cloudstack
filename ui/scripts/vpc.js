@@ -457,7 +457,7 @@
                       }
                     },
                     dataProvider: function(args) {
-                      args.respons.success({ data: [] });
+                      args.response.success({ data: [] });
                     }
                   });
 
