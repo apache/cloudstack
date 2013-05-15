@@ -83,6 +83,7 @@ import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -614,6 +615,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((NetworkRulesVmSecondaryIpCommand)cmd);
         } else if (clazz == ScaleVmCommand.class) {
             return execute((ScaleVmCommand) cmd);
+        } else if (clazz == PvlanSetupCommand.class) {
+            return execute((PvlanSetupCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1030,6 +1033,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } else if (nic.getBroadcastType() == BroadcastDomainType.Lswitch) {
             // Nicira Logical Switch
             return network.getNetwork();
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Pvlan) {
+            URI broadcastUri = nic.getBroadcastUri();
+            assert broadcastUri.getScheme().equals(BroadcastDomainType.Pvlan.scheme());
+            long vlan = Long.parseLong(NetUtils.getPrimaryPvlanFromUri(broadcastUri));
+            return enableVlanNetwork(conn, vlan, network);
         }
 
         throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());
@@ -1065,7 +1073,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vifr = vif.getRecord(conn);
             s_logger.debug("Created a vif " + vifr.uuid + " on " + nic.getDeviceId());
         }
-
+        
         return vif;
     }
 
@@ -1475,6 +1483,55 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.warn("Destroy temp dom0 vif " + vifName + "failed", e);
             }
         }
+    }
+    
+    private Answer execute(PvlanSetupCommand cmd) {
+    	Connection conn = getConnection();
+    	
+    	String primaryPvlan = cmd.getPrimary();
+    	String isolatedPvlan = cmd.getIsolated();
+    	String op = cmd.getOp();
+    	String dhcpName = cmd.getDhcpName();
+    	String dhcpMac = cmd.getDhcpMac();
+    	String dhcpIp = cmd.getDhcpIp();
+    	String vmMac = cmd.getVmMac();
+    	String networkTag = cmd.getNetworkTag();
+    	
+    	XsLocalNetwork nw = null;
+    	String nwNameLabel = null;
+    	try {
+			nw = getNativeNetworkForTraffic(conn, TrafficType.Guest, networkTag);
+			nwNameLabel = nw.getNetwork().getNameLabel(conn);
+		} catch (XenAPIException e) {
+			s_logger.warn("Fail to get network", e);
+    		return new Answer(cmd, false, e.toString());
+		} catch (XmlRpcException e) {
+			s_logger.warn("Fail to get network", e);
+    		return new Answer(cmd, false, e.toString());
+		}
+    	
+    	String result = null;
+    	if (cmd.getType() == PvlanSetupCommand.Type.DHCP) {
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "nw-label", nwNameLabel,
+    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "dhcp-name", dhcpName,
+    				"dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac);
+    		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+    			s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
+    			return new Answer(cmd, false, result);
+    		} else {
+    			s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
+    		}
+    	} else if (cmd.getType() == PvlanSetupCommand.Type.VM) {
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm", "op", op, "nw-label", nwNameLabel,
+    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "vm-mac", vmMac);
+    		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+    			s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
+    			return new Answer(cmd, false, result);
+    		} else {
+    			s_logger.info("Programmed pvlan for vm with mac " + vmMac);
+    		}
+    	}
+    	return new Answer(cmd, true, result);
     }
 
     @Override
