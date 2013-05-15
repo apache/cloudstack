@@ -711,8 +711,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public boolean destroyVpc(Vpc vpc, Account caller, Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Destroying vpc " + vpc);
         
-        //don't allow to delete vpc if it's in use by existing networks
-        int networksCount = _ntwkDao.getNetworkCountByVpcId(vpc.getId());
+        //don't allow to delete vpc if it's in use by existing non system networks (system networks are networks of a private gateway of the VPC,
+        //and they will get removed as a part of VPC cleanup
+        int networksCount = _ntwkDao.getNonSystemNetworkCountByVpcId(vpc.getId());
         if (networksCount > 0) {
             throw new InvalidParameterValueException("Can't delete VPC " + vpc + " as its used by " + networksCount + " networks");
         }
@@ -1235,7 +1236,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return false;
         }
 
-        //4) Delete private gateway
+        //4) Delete private gateways
         List<PrivateGateway> gateways = getVpcPrivateGateways(vpcId);
         if (gateways != null) {
             for (PrivateGateway gateway: gateways) {
@@ -1299,8 +1300,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     
 
     @Override
-    public List<PrivateGateway> getVpcPrivateGateways(long id) {
-        List<VpcGatewayVO> gateways = _vpcGatewayDao.listByVpcIdAndType(id, VpcGateway.Type.Private);
+    public List<PrivateGateway> getVpcPrivateGateways(long vpcId) {
+        List<VpcGatewayVO> gateways = _vpcGatewayDao.listByVpcIdAndType(vpcId, VpcGateway.Type.Private);
 
         if (gateways != null) {
             List<PrivateGateway> pvtGateway = new ArrayList();

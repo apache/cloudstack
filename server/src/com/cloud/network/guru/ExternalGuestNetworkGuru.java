@@ -83,7 +83,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         if (networkType == NetworkType.Advanced
                 && isMyTrafficType(offering.getTrafficType())
                 && offering.getGuestType() == Network.GuestType.Isolated
-                && isMyIsolationMethod(physicalNetwork)) {
+                && isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   "

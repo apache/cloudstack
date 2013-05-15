@@ -74,6 +74,7 @@ public class Upgrade410to420 implements DbUpgrade {
         upgradePhysicalNtwksWithInternalLbProvider(conn);
         updateNetworkACLs(conn);
         addHostDetailsIndex(conn);
+        updateNetworksForPrivateGateways(conn);
     }
 
     private void updateSystemVmTemplates(Connection conn) {
@@ -564,7 +565,6 @@ public class Upgrade410to420 implements DbUpgrade {
 
 
     private void upgradeDefaultVpcOffering(Connection conn) {
-
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
@@ -676,6 +676,31 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             } catch (SQLException e) {
             }
+        }
+    }
+    
+    
+    private void updateNetworksForPrivateGateways(Connection conn) {
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            //1) get all non removed gateways
+            pstmt = conn.prepareStatement("SELECT network_id, vpc_id FROM `cloud`.`vpc_gateways` WHERE type='Private' AND removed IS null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Long networkId = rs.getLong(1);
+                Long vpcId = rs.getLong(2);
+                //2) Update networks with vpc_id if its set to NULL
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` set vpc_id=? where id=? and vpc_id is NULL and removed is NULL");
+                pstmt.setLong(1, vpcId);
+                pstmt.setLong(2, networkId);
+                pstmt.executeUpdate();
+                
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to update private networks with VPC id.", e);
         }
     }
 }

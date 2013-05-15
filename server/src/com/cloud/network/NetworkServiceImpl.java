@@ -3813,7 +3813,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (privateNetwork == null) {
             //create Guest network
             privateNetwork = _networkMgr.createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, vlan,
-                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null, null, null, true);
+                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, vpcId, null, null, true);
 
             s_logger.debug("Created private network " + privateNetwork);
         } else {
