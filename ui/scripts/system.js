@@ -9430,21 +9430,47 @@
                   clusterName = hostname + "/" + dcName + "/" + clusterName; //override clusterName
                 }
                 array1.push("&clustername=" + todb(clusterName));
-
+                var clusterId = null;
                 $.ajax({
                   url: createURL("addCluster" + array1.join("")),
                   dataType: "json",
                   async: true,
                   success: function(json) {
                     var item = json.addclusterresponse.cluster[0];
-                    args.response.success({
+                    clusterId= json.addclusterresponse.cluster[0].id;
+                /*    args.response.success({
 										  data: $.extend(item, { state: 'Enabled' })
 										});
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                     args.response.error(errorMsg);
-                  }
+                  }*/
+                  
+                  //EXPLICIT DEDICATION
+                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+                    }
+
+                    if(hostId != null){
+                      $.ajax({
+                         url:createURL("dedicateCluster&clusterId=" +clusterId +"&domainId=" +args.data.domainId + array2.join("")),
+                         dataType:"json",
+                         success:function(json){
+                             var dedicatedObj = json.dedicateclusterresponse.cluster;
+                             args.response.success({  data: $.extend(item, dedicatedObj , {state:'Enabled'}) });
+
+                         },
+
+                         error:function(json){
+                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                         }
+                       });
+                   }
+                 }
+
                 });
               },
 
