@@ -383,6 +383,15 @@
             }
           }
         }
+      },
+      siteToSiteVPNs: function() {
+        return $.extend(true, {}, cloudStack.vpc.siteToSiteVPN, {
+          // siteToSiteVPN is multi-section so doesn't have an explicit
+          // 'listView' block
+          //
+          // -- use this as a flag for VPC chart to render as a list view
+          listView: true
+        });
       }
     },
     
