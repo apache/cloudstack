@@ -18,7 +18,6 @@ package com.cloud.event;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -58,7 +57,7 @@ public class EventControlsUnitTest extends TestCase{
         _mgmtServer._eventDao = _eventDao;
         _mgmtServer._accountMgr = _accountMgr;
         doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
-        when(_eventDao.listToArchiveOrDeleteEvents(anyList(), anyString(), any(Date.class), anyLong())).thenReturn(_events);
+        when(_eventDao.listToArchiveOrDeleteEvents(anyList(), anyString(), any(Date.class), anyList())).thenReturn(_events);
     }
 
     @After

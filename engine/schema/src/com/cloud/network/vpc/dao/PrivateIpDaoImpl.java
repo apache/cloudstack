@@ -114,7 +114,16 @@ public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implemen
         sc.setParameters("networkId", networkId);
         return findOneBy(sc);
     }
-    
+
+    @Override
+    public PrivateIpVO findByIpAndSourceNetworkIdAndVpcId(long networkId, String ip4Address, long vpcId) {
+        SearchCriteria<PrivateIpVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ip", ip4Address);
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("vpcId", vpcId);
+        return findOneBy(sc);
+    }
+
     @Override
     public PrivateIpVO findByIpAndVpcId(long vpcId, String ip4Address) {
         SearchCriteria<PrivateIpVO> sc = AllFieldsSearch.create();

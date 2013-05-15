@@ -49,4 +49,5 @@ public interface AccountDao extends GenericDao<AccountVO, Long> {
     //returns only non-removed account
     Account findActiveAccount(String accountName, Long domainId);
     Account findActiveNonProjectAccount(String accountName, Long domainId);
+    List<Long> getAccountIdsForDomains(List<Long> ids);
 }

@@ -83,7 +83,7 @@ public class NetworkACLServiceTest extends TestCase{
         createACLItemCmd = new CreateNetworkACLCmd(){
             @Override
             public Long getACLId(){
-                return 1L;
+                return 3L;
             }
 
             @Override

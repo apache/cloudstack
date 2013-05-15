@@ -102,8 +102,8 @@
       },
 
       'protocolnumber': {label:'Protocol Number',edit:true},
-      'startport': { edit: true, label: 'label.start.port' },
-      'endport': { edit: true, label: 'label.end.port' },
+      'startport': { edit: true, label: 'label.start.port', isOptional: true },
+      'endport': { edit: true, label: 'label.end.port', isOptional: true },
       'networkid': {
         label: 'Select Tier',
         select: function(args) {
@@ -173,7 +173,18 @@
         else
           delete args.data.protocolnumber;
 
+
        
+        if((args.data.protocol == 'tcp' || args.data.protocol == 'udp' || args.data.protocol == 'all') && (args.data.startport=="" || args.data.startport == undefined)){
+         cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
+          $(window).trigger('cloudStack.fullRefresh');
+        }
+        else if((args.data.protocol == 'tcp' || args.data.protocol == 'udp' || args.data.protocol == 'all')  && (args.data.endport=="" || args.data.endport == undefined)){
+         cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
+          $(window).trigger('cloudStack.fullRefresh');
+        }
+
+       else{       
         $.ajax({
           url: createURL('createNetworkACL'),
           data: $.extend(args.data, {
@@ -209,6 +220,7 @@
             args.response.error(parseXMLHttpResponse(data));
           }
         });
+      }
       }
     },
     actions: {

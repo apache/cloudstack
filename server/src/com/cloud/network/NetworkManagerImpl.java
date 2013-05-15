@@ -394,8 +394,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType,
                         addr.getSystem(), addr.getClass().getName(), addr.getUuid());
             }
-            // don't increment resource count for direct ip addresses
-            if (addr.getAssociatedWithNetworkId() != null) {
+            // don't increment resource count for direct and dedicated ip addresses
+            if (addr.getAssociatedWithNetworkId() != null && !isIpDedicated(addr)) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
             }
         }
@@ -640,10 +640,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 s_logger.debug("Associate IP address lock acquired");
             }
 
-            // Check that the maximum number of public IPs for the given
-            // accountId will not be exceeded
-            _resourceLimitMgr.checkResourceLimit(accountToLock, ResourceType.public_ip);
-
             txn.start();
 
             // If account has dedicated Public IP ranges, allocate IP from the dedicated range
@@ -668,6 +664,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
 
             if (!allocateFromDedicatedRange) {
+                // Check that the maximum number of public IPs for the given
+                // accountId will not be exceeded
+                _resourceLimitMgr.checkResourceLimit(accountToLock, ResourceType.public_ip);
+
                 List<VlanVO> nonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(zone.getId());
                 for (VlanVO nonDedicatedVlan : nonDedicatedVlans) {
                     nonDedicatedVlanDbIds.add(nonDedicatedVlan.getId());
@@ -2964,8 +2964,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (ip.getState() != State.Releasing) {
             txn.start();
 
-            // don't decrement resource count for direct ips
-            if (ip.getAssociatedWithNetworkId() != null) {
+            // don't decrement resource count for direct and dedicated ips
+            if (ip.getAssociatedWithNetworkId() != null && !isIpDedicated(ip)) {
                 _resourceLimitMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAllocatedToAccountId(), ResourceType.public_ip);
             }
 

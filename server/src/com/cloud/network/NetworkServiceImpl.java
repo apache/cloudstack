@@ -610,18 +610,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("Invalid network id is given");
         }
 
-        Network network = _networksDao.findById(networkId);
-        if (network == null) {
-            throw new InvalidParameterValueException("Invalid network id is given");
-        }
-        accountId = network.getAccountId();
-        domainId = network.getDomainId();
-
-        // Validate network offering
-        NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
-
-        // verify permissions
-        _accountMgr.checkAccess(ipOwner, null, true, network);
+        Account caller = UserContext.current().getCaller();
 
         //check whether the nic belongs to user vm.
         NicVO nicVO = _nicDao.findById(nicId);
@@ -632,6 +621,25 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (nicVO.getVmType() != VirtualMachine.Type.User) {
             throw new InvalidParameterValueException("The nic is not belongs to user vm");
         }
+
+        Nic nic = _nicDao.findById(nicId);
+        VirtualMachine vm = _userVmDao.findById(nicVO.getInstanceId());
+        if (vm == null) {
+            throw new InvalidParameterValueException("There is no vm with the nic");
+        }
+        // verify permissions
+        _accountMgr.checkAccess(ipOwner, null, true, vm);
+
+
+        Network network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Invalid network id is given");
+        }
+        accountId = network.getAccountId();
+        domainId = network.getDomainId();
+
+        // Validate network offering
+        NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         Long id = nicVO.getInstanceId();
@@ -649,14 +657,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Allocating guest ip for nic failed");
             }
         } else if (dc.getNetworkType() == NetworkType.Basic || ntwkOff.getGuestType()  == Network.GuestType.Shared) {
-            Account caller = UserContext.current().getCaller();
-            long callerUserId = UserContext.current().getCallerUserId();
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseNetwork, false, network);
             //handle the basic networks here
-            VirtualMachine vm = _userVmDao.findById(nicVO.getInstanceId());
-            if (vm == null) {
-                throw new InvalidParameterValueException("There is no vm with the nic");
-            }
             VMInstanceVO vmi = (VMInstanceVO)vm;
             Long podId = vmi.getPodIdToDeployIn();
             if (podId == null) {
@@ -718,6 +719,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("Unable to find ip address by id");
         }
 
+        VirtualMachine vm = _userVmDao.findById(secIpVO.getVmId());
+        if (vm == null) {
+            throw new InvalidParameterValueException("There is no vm with the nic");
+        }
+        // verify permissions
+        _accountMgr.checkAccess(caller, null, true, vm);
+
         Network network = _networksDao.findById(secIpVO.getNetworkId());
 
         if (network == null) {
@@ -726,9 +734,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
-
-        // verify permissions
-        _accountMgr.checkAccess(caller, null, true, network);
 
         Long nicId = secIpVO.getNicId();
         s_logger.debug("ip id = " + ipAddressId + " nic id = " + nicId);
@@ -3813,10 +3818,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             s_logger.debug("Created private network " + privateNetwork);
         } else {
             s_logger.debug("Private network already exists: " + privateNetwork);
+            throw new InvalidParameterValueException("Private network for the vlan: " + vlan + " and cidr  "+ cidr +"  already exists " +
+                    " in zone " + _configMgr.getZone(pNtwk.getDataCenterId()).getName());
         }
 
         //add entry to private_ip_address table
-        PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkId(privateNetwork.getId(), startIp);
+        PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkIdAndVpcId(privateNetwork.getId(), startIp, vpcId);
         if (privateIp != null) {
             throw new InvalidParameterValueException("Private ip address " + startIp + " already used for private gateway" +
                     " in zone " + _configMgr.getZone(pNtwk.getDataCenterId()).getName());

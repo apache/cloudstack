@@ -887,10 +887,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public boolean archiveEvents(ArchiveEventsCmd cmd) {
+        Account caller = UserContext.current().getCaller();
         List<Long> ids = cmd.getIds();
         boolean result =true;
+        List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), cmd.getEntityOwnerId());
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            permittedAccountIds.add(caller.getId());
+        } else {
+            DomainVO domain = _domainDao.findById(caller.getDomainId());
+            List<Long> permittedDomainIds = _domainDao.getDomainChildrenIds(domain.getPath());
+            permittedAccountIds = _accountDao.getAccountIdsForDomains(permittedDomainIds);
+        }
+
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
         _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
 
@@ -904,10 +914,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public boolean deleteEvents(DeleteEventsCmd cmd) {
+        Account caller = UserContext.current().getCaller();
         List<Long> ids = cmd.getIds();
         boolean result =true;
+        List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), cmd.getEntityOwnerId());
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            permittedAccountIds.add(caller.getId());
+        } else {
+            DomainVO domain = _domainDao.findById(caller.getDomainId());
+            List<Long> permittedDomainIds = _domainDao.getDomainChildrenIds(domain.getPath());
+            permittedAccountIds = _accountDao.getAccountIdsForDomains(permittedDomainIds);
+        }
+
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
         _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
 

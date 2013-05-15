@@ -2853,6 +2853,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan.getVlanType().toString(),
                         ip.getSystem(), ip.getClass().getName(), ip.getUuid());
             }
+            // increment resource count for dedicated public ip's
+            _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
         } else if (podId != null) {
             // This VLAN is pod-wide, so create a PodVlanMapVO entry
             PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
@@ -3124,6 +3126,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan.getVlanType().toString(),
                     ip.getSystem(), ip.getClass().getName(), ip.getUuid());
         }
+
+        // increment resource count for dedicated public ip's
+        _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
+
         return vlan;
     }
 
@@ -3187,10 +3193,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (_accountVlanMapDao.remove(acctVln.get(0).getId())) {
             // generate usage events to remove dedication for every ip in the range
             for (IPAddressVO ip : ips) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getId(),
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(),
                         ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan.getVlanType().toString(),
                         ip.getSystem(), ip.getClass().getName(), ip.getUuid());
             }
+            // decrement resource count for dedicated public ip's
+            _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(ips.size()));
             return true;
         } else {
             return false;

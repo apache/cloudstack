@@ -49,7 +49,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         ToArchiveOrDeleteEventSearch = createSearchBuilder();
         ToArchiveOrDeleteEventSearch.and("id", ToArchiveOrDeleteEventSearch.entity().getId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("type", ToArchiveOrDeleteEventSearch.entity().getType(), Op.EQ);
-        ToArchiveOrDeleteEventSearch.and("accountId", ToArchiveOrDeleteEventSearch.entity().getAccountId(), Op.EQ);
+        ToArchiveOrDeleteEventSearch.and("accountIds", ToArchiveOrDeleteEventSearch.entity().getAccountId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("createDateL", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LT);
         ToArchiveOrDeleteEventSearch.done();
     }
@@ -76,7 +76,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     }
 
     @Override
-    public List<EventVO> listToArchiveOrDeleteEvents(List<Long> ids, String type, Date olderThan, Long accountId) {
+    public List<EventVO> listToArchiveOrDeleteEvents(List<Long> ids, String type, Date olderThan, List<Long> accountIds) {
         SearchCriteria<EventVO> sc = ToArchiveOrDeleteEventSearch.create();
         if (ids != null) {
             sc.setParameters("id", ids.toArray(new Object[ids.size()]));
@@ -87,23 +87,24 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         if (olderThan != null) {
             sc.setParameters("createDateL", olderThan);
         }
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
+        if (accountIds != null && !accountIds.isEmpty()) {
+            sc.setParameters("accountIds", accountIds.toArray(new Object[accountIds.size()]));
         }
         return search(sc, null);
     }
 
     @Override
     public void archiveEvents(List<EventVO> events) {
-
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        for (EventVO event : events) {
-            event = lockRow(event.getId(), true);
-            event.setArchived(true);
-            update(event.getId(), event);
-            txn.commit();
+        if (events != null && !events.isEmpty()) {
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            for (EventVO event : events) {
+                event = lockRow(event.getId(), true);
+                event.setArchived(true);
+                update(event.getId(), event);
+                txn.commit();
+            }
+            txn.close();
         }
-        txn.close();
     }
 }
