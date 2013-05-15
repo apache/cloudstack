@@ -7925,6 +7925,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   width: 87px !important;
   min-width: 87px !important;
   max-width: 87px !important;
+  font-size: 10px;
 }
 
 /** Header fields*/
