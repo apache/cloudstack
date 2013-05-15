@@ -3957,6 +3957,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                 stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                             }
                             stats.setCurrentBytesSent(answer.getBytesSent());
+                            if (! _dailyOrHourly) {
+                                //update agg bytes
+                                stats.setAggBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
+                                stats.setAggBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
+                            }
                             _userStatsDao.update(stats.getId(), stats);
                             txn.commit();
                         } catch (Exception e) {
