@@ -2499,15 +2499,16 @@
                           var items;
                           if(networkSupportingLbExists == true) {
                             items = $.grep(networkOfferings, function(networkOffering) {
-                              var includingLbService = false;
+                              var includingPublicLbService = false;
                               $(networkOffering.service).each(function(){
                                 var thisService = this;
-                                if(thisService.name == "Lb") {
-                                  includingLbService = true;
+                                //only one tier is allowed to have PublicLb provider in a VPC
+                                if(thisService.name == "Lb" && lbProviderMap.publicLb.vpc.indexOf(thisService.provider[0].name) != -1) {                                  
+                                  includingPublicLbService = true;
                                   return false; //break $.each() loop
                                 }
                               });
-                              return !includingLbService;
+                              return !includingPublicLbService;
                             });
                           }
                           else {

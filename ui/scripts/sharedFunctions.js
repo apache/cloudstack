@@ -122,34 +122,22 @@ function createURL(apiName, options) {
   return urlString;
 }
 
-/*
-function fromdb(val) {
-  return sanitizeXSS(noNull(val));
-}
-*/
-
 function todb(val) {
   return encodeURIComponent(val);
 }
 
-/*
-function noNull(val) {
-  if(val == null)
-    return "";
-  else
-    return val;
-}
-*/
+//LB provider map
+var lbProviderMap = {
+  "publicLb": {
+    "non-vpc": ["VirtualRouter", "Netscaler", "F5"],
+    "vpc": ["VpcVirtualRouter", "Netscaler"]
+  },
+  "internalLb": {
+    "non-vpc": [],
+    "vpc": ["InternalLbVm"]
+  }
+};
 
-/*
-function sanitizeXSS(val) {  // Prevent cross-site-script(XSS) attack
-  if(val == null || typeof(val) != "string")
-    return val;
-  val = val.replace(/</g, "&lt;");  //replace < whose unicode is \u003c
-  val = val.replace(/>/g, "&gt;");  //replace > whose unicode is \u003e
-  return unescape(val);
-}
-*/
 
 // Role Functions
 function isAdmin() {
