@@ -3813,10 +3813,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             s_logger.debug("Created private network " + privateNetwork);
         } else {
             s_logger.debug("Private network already exists: " + privateNetwork);
+            throw new InvalidParameterValueException("Private network for the vlan: " + vlan + " and cidr  "+ cidr +"  already exists " +
+                    " in zone " + _configMgr.getZone(pNtwk.getDataCenterId()).getName());
         }
 
         //add entry to private_ip_address table
-        PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkId(privateNetwork.getId(), startIp);
+        PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkIdAndVpcId(privateNetwork.getId(), startIp, vpcId);
         if (privateIp != null) {
             throw new InvalidParameterValueException("Private ip address " + startIp + " already used for private gateway" +
                     " in zone " + _configMgr.getZone(pNtwk.getDataCenterId()).getName());
