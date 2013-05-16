@@ -371,6 +371,9 @@
   <bean id="LDAPUserAuthenticator" class="com.cloud.server.auth.LDAPUserAuthenticator">
     <property name="name" value="LDAP"/>
   </bean>
+  <bean id="PlainTextUserAuthenticator" class="com.cloud.server.auth.PlainTextUserAuthenticator">
+    <property name="name" value="PLAINTEXT"/>
+  </bean>
 
   <!--
       Network Elements

@@ -34,61 +34,38 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={UserAuthenticator.class})
 public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
-	public static final Logger s_logger = Logger.getLogger(PlainTextUserAuthenticator.class);
-	
-	@Inject private UserAccountDao _userAccountDao;
-	
-	@Override
-	public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters ) {
-		if (s_logger.isDebugEnabled()) {
+    public static final Logger s_logger = Logger.getLogger(PlainTextUserAuthenticator.class);
+
+    @Inject private UserAccountDao _userAccountDao;
+
+    @Override
+    public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters ) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieving user: " + username);
         }
+
         UserAccount user = _userAccountDao.getUserAccount(username, domainId);
         if (user == null) {
             s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
             return false;
         }
-        
-       
-        MessageDigest md5;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new CloudRuntimeException("Error", e);
-        }
-        md5.reset();
-        BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
 
-        // make sure our MD5 hash value is 32 digits long...
-        StringBuffer sb = new StringBuffer();
-        String pwStr = pwInt.toString(16);
-        int padding = 32 - pwStr.length();
-        for (int i = 0; i < padding; i++) {
-            sb.append('0');
-        }
-        sb.append(pwStr);
-        
-        
-        // Will: The MD5Authenticator is now a straight pass-through comparison of the
-        // the passwords because we will not assume that the password passed in has
-        // already been MD5 hashed.  I am keeping the above code in case this requirement changes
-        // or people need examples of how to MD5 hash passwords in java.
-        if (!user.getPassword().equals(sb.toString())) {
+        if (!user.getPassword().equals(password)) {
             s_logger.debug("Password does not match");
             return false;
         }
-		return true;
-	}
+        return true;
+    }
 
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		super.configure(name, params);
-		return true;
-	}
+    public boolean configure(String name, Map<String, Object> params)
+            throws ConfigurationException {
+        super.configure(name, params);
+        return true;
+    }
 
-	@Override
-	public String encode(String password) {
-		// Plaintext so no encoding at all
-		return password; 
-	}
+    @Override
+    public String encode(String password) {
+        // Plaintext so no encoding at all
+        return password;
+    }
 }
