@@ -286,7 +286,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             	throw new CloudRuntimeException(errorString);
             }
 
-            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreVO)secStore).getParent(), path, uuid);
+            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)secStore).getMountPoint(), path, uuid);
             Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
                 errorString = "Unable to create a link for " +type+ " id:"+entityId + "," + ans.getDetails();
