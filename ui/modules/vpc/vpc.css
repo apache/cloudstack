@@ -140,7 +140,7 @@
 }
 
 .vpc-network-chart .tier-item .content .dashboard-item .total {
-  font-size: 28px;
+  font-size: 17px;
   /*+placement:shift 7px 5px;*/
   position: relative;
   left: 7px;

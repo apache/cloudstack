@@ -230,7 +230,7 @@
                     {
                       id: 'tierLoadBalancers',
                       name: 'Load balancers',
-                      total: 5
+                      total: '5 Internal<br/>6 Public'
                     },
                     {
                       id: 'tierPortForwarders',
