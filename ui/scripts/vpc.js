@@ -324,7 +324,7 @@
       tierLoadBalancers: {
         listView: true,
         sectionSelect: {
-          label: 'Select LB type: '
+          label: 'Select LB type'
         },
         sections: {
           internalLoadBalancers: {
