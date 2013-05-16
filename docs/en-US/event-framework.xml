@@ -24,7 +24,7 @@
   <para>Event notification framework provides a means for the Management Server components to
     publish and subscribe to &PRODUCT; events. Event notification is achieved by implementing the
     concept of event bus abstraction in the Management Server. An event bus is introduced in the
-    Management Server that allows the &PRODUCT;components and extension plug-ins to subscribe to the
+    Management Server that allows the &PRODUCT; components and extension plug-ins to subscribe to the
     events by using the Advanced Message Queuing Protocol (AMQP) client. In &PRODUCT;, a default
     implementation of event bus is provided as a plug-in that uses the RabbitMQ AMQP client. The
     AMQP client pushes the published events to a compatible AMQP server. Therefore all the &PRODUCT;
