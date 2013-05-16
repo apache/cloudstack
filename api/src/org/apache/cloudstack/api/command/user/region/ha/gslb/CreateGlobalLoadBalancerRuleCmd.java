@@ -85,7 +85,11 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     }
 
     public String getAlgorithm() {
-        return algorithm;
+        if (algorithm != null) {
+            return algorithm;
+        } else {
+            return GlobalLoadBalancerRule.Algorithm.RoundRobin.name();
+        }
     }
 
     public String getGslbMethod() {
