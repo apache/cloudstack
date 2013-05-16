@@ -85,6 +85,10 @@ import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.PlannerHostReservationVO;
+import com.cloud.deploy.dao.PlannerHostReservationDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -212,6 +216,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected HighAvailabilityManager        _haMgr;
     @Inject
     protected StorageService                 _storageSvr;
+    @Inject
+    PlannerHostReservationDao _plannerHostReserveDao;
 
     protected List<? extends Discoverer> _discoverers;
     public List<? extends Discoverer> getDiscoverers() {
@@ -2851,4 +2857,41 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 				ResourceState.Enabled);
         return sc.list();
 	}
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_RESERVATION_RELEASE, eventDescription = "releasing host reservation", async = true)
+    public boolean releaseHostReservation(Long hostId) {
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
+            if (reservationEntry != null) {
+                long id = reservationEntry.getId();
+                PlannerHostReservationVO hostReservation = _plannerHostReserveDao.lockRow(id, true);
+                if (hostReservation == null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Host reservation for host: " + hostId + " does not even exist.  Release reservartion call is ignored.");
+                    }
+                    txn.rollback();
+                    return false;
+                }
+                hostReservation.setResourceUsage(null);
+                _plannerHostReserveDao.persist(hostReservation);
+                txn.commit();
+                return true;
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Host reservation for host: " + hostId
+                        + " does not even exist.  Release reservartion call is ignored.");
+            }
+            return false;
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Throwable t) {
+            s_logger.error("Unable to release host reservation for host: " + hostId, t);
+            txn.rollback();
+            return false;
+        }
+    }
 }

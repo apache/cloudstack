@@ -98,7 +98,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeployPlannerSelector;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -401,9 +400,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     AffinityGroupDao _affinityGroupDao;
-
-    @Inject
-    List<DeployPlannerSelector> plannerSelectors;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -2836,7 +2832,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
         return result;
     }
-    
+
     @Override
     public boolean finalizeDeployment(Commands cmds,
             VirtualMachineProfile<UserVmVO> profile, DeployDestination dest,
@@ -3036,7 +3032,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                 + " stop due to exception ", ex);
             }
         }
-        
+
         VMInstanceVO vm = profile.getVirtualMachine();
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
@@ -3174,15 +3170,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
 
-        String plannerName = null;
-        for (DeployPlannerSelector dps : plannerSelectors) {
-            plannerName = dps.selectPlanner(vm);
-            if (plannerName != null) {
-                break;
-            }
-        }
+        // Get serviceOffering for Virtual Machine
+        ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+        String plannerName = offering.getDeploymentPlanner();
         if (plannerName == null) {
-            throw new CloudRuntimeException(String.format("cannot find DeployPlannerSelector for vm[uuid:%s, hypervisorType:%s]", vm.getUuid(), vm.getHypervisorType()));
+            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                plannerName = "BareMetalPlanner";
+            } else {
+                plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+            }
         }
 
         String reservationId = vmEntity.reserve(plannerName, plan, new ExcludeList(), new Long(callerUser.getId()).toString());
@@ -3826,7 +3822,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     + cmd.getAccountName() + " is disabled.");
         }
 
-        //check caller has access to both the old and new account 
+        //check caller has access to both the old and new account
         _accountMgr.checkAccess(caller, null, true, oldAccount);
         _accountMgr.checkAccess(caller, null, true, newAccount);
 

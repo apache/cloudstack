@@ -142,6 +142,7 @@ known_categories = {
     'listNics':'Nic',
 	'AffinityGroup': 'Affinity Group',
     'InternalLoadBalancer': 'Internal LB',
+	'DeploymentPlanners': 'Configuration',
     }
 
 
