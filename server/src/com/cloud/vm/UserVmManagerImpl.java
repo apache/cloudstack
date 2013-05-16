@@ -2832,7 +2832,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
         return result;
     }
-    
+
     @Override
     public boolean finalizeDeployment(Commands cmds,
             VirtualMachineProfile<UserVmVO> profile, DeployDestination dest,
@@ -3029,7 +3029,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                 + " stop due to exception ", ex);
             }
         }
-        
+
         VMInstanceVO vm = profile.getVirtualMachine();
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
@@ -3171,7 +3171,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
         String plannerName = offering.getDeploymentPlanner();
         if (plannerName == null) {
-            plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+            if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                plannerName = "BareMetalPlanner";
+            } else {
+                plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+            }
         }
 
         String reservationId = vmEntity.reserve(plannerName, plan, new ExcludeList(), new Long(callerUser.getId()).toString());
@@ -3815,7 +3819,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     + cmd.getAccountName() + " is disabled.");
         }
 
-        //check caller has access to both the old and new account 
+        //check caller has access to both the old and new account
         _accountMgr.checkAccess(caller, null, true, oldAccount);
         _accountMgr.checkAccess(caller, null, true, newAccount);
 
