@@ -45,7 +45,7 @@
       <para>A typical GSLB environment is comprised of the following components:</para>
       <itemizedlist>
         <listitem>
-          <para><emphasis role="bold">GSLB Site</emphasis>: In &PRODUCT;terminology, GSLB sites are
+          <para><emphasis role="bold">GSLB Site</emphasis>: In &PRODUCT; terminology, GSLB sites are
             represented by zones that are mapped to data centers, each of which has various network
             appliances. Each GSLB site is managed by a NetScaler appliance that is local to that
             site. Each of these appliances treats its own site as the local site and all other

@@ -24,13 +24,13 @@ import org.apache.cloudstack.region.RegionServiceProvider;
 
 public interface GslbServiceProvider extends RegionServiceProvider {
 
-    public boolean isServiceEnabledInZone(long zoneId);
+    public boolean isServiceEnabledInZone(long zoneId, long physicalNetworkId);
 
-    public String getZoneGslbProviderPublicIp(long zoneId);
+    public String getZoneGslbProviderPublicIp(long zoneId, long physicalNetworkId);
 
-    public String getZoneGslbProviderPrivateIp(long zoneId);
+    public String getZoneGslbProviderPrivateIp(long zoneId, long physicalNetworkId);
 
-    public boolean applyGlobalLoadBalancerRule(long zoneId, GlobalLoadBalancerConfigCommand gslbConfigCmd)
+    public boolean applyGlobalLoadBalancerRule(long zoneId, long physicalNetworkId, GlobalLoadBalancerConfigCommand gslbConfigCmd)
             throws ResourceUnavailableException;
 
 }

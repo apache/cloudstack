@@ -70,4 +70,9 @@ swift=..,0755,/opt/xensource/bin
 swiftxen=..,0755,/etc/xapi.d/plugins
 s3xen=..,0755,/etc/xapi.d/plugins
 add_to_vcpus_params_live.sh=..,0755,/opt/xensource/bin
-
+ovs-pvlan=..,0755,/etc/xapi.d/plugins
+ovs-pvlan-dhcp-host.sh=../../../network,0755,/opt/xensource/bin
+ovs-pvlan-vm.sh=../../../network,0755,/opt/xensource/bin
+ovs-pvlan-cleanup.sh=../../../network,0755,/opt/xensource/bin
+ovs-get-dhcp-iface.sh=..,0755,/opt/xensource/bin
+ovs-get-bridge.sh=..,0755,/opt/xensource/bin

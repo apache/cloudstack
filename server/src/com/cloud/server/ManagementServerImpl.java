@@ -1165,7 +1165,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (volumePools.isEmpty()) {
                     allHosts.remove(host);
                 } else {
-                    if (host.getClusterId() != srcHost.getClusterId() || usesLocal) {
+                    if (!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) {
                         requiresStorageMotion.put(host, true);
                     }
                 }
@@ -1900,7 +1900,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // Don't allow to modify system template
-        if (id == Long.valueOf(1)) {
+        if (id.equals(Long.valueOf(1))) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
             ex.addProxyObject(template, id, "templateId");
             throw ex;
@@ -2427,7 +2427,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             public int compare(SummedCapacity arg0, SummedCapacity arg1) {
                 if (arg0.getPercentUsed() < arg1.getPercentUsed()) {
                     return 1;
-                } else if (arg0.getPercentUsed() == arg1.getPercentUsed()) {
+                } else if (arg0.getPercentUsed().equals(arg1.getPercentUsed())) {
                     return 0;
                 }
                 return -1;

@@ -434,6 +434,12 @@ setup_common() {
       ping -n -c 3 $MGMT_GW &
       sleep 3
       pkill ping
+  
+  fi
+
+  local hyp=$(hypervisor)
+  if [ "$hyp" == "vmware" ]; then
+      ntpq -p &> /dev/null || vmware-toolbox-cmd timesync enable
   fi
 }
 

@@ -1900,7 +1900,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @DB
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway,
                                       String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-                                      PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr, Boolean isDisplayNetworkEnabled)
+                                      PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
+                                      Boolean isDisplayNetworkEnabled, String isolatedPvlan)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1989,6 +1990,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if (zone.isSecurityGroupEnabled()) {
             	if (ipv6) {
             		throw new InvalidParameterValueException("IPv6 is not supported with security group!");
+            	}
+            	if (isolatedPvlan != null) {
+            		throw new InvalidParameterValueException("Isolated Private VLAN is not supported with security group!");
             	}
                 // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
                 // enabled zone
@@ -2149,13 +2153,20 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
         
         if (vlanId != null) {
-            userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
-            userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-            if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
-                userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-            } else {
-                userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-            }
+        	if (isolatedPvlan == null) {
+        		userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+        		if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+        			userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+        		} else {
+        			userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
+        		}
+        	} else {
+        		if (vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+        			throw new InvalidParameterValueException("Cannot support pvlan with untagged primary vlan!");
+        		}
+        		userNetwork.setBroadcastUri(NetUtils.generateUriForPvlan(vlanId, isolatedPvlan));
+        		userNetwork.setBroadcastDomainType(BroadcastDomainType.Pvlan);
+        	}
         }
         
         List<NetworkVO> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId,
@@ -2758,7 +2769,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 guestNetwork = createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network"
                         , owner.getAccountName() + "-network", null, null, null, null, owner, null, physicalNetwork,
                         zoneId, ACLType.Account,
-                        null, null, null, null, true);
+                        null, null, null, null, true, null);
                 if (guestNetwork == null) {
                     s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                     throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT " +
@@ -3634,8 +3645,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     			nic.setGateway(ip.getGateway());
     			nic.setNetmask(ip.getNetmask());
     			nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-    			nic.setBroadcastType(BroadcastDomainType.Vlan);
-    			nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
+    			//nic.setBroadcastType(BroadcastDomainType.Vlan);
+    			//nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
+    			nic.setBroadcastType(network.getBroadcastDomainType());
+    			nic.setBroadcastUri(network.getBroadcastUri());
     			nic.setFormat(AddressFormat.Ip4);
     			nic.setReservationId(String.valueOf(ip.getVlanTag()));
     			nic.setMacAddress(ip.getMacAddress());

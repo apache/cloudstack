@@ -85,7 +85,11 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     }
 
     public String getAlgorithm() {
-        return algorithm;
+        if (algorithm != null) {
+            return algorithm;
+        } else {
+            return GlobalLoadBalancerRule.Algorithm.RoundRobin.name();
+        }
     }
 
     public String getGslbMethod() {
@@ -158,7 +162,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating a global load balancer: " + getName() + " for account: " + getAccountName();
+        return "creating a global load balancer rule Id: " + getEntityId();
 
     }
 

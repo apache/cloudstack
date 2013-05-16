@@ -1095,7 +1095,15 @@ public class NetscalerResource implements ServerResource {
                 }
 
                 vserver.set_name(vserverName);
-                vserver.set_lbmethod(lbMethod);
+                if ("RoundRobin".equalsIgnoreCase(lbMethod)) {
+                    vserver.set_lbmethod("ROUNDROBIN");
+                } else if ("LeastConn".equalsIgnoreCase(lbMethod)) {
+                    vserver.set_lbmethod("LEASTCONNECTION");
+                } else if ("Proximity".equalsIgnoreCase(lbMethod)) {
+                    vserver.set_lbmethod("RTT");
+                } else {
+                    throw new ExecutionException("Unsupported LB method");
+                }
                 vserver.set_persistencetype(persistenceType);
                 if ("SOURCEIP".equalsIgnoreCase(persistenceType)) {
                     vserver.set_persistenceid(persistenceId);

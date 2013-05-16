@@ -118,18 +118,18 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
 
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                //zoneId, account_id, domain_id, vm_instance_id, network_offering_id, is_default, created, deleted
+                //zoneId, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted
             	Long zoneId = Long.valueOf(rs.getLong(1));
                 Long acctId = Long.valueOf(rs.getLong(2));
                 Long dId = Long.valueOf(rs.getLong(3));
                 long vmId = Long.valueOf(rs.getLong(4));
                 long noId = Long.valueOf(rs.getLong(5));
                 long nicId = Long.valueOf(rs.getLong(6));
-                boolean isDefault = Boolean.valueOf(rs.getBoolean(6));
+                boolean isDefault = Boolean.valueOf(rs.getBoolean(7));
                 Date createdDate = null;
                 Date deletedDate = null;
-                String createdTS = rs.getString(7);
-                String deletedTS = rs.getString(8);
+                String createdTS = rs.getString(8);
+                String deletedTS = rs.getString(9);
                 
 
                 if (createdTS != null) {
