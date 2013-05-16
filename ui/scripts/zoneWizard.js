@@ -3692,27 +3692,41 @@
             });
           }  
           else if(args.data.secondaryStorage.provider == 'S3') {                  
+            var data = {
+              provider: args.data.secondaryStorage.provider,                                           
+              'details[0].key': 'accesskey',
+              'details[0].value': args.data.secondaryStorage.accesskey,                                            
+              'details[1].key': 'secretkey',
+              'details[1].value': args.data.secondaryStorage.secretkey,                                            
+              'details[2].key': 'bucket',
+              'details[2].value': args.data.secondaryStorage.bucket,
+              'details[3].key': 'usehttps',
+              'details[3].value': (args.data.secondaryStorage.usehttps != null && args.data.secondaryStorage.usehttps == 'on' ? 'true' : 'false')
+            };                  
+            var index = 4;
+            if(args.data.secondaryStorage.endpoint != null && args.data.secondaryStorage.endpoint.length > 0){
+              data['details[' + index.toString() + '].key'] = 'endpoint';
+              data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.endpoint;                    
+              index++;
+            }
+            if(args.data.secondaryStorage.connectiontimeout != null && args.data.secondaryStorage.connectiontimeout.length > 0){
+              data['details[' + index.toString() + '].key'] = 'connectiontimeout';
+              data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.connectiontimeout;                        
+              index++;
+            }
+            if(args.data.secondaryStorage.maxerrorretry != null && args.data.secondaryStorage.maxerrorretry.length > 0){
+              data['details[' + index.toString() + '].key'] = 'maxerrorretry';
+              data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.maxerrorretry;   
+              index++;
+            }
+            if(args.data.secondaryStorage.sockettimeout != null && args.data.secondaryStorage.sockettimeout.length > 0){
+              data['details[' + index.toString() + '].key'] = 'sockettimeout';
+              data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.sockettimeout;   
+              index++;
+            }      
             $.ajax({
               url: createURL('addImageStore'),
-              data: {
-                provider: args.data.secondaryStorage.provider,                                           
-                'details[0].key': 'accesskey',
-                'details[0].value': args.data.secondaryStorage.accesskey,                                            
-                'details[1].key': 'secretkey',
-                'details[1].value': args.data.secondaryStorage.secretkey,                                            
-                'details[2].key': 'bucket',
-                'details[2].value': args.data.secondaryStorage.bucket,                                            
-                'details[3].key': 'endpoint',
-                'details[3].value': args.data.secondaryStorage.endpoint,                                          
-                'details[4].key': 'usehttps',
-                'details[4].value': (args.data.secondaryStorage.usehttps != null && args.data.secondaryStorage.usehttps == 'on' ? 'true' : 'false'),    
-                'details[5].key': 'connectiontimeout',
-                'details[5].value': args.data.secondaryStorage.connectiontimeout,                                          
-                'details[6].key': 'maxerrorretry',
-                'details[6].value': args.data.secondaryStorage.maxerrorretry,                                           
-                'details[7].key': 'sockettimeout',
-                'details[7].value': args.data.secondaryStorage.sockettimeout
-              },
+              data: data,
               success: function(json) {
                 complete({
                   data: $.extend(args.data, {
@@ -3751,19 +3765,30 @@
               }); 
             }     
           }
-          else if(args.data.secondaryStorage.provider == 'Swift') {
+          else if(args.data.secondaryStorage.provider == 'Swift') {            
+            var data = {
+              provider: args.data.secondaryStorage.provider,
+              url: args.data.secondaryStorage.url
+            };                 
+            var index = 0;
+            if(args.data.secondaryStorage.account != null && args.data.secondaryStorage.account.length > 0){
+              data['details[' + index.toString() + '].key'] = 'account';
+              data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.account;                    
+              index++;
+            }
+            if(args.data.secondaryStorage.username != null && args.data.secondaryStorage.username.length > 0){
+              data['details[' + index.toString() + '].key'] = 'username';
+              data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.username;                    
+              index++;
+            }
+            if(args.data.secondaryStorage.key != null && args.data.secondaryStorage.key.length > 0){
+              data['details[' + index.toString() + '].key'] = 'key';
+              data['details[' + index.toString() + '].value'] = args.data.secondaryStorage.key;                    
+              index++;
+            }      
             $.ajax({
               url: createURL('addImageStore'),
-              data: {
-                provider: args.data.secondaryStorage.provider,
-                url: args.data.secondaryStorage.url,
-                'details[0].key': 'account',
-                'details[0].value': args.data.secondaryStorage.account,
-                'details[1].key': 'username',
-                'details[1].value': args.data.secondaryStorage.username,
-                'details[2].key': 'key',
-                'details[2].value': args.data.secondaryStorage.key                      
-              },
+              data: data,
               success: function(json) {
                 complete({
                   data: $.extend(args.data, {
