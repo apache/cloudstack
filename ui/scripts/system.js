@@ -11196,8 +11196,7 @@
                     'details[2].value': args.data.bucket,
                     'details[3].key': 'usehttps',
                     'details[3].value': (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false')
-                  };
-                  debugger; 
+                  };                  
                   var index = 4;
                   if(args.data.endpoint != null && args.data.endpoint.length > 0){
                     data['details[' + index.toString() + '].key'] = 'endpoint';
@@ -11260,18 +11259,29 @@
                   }   
                 }
                 else if(args.data.provider == 'Swift') {
+                  var data = {
+                    provider: args.data.provider,
+                    url: args.data.url
+                  };                 
+                  var index = 0;
+                  if(args.data.account != null && args.data.account.length > 0){
+                    data['details[' + index.toString() + '].key'] = 'account';
+                    data['details[' + index.toString() + '].value'] = args.data.account;                    
+                    index++;
+                  }
+                  if(args.data.username != null && args.data.username.length > 0){
+                    data['details[' + index.toString() + '].key'] = 'username';
+                    data['details[' + index.toString() + '].value'] = args.data.username;                    
+                    index++;
+                  }
+                  if(args.data.key != null && args.data.key.length > 0){
+                    data['details[' + index.toString() + '].key'] = 'key';
+                    data['details[' + index.toString() + '].value'] = args.data.key;                    
+                    index++;
+                  }                 
                   $.ajax({
                     url: createURL('addImageStore'),
-                    data: {
-                      provider: args.data.provider,
-                      url: args.data.url,
-                      'details[0].key': 'account',
-                      'details[0].value': args.data.account,
-                      'details[1].key': 'username',
-                      'details[1].value': args.data.username,
-                      'details[2].key': 'key',
-                      'details[2].value': args.data.key                      
-                    },
+                    data: data,
                     success: function(json) {
                       havingSwift = true;
                       var item = json.addimagestoreresponse.secondarystorage;
