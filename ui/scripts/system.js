@@ -11186,27 +11186,43 @@
                   });
                 }
                 else if(args.data.provider == 'S3') {                  
+                  var data = {
+                    provider: args.data.provider,                                           
+                    'details[0].key': 'accesskey',
+                    'details[0].value': args.data.accesskey,                                            
+                    'details[1].key': 'secretkey',
+                    'details[1].value': args.data.secretkey,                                            
+                    'details[2].key': 'bucket',
+                    'details[2].value': args.data.bucket,
+                    'details[3].key': 'usehttps',
+                    'details[3].value': (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false')
+                  };
+                  debugger; 
+                  var index = 4;
+                  if(args.data.endpoint != null && args.data.endpoint.length > 0){
+                    data['details[' + index.toString() + '].key'] = 'endpoint';
+                    data['details[' + index.toString() + '].value'] = args.data.endpoint;                    
+                    index++;
+                  }
+                  if(args.data.connectiontimeout != null && args.data.connectiontimeout.length > 0){
+                    data['details[' + index.toString() + '].key'] = 'connectiontimeout';
+                    data['details[' + index.toString() + '].value'] = args.data.connectiontimeout;                        
+                    index++;
+                  }
+                  if(args.data.maxerrorretry != null && args.data.maxerrorretry.length > 0){
+                    data['details[' + index.toString() + '].key'] = 'maxerrorretry';
+                    data['details[' + index.toString() + '].value'] = args.data.maxerrorretry;   
+                    index++;
+                  }
+                  if(args.data.sockettimeout != null && args.data.sockettimeout.length > 0){
+                    data['details[' + index.toString() + '].key'] = 'sockettimeout';
+                    data['details[' + index.toString() + '].value'] = args.data.sockettimeout;   
+                    index++;
+                  }
+                  
                   $.ajax({
                     url: createURL('addImageStore'),
-                    data: {
-                      provider: args.data.provider,                                           
-                      'details[0].key': 'accesskey',
-                      'details[0].value': args.data.accesskey,                                            
-                      'details[1].key': 'secretkey',
-                      'details[1].value': args.data.secretkey,                                            
-                      'details[2].key': 'bucket',
-                      'details[2].value': args.data.bucket,                                            
-                      'details[3].key': 'endpoint',
-                      'details[3].value': args.data.endpoint,                                          
-                      'details[4].key': 'usehttps',
-                      'details[4].value': (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false'),    
-                      'details[5].key': 'connectiontimeout',
-                      'details[5].value': args.data.connectiontimeout,                                          
-                      'details[6].key': 'maxerrorretry',
-                      'details[6].value': args.data.maxerrorretry,                                           
-                      'details[7].key': 'sockettimeout',
-                      'details[7].value': args.data.sockettimeout
-                    },
+                    data: data,
                     success: function(json) {
                       havingS3 = true;
                       var item = json.addimagestoreresponse.secondarystorage;
