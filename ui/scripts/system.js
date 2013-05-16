@@ -10878,15 +10878,8 @@
           section: 'seconary-storage',
           fields: {
             name: { label: 'label.name' },
-						created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
-            resourcestate: {
-              label: 'label.state',
-              indicator: {
-                'Enabled': 'on',
-                'Disabled': 'off',
-                'Destroyed': 'off'
-              }              
-            }
+            url: { label: 'label.url' },
+            providername: { label: 'Provider' }      
           },
 
           dataProvider: function(args) {
@@ -11349,10 +11342,27 @@
                   {
                     name: { label: 'label.name' }
                   },
-                  {
-                    id: { label: 'label.id' },
+                  {                    
+                    url: { label: 'label.url' },
+                    providername: { label: 'Provider' },   
+                    scope: { label: 'label.scope' },
                     zonename: { label: 'label.zone' },
-                    created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
+                    details: { 
+                      label: 'label.details',
+                      converter: function(array1) {                        
+                        var string1 = '';                        
+                        if(array1 != null) {
+                          for(var i = 0; i < array1.length; i++) {
+                            if(i > 0)
+                              string1 += ', ';
+                            
+                            string1 += array1[i].name + ': ' + array1[i].value;                           
+                          }
+                        }                        
+                        return string1;                        
+                      }
+                    },                    
+                    id: { label: 'label.id' }
                   }
                 ],
 
