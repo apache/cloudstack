@@ -507,7 +507,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         try {
         	DataObject volumeOnStore = store.create(volume);
-        	volume.processEvent(Event.CreateOnlyRequested);
+        	volumeOnStore.processEvent(Event.CreateOnlyRequested);
         	snapshot.processEvent(Event.CopyingRequested);
         	 CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null,
         			 volume, store, volumeOnStore, future, snapshot);
@@ -528,7 +528,7 @@ public class VolumeServiceImpl implements VolumeService {
     protected Void createVolumeFromSnapshotCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
     		CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
     	CopyCommandResult result = callback.getResult();
-    	VolumeInfo volume = (VolumeInfo)context.vo;
+    	VolumeInfo volume = (VolumeInfo)context.templateOnStore;
     	SnapshotInfo snapshot = context.snapshot;
     	VolumeApiResult apiResult = new VolumeApiResult(volume);
     	Event event = null;
