@@ -2842,7 +2842,7 @@ ServerResource {
         Pair<Double, Double> nicStats = getNicStats(_publicBridgeName);
 
         HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil,
-                nicStats.first() / 1000, nicStats.second() / 1000, "host",
+                nicStats.first() / 1024, nicStats.second() / 1024, "host",
                 totMem, freeMem, 0, 0);
         return new GetHostStatsAnswer(cmd, hostStats);
     }
@@ -4561,10 +4561,10 @@ ServerResource {
             if (oldStats != null) {
                 long deltarx = rx - oldStats._rx;
                 if (deltarx > 0)
-                    stats.setNetworkReadKBs(deltarx / 1000);
+                    stats.setNetworkReadKBs(deltarx / 1024);
                 long deltatx = tx - oldStats._tx;
                 if (deltatx > 0)
-                    stats.setNetworkWriteKBs(deltatx / 1000);
+                    stats.setNetworkWriteKBs(deltatx / 1024);
             }
 
             vmStats newStat = new vmStats();
