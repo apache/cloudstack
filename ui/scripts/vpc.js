@@ -323,7 +323,7 @@
       // Internal load balancers
       tierLoadBalancers: {
         listView: {
-          id: 'ipAddresses',
+          id: 'internalLb',
           fields: {
             ipaddress: { label: 'label.ip.address' },
             type: { label: 'label.type' }
@@ -339,30 +339,72 @@
           },
           actions: {
             add: {
-              label: 'Add new LB',
+              label: 'Add Internal LB',
               createForm: {
-                title: 'Add new LB',
-                desc: 'Please specify the type of load balancer you would like to create.',
-                fields: {
-                  type: {
-                    label: 'label.type',
+                title: 'Add Internal LB',                
+                fields: {                                   
+                  name: { label: 'label.name', validation: { required: true } },
+                  description: { label: 'label.description', validation: { required: false } },
+                  sourceipaddress: { label: 'Source IP Address', validation: { required: false } },
+                  sourceport: { label: 'sourceport', validation: { required: true } },
+                  instanceport: { label: 'instanceport', validation: { required: true } },
+                  algorithm: { 
+                    label: 'label.algorithm',
+                    validation: { required: true },
                     select: function(args) {
                       args.response.success({
                         data: [
-                          { id: 'internal', description: 'Internal' },
-                          { id: 'public', description: 'Public' }
+                          { id: 'source', description: 'source' },
+                          { id: 'roundrobin', description: 'roundrobin' },
+                          { id: 'leastconn', description: 'leastconn' }
                         ]
                       });
                     }
-                  }
+                  }                  
                 }
               },
               messages: {
                 notification: function(args) {
-                  return 'Add LB to VPC network';
+                  return 'Add Internal LB';
                 }
               },
-              action: function(args) {
+              action: function(args) {               
+                var data = {
+                  name: args.data.name,
+                  sourceport: args.data.sourceport,
+                  instanceport: args.data.instanceport,
+                  algorithm: args.data.algorithm,
+                  networkid: args.context.networks[0].id,
+                  sourceipaddressnetworkid: args.context.networks[0].id,
+                  scheme: 'Internal'
+                };
+                if(args.data.description != null && args.data.description.length > 0){
+                  $.extend(data, {
+                    description: args.data.description
+                  });                  
+                }
+                if(args.data.sourceipaddress != null && args.data.sourceipaddress.length > 0){
+                  $.extend(data, {
+                    sourceipaddress: args.data.sourceipaddress
+                  });                  
+                }                
+                $.ajax({
+                  url: createURL('createLoadBalancer'),
+                  data: data,
+                  success: function(json){                    
+                    var jid = json.createloadbalancerresponse.jobid;   
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {                          
+                          return json.queryasyncjobresultresponse.jobresult.loadbalancerrule;
+                        }
+                       }
+                      }
+                    );    
+                  }
+                });
+                
                 args.response.success();
               },
               notification: {
