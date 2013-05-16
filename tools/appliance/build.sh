@@ -34,7 +34,7 @@ bundle
 
 # Clean and start building the appliance
 veewee vbox destroy $appliance
-veewee vbox build $appliance --nogui
+veewee vbox build $appliance --nogui --auto
 veewee vbox halt $appliance
 
 while [[ `vboxmanage list runningvms | grep $appliance | wc -l` -ne 0 ]];
