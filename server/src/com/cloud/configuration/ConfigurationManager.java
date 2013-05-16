@@ -242,6 +242,4 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @return
      */
     String cleanupTags(String tags);
-
-    <T> ConfigValue<T> getConfig(Config config, Class<T> clazz);
 }

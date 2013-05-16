@@ -44,6 +44,9 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.messagebus.TopicConstants;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
+import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
+import org.apache.cloudstack.vm.jobs.VmWorkJobVO.Step;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -167,7 +170,6 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VmWorkJobVO.Step;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;

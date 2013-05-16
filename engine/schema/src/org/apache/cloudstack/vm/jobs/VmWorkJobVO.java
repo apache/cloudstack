@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package org.apache.cloudstack.vm.jobs;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
@@ -25,6 +25,9 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.framework.jobs.AsyncJobVO;
+
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 
 
 @Entity

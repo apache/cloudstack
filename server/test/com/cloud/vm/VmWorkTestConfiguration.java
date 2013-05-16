@@ -33,6 +33,8 @@ import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueDaoImpl;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDaoImpl;
+import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
+import org.apache.cloudstack.vm.jobs.VmWorkJobDaoImpl;
 
 import com.cloud.api.ApiDispatcher;
 import com.cloud.cluster.ClusterManager;

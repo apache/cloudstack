@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.AsyncJobExecutionContext;

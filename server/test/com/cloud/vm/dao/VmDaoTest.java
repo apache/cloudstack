@@ -29,13 +29,14 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
+import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmWorkJobDao;
-import com.cloud.vm.VmWorkJobVO;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;

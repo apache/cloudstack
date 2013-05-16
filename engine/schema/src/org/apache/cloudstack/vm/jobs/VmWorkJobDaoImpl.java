@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package org.apache.cloudstack.vm.jobs;
 
 import java.util.Date;
 import java.util.List;
@@ -22,6 +22,7 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.vm.jobs.VmWorkJobVO.Step;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
@@ -29,7 +30,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.vm.VmWorkJobVO.Step;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 
 public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implements VmWorkJobDao {
 

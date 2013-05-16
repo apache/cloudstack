@@ -48,8 +48,6 @@ import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 
-import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigValue;
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationService;
@@ -632,11 +630,5 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
 		// TODO Auto-generated method stub
 		return false;
 	}
-
-    @Override
-    public <T> ConfigValue<T> getConfig(Config config, Class<T> clazz) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
 }

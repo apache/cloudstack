@@ -14,26 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.configuration;
+package org.apache.cloudstack.config;
 
+import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-// This class returns the config value in a class.  We can later enhance this
-// class to get auto-updated by the database.
+/**
+ *  This is a match set to ConfigKey.
+ *
+ * TODO: When we create a framework project for configuration, this should be
+ * moved there.
+ */
 public class ConfigValue<T> {
 
-    Config _config;
+    ConfigKey<T> _config;
     ConfigurationDao _dao;
     Number _multiplier;
 
-    protected ConfigValue(ConfigurationDao dao, Config config) {
+    public ConfigValue(ConfigurationDao dao, ConfigKey<T> config) {
         _dao = dao;
         _config = config;
         _multiplier = 1;
     }
 
-    public Config getConfig() {
+    public ConfigKey<T> getConfigKey() {
         return _config;
     }
 
@@ -45,9 +50,9 @@ public class ConfigValue<T> {
     @SuppressWarnings("unchecked")
     public T value() {
         ConfigurationVO vo = _dao.findByName(_config.key());
-        String value = vo != null ? vo.getValue() : _config.getDefaultValue();
+        String value = vo != null ? vo.getValue() : _config.defaultValue();
         
-        Class<?> type = _config.getType();
+        Class<T> type = _config.type();
         if (type.isAssignableFrom(Boolean.class)) {
             return (T)Boolean.valueOf(value);
         } else if (type.isAssignableFrom(Integer.class)) {

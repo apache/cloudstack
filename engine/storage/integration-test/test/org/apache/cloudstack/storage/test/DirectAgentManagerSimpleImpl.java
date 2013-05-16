@@ -32,11 +32,8 @@ import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SetupCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostEnvironment;
 import com.cloud.host.HostVO;
@@ -49,7 +46,7 @@ import com.cloud.utils.component.ManagerBase;
 
 public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentManager {
     private static final Logger logger = Logger.getLogger(DirectAgentManagerSimpleImpl.class);
-    private Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
+    private final Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
     @Inject
     HostDao hostDao;
     @Override
@@ -193,21 +190,9 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean agentStatusTransitTo(HostVO host, Event e, long msId) {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public AgentAttache findAttache(long hostId) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override

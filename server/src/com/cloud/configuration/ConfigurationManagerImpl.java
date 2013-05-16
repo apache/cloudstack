@@ -65,6 +65,9 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.config.ConfigKey;
+import org.apache.cloudstack.config.ConfigRepo;
+import org.apache.cloudstack.config.ConfigValue;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -187,7 +190,7 @@ import com.cloud.vm.dao.NicDao;
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
-public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
+public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, ConfigRepo {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class.getName());
 
     @Inject
@@ -4485,7 +4488,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    public <T> ConfigValue<T> getConfig(Config config, Class<T> clazz) {
+    public <T> ConfigValue<T> get(ConfigKey<T> config) {
         return new ConfigValue<T>(_configDao, config);
     }
 }

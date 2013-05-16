@@ -29,11 +29,15 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.config.ConfigRepo;
+import org.apache.cloudstack.config.ConfigValue;
 import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
+import org.apache.cloudstack.engine.config.Configs;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageOrchestrator;
 import org.apache.cloudstack.network.NetworkOrchestrator;
+import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -43,9 +47,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.cluster.ManagementServerNode;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigValue;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dao.EntityManager;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.dao.DomainDao;
@@ -70,12 +71,10 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfileImpl;
-import com.cloud.vm.VmWorkJobDao;
 
 /**
  * VirtualMachineOrchestrator orchestrates virtual machine operations.
@@ -86,7 +85,7 @@ public class VirtualMachineOrchestrator extends ManagerBase {
     @Inject
     EntityManager _entityMgr;
     @Inject
-    ConfigurationManager _configMgr;
+    ConfigRepo _configRepo;
     @Inject
     NetworkOrchestrator _networkOrchestrator;
     @Inject
@@ -99,7 +98,7 @@ public class VirtualMachineOrchestrator extends ManagerBase {
     VirtualMachineManager _itMgr;
     
     protected ConfigValue<Integer> _retry;
-    protected ConfigValue<Long> _cancelWait;
+    protected ConfigValue<Integer> _cancelWait;
     protected ConfigValue<Long> _cleanupWait;
     protected ConfigValue<Long> _cleanupInterval;
     protected ConfigValue<Long> _opWaitInterval;
@@ -280,16 +279,15 @@ public class VirtualMachineOrchestrator extends ManagerBase {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         
-        _retry = _configMgr.getConfig(Config.StartRetry, Integer.class);
+        _retry = _configRepo.get(Configs.StartRetry);
         
-
-        _cancelWait = _configMgr.getConfig(Config.VmOpCancelInterval, Long.class);
-        _cleanupWait = _configMgr.getConfig(Config.VmOpCleanupWait, Long.class);
-        _cleanupInterval = _configMgr.getConfig(Config.VmOpCleanupInterval, Long.class).setMultiplier(1000);
-        _opWaitInterval = _configMgr.getConfig(Config.VmOpWaitInterval, Long.class).setMultiplier(1000);
-        _lockStateRetry = _configMgr.getConfig(Config.VmOpLockStateRetry, Integer.class);
-        _operationTimeout = _configMgr.getConfig(Config.Wait, Integer.class).setMultiplier(2);
-        _forceStop = _configMgr.getConfig(Config.VmDestroyForcestop, Boolean.class);
+        _cancelWait = _configRepo.get(Configs.VmOpCancelInterval);
+        _cleanupWait = _configRepo.get(Configs.VmOpCleanupWait);
+        _cleanupInterval = _configRepo.get(Configs.VmOpCleanupInterval).setMultiplier(1000);
+        _opWaitInterval = _configRepo.get(Configs.VmOpWaitInterval).setMultiplier(1000);
+        _lockStateRetry = _configRepo.get(Configs.VmOpLockStateRetry);
+        _operationTimeout = _configRepo.get(Configs.Wait).setMultiplier(2);
+        _forceStop = _configRepo.get(Configs.VmDestroyForcestop);
 
         _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -297,7 +295,7 @@ public class VirtualMachineOrchestrator extends ManagerBase {
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
 
-        ReservationContextImpl.setComponents(_userDao, _domainDao, _accountDao);
+//        ReservationContextImpl.setComponents(_userDao, _domainDao, _accountDao);
         VirtualMachineProfileImpl.setComponents(_offeringDao, _templateDao, _accountDao);
         VirtualMachineEntityImpl2.init(_entityMgr, this, _networkOrchestrator, _storageOrchestrator);
 

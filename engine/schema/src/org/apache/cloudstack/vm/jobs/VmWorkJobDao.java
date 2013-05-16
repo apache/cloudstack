@@ -14,13 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package org.apache.cloudstack.vm.jobs;
 
 import java.util.Date;
 import java.util.List;
 
+import org.apache.cloudstack.vm.jobs.VmWorkJobVO.Step;
+
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VmWorkJobVO.Step;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 
 public interface VmWorkJobDao extends GenericDao<VmWorkJobVO, Long> {
 	VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId);

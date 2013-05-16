@@ -20,6 +20,9 @@ import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
+import org.apache.cloudstack.vm.jobs.VmWorkJobDaoImpl;
+
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.dc.dao.ClusterDao;
@@ -30,8 +33,6 @@ import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.vm.VmWorkJobDao;
-import com.cloud.vm.VmWorkJobDaoImpl;
 
 @Configuration
 public class VmDaoTestConfiguration {
