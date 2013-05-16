@@ -155,7 +155,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         long gslbRuleId =  assignToGslbCmd.getGlobalLoadBalancerRuleId();
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
         if (gslbRule == null) {
-            throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRule.getUuid());
+            throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRuleId);
         }
 
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
@@ -282,7 +282,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         long gslbRuleId =  removeFromGslbCmd.getGlobalLoadBalancerRuleId();
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
         if (gslbRule == null) {
-            throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRule.getUuid());
+            throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRuleId);
         }
 
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
