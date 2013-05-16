@@ -3171,7 +3171,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
         String plannerName = offering.getDeploymentPlanner();
         if (plannerName == null) {
-            if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
                 plannerName = "BareMetalPlanner";
             } else {
                 plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());

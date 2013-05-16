@@ -223,7 +223,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         ServiceOffering offering = vmProfile.getServiceOffering();
         String plannerName = offering.getDeploymentPlanner();
         if (plannerName == null) {
-            if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
                 plannerName = "BareMetalPlanner";
             } else {
                 plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
