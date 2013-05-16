@@ -16,6 +16,32 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.channels.SocketChannel;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -47,7 +73,6 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
-import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -78,6 +103,7 @@ import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -85,8 +111,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
-import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.ScaleVmAnswer;
+import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
@@ -101,6 +127,7 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
@@ -135,14 +162,14 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateVolumeOVACommand;
-import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
-import com.cloud.agent.api.storage.PrepareOVAPackingAnswer;
-import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.PrepareOVAPackingAnswer;
+import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -250,30 +277,6 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-
-import javax.naming.ConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.nio.channels.SocketChannel;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.TimeZone;
-import java.util.UUID;
 
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
@@ -495,6 +498,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((UnregisterVMCommand) cmd);
             } else if (clz == ScaleVmCommand.class) {
                 return execute((ScaleVmCommand) cmd);
+            } else if (clz == PvlanSetupCommand.class) {
+                return execute((PvlanSetupCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1037,7 +1042,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String domrGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String gw = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
-        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));;
+        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
         String domainName = cmd.getNetworkDomain();
         String dns = cmd.getDefaultDns1();
         if (dns == null || dns.isEmpty()) {
@@ -1376,7 +1381,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             NicTO nicTo = cmd.getNic();
             VirtualDevice nic;
-            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false);
+            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, cmd.getVMType());;
             if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
                 String dvSwitchUuid;
                 ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
@@ -1643,7 +1648,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
         } else {
             networkInfo = HypervisorHostHelper.prepareNetwork(this._publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false);
+                    vmMo.getRunningHost(), vlanId, null, null, null, this._ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false);
         }
 
         int nicIndex = allocPublicNicIndex(vmMo);
@@ -2537,7 +2542,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
                 boolean configureVServiceInNexus = (nicTo.getType() == TrafficType.Guest) && (vmSpec.getDetails().containsKey("ConfigureVServiceInNexus"));
-                Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, configureVServiceInNexus);
+                VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
+                Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, configureVServiceInNexus, vmType);
                 if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
                     String dvSwitchUuid;
                     ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
@@ -2719,16 +2725,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return poolMors;
     }
 
+
+    private String getPvlanInfo(NicTO nicTo) {
+        if (nicTo.getBroadcastType() == BroadcastDomainType.Pvlan) {
+            return NetUtils.getIsolatedPvlanFromUri(nicTo.getBroadcastUri());
+        }
+        return null;
+    }
+
     private String getVlanInfo(NicTO nicTo, String defaultVlan) {
         if (nicTo.getBroadcastType() == BroadcastDomainType.Native) {
             return defaultVlan;
         }
-
-        if (nicTo.getBroadcastType() == BroadcastDomainType.Vlan) {
+        if (nicTo.getBroadcastType() == BroadcastDomainType.Vlan || nicTo.getBroadcastType() == BroadcastDomainType.Pvlan) {
             if (nicTo.getBroadcastUri() != null) {
+                if (nicTo.getBroadcastType() == BroadcastDomainType.Vlan)
+                    // For vlan, the broadcast uri is of the form vlan://<vlanid>
                 return nicTo.getBroadcastUri().getHost();
+                else
+                    // for pvlan, the broacast uri will be of the form pvlan://<vlanid>-i<pvlanid>
+                    return NetUtils.getPrimaryPvlanFromUri(nicTo.getBroadcastUri());
             } else {
-                s_logger.warn("BroadcastType is not claimed as VLAN, but without vlan info in broadcast URI. Use vlan info from labeling: " + defaultVlan);
+                s_logger.warn("BroadcastType is not claimed as VLAN or PVLAN, but without vlan info in broadcast URI. Use vlan info from labeling: " + defaultVlan);
                 return defaultVlan;
             }
         }
@@ -2737,7 +2755,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return defaultVlan;
     }
 
-    private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus) throws Exception {
+    private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus, VirtualMachine.Type vmType) throws Exception {
         Pair<String, String> switchName;
         TrafficType trafficType;
         VirtualSwitchType switchType;
@@ -2761,12 +2779,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         s_logger.info("Prepare network on " + switchType + " " + switchName + " with name prefix: " + namePrefix);
 
         if (VirtualSwitchType.StandardVirtualSwitch == switchType) {
-            networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()),
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
+            networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix,
+                    hostMo, getVlanInfo(nicTo, switchName.second()), nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
                     !namePrefix.startsWith("cloud.private"));
         }
         else {
-            networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()),
+            String vlanId = getVlanInfo(nicTo, switchName.second());
+            String svlanId = null;
+            boolean pvlannetwork = (getPvlanInfo(nicTo) == null)?false:true;
+            if (vmType != null && vmType.equals(VirtualMachine.Type.DomainRouter) && pvlannetwork) {
+                // plumb this network to the promiscuous vlan.
+                svlanId = vlanId;
+            } else {
+                // plumb this network to the isolated vlan.
+                svlanId = getPvlanInfo(nicTo);
+            }
+            networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, vlanId, svlanId,
                     nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType, _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus);
         }
 
@@ -3253,7 +3281,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             NicTO[] nics = vm.getNics();
             for (NicTO nic : nics) {
                 // prepare network on the host
-                prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic, false);
+                prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic, false, cmd.getVirtualMachine().getType());
             }
 
             String secStoreUrl = mgr.getSecondaryStorageStoreUrl(Long.parseLong(_dcId));
@@ -3917,6 +3945,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    protected Answer execute(PvlanSetupCommand cmd) {
+        // Pvlan related operations are performed in the start/stop command paths
+        // for vmware. This function is implemented to support mgmt layer code
+        // that issue this command. Note that pvlan operations are supported only
+        // in Distributed Virtual Switch environments for vmware deployments.
+        return new Answer(cmd, true, "success");
+    }
+
     protected Answer execute(UnregisterVMCommand cmd){
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource UnregisterVMCommand: " + _gson.toJson(cmd));
@@ -4134,6 +4170,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    @Override
     public CreateVolumeOVAAnswer execute(CreateVolumeOVACommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource CreateVolumeOVACommand: " + _gson.toJson(cmd));

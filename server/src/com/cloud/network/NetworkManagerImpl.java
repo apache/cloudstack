@@ -3004,6 +3004,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     Random _rand = new Random(System.currentTimeMillis());
 
+    @Override
     public List<? extends Nic> listVmNics(Long vmId, Long nicId) {
         List<NicVO> result = null;
         if (nicId == null) {
@@ -3014,6 +3015,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return result;
     }
 
+    @Override
     public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp)
     throws InsufficientAddressCapacityException {
         String ipaddr = null;

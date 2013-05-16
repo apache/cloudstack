@@ -2898,12 +2898,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 originalIp = nic.getIp4Address();
                 guestNic = nic;
                 guestNetwork = network;
+                // In vmware, we will be effecting pvlan settings in portgroups in StartCommand.
+                if (profile.getHypervisorType() != HypervisorType.VMware) {
                 if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
                 	if (!setupVmForPvlan(true, hostId, nic)) {
                 		return false;
                 	}
                 }
             }
+        }
         }
         boolean ipChanged = false;
         if (originalIp != null && !originalIp.equalsIgnoreCase(returnedIp)) {
@@ -4336,7 +4339,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         UserVmVO vmVO = _vmDao.findById(vm.getId());
         if (vmVO.getState() == State.Running) {
             try {
-                PlugNicCommand plugNicCmd = new PlugNicCommand(nic,vm.getName());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic,vm.getName(), vm.getType());
                 Commands cmds = new Commands(OnError.Stop);
                 cmds.addCommand("plugnic",plugNicCmd);
                 _agentMgr.send(dest.getHost().getId(),cmds);
