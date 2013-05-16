@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
@@ -99,7 +98,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
         _params.put(name, value);
     }
     
-    @Override 
+    @Override
     public void setBootLoaderType(BootloaderType bootLoader) {
     	this._bootloader = bootLoader;
     }
@@ -198,7 +197,8 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     static ServiceOfferingDao s_offeringDao;
     static VMTemplateDao s_templateDao;
     static AccountDao s_accountDao;
-    static void setComponents(ServiceOfferingDao offeringDao, VMTemplateDao templateDao, AccountDao accountDao) {
+
+    public static void setComponents(ServiceOfferingDao offeringDao, VMTemplateDao templateDao, AccountDao accountDao) {
         s_offeringDao = offeringDao;
         s_templateDao = templateDao;
         s_accountDao = accountDao;

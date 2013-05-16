@@ -39,9 +39,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -98,7 +98,6 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
-import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -109,7 +108,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -142,7 +140,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
  *         report router statistics | seconds | 300s || * }
  **/
 @Local(value = { AgentManager.class })
-public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory {
+public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory, AttacheHandler {
     private static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
     private static final Logger status_logger = Logger.getLogger(Status.class);
 
@@ -1482,6 +1480,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    @Override
     public void disconnectWithInvestigation(final long hostId, final Status.Event event) {
         disconnectInternal(hostId, event, true);
     }

@@ -65,6 +65,8 @@ public class ComponentLifecycleBase implements ComponentLifecycle {
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
+        _name = name;
+        _configParams = params;
 		return true;
 	}
 

@@ -25,16 +25,12 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
@@ -147,21 +143,9 @@ public class MockAgentManagerImpl extends ManagerBase implements AgentManager {
     }
 
     @Override
-    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean agentStatusTransitTo(HostVO host, Event e, long msId) {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public AgentAttache findAttache(long hostId) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override

@@ -23,9 +23,9 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
 import net.sf.ehcache.Cache;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GenericDao;

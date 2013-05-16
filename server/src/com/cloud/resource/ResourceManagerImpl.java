@@ -30,6 +30,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -46,8 +49,6 @@ import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.TapAgentsAction;
@@ -61,6 +62,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.AgentAttache;
+import com.cloud.agent.manager.AttacheHandler;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
@@ -212,6 +214,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected HighAvailabilityManager        _haMgr;
     @Inject
     protected StorageService                 _storageSvr;
+    protected AttacheHandler _attacheHandler; // FIXME: Get rid of me!
 
     protected List<? extends Discoverer> _discoverers;
     public List<? extends Discoverer> getDiscoverers() {
@@ -667,12 +670,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public S3 discoverS3(final AddS3Cmd cmd) throws DiscoveryException {
-        return this._s3Mgr.addS3(cmd);
+        return _s3Mgr.addS3(cmd);
     }
 
     @Override
     public List<S3VO> listS3s(final ListS3sCmd cmd) {
-        return this._s3Mgr.listS3s(cmd);
+        return _s3Mgr.listS3s(cmd);
     }
 
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,
@@ -743,7 +746,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 				// already have a lot of information
 				// in cluster object, to simplify user input, we will construct
 				// neccessary information here
-				Map<String, String> clusterDetails = this._clusterDetailsDao
+				Map<String, String> clusterDetails = _clusterDetailsDao
 						.findDetails(clusterId);
                 username = clusterDetails.get("username");
 				assert (username != null);
@@ -925,7 +928,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 		 * concurrently, return. And consider the situation of CloudStack
 		 * shutdown during delete. A global lock?
          */
-        AgentAttache attache = _agentMgr.findAttache(hostId);
+        AgentAttache attache = _attacheHandler.findAttache(hostId);
 		// Get storage pool host mappings here because they can be removed as a
 		// part of handleDisconnect later
 		// TODO: find out the bad boy, what's a buggy logic!
@@ -1536,6 +1539,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 			throws ConfigurationException {
 		_defaultSystemVMHypervisor = HypervisorType.getType(_configDao
 				.getValue(Config.SystemVMDefaultHypervisor.toString()));
+        _attacheHandler = (AttacheHandler)_agentMgr;
         return true;
     }
 
@@ -1990,7 +1994,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					hostTags,
 					ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT);
             if (host != null) {
-				attache = _agentMgr.handleDirectConnectAgent(host, cmds,
+                attache = _attacheHandler.handleDirectConnectAgent(host, cmds,
 						resource, forRebalance);
                 /* reload myself from database */
                 host = _hostDao.findById(host.getId());
@@ -2075,7 +2079,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             if (host != null) {
                 if (!deferAgentCreation) { // if first host in cluster then create agent otherwise defer it to scan task
-                    attache = _agentMgr.handleDirectConnectAgent(host, cmds, resource, forRebalance);
+                    attache = _attacheHandler.handleDirectConnectAgent(host, cmds, resource, forRebalance);
                     host = _hostDao.findById(host.getId()); // reload
                 } else {
                     host = _hostDao.findById(host.getId()); // reload
@@ -2144,8 +2148,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         Map<String, String> details = hostDetails;
         String guid = details.get("guid");
-		List<HostVO> currentHosts = this
-				.listAllUpAndEnabledHostsInOneZoneByType(hostType, zoneId);
+		List<HostVO> currentHosts = listAllUpAndEnabledHostsInOneZoneByType(hostType, zoneId);
         for (HostVO currentHost : currentHosts) {
             if (currentHost.getGuid().equals(guid)) {
                 return currentHost;
@@ -2525,7 +2528,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     private boolean doUpdateHostPassword(long hostId) {
-        AgentAttache attache = _agentMgr.findAttache(hostId);
+        AgentAttache attache = _attacheHandler.findAttache(hostId);
         if (attache == null) {
             return false;
         }
@@ -2556,7 +2559,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return doUpdateHostPassword(cmd.getHostId());
         } else {
             // get agents for the cluster
-            List<HostVO> hosts = this.listAllHostsInCluster(cmd.getClusterId());
+            List<HostVO> hosts = listAllHostsInCluster(cmd.getClusterId());
             for (HostVO h : hosts) {
                 try {
 					/*

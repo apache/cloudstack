@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -120,9 +120,11 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
     @Column(name=GenericDao.CREATED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
     protected Date created;
 
     @Column(name=GenericDao.REMOVED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
     protected Date removed;
 
     @Column(name="update_time", updatable=true)
@@ -184,7 +186,6 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     
     @Transient
     private VMReservationVO vmReservation;
-    
 
     public VMEntityVO(long id,
             long serviceOfferingId,
@@ -198,21 +199,21 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
             long accountId,
             boolean haEnabled, Long diskOfferingId) {
         this.id = id;
-        this.hostName = name != null ? name : this.uuid;
+        hostName = name != null ? name : uuid;
         if (vmTemplateId != null) {
-            this.templateId = vmTemplateId;
+            templateId = vmTemplateId;
         }
         this.instanceName = instanceName;
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
-        this.vncPassword = Long.toHexString(new Random().nextLong());
-        this.state = State.Stopped;
+        vncPassword = Long.toHexString(new Random().nextLong());
+        state = State.Stopped;
         this.accountId = accountId;
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
-        this.limitCpuUse = false;
+        limitCpuUse = false;
         this.diskOfferingId = diskOfferingId;
     }
 
@@ -229,7 +230,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
             boolean haEnabled,
             boolean limitResourceUse) {
         this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled, null);
-        this.limitCpuUse = limitResourceUse;
+        limitCpuUse = limitResourceUse;
     }
 
 
@@ -346,11 +347,11 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     public Date getProxyAssignTime() {
-        return this.proxyAssignTime;
+        return proxyAssignTime;
     }
 
     public void setProxyAssignTime(Date time) {
-        this.proxyAssignTime = time;
+        proxyAssignTime = time;
     }
 
     @Override
@@ -426,7 +427,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     public void setPodId(long podId) {
-        this.podIdToDeployIn = podId;
+        podIdToDeployIn = podId;
     }
 
     public void setPrivateMacAddress(String privateMacAddress) {
@@ -434,7 +435,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     public void setDataCenterId(long dataCenterId) {
-        this.dataCenterIdToDeployIn = dataCenterId;
+        dataCenterIdToDeployIn = dataCenterId;
     }
 
     public boolean isRemoved() {
@@ -450,7 +451,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     public String getReservationId() {
-        return this.reservationId;
+        return reservationId;
     }
 
     @Override

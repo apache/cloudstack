@@ -24,8 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
-
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.engine.vm.VMEntityManager;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -36,7 +35,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Component
 public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
 	@Inject private VMEntityManager manager;
@@ -47,38 +45,38 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	}
 
 	public void init(String vmId) {
-	this.vmEntityVO = this.manager.loadVirtualMachine(vmId);
+	vmEntityVO = manager.load(vmId);
 	}
 
 	public void init(String vmId, String owner, String hostName, String displayName, int cpu, int speed, long memory, List<String> computeTags, List<String> rootDiskTags, List<String> networks) {
 		init(vmId);
-		this.vmEntityVO.setOwner(owner);
-		this.vmEntityVO.setHostname(hostName);
-		this.vmEntityVO.setDisplayname(displayName);
-		this.vmEntityVO.setSpeed(speed);
-		this.vmEntityVO.setComputeTags(computeTags);
-		this.vmEntityVO.setRootDiskTags(rootDiskTags);
-		this.vmEntityVO.setNetworkIds(networks);
+		vmEntityVO.setOwner(owner);
+		vmEntityVO.setHostname(hostName);
+		vmEntityVO.setDisplayname(displayName);
+		vmEntityVO.setSpeed(speed);
+		vmEntityVO.setComputeTags(computeTags);
+		vmEntityVO.setRootDiskTags(rootDiskTags);
+		vmEntityVO.setNetworkIds(networks);
 
-		manager.saveVirtualMachine(vmEntityVO);
+		manager.save(vmEntityVO);
 	}
 
 	public VirtualMachineEntityImpl(String vmId, VMEntityManager manager) {
 		this.manager = manager;
-	this.vmEntityVO = this.manager.loadVirtualMachine(vmId);
+	vmEntityVO = this.manager.load(vmId);
     }
 
 	public VirtualMachineEntityImpl(String vmId, String owner, String hostName, String displayName, int cpu, int speed, long memory, List<String> computeTags, List<String> rootDiskTags, List<String> networks, VMEntityManager manager) {
 		this(vmId, manager);
-		this.vmEntityVO.setOwner(owner);
-		this.vmEntityVO.setHostname(hostName);
-		this.vmEntityVO.setDisplayname(displayName);
-		this.vmEntityVO.setSpeed(speed);
-		this.vmEntityVO.setComputeTags(computeTags);
-		this.vmEntityVO.setRootDiskTags(rootDiskTags);
-		this.vmEntityVO.setNetworkIds(networks);
+		vmEntityVO.setOwner(owner);
+		vmEntityVO.setHostname(hostName);
+		vmEntityVO.setDisplayname(displayName);
+		vmEntityVO.setSpeed(speed);
+		vmEntityVO.setComputeTags(computeTags);
+		vmEntityVO.setRootDiskTags(rootDiskTags);
+		vmEntityVO.setNetworkIds(networks);
 
-		manager.saveVirtualMachine(vmEntityVO);
+		manager.save(vmEntityVO);
     }
 
 	@Override
@@ -196,7 +194,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	@Override
 	public String reserve(String plannerToUse, DeploymentPlan plan,
 			ExcludeList exclude, String caller) throws InsufficientCapacityException, ResourceUnavailableException {
-		return manager.reserveVirtualMachine(this.vmEntityVO, plannerToUse, plan, exclude);
+		return manager.reserve(vmEntityVO, plannerToUse, plan, exclude);
 	}
 
 	@Override
@@ -207,12 +205,12 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
 	@Override
 	public void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException{
-        manager.deployVirtualMachine(reservationId, this.vmEntityVO, caller, params);
+        manager.deploy(reservationId, vmEntityVO, caller, params);
 	}
 
 	@Override
 	public boolean stop(String caller) throws ResourceUnavailableException{
-	    return manager.stopvirtualmachine(this.vmEntityVO, caller);
+	    return manager.stop(vmEntityVO, caller);
 	}
 
 	@Override
@@ -223,7 +221,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 
 	@Override
 	public boolean destroy(String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-		return manager.destroyVirtualMachine(this.vmEntityVO, caller);
+		return manager.destroy(vmEntityVO, caller);
 	}
 
 	@Override

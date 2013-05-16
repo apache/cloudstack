@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.engine.cloud.entity.api;
+package org.apache.cloudstack.engine.vm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
-
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
 import org.apache.cloudstack.engine.cloud.entity.VMReservationVO;
@@ -67,7 +65,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Component
 public class VMEntityManagerImpl implements VMEntityManager {
 
     @Inject
@@ -119,18 +116,18 @@ public class VMEntityManagerImpl implements VMEntityManager {
     DeploymentPlanningManager _dpMgr;
 
 	@Override
-	public VMEntityVO loadVirtualMachine(String vmId) {
+	public VMEntityVO load(String vmId) {
 		return _vmEntityDao.findByUuid(vmId);
 	}
 
 	@Override
-	public void saveVirtualMachine(VMEntityVO entity) {
+	public void save(VMEntityVO entity) {
 	    _vmEntityDao.persist(entity);
 
 	}
 
     @Override
-    public String reserveVirtualMachine(VMEntityVO vmEntityVO, String plannerToUse, DeploymentPlan planToDeploy, ExcludeList exclude)
+    public String reserve(VMEntityVO vmEntityVO, String plannerToUse, DeploymentPlan planToDeploy, ExcludeList exclude)
             throws InsufficientCapacityException, ResourceUnavailableException {
 
         //call planner and get the deployDestination.
@@ -206,7 +203,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public void deployVirtualMachine(String reservationId, VMEntityVO vmEntityVO, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException{
+    public void deploy(String reservationId, VMEntityVO vmEntityVO, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException{
         //grab the VM Id and destination using the reservationId.
 
         VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
@@ -241,7 +238,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public boolean stopvirtualmachine(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException {
+    public boolean stop(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException {
 
         VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
         return _itMgr.stop(vm, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
@@ -249,7 +246,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public boolean destroyVirtualMachine(VMEntityVO vmEntityVO, String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException{
+    public boolean destroy(VMEntityVO vmEntityVO, String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException{
 
          VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
          return _itMgr.destroy(vm, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));

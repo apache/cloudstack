@@ -19,7 +19,6 @@ package com.cloud.cluster;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLifecycle;
@@ -27,7 +26,6 @@ import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
-@Component
 @Local(value = {SystemIntegrityChecker.class})
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
 	private final Logger s_logger = Logger.getLogger(ManagementServerNode.class);

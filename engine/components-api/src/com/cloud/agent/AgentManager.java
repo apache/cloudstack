@@ -18,17 +18,13 @@ package com.cloud.agent;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -142,11 +138,7 @@ public interface AgentManager extends Manager {
     /* working as a lock while agent is being loaded */
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);
     
-    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
-    
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId);
-    
-    public AgentAttache findAttache(long hostId);
     
     void disconnectWithoutInvestigation(long hostId, Status.Event event);
     
