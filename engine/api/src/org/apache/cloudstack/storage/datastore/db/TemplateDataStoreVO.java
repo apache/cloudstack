@@ -263,7 +263,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 		return tid.hashCode()+hid.hashCode();
 	}
 
-    public void setSize(long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 

@@ -50,6 +50,7 @@ import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
@@ -293,6 +294,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
             List<DataStore> ssStores = this._dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
              for( DataStore ssStore : ssStores ) {
+                 if (!(ssStore.getTO() instanceof NfsTO ))
+                     continue; // only do this for Nfs
                 String secUrl = ssStore.getUri();
                 SecStorageSetupCommand setupCmd = null;
                 if (!_useSSlCopy) {

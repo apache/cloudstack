@@ -349,7 +349,7 @@ public class TemplateServiceImpl implements TemplateService {
                     tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
                     tmpltStore.setDataStoreRole(store.getRole());
                     _vmTemplateStoreDao.persist(tmpltStore);
-                    
+
                     // update size in vm_template table
                     VMTemplateVO tmlpt = _templateDao.findById(tmplt.getId());
                     tmlpt.setSize(tmpltInfo.getSize());
@@ -613,7 +613,7 @@ public class TemplateServiceImpl implements TemplateService {
             TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
             if ( tmpltStore == null ) {
                 tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, tmplt.getUrl());
-                tmpltStore.setSize(0);
+                tmpltStore.setSize(0L);
                 tmpltStore.setPhysicalSize(0); // no size information for pre-seeded system vm templates
                 tmpltStore.setDataStoreRole(store.getRole());
                 _vmTemplateStoreDao.persist(tmpltStore);

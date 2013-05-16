@@ -224,7 +224,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
-    
+
     protected Answer copyFromS3ToNfs(CopyCommand cmd, DataTO srcData, S3TO s3, DataTO destData, NfsTO destImageStore) {
         final String storagePath = destImageStore.getUrl();
         final String destPath = destData.getPath();
@@ -308,6 +308,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             String finalFileName = templateFilename;
             String finalDownloadPath = destPath + File.separator + templateFilename;
+            // compute the size of
+            long size = this._storage.getSize(downloadPath + File.separator + templateFilename);
 
             DataTO newDestTO = null;
 
@@ -315,6 +317,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 TemplateObjectTO newTemplTO = new TemplateObjectTO();
                 newTemplTO.setPath(finalDownloadPath);
                 newTemplTO.setName(finalFileName);
+                newTemplTO.setSize(size);
                 newDestTO = newTemplTO;
             } else {
                 return new CopyCmdAnswer("not implemented yet");
@@ -355,7 +358,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             command.add("-n", templateName);
             command.add("-t", destPath);
             String result = command.execute();
-            
+
             if (result != null && !result.equalsIgnoreCase("")) {
             	return new CopyCmdAnswer(result);
             }
