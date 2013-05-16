@@ -162,7 +162,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating a global load balancer: " + getName() + " for account: " + getAccountName();
+        return "creating a global load balancer rule Id: " + getEntityId();
 
     }
 
