@@ -730,6 +730,9 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         Field dcID = NetworkVO.class.getDeclaredField("dataCenterId");
         dcID.setAccessible(true);
         dcID.set(networkVo, new Long(1));
+        Field phyNetworkId = NetworkVO.class.getDeclaredField("physicalNetworkId");
+        phyNetworkId.setAccessible(true);
+        phyNetworkId.set(networkVo, new Long(200));
         when(gslbServiceImpl._networkDao.findById(new Long(1))).thenReturn(networkVo);
 
         GlobalLoadBalancerLbRuleMapVO gslbLbMap = new GlobalLoadBalancerLbRuleMapVO(1, 1);

@@ -162,6 +162,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         CountBy.and("offeringId", CountBy.entity().getNetworkOfferingId(), Op.EQ);
         CountBy.and("vpcId", CountBy.entity().getVpcId(), Op.EQ);
         CountBy.and("removed", CountBy.entity().getRemoved(), Op.NULL);
+        SearchBuilder<NetworkOfferingVO> ntwkOffJoin = _ntwkOffDao.createSearchBuilder();
+        ntwkOffJoin.and("isSystem", ntwkOffJoin.entity().isSystemOnly(), Op.EQ);
+        CountBy.join("offerings", ntwkOffJoin, CountBy.entity().getNetworkOfferingId(), ntwkOffJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         CountBy.done();
 
         PhysicalNetworkSearch = createSearchBuilder();
@@ -626,5 +629,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("aclId", aclId);
 
         return listBy(sc, null);
+    }
+    
+    
+    @Override
+    public int getNonSystemNetworkCountByVpcId(long vpcId) {
+        SearchCriteria<Integer> sc = CountBy.create();
+        sc.setParameters("vpcId", vpcId);
+        sc.setJoinParameters("offerings", "isSystem", false);
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
     }
 }

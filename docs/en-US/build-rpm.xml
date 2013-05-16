@@ -41,9 +41,9 @@ under the License.
     <para>You probably want to ensure that your environment variables will survive a logout/reboot. 
         Be sure to update <filename>~/.bashrc</filename> with the PATH and JAVA_HOME variables.</para>
 
-    <para>Building RPMs for $PRODUCT; is fairly simple. Assuming you already have the source downloaded and have uncompressed the tarball into a local directory, you're going to be able to generate packages in just a few minutes.</para>
+    <para>Building RPMs for &PRODUCT; is fairly simple. Assuming you already have the source downloaded and have uncompressed the tarball into a local directory, you're going to be able to generate packages in just a few minutes.</para>
     <note><title>Packaging has Changed</title>
-        <para>If you've created packages for $PRODUCT; previously, you should be aware that the process has changed considerably since the project has moved to using Apache Maven. Please be sure to follow the steps in this section closely.</para>
+        <para>If you've created packages for &PRODUCT; previously, you should be aware that the process has changed considerably since the project has moved to using Apache Maven. Please be sure to follow the steps in this section closely.</para>
     </note>
     <section id="generating-rpms">
         <title>Generating RPMS</title>
@@ -69,7 +69,7 @@ under the License.
                 <title>Configuring your systems to use your new yum repository</title>
                 <para>
                     Now that your yum repository is populated with RPMs and metadata
-                    we need to configure the machines that need to install $PRODUCT;.
+                    we need to configure the machines that need to install &PRODUCT;.
                     Create a file named <filename>/etc/yum.repos.d/cloudstack.repo</filename> with this information:
                     <programlisting>
                         [apache-cloudstack]
@@ -79,7 +79,7 @@ under the License.
                         gpgcheck=0
                     </programlisting>
                 </para>
-                <para> Completing this step will allow you to easily install $PRODUCT; on a number of machines across the network. 
+                <para> Completing this step will allow you to easily install &PRODUCT; on a number of machines across the network. 
                 </para>
             </section>
         </section>

@@ -150,13 +150,13 @@ public interface CiscoVnmcConnection {
 
     public boolean createTenantVDCEgressAclRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String destStartIp, String destEndIp,
+            String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort)
             throws ExecutionException;
 
     public boolean createTenantVDCEgressAclRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String destStartIp, String destEndIp)
+            String protocol, String sourceStartIp, String sourceEndIp)
             throws ExecutionException;
 
     public boolean deleteTenantVDCAclRule(String tenantName,

@@ -182,7 +182,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
             }
             _accountMgr.checkAccess(caller, null, true, vpc);
-            if(gateway.getVpcId() != acl.getVpcId()){
+            if(!gateway.getVpcId().equals(acl.getVpcId())){
                 throw new InvalidParameterValueException("private gateway: "+privateGatewayId+" and ACL: "+aclId+" do not belong to the same VPC");
             }
         }
@@ -225,7 +225,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             }
 
             _accountMgr.checkAccess(caller, null, true, vpc);
-            if(network.getVpcId() != acl.getVpcId()){
+            if(!network.getVpcId().equals(acl.getVpcId())){
                 throw new InvalidParameterValueException("Network: "+networkId+" and ACL: "+aclId+" do not belong to the same VPC");
             }
         }

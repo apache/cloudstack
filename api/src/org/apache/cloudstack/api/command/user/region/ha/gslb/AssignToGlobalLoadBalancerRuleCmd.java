@@ -95,7 +95,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "applying load balancer rules " + StringUtils.join(getLoadBalancerRulesIds(), ",") +
+        return "assign load balancer rules " + StringUtils.join(getLoadBalancerRulesIds(), ",") +
                 " to global load balancer rule " + getGlobalLoadBalancerRuleId();
     }
 

@@ -69,6 +69,7 @@ import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.UnPlugNicAnswer;
@@ -1023,6 +1024,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw new CloudRuntimeException("Failed to find a nic profile for the existing default network. This is bad and probably means some sort of configuration corruption");
         }
 
+        Network oldDefaultNetwork = null;
+        oldDefaultNetwork = _networkModel.getDefaultNetworkForVm(vmId);
+        long oldNetworkOfferingId = -1L;
+
+        if(oldDefaultNetwork!=null) {
+            oldNetworkOfferingId = oldDefaultNetwork.getNetworkOfferingId();
+        }
         NicVO existingVO = _nicDao.findById(existing.id);
         Integer chosenID = nic.getDeviceId();
         Integer existingID = existing.getDeviceId();
@@ -1054,6 +1062,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw new CloudRuntimeException("Failed to change default nic to " + nic + " and now we have no default");
         } else if (newdefault.getId() == nic.getNetworkId()) {
             s_logger.debug("successfully set default network to " + network + " for " + vmInstance);
+            String nicIdString = Long.toString(nic.getId());
+            long newNetworkOfferingId = network.getNetworkOfferingId();
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), nicIdString, oldNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                     vmInstance.getId(), nicIdString, newNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), nicIdString, newNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                     vmInstance.getId(), nicIdString, oldNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid());
             return _vmDao.findById(vmInstance.getId());
         }
 
@@ -1655,7 +1673,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         String description = "";
 
-        if (displayName != vmInstance.getDisplayName()) {
+        if (!displayName.equals(vmInstance.getDisplayName())) {
             description += "New display name: " + displayName + ". ";
         }
 
@@ -2191,7 +2209,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     s_logger.debug("Creating network for account " + owner + " from the network offering id=" +requiredOfferings.get(0).getId() + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                             owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
-                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true);
+                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException(
@@ -2788,6 +2806,37 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         return true;
     }
 
+    private boolean setupVmForPvlan(boolean add, Long hostId, NicVO nic) {
+        if (!nic.getBroadcastUri().getScheme().equals("pvlan")) {
+    		return false;
+    	}
+        String op = "add";
+        if (!add) {
+        	// "delete" would remove all the rules(if using ovs) related to this vm
+        	op = "delete";
+        }
+        Network network = _networkDao.findById(nic.getNetworkId());
+        Host host = _hostDao.findById(hostId);
+        String networkTag = _networkModel.getNetworkTag(host.getHypervisorType(), network);
+    	PvlanSetupCommand cmd = PvlanSetupCommand.createVmSetup(op, nic.getBroadcastUri(), networkTag, nic.getMacAddress());
+        Answer answer = null;
+        try {
+            answer = _agentMgr.send(hostId, cmd);
+        } catch (OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+            return false;
+        } catch (AgentUnavailableException e) {
+            s_logger.warn("Agent Unavailable ", e);
+            return false;
+        }
+
+        boolean result = true;
+        if (answer == null || !answer.getResult()) {
+        	result = false;
+        }
+        return result;
+    }
+    
     @Override
     public boolean finalizeDeployment(Commands cmds,
             VirtualMachineProfile<UserVmVO> profile, DeployDestination dest,
@@ -2849,6 +2898,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 originalIp = nic.getIp4Address();
                 guestNic = nic;
                 guestNetwork = network;
+                if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
+                	if (!setupVmForPvlan(true, hostId, nic)) {
+                		return false;
+                	}
+                }
             }
         }
         boolean ipChanged = false;
@@ -2977,6 +3031,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                 + ip + " as a part of vm "
                                 + profile.getVirtualMachine()
                                 + " stop due to exception ", ex);
+            }
+        }
+        
+        VMInstanceVO vm = profile.getVirtualMachine();
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        for (NicVO nic : nics) {
+            NetworkVO network = _networkDao.findById(nic.getNetworkId());
+            if (network.getTrafficType() == TrafficType.Guest) {
+                if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
+                	setupVmForPvlan(false, vm.getHostId(), nic);
+                }
             }
         }
     }
@@ -3643,7 +3708,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
         Map<VolumeVO, StoragePoolVO> volToPoolObjectMap = new HashMap<VolumeVO, StoragePoolVO>();
-        if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId() == srcHost.getClusterId()) {
+        if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId().equals(srcHost.getClusterId())) {
             if (volumeToPool.isEmpty()) {
                 // If the destination host is in the same cluster and volumes do not have to be migrated across pools
                 // then fail the call. migrateVirtualMachine api should have been used.
@@ -4038,7 +4103,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                     requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                                     newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
-                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true);
+                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null);
                             // if the network offering has persistent set to true, implement the network
                             if (requiredOfferings.get(0).getIsPersistent()) {
                                 DeployDestination dest = new DeployDestination(zone, null, null, null);

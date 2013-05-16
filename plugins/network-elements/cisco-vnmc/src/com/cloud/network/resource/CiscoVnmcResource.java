@@ -60,6 +60,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.OperationType;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 
@@ -280,30 +281,30 @@ public class CiscoVnmcResource implements ServerResource {
         String policyIdentifier = cmd.getIpAddress().getPublicIp().replace('.', '-');
         try {
             if (!_connection.createTenantVDCNatPolicySet(tenant)) {
-                throw new Exception("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             if (!_connection.createTenantVDCSourceNatPolicy(tenant, policyIdentifier)) {
-                throw new Exception("Failed to create source NAT policy in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create source NAT policy in VNMC for guest network with vlan " + vlanId);
             }
 
             if (!_connection.createTenantVDCSourceNatPolicyRef(tenant, policyIdentifier)) {
-                throw new Exception("Failed to associate source NAT policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to associate source NAT policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             if (!_connection.createTenantVDCSourceNatIpPool(tenant, policyIdentifier, cmd.getIpAddress().getPublicIp())) {
-                throw new Exception("Failed to create source NAT ip pool in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create source NAT ip pool in VNMC for guest network with vlan " + vlanId);
             }
 
             String[] ipRange = getIpRangeFromCidr(cmd.getContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR));
             if (!_connection.createTenantVDCSourceNatRule(tenant, policyIdentifier, ipRange[0], ipRange[1])) {
-                throw new Exception("Failed to create source NAT rule in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create source NAT rule in VNMC for guest network with vlan " + vlanId);
             }
 
             if (!_connection.associateNatPolicySet(tenant)) {
-                throw new Exception("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
             }
-        } catch (Throwable e) {
+        } catch (ExecutionException e) {
             String msg = "SetSourceNatCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
@@ -337,29 +338,29 @@ public class CiscoVnmcResource implements ServerResource {
 
         try {
             if (!_connection.createTenantVDCAclPolicySet(tenant, true)) {
-                throw new Exception("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
             }
             if (!_connection.createTenantVDCAclPolicySet(tenant, false)) {
-                throw new Exception("Failed to create ACL egress policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create ACL egress policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 
                 if (!_connection.createTenantVDCAclPolicy(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to create ACL policy in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to create ACL policy in VNMC for guest network with vlan " + vlanId);
                 }
                 if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, true)) {
-                    throw new Exception("Failed to associate ACL policy with ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to associate ACL policy with ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
                 }
                 if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, false)) {
-                    throw new Exception("Failed to associate ACL policy with ACL egress policy set in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to associate ACL policy with ACL egress policy set in VNMC for guest network with vlan " + vlanId);
                 }
 
                 for (FirewallRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
                         if (!_connection.deleteTenantVDCAclRule(tenant, Long.toString(rule.getId()), policyIdentifier)) {
-                            throw new Exception("Failed to delete ACL rule in VNMC for guest network with vlan " + vlanId);
+                            throw new ExecutionException("Failed to delete ACL rule in VNMC for guest network with vlan " + vlanId);
                         }
                     } else {
                         String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
@@ -370,13 +371,13 @@ public class CiscoVnmcResource implements ServerResource {
                                         Long.toString(rule.getId()), policyIdentifier,
                                         rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1],
                                         Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
-                                    throw new Exception("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
+                                    throw new ExecutionException("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             } else {
                                 if (!_connection.createTenantVDCIngressAclRule(tenant,
                                         Long.toString(rule.getId()), policyIdentifier,
                                         rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1])) {
-                                    throw new Exception("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
+                                    throw new ExecutionException("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             }
                         } else {
@@ -387,13 +388,13 @@ public class CiscoVnmcResource implements ServerResource {
                                         rule.getProtocol().toUpperCase(),
                                         externalIpRange[0], externalIpRange[1],
                                         Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
-                                    throw new Exception("Failed to create ACL egress rule in VNMC for guest network with vlan " + vlanId);
+                                    throw new ExecutionException("Failed to create ACL egress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             } else {
                                 if (!_connection.createTenantVDCEgressAclRule(tenant,
                                         Long.toString(rule.getId()), policyIdentifier,
                                         rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1])) {
-                                    throw new Exception("Failed to create ACL egress rule in VNMC for guest network with vlan " + vlanId);
+                                    throw new ExecutionException("Failed to create ACL egress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             }
                         }
@@ -402,9 +403,9 @@ public class CiscoVnmcResource implements ServerResource {
             }
 
             if (!_connection.associateAclPolicySet(tenant)) {
-                throw new Exception("Failed to associate ACL policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to associate ACL policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
             }
-        } catch (Throwable e) {
+        } catch (ExecutionException e) {
             String msg = "SetFirewallRulesCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
@@ -438,69 +439,60 @@ public class CiscoVnmcResource implements ServerResource {
 
         try {
             if (!_connection.createTenantVDCNatPolicySet(tenant)) {
-                throw new Exception("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             if (!_connection.createTenantVDCAclPolicySet(tenant, true)) {
-                throw new Exception("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             if (!_connection.createTenantVDCAclPolicySet(tenant, false)) {
-                throw new Exception("Failed to create ACL egress policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create ACL egress policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 
                 if (!_connection.createTenantVDCDNatPolicy(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to create DNAT policy in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to create DNAT policy in VNMC for guest network with vlan " + vlanId);
                 }
                 if (!_connection.createTenantVDCDNatPolicyRef(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to associate DNAT policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to associate DNAT policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
                 }
 
                 if (!_connection.createTenantVDCAclPolicy(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to create ACL policy in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to create ACL policy in VNMC for guest network with vlan " + vlanId);
                 }
                 if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, true)) {
-                    throw new Exception("Failed to associate ACL policy with ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to associate ACL policy with ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
                 }
                 if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, false)) {
-                    throw new Exception("Failed to associate ACL policy with ACL egress policy set in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to associate ACL policy with ACL egress policy set in VNMC for guest network with vlan " + vlanId);
                 }
 
                 for (StaticNatRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
                         if (!_connection.deleteTenantVDCDNatRule(tenant, Long.toString(rule.getId()), policyIdentifier)) {
-                            throw new Exception("Failed to delete DNAT rule in VNMC for guest network with vlan " + vlanId);
-                        }
-
-                        if (!_connection.deleteTenantVDCAclRule(tenant, Long.toString(rule.getId()), policyIdentifier)) {
-                            throw new Exception("Failed to delete ACL ingress rule for DNAT in VNMC for guest network with vlan " + vlanId);
+                            throw new ExecutionException("Failed to delete DNAT rule in VNMC for guest network with vlan " + vlanId);
                         }
                     } else {
                         if (!_connection.createTenantVDCDNatIpPool(tenant, Long.toString(rule.getId()), rule.getDstIp())) {
-                            throw new Exception("Failed to create DNAT ip pool in VNMC for guest network with vlan " + vlanId);
+                            throw new ExecutionException("Failed to create DNAT ip pool in VNMC for guest network with vlan " + vlanId);
                         }
 
                         if (!_connection.createTenantVDCDNatRule(tenant,
                                 Long.toString(rule.getId()), policyIdentifier, rule.getSrcIp())) {
-                            throw new Exception("Failed to create DNAT rule in VNMC for guest network with vlan " + vlanId);
-                        }
-
-                        if (!_connection.createTenantVDCAclRuleForDNat(tenant,
-                                Long.toString(rule.getId()), policyIdentifier, rule.getDstIp())) {
-                            throw new Exception("Failed to create ACL rule for DNAT in VNMC for guest network with vlan " + vlanId);
+                            throw new ExecutionException("Failed to create DNAT rule in VNMC for guest network with vlan " + vlanId);
                         }
                     }
                 }
             }
 
             if (!_connection.associateAclPolicySet(tenant)) {
-                throw new Exception("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
             }
-        } catch (Throwable e) {
-            String msg = "SetSourceNatCommand failed due to " + e.getMessage();
+        } catch (ExecutionException e) {
+            String msg = "SetStaticNatRulesCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
@@ -533,77 +525,66 @@ public class CiscoVnmcResource implements ServerResource {
 
         try {
             if (!_connection.createTenantVDCNatPolicySet(tenant)) {
-                throw new Exception("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             if (!_connection.createTenantVDCAclPolicySet(tenant, true)) {
-                throw new Exception("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             if (!_connection.createTenantVDCAclPolicySet(tenant, false)) {
-                throw new Exception("Failed to create ACL egress policy set in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create ACL egress policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 
                 if (!_connection.createTenantVDCPFPolicy(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to create PF policy in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to create PF policy in VNMC for guest network with vlan " + vlanId);
                 }
                 if (!_connection.createTenantVDCPFPolicyRef(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to associate PF policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to associate PF policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
                 }
 
                 if (!_connection.createTenantVDCAclPolicy(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to create ACL policy in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to create ACL policy in VNMC for guest network with vlan " + vlanId);
                 }
                 if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, true)) {
-                    throw new Exception("Failed to associate ACL policy with ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to associate ACL policy with ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
                 }
                 if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, false)) {
-                    throw new Exception("Failed to associate ACL policy with ACL egress policy set in VNMC for guest network with vlan " + vlanId);
+                    throw new ExecutionException("Failed to associate ACL policy with ACL egress policy set in VNMC for guest network with vlan " + vlanId);
                 }
 
                 for (PortForwardingRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
                         if (!_connection.deleteTenantVDCPFRule(tenant, Long.toString(rule.getId()), policyIdentifier)) {
-                            throw new Exception("Failed to delete PF rule in VNMC for guest network with vlan " + vlanId);
-                        }
-
-                        if (!_connection.deleteTenantVDCAclRule(tenant, Long.toString(rule.getId()), policyIdentifier)) {
-                            throw new Exception("Failed to delete ACL ingress rule for PF in VNMC for guest network with vlan " + vlanId);
+                            throw new ExecutionException("Failed to delete PF rule in VNMC for guest network with vlan " + vlanId);
                         }
                     } else {
                         if (!_connection.createTenantVDCPFIpPool(tenant, Long.toString(rule.getId()), rule.getDstIp())) {
-                            throw new Exception("Failed to create PF ip pool in VNMC for guest network with vlan " + vlanId);
+                            throw new ExecutionException("Failed to create PF ip pool in VNMC for guest network with vlan " + vlanId);
                         }
                         if (!_connection.createTenantVDCPFPortPool(tenant, Long.toString(rule.getId()),
                                 Integer.toString(rule.getDstPortRange()[0]), Integer.toString(rule.getDstPortRange()[1]))) {
-                            throw new Exception("Failed to create PF port pool in VNMC for guest network with vlan " + vlanId);
+                            throw new ExecutionException("Failed to create PF port pool in VNMC for guest network with vlan " + vlanId);
                         }
 
                         if (!_connection.createTenantVDCPFRule(tenant,
                                 Long.toString(rule.getId()), policyIdentifier,
                                 rule.getProtocol().toUpperCase(), rule.getSrcIp(),
                                 Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
-                            throw new Exception("Failed to create PF rule in VNMC for guest network with vlan " + vlanId);
-                        }
-
-                        if (!_connection.createTenantVDCAclRuleForPF(tenant,
-                                Long.toString(rule.getId()), policyIdentifier,
-                                rule.getProtocol().toUpperCase(), rule.getDstIp(),
-                                Integer.toString(rule.getDstPortRange()[0]), Integer.toString(rule.getDstPortRange()[1]))) {
-                            throw new Exception("Failed to create ACL rule for PF in VNMC for guest network with vlan " + vlanId);
+                            throw new ExecutionException("Failed to create PF rule in VNMC for guest network with vlan " + vlanId);
                         }
                     }
                 }
             }
 
             if (!_connection.associateAclPolicySet(tenant)) {
-                throw new Exception("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
             }
-        } catch (Throwable e) {
-            String msg = "SetSourceNatCommand failed due to " + e.getMessage();
+        } catch (ExecutionException e) {
+            String msg = "SetPortForwardingRulesCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
@@ -619,24 +600,24 @@ public class CiscoVnmcResource implements ServerResource {
         return execute(cmd, _numRetries);
     }
 
-    private void createEdgeDeviceProfile(String tenant, List<String> gateways, Long vlanId) throws Exception {
+    private void createEdgeDeviceProfile(String tenant, List<String> gateways, Long vlanId) throws ExecutionException {
         // create edge device profile
         if (!_connection.createTenantVDCEdgeDeviceProfile(tenant))
-            throw new Exception("Failed to create tenant edge device profile in VNMC for guest network with vlan " + vlanId);
+            throw new ExecutionException("Failed to create tenant edge device profile in VNMC for guest network with vlan " + vlanId);
 
         // create edge static route policy
         if (!_connection.createTenantVDCEdgeStaticRoutePolicy(tenant))
-            throw new Exception("Failed to create tenant edge static route policy in VNMC for guest network with vlan " + vlanId);
+            throw new ExecutionException("Failed to create tenant edge static route policy in VNMC for guest network with vlan " + vlanId);
 
         // create edge static route for all gateways
         for (String gateway : gateways) {
             if (!_connection.createTenantVDCEdgeStaticRoute(tenant, gateway, "0.0.0.0", "0.0.0.0"))
-                throw new Exception("Failed to create tenant edge static route in VNMC for guest network with vlan " + vlanId);
+                throw new ExecutionException("Failed to create tenant edge static route in VNMC for guest network with vlan " + vlanId);
         }
 
         // associate edge 
         if (!_connection.associateTenantVDCEdgeStaticRoutePolicy(tenant))
-            throw new Exception("Failed to associate edge static route policy with edge device profile in VNMC for guest network with vlan " + vlanId);
+            throw new ExecutionException("Failed to associate edge static route policy with edge device profile in VNMC for guest network with vlan " + vlanId);
     }
 
     private Answer execute(CreateLogicalEdgeFirewallCommand cmd, int numRetries) {
@@ -644,23 +625,23 @@ public class CiscoVnmcResource implements ServerResource {
         try {
             // create tenant
             if (!_connection.createTenant(tenant))
-                throw new Exception("Failed to create tenant in VNMC for guest network with vlan " + cmd.getVlanId());
+                throw new ExecutionException("Failed to create tenant in VNMC for guest network with vlan " + cmd.getVlanId());
 
             // create tenant VDC
             if (!_connection.createTenantVDC(tenant))
-                throw new Exception("Failed to create tenant VDC in VNMC for guest network with vlan " + cmd.getVlanId());
+                throw new ExecutionException("Failed to create tenant VDC in VNMC for guest network with vlan " + cmd.getVlanId());
 
             // create edge security profile
             if (!_connection.createTenantVDCEdgeSecurityProfile(tenant))
-                throw new Exception("Failed to create tenant edge security profile in VNMC for guest network with vlan " + cmd.getVlanId());
+                throw new ExecutionException("Failed to create tenant edge security profile in VNMC for guest network with vlan " + cmd.getVlanId());
 
             // create edge device profile and associated route
             createEdgeDeviceProfile(tenant, cmd.getPublicGateways(), cmd.getVlanId());
 
             // create logical edge firewall
             if (!_connection.createEdgeFirewall(tenant, cmd.getPublicIp(), cmd.getInternalIp(), cmd.getPublicSubnet(), cmd.getInternalSubnet()))
-                throw new Exception("Failed to create edge firewall in VNMC for guest network with vlan " + cmd.getVlanId());
-        } catch (Throwable e) {
+                throw new ExecutionException("Failed to create edge firewall in VNMC for guest network with vlan " + cmd.getVlanId());
+        } catch (ExecutionException e) {
             String msg = "CreateLogicalEdgeFirewallCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
@@ -688,7 +669,7 @@ public class CiscoVnmcResource implements ServerResource {
             s_logger.debug("Created vservice node for ASA appliance in Cisco VSM for vlan " + vlanId);
             helper.updatePortProfile(cmd.getAsaInPortProfile(), SwitchPortMode.access, params);
             s_logger.debug("Updated inside port profile for ASA appliance in Cisco VSM with new vlan " + vlanId);
-        } catch (Throwable e) {
+        } catch (CloudRuntimeException e) {
             String msg = "ConfigureVSMForASACommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
@@ -711,18 +692,18 @@ public class CiscoVnmcResource implements ServerResource {
         try {
             Map<String, String> availableAsaAppliances = _connection.listUnAssocAsa1000v();
             if (availableAsaAppliances.isEmpty()) {
-                throw new Exception("No ASA 1000v available to associate with logical edge firewall for guest vlan " + cmd.getVlanId());
+                throw new ExecutionException("No ASA 1000v available to associate with logical edge firewall for guest vlan " + cmd.getVlanId());
             }
 
             String asaInstanceDn = availableAsaAppliances.get(cmd.getAsaMgmtIp());
             if (asaInstanceDn == null) {
-                throw new Exception("Requested ASA 1000v (" + cmd.getAsaMgmtIp() + ") is not available");
+                throw new ExecutionException("Requested ASA 1000v (" + cmd.getAsaMgmtIp() + ") is not available");
             }
 
             if (!_connection.assignAsa1000v(tenant, asaInstanceDn)) {
-                throw new Exception("Failed to associate ASA 1000v (" + cmd.getAsaMgmtIp() + ") with logical edge firewall for guest vlan " + cmd.getVlanId());
+                throw new ExecutionException("Failed to associate ASA 1000v (" + cmd.getAsaMgmtIp() + ") with logical edge firewall for guest vlan " + cmd.getVlanId());
             }
-        } catch (Throwable e) {
+        } catch (ExecutionException e) {
             String msg = "AssociateAsaWithLogicalEdgeFirewallCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
@@ -743,7 +724,7 @@ public class CiscoVnmcResource implements ServerResource {
         String tenant = "vlan-" + cmd.getVlanId();
         try {
             _connection.deleteTenant(tenant);
-        } catch (Throwable e) {
+        } catch (ExecutionException e) {
             String msg = "CleanupLogicalEdgeFirewallCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);

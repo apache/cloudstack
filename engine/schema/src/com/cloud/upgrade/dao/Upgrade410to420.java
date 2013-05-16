@@ -73,9 +73,11 @@ public class Upgrade410to420 implements DbUpgrade {
         upgradeDefaultVpcOffering(conn);
         upgradePhysicalNtwksWithInternalLbProvider(conn);
         updateNetworkACLs(conn);
+        addHostDetailsIndex(conn);
+        updateNetworksForPrivateGateways(conn);
     }
-	
-	private void updateSystemVmTemplates(Connection conn) {
+
+    private void updateSystemVmTemplates(Connection conn) {
 	    PreparedStatement sql = null;
         try {
             sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
@@ -91,7 +93,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
 	}
-	
+
 	private void updatePrimaryStore(Connection conn) {
 	    PreparedStatement sql = null;
 	    PreparedStatement sql2 = null;
@@ -100,7 +102,7 @@ public class Upgrade410to420 implements DbUpgrade {
             sql.setString(1, "ancient primary data store provider");
             sql.setString(2, "HOST");
             sql.executeUpdate();
-            
+
             sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
             sql2.setString(1, "ancient primary data store provider");
             sql2.setString(2, "CLUSTER");
@@ -114,7 +116,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 } catch (SQLException e) {
                 }
             }
-            
+
             if (sql2 != null) {
                 try {
                     sql2.close();
@@ -242,7 +244,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
+
     private void createPlaceHolderNics(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -263,7 +265,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt.setLong(4, networkId);
                     pstmt.executeUpdate();
                     s_logger.debug("Created placeholder nic for the ipAddress " + ip);
-                
+
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create placeholder nics", e);
@@ -279,8 +281,8 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
-    
+
+
     private void updateRemoteAccessVpn(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -560,10 +562,9 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
-    
-    private void upgradeDefaultVpcOffering(Connection conn) {
 
+
+    private void upgradeDefaultVpcOffering(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
@@ -579,7 +580,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 pstmt.setString(3, "InternalLbVm");
                 pstmt.executeUpdate();
             }
-            
+
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable update the default VPC offering with the internal lb service", e);
         } finally {
@@ -594,9 +595,9 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
-    
-    
+
+
+
     private void upgradePhysicalNtwksWithInternalLbProvider(Connection conn) {
 
         PreparedStatement pstmt = null;
@@ -615,7 +616,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 pstmt.setString(1, uuid);
                 pstmt.setLong(2, pNtwkId);
                 pstmt.executeUpdate();
-                
+
                 //Add internal lb vm to the list of physical network elements
                 PreparedStatement pstmt1 = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" +
                 		" WHERE physical_network_id=? AND provider_name='InternalLbVm'");
@@ -629,7 +630,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt1.executeUpdate();
                 }
             }
-            
+
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable existing physical networks with internal lb provider", e);
         } finally {
@@ -643,6 +644,63 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
-        
+
+    }
+
+    private void addHostDetailsIndex(Connection conn) {
+        s_logger.debug("Checking if host_details index exists, if not we will add it");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` where KEY_NAME = 'fk_host_details__host_id'");
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                s_logger.debug("Index already exists on host_details - not adding new one");
+            } else {
+                // add the index
+                PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER IGNORE TABLE `cloud`.`host_details` ADD INDEX `fk_host_details__host_id` (`host_id`)");
+                pstmtUpdate.executeUpdate();
+                s_logger.debug("Index did not exist on host_details -  added new one");
+                pstmtUpdate.close();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to check/update the host_details index ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    
+    private void updateNetworksForPrivateGateways(Connection conn) {
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            //1) get all non removed gateways
+            pstmt = conn.prepareStatement("SELECT network_id, vpc_id FROM `cloud`.`vpc_gateways` WHERE type='Private' AND removed IS null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Long networkId = rs.getLong(1);
+                Long vpcId = rs.getLong(2);
+                //2) Update networks with vpc_id if its set to NULL
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` set vpc_id=? where id=? and vpc_id is NULL and removed is NULL");
+                pstmt.setLong(1, vpcId);
+                pstmt.setLong(2, networkId);
+                pstmt.executeUpdate();
+                
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to update private networks with VPC id.", e);
+        }
     }
 }

@@ -240,7 +240,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return false;
         }
         
-        if (canHandleLbRules(rules)) {
+        if (!canHandleLbRules(rules)) {
             return false;
         }
 
@@ -923,13 +923,13 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
-    public boolean applyGlobalLoadBalancerRule(long zoneId, GlobalLoadBalancerConfigCommand gslbConfigCmd)
+    public boolean applyGlobalLoadBalancerRule(long zoneId, long physicalNetworkId, GlobalLoadBalancerConfigCommand gslbConfigCmd)
             throws ResourceUnavailableException {
 
         long zoneGslbProviderHosId = 0;
 
         // find the NetScaler device configured as gslb service provider in the zone
-        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId, physicalNetworkId);
         if (nsGslbProvider == null) {
             String msg = "Unable to find a NetScaler configured as gslb service provider in zone " + zoneId;
             s_logger.debug(msg);
@@ -950,28 +950,37 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         return true;
     }
 
-    private ExternalLoadBalancerDeviceVO findGslbProvider(long zoneId) {
+    private ExternalLoadBalancerDeviceVO findGslbProvider(long zoneId, long physicalNetworkId) {
         List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
-        if (pNtwks.isEmpty() || pNtwks.size() > 1) {
-            throw new InvalidParameterValueException("Unable to get physical network in zone id = " + zoneId);
+
+        if (pNtwks == null || pNtwks.isEmpty()) {
+            throw new InvalidParameterValueException("Unable to get physical network: " + physicalNetworkId +
+                    " in zone id = " + zoneId);
+        } else {
+            for (PhysicalNetwork physicalNetwork : pNtwks) {
+                if (physicalNetwork.getId() == physicalNetworkId) {
+                    PhysicalNetworkVO physNetwork = pNtwks.get(0);
+                    ExternalLoadBalancerDeviceVO nsGslbProvider = _externalLoadBalancerDeviceDao.findGslbServiceProvider(
+                            physNetwork.getId(), Provider.Netscaler.getName());
+                    return nsGslbProvider;
+                }
+            }
         }
-        PhysicalNetworkVO physNetwork = pNtwks.get(0);
-        ExternalLoadBalancerDeviceVO nsGslbProvider = _externalLoadBalancerDeviceDao.findGslbServiceProvider(
-                physNetwork.getId(), Provider.Netscaler.getName());
-        return nsGslbProvider;
+
+        return null;
     }
 
     @Override
-    public boolean isServiceEnabledInZone(long zoneId) {
+    public boolean isServiceEnabledInZone(long zoneId, long physicalNetworkId) {
 
-        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId, physicalNetworkId);
         //return true if a NetScaler device is configured in the zone
         return (nsGslbProvider != null);
     }
 
     @Override
-    public String getZoneGslbProviderPublicIp(long zoneId) {
-        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+    public String getZoneGslbProviderPublicIp(long zoneId, long physicalNetworkId) {
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId, physicalNetworkId);
         if (nsGslbProvider != null) {
             return nsGslbProvider.getGslbSitePublicIP();
         }
@@ -979,8 +988,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
-    public String getZoneGslbProviderPrivateIp(long zoneId) {
-        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId);
+    public String getZoneGslbProviderPrivateIp(long zoneId, long physicalNetworkId) {
+        ExternalLoadBalancerDeviceVO nsGslbProvider = findGslbProvider(zoneId, physicalNetworkId);
         if (nsGslbProvider != null) {
             return nsGslbProvider.getGslbSitePrivateIP();
         }

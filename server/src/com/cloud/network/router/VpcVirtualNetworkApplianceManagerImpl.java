@@ -1236,12 +1236,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //1) allocate nic for control and source nat public ip
         networks = super.createRouterNetworks(owner, isRedundant, plan, null, sourceNatIp);
 
-        //2) allocate nic for private gateway if needed
-        PrivateGateway privateGateway = _vpcMgr.getVpcPrivateGateway(vpcId);
-        if (privateGateway != null) {
-            NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
-            Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
-            networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) privateNetwork, privateNic));
+        //2) allocate nic for private gateways if needed
+        List<PrivateGateway> privateGateways = _vpcMgr.getVpcPrivateGateways(vpcId);
+        if (privateGateways != null && !privateGateways.isEmpty()) {
+            for (PrivateGateway privateGateway : privateGateways) {
+                NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
+                Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
+                networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) privateNetwork, privateNic));
+            }
         }
         
         //3) allocate nic for guest gateway if needed

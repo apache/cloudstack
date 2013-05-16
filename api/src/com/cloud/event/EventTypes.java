@@ -134,6 +134,7 @@ public class EventTypes {
     public static final String EVENT_REMOVE_FROM_GLOBAL_LOAD_BALANCER_RULE = "GLOBAL.LB.REMOVE";
     public static final String EVENT_GLOBAL_LOAD_BALANCER_CREATE = "GLOBAL.LB.CREATE";
     public static final String EVENT_GLOBAL_LOAD_BALANCER_DELETE = "GLOBAL.LB.DELETE";
+    public static final String EVENT_GLOBAL_LOAD_BALANCER_UPDATE = "GLOBAL.LB.UPDATE";
 
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";

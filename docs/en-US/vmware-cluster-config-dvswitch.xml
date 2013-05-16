@@ -21,7 +21,7 @@
 -->
 <section id="vmware-cluster-config-dvswitch">
   <title>Configuring a vSphere Cluster with VMware Distributed Virtual Switch</title>
-  <para>&PRODUCT;supports VMware vNetwork Distributed Switch (VDS) for virtual network configuration
+  <para>&PRODUCT; supports VMware vNetwork Distributed Switch (VDS) for virtual network configuration
     in a VMware vSphere environment. This section helps you configure VMware VDS in a &PRODUCT;
     deployment. Each vCenter server instance can support up to 128 VDS instances and each VDS
     instance can manage up to 500 VMware hosts.</para>
