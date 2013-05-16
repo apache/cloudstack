@@ -2491,7 +2491,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if ( vlans != null && vlans.size() > 0 ) {
                     if ( vlanId == null ) {
                         vlanId = vlan.getVlanTag();
-                    } else if ( vlan.getVlanTag() != vlanId ) {
+                    } else if (!vlan.getVlanTag().equals(vlanId)) {
                         throw new InvalidParameterValueException("there is already one vlan " + vlan.getVlanTag() + " on network :" +
                                 + network.getId() + ", only one vlan is allowed on guest network");
                     }

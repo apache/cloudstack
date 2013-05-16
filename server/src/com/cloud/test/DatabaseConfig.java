@@ -792,14 +792,14 @@ public class DatabaseConfig {
         }
 
         // If a netmask was provided, check that the startIP, endIP, and gateway all belong to the same subnet
-        if (netmask != null && netmask != "") {
+        if (netmask != null && !netmask.equals("")) {
             if (endIP != null) {
                 if (!IPRangeConfig.sameSubnet(startIP, endIP, netmask)) {
                     printError("Start and end IPs for the public IP range must be in the same subnet, as per the provided netmask.");
                 }
             }
 
-            if (gateway != null && gateway != "") {
+            if (gateway != null && !gateway.equals("")) {
                 if (!IPRangeConfig.sameSubnet(startIP, gateway, netmask)) {
                     printError("The start IP for the public IP range must be in the same subnet as the gateway, as per the provided netmask.");
                 }
