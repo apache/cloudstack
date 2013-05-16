@@ -33,7 +33,6 @@ import org.apache.cloudstack.config.ConfigRepo;
 import org.apache.cloudstack.config.ConfigValue;
 import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
-import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
 import org.apache.cloudstack.engine.config.Configs;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageOrchestrator;
 import org.apache.cloudstack.network.NetworkOrchestrator;
@@ -50,28 +49,34 @@ import com.cloud.cluster.ManagementServerNode;
 import com.cloud.dao.EntityManager;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfileImpl;
@@ -95,7 +100,7 @@ public class VirtualMachineOrchestrator extends ManagerBase {
     @Inject
     VmWorkJobDao _workJobDao;
     @Inject
-    VirtualMachineManager _itMgr;
+    VolumeManager _volMgr;
     
     protected ConfigValue<Integer> _retry;
     protected ConfigValue<Integer> _cancelWait;
@@ -117,7 +122,11 @@ public class VirtualMachineOrchestrator extends ManagerBase {
     ServiceOfferingDao _offeringDao;
     @Inject
     VMTemplateDao _templateDao;
-    // FIXME: Hopefull we can remove the above stuff.
+    @Inject
+    VirtualMachineManager _itMgr;
+    @Inject
+    NetworkManager _networkMgr;
+    // FIXME: Hopefully we can remove the above stuff.
 
     long _nodeId;
 
@@ -129,7 +138,7 @@ public class VirtualMachineOrchestrator extends ManagerBase {
             String templateId,
             String hostName,
             String displayName,
-            String hypervisor,
+            Hypervisor.HypervisorType hypervisor,
             int cpu,
             int speed,
             long memory,
@@ -147,13 +156,8 @@ public class VirtualMachineOrchestrator extends ManagerBase {
             }
         }
 
-        VirtualMachineEntityImpl vmEntity = ComponentContext.inject(VirtualMachineEntityImpl.class);
-        vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, new ArrayList<String>(networkNicMap.keySet()));
-
-        HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
-
         //load vm instance and offerings and call virtualMachineManagerImpl
-        VMInstanceVO vm = _entityMgr.findByUuid(VMInstanceVO.class, id);
+        VMEntityVO vm = _entityMgr.findByUuid(VMEntityVO.class, id);
 
         // If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk
         // Else, a disk offering is optional, and if present will be used to create the data disk
@@ -181,20 +185,14 @@ public class VirtualMachineOrchestrator extends ManagerBase {
             dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
         }
 
-        if (_itMgr.allocate(_entityMgr.findById(UserVmVO.class, vm.getId()),
-                _entityMgr.findById(VMTemplateVO.class, templateId),
-                offering,
-                rootDiskOffering,
-                dataDiskOfferings,
-                networkIpMap,
-                null,
-                plan,
-                hypervisorType,
-                _entityMgr.findById(AccountVO.class, new Long(owner))) == null) {
+        VMTemplateVO template = _entityMgr.findByUuid(VMTemplateVO.class, templateId);
+
+        vm = createDbEntities(vm, plan, template, offering, rootDiskOffering, dataDiskOfferings, networkIpMap, hypervisor, owner);
+        if (vm == null) {
             return null;
         }
 
-        return vmEntity;
+        return new VirtualMachineEntityImpl2(vm);
     }
 
     public VirtualMachineEntity createFromScratch(
@@ -203,7 +201,7 @@ public class VirtualMachineOrchestrator extends ManagerBase {
             String isoId,
             String hostName,
             String displayName,
-            String hypervisor,
+            Hypervisor.HypervisorType hypervisorType,
             String os,
             int cpu,
             int speed,
@@ -214,12 +212,7 @@ public class VirtualMachineOrchestrator extends ManagerBase {
             Map<String, NicProfile> networkNicMap,
             DeploymentPlan plan) throws InsufficientCapacityException {
 
-        // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
-        VirtualMachineEntityImpl vmEntity = ComponentContext.inject(VirtualMachineEntityImpl.class);
-        vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, new ArrayList<String>(networkNicMap.keySet()));
-
-        //load vm instance and offerings and call virtualMachineManagerImpl
-        VMInstanceVO vm = _entityMgr.findByUuid(VMInstanceVO.class, id);
+        VMEntityVO vm = _entityMgr.findByUuid(VMEntityVO.class, id);
 
         Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
         ServiceOfferingVO offering = _entityMgr.findById(ServiceOfferingVO.class, vm.getServiceOfferingId());
@@ -227,9 +220,6 @@ public class VirtualMachineOrchestrator extends ManagerBase {
 
         List<Pair<DiskOfferingVO, Long>> dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>();
         Long diskOfferingId = vm.getDiskOfferingId();
-        if (diskOfferingId == null) {
-            throw new InvalidParameterValueException("Installing from ISO requires a disk offering to be specified for the root disk.");
-        }
         DiskOfferingVO diskOffering = _entityMgr.findById(DiskOfferingVO.class, diskOfferingId);
         if (diskOffering == null) {
             throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
@@ -252,17 +242,78 @@ public class VirtualMachineOrchestrator extends ManagerBase {
             }
         }
 
-        HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
+        VMTemplateVO template = _entityMgr.findByUuid(VMTemplateVO.class, isoId);
 
-        if (_itMgr.allocate(_entityMgr.findById(UserVmVO.class, vm.getId()),
-                _entityMgr.findById(VMTemplateVO.class, new Long(isoId)),
-                offering, rootDiskOffering, dataDiskOfferings, networkIpMap,
-                null, plan, hypervisorType,
-                _entityMgr.findById(AccountVO.class, new Long(owner))) == null) {
+        vm = createDbEntities(vm, plan, template, offering, rootDiskOffering, dataDiskOfferings, networkIpMap, hypervisorType, owner);
+        if (vm == null) {
             return null;
         }
 
-        return vmEntity;
+        return new VirtualMachineEntityImpl2(vm);
+    }
+
+    @DB
+    protected VMEntityVO createDbEntities(VMEntityVO vm1, DeploymentPlan plan, VMTemplateVO template, ServiceOfferingVO serviceOffering,
+            Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
+            List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, List<Pair<NetworkVO, NicProfile>> networks,
+            Hypervisor.HypervisorType hyperType, String ownerRef) throws InsufficientCapacityException {
+        assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Allocating entries for VM: " + vm1);
+        }
+        
+        AccountVO owner = _entityMgr.findById(AccountVO.class, new Long(ownerRef));
+
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, vm1.getId());
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        try {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Allocating nics for " + vm);
+            }
+
+            _networkMgr.allocate(vmProfile, networks);
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
+        }
+
+        if (dataDiskOfferings == null) {
+            dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(0);
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Allocaing disks for " + vm);
+        }
+
+        if (template.getFormat() == ImageFormat.ISO) {
+            _volMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner);
+        } else if (template.getFormat() == ImageFormat.BAREMETAL) {
+            // Do nothing
+        } else {
+            _volMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner);
+        }
+
+        for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
+            _volMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
+        }
+
+        vm1.setDataCenterId(plan.getDataCenterId());
+        if (plan.getPodId() != null) {
+            vm1.setPodId(plan.getPodId());
+        }
+
+        vm1 = _entityMgr.persist(vm1);
+        txn.commit();
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Allocation completed for VM: " + vm);
+        }
+
+        return vm1;
     }
 
     public VirtualMachineEntity get(String uuid) {
