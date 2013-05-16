@@ -28,7 +28,9 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
@@ -51,6 +53,8 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     List<StorageCacheAllocator> storageCacheAllocator;
     @Inject
     DataMotionService dataMotionSvr;
+    @Inject
+    ObjectInDataStoreManager objectInStoreMgr;
 
     @Override
     public DataStore getCacheStorage(Scope scope) {
@@ -133,6 +137,12 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 	@Override
 	public DataObject createCacheObject(DataObject data, Scope scope) {
 		DataStore cacheStore = this.getCacheStorage(scope);
+		DataObjectInStore obj = objectInStoreMgr.findObject(data, cacheStore);
+		if (obj != null && obj.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+			s_logger.debug("there is already one in the cache store");
+			return objectInStoreMgr.get(data, cacheStore);
+		}
+		
 		//TODO: consider multiple thread to create
 		DataObject objOnCacheStore = cacheStore.create(data);
 

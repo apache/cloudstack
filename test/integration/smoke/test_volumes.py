@@ -19,6 +19,7 @@
 #Import Local Modules
 import marvin
 from marvin.cloudstackTestCase import *
+from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
 from marvin.integration.lib.utils import *
@@ -449,12 +450,8 @@ class TestVolumes(cloudstackTestCase):
         cmd.id = self.volume.id
         #Proper exception should be raised; deleting attach VM is not allowed
         #with self.assertRaises(Exception):
-        result = self.apiClient.deleteVolume(cmd)
-        self.assertEqual(
-                         result,
-                         None,
-                         "Check for delete download error while volume is attached"
-                         )
+        with self.assertRaises(cloudstackAPIException):
+            self.apiClient.deleteVolume(cmd)
         
     @attr(tags = ["advanced", "advancedns", "smoke"])    
     def test_05_detach_volume(self):

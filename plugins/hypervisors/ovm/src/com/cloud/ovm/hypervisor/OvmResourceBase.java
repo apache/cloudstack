@@ -131,7 +131,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
-import com.xensource.xenapi.Types.XenAPIException;
 
 public class OvmResourceBase implements ServerResource, HypervisorResource {
 	private static final Logger s_logger = Logger.getLogger(OvmResourceBase.class);
