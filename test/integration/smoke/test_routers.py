@@ -141,11 +141,17 @@ class TestRouterServices(cloudstackTestCase):
         #    by checking status of dnsmasq process
 
         # Find router associated with user account
-        list_router_response = list_routers(
-                                    self.apiclient,
-                                    account=self.account.name,
-                                    domainid=self.account.domainid
-                                    )
+        if self.zone.networktype == "Basic":
+            list_router_response = list_routers(
+                self.apiclient,
+                listall="true"
+            )
+        else:
+            list_router_response = list_routers(
+                self.apiclient,
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
         self.assertEqual(
                             isinstance(list_router_response, list),
                             True,
