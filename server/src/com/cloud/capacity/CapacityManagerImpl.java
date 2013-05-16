@@ -681,7 +681,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
             boolean fromLastHost = false;
-            if (vm.getLastHostId() == vm.getHostId()) {
+            if (vm.getLastHostId().equals(vm.getHostId())) {
                 s_logger.debug("VM starting again on the last host it was stopped on");
                 fromLastHost = true;
             }

@@ -1264,7 +1264,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     throw new InvalidParameterValueException("Unable to find specified NetworkACL");
                 }
 
-                if(vpcId != acl.getVpcId()){
+                if(!vpcId.equals(acl.getVpcId())){
                     throw new InvalidParameterValueException("ACL: "+aclId+" do not belong to the VPC");
                 }
             }

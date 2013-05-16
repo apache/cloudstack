@@ -993,7 +993,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         //Verify parameters
-        if (sourceZoneId == destZoneId) {
+        if (sourceZoneId.equals(destZoneId)) {
             throw new InvalidParameterValueException("Please specify different source and destination zones.");
         }
         
@@ -1522,7 +1522,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account caller = UserContext.current().getCaller();
         Long id = cmd.getId();
 
-        if (id == Long.valueOf(1)) {
+        if (id.equals(Long.valueOf(1))) {
             throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
         }
 
@@ -1614,7 +1614,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id + " as it is removed ");
         }
 
-        if (id == Long.valueOf(1)) {
+        if (id.equals(Long.valueOf(1))) {
             throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
         }
 

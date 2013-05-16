@@ -168,7 +168,7 @@ public class ApiDispatcher {
                 pageSize = Long.valueOf((String) pageSizeObj);
             }
 
-            if ((unpackedParams.get(ApiConstants.PAGE) == null) && (pageSize != null && pageSize != BaseListCmd.PAGESIZE_UNLIMITED)) {
+            if ((unpackedParams.get(ApiConstants.PAGE) == null) && (pageSize != null && !pageSize.equals(BaseListCmd.PAGESIZE_UNLIMITED))) {
                 ServerApiException ex = new ServerApiException(ApiErrorCode.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");
                 ex.setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ex.getClass().getName()));
                 throw ex;

@@ -3708,7 +3708,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
         Map<VolumeVO, StoragePoolVO> volToPoolObjectMap = new HashMap<VolumeVO, StoragePoolVO>();
-        if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId() == srcHost.getClusterId()) {
+        if (!isVMUsingLocalStorage(vm) && destinationHost.getClusterId().equals(srcHost.getClusterId())) {
             if (volumeToPool.isEmpty()) {
                 // If the destination host is in the same cluster and volumes do not have to be migrated across pools
                 // then fail the call. migrateVirtualMachine api should have been used.
