@@ -5761,56 +5761,6 @@
               return listView;
             },
 
-            ucs: function() {
-              var listView = $.extend(true, {}, cloudStack.sections.system.subsections['secondary-storage'].listView, {
-                dataProvider: function (args) {
-                  var searchByArgs = args.filterBy.search.value.length ?
-                    '&name=' + args.filterBy.search.value : '';
-
-                  var data = { 
-                    type: 'SecondaryStorage', 
-                    page: args.page, 
-                    pageSize: pageSize, 
-                    listAll: true 
-                  };                  
-
-                  $.ajax({
-                    url: createURL('listHosts' + searchByArgs),
-                    data: data,
-                    success: function (json) {
-                      args.response.success({ data: json.listhostsresponse.host });
-                    },
-                    error: function (json) {
-                      args.response.error(parseXMLHttpResponse(json));
-                    }
-                  });
-                },
-
-                detailView: {
-                  updateContext: function (args) {
-                    var zone;
-
-                    $.ajax({
-                      url: createURL('listZones'),
-                      data: { id: args.context.secondarystorages[0].zoneid },
-                      async: false,
-                      success: function (json) {
-                        zone = json.listzonesresponse.zone[0];
-                      }
-                    });
-
-                    selectedZoneObj = zone;
-
-                    return {
-                      zones: [zone]
-                    };
-                  }
-                }
-              });
-
-              return listView;
-            },
-            
             secondaryStorage: function() {
               var listView = $.extend(true, {}, cloudStack.sections.system.subsections['secondary-storage'].listView, {
                 dataProvider: function (args) {
@@ -10932,6 +10882,47 @@
           }
         }
       },
+
+      ucs: {
+        title: 'UCS',
+        id: 'ucs',
+        listView: {
+          fields: {
+            fieldA: { label: 'Field A' },
+            fieldB: { label: 'Field B' }
+          },
+          dataProvider: function(args) {
+            args.response.success({
+              data: [
+                { fieldA: 'fieldA1', fieldB: 'fieldB1' },
+                { fieldA: 'fieldA2', fieldB: 'fieldB2' }
+              ]
+            });
+          },
+          detailView: {
+            isMaximized: true,
+            tabs: {
+              blades: {
+                title: 'Blades',
+                listView: {
+                  fields: {
+                    fieldA: { label: 'Field A' },
+                    fieldB: { label: 'Field B' }
+                  },
+                  dataProvider: function(args) {
+                    args.response.success({
+                      data: [
+                        { fieldA: 'fieldA1', fieldB: 'fieldB1' },
+                        { fieldA: 'fieldA2', fieldB: 'fieldB2' }
+                      ]
+                    });
+                  },
+                }
+              }
+            }
+          }
+        }
+      },      
 
       'secondary-storage': {
         title: 'label.secondary.storage',
