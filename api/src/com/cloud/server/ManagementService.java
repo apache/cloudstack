@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.exception.*;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
@@ -34,11 +35,7 @@ import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.*;
 import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
@@ -64,10 +61,6 @@ import com.cloud.configuration.Configuration;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
@@ -422,4 +415,5 @@ public interface ManagementService {
     
     List<String> listDeploymentPlanners();
 
+    VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException;
 }

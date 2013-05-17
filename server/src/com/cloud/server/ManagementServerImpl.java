@@ -43,6 +43,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.*;
+import com.cloud.vm.*;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -151,13 +153,7 @@ import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForM
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.MigrateSystemVMCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.StartSystemVMCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.*;
 import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficTypeCmd;
@@ -472,12 +468,6 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -571,17 +561,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -717,6 +697,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    UserVmManager _userVmMgr;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -2917,6 +2899,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAffinityGroupTypesCmd.class);
         cmdList.add(ListDeploymentPlannersCmd.class);
         cmdList.add(ReleaseHostReservationCmd.class);
+        cmdList.add(ScaleSystemVMCmd.class);
         cmdList.add(AddResourceDetailCmd.class);
         cmdList.add(RemoveResourceDetailCmd.class);
         cmdList.add(ListResourceDetailsCmd.class);
@@ -4021,9 +4004,27 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException {
+
+        boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId());
+        if(result){
+            VirtualMachine vm = _vmInstanceDao.findById(cmd.getId());
+            return vm;
+        }else{
+            return null;
+        }
+    }
+
+
+    @Override
     public VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd) {
         Long systemVmId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
+        return upgradeStoppedSystemVm(systemVmId, serviceOfferingId);
+
+    }
+
+    private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId){
         Account caller = UserContext.current().getCaller();
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);

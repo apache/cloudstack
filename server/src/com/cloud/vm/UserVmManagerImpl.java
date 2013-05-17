@@ -1076,11 +1076,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCALE, eventDescription = "scaling Vm")
-    public boolean
-    upgradeVirtualMachine(ScaleVMCmd cmd) throws InvalidParameterValueException, ResourceAllocationException {
+    public UserVm
+    upgradeVirtualMachine(ScaleVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
 
         Long vmId = cmd.getId();
         Long newServiceOfferingId = cmd.getServiceOfferingId();
+        boolean  result = upgradeVirtualMachine(vmId, newServiceOfferingId);
+        if(result){
+            return _vmDao.findById(vmId);
+        }else{
+            return null;
+        }
+
+    }
+
+    @Override
+    public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
         Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
@@ -1147,8 +1158,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         return success;
-
     }
+
 
     @Override
     public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId,

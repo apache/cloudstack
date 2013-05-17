@@ -22,9 +22,7 @@ import java.util.Map;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.*;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.Criteria;
 import com.cloud.user.Account;
@@ -93,5 +91,7 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmServi
     Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
 
     Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
 }
