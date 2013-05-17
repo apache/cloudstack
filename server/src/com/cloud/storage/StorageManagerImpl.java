@@ -438,6 +438,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         SearchCriteria.Op.EQ);
                 volumeSB.and("removed", volumeSB.entity().getRemoved(),
                         SearchCriteria.Op.NULL);
+                volumeSB.and("state", volumeSB.entity().getState(), SearchCriteria.Op.NIN);
 
                 SearchBuilder<VMInstanceVO> activeVmSB = _vmInstanceDao
                         .createSearchBuilder();
@@ -449,6 +450,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                 SearchCriteria<VolumeVO> volumeSC = volumeSB.create();
                 volumeSC.setParameters("poolId", PrimaryDataStoreVO.getId());
+                volumeSC.setParameters("state", Volume.State.Expunging, Volume.State.Destroy);
                 volumeSC.setJoinParameters("activeVmSB", "state",
                         State.Starting, State.Running, State.Stopping,
                         State.Migrating);
@@ -644,6 +646,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SearchCriteria.Op.EQ);
         volumeSearch.and("poolId", volumeSearch.entity().getPoolId(),
                 SearchCriteria.Op.EQ);
+        volumeSearch.and("state", volumeSearch.entity().getState(), SearchCriteria.Op.EQ);
         StoragePoolSearch.join("vmVolume", volumeSearch, volumeSearch.entity()
                 .getInstanceId(), StoragePoolSearch.entity().getId(),
                 JoinBuilder.JoinType.INNER);
@@ -1591,6 +1594,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         SearchCriteria<VMInstanceVO> sc = StoragePoolSearch.create();
         sc.setJoinParameters("vmVolume", "volumeType", Volume.Type.ROOT);
         sc.setJoinParameters("vmVolume", "poolId", storagePoolId);
+        sc.setJoinParameters("vmVolume", "state", Volume.State.Ready);
         return _vmInstanceDao.search(sc, null);
     }
 

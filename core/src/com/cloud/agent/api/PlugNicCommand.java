@@ -17,11 +17,13 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.vm.VirtualMachine;
 
 public class PlugNicCommand extends Command {
 
     NicTO nic;
     String instanceName;
+    VirtualMachine.Type vmType;
 
     public NicTO getNic() {
         return nic;
@@ -35,12 +37,17 @@ public class PlugNicCommand extends Command {
     protected PlugNicCommand() {
     }
 
-    public PlugNicCommand(NicTO nic, String instanceName) {
+    public PlugNicCommand(NicTO nic, String instanceName, VirtualMachine.Type vmtype) {
         this.nic = nic;
         this.instanceName = instanceName;
+        this.vmType = vmtype;
     }
 
     public String getVmName() {
         return instanceName;
+    }
+
+    public VirtualMachine.Type getVMType() {
+        return vmType;
     }
 }

@@ -2468,7 +2468,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     // offerings
     private boolean isPermissible(Long accountDomainId, Long offeringDomainId) {
 
-        if (accountDomainId == offeringDomainId) {
+        if (accountDomainId.equals(offeringDomainId)) {
             return true; // account and service offering in same domain
         }
 

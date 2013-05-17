@@ -80,7 +80,7 @@ under the License.
     </pair>
     <pair key="%aclruledn%/rule-cond-3/nw-expr2/nw-attr-qual">
       <policyNwAttrQualifier
-        attrEp="destination"
+        attrEp="source"
         dn="%aclruledn%/rule-cond-3/nw-expr2/nw-attr-qual"
         status="created"/>
     </pair>
@@ -93,7 +93,7 @@ under the License.
         name=""
         placement="begin"
         status="created"
-        value="%deststartip%"/>
+        value="%sourcestartip%"/>
     </pair>
     <pair key="%aclruledn%/rule-cond-3/nw-expr2/nw-ip-3">
       <policyIPAddress
@@ -104,7 +104,7 @@ under the License.
         name=""
         placement="end"
         status="created"
-        value="%destendip%"/>
+        value="%sourceendip%"/>
     </pair>
 
   </inConfigs>
@@ -116,6 +116,6 @@ under the License.
     descr=value
     actiontype="drop" or "permit"
     protocolvalue = "TCP" or "UDP" or "ICMP"
-    deststartip="destination start ip"
-    destendip="destination end ip"
+    sourcestartip="source start ip"
+    sourceendip="source end ip"
 --!>

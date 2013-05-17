@@ -146,6 +146,7 @@ known_categories = {
     'deleteImageStore': 'Image Store',
     'createCacheStore': 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
+	'DeploymentPlanners': 'Configuration',
     }
 
 

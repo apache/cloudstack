@@ -729,7 +729,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     @Override
     public boolean createTenantVDCEgressAclRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String destStartIp, String destEndIp,
+            String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_EGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_EGRESS_ACL_RULE.getService();
@@ -740,8 +740,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "descr", "Egress ACL rule for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "actiontype", "permit");
         xml = replaceXmlValue(xml, "protocolvalue", protocol);
-        xml = replaceXmlValue(xml, "deststartip", destStartIp);
-        xml = replaceXmlValue(xml, "destendip", destEndIp);
+        xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
+        xml = replaceXmlValue(xml, "sourceendip", sourceEndIp);
         xml = replaceXmlValue(xml, "deststartport", destStartPort);
         xml = replaceXmlValue(xml, "destendport", destEndPort);
 
@@ -759,7 +759,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     @Override
     public boolean createTenantVDCEgressAclRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String destStartIp, String destEndIp) throws ExecutionException {
+            String protocol, String sourceStartIp, String sourceEndIp) throws ExecutionException {
         String xml = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getService();
         if (protocol.equalsIgnoreCase("all")) { // any protocol
@@ -773,8 +773,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
         xml = replaceXmlValue(xml, "descr", "Egress ACL rule for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "actiontype", "permit");
-        xml = replaceXmlValue(xml, "deststartip", destStartIp);
-        xml = replaceXmlValue(xml, "destendip", destEndIp);
+        xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
+        xml = replaceXmlValue(xml, "sourceendip", sourceEndIp);
 
         List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
         int order = 100;

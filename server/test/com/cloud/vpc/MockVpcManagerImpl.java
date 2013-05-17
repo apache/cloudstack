@@ -379,7 +379,7 @@ public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
     }
 
     @Override
-    public List<PrivateGateway> getVpcPrivateGateways(long id) {
+    public List<PrivateGateway> getVpcPrivateGateways(long vpcId) {
         return null;
     }
 

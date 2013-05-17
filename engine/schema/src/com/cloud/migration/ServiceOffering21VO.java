@@ -174,5 +174,10 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
         return false;
     }
 
+    @Override
+    public String getDeploymentPlanner() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

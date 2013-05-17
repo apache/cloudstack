@@ -792,7 +792,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAlgorithm(globalLoadBalancerRule.getAlgorithm());
         response.setStickyMethod(globalLoadBalancerRule.getPersistence());
         response.setServiceType(globalLoadBalancerRule.getServiceType());
-        response.setServiceDomainName(globalLoadBalancerRule.getGslbDomain());
+        response.setServiceDomainName(globalLoadBalancerRule.getGslbDomain() + "."
+                + ApiDBUtils.getDnsNameConfiguredForGslb());
         response.setName(globalLoadBalancerRule.getName());
         response.setDescription(globalLoadBalancerRule.getDescription());
         response.setRegionIdId(globalLoadBalancerRule.getRegion());

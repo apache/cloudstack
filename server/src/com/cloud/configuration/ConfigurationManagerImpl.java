@@ -162,6 +162,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -344,6 +345,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     NicSecondaryIpDao _nicSecondaryIpDao;
     @Inject
     NicIpAliasDao _nicIpAliasDao;
+
+    @Inject
+    public ManagementService _mgr;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao;
@@ -2033,17 +2037,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Network rate can be specified only for non-System offering and system offerings having \"domainrouter\" systemvmtype");
         }
 
+        if (cmd.getDeploymentPlanner() != null) {
+            List<String> planners = _mgr.listDeploymentPlanners();
+            if (planners != null && !planners.isEmpty()) {
+                if (!planners.contains(cmd.getDeploymentPlanner())) {
+                    throw new InvalidParameterValueException(
+                            "Invalid name for Deployment Planner specified, please use listDeploymentPlanners to get the valid set");
+                }
+            } else {
+                throw new InvalidParameterValueException("No deployment planners found");
+            }
+        }
+
         return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
-                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
+                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText,
-            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag, Integer networkRate) {
+            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner) {
         tags = cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
-                domainId, hostTag);
+                domainId, hostTag, deploymentPlanner);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());
@@ -2490,7 +2506,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if ( vlans != null && vlans.size() > 0 ) {
                     if ( vlanId == null ) {
                         vlanId = vlan.getVlanTag();
-                    } else if ( vlan.getVlanTag() != vlanId ) {
+                    } else if (!vlan.getVlanTag().equals(vlanId)) {
                         throw new InvalidParameterValueException("there is already one vlan " + vlan.getVlanTag() + " on network :" +
                                 + network.getId() + ", only one vlan is allowed on guest network");
                     }
@@ -2656,6 +2672,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (uri != null) {
                 String[] vlan = uri.toString().split("vlan:\\/\\/");
                 networkVlanId = vlan[1];
+                //For pvlan
+                networkVlanId = networkVlanId.split("-")[0];
             }
 
             if (vlanId != null) {

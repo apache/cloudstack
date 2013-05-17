@@ -27,24 +27,6 @@ import java.util.TreeSet;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.NetworkACLItemDao;
-import com.cloud.network.vpc.NetworkACLItemVO;
-import com.cloud.network.vpc.NetworkACLManager;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.PrivateIpAddress;
-import com.cloud.network.vpc.PrivateIpVO;
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.PrivateIpDao;
-import com.cloud.network.vpc.dao.StaticRouteDao;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -108,6 +90,24 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.PrivateIpAddress;
+import com.cloud.network.vpc.PrivateIpVO;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcGateway;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.PrivateIpDao;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
@@ -126,7 +126,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.VMInstanceDao;
-
 
 @Component
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
@@ -339,7 +338,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         DomainRouterVO router = _routerDao.findById(vm.getId());
         if (router.getState() == State.Running) {
             try {
-                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType());
                 
                 Commands cmds = new Commands(OnError.Stop);
                 cmds.addCommand("plugnic", plugNicCmd);                     
@@ -748,7 +747,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 //                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
 //                    _firewallDao.loadSourceCidrs((FirewallRuleVO)rule);
 //                }
-                NetworkACLTO ruleTO = new NetworkACLTO((NetworkACLItemVO)rule, guestVlan, rule.getTrafficType());
+                NetworkACLTO ruleTO = new NetworkACLTO(rule, guestVlan, rule.getTrafficType());
                 rulesTO.add(ruleTO);
             }
         }
@@ -828,7 +827,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         _routerDao.update(routerVO.getId(), routerVO);
                     }
                 }
-                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()), router.getInstanceName());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()), router.getInstanceName(), router.getType());
                 cmds.addCommand(plugNicCmd); 
                 VpcVO vpc = _vpcDao.findById(router.getVpcId());
                 NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, publicNic.getIp4Address(), vpc.getCidr());
@@ -851,7 +850,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             for (Pair<Nic, Network> nicNtwk : guestNics) {
                 Nic guestNic = nicNtwk.first();
                 //plug guest nic 
-                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, guestNic.getNetworkId(), null), router.getInstanceName());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, guestNic.getNetworkId(), null), router.getInstanceName(), router.getType());
                 cmds.addCommand(plugNicCmd);
                 
                 if (!_networkModel.isPrivateGateway(guestNic)) {
@@ -1236,12 +1235,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //1) allocate nic for control and source nat public ip
         networks = super.createRouterNetworks(owner, isRedundant, plan, null, sourceNatIp);
 
-        //2) allocate nic for private gateway if needed
-        PrivateGateway privateGateway = _vpcMgr.getVpcPrivateGateway(vpcId);
-        if (privateGateway != null) {
-            NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
-            Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
-            networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) privateNetwork, privateNic));
+        //2) allocate nic for private gateways if needed
+        List<PrivateGateway> privateGateways = _vpcMgr.getVpcPrivateGateways(vpcId);
+        if (privateGateways != null && !privateGateways.isEmpty()) {
+            for (PrivateGateway privateGateway : privateGateways) {
+                NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
+                Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
+                networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) privateNetwork, privateNic));
+            }
         }
         
         //3) allocate nic for guest gateway if needed

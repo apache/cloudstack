@@ -44,7 +44,7 @@ public class ListNetworkIsolationMethodsCmd extends BaseListCmd{
                 isolationResponses.add(isolationMethod);
             }
         }
-        response.setResponses(isolationResponses, methods.length);
+        response.setResponses(isolationResponses, isolationResponses.size());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
         

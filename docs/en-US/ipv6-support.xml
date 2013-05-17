@@ -21,7 +21,7 @@
 -->
 <section id="ipv6-support">
   <title>IPv6 Support in &PRODUCT;</title>
-  <para>&PRODUCT;supports Internet Protocol version 6 (IPv6), the recent version of the Internet
+  <para>&PRODUCT; supports Internet Protocol version 6 (IPv6), the recent version of the Internet
     Protocol (IP) that defines routing the network traffic. IPv6 uses a 128-bit address that
     exponentially expands the current address space that is available to the users. IPv6 addresses
     consist of eight groups of four hexadecimal digits separated by colons, for example,

@@ -39,18 +39,18 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 	private static final Logger s_logger = Logger.getLogger(ZoneWideStoragePoolAllocator.class);
-	@Inject PrimaryDataStoreDao _storagePoolDao; 
-	@Inject DataStoreManager dataStoreMgr; 
-	
+	@Inject PrimaryDataStoreDao _storagePoolDao;
+	@Inject DataStoreManager dataStoreMgr;
+
 	@Override
-	protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, 
+	protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh,
 			 DeploymentPlan plan) {
         Volume volume =  _volumeDao.findById(dskCh.getVolumeId());
         List<Volume> requestVolumes = new ArrayList<Volume>();
         requestVolumes.add(volume);
         return storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
 	}
-	
+
 	@Override
 	protected List<StoragePool> select(DiskProfile dskCh,
 			VirtualMachineProfile<? extends VirtualMachine> vmProfile,
@@ -64,9 +64,16 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 				return suitablePools;
 			}
 		}
-		
+
 		List<StoragePoolVO> storagePools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
-	
+
+        // add remaining pools in zone, that did not match tags, to avoid set
+        List<StoragePoolVO> allPools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null);
+        allPools.removeAll(storagePools);
+        for (StoragePoolVO pool : allPools) {
+            avoid.addPool(pool.getId());
+        }
+
 		for (StoragePoolVO storage : storagePools) {
 			if (suitablePools.size() == returnUpTo) {
         		break;
@@ -74,7 +81,9 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 			StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
 			if (filter(avoid, pol, dskCh, plan)) {
 				suitablePools.add(pol);
-			}
+            } else {
+                avoid.addPool(pol.getId());
+            }
 		}
 		return suitablePools;
 	}

@@ -127,6 +127,7 @@ import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -276,6 +277,8 @@ ServerResource {
     private String _createTmplPath;
     private String _heartBeatPath;
     private String _securityGroupPath;
+    private String _ovsPvlanDhcpHostPath;
+    private String _ovsPvlanVmPath;
     private String _routerProxyPath;
     private String _host;
     private String _dcId;
@@ -597,6 +600,18 @@ ServerResource {
                     "Unable to find the router_proxy.sh");
         }
 
+        _ovsPvlanDhcpHostPath = Script.findScript(networkScriptsDir, "ovs-pvlan-dhcp-host.sh");
+        if ( _ovsPvlanDhcpHostPath == null) {
+            throw new ConfigurationException(
+                    "Unable to find the ovs-pvlan-dhcp-host.sh");
+        }
+        
+        _ovsPvlanVmPath = Script.findScript(networkScriptsDir, "ovs-pvlan-vm.sh");
+        if ( _ovsPvlanVmPath == null) {
+            throw new ConfigurationException(
+                    "Unable to find the ovs-pvlan-vm.sh");
+        }
+        
         String value = (String) params.get("developer");
         boolean isDeveloper = Boolean.parseBoolean(value);
 
@@ -1213,6 +1228,8 @@ ServerResource {
                 return execute((NetworkRulesVmSecondaryIpCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
+            } else if (cmd instanceof PvlanSetupCommand) {
+                return execute((PvlanSetupCommand) cmd);
             } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1524,6 +1541,65 @@ ServerResource {
                            + "attached to physical interface" + pif);
             return "";
         }
+    }
+
+    private Answer execute(PvlanSetupCommand cmd) {
+    	String primaryPvlan = cmd.getPrimary();
+    	String isolatedPvlan = cmd.getIsolated();
+    	String op = cmd.getOp();
+    	String dhcpName = cmd.getDhcpName();
+    	String dhcpMac = cmd.getDhcpMac();
+    	String dhcpIp = cmd.getDhcpIp();
+    	String vmMac = cmd.getVmMac();
+    	boolean add = true;
+    	
+    	String opr = "-A";
+    	if (op.equals("delete"))  {
+    		opr = "-D";
+    		add = false;
+    	}
+    	
+    	String result = null;
+        Connect conn;
+		try {
+			if (cmd.getType() == PvlanSetupCommand.Type.DHCP) {
+				Script script = new Script(_ovsPvlanDhcpHostPath, _timeout, s_logger);
+				if (add) {
+					conn = LibvirtConnection.getConnectionByVmName(dhcpName);
+					List<InterfaceDef> ifaces = getInterfaces(conn, dhcpName);
+					InterfaceDef guestNic = ifaces.get(0);
+					script.add(opr, "-b", _guestBridgeName,
+						"-p", primaryPvlan, "-i", isolatedPvlan, "-n", dhcpName,
+						"-d", dhcpIp, "-m", dhcpMac, "-I", guestNic.getDevName());
+				} else {
+					script.add(opr, "-b", _guestBridgeName,
+						"-p", primaryPvlan, "-i", isolatedPvlan, "-n", dhcpName,
+						"-d", dhcpIp, "-m", dhcpMac);
+				}
+				result = script.execute();
+				if (result != null) {
+					s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
+					return new Answer(cmd, false, result);
+				} else {
+					s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
+				}
+			} else if (cmd.getType() == PvlanSetupCommand.Type.VM) {
+				Script script = new Script(_ovsPvlanVmPath, _timeout, s_logger);
+				script.add(opr, "-b", _guestBridgeName,
+						"-p", primaryPvlan, "-i", isolatedPvlan, "-v", vmMac);
+				result = script.execute();
+				if (result != null) {
+					s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
+					return new Answer(cmd, false, result);
+				} else {
+					s_logger.info("Programmed pvlan for vm with mac " + vmMac);
+				}
+			}
+		} catch (LibvirtException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	return new Answer(cmd, true, result);
     }
 
     private void VifHotPlug(Connect conn, String vmName, String vlanId,
@@ -2760,7 +2836,7 @@ ServerResource {
         Pair<Double, Double> nicStats = getNicStats(_publicBridgeName);
 
         HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil,
-                nicStats.first() / 1000, nicStats.second() / 1000, "host",
+                nicStats.first() / 1024, nicStats.second() / 1024, "host",
                 totMem, freeMem, 0, 0);
         return new GetHostStatsAnswer(cmd, hostStats);
     }
@@ -4417,10 +4493,10 @@ ServerResource {
             if (oldStats != null) {
                 long deltarx = rx - oldStats._rx;
                 if (deltarx > 0)
-                    stats.setNetworkReadKBs(deltarx / 1000);
+                    stats.setNetworkReadKBs(deltarx / 1024);
                 long deltatx = tx - oldStats._tx;
                 if (deltatx > 0)
-                    stats.setNetworkWriteKBs(deltatx / 1000);
+                    stats.setNetworkWriteKBs(deltatx / 1024);
             }
 
             vmStats newStat = new vmStats();

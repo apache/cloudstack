@@ -74,7 +74,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         if (!dskCh.useLocalStorage()) {
             return suitablePools;
         }
-        
+
         // data disk and host identified from deploying vm (attach volume case)
         if (dskCh.getType() == Volume.Type.DATADISK && plan.getHostId() != null) {
             List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(plan.getHostId());
@@ -85,7 +85,9 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 	if (filter(avoid, pol, dskCh, plan)) {
                 		s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
                 		suitablePools.add(pol);
-                	}
+                    } else {
+                        avoid.addPool(pool.getId());
+                    }
                 }
 
                 if (suitablePools.size() == returnUpTo) {
@@ -101,8 +103,19 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         		StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
         		if (filter(avoid, pol, dskCh, plan)) {
         			suitablePools.add(pol);
-        		}
+                } else {
+                    avoid.addPool(pool.getId());
+                }
         	}
+
+            // add remaining pools in cluster, that did not match tags, to avoid
+            // set
+            List<StoragePoolVO> allPools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(),
+                    plan.getPodId(), plan.getClusterId(), null);
+            allPools.removeAll(availablePools);
+            for (StoragePoolVO pool : allPools) {
+                avoid.addPool(pool.getId());
+            }
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -111,7 +124,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
         return suitablePools;
     }
-   
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);

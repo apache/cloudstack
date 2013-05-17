@@ -1322,7 +1322,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (migrationResult) {
                 //if the vm is migrated to different pod in basic mode, need to reallocate ip
 
-                if (vm.getPodIdToDeployIn() != destPool.getPodId()) {
+                if (!vm.getPodIdToDeployIn().equals(destPool.getPodId())) {
                     DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), destPool.getPodId(), null, null, null, null);
                     VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, null, null, null, null);
                     _networkMgr.reallocate(vmProfile, plan);

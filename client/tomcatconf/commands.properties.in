@@ -212,6 +212,7 @@ listConfigurations=1
 ldapConfig=1
 ldapRemove=1
 listCapabilities=15
+listDeploymentPlanners=1
 
 #### pod commands
 createPod=1
@@ -267,6 +268,7 @@ listHosts=3
 findHostsForMigration=1
 addSecondaryStorage=1
 updateHostPassword=1
+releaseHostReservation=1
 
 #### volume commands
 attachVolume=15

@@ -230,6 +230,7 @@ public class ApiConstants {
     public static final String VLAN_RANGE = "vlanrange";
     public static final String REMOVE_VLAN="removevlan";
     public static final String VLAN_ID = "vlanid";
+    public static final String ISOLATED_PVLAN = "isolatedpvlan";
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
@@ -495,6 +496,7 @@ public class ApiConstants {
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
     public static final String AFFINITY_GROUP_ID = "affinitygroupid";
+    public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
     public static final String ACL_ID = "aclid";
     public static final String NUMBER = "number";
 

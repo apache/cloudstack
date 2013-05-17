@@ -388,5 +388,7 @@ public interface ManagementService {
      * @return List of capacities
      */
     List<? extends Capacity> listTopConsumedResources(ListCapacityCmd cmd);
+    
+    List<String> listDeploymentPlanners();
 
 }

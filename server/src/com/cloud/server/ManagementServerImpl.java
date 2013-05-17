@@ -78,6 +78,7 @@ import org.apache.cloudstack.api.command.admin.host.FindHostsForMigrationCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.ReleaseHostReservationCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
@@ -457,6 +458,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -660,6 +662,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -796,11 +799,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
 
+    protected List<DeploymentPlanner> _planners;
+
+    public List<DeploymentPlanner> getPlanners() {
+        return _planners;
+    }
+
+    public void setPlanners(List<DeploymentPlanner> _planners) {
+        this._planners = _planners;
+    }
+
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
     private String _encryptionKey = null;
     private String _encryptionIV = null;
-    
+
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
@@ -1046,29 +1059,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String zoneType = cmd.getZoneType();
         String keyword = cmd.getKeyword();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
-    	
-        
+
+
     	Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        
-        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();        
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);        
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);  
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);          
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);         
+
+        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-        
+
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-        
-        
-        SearchCriteria<ClusterVO> sc = sb.create();        
+
+
+        SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
-            sc.setParameters("id", id);            
+            sc.setParameters("id", id);
         }
 
         if (name != null) {
@@ -1096,9 +1109,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
-                
+
         if (keyword != null) {
             SearchCriteria<ClusterVO> ssc = _clusterDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1222,7 +1235,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (volumePools.isEmpty()) {
                     allHosts.remove(host);
                 } else {
-                    if (host.getClusterId() != srcHost.getClusterId() || usesLocal) {
+                    if (!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) {
                         requiresStorageMotion.put(host, true);
                     }
                 }
@@ -1511,26 +1524,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd) {
         String podName = cmd.getPodName();
         Long id = cmd.getId();
-        Long zoneId = cmd.getZoneId();        
+        Long zoneId = cmd.getZoneId();
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
         String zoneType = cmd.getZoneType();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
-    	
+
     	Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();        
+        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);          
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);         
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-        
+
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-               
+
         SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();
@@ -1543,23 +1556,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (id != null) {
             sc.setParameters("id", id);
         }
-        
+
         if (podName != null) {
             sc.setParameters("name", "%" + podName + "%");
         }
-        
+
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
         }
-        
+
         if (allocationState != null) {
             sc.setParameters("allocationState", allocationState);
-        }        
-    
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
         }
-        
+
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
+        }
+
         Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Pod>, Integer>(result.first(), result.second());
     }
@@ -1868,6 +1881,89 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 */
 
+    private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
+        Long id = cmd.getId();
+        String name = cmd.getTemplateName();
+        String displayText = cmd.getDisplayText();
+        String format = cmd.getFormat();
+        Long guestOSId = cmd.getOsTypeId();
+        Boolean passwordEnabled = cmd.isPasswordEnabled();
+        Boolean bootable = cmd.isBootable();
+        Integer sortKey = cmd.getSortKey();
+        Account account = UserContext.current().getCaller();
+
+        // verify that template exists
+        VMTemplateVO template = _templateDao.findById(id);
+        if (template == null || template.getRemoved() != null) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("unable to find template/iso with specified id");
+            ex.addProxyObject(template, id, "templateId");
+            throw ex;
+        }
+
+        // Don't allow to modify system template
+        if (id.equals(Long.valueOf(1))) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
+            ex.addProxyObject(template, id, "templateId");
+            throw ex;
+        }
+
+        // do a permission check
+        _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
+
+        boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null
+                && bootable == null && sortKey == null);
+        if (!updateNeeded) {
+            return template;
+        }
+
+        template = _templateDao.createForUpdate(id);
+
+        if (name != null) {
+            template.setName(name);
+        }
+
+        if (displayText != null) {
+            template.setDisplayText(displayText);
+        }
+
+        if (sortKey != null) {
+            template.setSortKey(sortKey);
+        }
+
+        ImageFormat imageFormat = null;
+        if (format != null) {
+            try {
+                imageFormat = ImageFormat.valueOf(format.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException("Image format: " + format + " is incorrect. Supported formats are "
+                        + EnumUtils.listValues(ImageFormat.values()));
+            }
+
+            template.setFormat(imageFormat);
+        }
+
+        if (guestOSId != null) {
+            GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+
+            if (guestOS == null) {
+                throw new InvalidParameterValueException("Please specify a valid guest OS ID.");
+            } else {
+                template.setGuestOSId(guestOSId);
+            }
+        }
+
+        if (passwordEnabled != null) {
+            template.setEnablePassword(passwordEnabled);
+        }
+
+        if (bootable != null) {
+            template.setBootable(bootable);
+        }
+
+        _templateDao.update(id, template);
+
+        return _templateDao.findById(id);
+    }
 
     @Override
     public Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(ListPublicIpAddressesCmd cmd) {
@@ -2332,7 +2428,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             public int compare(SummedCapacity arg0, SummedCapacity arg1) {
                 if (arg0.getPercentUsed() < arg1.getPercentUsed()) {
                     return 1;
-                } else if (arg0.getPercentUsed() == arg1.getPercentUsed()) {
+                } else if (arg0.getPercentUsed().equals(arg1.getPercentUsed())) {
                     return 0;
                 }
                 return -1;
@@ -2826,7 +2922,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateVMAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupTypesCmd.class);
         cmdList.add(ListNetworkIsolationMethodsCmd.class);
-
+        cmdList.add(ListDeploymentPlannersCmd.class);
+        cmdList.add(ReleaseHostReservationCmd.class);
         cmdList.add(AddResourceDetailCmd.class);
         cmdList.add(RemoveResourceDetailCmd.class);
         cmdList.add(ListResourceDetailsCmd.class);
@@ -3028,10 +3125,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }        
-        
+        }
+
         SearchCriteria<VMInstanceVO> sc = sb.create();
 
         if (keyword != null) {
@@ -3073,9 +3170,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
-        
+
         Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends VirtualMachine>, Integer>(result.first(), result.second());
     }
@@ -3600,7 +3697,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // although we may have race conditioning here, database transaction serialization should
         // give us the same key
         if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), 
+            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(),
             	getBase64EncodedRandomKey(128));
         }
         return _hashKey;
@@ -3609,41 +3706,41 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public String getEncryptionKey() {
         if (_encryptionKey == null) {
-            _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(), 
-            	Config.EncryptionKey.getCategory(), 
+            _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(),
+            	Config.EncryptionKey.getCategory(),
             	getBase64EncodedRandomKey(128));
         }
         return _encryptionKey;
     }
-    
+
     @Override
     public String getEncryptionIV() {
         if (_encryptionIV == null) {
-            _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(), 
-            	Config.EncryptionIV.getCategory(), 
+            _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(),
+            	Config.EncryptionIV.getCategory(),
             	getBase64EncodedRandomKey(128));
         }
         return _encryptionIV;
     }
-    
+
     @Override
     @DB
     public void resetEncryptionKeyIV() {
-    	
+
     	SearchBuilder<ConfigurationVO> sb = _configDao.createSearchBuilder();
     	sb.and("name1", sb.entity().getName(), SearchCriteria.Op.EQ);
     	sb.or("name2", sb.entity().getName(), SearchCriteria.Op.EQ);
     	sb.done();
-    	
+
     	SearchCriteria<ConfigurationVO> sc = sb.create();
     	sc.setParameters("name1", Config.EncryptionKey.key());
     	sc.setParameters("name2", Config.EncryptionIV.key());
-    	
+
     	_configDao.expunge(sc);
     	_encryptionKey = null;
     	_encryptionIV = null;
     }
-    
+
     private static String getBase64EncodedRandomKey(int nBits) {
 		SecureRandom random;
 		try {
@@ -3979,4 +4076,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
     }
+
+    @Override
+    public List<String> listDeploymentPlanners() {
+        List<String> plannersAvailable = new ArrayList<String>();
+        for (DeploymentPlanner planner : _planners) {
+            plannersAvailable.add(planner.getName());
+        }
+
+        return plannersAvailable;
+    }
+
 }

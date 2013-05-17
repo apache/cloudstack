@@ -1684,4 +1684,9 @@ public class ApiDBUtils {
     public static List<? extends LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {
         return _gslbService.listSiteLoadBalancers(gslbRuleId);
     }
+
+    public static String getDnsNameConfiguredForGslb() {
+        String providerDnsName = _configDao.getValue(Config.CloudDnsName.key());
+        return providerDnsName;
+    }
 }
