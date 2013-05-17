@@ -18,15 +18,16 @@ package com.cloud.service.dao;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -36,6 +37,8 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value={ServiceOfferingDao.class}) @DB(txn=false)
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
     protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
+
+    @Inject protected ServiceOfferingDetailsDao detailsDao;
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdSearch;
@@ -153,5 +156,19 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         offering.setRemoved(new Date());
 
         return update(id, offering);
+    }
+
+    @Override
+    public void loadDetails(ServiceOfferingVO serviceOffering) {
+        Map<String, String> details = detailsDao.findDetails(serviceOffering.getId());
+        serviceOffering.setDetails(details);
+    }
+
+    @Override
+    public void saveDetails(ServiceOfferingVO serviceOffering) {
+        Map<String, String> details = serviceOffering.getDetails();
+        if (details != null) {
+            detailsDao.persist(serviceOffering.getId(), details);
+        }
     }
 }

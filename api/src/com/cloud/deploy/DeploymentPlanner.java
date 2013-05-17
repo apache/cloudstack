@@ -213,6 +213,13 @@ public interface DeploymentPlanner extends Adapter {
             _hostIds.add(hostId);
         }
 
+        public void addHostList(Collection<Long> hostList) {
+            if (_hostIds == null) {
+                _hostIds = new HashSet<Long>();
+            }
+            _hostIds.addAll(hostList);
+        }
+
         public boolean shouldAvoid(Host host) {
             if (_dcIds != null && _dcIds.contains(host.getDataCenterId())) {
                 return true;

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.service;
 
+import java.util.Map;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -70,6 +72,12 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     @Column(name = "deployment_planner")
     private String deploymentPlanner = null;
+
+    // This is a delayed load value.  If the value is null,
+    // then this field has not been loaded yet.
+    // Call service offering dao to load it.
+    @Transient
+    Map<String, String> details;
 
     protected ServiceOfferingVO() {
         super();
@@ -225,4 +233,23 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         return deploymentPlanner;
     }
 
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public String getDetail(String name) {
+        assert (details != null) : "Did you forget to load the details?";
+
+        return details != null ? details.get(name) : null;
+    }
+
+    public void setDetail(String name, String value) {
+        assert (details != null) : "Did you forget to load the details?";
+
+        details.put(name, value);
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
 }
