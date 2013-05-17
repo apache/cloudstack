@@ -10983,6 +10983,7 @@
           
           detailView: {
             isMaximized: true,
+            noCompact: true,
             tabs: {
               blades: {
                 title: 'Blades',
@@ -11072,6 +11073,7 @@
                                                      
                   detailView: {
                     name: 'blade details',
+                    noCompact: true,
                     actions: {                      
                       associateProfileToBlade: {
                         label: 'associate profile to blade',

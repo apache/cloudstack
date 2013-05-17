@@ -11763,8 +11763,9 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .attach .icon,
 .attachISO .icon,
-.attachDisk .icon {
-  background-position: -101px -3px;
+.attachDisk .icon,
+.associateProfileToBlade .icon {
+  background-position: -104px -3px;
 }
 
 .attach:hover .icon,
