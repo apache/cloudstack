@@ -5760,6 +5760,57 @@
 
               return listView;
             },
+
+            ucs: function() {
+              var listView = $.extend(true, {}, cloudStack.sections.system.subsections['secondary-storage'].listView, {
+                dataProvider: function (args) {
+                  var searchByArgs = args.filterBy.search.value.length ?
+                    '&name=' + args.filterBy.search.value : '';
+
+                  var data = { 
+                    type: 'SecondaryStorage', 
+                    page: args.page, 
+                    pageSize: pageSize, 
+                    listAll: true 
+                  };                  
+
+                  $.ajax({
+                    url: createURL('listHosts' + searchByArgs),
+                    data: data,
+                    success: function (json) {
+                      args.response.success({ data: json.listhostsresponse.host });
+                    },
+                    error: function (json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+
+                detailView: {
+                  updateContext: function (args) {
+                    var zone;
+
+                    $.ajax({
+                      url: createURL('listZones'),
+                      data: { id: args.context.secondarystorages[0].zoneid },
+                      async: false,
+                      success: function (json) {
+                        zone = json.listzonesresponse.zone[0];
+                      }
+                    });
+
+                    selectedZoneObj = zone;
+
+                    return {
+                      zones: [zone]
+                    };
+                  }
+                }
+              });
+
+              return listView;
+            },
+            
             secondaryStorage: function() {
               var listView = $.extend(true, {}, cloudStack.sections.system.subsections['secondary-storage'].listView, {
                 dataProvider: function (args) {

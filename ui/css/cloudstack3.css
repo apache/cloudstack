@@ -4952,6 +4952,11 @@ Dialogs*/
   top: 497px;
 }
 
+.system-chart.compute ul.resources li.ucs {
+  left: 199px;
+  top: 406px;
+}
+
 /** Network*/
 .system-chart.network {
 }
