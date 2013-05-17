@@ -39,6 +39,7 @@ import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.DVPortSetting;
 import com.vmware.vim25.DVPortgroupConfigInfo;
@@ -59,7 +60,11 @@ import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
+import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VMwareDVSPvlanConfigSpec;
+import com.vmware.vim25.VMwareDVSPvlanMapEntry;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualLsiLogicController;
@@ -67,6 +72,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualSCSISharing;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
 
@@ -124,12 +130,17 @@ public class HypervisorHostHelper {
 	    }
 	}
 
-	public static String composeCloudNetworkName(String prefix, String vlanId, Integer networkRateMbps, String vSwitchName) {
+    public static String composeCloudNetworkName(String prefix, String vlanId, String svlanId, Integer networkRateMbps, String vSwitchName) {
 		StringBuffer sb = new StringBuffer(prefix);
-		if(vlanId == null || UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId))
+        if(vlanId == null || UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
 			sb.append(".untagged");
-		else
+        } else {
 			sb.append(".").append(vlanId);
+            if (svlanId != null) {
+                sb.append(".").append("s" + svlanId);
+            }
+
+        }
 
 		if(networkRateMbps != null && networkRateMbps.intValue() > 0)
 			sb.append(".").append(String.valueOf(networkRateMbps));
@@ -412,7 +423,7 @@ public class HypervisorHostHelper {
 	 */
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix,
-            HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs,
+            HostMO hostMo, String vlanId, String secondaryvlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs,
             VirtualSwitchType vSwitchType, int numPorts, String gateway, boolean configureVServiceInNexus) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
@@ -428,20 +439,28 @@ public class HypervisorHostHelper {
         boolean createGCTag = false;
         String networkName;
         Integer vid = null;
+        Integer spvlanid = null;  // secondary pvlan id
 
         if(vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
             createGCTag = true;
             vid = Integer.parseInt(vlanId);
         }
-        networkName = composeCloudNetworkName(namePrefix, vlanId, networkRateMbps, physicalNetwork);
+        if (secondaryvlanId != null) {
+            spvlanid = Integer.parseInt(secondaryvlanId);
+        }
+        networkName = composeCloudNetworkName(namePrefix, vlanId, secondaryvlanId, networkRateMbps, physicalNetwork);
 
         if (vSwitchType == VirtualSwitchType.VMwareDistributedVirtualSwitch) {
+            VMwareDVSConfigSpec dvsSpec = null;
             DVSTrafficShapingPolicy shapingPolicy;
-            VmwareDistributedVirtualSwitchVlanSpec vlanSpec;
+            VmwareDistributedVirtualSwitchVlanSpec vlanSpec = null;
+            VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = null;
+            //VMwareDVSPvlanConfigSpec pvlanSpec = null;
             DVSSecurityPolicy secPolicy;
             VMwareDVSPortSetting dvsPortSetting;
             DVPortgroupConfigSpec dvPortGroupSpec;
             DVPortgroupConfigInfo dvPortgroupInfo;
+            //DVSConfigInfo dvsInfo;
 
             dvSwitchName = physicalNetwork;
             // TODO(sateesh): Remove this after ensuring proper default value for vSwitchName throughout traffic types
@@ -462,13 +481,95 @@ public class HypervisorHostHelper {
             dvSwitchMo = new DistributedVirtualSwitchMO(context, morDvSwitch);
 
             shapingPolicy = getDVSShapingPolicy(networkRateMbps);
-            if (vid != null) {
-                vlanSpec = createDVPortVlanIdSpec(vid);
-            } else {
-                vlanSpec = createDVPortVlanSpec();
-            }
             secPolicy = createDVSSecurityPolicy();
+
+            // First, if both vlan id and pvlan id are provided, we need to
+            // reconfigure the DVSwitch to have a tuple <vlan id, pvlan id> of
+            // type isolated.
+            if (vid != null && spvlanid != null) {
+                // First check if the vlan/pvlan pair already exists on this dvswitch.
+
+                Map<Integer, HypervisorHostHelper.PvlanType> vlanmap = dvSwitchMo.retrieveVlanPvlan(vid, spvlanid, morDvSwitch);
+                if (vlanmap.size() != 0) {
+                    // Then either vid or pvlanid or both are already being used.
+                    if (vlanmap.containsKey(vid) && vlanmap.get(vid) != HypervisorHostHelper.PvlanType.promiscuous) {
+                        // This VLAN ID is already setup as a non-promiscuous vlan id on the DVS. Throw an exception.
+                        String msg = "VLAN ID " + vid + " is already in use as a " + vlanmap.get(vid).toString() + " VLAN on the DVSwitch";
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                    if ((vid != spvlanid) && vlanmap.containsKey(spvlanid) && vlanmap.get(spvlanid) != HypervisorHostHelper.PvlanType.isolated) {
+                        // This PVLAN ID is already setup as a non-isolated vlan id on the DVS. Throw an exception.
+                        String msg = "PVLAN ID " + spvlanid + " is already in use as a " + vlanmap.get(spvlanid).toString() + " VLAN in the DVSwitch";
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+
+                // First create a DVSconfig spec.
+                dvsSpec = new VMwareDVSConfigSpec();
+                // Next, add the required primary and secondary vlan config specs to the dvs config spec.
+                if (!vlanmap.containsKey(vid)) {
+                    VMwareDVSPvlanConfigSpec ppvlanConfigSpec = createDVPortPvlanConfigSpec(vid, vid, PvlanType.promiscuous, PvlanOperation.add);
+                    dvsSpec.getPvlanConfigSpec().add(ppvlanConfigSpec);
+                }
+                if ( !vid.equals(spvlanid) && !vlanmap.containsKey(spvlanid)) {
+                    VMwareDVSPvlanConfigSpec spvlanConfigSpec = createDVPortPvlanConfigSpec(vid, spvlanid, PvlanType.isolated, PvlanOperation.add);
+                    dvsSpec.getPvlanConfigSpec().add(spvlanConfigSpec);
+                }
+
+                if (dvsSpec.getPvlanConfigSpec().size() > 0) {
+                    // We have something to configure on the DVS... so send it the command.
+                    // When reconfiguring a vmware DVSwitch, we need to send in the configVersion in the spec.
+                    // Let's retrieve this switch's configVersion first.
+                    String dvsConfigVersion = dvSwitchMo.getDVSConfigVersion(morDvSwitch);
+                    dvsSpec.setConfigVersion(dvsConfigVersion);
+                    // Reconfigure the dvs using this spec.
+
+                    try {
+                        TaskInfo reconfigTask = dvSwitchMo.updateVMWareDVSwitchGetTask(morDvSwitch, dvsSpec);
+                    } catch (Exception e) {
+                        if(e instanceof AlreadyExistsFaultMsg) {
+                            s_logger.info("Specified vlan id (" + vid + ") private vlan id (" + spvlanid + ") tuple already configured on VMWare DVSwitch");
+                            // Do nothing, good if the tuple's already configured on the dvswitch.
+            } else {
+                            // Rethrow the exception
+                            s_logger.error("Failed to configure vlan/pvlan tuple on VMware DVSwitch: " + vid + "/" + spvlanid + ", failure message: " + e.getMessage());
+                            e.printStackTrace();
+                            throw e;
+                        }
+                    }
+                }
+                // Else the vlan/pvlan pair already exists on the DVSwitch, and we needn't configure it again.
+            }
+
+            // Next, create the port group. For this, we need to create a VLAN spec.
+            if (vid == null) {
+                vlanSpec = createDVPortVlanSpec();
+            } else {
+                if (spvlanid == null) {
+                    // Create vlan spec.
+                    vlanSpec = createDVPortVlanIdSpec(vid);
+                } else {
+                    // Create a pvlan spec. The pvlan spec is different from the pvlan config spec
+                    // that we created earlier. The pvlan config spec is used to configure the switch
+                    // with a <primary vlanId, secondary vlanId> tuple. The pvlan spec is used
+                    // to configure a port group (i.e., a network) with a secondary vlan id. We don't
+                    // need to mention more than the secondary vlan id because one secondary vlan id
+                    // can be associated with only one primary vlan id. Give vCenter the secondary vlan id,
+                    // and it will find out the associated primary vlan id and do the rest of the
+                    // port group configuration.
+                    pvlanSpec = createDVPortPvlanIdSpec(spvlanid);
+            }
+            }
+
+            // NOTE - VmwareDistributedVirtualSwitchPvlanSpec extends VmwareDistributedVirtualSwitchVlanSpec.
+            if (pvlanSpec != null) {
+                dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, pvlanSpec);
+            } else {
             dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
+            }
+
             dvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts);
 
             if (!dataCenterMo.hasDvPortGroup(networkName)) {
@@ -627,7 +728,6 @@ public class HypervisorHostHelper {
         dvsPortSetting.setSecurityPolicy(secPolicy);
         dvsPortSetting.setInShapingPolicy(shapingPolicy);
         dvsPortSetting.setOutShapingPolicy(shapingPolicy);
-
         return dvsPortSetting;
     }
 
@@ -658,6 +758,35 @@ public class HypervisorHostHelper {
         return shapingPolicy;
     }
 
+    public static VmwareDistributedVirtualSwitchPvlanSpec createDVPortPvlanIdSpec(int pvlanId) {
+        VmwareDistributedVirtualSwitchPvlanSpec pvlanIdSpec = new VmwareDistributedVirtualSwitchPvlanSpec();
+        pvlanIdSpec.setPvlanId(pvlanId);
+        return pvlanIdSpec;
+    }
+
+    public enum PvlanOperation {
+        add,
+        edit,
+        remove
+    }
+
+    public enum PvlanType {
+        promiscuous,
+        isolated,
+        community,  // We don't use Community
+    }
+
+    public static VMwareDVSPvlanConfigSpec createDVPortPvlanConfigSpec(int vlanId, int secondaryVlanId, PvlanType pvlantype, PvlanOperation operation) {
+        VMwareDVSPvlanConfigSpec pvlanConfigSpec = new VMwareDVSPvlanConfigSpec();
+        VMwareDVSPvlanMapEntry map = new VMwareDVSPvlanMapEntry();
+        map.setPvlanType(pvlantype.toString());
+        map.setPrimaryVlanId(vlanId);
+        map.setSecondaryVlanId(secondaryVlanId);
+        pvlanConfigSpec.setPvlanEntry(map);
+
+        pvlanConfigSpec.setOperation(operation.toString());
+        return pvlanConfigSpec;
+    }
     public static VmwareDistributedVirtualSwitchVlanIdSpec createDVPortVlanIdSpec(int vlanId) {
         VmwareDistributedVirtualSwitchVlanIdSpec vlanIdSpec = new VmwareDistributedVirtualSwitchVlanIdSpec();
         vlanIdSpec.setVlanId(vlanId);
@@ -706,7 +835,7 @@ public class HypervisorHostHelper {
             vid = Integer.parseInt(vlanId);
         }
 
-        networkName = composeCloudNetworkName(namePrefix, vlanId, networkRateMbps, vSwitchName);
+        networkName = composeCloudNetworkName(namePrefix, vlanId, null, networkRateMbps, vSwitchName);
         HostNetworkSecurityPolicy secPolicy = null;
         if (namePrefix.equalsIgnoreCase("cloud.private")) {
             secPolicy = new HostNetworkSecurityPolicy();
@@ -1036,6 +1165,7 @@ public class HypervisorHostHelper {
 
 		        			  	context.uploadVmdkFile(ovfFileItem.isCreate() ? "PUT" : "POST", urlToPost, absoluteFile,
 		    			  			bytesAlreadyWritten, new ActionDelegate<Long> () {
+                                    @Override
 									public void action(Long param) {
 										progressReporter.reportProgress((int)(param * 100 / totalBytes));
 									}

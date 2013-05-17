@@ -92,6 +92,8 @@ public class EventTypes {
     public static final String EVENT_PROXY_STOP = "PROXY.STOP";
     public static final String EVENT_PROXY_REBOOT = "PROXY.REBOOT";
     public static final String EVENT_PROXY_HA = "PROXY.HA";
+    public static final String EVENT_PROXY_SCALE = "PROXY.SCALE";
+
 
     // VNC Console Events
     public static final String EVENT_VNC_CONNECT = "VNC.CONNECT";
@@ -213,6 +215,7 @@ public class EventTypes {
     public static final String EVENT_SSVM_STOP = "SSVM.STOP";
     public static final String EVENT_SSVM_REBOOT = "SSVM.REBOOT";
     public static final String EVENT_SSVM_HA = "SSVM.HA";
+    public static final String EVENT_SSVM_SCALE = "SSVM.SCALE";
 
     // Service Offerings
     public static final String EVENT_SERVICE_OFFERING_CREATE = "SERVICE.OFFERING.CREATE";
@@ -423,6 +426,7 @@ public class EventTypes {
     public static final String EVENT_INTERNAL_LB_VM_START = "INTERNALLBVM.START";
     public static final String EVENT_INTERNAL_LB_VM_STOP = "INTERNALLBVM.STOP";
 
+    public static final String EVENT_HOST_RESERVATION_RELEASE = "HOST.RESERVATION.RELEASE";
     // Dedicated guest vlan range
     public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE  = "GUESTVLANRANGE.DEDICATE";
     public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE  = "GUESTVLANRANGE.RELEASE";
@@ -728,7 +732,6 @@ public class EventTypes {
         entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_UPDATE, AutoScaleVmGroup.class.getName());
         entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_ENABLE, AutoScaleVmGroup.class.getName());
         entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_DISABLE, AutoScaleVmGroup.class.getName());
-
         entityEventDetails.put(EVENT_GUEST_VLAN_RANGE_DEDICATE, GuestVlan.class.getName());
         entityEventDetails.put(EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE, GuestVlan.class.getName());
     }

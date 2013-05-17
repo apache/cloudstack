@@ -43,6 +43,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.*;
+import com.cloud.vm.*;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -78,6 +80,7 @@ import org.apache.cloudstack.api.command.admin.host.FindHostsForMigrationCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.ReleaseHostReservationCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
@@ -150,13 +153,7 @@ import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForM
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.MigrateSystemVMCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.StartSystemVMCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.*;
 import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.AddTrafficTypeCmd;
@@ -462,6 +459,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -470,12 +468,6 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -569,17 +561,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -589,6 +571,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
+import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
@@ -714,6 +697,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    UserVmManager _userVmMgr;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -726,11 +711,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
 
+    protected List<DeploymentPlanner> _planners;
+
+    public List<DeploymentPlanner> getPlanners() {
+        return _planners;
+    }
+
+    public void setPlanners(List<DeploymentPlanner> _planners) {
+        this._planners = _planners;
+    }
+
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
     private String _encryptionKey = null;
     private String _encryptionIV = null;
-    
+
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
@@ -976,29 +971,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String zoneType = cmd.getZoneType();
         String keyword = cmd.getKeyword();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
-    	
-        
+
+
     	Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        
-        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();        
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);        
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);  
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);          
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);         
+
+        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-        
+
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-        
-        
-        SearchCriteria<ClusterVO> sc = sb.create();        
+
+
+        SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
-            sc.setParameters("id", id);            
+            sc.setParameters("id", id);
         }
 
         if (name != null) {
@@ -1026,9 +1021,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
-                
+
         if (keyword != null) {
             SearchCriteria<ClusterVO> ssc = _clusterDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1073,17 +1068,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with given id");
             throw ex;
         }
 
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM is not Running, unable to migrate the vm" + vm);
+                s_logger.debug("VM is not running, cannot migrate the vm" + vm);
             }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to" +
-                    " migrate the vm with specified id");
+            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, cannot " +
+                    "migrate the vm with specified id");
             ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
@@ -1441,26 +1435,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd) {
         String podName = cmd.getPodName();
         Long id = cmd.getId();
-        Long zoneId = cmd.getZoneId();        
+        Long zoneId = cmd.getZoneId();
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
         String zoneType = cmd.getZoneType();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
-    	
+
     	Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();        
+        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);          
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);         
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-        
+
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-               
+
         SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();
@@ -1473,23 +1467,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (id != null) {
             sc.setParameters("id", id);
         }
-        
+
         if (podName != null) {
             sc.setParameters("name", "%" + podName + "%");
         }
-        
+
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
         }
-        
+
         if (allocationState != null) {
             sc.setParameters("allocationState", allocationState);
-        }        
-    
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
         }
-        
+
+        if(zoneType != null) {
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
+        }
+
         Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Pod>, Integer>(result.first(), result.second());
     }
@@ -2903,7 +2897,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAffinityGroupsCmd.class);
         cmdList.add(UpdateVMAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupTypesCmd.class);
-
+        cmdList.add(ListDeploymentPlannersCmd.class);
+        cmdList.add(ReleaseHostReservationCmd.class);
+        cmdList.add(ScaleSystemVMCmd.class);
         cmdList.add(AddResourceDetailCmd.class);
         cmdList.add(RemoveResourceDetailCmd.class);
         cmdList.add(ListResourceDetailsCmd.class);
@@ -3105,10 +3101,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }        
-        
+        }
+
         SearchCriteria<VMInstanceVO> sc = sb.create();
 
         if (keyword != null) {
@@ -3150,9 +3146,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
-        
+
         Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends VirtualMachine>, Integer>(result.first(), result.second());
     }
@@ -3677,7 +3673,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // although we may have race conditioning here, database transaction serialization should
         // give us the same key
         if (_hashKey == null) {
-            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(), 
+            _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(),
             	getBase64EncodedRandomKey(128));
         }
         return _hashKey;
@@ -3686,41 +3682,41 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public String getEncryptionKey() {
         if (_encryptionKey == null) {
-            _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(), 
-            	Config.EncryptionKey.getCategory(), 
+            _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(),
+            	Config.EncryptionKey.getCategory(),
             	getBase64EncodedRandomKey(128));
         }
         return _encryptionKey;
     }
-    
+
     @Override
     public String getEncryptionIV() {
         if (_encryptionIV == null) {
-            _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(), 
-            	Config.EncryptionIV.getCategory(), 
+            _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(),
+            	Config.EncryptionIV.getCategory(),
             	getBase64EncodedRandomKey(128));
         }
         return _encryptionIV;
     }
-    
+
     @Override
     @DB
     public void resetEncryptionKeyIV() {
-    	
+
     	SearchBuilder<ConfigurationVO> sb = _configDao.createSearchBuilder();
     	sb.and("name1", sb.entity().getName(), SearchCriteria.Op.EQ);
     	sb.or("name2", sb.entity().getName(), SearchCriteria.Op.EQ);
     	sb.done();
-    	
+
     	SearchCriteria<ConfigurationVO> sc = sb.create();
     	sc.setParameters("name1", Config.EncryptionKey.key());
     	sc.setParameters("name2", Config.EncryptionIV.key());
-    	
+
     	_configDao.expunge(sc);
     	_encryptionKey = null;
     	_encryptionIV = null;
     }
-    
+
     private static String getBase64EncodedRandomKey(int nBits) {
 		SecureRandom random;
 		try {
@@ -4008,9 +4004,27 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException {
+
+        boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId());
+        if(result){
+            VirtualMachine vm = _vmInstanceDao.findById(cmd.getId());
+            return vm;
+        }else{
+            return null;
+        }
+    }
+
+
+    @Override
     public VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd) {
         Long systemVmId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
+        return upgradeStoppedSystemVm(systemVmId, serviceOfferingId);
+
+    }
+
+    private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId){
         Account caller = UserContext.current().getCaller();
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
@@ -4056,4 +4070,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
     }
+
+    @Override
+    public List<String> listDeploymentPlanners() {
+        List<String> plannersAvailable = new ArrayList<String>();
+        for (DeploymentPlanner planner : _planners) {
+            plannersAvailable.add(planner.getName());
+        }
+
+        return plannersAvailable;
+    }
+
 }

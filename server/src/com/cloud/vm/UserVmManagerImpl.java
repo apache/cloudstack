@@ -98,7 +98,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeployPlannerSelector;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -401,9 +400,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     AffinityGroupDao _affinityGroupDao;
-
-    @Inject
-    List<DeployPlannerSelector> plannerSelectors;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -1080,11 +1076,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCALE, eventDescription = "scaling Vm")
-    public boolean
-    upgradeVirtualMachine(ScaleVMCmd cmd) throws InvalidParameterValueException, ResourceAllocationException {
+    public UserVm
+    upgradeVirtualMachine(ScaleVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
 
         Long vmId = cmd.getId();
         Long newServiceOfferingId = cmd.getServiceOfferingId();
+        boolean  result = upgradeVirtualMachine(vmId, newServiceOfferingId);
+        if(result){
+            return _vmDao.findById(vmId);
+        }else{
+            return null;
+        }
+
+    }
+
+    @Override
+    public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException{
         Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
@@ -1151,8 +1158,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         return success;
-
     }
+
 
     @Override
     public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId,
@@ -2836,7 +2843,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
         return result;
     }
-    
+
     @Override
     public boolean finalizeDeployment(Commands cmds,
             VirtualMachineProfile<UserVmVO> profile, DeployDestination dest,
@@ -2898,12 +2905,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 originalIp = nic.getIp4Address();
                 guestNic = nic;
                 guestNetwork = network;
+                // In vmware, we will be effecting pvlan settings in portgroups in StartCommand.
+                if (profile.getHypervisorType() != HypervisorType.VMware) {
                 if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
                 	if (!setupVmForPvlan(true, hostId, nic)) {
                 		return false;
                 	}
                 }
             }
+        }
         }
         boolean ipChanged = false;
         if (originalIp != null && !originalIp.equalsIgnoreCase(returnedIp)) {
@@ -3033,7 +3043,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                 + " stop due to exception ", ex);
             }
         }
-        
+
         VMInstanceVO vm = profile.getVirtualMachine();
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
@@ -3171,15 +3181,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
 
-        String plannerName = null;
-        for (DeployPlannerSelector dps : plannerSelectors) {
-            plannerName = dps.selectPlanner(vm);
-            if (plannerName != null) {
-                break;
-            }
-        }
+        // Get serviceOffering for Virtual Machine
+        ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+        String plannerName = offering.getDeploymentPlanner();
         if (plannerName == null) {
-            throw new CloudRuntimeException(String.format("cannot find DeployPlannerSelector for vm[uuid:%s, hypervisorType:%s]", vm.getUuid(), vm.getHypervisorType()));
+            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                plannerName = "BareMetalPlanner";
+            } else {
+                plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+            }
         }
 
         String reservationId = vmEntity.reserve(plannerName, plan, new ExcludeList(), new Long(callerUser.getId()).toString());
@@ -3823,7 +3833,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     + cmd.getAccountName() + " is disabled.");
         }
 
-        //check caller has access to both the old and new account 
+        //check caller has access to both the old and new account
         _accountMgr.checkAccess(caller, null, true, oldAccount);
         _accountMgr.checkAccess(caller, null, true, newAccount);
 
@@ -4336,7 +4346,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         UserVmVO vmVO = _vmDao.findById(vm.getId());
         if (vmVO.getState() == State.Running) {
             try {
-                PlugNicCommand plugNicCmd = new PlugNicCommand(nic,vm.getName());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic,vm.getName(), vm.getType());
                 Commands cmds = new Commands(OnError.Stop);
                 cmds.addCommand("plugnic",plugNicCmd);
                 _agentMgr.send(dest.getHost().getId(),cmds);

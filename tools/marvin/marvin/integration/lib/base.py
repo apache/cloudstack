@@ -685,6 +685,7 @@ class Volume:
                 timeout = timeout - 1
         return
 
+    @classmethod
     def migrate(cls, apiclient, **kwargs):
         """Migrate a volume"""
         cmd = migrateVolume.migrateVolumeCmd()
@@ -1268,6 +1269,10 @@ class ServiceOffering:
 
         if "tags" in services:
             cmd.tags = services["tags"]
+
+        if "deploymentplanner" in services:
+            cmd.deploymentplanner = services["deploymentplanner"]
+
         # Service Offering private to that domain
         if domainid:
             cmd.domainid = domainid

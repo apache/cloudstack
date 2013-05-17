@@ -17,6 +17,10 @@
 
 package com.cloud.upgrade.dao;
 
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+import org.apache.log4j.Logger;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.Date;
@@ -25,12 +29,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.UUID;
-
 import com.cloud.network.vpc.NetworkACL;
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade410to420 implements DbUpgrade {
 	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
@@ -70,6 +69,7 @@ public class Upgrade410to420 implements DbUpgrade {
         updatePrimaryStore(conn);
         addEgressFwRulesForSRXGuestNw(conn);
         upgradeEIPNetworkOfferings(conn);
+        updateGlobalDeploymentPlanner(conn);
         upgradeDefaultVpcOffering(conn);
         upgradePhysicalNtwksWithInternalLbProvider(conn);
         updateNetworkACLs(conn);
@@ -563,6 +563,53 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
+    private void updateGlobalDeploymentPlanner(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn
+                    .prepareStatement("select value from `cloud`.`configuration` where name = 'vm.allocation.algorithm'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String globalValue = rs.getString(1);
+                String plannerName = "FirstFitPlanner";
+
+                if (globalValue != null) {
+                    if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.random.toString())) {
+                        plannerName = "FirstFitPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString())) {
+                        plannerName = "FirstFitPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_firstfit
+                            .toString())) {
+                        plannerName = "UserConcentratedPodPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random
+                            .toString())) {
+                        plannerName = "UserConcentratedPodPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString())) {
+                        plannerName = "UserDispersingPlanner";
+                    }
+                }
+                // update vm.deployment.planner global config
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` set value=? where name = 'vm.deployment.planner'");
+                pstmt.setString(1, plannerName);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to set vm.deployment.planner global config", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
 
     private void upgradeDefaultVpcOffering(Connection conn) {
         PreparedStatement pstmt = null;
@@ -595,8 +642,6 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-
-
 
     private void upgradePhysicalNtwksWithInternalLbProvider(Connection conn) {
 
@@ -644,7 +689,6 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
-
     }
 
     private void addHostDetailsIndex(Connection conn) {

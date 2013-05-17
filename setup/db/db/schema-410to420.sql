@@ -393,7 +393,16 @@ CREATE TABLE `cloud`.`vm_snapshots` (
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `vm_snapshot_enabled` tinyint(1) DEFAULT 0 NOT NULL COMMENT 'Whether VM snapshot is supported by hypervisor';
 UPDATE `cloud`.`hypervisor_capabilities` SET `vm_snapshot_enabled`=1 WHERE `hypervisor_type` in ('VMware', 'XenServer');
 
-      
+CREATE TABLE `cloud`.`service_offering_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_service_offering_details__service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE,
+  CONSTRAINT UNIQUE KEY `uk_service_offering_id_name` (`service_offering_id`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
     select 
@@ -973,9 +982,61 @@ CREATE TABLE `cloud`.`network_asa1000v_map` (
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `eip_associate_public_ip` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if public IP is associated with user VM creation by default when EIP service is enabled.' AFTER `elastic_ip_service`;
 
--- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;     
 
+CREATE TABLE `cloud`.`op_host_planner_reservation` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `data_center_id` bigint unsigned NOT NULL,
+  `pod_id` bigint unsigned,
+  `cluster_id` bigint unsigned,
+  `host_id` bigint unsigned,
+  `resource_usage` varchar(255) COMMENT 'Shared(between planners) Vs Dedicated (exclusive usage to a planner)',
+  PRIMARY KEY  (`id`),
+  INDEX `i_op_host_planner_reservation__host_resource_usage`(`host_id`, `resource_usage`),
+  CONSTRAINT `fk_planner_reservation__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_planner_reservation__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_planner_reservation__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_planner_reservation__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`service_offering` ADD COLUMN `deployment_planner` varchar(255) COMMENT 'Planner heuristics used to deploy a VM of this offering; if null global config vm.deployment.planner is used';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.deployment.planner', 'FirstFitPlanner', '[''FirstFitPlanner'', ''UserDispersingPlanner'', ''UserConcentratedPodPlanner'']: DeploymentPlanner heuristic that will be used for VM deployment.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'host.reservation.release.period', '300000', 'The interval in milliseconds between host reservation release checks');
+
+DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
+CREATE VIEW `cloud`.`service_offering_view` AS
+    select 
+        service_offering.id,
+        disk_offering.uuid,
+        disk_offering.name,
+        disk_offering.display_text,
+        disk_offering.created,
+        disk_offering.tags,
+        disk_offering.removed,
+        disk_offering.use_local_storage,
+        disk_offering.system_use,
+        service_offering.cpu,
+        service_offering.speed,
+        service_offering.ram_size,
+        service_offering.nw_rate,
+        service_offering.mc_rate,
+        service_offering.ha_enabled,
+        service_offering.limit_cpu_use,
+        service_offering.host_tag,
+        service_offering.default_use,
+        service_offering.vm_type,
+        service_offering.sort_key,
+        service_offering.deployment_planner,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path
+    from
+        `cloud`.`service_offering`
+            inner join
+        `cloud`.`disk_offering` ON service_offering.id = disk_offering.id
+            left join
+        `cloud`.`domain` ON disk_offering.domain_id = domain.id;
 
 -- Add "default" field to account/user tables
 ALTER TABLE `cloud`.`account` ADD COLUMN `default` int(1) unsigned NOT NULL DEFAULT '0' COMMENT '1 if account is default';
@@ -1605,3 +1666,8 @@ CREATE  TABLE `cloud`.`nic_ip_alias` (
 
 alter table `cloud`.`vpc_gateways` add column network_acl_id bigint unsigned default 1 NOT NULL;
 update `cloud`.`vpc_gateways` set network_acl_id = 2;
+
+-- Re-enable foreign key checking, at the end of the upgrade path
+SET foreign_key_checks = 1;			
+
+

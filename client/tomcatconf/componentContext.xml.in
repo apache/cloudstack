@@ -156,6 +156,7 @@
           <ref bean="FirstFitPlanner" />
           <ref bean="UserDispersingPlanner" />
           <ref bean="UserConcentratedPodPlanner" />
+          <ref bean="ImplicitDedicationPlanner" />
 <!--
           <ref bean="BareMetalPlanner" />
 -->

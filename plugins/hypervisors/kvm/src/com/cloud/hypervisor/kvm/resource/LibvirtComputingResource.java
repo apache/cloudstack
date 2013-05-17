@@ -2842,7 +2842,7 @@ ServerResource {
         Pair<Double, Double> nicStats = getNicStats(_publicBridgeName);
 
         HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil,
-                nicStats.first() / 1000, nicStats.second() / 1000, "host",
+                nicStats.first() / 1024, nicStats.second() / 1024, "host",
                 totMem, freeMem, 0, 0);
         return new GetHostStatsAnswer(cmd, hostStats);
     }
@@ -3581,6 +3581,7 @@ ServerResource {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
+        KVMStoragePool attachingPool = attachingDisk.getPool();
         try {
             if (!attach) {
                 dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
@@ -3605,7 +3606,12 @@ ServerResource {
                 }
             } else {
                 diskdef = new DiskDef();
-                if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
+                if (attachingPool.getType() == StoragePoolType.RBD) {
+                    diskdef.defNetworkBasedDisk(attachingDisk.getPath(),
+                            attachingPool.getSourceHost(), attachingPool.getSourcePort(),
+                            attachingPool.getAuthUserName(), attachingPool.getUuid(), devId,
+                            DiskDef.diskBus.VIRTIO, diskProtocol.RBD);
+                } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId,
                             DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
@@ -4561,10 +4567,10 @@ ServerResource {
             if (oldStats != null) {
                 long deltarx = rx - oldStats._rx;
                 if (deltarx > 0)
-                    stats.setNetworkReadKBs(deltarx / 1000);
+                    stats.setNetworkReadKBs(deltarx / 1024);
                 long deltatx = tx - oldStats._tx;
                 if (deltatx > 0)
-                    stats.setNetworkWriteKBs(deltatx / 1000);
+                    stats.setNetworkWriteKBs(deltatx / 1024);
             }
 
             vmStats newStat = new vmStats();

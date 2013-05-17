@@ -312,6 +312,7 @@ public class ApiConstants {
     public static final String ACCEPT = "accept";
     public static final String SORT_KEY = "sortkey";
     public static final String ACCOUNT_DETAILS = "accountdetails";
+    public static final String SERVICE_OFFERING_DETAILS = "serviceofferingdetails";
     public static final String SERVICE_PROVIDER_LIST = "serviceproviderlist";
     public static final String SERVICE_CAPABILITY_LIST = "servicecapabilitylist";
     public static final String CAN_CHOOSE_SERVICE_CAPABILITY = "canchooseservicecapability";
@@ -496,6 +497,7 @@ public class ApiConstants {
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
     public static final String AFFINITY_GROUP_ID = "affinitygroupid";
+    public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
     public static final String ACL_ID = "aclid";
     public static final String NUMBER = "number";
 

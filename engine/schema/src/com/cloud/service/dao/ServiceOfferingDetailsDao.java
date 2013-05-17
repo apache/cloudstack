@@ -14,11 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.deploy;
+package com.cloud.service.dao;
 
-import com.cloud.utils.component.Adapter;
-import com.cloud.vm.UserVmVO;
+import java.util.Map;
 
-public interface DeployPlannerSelector extends Adapter {
-    String selectPlanner(UserVmVO vm);
+import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.utils.db.GenericDao;
+
+public interface ServiceOfferingDetailsDao extends GenericDao<ServiceOfferingDetailsVO, Long> {
+    Map<String, String> findDetails(long serviceOfferingId);
+    void persist(long serviceOfferingId, Map<String, String> details);
+    ServiceOfferingDetailsVO findDetail(long serviceOfferingId, String name);
+    void deleteDetails(long serviceOfferingId);
 }

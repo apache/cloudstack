@@ -748,11 +748,11 @@ public class VolumeServiceImpl implements VolumeService {
     protected Void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
         VolumeObject vo = (VolumeObject)context.volume;
-        /*if (result.isFailed()) {
+        if (result.isFailed()) {
             vo.stateTransit(Volume.Event.OperationFailed);
         } else {
             vo.stateTransit(Volume.Event.OperationSucceeded);
-        }*/
+        }
         VolumeApiResult res = new VolumeApiResult(vo);
         context.future.complete(res);
         return null;
