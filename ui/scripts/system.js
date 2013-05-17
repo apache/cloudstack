@@ -11009,8 +11009,67 @@
                         { fieldA: 'fieldA2', fieldB: 'fieldB2' }
                       ]
                     });                  
+                  },                  
+                  actions: {                      
+                    associateProfileToBlade: {
+                      label: 'associate profile to blade',
+                      messages: {
+                        notification: function(args) {
+                          return 'associate profile to blade';
+                        }
+                      },
+                      createForm: {
+                        title: 'associate profile to blade',
+                        fields: {
+                          profiledn: {
+                            label: 'profile',
+                            select: function(args) {
+                              var items = [];     
+                              
+                              /*
+                              $.ajax({
+                                url: createURL('listUcsProfile'),
+                                data: {
+                                  ucsmanagerid: args.context.ucsManagers[0].id
+                                },
+                                success: function(json) {
+                                  
+                                }
+                              });
+                              */
+                              
+                              items.push({id: 'aaa', description: 'aaa'});
+                              items.push({id: 'bbb', description: 'bbb'});
+                              args.response.success({data: items});
+                            },
+                            validation: { required: true }
+                          }
+                        }
+                      },
+                      action: function(args) {
+                        /*
+                        $.ajax({
+                          url: createURL('associatesUscProfileToBlade'),
+                          data: {
+                            ucsmanagerid: args.context.ucsManagers[0].id,
+                            profiledn: args.data.profiledn, 
+                            bladeid: '1234567890' //to change later
+                          },
+                          success: function(json) {
+                            
+                          }
+                        });
+                        */
+                        args.response.success();
+                      },
+                      notification: {
+                        poll: function(args) {
+                          args.complete();
+                        }
+                      }
+                    }                      
                   },
-                                   
+                                                     
                   detailView: {
                     name: 'blade details',
                     actions: {                      
