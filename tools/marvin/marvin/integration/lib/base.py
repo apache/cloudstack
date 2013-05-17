@@ -1268,6 +1268,10 @@ class ServiceOffering:
 
         if "tags" in services:
             cmd.tags = services["tags"]
+
+        if "deploymentplanner" in services:
+            cmd.deploymentplanner = services["deploymentplanner"]
+
         # Service Offering private to that domain
         if domainid:
             cmd.domainid = domainid

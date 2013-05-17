@@ -16,21 +16,14 @@
 // under the License.
 package com.cloud.service.dao;
 
-import java.util.List;
+import java.util.Map;
 
-import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.utils.db.GenericDao;
 
-/*
- * Data Access Object for service_offering table
- */
-public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> {
-    ServiceOfferingVO findByName(String name);
-    ServiceOfferingVO persistSystemServiceOffering(ServiceOfferingVO vo);
-	List<ServiceOfferingVO> findPublicServiceOfferings();
-	List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId);
-    List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vm_type);
-    ServiceOfferingVO persistDeafultServiceOffering(ServiceOfferingVO offering);
-    void loadDetails(ServiceOfferingVO serviceOffering);
-    void saveDetails(ServiceOfferingVO serviceOffering);
+public interface ServiceOfferingDetailsDao extends GenericDao<ServiceOfferingDetailsVO, Long> {
+    Map<String, String> findDetails(long serviceOfferingId);
+    void persist(long serviceOfferingId, Map<String, String> details);
+    ServiceOfferingDetailsVO findDetail(long serviceOfferingId, String name);
+    void deleteDetails(long serviceOfferingId);
 }

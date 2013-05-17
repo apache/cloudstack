@@ -370,7 +370,7 @@
   <bean id="vpnUserDaoImpl" class="com.cloud.network.dao.VpnUserDaoImpl" />
   <bean id="applicationLbRuleDaoImpl" class="org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDaoImpl" />
   <bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
-
+  <bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
 
   <!--
     Checkers
@@ -545,6 +545,10 @@
   
   <bean id="UserConcentratedPodPlanner" class="com.cloud.deploy.UserConcentratedPodPlanner">
     <property name="name" value="UserConcentratedPodPlanner"/>
+  </bean>
+
+  <bean id="ImplicitDedicationPlanner" class="com.cloud.deploy.ImplicitDedicationPlanner">
+    <property name="name" value="ImplicitDedicationPlanner"/>
   </bean>
 
   <bean id="clusterBasedAgentLoadBalancerPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner">

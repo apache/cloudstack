@@ -312,6 +312,7 @@ public class ApiConstants {
     public static final String ACCEPT = "accept";
     public static final String SORT_KEY = "sortkey";
     public static final String ACCOUNT_DETAILS = "accountdetails";
+    public static final String SERVICE_OFFERING_DETAILS = "serviceofferingdetails";
     public static final String SERVICE_PROVIDER_LIST = "serviceproviderlist";
     public static final String SERVICE_CAPABILITY_LIST = "servicecapabilitylist";
     public static final String CAN_CHOOSE_SERVICE_CAPABILITY = "canchooseservicecapability";

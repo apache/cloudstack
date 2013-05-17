@@ -133,6 +133,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-planner-implicit-dedication</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-host-allocator-random</artifactId>
       <version>${project.version}</version>
     </dependency>

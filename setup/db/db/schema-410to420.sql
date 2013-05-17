@@ -393,7 +393,16 @@ CREATE TABLE `cloud`.`vm_snapshots` (
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `vm_snapshot_enabled` tinyint(1) DEFAULT 0 NOT NULL COMMENT 'Whether VM snapshot is supported by hypervisor';
 UPDATE `cloud`.`hypervisor_capabilities` SET `vm_snapshot_enabled`=1 WHERE `hypervisor_type` in ('VMware', 'XenServer');
 
-      
+CREATE TABLE `cloud`.`service_offering_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_service_offering_details__service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE,
+  CONSTRAINT UNIQUE KEY `uk_service_offering_id_name` (`service_offering_id`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
     select 

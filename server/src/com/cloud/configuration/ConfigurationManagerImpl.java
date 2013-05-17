@@ -39,7 +39,6 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
-
 import com.cloud.dc.*;
 import com.cloud.dc.dao.*;
 import com.cloud.user.*;
@@ -105,7 +104,6 @@ import com.cloud.dc.dao.DcDetailsDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
-
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -165,6 +163,7 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -276,6 +275,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     S3Dao _s3Dao;
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     DiskOfferingDao _diskOfferingDao;
     @Inject
@@ -2050,19 +2051,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
-                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner());
+        return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(),
+                cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
+                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(),
+                cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
-    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText,
-            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner) {
+    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type,
+            String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag,
+            Integer networkRate, String deploymentPlanner, Map<String, String> details) {
         tags = cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag, deploymentPlanner);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
+            if (details != null) {
+                _serviceOfferingDetailsDao.persist(offering.getId(), details);
+            }
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
