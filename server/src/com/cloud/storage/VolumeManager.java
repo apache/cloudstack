@@ -105,4 +105,8 @@ public interface VolumeManager extends VolumeApiService {
     DiskProfile allocateTemplatedVolume(Type type, String name,
             DiskOfferingVO offering, VMTemplateVO template, VMInstanceVO vm,
             Account owner);
+
+    String getVmNameFromVolumeId(long volumeId);
+
+    String getStoragePoolOfVolume(long volumeId);
 }

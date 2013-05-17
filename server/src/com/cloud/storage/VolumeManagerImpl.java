@@ -2604,4 +2604,17 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
     }
 
+
+    @Override
+    public String getVmNameFromVolumeId(long volumeId) {
+        Long instanceId;
+        VolumeVO volume = _volsDao.findById(volumeId);
+        return getVmNameOnVolume(volume);
+    }
+
+    @Override
+    public String getStoragePoolOfVolume(long volumeId) {
+        VolumeVO vol = _volsDao.findById(volumeId);
+        return dataStoreMgr.getPrimaryDataStore(vol.getPoolId()).getUuid();
+    }
 }

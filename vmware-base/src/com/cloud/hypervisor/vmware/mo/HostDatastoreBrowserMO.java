@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import java.util.ArrayList;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -76,7 +78,8 @@ public class HostDatastoreBrowserMO extends BaseMO {
 		return searchDatastore(datastorePath, spec);
 	}
 
-	public HostDatastoreBrowserSearchResults searchDatastoreSubFolders(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
+    @SuppressWarnings("unchecked")
+    public ArrayList<HostDatastoreBrowserSearchResults> searchDatastoreSubFolders(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
 		if(s_logger.isTraceEnabled())
 			s_logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
 
@@ -87,7 +90,7 @@ public class HostDatastoreBrowserMO extends BaseMO {
 			if(result) {
 				_context.waitForTaskProgressDone(morTask);
 
-				return (HostDatastoreBrowserSearchResults)_context.getVimClient().getDynamicProperty(morTask, "info.result");
+				return (ArrayList<HostDatastoreBrowserSearchResults>) _context.getVimClient().getDynamicProperty(morTask, "info.result");
 			} else {
 	        	s_logger.error("VMware searchDaastoreSubFolders_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
 			}
@@ -99,12 +102,11 @@ public class HostDatastoreBrowserMO extends BaseMO {
 		return null;
 	}
 
-	public HostDatastoreBrowserSearchResults searchDatastoreSubFolders(String datastorePath, String folderName, boolean caseInsensitive) throws Exception {
-		HostDatastoreBrowserSearchSpec spec = new HostDatastoreBrowserSearchSpec();
-		spec.setSearchCaseInsensitive(caseInsensitive);
-		spec.getMatchPattern().add(folderName);
+    public ArrayList<HostDatastoreBrowserSearchResults> searchDatastoreSubFolders(String datastorePath, String fileName, boolean caseInsensitive) throws Exception {
+        HostDatastoreBrowserSearchSpec spec = new HostDatastoreBrowserSearchSpec();
+        spec.setSearchCaseInsensitive(caseInsensitive);
+        spec.getMatchPattern().add(fileName);
 
-		return searchDatastore(datastorePath, spec);
-	}
+        return searchDatastoreSubFolders(datastorePath, spec);
+    }
 }
-
