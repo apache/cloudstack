@@ -24,10 +24,18 @@ import com.cloud.agent.api.to.StorageFilerTO;
 public class MigrateWithStorageCommand extends Command {
     VirtualMachineTO vm;
     Map<VolumeTO, StorageFilerTO> volumeToFiler;
+    String tgtHost;
 
     public MigrateWithStorageCommand(VirtualMachineTO vm, Map<VolumeTO, StorageFilerTO> volumeToFiler) {
         this.vm = vm;
         this.volumeToFiler = volumeToFiler;
+        this.tgtHost = null;
+    }
+
+    public MigrateWithStorageCommand(VirtualMachineTO vm, Map<VolumeTO, StorageFilerTO> volumeToFiler, String tgtHost) {
+        this.vm = vm;
+        this.volumeToFiler = volumeToFiler;
+        this.tgtHost = tgtHost;
     }
 
     public VirtualMachineTO getVirtualMachine() {
@@ -36,6 +44,10 @@ public class MigrateWithStorageCommand extends Command {
 
     public Map<VolumeTO, StorageFilerTO> getVolumeToFiler() {
         return volumeToFiler;
+    }
+
+    public String getTargetHost() {
+        return tgtHost;
     }
 
     @Override
