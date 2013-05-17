@@ -1086,17 +1086,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with given id");
             throw ex;
         }
 
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM is not Running, unable to migrate the vm" + vm);
+                s_logger.debug("VM is not running, cannot migrate the vm" + vm);
             }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to" +
-                    " migrate the vm with specified id");
+            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, cannot " +
+                    "migrate the vm with specified id");
             ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
