@@ -10989,8 +10989,8 @@
                 title: 'Blades',
                 listView: {
                   fields: {
-                    fieldA: { label: 'Field A' },
-                    fieldB: { label: 'Field B' }
+                    dn: { label: 'Distinguished Name' },
+                    associatedProfileDn: { label: 'Associated Profile' }
                   },
                   dataProvider: function(args) {                    
                     /*
@@ -11006,8 +11006,9 @@
                     */                    
                     args.response.success({
                       data: [
-                        { fieldA: 'fieldA1', fieldB: 'fieldB1' },
-                        { fieldA: 'fieldA2', fieldB: 'fieldB2' }
+                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-2/blade-2', associatedProfileDn: 'profile_2' },
+                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-1/blade-1', associatedProfileDn: 'profile_1' },
+                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-3/blade-3', associatedProfileDn: '' }
                       ]
                     });                  
                   },                  
@@ -11039,8 +11040,9 @@
                               });
                               */
                               
-                              items.push({id: 'aaa', description: 'aaa'});
-                              items.push({id: 'bbb', description: 'bbb'});
+                              items.push({id: 'profile_1', description: 'profile_1'});
+                              items.push({id: 'profile_2', description: 'profile_2'});
+                              items.push({id: 'profile_3', description: 'profile_3'});
                               args.response.success({data: items});
                             },
                             validation: { required: true }
@@ -11061,7 +11063,7 @@
                           }
                         });
                         */
-                        args.response.success();
+                        args.response.success({data: { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-2/blade-2', associatedProfileDn: 'profile_3' }});
                       },
                       notification: {
                         poll: function(args) {
@@ -11102,8 +11104,9 @@
                                 });
                                 */
                                 
-                                items.push({id: 'aaa', description: 'aaa'});
-                                items.push({id: 'bbb', description: 'bbb'});
+                                items.push({id: 'profile_1', description: 'profile_1'});
+                                items.push({id: 'profile_2', description: 'profile_2'});
+                                items.push({id: 'profile_3', description: 'profile_3'});
                                 args.response.success({data: items});
                               },
                               validation: { required: true }
