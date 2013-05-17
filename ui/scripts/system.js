@@ -10887,11 +10887,24 @@
         title: 'UCS',
         id: 'ucs',
         listView: {
+          id: 'ucsManagers',
           fields: {
             fieldA: { label: 'Field A' },
             fieldB: { label: 'Field B' }
           },
           dataProvider: function(args) {
+            /*
+            $.ajax({
+              url: createURL('listUcsManager'),
+              data: {
+                zoneid: args.context.physicalResources[0].id
+              },
+              success: function(json) {
+                
+              }
+            });
+            */
+            
             args.response.success({
               data: [
                 { fieldA: 'fieldA1', fieldB: 'fieldB1' },
@@ -10909,14 +10922,87 @@
                     fieldA: { label: 'Field A' },
                     fieldB: { label: 'Field B' }
                   },
-                  dataProvider: function(args) {
+                  dataProvider: function(args) {                    
+                    /*
+                    $.ajax({
+                      url: createURL('listUcsBlade'),
+                      data: {
+                        ucsmanagerid: args.context.ucsManagers[0].id
+                      },
+                      success: function(json) {
+                        
+                      }                      
+                    });
+                    */                    
                     args.response.success({
                       data: [
                         { fieldA: 'fieldA1', fieldB: 'fieldB1' },
                         { fieldA: 'fieldA2', fieldB: 'fieldB2' }
                       ]
-                    });
+                    });                  
                   },
+                                   
+                  detailView: {
+                    name: 'Service offering details',
+                    actions: {                      
+                      associateProfileToBlade: {
+                        label: 'associate profile to blade',
+                        messages: {
+                          notification: function(args) {
+                            return 'associate profile to blade';
+                          }
+                        },
+                        createForm: {
+                          title: 'associate profile to blade',
+                          fields: {
+                            profileid: {
+                              label: 'profile',
+                              select: function(args) {
+                                var items = [];                                
+                                items.push({id: 'aaa', description: 'aaa'});
+                                items.push({id: 'bbb', description: 'bbb'});
+                                args.response.success({data: items});
+                              },
+                              validation: { required: true }
+                            }
+                          }
+                        },
+                        action: function(args) {
+                          args.response.success();
+                        },
+                        notification: {
+                          poll: function(args) {
+                            args.complete();
+                          }
+                        }
+                      }                      
+                    },                    
+                    tabs: {
+                      details: {
+                        title: 'label.details',
+
+                        fields: [
+                          {
+                            fieldA: { label: 'fieldA' }
+                          },
+                          {
+                            fieldB: { label: 'fieldB' }
+                          }
+                        ],
+
+                        dataProvider: function(args) { 
+                          args.response.success(
+                            {                              
+                              data: {
+                                fieldA: 'fieldAAA',
+                                fieldB: 'fieldBBB'
+                              }
+                            }
+                          );
+                        }
+                      }
+                    }                   
+                  }                  
                 }
               }
             }
