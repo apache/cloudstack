@@ -17,11 +17,13 @@
 
 import xml.dom.minidom
 import json
-from optparse import OptionParser
-from textwrap import dedent
 import os
 import sys
 import urllib2
+from optparse import OptionParser
+from textwrap import dedent
+from os import path
+
 
 
 class cmdParameterProperty(object):
@@ -94,8 +96,9 @@ class codeGenerator(object):
         self.code += self.newline
 
     def generateSubClass(self, name, properties):
-        '''generate code for sub list'''
-        subclass = 'class %s:\n' % name
+        """Generate code for sub objects
+        """
+        subclass = 'class %s:\n'%name
         subclass += self.space + "def __init__(self):\n"
         for pro in properties:
             if pro.desc is not None:
@@ -110,8 +113,11 @@ class codeGenerator(object):
 
         self.subclass.append(subclass)
 
-    def generate(self, cmd):
-
+    def generateApiCmd(self, cmd):
+        """Given an API cmd module generate the cloudstack cmd class in python
+        """
+        self.code = ""
+        self.subclass = []
         self.cmd = cmd
         self.cmdsName.append(self.cmd.name)
         self.code = self.license
@@ -121,7 +127,6 @@ class codeGenerator(object):
         self.code += 'from baseResponse import *\n'
         self.code += "class %sCmd (baseCmd):\n" % self.cmd.name
         self.code += self.space + "def __init__(self):\n"
-
         self.code += self.space + self.space
         self.code += 'self.isAsync = "%s"\n' % str(self.cmd.async).lower()
 
@@ -170,18 +175,25 @@ class codeGenerator(object):
 
         for subclass in self.subclass:
             self.code += subclass + "\n"
+        return self.code
 
-        fp = open(self.outputFolder + "/cloudstackAPI/%s.py" % self.cmd.name,
-                  "w")
-        fp.write(self.code)
-        fp.close()
-        self.code = ""
-        self.subclass = []
+    def write(self, out, modulename, code):
+        """
+        writes the generated code for `modulename` in the `out.cloudstackAPI` package
+        @param out: absolute path where all api cmds are written to
+        @param modulename: name of the module being written: eg: createNetwork
+        @param code: Generated code
+        @return: None
+        """
+        final_path = path.join(out, 'cloudstackAPI', modulename)
+        module = final_path + '.py' #eg: out/cloudstackAPI/modulename.py
+        with open(module, "w") as fp:
+            fp.write(code)
 
     def finalize(self):
-        '''generate an api call'''
-
-        header = '"""Test Client for CloudStack API"""\n'
+        """Generate an api call
+        """
+        header = '"""Marvin TestClient for CloudStack"""\n'
         imports = "import copy\n"
         initCmdsList = '__all__ = ['
         body = ''
@@ -230,34 +242,24 @@ class codeGenerator(object):
             imports += 'from %s import %sResponse\n' % (cmdName, cmdName)
             initCmdsList += '"%s",' % cmdName
 
-        fp = open(self.outputFolder + '/cloudstackAPI/cloudstackAPIClient.py',
-                  'w')
-        fp.write(self.license)
-        for item in [header, imports, body]:
-            fp.write(item)
-        fp.close()
+        cloudstackApiClient = self.license + header + imports + body
+        self.write(out=self.outputFolder, modulename='cloudstackAPIClient', code=cloudstackApiClient)
 
         '''generate __init__.py'''
         initCmdsList = self.license + initCmdsList + '"cloudstackAPIClient"]'
-        fp = open(self.outputFolder + '/cloudstackAPI/__init__.py', 'w')
-        fp.write(initCmdsList)
-        fp.close()
+        self.write(out=self.outputFolder, modulename='__init__', code=initCmdsList)
 
-        fp = open(self.outputFolder + '/cloudstackAPI/baseCmd.py', 'w')
         basecmd = self.license
         basecmd += '"""Base Command"""\n'
         basecmd += 'class baseCmd(object):\n'
         basecmd += self.space + 'pass\n'
-        fp.write(basecmd)
-        fp.close()
+        self.write(out=self.outputFolder, modulename='baseCmd', code=basecmd)
 
-        fp = open(self.outputFolder + '/cloudstackAPI/baseResponse.py', 'w')
-        basecmd = self.license
-        basecmd += '"""Base class for response"""\n'
-        basecmd += 'class baseResponse(object):\n'
-        basecmd += self.space + 'pass\n'
-        fp.write(basecmd)
-        fp.close()
+        baseResponse = self.license
+        baseResponse += '"""Base Response"""\n'
+        baseResponse += 'class baseResponse:\n'
+        baseResponse += self.space + 'pass\n'
+        self.write(out=self.outputFolder, modulename='baseResponse', code=baseResponse)
 
     def constructResponseFromXML(self, response):
         paramProperty = cmdParameterProperty()
@@ -327,7 +329,8 @@ class codeGenerator(object):
         dom = xml.dom.minidom.parse(apiSpecFile)
         cmds = self.loadCmdFromXML(dom)
         for cmd in cmds:
-            self.generate(cmd)
+            code = self.generateApiCmd(cmd)
+            self.write(out=self.outputFolder, modulename=cmd.name, code=code)
         self.finalize()
 
     def constructResponseFromJSON(self, response):
@@ -412,7 +415,8 @@ class codeGenerator(object):
                 apiStream = urllib2.urlopen(endpointUrl)
                 cmds = self.loadCmdFromJSON(apiStream)
                 for cmd in cmds:
-                    self.generate(cmd)
+                    code = self.generateApiCmd(cmd)
+                    self.write(out=self.outputFolder, modulename=cmd.name, code=code)
                 self.finalize()
 
 
