@@ -1667,6 +1667,10 @@ CREATE  TABLE `cloud`.`nic_ip_alias` (
 alter table `cloud`.`vpc_gateways` add column network_acl_id bigint unsigned default 1 NOT NULL;
 update `cloud`.`vpc_gateways` set network_acl_id = 2;
 
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'VpcManager', 'blacklisted.routes', NULL, 'Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway');
+
+
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			
 
