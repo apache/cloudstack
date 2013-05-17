@@ -140,7 +140,7 @@
 }
 
 .vpc-network-chart .tier-item .content .dashboard-item .total {
-  font-size: 17px;
+  font-size: 30px;
   /*+placement:shift 7px 5px;*/
   position: relative;
   left: 7px;
@@ -152,6 +152,10 @@
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item .total.multiline {
+  font-size: 14px;
 }
 
 .vpc-network-chart .tier-item .content .dashboard-item .name {

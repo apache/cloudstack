@@ -162,7 +162,15 @@
         var id = dashboardItem.id;
 
         $name.find('span').html(dashboardItem.name);
-        $total.find('span').html(dashboardItem.total);
+
+
+        if (dashboardItem.totalMultiLine) {
+          $total.find('span').html(dashboardItem.totalMultiLine);
+          $total.addClass('multiline');
+        } else {
+          $total.find('span').html(dashboardItem.total);
+        }
+        
         $dashboardItem.append($total, $name);
         $dashboardItem.appendTo($dashboard);
 
@@ -230,7 +238,7 @@
                     {
                       id: 'tierLoadBalancers',
                       name: 'Load balancers',
-                      total: '5 Internal<br/>6 Public'
+                      totalMultiLine: '5 Internal<br/>6 Public'
                     },
                     {
                       id: 'tierPortForwarders',
