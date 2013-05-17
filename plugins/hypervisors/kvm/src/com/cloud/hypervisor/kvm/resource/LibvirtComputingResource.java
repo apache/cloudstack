@@ -3581,6 +3581,7 @@ ServerResource {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
+        KVMStoragePool attachingPool = attachingDisk.getPool();
         try {
             if (!attach) {
                 dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
@@ -3605,7 +3606,12 @@ ServerResource {
                 }
             } else {
                 diskdef = new DiskDef();
-                if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
+                if (attachingPool.getType() == StoragePoolType.RBD) {
+                    diskdef.defNetworkBasedDisk(attachingDisk.getPath(),
+                            attachingPool.getSourceHost(), attachingPool.getSourcePort(),
+                            attachingPool.getAuthUserName(), attachingPool.getUuid(), devId,
+                            DiskDef.diskBus.VIRTIO, diskProtocol.RBD);
+                } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId,
                             DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
