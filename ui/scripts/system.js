@@ -10889,8 +10889,8 @@
         listView: {
           id: 'ucsManagers',
           fields: {
-            fieldA: { label: 'Field A' },
-            fieldB: { label: 'Field B' }
+            name: { label: 'label.name' },
+            url: { label: 'label.url' }
           },
           dataProvider: function(args) {
             /*
@@ -10907,11 +10907,80 @@
             
             args.response.success({
               data: [
-                { fieldA: 'fieldA1', fieldB: 'fieldB1' },
-                { fieldA: 'fieldA2', fieldB: 'fieldB2' }
+                { id: '73695389-13ba-48e4-b661-a5e56966f577', name: 'UCS Manager 1', url: '10.196.72.1' },
+                { id: '32588a3e-9d70-4a23-9117-42da48fa8c10', name: 'UCS Manager 2', url: '10.196.72.2' }
               ]
             });
           },
+          actions: {            
+            add: {
+              label: 'Add UCS Manager',
+
+              messages: {               
+                notification: function(args) {
+                  return 'Add UCS Manager';
+                }
+              },
+
+              createForm: {
+                title: 'Add UCS Manager',
+                fields: {
+                  name: {
+                    label: 'label.name',                    
+                    validation: { required: false }
+                  },
+                  url: {
+                    label: 'label.url',
+                    validation: { required: true }
+                  },
+                  username: {
+                    label: 'label.username',
+                    validation: { required: true }
+                  },
+                  password: {
+                    label: 'label.password',
+                    validation: { required: true }
+                  }                  
+                }
+              },
+
+              action: function(args) {                
+                var data = {
+                  zoneid: args.context.physicalResources[0].id,
+                  url: args.data.url,
+                  username: args.data.username,
+                  password: args.data.password
+                };    
+                if(args.data.name != null && args.data.name.length > 0) {
+                  $.extend(data, {
+                    name: args.data.name
+                  });
+                }
+                /*
+                $.ajax({
+                  url: createURL('addUcsManager'),
+                  data: data,                 
+                  success: function(json) {
+                    
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
+                  }
+                });
+                */
+                
+                args.response.success({data:  { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', name: 'UCS Manager 3', url: '10.196.72.3' }});
+                
+              },
+
+              notification: {
+                poll: function(args) {
+                  args.complete();
+                }
+              }
+            }            
+          },
+          
           detailView: {
             isMaximized: true,
             tabs: {
@@ -10943,7 +11012,7 @@
                   },
                                    
                   detailView: {
-                    name: 'Service offering details',
+                    name: 'blade details',
                     actions: {                      
                       associateProfileToBlade: {
                         label: 'associate profile to blade',
@@ -10955,10 +11024,23 @@
                         createForm: {
                           title: 'associate profile to blade',
                           fields: {
-                            profileid: {
+                            profiledn: {
                               label: 'profile',
                               select: function(args) {
-                                var items = [];                                
+                                var items = [];     
+                                
+                                /*
+                                $.ajax({
+                                  url: createURL('listUcsProfile'),
+                                  data: {
+                                    ucsmanagerid: args.context.ucsManagers[0].id
+                                  },
+                                  success: function(json) {
+                                    
+                                  }
+                                });
+                                */
+                                
                                 items.push({id: 'aaa', description: 'aaa'});
                                 items.push({id: 'bbb', description: 'bbb'});
                                 args.response.success({data: items});
@@ -10968,6 +11050,19 @@
                           }
                         },
                         action: function(args) {
+                          /*
+                          $.ajax({
+                            url: createURL('associatesUscProfileToBlade'),
+                            data: {
+                              ucsmanagerid: args.context.ucsManagers[0].id,
+                              profiledn: args.data.profiledn, 
+                              bladeid: '1234567890' //to change later
+                            },
+                            success: function(json) {
+                              
+                            }
+                          });
+                          */
                           args.response.success();
                         },
                         notification: {
