@@ -11071,8 +11071,9 @@
                         }
                       }
                     }                      
-                  },
-                                                     
+                  }
+                  
+                  /*,                                                     
                   detailView: {
                     name: 'blade details',
                     noCompact: true,
@@ -11092,18 +11093,6 @@
                               select: function(args) {
                                 var items = [];     
                                 
-                                /*
-                                $.ajax({
-                                  url: createURL('listUcsProfile'),
-                                  data: {
-                                    ucsmanagerid: args.context.ucsManagers[0].id
-                                  },
-                                  success: function(json) {
-                                    
-                                  }
-                                });
-                                */
-                                
                                 items.push({id: 'profile_1', description: 'profile_1'});
                                 items.push({id: 'profile_2', description: 'profile_2'});
                                 items.push({id: 'profile_3', description: 'profile_3'});
@@ -11113,20 +11102,7 @@
                             }
                           }
                         },
-                        action: function(args) {
-                          /*
-                          $.ajax({
-                            url: createURL('associatesUscProfileToBlade'),
-                            data: {
-                              ucsmanagerid: args.context.ucsManagers[0].id,
-                              profiledn: args.data.profiledn, 
-                              bladeid: '1234567890' //to change later
-                            },
-                            success: function(json) {
-                              
-                            }
-                          });
-                          */
+                        action: function(args) {                          
                           args.response.success();
                         },
                         notification: {
@@ -11161,7 +11137,9 @@
                         }
                       }
                     }                   
-                  }                  
+                  } 
+                  */
+                                    
                 }
               }
             }
