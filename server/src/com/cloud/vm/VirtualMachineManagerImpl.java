@@ -59,6 +59,8 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.ClusterSyncAnswer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingRoutingCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartAnswer;
@@ -67,6 +69,8 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
@@ -3142,6 +3146,71 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return _vmDao.update(vmId, vmForUpdate);
     }
 
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO to, VMInstanceVO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        boolean result = true;
+
+        if (vm.getState() == State.Running) {
+            try {
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, to.getName());
+
+                Commands cmds = new Commands(OnError.Stop);
+                cmds.addCommand("plugnic", plugNicCmd);
+                _agentMgr.send(dest.getHost().getId(), cmds);
+                PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
+                if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
+                    s_logger.warn("Unable to plug nic for vm " + to.getName());
+                    result = false;
+                }
+            } catch (OperationTimedoutException e) {
+                throw new AgentUnavailableException("Unable to plug nic for router " + to.getName() + " in network " + network,
+                        dest.getHost().getId(), e);
+            }
+        } else {
+            s_logger.warn("Unable to apply PlugNic, vm " + vm + " is not in the right state " + vm.getState());
+
+            throw new ResourceUnavailableException("Unable to apply PlugNic on the backend," +
+                    " vm " + to + " is not in the right state", DataCenter.class, vm.getDataCenterId());
+        }
+
+        return result;
+    }
+
+    protected boolean unplugNic(Network network, NicTO nic, VirtualMachineTO to, VMInstanceVO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
+
+        boolean result = true;
+
+        if (vm.getState() == State.Running) {
+            try {
+                Commands cmds = new Commands(OnError.Stop);
+                UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, to.getName());
+                cmds.addCommand("unplugnic", unplugNicCmd);
+                _agentMgr.send(dest.getHost().getId(), cmds);
+
+                UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
+                if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
+                    s_logger.warn("Unable to unplug nic from router " + vm);
+                    result = false;
+                }
+            } catch (OperationTimedoutException e) {
+                throw new AgentUnavailableException("Unable to unplug nic from rotuer " + vm + " from network " + network,
+                        dest.getHost().getId(), e);
+            }
+        } else if (vm.getState() == State.Stopped || vm.getState() == State.Stopping) {
+            s_logger.debug("Vm " + vm.getInstanceName() + " is in " + vm.getState() +
+                    ", so not sending unplug nic command to the backend");
+        } else {
+            s_logger.warn("Unable to apply unplug nic, Vm " + vm + " is not in the right state " + vm.getState());
+
+            throw new ResourceUnavailableException("Unable to apply unplug nic on the backend," +
+                    " vm " + vm + " is not in the right state", DataCenter.class, vm.getDataCenterId());
+        }
+
+        return result;
+    }
+
     @Override
     public NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
     ResourceUnavailableException, InsufficientCapacityException {
@@ -3182,7 +3251,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             
             boolean result = false;
             try{
-                result = vmGuru.plugNic(network, nicTO, vmTO, context, dest);
+                result = plugNic(network, nicTO, vmTO, vmVO, context, dest);
                 if (result) {
                 s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
@@ -3256,7 +3325,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (vm.getState() == State.Running) {
             NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
             s_logger.debug("Un-plugging nic " + nic + " for vm " + vm + " from network " + network);
-            boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+            boolean result = unplugNic(network, nicTO, vmTO, vmVO, context, dest);
             if (result) {
                 s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
                 long isDefault = (nic.isDefaultNic()) ? 1 : 0;
@@ -3327,7 +3396,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (vm.getState() == State.Running) {
             NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
             s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
-            boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+            boolean result = unplugNic(network, nicTO, vmTO, vmVO, context, dest);
             if (result) {
                 s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
             } else {

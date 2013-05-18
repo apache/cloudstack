@@ -65,16 +65,11 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.PlugNicAnswer;
-import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.UnPlugNicAnswer;
-import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -106,7 +101,6 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -4226,64 +4220,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 + template.getUuid() + " done successfully");
         return vm;
 
-    }
-
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest)
-                    throws ConcurrentOperationException, ResourceUnavailableException,
-                    InsufficientCapacityException {
-        UserVmVO vmVO = _vmDao.findById(vm.getId());
-        if (vmVO.getState() == State.Running) {
-            try {
-                PlugNicCommand plugNicCmd = new PlugNicCommand(nic,vm.getName());
-                Commands cmds = new Commands(OnError.Stop);
-                cmds.addCommand("plugnic",plugNicCmd);
-                _agentMgr.send(dest.getHost().getId(),cmds);
-                PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
-                if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to plug nic for " + vmVO + " due to: " + " due to: " + plugNicAnswer.getDetails());
-                    return false;
-                }
-            } catch (OperationTimedoutException e) {
-                throw new AgentUnavailableException("Unable to plug nic for " + vmVO + " in network " + network, dest.getHost().getId(), e);
-            }
-        } else if (vmVO.getState() == State.Stopped || vmVO.getState() == State.Stopping) {
-            s_logger.warn(vmVO + " is Stopped, not sending PlugNicCommand.  Currently " + vmVO.getState());
-        } else {
-            s_logger.warn("Unable to plug nic, " + vmVO + " is not in the right state " + vmVO.getState());
-            throw new ResourceUnavailableException("Unable to plug nic on the backend," +
-                    vmVO + " is not in the right state", DataCenter.class, vmVO.getDataCenterId());
-        }
-        return true;
-    }
-
-    @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        UserVmVO vmVO = _vmDao.findById(vm.getId());
-        if (vmVO.getState() == State.Running) {
-            try {
-                UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic,vm.getName());
-                Commands cmds = new Commands(OnError.Stop);
-                cmds.addCommand("unplugnic",unplugNicCmd);
-                _agentMgr.send(dest.getHost().getId(),cmds);
-                UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
-                if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to unplug nic for " + vmVO + " due to: " + unplugNicAnswer.getDetails());
-                    return false;
-                }
-            } catch (OperationTimedoutException e) {
-                throw new AgentUnavailableException("Unable to unplug nic for " + vmVO + " in network " + network, dest.getHost().getId(), e);
-            }
-        } else if (vmVO.getState() == State.Stopped || vmVO.getState() == State.Stopping) {
-            s_logger.warn(vmVO + " is Stopped, not sending UnPlugNicCommand.  Currently " + vmVO.getState());
-        } else {
-            s_logger.warn("Unable to unplug nic, " + vmVO + " is not in the right state " + vmVO.getState());
-            throw new ResourceUnavailableException("Unable to unplug nic on the backend," +
-                    vmVO + " is not in the right state", DataCenter.class, vmVO.getDataCenterId());
-        }
-        return true;
     }
 
     @Override

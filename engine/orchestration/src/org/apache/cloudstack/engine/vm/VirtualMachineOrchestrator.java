@@ -266,7 +266,7 @@ public class VirtualMachineOrchestrator extends ManagerBase {
         AccountVO owner = _entityMgr.findById(AccountVO.class, new Long(ownerRef));
 
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, vm1.getId());
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
