@@ -34,6 +34,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.nicModel;
 
@@ -63,31 +64,45 @@ public class LibvirtDomainXMLParser {
             NodeList disks = devices.getElementsByTagName("disk");
             for (int i = 0; i < disks.getLength(); i++) {
                 Element disk = (Element) disks.item(i);
-                String diskFmtType = getAttrValue("driver", "type", disk);
-                String diskFile = getAttrValue("source", "file", disk);
-                String diskDev = getAttrValue("source", "dev", disk);
-
-                String diskLabel = getAttrValue("target", "dev", disk);
-                String bus = getAttrValue("target", "bus", disk);
                 String type = disk.getAttribute("type");
-                String device = disk.getAttribute("device");
-
                 DiskDef def = new DiskDef();
-                if (type.equalsIgnoreCase("file")) {
-                    if (device.equalsIgnoreCase("disk")) {
-                        DiskDef.diskFmtType fmt = null;
-                        if (diskFmtType != null) {
-                            fmt = DiskDef.diskFmtType.valueOf(diskFmtType
-                                    .toUpperCase());
+                if (type.equalsIgnoreCase("network")) {
+                    String diskFmtType = getAttrValue("driver", "type", disk);
+                    String diskPath = getAttrValue("source", "name", disk);
+                    String protocol = getAttrValue("source", "protocol", disk);
+                    String authUserName = getAttrValue("auth", "username", disk);
+                    String poolUuid = getAttrValue("secret", "uuid", disk);
+                    String host = getAttrValue("host", "name", disk);
+                    int port = Integer.parseInt(getAttrValue("host", "port", disk));
+                    String diskLabel = getAttrValue("target", "dev", disk);
+                    String bus = getAttrValue("target", "bus", disk);
+                    def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
+                                            DiskDef.diskBus.valueOf(bus.toUpperCase()), DiskDef.diskProtocol.valueOf(protocol.toUpperCase()));
+                } else {
+                    String diskFmtType = getAttrValue("driver", "type", disk);
+                    String diskFile = getAttrValue("source", "file", disk);
+                    String diskDev = getAttrValue("source", "dev", disk);
+
+                    String diskLabel = getAttrValue("target", "dev", disk);
+                    String bus = getAttrValue("target", "bus", disk);
+                    String device = disk.getAttribute("device");
+
+                    if (type.equalsIgnoreCase("file")) {
+                        if (device.equalsIgnoreCase("disk")) {
+                            DiskDef.diskFmtType fmt = null;
+                            if (diskFmtType != null) {
+                                fmt = DiskDef.diskFmtType.valueOf(diskFmtType
+                                        .toUpperCase());
+                            }
+                            def.defFileBasedDisk(diskFile, diskLabel,
+                                    DiskDef.diskBus.valueOf(bus.toUpperCase()), fmt);
+                        } else if (device.equalsIgnoreCase("cdrom")) {
+                            def.defISODisk(diskFile);
                         }
-                        def.defFileBasedDisk(diskFile, diskLabel,
-                                DiskDef.diskBus.valueOf(bus.toUpperCase()), fmt);
-                    } else if (device.equalsIgnoreCase("cdrom")) {
-                        def.defISODisk(diskFile);
+                    } else if (type.equalsIgnoreCase("block")) {
+                        def.defBlockBasedDisk(diskDev, diskLabel,
+                                DiskDef.diskBus.valueOf(bus.toUpperCase()));
                     }
-                } else if (type.equalsIgnoreCase("block")) {
-                    def.defBlockBasedDisk(diskDev, diskLabel,
-                            DiskDef.diskBus.valueOf(bus.toUpperCase()));
                 }
                 diskDefs.add(def);
             }
