@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -613,7 +613,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 if(proxy.getActiveSession() >= _capacityPerProxy){
                     it.remove();
                 }
-            }            
+            }
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Running proxy pool size : " + runningList.size());
                 for (ConsoleProxyVO proxy : runningList) {
@@ -819,7 +819,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                         return;
                     }
 
-                    final ConsoleProxyVO proxy = this._consoleProxyDao.findById(proxyVmId);
+                    final ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
                     if (proxy != null) {
 
                         // Disable this feature for now, as it conflicts with
@@ -948,7 +948,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
-            HostVO secondaryStorageHost = this.templateMgr.getSecondaryStorageHost(dataCenterId);
+            HostVO secondaryStorageHost = templateMgr.getSecondaryStorageHost(dataCenterId);
             boolean templateReady = false;
 
             if (template != null && secondaryStorageHost != null) {
@@ -1020,7 +1020,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             s_logger.info("Stop console proxy manager");
         }
 
-        this._loadScanner.stop();
+        _loadScanner.stop();
         _allocProxyLock.releaseRef();
         _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
@@ -1170,7 +1170,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             //expunge the vm
             boolean result = _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(), 
+                HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(),
                         Host.Type.ConsoleProxy);
                 if (host != null) {
                     s_logger.debug("Removing host entry for proxy id=" + vmId);
@@ -1330,11 +1330,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
-        ConsoleProxyVO vm = profile.getVirtualMachine();
-        Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
-        vm.setDetails(details);
+//        VirtualMachine vm = profile.getVirtualMachine();
+//        Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
+//        vm.setDetails(details);
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=consoleproxy");
@@ -1408,11 +1408,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
         finalizeCommandsOnStart(cmds, profile);
 
-        ConsoleProxyVO proxy = profile.getVirtualMachine();
+        VirtualMachine vm = profile.getVirtualMachine();
+
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(vm.getId());
         DataCenter dc = dest.getDataCenter();
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
@@ -1431,7 +1433,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile) {
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
 
         NicProfile managementNic = null;
         NicProfile controlNic = null;
@@ -1458,7 +1460,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
         if (answer == null || !answer.getResult()) {
             if (answer != null) {
@@ -1474,7 +1476,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
             IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
             if (ipaddr != null && ipaddr.getSystem()) {
-                ConsoleProxyVO consoleVm = profile.getVirtualMachine();
+                ConsoleProxyVO consoleVm = _consoleProxyDao.findById(profile.getId());
                 // override CPVM guest IP with EIP, so that console url's will be prepared with EIP
                 consoleVm.setPublicIpAddress(ipaddr.getAddress().addr());
                 _consoleProxyDao.update(consoleVm.getId(), consoleVm);
@@ -1518,7 +1520,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
         //release elastic IP here if assigned
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
         if (ip != null && ip.getSystem()) {
@@ -1578,14 +1580,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         List<ConsoleProxyVO> runningProxies = _consoleProxyDao.getProxyListInStates(State.Running);
         for (ConsoleProxyVO proxy : runningProxies) {
             s_logger.info("Stop console proxy " + proxy.getId() + " because of we are currently in ResetSuspending management mode");
-            this.stopProxy(proxy.getId());
+            stopProxy(proxy.getId());
         }
 
         // check if it is time to resume
         List<ConsoleProxyVO> proxiesInTransition = _consoleProxyDao.getProxyListInStates(State.Running, State.Starting, State.Stopping);
         if (proxiesInTransition.size() == 0) {
             s_logger.info("All previous console proxy VMs in transition mode ceased the mode, we will now resume to last management state");
-            this.resumeLastManagementState();
+            resumeLastManagementState();
         }
     }
 
@@ -1654,12 +1656,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public Pair<AfterScanAction, Object> scanPool(Long pool) {
         long dataCenterId = pool.longValue();
 
-        ConsoleProxyLoadInfo proxyInfo = this._zoneProxyCountMap.get(dataCenterId);
+        ConsoleProxyLoadInfo proxyInfo = _zoneProxyCountMap.get(dataCenterId);
         if (proxyInfo == null) {
             return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);
         }
 
-        ConsoleProxyLoadInfo vmInfo = this._zoneVmCountMap.get(dataCenterId);
+        ConsoleProxyLoadInfo vmInfo = _zoneVmCountMap.get(dataCenterId);
         if (vmInfo == null) {
             vmInfo = new ConsoleProxyLoadInfo();
         }
@@ -1736,7 +1738,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
     }
 
     @Override
@@ -1749,7 +1751,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
     	
     	try {
-	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(), 
+	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(),
 	    		user, account,  ((VmWorkStart)work).getPlan());
 	    	
     		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);

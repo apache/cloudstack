@@ -34,7 +34,7 @@ import com.cloud.user.Account;
  * @param <T>
  *            a VirtualMachine
  */
-public interface VirtualMachineProfile<T extends VirtualMachine> {
+public interface VirtualMachineProfile {
 
 	// Making Param strong-typing looks like a over-kill to me
     public static class Param {
@@ -89,7 +89,7 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
     /**
      * @return the virtual machine that backs up this profile.
      */
-    T getVirtualMachine();
+    VirtualMachine getVirtualMachine();
 
     /**
      * @return service offering for this virtual machine.
@@ -162,6 +162,5 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
     Float getCpuOvercommitRatio();
 
     Float getMemoryOvercommitRatio();
-
 
 }

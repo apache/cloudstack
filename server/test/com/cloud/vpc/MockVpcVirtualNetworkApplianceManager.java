@@ -23,8 +23,9 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -46,7 +47,6 @@ import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -71,14 +71,15 @@ VpcVirtualNetworkApplianceService {
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#savePasswordToRouter(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
     @Override
-    public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile,
+    public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile profile,
             List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean saveSSHPublicKeyToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, List<? extends VirtualRouter> routers, String SSHPublicKey) throws ResourceUnavailableException {
+    public boolean saveSSHPublicKeyToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers, String SSHPublicKey)
+            throws ResourceUnavailableException {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
@@ -86,7 +87,7 @@ VpcVirtualNetworkApplianceService {
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#saveUserDataToRouter(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
     @Override
-    public boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile,
+    public boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile profile,
             List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
@@ -195,7 +196,7 @@ VpcVirtualNetworkApplianceService {
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#applyDhcpEntry(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DeployDestination, java.util.List)
      */
     @Override
-    public boolean applyDhcpEntry(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm,
+    public boolean applyDhcpEntry(Network config, NicProfile nic, VirtualMachineProfile vm,
             DeployDestination dest, List<DomainRouterVO> routers) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
@@ -205,7 +206,7 @@ VpcVirtualNetworkApplianceService {
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#applyUserData(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DeployDestination, java.util.List)
      */
     @Override
-    public boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm,
+    public boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile vm,
             DeployDestination dest, List<DomainRouterVO> routers) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;

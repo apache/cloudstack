@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -52,7 +52,6 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.async.AsyncJobExecutionContext;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerNode;
@@ -135,7 +134,6 @@ import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.SystemVmLoadScanHandler;
 import com.cloud.vm.SystemVmLoadScanner;
-import com.cloud.vm.VmWork;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -143,6 +141,7 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkStart;
 import com.cloud.vm.VmWorkStop;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -230,7 +229,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     protected CapacityDao                         _capacityDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
-    @Inject 
+    @Inject
     protected ResourceManager _resourceMgr;
     //@Inject			// TODO this is a very strange usage, a singleton class need to inject itself?
     protected SecondaryStorageVmManager _ssvmMgr;
@@ -350,14 +349,14 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                         s_logger.debug("Successfully programmed secondary storage " + host.getName() + " in secondary storage VM " + ssVm.getInstanceName());
                     }
                     return false;
-                }               
+                }
             }
         }
         return true;
     }
     
     
-    @Override 
+    @Override
     public boolean deleteHost(Long hostId) {
         List<SnapshotVO> snapshots = _snapshotDao.listByHostId(hostId);
         if( snapshots != null && !snapshots.isEmpty()) {
@@ -1001,7 +1000,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         try {
             boolean result = _itMgr.expunge(ssvm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(), 
+                HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(),
                         Host.Type.SecondaryStorageVM);
                 if (host != null) {
                     s_logger.debug("Removing host entry for ssvm id=" + vmId);
@@ -1049,11 +1048,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
-    	SecondaryStorageVmVO vm = profile.getVirtualMachine();
-        Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
-        vm.setDetails(details);
+        SecondaryStorageVmVO ssVm = _secStorageVmDao.findById(profile.getId());
     	
         HostVO secHost = _ssvmMgr.findSecondaryStorageHost(dest.getDataCenter().getId());
         assert (secHost != null);
@@ -1085,7 +1082,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
-        buf.append(" role=").append(profile.getVirtualMachine().getRole().toString());
+        buf.append(" role=").append(ssVm.getRole().toString());
         buf.append(" mtu=").append(_secStorageVmMtuSize);
 
         boolean externalDhcp = false;
@@ -1151,11 +1148,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
         finalizeCommandsOnStart(cmds, profile);
 
-        SecondaryStorageVmVO secVm = profile.getVirtualMachine();
+        SecondaryStorageVmVO secVm = _secStorageVmDao.findById(profile.getId());
         DataCenter dc = dest.getDataCenter();
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
@@ -1174,7 +1171,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile) {
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
 
         NicProfile managementNic = null;
         NicProfile controlNic = null;
@@ -1201,7 +1198,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<SecondaryStorageVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
         if (!answer.getResult()) {
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
@@ -1213,7 +1210,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
             IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
             if (ipaddr != null && ipaddr.getSystem()) {
-                SecondaryStorageVmVO secVm = profile.getVirtualMachine();
+                SecondaryStorageVmVO secVm = _secStorageVmDao.findById(profile.getId());
                 // override SSVM guest IP with EIP, so that download url's with be prepared with EIP
                 secVm.setPublicIpAddress(ipaddr.getAddress().addr());
                 _secStorageVmDao.update(secVm.getId(), secVm);
@@ -1227,7 +1224,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<SecondaryStorageVmVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
         //release elastic IP here
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
         if (ip != null && ip.getSystem()) {
@@ -1301,7 +1298,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating,
                 State.Starting,  State.Stopped, State.Stopping );
         int vmSize = (ssVms == null)? 0 : ssVms.size();
-        List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dataCenterId);        
+        List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dataCenterId);
         int hostSize = (ssHosts == null)? 0 : ssHosts.size();
         if ( hostSize > vmSize ) {
             s_logger.info("No secondary storage vms found in datacenter id=" + dataCenterId + ", starting a new one");
@@ -1334,7 +1331,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 	    }
 	    
 		host.setType( com.cloud.host.Host.Type.SecondaryStorageVM);
-		return host;	
+		return host;
     }
 
 	@Override
@@ -1482,7 +1479,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
 	@Override
-	public void prepareStop(VirtualMachineProfile<SecondaryStorageVmVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
 	}
 	
     @Override
@@ -1495,7 +1492,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
     	
     	try {
-	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(), 
+	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(),
 	    		user, account,  ((VmWorkStart)work).getPlan());
 	    	
     		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);

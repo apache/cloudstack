@@ -36,7 +36,7 @@ public interface HypervisorGuru extends Adapter {
      * @param vm
      * @return
      */
-    <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm);
+    VirtualMachineTO implement(VirtualMachineProfile vm);
 
     /**
      * Give hypervisor guru opportunity to decide if certain command needs to be delegated to other host, mainly to secondary storage VM host

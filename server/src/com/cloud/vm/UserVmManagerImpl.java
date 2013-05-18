@@ -32,6 +32,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
@@ -60,8 +63,6 @@ import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -387,7 +388,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     VpcManager _vpcMgr;
     @Inject
     TemplateManager templateMgr;
-    @Inject 
+    @Inject
     protected GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
     UsageEventDao _usageEventDao;
@@ -534,7 +535,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
             Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
             NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork), _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
-            VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
+            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
             UserDataServiceProvider element = _networkMgr.getPasswordResetProvider(defaultNetwork);
@@ -657,7 +658,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
                 _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
 
-        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
 
         if (template != null && template.getEnablePassword()) {
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
@@ -708,7 +709,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.stop(new Long(userId).toString());            
+            status = vmEntity.stop(new Long(userId).toString());
         } catch (ResourceUnavailableException e) {
             s_logger.debug("Unable to stop due to ", e);
             status = false;
@@ -1501,7 +1502,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                         .findUsableVolumesForInstance(vm.getId());
                 for (VolumeVO volume : volumesForThisVm) {
                     if (volume.getState() != Volume.State.Destroy) {
-                        this.volumeMgr.destroyVolume(volume);
+                        volumeMgr.destroyVolume(volume);
                     }
                 }
                 String msg = "Failed to deploy Vm with Id: " + vmId + ", on Host with Id: " + hostId;
@@ -1684,7 +1685,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
                 _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
 
-        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>((VMInstanceVO)vm);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl((VMInstanceVO)vm);
 
         UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(defaultNetwork);
         if (element == null) {
@@ -2054,7 +2055,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             isSecurityGroupEnabledNetworkUsed = true;
 
         } else {
-            // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks 
+            // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks
             for (Long networkId : networkIdList) {
                 NetworkVO network = _networkDao.findById(networkId);
 
@@ -2070,7 +2071,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     }
 
                     isSecurityGroupEnabledNetworkUsed = true;
-                }            
+                }
 
                 if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
                     throw new InvalidParameterValueException("Can specify only Shared Guest networks when" +
@@ -2499,7 +2500,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     // * verify that there are no duplicates
                     if (hostNames.contains(hostName)) {
                         throw new InvalidParameterValueException("The vm with hostName " + hostName
-                                + " already exists in the network domain: " + ntwkDomain + "; network=" 
+                                + " already exists in the network domain: " + ntwkDomain + "; network="
                                 + _networkModel.getNetwork(ntwkId));
                     }
                 }
@@ -2571,7 +2572,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         List<String> computeTags = new ArrayList<String>();
         computeTags.add(offering.getHostTag());
 
-        List<String> rootDiskTags =	new ArrayList<String>();    	
+        List<String> rootDiskTags =	new ArrayList<String>();
         rootDiskTags.add(offering.getTags());
 
         if(isIso){
@@ -2697,9 +2698,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public boolean finalizeVirtualMachineProfile(
-            VirtualMachineProfile<UserVmVO> profile, DeployDestination dest,
+            VirtualMachineProfile profile, DeployDestination dest,
             ReservationContext context) {
-        UserVmVO vm = profile.getVirtualMachine();
+        UserVmVO vm = _vmDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
         vm.setDetails(details);
 
@@ -2714,7 +2715,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                 + vm.getIsoId());
             }
 
-            Pair<String, String> isoPathPair = this.templateMgr.getAbsoluteIsoPath(
+            Pair<String, String> isoPathPair = templateMgr.getAbsoluteIsoPath(
                     template.getId(), vm.getDataCenterId());
 
             if (template.getTemplateType() == TemplateType.PERHOST) {
@@ -2757,9 +2758,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public boolean finalizeDeployment(Commands cmds,
-            VirtualMachineProfile<UserVmVO> profile, DeployDestination dest,
+            VirtualMachineProfile profile, DeployDestination dest,
             ReservationContext context) {
-        UserVmVO userVm = profile.getVirtualMachine();
+        UserVmVO userVm = _vmDao.findById(profile.getId());
         List<NicVO> nics = _nicDao.listByVmId(userVm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
@@ -2774,14 +2775,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds,
-            VirtualMachineProfile<UserVmVO> profile) {
+            VirtualMachineProfile profile) {
         return true;
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile,
+    public boolean finalizeStart(VirtualMachineProfile profile,
             long hostId, Commands cmds, ReservationContext context) {
-        UserVmVO vm = profile.getVirtualMachine();
+        UserVmVO vm = _vmDao.findById(profile.getId());
 
         Answer[] answersToCmds = cmds.getAnswers();
         if (answersToCmds == null) {
@@ -2833,7 +2834,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
         if (ipChanged) {
             DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
-            UserVmVO userVm = profile.getVirtualMachine();
+            UserVmVO userVm = _vmDao.findById(profile.getId());
             // dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())
             if (_ntwkSrvcDao.canProviderSupportServiceInNetwork(
                     guestNetwork.getId(), Service.Dhcp,
@@ -2926,7 +2927,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<UserVmVO> profile,
+    public void finalizeStop(VirtualMachineProfile profile,
             StopAnswer answer) {
         // release elastic IP here
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
@@ -3130,7 +3131,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.destroy(new Long(userId).toString());    
+            status = vmEntity.destroy(new Long(userId).toString());
         } catch (CloudException e) {
             CloudRuntimeException ex = new CloudRuntimeException(
                     "Unable to destroy with specified vmId", e);
@@ -3725,7 +3726,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     + cmd.getAccountName() + " is disabled.");
         }
 
-        //check caller has access to both the old and new account 
+        //check caller has access to both the old and new account
         _accountMgr.checkAccess(caller, null, true, oldAccount);
         _accountMgr.checkAccess(caller, null, true, newAccount);
 
@@ -3851,8 +3852,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         txn.commit();
 
         VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
-        VirtualMachineProfileImpl<VMInstanceVO> vmOldProfile = new VirtualMachineProfileImpl<VMInstanceVO>(
-                vmoi);
+        VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(vmoi);
 
         // OS 3: update the network
         List<Long> networkIdList = cmd.getNetworkIds();
@@ -3929,8 +3929,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     profile));
 
             VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
-            VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(
-                    vmi);
+            VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
             _networkMgr.allocate(vmProfile, networks);
 
             _securityGroupMgr.addInstanceToGroups(vm.getId(),
@@ -4064,8 +4063,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 }
                 VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(),
                         vm.getId());
-                VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(
-                        vmi);
+                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
                 _networkMgr.allocate(vmProfile, networks);
                 s_logger.debug("AssignVM: Advance virtual, adding networks no "
                         + networks.size() + " to " + vm.getInstanceName());
@@ -4187,7 +4185,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         /* Detach and destory the old root volume */
 
         _volsDao.detachVolume(root.getId());
-        this.volumeMgr.destroyVolume(root);
+        volumeMgr.destroyVolume(root);
 
         if (template.getEnablePassword()) {
             String password = generateRandomPassword();
@@ -4289,7 +4287,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
     }
     
     @Override

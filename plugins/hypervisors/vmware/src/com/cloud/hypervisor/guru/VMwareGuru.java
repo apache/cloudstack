@@ -12,7 +12,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.guru;
@@ -27,9 +27,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
@@ -56,8 +54,8 @@ import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.network.Network.Provider;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -104,7 +102,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     @Override
-    public <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm) {
+    public VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         to.setBootloader(BootloaderType.HVM);
 
@@ -113,7 +111,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             details = new HashMap<String, String>();
 
         String nicDeviceType = details.get(VmDetailConstants.NIC_ADAPTER);
-        if(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO 
+        if(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO
                 || vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
 
             if(nicDeviceType == null) {
@@ -141,7 +139,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
         
         String diskDeviceType = details.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
-        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO 
+        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO
             || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)){
             // user vm
             if (diskDeviceType == null){
@@ -236,7 +234,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         
         // Don't do this if the virtual machine is one of the special types
         // Should only be done on user machines
-        if(!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO 
+        if(!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO
                 || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
             String nestedVirt = _configDao.getValue(Config.VmwareEnableNestedVirtualization.key());
             if (nestedVirt != null) {
@@ -279,7 +277,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     public long getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
 
-        if(cmd instanceof PrimaryStorageDownloadCommand || 
+        if(cmd instanceof PrimaryStorageDownloadCommand ||
                 cmd instanceof BackupSnapshotCommand ||
                 cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
                 cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
@@ -317,8 +315,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 _cmdExecLogDao.persist(execLog);
                 cmd.setContextParam("execid", String.valueOf(execLog.getId()));
 
-                if(cmd instanceof BackupSnapshotCommand || 
-                        cmd instanceof CreatePrivateTemplateFromVolumeCommand || 
+                if(cmd instanceof BackupSnapshotCommand ||
+                        cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
                         cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
                         cmd instanceof CopyVolumeCommand ||
                         cmd instanceof CreateVolumeOVACommand ||

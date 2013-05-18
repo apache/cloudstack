@@ -26,16 +26,15 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.org.Cluster;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.DetailVO;
@@ -45,6 +44,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -78,7 +78,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject ConsoleProxyDao _consoleProxyDao = null;
     @Inject SecondaryStorageVmDao _secStorgaeVmDao = null;
     @Inject ConfigurationDao _configDao = null;
-    @Inject GuestOSDao _guestOSDao = null; 
+    @Inject GuestOSDao _guestOSDao = null;
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject VMInstanceDao _vmInstanceDao = null;
     @Inject ResourceManager _resourceMgr;
@@ -91,13 +91,13 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     
     
 	@Override
-	public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
 			ExcludeList avoid, int returnUpTo) {
 	    return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
 	}
 	
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
 	
 	    long dcId = plan.getDataCenterId();
 		Long podId = plan.getPodId();
@@ -133,28 +133,28 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 List<HostVO> hostsMatchingOfferingTag = new ArrayList<HostVO>();
                 List<HostVO> hostsMatchingTemplateTag = new ArrayList<HostVO>();
                 if (hasSvcOfferingTag){
-                    if (s_logger.isDebugEnabled()){            
+                    if (s_logger.isDebugEnabled()){
                         s_logger.debug("Looking for hosts having tag specified on SvcOffering:" + hostTagOnOffering);
                     }
                     hostsMatchingOfferingTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering);
-                    if (s_logger.isDebugEnabled()){            
+                    if (s_logger.isDebugEnabled()){
                         s_logger.debug("Hosts with tag '" + hostTagOnOffering + "' are:" + hostsMatchingOfferingTag);
-                    }                
+                    }
                 }
                 if (hasTemplateTag){
-                    if (s_logger.isDebugEnabled()){            
+                    if (s_logger.isDebugEnabled()){
                         s_logger.debug("Looking for hosts having tag specified on Template:" + hostTagOnTemplate);
                     }
-                    hostsMatchingTemplateTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);    
-                    if (s_logger.isDebugEnabled()){            
+                    hostsMatchingTemplateTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
+                    if (s_logger.isDebugEnabled()){
                         s_logger.debug("Hosts with tag '" + hostTagOnTemplate+"' are:" + hostsMatchingTemplateTag);
-                    }                  
+                    }
                 }
                 
                 if (hasSvcOfferingTag && hasTemplateTag){
                     hostsMatchingOfferingTag.retainAll(hostsMatchingTemplateTag);
-                    clusterHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);    
-                    if (s_logger.isDebugEnabled()){            
+                    clusterHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
+                    if (s_logger.isDebugEnabled()){
                         s_logger.debug("Found "+ hostsMatchingOfferingTag.size() +" Hosts satisfying both tags, host ids are:" + hostsMatchingOfferingTag);
                     }
                     
@@ -173,7 +173,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan,
             Type type, ExcludeList avoid, List<HostVO> hosts, int returnUpTo, boolean considerReservedCapacity) {
         long dcId = plan.getDataCenterId();
         Long podId = plan.getPodId();
@@ -309,7 +309,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
         
         //now filter the given list of Hosts by this ordered list
-        Map<Long, HostVO> hostMap = new HashMap<Long, HostVO>();        
+        Map<Long, HostVO> hostMap = new HashMap<Long, HostVO>();
         for (HostVO host : hosts) {
             hostMap.put(host.getId(), host);
         }

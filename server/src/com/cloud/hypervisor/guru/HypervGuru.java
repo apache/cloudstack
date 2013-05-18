@@ -22,13 +22,12 @@ import javax.inject.Inject;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -51,7 +50,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     @Override
-    public <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm) {
+    public VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         to.setBootloader(BootloaderType.HVM);
 
@@ -64,7 +63,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Override
     public long getCommandHostDelegation(long hostId, Command cmd) {
     	return hostId;
-    }   
+    }
     
     @Override
     public boolean trackVmHostChange() {

@@ -20,12 +20,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=HypervisorGuru.class)
@@ -41,8 +40,7 @@ public class OvmGuru extends HypervisorGuruBase implements HypervisorGuru {
 	}
 
 	@Override
-	public <T extends VirtualMachine> VirtualMachineTO implement(
-			VirtualMachineProfile<T> vm) {
+    public VirtualMachineTO implement(VirtualMachineProfile vm) {
 		VirtualMachineTO to = toVirtualMachineTO(vm);
 		to.setBootloader(vm.getBootLoaderType());
 

@@ -363,7 +363,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 
 	@Override
 	public VirtualMachineTO toVmTO(
-			VirtualMachineProfile<? extends VMInstanceVO> profile) {
+			VirtualMachineProfile profile) {
 		// TODO Auto-generated method stub
 		return null;
 	}

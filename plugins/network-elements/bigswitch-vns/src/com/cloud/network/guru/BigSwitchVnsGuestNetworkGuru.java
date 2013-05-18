@@ -211,7 +211,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
@@ -221,7 +221,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public boolean release(NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             String reservationId) {
         // TODO Auto-generated method stub
         return super.release(nic, vm, reservationId);

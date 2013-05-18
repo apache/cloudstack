@@ -369,7 +369,7 @@ public class MidoNetElement extends AdapterBase implements
      * From interface DHCPServiceProvider
      */
     @Override
-    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
+    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm,
                                 DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
@@ -736,7 +736,7 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm,
                            DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         s_logger.debug("prepare called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
@@ -800,7 +800,7 @@ public class MidoNetElement extends AdapterBase implements
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm,
                            ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("release called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());

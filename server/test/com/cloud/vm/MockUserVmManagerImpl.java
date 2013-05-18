@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -41,7 +43,6 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.VmStatsEntry;
@@ -99,31 +100,31 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<UserVmVO> profile) {
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
         // TODO Auto-generated method stub
 
     }
@@ -419,7 +420,7 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
         // TODO Auto-generated method stub
 
     }

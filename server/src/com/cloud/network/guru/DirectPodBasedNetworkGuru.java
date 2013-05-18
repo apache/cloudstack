@@ -88,7 +88,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenterVO dc = _dcDao.findById(network.getDataCenterId());
@@ -119,7 +119,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     }
 
     @Override @DB
-    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         
         String oldIp = nic.getIp4Address();
@@ -159,7 +159,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     }
 
     @DB
-    protected void getIp(NicProfile nic, Pod pod, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException,
+    protected void getIp(NicProfile nic, Pod pod, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
         DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIp4Address() == null) {

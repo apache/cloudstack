@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -82,9 +82,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
 
-    protected <T extends VirtualMachine> VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile<T> vmProfile) {
+    protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
 
-        ServiceOffering offering = vmProfile.getServiceOffering();  
+        ServiceOffering offering = vmProfile.getServiceOffering();
         VirtualMachine vm = vmProfile.getVirtualMachine();
         Long minMemory = (long) (offering.getRamSize()/vmProfile.getCpuOvercommitRatio());
         int  minspeed= (int)(offering.getSpeed()/vmProfile.getMemoryOvercommitRatio());

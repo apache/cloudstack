@@ -346,7 +346,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Allocating entries for VM: " + vm);
         }
 
-        VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, serviceOffering, owner, params);
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, serviceOffering, owner, params);
 
         vm.setDataCenterId(plan.getDataCenterId());
         if (plan.getPodId() != null) {
@@ -462,7 +462,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Destroying vm " + vm);
         }
 
-        VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         s_logger.debug("Cleaning up NICS");
         _networkMgr.cleanupNics(profile);
         // Clean up volumes based on the vm's instance id
@@ -904,7 +904,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
+                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, account, params);
                 DeployDestination dest = null;
                 try {
                     dest = _dpMgr.planDeployment(vmProfile, plan, avoids);
@@ -1088,8 +1088,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    protected <T extends VMInstanceVO> boolean sendStop(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, boolean force) {
-        VMInstanceVO vm = profile.getVirtualMachine();
+    protected <T extends VMInstanceVO> boolean sendStop(VirtualMachineGuru<T> guru, VirtualMachineProfile profile, boolean force) {
+        VirtualMachine vm = profile.getVirtualMachine();
         StopCommand stop = new StopCommand(vm);
         try {
             Answer answer = _agentMgr.send(vm.getHostId(), stop);
@@ -1112,8 +1112,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return true;
     }
 
-    protected <T extends VMInstanceVO> boolean cleanup(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, VmWorkJobVO work, Event event, boolean force, User user, Account account) {
-        T vm = profile.getVirtualMachine();
+    protected <T extends VMInstanceVO> boolean cleanup(VirtualMachineGuru<T> guru, VirtualMachineProfile profile, VmWorkJobVO work, Event event, boolean force, User user,
+            Account account) {
+        VirtualMachine vm = profile.getVirtualMachine();
         State state = vm.getState();
         s_logger.debug("Cleaning up resources for the vm " + vm + " in " + state + " state");
         if (state == State.Starting) {
@@ -1280,7 +1281,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
-        VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
 
         try {
             if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId())) {
@@ -1303,7 +1304,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             if (doCleanup) {
-                if (cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.StopRequested, forced, user, account)) {
+                if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.StopRequested, forced, user, account)) {
                     try {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Updating work item to Done, id:" + work.getId());
@@ -1438,7 +1439,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
-            VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
+            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
 
             try {
                 if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId())) {
@@ -1466,7 +1467,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 if (doCleanup) {
-                    if (cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.StopRequested, forced, user, account)) {
+                    if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.StopRequested, forced, user, account)) {
                         try {
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Updating work item to Done, id:" + work.getId());
@@ -1656,7 +1657,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Unable to migrate vm: " + e.toString());
         }
 
-        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         boolean migrationResult = false;
         try {
             migrationResult = volumeMgr.storageMigration(profile, destPool);
@@ -1666,7 +1667,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 if (vm.getPodIdToDeployIn() != destPool.getPodId()) {
                     DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), destPool.getPodId(), null, null, null, null);
-                    VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, null, null, null, null);
+                    VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, null, null, null, null);
                     _networkMgr.reallocate(vmProfile, plan);
                 }
 
@@ -1822,7 +1823,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             } catch (AgentUnavailableException e) {
                                 s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                             }
-                            cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.AgentReportStopped, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                            cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
                             return null;
                         }
                     } catch (OperationTimedoutException e) {
@@ -1855,7 +1856,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         */
     }
 
-    private Map<VolumeVO, StoragePoolVO> getPoolListForVolumesForMigration(VirtualMachineProfile<VMInstanceVO> profile,
+    private Map<VolumeVO, StoragePoolVO> getPoolListForVolumesForMigration(VirtualMachineProfile profile,
             Host host, Map<VolumeVO, StoragePoolVO> volumeToPool) {
         List<VolumeVO> allVolumes = _volsDao.findUsableVolumesForInstance(profile.getId());
         for (VolumeVO volume : allVolumes) {
@@ -1959,7 +1960,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // Create a map of which volume should go in which storage pool.
         long vmId = vm.getId();
         vm = vmGuru.findById(vmId);
-        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         volumeToPool = getPoolListForVolumesForMigration(profile, destHost, volumeToPool);
 
         // If none of the volumes have to be migrated, fail the call. Administrator needs to make a call for migrating
@@ -2008,7 +2009,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (AgentUnavailableException e) {
                         s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                     }
-                    cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.AgentReportStopped, true,
+                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true,
                             _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
                     return null;
                 }
@@ -2040,7 +2041,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile) {
+    public VirtualMachineTO toVmTO(VirtualMachineProfile profile) {
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(profile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO to = hvGuru.implement(profile);
         return to;
@@ -2096,7 +2097,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return true;
         }
 
-        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
 
         Long hostId = vm.getHostId();
         if (hostId == null) {
@@ -3155,7 +3156,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
 
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null,
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmVO, null,
                 null, null, null);
 
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
@@ -3224,7 +3225,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
 
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null,
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmVO, null,
                 null, null, null);
 
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
@@ -3288,7 +3289,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
 
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null,
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmVO, null,
                 null, null, null);
 
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
@@ -3352,7 +3353,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public VMInstanceVO findHostAndMigrate(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, VirtualMachineMigrationException, ManagementServerException {
 
-        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
 
         Long srcHostId = vm.getHostId();
         Long oldSvcOfferingId = vm.getServiceOfferingId();
@@ -3542,7 +3543,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 } catch (AgentUnavailableException e) {
                                     s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                                 }
-                                cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.AgentReportStopped, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                                cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
                                 return null;
                             }
                         } catch (OperationTimedoutException e) {

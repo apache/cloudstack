@@ -24,6 +24,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -32,8 +35,6 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -62,7 +63,6 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
@@ -88,20 +88,9 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
-import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
-import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 
 @Component
@@ -725,7 +714,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#allocate(com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
     @Override
-    public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks)
+    public void allocate(VirtualMachineProfile vm, List<Pair<NetworkVO, NicProfile>> networks)
             throws InsufficientCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         
@@ -739,7 +728,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#prepare(com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DeployDestination, com.cloud.vm.ReservationContext)
      */
     @Override
-    public void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest,
+    public void prepare(VirtualMachineProfile profile, DeployDestination dest,
             ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
             ResourceUnavailableException {
         // TODO Auto-generated method stub
@@ -754,7 +743,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#release(com.cloud.vm.VirtualMachineProfile, boolean)
      */
     @Override
-    public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced)
+    public void release(VirtualMachineProfile vmProfile, boolean forced)
             throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         
@@ -768,7 +757,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#cleanupNics(com.cloud.vm.VirtualMachineProfile)
      */
     @Override
-    public void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
+    public void cleanupNics(VirtualMachineProfile vm) {
         // TODO Auto-generated method stub
         
     }
@@ -781,7 +770,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#expungeNics(com.cloud.vm.VirtualMachineProfile)
      */
     @Override
-    public void expungeNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
+    public void expungeNics(VirtualMachineProfile vm) {
         // TODO Auto-generated method stub
         
     }
@@ -836,7 +825,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#prepareNicForMigration(com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DeployDestination)
      */
     @Override
-    public <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest) {
+    public void prepareNicForMigration(VirtualMachineProfile vm, DeployDestination dest) {
         // TODO Auto-generated method stub
         
     }
@@ -999,7 +988,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#reallocate(com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DataCenterDeployment)
      */
     @Override
-    public boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm, DataCenterDeployment dest)
+    public boolean reallocate(VirtualMachineProfile vm, DataCenterDeployment dest)
             throws InsufficientCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return false;
@@ -1040,7 +1029,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#allocateDirectIp(com.cloud.vm.NicProfile, com.cloud.dc.DataCenter, com.cloud.vm.VirtualMachineProfile, com.cloud.network.Network, java.lang.String)
      */
     @Override
-    public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm,
+    public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm,
             Network network, String requestedIpv4, String requestedIpv6) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
@@ -1069,7 +1058,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public Pair<NicProfile, Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic,
-            int deviceId, VirtualMachineProfile<? extends VMInstanceVO> vm)
+            int deviceId, VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException {
         // TODO Auto-generated method stub
@@ -1084,7 +1073,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#prepareNic(com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DeployDestination, com.cloud.vm.ReservationContext, long, com.cloud.network.NetworkVO)
      */
     @Override
-    public NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest,
+    public NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest,
             ReservationContext context, long nicId, NetworkVO network)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
@@ -1100,7 +1089,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#removeNic(com.cloud.vm.VirtualMachineProfile, com.cloud.vm.Nic)
      */
     @Override
-    public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Nic nic) {
+    public void removeNic(VirtualMachineProfile vm, Nic nic) {
         // TODO Auto-generated method stub
         
     }
@@ -1141,7 +1130,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#releaseNic(com.cloud.vm.VirtualMachineProfile, com.cloud.vm.Nic)
      */
     @Override
-    public void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic)
+    public void releaseNic(VirtualMachineProfile vmProfile, Nic nic)
             throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         
@@ -1156,7 +1145,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context,
-            VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare)
+            VirtualMachineProfile vmProfile, boolean prepare)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub

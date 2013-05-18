@@ -106,7 +106,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException {
 
         if(vm.getHypervisorType() == HypervisorType.VMware && vm.getType() != VirtualMachine.Type.DomainRouter) {
@@ -124,11 +124,11 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
+    public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
 
@@ -163,7 +163,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
 
         if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {

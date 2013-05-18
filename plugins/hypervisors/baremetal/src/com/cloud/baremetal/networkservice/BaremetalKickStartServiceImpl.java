@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -59,7 +59,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = BaremetalPxeService.class)
@@ -81,7 +80,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
     VMTemplateDao _tmpDao;
 
     @Override
-    public boolean prepare(VirtualMachineProfile<UserVmVO> profile, NicProfile nic, DeployDestination dest, ReservationContext context) {
+    public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) {
         NetworkVO nwVO = _nwDao.findById(nic.getNetworkId());
         SearchCriteriaService<BaremetalPxeVO, BaremetalPxeVO> sc = SearchCriteria2.create(BaremetalPxeVO.class);
         sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, BaremetalPxeType.KICK_START.toString());

@@ -67,7 +67,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     @Override
-    public DeployDestination planDeployment(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    public DeployDestination planDeployment(VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoids) throws InsufficientServerCapacityException,
             AffinityConflictException {
 

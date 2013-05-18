@@ -27,10 +27,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.Capacity;
@@ -71,7 +72,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.ReservationContext;
@@ -124,7 +124,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
 
     @Override
-    public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    public DeployDestination plan(VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid)
                     throws InsufficientServerCapacityException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -305,7 +305,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
     }
 
-    private DeployDestination scanPodsForDestination(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid){
+    private DeployDestination scanPodsForDestination(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) {
 
         ServiceOffering offering = vmProfile.getServiceOffering();
         int requiredCpu = offering.getCpu() * offering.getSpeed();
@@ -363,7 +363,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         }
     }
 
-    private DeployDestination scanClustersForDestinationInZoneOrPod(long id, boolean isZone, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid){
+    private DeployDestination scanClustersForDestinationInZoneOrPod(long id, boolean isZone, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) {
 
         VirtualMachine vm = vmProfile.getVirtualMachine();
         ServiceOffering offering = vmProfile.getServiceOffering();
@@ -420,7 +420,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
      * other than the capacity based ordering which is done by default.
      * @return List<Long> ordered list of Cluster Ids
      */
-    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
         List<Long> reordersClusterIds = clusterCapacityInfo.first();
         return reordersClusterIds;
     }
@@ -432,7 +432,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
      * other than the capacity based ordering which is done by default.
      * @return List<Long> ordered list of Pod Ids
      */
-    protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+    protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
         List<Long> podIdsByCapacity = podCapacityInfo.first();
         return podIdsByCapacity;
     }
@@ -459,7 +459,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         return capacityList;
     }
 
-    private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+    private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
 
         List<Short> capacityList = getCapacitiesForCheckingThreshold();
         List<Long> clustersCrossingThreshold = new ArrayList<Long>();
@@ -496,7 +496,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         }
     }
 
-    private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid, DataCenter dc){
 
         if (s_logger.isTraceEnabled()) {
@@ -704,7 +704,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         return hostCanAccessSPool;
     }
 
-    protected List<Host> findSuitableHosts(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo){
+    protected List<Host> findSuitableHosts(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         List<Host> suitableHosts = new ArrayList<Host>();
         for(HostAllocator allocator : _hostAllocators) {
             suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, avoid, returnUpTo);
@@ -719,7 +719,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         return suitableHosts;
     }
 
-    protected Pair<Map<Volume, List<StoragePool>>, List<Volume>> findSuitablePoolsForVolumes(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo){
+    protected Pair<Map<Volume, List<StoragePool>>, List<Volume>> findSuitablePoolsForVolumes(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         List<VolumeVO> volumesTobeCreated = _volsDao.findUsableVolumesForInstance(vmProfile.getId());
         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
         List<Volume> readyAndReusedVolumes = new ArrayList<Volume>();
@@ -736,10 +736,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 StoragePool pool = null;
                 if(toBeCreated.getPoolId() != null){
                     s_logger.debug("finding pool by id '" + toBeCreated.getPoolId() + "'");
-                    pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
+                    pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
                 }else{
                     s_logger.debug("finding pool by id '" + plan.getPoolId() + "'");
-                    pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
+                    pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
                 }
 
                 if(pool != null){
@@ -851,14 +851,14 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     }
 
     @Override
-    public boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan,
+    public boolean check(VirtualMachineProfile vm, DeploymentPlan plan,
             DeployDestination dest, ExcludeList exclude) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
+    public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
         if(vm.getHypervisorType() != HypervisorType.BareMetal){
             //check the allocation strategy
             if (_allocationAlgorithm != null && (_allocationAlgorithm.equals(AllocationAlgorithm.random.toString()) || _allocationAlgorithm.equals(AllocationAlgorithm.firstfit.toString()))) {

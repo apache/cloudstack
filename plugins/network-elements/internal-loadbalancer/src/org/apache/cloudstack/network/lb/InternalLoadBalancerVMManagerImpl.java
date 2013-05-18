@@ -173,7 +173,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
 
     @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile,
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile,
             DeployDestination dest, ReservationContext context) {
 
         //Internal LB vm starts up with 2 Nics
@@ -248,8 +248,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
-        DomainRouterVO internalLbVm = profile.getVirtualMachine();
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
+        DomainRouterVO internalLbVm = _internalLbVmDao.findById(profile.getId());
 
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
@@ -265,8 +265,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds, ReservationContext context) {
-        DomainRouterVO internalLbVm = profile.getVirtualMachine();
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         
         boolean result = true;
 
@@ -294,6 +293,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             }
         }
         
+        DomainRouterVO internalLbVm = _internalLbVmDao.findById(profile.getId());
+
         answer = cmds.getAnswer("getDomRVersion");
         if (answer != null && answer instanceof GetDomRVersionAnswer) {
             GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)answer;
@@ -314,8 +315,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
-        DomainRouterVO internalLbVm = profile.getVirtualMachine();
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
+        DomainRouterVO internalLbVm = _internalLbVmDao.findById(profile.getId());
         NicProfile controlNic = getNicProfileByTrafficType(profile, TrafficType.Control);
 
         if (controlNic == null) {
@@ -351,7 +352,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, StopAnswer answer) {
+    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
     }
 
     @Override
@@ -381,7 +382,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile) {
+    public void prepareStop(VirtualMachineProfile profile) {
     }
     
     @Override
@@ -421,7 +422,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         return _name;
     }
     
-    protected NicProfile getNicProfileByTrafficType(VirtualMachineProfile<DomainRouterVO> profile, TrafficType trafficType) {
+    protected NicProfile getNicProfileByTrafficType(VirtualMachineProfile profile, TrafficType trafficType) {
         for (NicProfile nic : profile.getNics()) {
             if (nic.getTrafficType() == trafficType && nic.getIp4Address() != null) {
                 return nic;
@@ -430,7 +431,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         return null;
      }
     
-    protected void finalizeSshAndVersionOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DomainRouterVO router, NicProfile controlNic) {
+    protected void finalizeSshAndVersionOnStart(Commands cmds, VirtualMachineProfile profile, DomainRouterVO router, NicProfile controlNic) {
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922));
 
         // Update internal lb vm template/scripts version

@@ -206,7 +206,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     @Override @DB
-    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (network.getSpecifyIpRanges()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
@@ -305,7 +305,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException {
 
@@ -382,7 +382,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     @Override
-    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm,
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
@@ -392,7 +392,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     @Override
-    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         nic.setBroadcastUri(null);
         nic.setIsolationUri(null);
         return true;

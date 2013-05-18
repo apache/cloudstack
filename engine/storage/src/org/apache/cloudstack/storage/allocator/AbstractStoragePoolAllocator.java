@@ -91,11 +91,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return true;
     }
 	
-	protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
+	protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
     
     @Override
 	public
-    List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
     	List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
     	return reOrder(pools, vmProfile, plan);
     }
@@ -131,7 +131,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
     
     protected List<StoragePool> reOrder(List<StoragePool> pools, 
-    		VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+    		VirtualMachineProfile vmProfile,
     		DeploymentPlan plan) {
     	Account account = null;
     	if(vmProfile.getVirtualMachine() != null){

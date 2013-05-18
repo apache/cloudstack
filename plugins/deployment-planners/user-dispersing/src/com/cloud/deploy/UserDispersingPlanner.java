@@ -47,7 +47,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
      * @return List<Long> ordered list of Cluster Ids
      */
     @Override
-    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan){
         List<Long> clusterIdsByCapacity = clusterCapacityInfo.first();
         if(vmProfile.getOwner() == null){
             return clusterIdsByCapacity;
@@ -77,7 +77,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
      * @return List<Long> ordered list of Pod Ids
      */
     @Override
-    protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+    protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan){
         List<Long> podIdsByCapacity = podCapacityInfo.first();
         if(vmProfile.getOwner() == null){
             return podIdsByCapacity;
@@ -192,7 +192,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
     
 
     @Override
-    public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
+    public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
         if(vm.getHypervisorType() != HypervisorType.BareMetal){
             //check the allocation strategy
             if (_allocationAlgorithm != null && _allocationAlgorithm.equals(AllocationAlgorithm.userdispersing.toString())) {

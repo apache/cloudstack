@@ -37,12 +37,11 @@ import com.cloud.user.dao.AccountDao;
  * Implementation of VirtualMachineProfile.
  *
  */
-public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements VirtualMachineProfile<T> {
+public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     
-    T _vm;
+    VMInstanceVO _vm;
     ServiceOfferingVO _offering;
     VMTemplateVO _template;
-    UserVmDetailVO _userVmDetails;
     Map<Param, Object> _params;
     List<NicProfile> _nics = new ArrayList<NicProfile>();
     List<VolumeTO> _disks = new ArrayList<VolumeTO>();
@@ -54,7 +53,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
 
     VirtualMachine.Type _type;
     
-    public VirtualMachineProfileImpl(T vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<Param, Object> params) {
+    public VirtualMachineProfileImpl(VMInstanceVO vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<Param, Object> params) {
         _vm = vm;
         _template = template;
         _offering = offering;
@@ -67,7 +66,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
         	_type = vm.getType();
     }
     
-    public VirtualMachineProfileImpl(T vm) {
+    public VirtualMachineProfileImpl(VMInstanceVO vm) {
         this(vm, null, null, null, null);
     }
     
@@ -81,7 +80,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     }
     
     @Override
-    public T getVirtualMachine() {
+    public VirtualMachine getVirtualMachine() {
         return _vm;
     }
     
@@ -100,7 +99,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     
     @Override
     public void setBootLoaderType(BootloaderType bootLoader) {
-    	this._bootloader = bootLoader;
+    	_bootloader = bootLoader;
     }
     
     @Override
@@ -231,7 +230,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
 
 	@Override
 	public BootloaderType getBootLoaderType() {
-		return this._bootloader;
+		return _bootloader;
 	}
 	
 	@Override
@@ -254,12 +253,12 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     }
     @Override
    public Float getCpuOvercommitRatio(){
-        return  this.cpuOvercommitRatio;
+        return  cpuOvercommitRatio;
     }
 
     @Override
     public Float getMemoryOvercommitRatio(){
-        return this.memoryOvercommitRatio;
+        return memoryOvercommitRatio;
     }
 
 

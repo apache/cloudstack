@@ -40,6 +40,6 @@ public interface DeploymentPlanningManager extends Manager {
      *
      *
      */
-    DeployDestination planDeployment(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan,
+    DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan,
             ExcludeList avoids) throws InsufficientServerCapacityException, AffinityConflictException;
 }

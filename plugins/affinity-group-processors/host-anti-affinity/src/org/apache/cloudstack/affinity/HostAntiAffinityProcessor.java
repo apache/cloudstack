@@ -21,9 +21,10 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -48,7 +49,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
     @Override
-    public void process(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan,
+    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan,
             ExcludeList avoid)
             throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();

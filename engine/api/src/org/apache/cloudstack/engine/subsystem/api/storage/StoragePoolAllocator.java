@@ -39,7 +39,7 @@ public interface StoragePoolAllocator extends Adapter {
 	* @param int returnUpTo (use -1 to return all possible pools)
 	* @return List<StoragePool> List of storage pools that are suitable for the VM 
 	**/ 
-	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);	
+	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);	
 	
 	public static int RETURN_UPTO_ALL = -1;
 }

@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,15 +19,12 @@
 package com.cloud.baremetal.networkservice;
 
 import java.util.HashMap;
-
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.baremetal.manager.BaremetalManager;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,16 +33,12 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -72,7 +65,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
+    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (!canHandle(dest)) {
             return false;
@@ -82,17 +75,17 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
             return false;
         }
 
-        return pxeMgr.addUserData(nic, (VirtualMachineProfile<UserVm>) vm);
+        return pxeMgr.addUserData(nic, vm);
     }
 
     @Override
-    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException {
+    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile vm) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String SSHPublicKey) throws ResourceUnavailableException {
+    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String SSHPublicKey) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -115,14 +108,14 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context)
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
@@ -154,7 +147,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
 
 
     @Override
-    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;

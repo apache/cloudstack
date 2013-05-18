@@ -76,7 +76,7 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
     PodVlanMapDao _podVlanDao;
 
     @Override
-    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (dest.getHost().getHypervisorType() != HypervisorType.BareMetal) {
             super.reserve(nic, network, vm, dest, context);
@@ -149,7 +149,7 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
         s_logger.debug("Allocated a nic " + nic + " for " + vm);
     }
 
-    private void getBaremetalIp(NicProfile nic, Pod pod, VirtualMachineProfile<? extends VirtualMachine> vm, Network network, String requiredIp)
+    private void getBaremetalIp(NicProfile nic, Pod pod, VirtualMachineProfile vm, Network network, String requiredIp)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIp4Address() == null) {
