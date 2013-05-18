@@ -16,15 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.ejb.Local;
-
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -33,18 +24,25 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.VM;
 import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VM;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import javax.ejb.Local;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 @Local(value=ServerResource.class)
 public class XcpServerResource extends CitrixResourceBase {
-	  private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
-	  private String version;
-    public XcpServerResource(String version) {
+    private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
+    private String version;
+
+    public XcpServerResource() {
         super();
-        this.version = version;
     }
-    
+
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof NetworkUsageCommand) {
@@ -52,15 +50,6 @@ public class XcpServerResource extends CitrixResourceBase {
         } else {
             return super.executeRequest(cmd);
         }
-    }
-    
-    @Override
-    protected String getGuestOsType(String stdType, boolean bootFromCD) {
-    	if (version.equalsIgnoreCase("1.6")) {
-    		return CitrixHelper.getXcp160GuestOsType(stdType);
-    	} else {
-    		return CitrixHelper.getXcpGuestOsType(stdType);
-    	}
     }
 
     @Override
@@ -77,19 +66,9 @@ public class XcpServerResource extends CitrixResourceBase {
     }
 
     @Override
-    protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
-
-        vm.setMemoryStaticMin(conn, 33554432L);
-        vm.setMemoryDynamicMin(conn, 33554432L);
-        vm.setMemoryDynamicMax(conn, 33554432L);
-        vm.setMemoryStaticMax(conn, 33554432L);
-
-        vm.setMemoryStaticMax(conn, memsize);
-        vm.setMemoryDynamicMax(conn, memsize);
-        vm.setMemoryDynamicMin(conn, memsize);
-        vm.setMemoryStaticMin(conn, memsize);
+    protected String getGuestOsType(String stdType, boolean bootFromCD) {
+        return CitrixHelper.getXcpGuestOsType(stdType);
     }
-    
 
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
         try {
@@ -104,9 +83,7 @@ public class XcpServerResource extends CitrixResourceBase {
             return answer;
         } catch (Exception ex) {
             s_logger.warn("Failed to get network usage stats due to ", ex);
-            return new NetworkUsageAnswer(cmd, ex); 
+            return new NetworkUsageAnswer(cmd, ex);
         }
     }
-
-    
 }
