@@ -44,6 +44,8 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
@@ -57,13 +59,20 @@ import com.cloud.utils.script.Script;
 @Component
 public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResource {
 
-    private static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
+    private static final Logger s_logger = Logger.getLogger(LocalNfsSecondaryStorageResource.class);
 
     public LocalNfsSecondaryStorageResource() {
         this._dlMgr = new DownloadManagerImpl();
         ((DownloadManagerImpl) _dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
         _storage = new JavaStorageLayer();
         this._inSystemVM = false;
+        // get mount parent folder configured in global setting, if set, this will overwrite _parent in NfsSecondaryStorageResource to work
+        // around permission issue for default /mnt folder
+        ConfigurationDaoImpl configDao = new ConfigurationDaoImpl();
+        String mountParent = configDao.getValue(Config.MountParent.key());
+        if (mountParent != null) {
+            _parent = mountParent + File.separator + "secStorage";
+        }
     }
 
     @Override
@@ -171,6 +180,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
         res.addAll(parser.getPaths());
         for (String s : res) {
             if (s.contains(root)) {
+                s_logger.debug("mount point " + root + " already exists");
                 return root;
             }
         }
@@ -194,6 +204,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
                 file.delete();
             return null;
         }
+        s_logger.debug("Successfully mount " + nfsPath);
 
         // Change permissions for the mountpoint
         script = new Script(true, "chmod", _timeout, s_logger);
@@ -203,6 +214,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
             s_logger.warn("Unable to set permissions for " + root + " due to " + result);
             return null;
         }
+        s_logger.debug("Successfully set 777 permission for " + root);
 
         // XXX: Adding the check for creation of snapshots dir here. Might have
         // to move it somewhere more logical later.
