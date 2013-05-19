@@ -164,7 +164,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { SecondaryStorageVmManager.class })
-public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -905,13 +905,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         return true;
     }
 
-    @Override
-    public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, "s")) {
-            return null;
-        }
-        return VirtualMachineName.getSystemVmId(vmName);
-    }
+//    @Override
+//    public Long convertToId(String vmName) {
+//        if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, "s")) {
+//            return null;
+//        }
+//        return VirtualMachineName.getSystemVmId(vmName);
+//    }
 
     @Override
     public boolean stopSecStorageVm(long secStorageVmId) {
@@ -1026,23 +1026,23 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         return "secStorageVm." + id;
     }
 
-    @Override
-    public SecondaryStorageVmVO findByName(String name) {
-        if (!VirtualMachineName.isValidSecStorageVmName(name, null)) {
-            return null;
-        }
-        return findById(VirtualMachineName.getSystemVmId(name));
-    }
+//    @Override
+//    public SecondaryStorageVmVO findByName(String name) {
+//        if (!VirtualMachineName.isValidSecStorageVmName(name, null)) {
+//            return null;
+//        }
+//        return findById(VirtualMachineName.getSystemVmId(name));
+//    }
 
-    @Override
-    public SecondaryStorageVmVO findById(long id) {
-        return _secStorageVmDao.findById(id);
-    }
-
-    @Override
-    public SecondaryStorageVmVO persist(SecondaryStorageVmVO vm) {
-        return _secStorageVmDao.persist(vm);
-    }
+//    @Override
+//    public SecondaryStorageVmVO findById(long id) {
+//        return _secStorageVmDao.findById(id);
+//    }
+//
+//    @Override
+//    public SecondaryStorageVmVO persist(SecondaryStorageVmVO vm) {
+//        return _secStorageVmDao.persist(vm);
+//    }
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
@@ -1167,7 +1167,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         return true;
     }
 
-    @Override
+
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
 
         NicProfile managementNic = null;
@@ -1235,7 +1235,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    public void finalizeExpunge(SecondaryStorageVmVO vm) {
+    public void finalizeExpunge(VirtualMachine instance) {
+        SecondaryStorageVmVO vm = _secStorageVmDao.findById(instance.getId());
         vm.setPublicIpAddress(null);
         vm.setPublicMacAddress(null);
         vm.setPublicNetmask(null);
@@ -1467,7 +1468,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public void vmWorkStart(VmWork work) {
     	assert(work instanceof VmWorkStart);
     	
-    	SecondaryStorageVmVO vm = findById(work.getVmId());
+        SecondaryStorageVmVO vm = _secStorageVmDao.findById(work.getVmId());
     	
     	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
     	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
@@ -1488,7 +1489,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public void vmWorkStop(VmWork work) {
     	assert(work instanceof VmWorkStop);
     	
-    	SecondaryStorageVmVO vm = findById(work.getVmId());
+        SecondaryStorageVmVO vm = _secStorageVmDao.findById(work.getVmId());
     	
     	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
     	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());

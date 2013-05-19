@@ -35,7 +35,7 @@ import com.cloud.utils.Pair;
  *
  * 
  */
-public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmService{
+public interface UserVmManager extends UserVmService {
 
 	static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     /**

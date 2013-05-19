@@ -68,7 +68,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             // to solve the problem, we have to go through an instantiated VirtualMachineGuru so that it can carry
             // down correct type back to VirtualMachineManagerImpl. It is sad that we have to write code like this
             //
-            VirtualMachineGuru<VMInstanceVO> guru = _vmMgr.getVmGuru(vm);
+            VirtualMachineGuru guru = _vmMgr.getVmGuru(vm);
             assert(guru != null);
             if(guru == null) {
             	s_logger.error("Unable to find virtual Guru for VM type: " + vm.getType());
@@ -94,7 +94,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         }
 	}
 	
-	private Method getHandler(VirtualMachineGuru<?> guru, String cmd) {
+    private Method getHandler(VirtualMachineGuru guru, String cmd) {
 		
 		synchronized(_handlerMap) {
 			Class<?> clz = guru.getClass();

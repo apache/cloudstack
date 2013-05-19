@@ -241,7 +241,7 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
-public class UserVmManagerImpl extends ManagerBase implements UserVmManager, UserVmService {
+public class UserVmManagerImpl extends ManagerBase implements UserVmManager, UserVmService, VirtualMachineGuru {
     private static final Logger s_logger = Logger
             .getLogger(UserVmManagerImpl.class);
 
@@ -1353,13 +1353,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         return UUID.randomUUID().toString();
     }
 
-    @Override
-    public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidVmName(vmName, _instance)) {
-            return null;
-        }
-        return VirtualMachineName.getVmId(vmName);
-    }
+//    @Override
+//    public Long convertToId(String vmName) {
+//        if (!VirtualMachineName.isValidVmName(vmName, _instance)) {
+//            return null;
+//        }
+//        return VirtualMachineName.getVmId(vmName);
+//    }
 
     @Override
     public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
@@ -2768,12 +2768,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public boolean finalizeCommandsOnStart(Commands cmds,
-            VirtualMachineProfile profile) {
-        return true;
-    }
-
-    @Override
     public boolean finalizeStart(VirtualMachineProfile profile,
             long hostId, Commands cmds, ReservationContext context) {
         UserVmVO vm = _vmDao.findById(profile.getId());
@@ -2858,26 +2852,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public void finalizeExpunge(UserVmVO vm) {
+    public void finalizeExpunge(VirtualMachine vm) {
     }
 
-    @Override
-    public UserVmVO persist(UserVmVO vm) {
-        return _vmDao.persist(vm);
-    }
-
-    @Override
-    public UserVmVO findById(long id) {
-        return _vmDao.findById(id);
-    }
-
-    @Override
-    public UserVmVO findByName(String name) {
-        if (!VirtualMachineName.isValidVmName(name)) {
-            return null;
-        }
-        return findById(VirtualMachineName.getVmId(name));
-    }
+//    @Override
+//    public UserVmVO persist(UserVmVO vm) {
+//        return _vmDao.persist(vm);
+//    }
+//
+//    @Override
+//    public UserVmVO findById(long id) {
+//        return _vmDao.findById(id);
+//    }
+//
+//    @Override
+//    public UserVmVO findByName(String name) {
+//        if (!VirtualMachineName.isValidVmName(name)) {
+//            return null;
+//        }
+//        return findById(VirtualMachineName.getVmId(name));
+//    }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_STOP, eventDescription = "stopping Vm", async = true)

@@ -184,20 +184,19 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> void registerGuru(Type type,
-			VirtualMachineGuru<T> guru) {
+    public void registerGuru(Type type, VirtualMachineGuru guru) {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public Collection<VirtualMachineGuru<? extends VMInstanceVO>> getRegisteredGurus() {
+    public Collection<VirtualMachineGuru> getRegisteredGurus() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
     @Override
-    public <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm) {
+    public VirtualMachineGuru getVmGuru(VirtualMachine vm) {
 		// TODO Auto-generated method stub
     	return null;
     }

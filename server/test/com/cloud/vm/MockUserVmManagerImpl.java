@@ -44,12 +44,9 @@ import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 
-import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.agent.manager.Commands;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -77,66 +74,6 @@ import com.cloud.utils.exception.ExecutionException;
 @Component
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager, UserVmService {
-
-    @Override
-    public UserVmVO findByName(String name) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public UserVmVO findById(long id) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public UserVmVO persist(UserVmVO vm) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void finalizeExpunge(UserVmVO vm) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public Long convertToId(String vmName) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public List<? extends UserVm> getVirtualMachines(long hostId) {
@@ -417,22 +354,8 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     }
 
     @Override
-    public void prepareStop(VirtualMachineProfile profile) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
-    }
-    
-    @Override
-    public void vmWorkStart(VmWork work) {
-    }
-    
-    @Override
-    public void vmWorkStop(VmWork work) {
     }
 }

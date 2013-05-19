@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -92,11 +92,13 @@ public interface VirtualMachineManager extends Manager {
 
     <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException;
 
-    <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
+    void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
     
-    Collection<VirtualMachineGuru<? extends VMInstanceVO>> getRegisteredGurus();
+    // FIXME: This method is added by VirtualMachinePowerStateSyncImpl
+    Collection<VirtualMachineGuru> getRegisteredGurus();
 
-    <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm);
+    // FIXME: Apparently this method is added by Kelven for VmWorkJobDispatcher.  Should look into removing this.
+    VirtualMachineGuru getVmGuru(VirtualMachine vm);
     
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
@@ -159,15 +161,15 @@ public interface VirtualMachineManager extends Manager {
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, 
+    NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
                 ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * @param vm
      * @param nic
      * @return
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
     boolean removeNicFromVm(VirtualMachine vm, NicVO nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
@@ -176,8 +178,8 @@ public interface VirtualMachineManager extends Manager {
      * @param network
      * @param broadcastUri TODO
      * @return
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
     boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException;
 
@@ -213,6 +215,6 @@ public interface VirtualMachineManager extends Manager {
     <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
-    <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account) 
+    <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account)
     	throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 }

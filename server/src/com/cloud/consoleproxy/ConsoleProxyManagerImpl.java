@@ -164,7 +164,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
 public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager,
-        VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+        VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -1023,13 +1023,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return true;
     }
 
-    @Override
-    public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidConsoleProxyName(vmName, _instance)) {
-            return null;
-        }
-        return VirtualMachineName.getConsoleProxyId(vmName);
-    }
+//    @Override
+//    public Long convertToId(String vmName) {
+//        if (!VirtualMachineName.isValidConsoleProxyName(vmName, _instance)) {
+//            return null;
+//        }
+//        return VirtualMachineName.getConsoleProxyId(vmName);
+//    }
 
     @Override
     public boolean stopProxy(long proxyVmId) {
@@ -1429,7 +1429,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return true;
     }
 
-    @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
 
         NicProfile managementNic = null;
@@ -1487,7 +1486,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public void finalizeExpunge(ConsoleProxyVO proxy) {
+    public void finalizeExpunge(VirtualMachine vm) {
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(vm.getId());
         proxy.setPublicIpAddress(null);
         proxy.setPublicMacAddress(null);
         proxy.setPublicNetmask(null);
@@ -1498,23 +1498,23 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
 
 
-    @Override
-    public ConsoleProxyVO persist(ConsoleProxyVO proxy) {
-        return _consoleProxyDao.persist(proxy);
-    }
-
-    @Override
-    public ConsoleProxyVO findById(long id) {
-        return _consoleProxyDao.findById(id);
-    }
-
-    @Override
-    public ConsoleProxyVO findByName(String name) {
-        if (!VirtualMachineName.isValidConsoleProxyName(name)) {
-            return null;
-        }
-        return findById(VirtualMachineName.getConsoleProxyId(name));
-    }
+//    @Override
+//    public ConsoleProxyVO persist(ConsoleProxyVO proxy) {
+//        return _consoleProxyDao.persist(proxy);
+//    }
+//
+//    @Override
+//    public ConsoleProxyVO findById(long id) {
+//        return _consoleProxyDao.findById(id);
+//    }
+//
+//    @Override
+//    public ConsoleProxyVO findByName(String name) {
+//        if (!VirtualMachineName.isValidConsoleProxyName(name)) {
+//            return null;
+//        }
+//        return findById(VirtualMachineName.getConsoleProxyId(name));
+//    }
 
     @Override
     public void finalizeStop(VirtualMachineProfile profile, StopAnswer answer) {
@@ -1726,7 +1726,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public void vmWorkStart(VmWork work) {
     	assert(work instanceof VmWorkStart);
     	
-    	ConsoleProxyVO vm = findById(work.getVmId());
+        ConsoleProxyVO vm = _consoleProxyDao.findById(work.getVmId());
     	
     	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
     	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
@@ -1747,7 +1747,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public void vmWorkStop(VmWork work) {
     	assert(work instanceof VmWorkStop);
     	
-    	ConsoleProxyVO vm = findById(work.getVmId());
+        ConsoleProxyVO vm = _consoleProxyDao.findById(work.getVmId());
     	
     	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
     	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());

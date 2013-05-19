@@ -310,10 +310,10 @@ public class VirtualMachineManagerImplTest {
         doNothing().when(_work).setStep(ItWorkVO.Step.Done);
 
         // Mock the vm guru and the user vm object that gets returned.
-        _vmMgr._vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
+        _vmMgr._vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
         UserVmManagerImpl userVmManager = mock(UserVmManagerImpl.class);
         _vmMgr.registerGuru(VirtualMachine.Type.User, userVmManager);
-        when(userVmManager.findById(anyLong())).thenReturn(_vmMock);
+//        when(userVmManager.findById(anyLong())).thenReturn(_vmMock);
 
         // Mock the iteration over all the volumes of an instance.
         Iterator<VolumeVO> volumeIterator = mock(Iterator.class);

@@ -306,7 +306,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     DeploymentPlanningManager _dpMgr;
 
-    Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
+    Map<VirtualMachine.Type, VirtualMachineGuru> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     ScheduledExecutorService _executor = null;
@@ -322,23 +322,22 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected boolean _forceStop;
 
     @Override
-    public <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru) {
+    public void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru) {
         synchronized (_vmGurus) {
             _vmGurus.put(type, guru);
         }
     }
     
     @Override
-    public Collection<VirtualMachineGuru<? extends VMInstanceVO>> getRegisteredGurus() {
+    public Collection<VirtualMachineGuru> getRegisteredGurus() {
     	synchronized(_vmGurus) {
     		return _vmGurus.values();
     	}
     }
-   
+
     @Override
-    @SuppressWarnings("unchecked")
-    public <T extends VMInstanceVO> VirtualMachineGuru<T> getVmGuru(T vm) {
-        return (VirtualMachineGuru<T>) _vmGurus.get(vm.getType());
+    public VirtualMachineGuru getVmGuru(VirtualMachine vm) {
+        return _vmGurus.values().iterator().next();
     }
 
     @Override
@@ -358,12 +357,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
 
-        @SuppressWarnings("unchecked")
-        VirtualMachineGuru<T> guru = (VirtualMachineGuru<T>) _vmGurus.get(vm.getType());
+        VirtualMachineGuru guru = _vmGurus.get(vm.getType());
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        vm = guru.persist(vm);
+//        vm = guru.persist(vm);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating nics for " + vm);
@@ -473,7 +471,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
         volumeMgr.cleanupVolumes(vm.getId());
 
-        VirtualMachineGuru<T> guru = getVmGuru(vm);
+        VirtualMachineGuru guru = getVmGuru(vm);
         guru.finalizeExpunge(vm);
         //remove the overcommit detials from the uservm details
         _uservmDetailsDao.deleteDetails(vm.getId());
@@ -675,12 +673,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     */
 
     @DB
-    protected <T extends VMInstanceVO> Ternary<T, ReservationContext, VmWorkJobVO> changeToStartState(VirtualMachineGuru<T> vmGuru, T vm, User caller, Account account)
+    protected Ternary<VMInstanceVO, ReservationContext, VmWorkJobVO> changeToStartState(VirtualMachineGuru vmGuru, VMInstanceVO vm, User caller, Account account)
         throws ConcurrentOperationException {
     	
         long vmId = vm.getId();
         
-        Ternary<T, ReservationContext, VmWorkJobVO> result = null;
+        Ternary<VMInstanceVO, ReservationContext, VmWorkJobVO> result = null;
         Transaction txn = Transaction.currentTxn();
         txn.start();
         try {
@@ -692,7 +690,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 	            if (s_logger.isDebugEnabled()) {
 	                s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
 	            }
-	            result = new Ternary<T, ReservationContext, VmWorkJobVO>(vmGuru.findById(vmId), context, work);
+                result = new Ternary<VMInstanceVO, ReservationContext, VmWorkJobVO>(_vmDao.findById(vm.getId()), context, work);
 	            txn.commit();
 	            return result;
 	        }
@@ -812,10 +810,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
-        vm = vmGuru.findById(vm.getId());
+        VirtualMachineGuru vmGuru = getVmGuru(vm);
+        VMInstanceVO vm2 = _vmDao.findById(vm.getId());
   
-        Ternary<T, ReservationContext, VmWorkJobVO> start = changeToStartState(vmGuru, vm, caller, account);
+        Ternary<VMInstanceVO, ReservationContext, VmWorkJobVO> start = changeToStartState(vmGuru, vm2, caller, account);
         assert(start != null);
 
         ReservationContext ctx = start.second();
@@ -1092,7 +1090,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    protected <T extends VMInstanceVO> boolean sendStop(VirtualMachineGuru<T> guru, VirtualMachineProfile profile, boolean force) {
+    protected boolean sendStop(VirtualMachineGuru guru, VirtualMachineProfile profile, boolean force) {
         VirtualMachine vm = profile.getVirtualMachine();
         StopCommand stop = new StopCommand(vm);
         try {
@@ -1116,7 +1114,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return true;
     }
 
-    protected <T extends VMInstanceVO> boolean cleanup(VirtualMachineGuru<T> guru, VirtualMachineProfile profile, VmWorkJobVO work, Event event, boolean force, User user,
+    protected boolean cleanup(VirtualMachineGuru guru, VirtualMachineProfile profile, VmWorkJobVO work, Event event, boolean force, User user,
             Account account) {
         VirtualMachine vm = profile.getVirtualMachine();
         State state = vm.getState();
@@ -1284,7 +1282,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return true;
         }
 
-        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+        VirtualMachineGuru vmGuru = getVmGuru(vm);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
 
         try {
@@ -1649,10 +1647,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public <T extends VMInstanceVO> T storageMigration(T vm, StoragePool destPool) {
-        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+        VirtualMachineGuru vmGuru = getVmGuru(vm);
 
         long vmId = vm.getId();
-        vm = vmGuru.findById(vmId);
+        VMInstanceVO vm2 = _vmDao.findById(vmId);
 
         try {
             stateTransitTo(vm, VirtualMachine.Event.StorageMigrationRequested, null);
@@ -1954,7 +1952,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         HostVO srcHost = _hostDao.findById(srcHostId);
         HostVO destHost = _hostDao.findById(destHostId);
-        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+        VirtualMachineGuru vmGuru = getVmGuru(vm);
 
         DataCenterVO dc = _dcDao.findById(destHost.getDataCenterId());
         HostPodVO pod = _podDao.findById(destHost.getPodId());
@@ -1963,7 +1961,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // Create a map of which volume should go in which storage pool.
         long vmId = vm.getId();
-        vm = vmGuru.findById(vmId);
+        VMInstanceVO vm2 = _vmDao.findById(vmId);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         volumeToPool = getPoolListForVolumesForMigration(profile, destHost, volumeToPool);
 
@@ -2094,8 +2092,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean migrateAway(VirtualMachine.Type vmType, long vmId, long srcHostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException {
-        VirtualMachineGuru<? extends VMInstanceVO> vmGuru = _vmGurus.get(vmType);
-        VMInstanceVO vm = vmGuru.findById(vmId);
+        VirtualMachineGuru vmGuru = _vmGurus.get(vmType);
+        VMInstanceVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             s_logger.debug("Unable to find a VM for " + vmId);
             return true;
@@ -2255,8 +2253,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public VMInstanceVO findByIdAndType(VirtualMachine.Type type, long vmId) {
-        VirtualMachineGuru<? extends VMInstanceVO> guru = _vmGurus.get(type);
-        return guru.findById(vmId);
+        return _vmDao.findById(vmId);
     }
 
     public Command cleanup(VirtualMachine vm) {
@@ -2526,22 +2523,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (newStates == null) {
             return map;
         }
-        Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmGurus.values();
+        Collection<VirtualMachineGuru> vmGurus = _vmGurus.values();
         boolean is_alien_vm = true;
         long alien_vm_count = -1;
         for (Map.Entry<String, Pair<String, State>> entry : newStates.entrySet()) {
             is_alien_vm = true;
-            for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
+            for (VirtualMachineGuru vmGuru : vmGurus) {
                 String name = entry.getKey();
-                VMInstanceVO vm = vmGuru.findByName(name);
+                VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
                 if (vm != null) {
                     map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().second(), entry.getValue().first()));
-                    is_alien_vm = false;
-                    break;
-                }
-                Long id = vmGuru.convertToId(name);
-                if (id != null) {
-                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null, entry.getValue().second(), entry.getValue().first()));
                     is_alien_vm = false;
                     break;
                 }
@@ -2590,22 +2581,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return map;
         }
 
-        Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmGurus.values();
+        Collection<VirtualMachineGuru> vmGurus = _vmGurus.values();
 
         for (Map.Entry<String, State> entry : states.entrySet()) {
-            for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
+            for (VirtualMachineGuru vmGuru : vmGurus) {
                 String name = entry.getKey();
 
-                VMInstanceVO vm = vmGuru.findByName(name);
+                VMInstanceVO vm = _vmDao.findVMByInstanceName(name);
 
                 if (vm != null) {
                     map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue()));
-                    break;
-                }
-
-                Long id = vmGuru.convertToId(name);
-                if (id != null) {
-                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null,entry.getValue()));
                     break;
                 }
             }
@@ -3042,18 +3027,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public State state;
         public String hostUuid;
         public VMInstanceVO vm;
-        public VirtualMachineGuru<VMInstanceVO> guru;
+        public VirtualMachineGuru guru;
 
         @SuppressWarnings("unchecked")
-        public AgentVmInfo(String name, VirtualMachineGuru<? extends VMInstanceVO> guru, VMInstanceVO vm, State state, String host) {
+        public AgentVmInfo(String name, VirtualMachineGuru guru, VMInstanceVO vm, State state, String host) {
             this.name = name;
             this.state = state;
             this.vm = vm;
-            this.guru = (VirtualMachineGuru<VMInstanceVO>) guru;
+            this.guru = guru;
             hostUuid = host;
         }
 
-        public AgentVmInfo(String name, VirtualMachineGuru<? extends VMInstanceVO> guru, VMInstanceVO vm, State state) {
+        public AgentVmInfo(String name, VirtualMachineGuru guru, VMInstanceVO vm, State state) {
             this(name, guru, vm, state, null);
         }
 
@@ -3245,7 +3230,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
 
             //4) plug the nic to the vm
-            VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+            VirtualMachineGuru vmGuru = getVmGuru(vmVO);
 
             s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
             
@@ -3300,7 +3285,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
-        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+        VirtualMachineGuru vmGuru = getVmGuru(vmVO);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
@@ -3364,7 +3349,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
-        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+        VirtualMachineGuru vmGuru = getVmGuru(vmVO);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 

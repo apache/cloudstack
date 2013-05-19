@@ -25,17 +25,7 @@ import com.cloud.exception.ResourceUnavailableException;
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
  *
  */
-public interface VirtualMachineGuru<T extends VirtualMachine> {
-    /**
-     * Find the virtual machine by name.
-     * @param name
-     * @return virtual machine.
-     */
-    T findByName(String name);
-    
-    T findById(long id);
-    
-    T persist(T vm);
+public interface VirtualMachineGuru {
     
     boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context);
     
@@ -57,21 +47,9 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      */
     boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context);
     
-    boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile);
-    
     void finalizeStop(VirtualMachineProfile profile, StopAnswer answer);
     
-    void finalizeExpunge(T vm);
-    
-    /**
-     * Returns the id parsed from the name.  If it cannot parse the name,
-     * then return null.  This method is used to determine if this is
-     * the right handler for this vm.
-     * 
-     * @param vmName vm name coming form the agent.
-     * @return id if the handler works for this vm and can parse id.  null if not.
-     */
-    Long convertToId(String vmName);
+    void finalizeExpunge(VirtualMachine vm);
     
     /**
      * Prepare Vm for Stop

@@ -141,7 +141,7 @@ import com.cloud.vm.dao.NicDao;
 @Component
 @Local(value = { ElasticLoadBalancerManager.class })
 public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
-ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
+        ElasticLoadBalancerManager, VirtualMachineGuru {
     private static final Logger s_logger = Logger
             .getLogger(ElasticLoadBalancerManagerImpl.class);
     
@@ -770,24 +770,24 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         }
     }
 
-    @Override
-    public DomainRouterVO findByName(String name) {
-        if (!VirtualMachineName.isValidSystemVmName(name, _instance, _elbVmNamePrefix)) {
-            return null;
-        }
-
-        return _routerDao.findById(VirtualMachineName.getSystemVmId(name));
-    }
-
-    @Override
-    public DomainRouterVO findById(long id) {
-        return _routerDao.findById(id);
-    }
-
-    @Override
-    public DomainRouterVO persist(DomainRouterVO elbVm) {
-        return _routerDao.persist(elbVm);
-    }
+//    @Override
+//    public DomainRouterVO findByName(String name) {
+//        if (!VirtualMachineName.isValidSystemVmName(name, _instance, _elbVmNamePrefix)) {
+//            return null;
+//        }
+//
+//        return _routerDao.findById(VirtualMachineName.getSystemVmId(name));
+//    }
+//
+//    @Override
+//    public DomainRouterVO findById(long id) {
+//        return _routerDao.findById(id);
+//    }
+//
+//    @Override
+//    public DomainRouterVO persist(DomainRouterVO elbVm) {
+//        return _routerDao.persist(elbVm);
+//    }
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
@@ -900,7 +900,7 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
         return true;
     }
 
-    @Override
+
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
         DomainRouterVO elbVm = _routerDao.findById(profile.getId());
         DataCenterVO dcVo = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
@@ -967,19 +967,19 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     }
 
     @Override
-    public void finalizeExpunge(DomainRouterVO vm) {
+    public void finalizeExpunge(VirtualMachine vm) {
         // no-op
         
     }
 
-    @Override
-    public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, _elbVmNamePrefix)) {
-            return null;
-        }
-
-        return VirtualMachineName.getSystemVmId(vmName);
-    }
+//    @Override
+//    public Long convertToId(String vmName) {
+//        if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, _elbVmNamePrefix)) {
+//            return null;
+//        }
+//
+//        return VirtualMachineName.getSystemVmId(vmName);
+//    }
     
     @Override
     public void prepareStop(VirtualMachineProfile profile) {

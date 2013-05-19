@@ -250,7 +250,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 @Local(value = {VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class})
 public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService,
-        VirtualMachineGuru<DomainRouterVO>, Listener {
+        VirtualMachineGuru, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -775,14 +775,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     protected VirtualNetworkApplianceManagerImpl() {
     }
 
-    @Override
-    public Long convertToId(final String vmName) {
-        if (!VirtualMachineName.isValidRouterName(vmName, _instance)) {
-            return null;
-        }
-
-        return VirtualMachineName.getRouterId(vmName);
-    }
+//    @Override
+//    public Long convertToId(final String vmName) {
+//        if (!VirtualMachineName.isValidRouterName(vmName, _instance)) {
+//            return null;
+//        }
+//
+//        return VirtualMachineName.getRouterId(vmName);
+//    }
 
     private VmDataCommand generateVmDataCommand(VirtualRouter router, String vmPrivateIpAddress, String userData,
             String serviceOffering, String zoneName, String guestIpAddress, String vmName,
@@ -2229,7 +2229,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return true;
     }
 
-    @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
         DomainRouterVO router = _routerDao.findById(profile.getId());
         NicProfile controlNic = getControlNic(profile);
@@ -2538,7 +2537,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     @Override
-    public void finalizeExpunge(DomainRouterVO vm) {
+    public void finalizeExpunge(VirtualMachine vm) {
     }
 
     @Override
@@ -2759,11 +2758,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         });
     }
 
-    @Override
-    public DomainRouterVO persist(DomainRouterVO router) {
-        DomainRouterVO virtualRouter = _routerDao.persist(router);
-        return virtualRouter;
-    }
+//    @Override
+//    public DomainRouterVO persist(DomainRouterVO router) {
+//        DomainRouterVO virtualRouter = _routerDao.persist(router);
+//        return virtualRouter;
+//    }
 
     @Override
     //FIXME add partial success and STOP state support
@@ -2823,19 +2822,19 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return result;
     }
 
-    @Override
-    public DomainRouterVO findById(long id) {
-        return _routerDao.findById(id);
-    }
-
-    @Override
-    public DomainRouterVO findByName(String name) {
-        if (!VirtualMachineName.isValidRouterName(name)) {
-            return null;
-        }
-
-        return _routerDao.findById(VirtualMachineName.getRouterId(name));
-    }
+//    @Override
+//    public DomainRouterVO findById(long id) {
+//        return _routerDao.findById(id);
+//    }
+//
+//    @Override
+//    public DomainRouterVO findByName(String name) {
+//        if (!VirtualMachineName.isValidRouterName(name)) {
+//            return null;
+//        }
+//
+//        return _routerDao.findById(VirtualMachineName.getRouterId(name));
+//    }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_START, eventDescription = "starting router Vm", async = true)

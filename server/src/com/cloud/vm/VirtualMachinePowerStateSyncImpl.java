@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.vm;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.messagebus.TopicConstants;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -100,7 +100,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         return map;
     }
     	    
-    private Map<Long, VirtualMachine.PowerState> convertToInfos(Map<String, HostVmStateReportEntry> states) { 
+    private Map<Long, VirtualMachine.PowerState> convertToInfos(Map<String, HostVmStateReportEntry> states) {
         final HashMap<Long, VirtualMachine.PowerState> map = new HashMap<Long, VirtualMachine.PowerState>();
         if (states == null) {
             return map;
@@ -120,20 +120,21 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     }
     
     private VMInstanceVO findVM(String vmName) {
-        Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmMgr.getRegisteredGurus();
-
-        for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
-            VMInstanceVO vm = vmGuru.findByName(vmName);
-            if (vm != null)
-                return vm;
-            
-            Long id = vmGuru.convertToId(vmName);
-            if (id != null) {
-            	vm = vmGuru.findById(id);
-            	if(vm != null)
-            		return vm;
-            }
-        }
-        return null;
+        return _instanceDao.findVMByInstanceName(vmName);
+//        Collection<VirtualMachineGuru> vmGurus = _vmMgr.getRegisteredGurus();
+//
+//        for (VirtualMachineGuru vmGuru : vmGurus) {
+//            VMInstanceVO vm = vmGuru.findByName(vmName);
+//            if (vm != null)
+//                return vm;
+//
+//            Long id = vmGuru.convertToId(vmName);
+//            if (id != null) {
+//            	vm = vmGuru.findById(id);
+//            	if(vm != null)
+//            		return vm;
+//            }
+//        }
+//        return null;
     }
 }
