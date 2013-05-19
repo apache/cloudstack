@@ -120,7 +120,7 @@ import com.cloud.vm.dao.NicDao;
 @Component
 @Local(value = { InternalLoadBalancerVMManager.class, InternalLoadBalancerVMService.class})
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
-    InternalLoadBalancerVMManager, VirtualMachineGuru<DomainRouterVO> {
+        InternalLoadBalancerVMManager, VirtualMachineGuru {
     private static final Logger s_logger = Logger
             .getLogger(InternalLoadBalancerVMManagerImpl.class);
     static final private String _internalLbVmNamePrefix = "b";
@@ -150,25 +150,25 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     @Inject ResourceManager _resourceMgr;
     @Inject ConfigurationServer _configServer;
 
-    @Override
-    public DomainRouterVO findByName(String name) {
-        if (!VirtualMachineName.isValidSystemVmName(name, _instance, _internalLbVmNamePrefix)) {
-            return null;
-        }
-
-        return _internalLbVmDao.findById(VirtualMachineName.getRouterId(name));
-    }
-
-    @Override
-    public DomainRouterVO findById(long id) {
-        return _internalLbVmDao.findById(id);
-    }
-
-    @Override
-    public DomainRouterVO persist(DomainRouterVO vm) {
-        DomainRouterVO virtualRouter =  _internalLbVmDao.persist(vm);
-        return virtualRouter;
-    }
+//    @Override
+//    public DomainRouterVO findByName(String name) {
+//        if (!VirtualMachineName.isValidSystemVmName(name, _instance, _internalLbVmNamePrefix)) {
+//            return null;
+//        }
+//
+//        return _internalLbVmDao.findById(VirtualMachineName.getRouterId(name));
+//    }
+//
+//    @Override
+//    public DomainRouterVO findById(long id) {
+//        return _internalLbVmDao.findById(id);
+//    }
+//
+//    @Override
+//    public DomainRouterVO persist(DomainRouterVO vm) {
+//        DomainRouterVO virtualRouter =  _internalLbVmDao.persist(vm);
+//        return virtualRouter;
+//    }
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile,
@@ -312,7 +312,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         return result;
     }
 
-    @Override
+
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile profile) {
         DomainRouterVO internalLbVm = _internalLbVmDao.findById(profile.getId());
         NicProfile controlNic = getNicProfileByTrafficType(profile, TrafficType.Control);
@@ -354,17 +354,17 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     }
 
     @Override
-    public void finalizeExpunge(DomainRouterVO vm) {
+    public void finalizeExpunge(VirtualMachine vm) {
     }
 
-    @Override
-    public Long convertToId(String vmName) {
-        if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, _internalLbVmNamePrefix)) {
-            return null;
-        }
-
-        return VirtualMachineName.getRouterId(vmName);
-    }
+//    @Override
+//    public Long convertToId(String vmName) {
+//        if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, _internalLbVmNamePrefix)) {
+//            return null;
+//        }
+//
+//        return VirtualMachineName.getRouterId(vmName);
+//    }
 
     @Override
     public void prepareStop(VirtualMachineProfile profile) {
