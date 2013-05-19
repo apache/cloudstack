@@ -17,18 +17,6 @@
 package com.cloud.hypervisor.xen.resource;
 
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ejb.Local;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -39,13 +27,23 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Console;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
-import com.xensource.xenapi.Types.XenAPIException;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import javax.ejb.Local;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Local(value=ServerResource.class)
 public class XenServer56FP1Resource extends XenServer56Resource {
@@ -137,17 +135,17 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         record.nameLabel = vmSpec.getName();
         record.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
         record.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
-        record.memoryDynamicMax = vmSpec.getMaxRam();
         record.memoryDynamicMin = vmSpec.getMinRam();
+        record.memoryDynamicMax = vmSpec.getMaxRam();
         Map<String, String> hostParams = new HashMap<String, String>();
         hostParams = host.getLicenseParams(conn);
         if (hostParams.get("restrict_dmc").equalsIgnoreCase("false")) {
-            record.memoryStaticMax = 8589934592L; //8GB
-            record.memoryStaticMin = 134217728L; //128MB
+            record.memoryStaticMin = vmSpec.getMinRam();
+            record.memoryStaticMax = vmSpec.getMaxRam();
         } else {
             s_logger.warn("Host "+ _host.uuid + " does not support Dynamic Memory Control, so we cannot scale up the vm");
-            record.memoryStaticMax = vmSpec.getMaxRam();
-            record.memoryStaticMin = vmSpec.getMinRam();
+            record.memoryStaticMin = 134217728L; //128MB
+            record.memoryStaticMax = 8589934592L; //8GB
         }
 
         if (guestOsTypeName.toLowerCase().contains("windows")) {

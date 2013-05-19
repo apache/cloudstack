@@ -335,6 +335,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     long _xs_memory_used = 128 * 1024 * 1024L; // xen hypervisor used 128 M
     double _xs_virtualization_factor = 63.0/64.0;  // 1 - virtualization overhead
 
+    //static min values for guests on xen
+    private static final long mem_128m = 134217728L;
+
     protected boolean _canBridgeFirewall = false;
     protected boolean _isOvs = false;
     protected List<VIF> _tmpDom0Vif = new ArrayList<VIF>();
@@ -1208,8 +1211,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
+        if (!templates.iterator().hasNext()) {
+            throw new CloudRuntimeException("No matching OS type found for starting a [" + vmSpec.getOs()
+                    + "] VM on host " + host.getHostname(conn));
+        }
         VM template = templates.iterator().next();
-
         VM vm = template.createClone(conn, vmSpec.getName());
         VM.Record vmr = vm.getRecord(conn);
         if (s_logger.isDebugEnabled()) {
@@ -3503,8 +3509,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    /**
+     * WARN: static-min <= dynamic-min <= dynamic-max <= static-max
+     * @see XcpServerResource#setMemory(com.xensource.xenapi.Connection, com.xensource.xenapi.VM, long, long)
+     * @param conn
+     * @param vm
+     * @param minMemsize
+     * @param maxMemsize
+     * @throws XmlRpcException
+     * @throws XenAPIException
+     */
     protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
-        vm.setMemoryLimits(conn, maxMemsize, maxMemsize, minMemsize, maxMemsize);
+        vm.setMemoryStaticMin(conn, mem_128m);
+        vm.setMemoryDynamicMin(conn, minMemsize);
+        vm.setMemoryDynamicMax(conn, maxMemsize);
+        vm.setMemoryStaticMax(conn, maxMemsize);
     }
 
     protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
@@ -4299,7 +4318,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * @throws XenAPIException
      * @throws XmlRpcException
      * 
-     * @see enableVlanNetwork
+     * @see CitrixResourceBase#enableVlanNetwork
      */
     protected XsLocalNetwork getNetworkByName(Connection conn, String name) throws XenAPIException, XmlRpcException {
         Set<Network> networks = Network.getByNameLabel(conn, name);

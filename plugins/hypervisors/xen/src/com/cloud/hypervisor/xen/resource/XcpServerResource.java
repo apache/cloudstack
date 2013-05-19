@@ -37,6 +37,8 @@ import java.util.List;
 @Local(value=ServerResource.class)
 public class XcpServerResource extends CitrixResourceBase {
     private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
+    private static final long mem_32m = 33554432L;
+
     private String version;
 
     public XcpServerResource() {
@@ -70,20 +72,6 @@ public class XcpServerResource extends CitrixResourceBase {
         return CitrixHelper.getXcpGuestOsType(stdType);
     }
 
-    @Override
-    protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
-
-        vm.setMemoryStaticMin(conn, 33554432L);
-        //vm.setMemoryDynamicMin(conn, 33554432L);
-        //vm.setMemoryDynamicMax(conn, 33554432L);
-        vm.setMemoryStaticMax(conn, 33554432L);
-
-        //vm.setMemoryStaticMax(conn, maxMemsize );
-        vm.setMemoryDynamicMax(conn, maxMemsize );
-        vm.setMemoryDynamicMin(conn, minMemsize );
-        //vm.setMemoryStaticMin(conn,  maxMemsize );
-    }
-    
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
         try {
             Connection conn = getConnection();
@@ -99,5 +87,62 @@ public class XcpServerResource extends CitrixResourceBase {
             s_logger.warn("Failed to get network usage stats due to ", ex);
             return new NetworkUsageAnswer(cmd, ex);
         }
+    }
+
+    /**
+     XCP provides four memory configuration fields through which
+     administrators can control this behaviour:
+
+     * static-min
+     * dynamic-min
+     * dynamic-max
+     * static-max
+
+     The fields static-{min,max} act as *hard* lower and upper
+     bounds for a guest's memory. For a running guest:
+     * it's not possible to assign the guest more memory than
+     static-max without first shutting down the guest.
+     * it's not possible to assign the guest less memory than
+     static-min without first shutting down the guest.
+
+     The fields dynamic-{min,max} act as *soft* lower and upper
+     bounds for a guest's memory. It's possible to change these
+     fields even when a guest is running.
+
+     The dynamic range must lie wholly within the static range. To
+     put it another way, XCP at all times ensures that:
+
+     static-min <= dynamic-min <= dynamic-max <= static-max
+
+     At all times, XCP will attempt to keep a guest's memory usage
+     between dynamic-min and dynamic-max.
+
+     If dynamic-min = dynamic-max, then XCP will attempt to keep
+     a guest's memory allocation at a constant size.
+
+     If dynamic-min < dynamic-max, then XCP will attempt to give
+     the guest as much memory as possible, while keeping the guest
+     within dynamic-min and dynamic-max.
+
+     If there is enough memory on a given host to give all resident
+     guests dynamic-max, then XCP will attempt do so.
+
+     If there is not enough memory to give all guests dynamic-max,
+     then XCP will ask each of the guests (on that host) to use
+     an amount of memory that is the same *proportional* distance
+     between dynamic-min and dynamic-max.
+
+     XCP will refuse to start guests if starting those guests would
+     cause the sum of all the dynamic-min values to exceed the total
+     host memory (taking into account various memory overheads).
+
+     cf: http://wiki.xen.org/wiki/XCP_FAQ_Dynamic_Memory_Control
+     */
+    @Override
+    protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
+        vm.setMemoryStaticMin(conn, mem_32m);
+        vm.setMemoryDynamicMin(conn, minMemsize);
+        vm.setMemoryDynamicMax(conn, maxMemsize);
+        vm.setMemoryStaticMax(conn, maxMemsize);
     }
 }
