@@ -505,10 +505,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         clusterId = cluster.getId();
         result.add(cluster);
 
-           ClusterDetailsVO cluster_detail_cpu = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", Float.toString(cmd.getCpuOvercommitRatio()));
-           ClusterDetailsVO cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", Float.toString(cmd.getMemoryOvercommitRaito()));
-           _clusterDetailsDao.persist(cluster_detail_cpu);
-           _clusterDetailsDao.persist(cluster_detail_ram);
+        ClusterDetailsVO cluster_detail_cpu = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", Float.toString(cmd.getCpuOvercommitRatio()));
+        ClusterDetailsVO cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", Float.toString(cmd.getMemoryOvercommitRatio()));
+        _clusterDetailsDao.persist(cluster_detail_cpu);
+        _clusterDetailsDao.persist(cluster_detail_ram);
 
         if (clusterType == Cluster.ClusterType.CloudManaged) {
             return result;
@@ -530,8 +530,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
 
-        if(cmd.getMemoryOvercommitRaito().compareTo(1f) > 0) {
-             cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", Float.toString(cmd.getMemoryOvercommitRaito()));
+        if(cmd.getMemoryOvercommitRatio().compareTo(1f) > 0) {
+             cluster_detail_ram = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", Float.toString(cmd.getMemoryOvercommitRatio()));
             _clusterDetailsDao.persist(cluster_detail_ram);
         }
 

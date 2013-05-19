@@ -40,12 +40,6 @@ import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
-import com.cloud.vm.*;
-import com.cloud.network.vpc.NetworkACL;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcOffering;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -975,8 +969,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setManagedState(cluster.getManagedState().toString());
         String cpuOvercommitRatio=ApiDBUtils.findClusterDetails(cluster.getId(),"cpuOvercommitRatio").getValue();
         String memoryOvercommitRatio=ApiDBUtils.findClusterDetails(cluster.getId(),"memoryOvercommitRatio").getValue();
-        clusterResponse.setCpuovercommitratio(cpuOvercommitRatio);
-        clusterResponse.setRamovercommitratio(memoryOvercommitRatio);
+        clusterResponse.setCpuOvercommitRatio(cpuOvercommitRatio);
+        clusterResponse.setMemoryOvercommitRatio(memoryOvercommitRatio);
 
 
         if (showCapacities != null && showCapacities) {

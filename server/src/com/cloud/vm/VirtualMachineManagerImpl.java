@@ -824,8 +824,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 Long cluster_id = dest.getCluster().getId();
                 ClusterDetailsVO cluster_detail_cpu =  _clusterDetailsDao.findDetail(cluster_id,"cpuOvercommitRatio");
                 ClusterDetailsVO cluster_detail_ram =  _clusterDetailsDao.findDetail(cluster_id,"memoryOvercommitRatio");
-                vmProfile.setcpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
-                vmProfile.setramOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
+                vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
+                vmProfile.setMemoryOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
 
                 try {
                     if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
