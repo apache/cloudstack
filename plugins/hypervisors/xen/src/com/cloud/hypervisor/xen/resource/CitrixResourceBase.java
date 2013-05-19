@@ -3520,10 +3520,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * @throws XenAPIException
      */
     protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
-        vm.setMemoryStaticMin(conn, mem_128m);
-        vm.setMemoryDynamicMin(conn, minMemsize);
-        vm.setMemoryDynamicMax(conn, maxMemsize);
-        vm.setMemoryStaticMax(conn, maxMemsize);
+        vm.setMemoryLimits(conn, mem_128m, maxMemsize, minMemsize, maxMemsize);
     }
 
     protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {

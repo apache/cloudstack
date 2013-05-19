@@ -140,9 +140,12 @@ public class XcpServerResource extends CitrixResourceBase {
      */
     @Override
     protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
-        vm.setMemoryStaticMin(conn, mem_32m);
-        vm.setMemoryDynamicMin(conn, minMemsize);
-        vm.setMemoryDynamicMax(conn, maxMemsize);
-        vm.setMemoryStaticMax(conn, maxMemsize);
+        //setMemoryLimits(staticMin, staticMax, dynamicMin, dynamicMax)
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Memory Limits for VM [" + vm.getNameLabel(conn) +
+                    "[staticMin:" + mem_32m + ", staticMax:" + maxMemsize
+                    + ", dynamicMin: " + minMemsize + ", dynamicMax:" + maxMemsize+"]]");
+        }
+        vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }
 }
