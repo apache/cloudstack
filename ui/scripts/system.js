@@ -11063,7 +11063,7 @@
                           }
                         });
                         */
-                        args.response.success({data: { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-2/blade-2', associatedProfileDn: 'profile_3' }});
+                        args.response.success({data: { associatedProfileDn: args.data.profiledn }});
                       },
                       notification: {
                         poll: function(args) {
