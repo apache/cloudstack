@@ -208,15 +208,6 @@
               _custom: {
                 jobId: data.createnetworkaclresponse.jobid,
                 getUpdatedItem: function(json) {
-                  //var networkName = $multi.find('select[name=networkid] option[value=' + args.data.networkid + ']').html();
-                 /* var data = $.extend(json.queryasyncjobresultresponse.jobresult.networkacl, {
-                    networkid: networkName
-                  });*/
-                  var data = json.queryasyncjobresultresponse.jobresult.networkacl; 
-                  var aclRules = $multi.data('acl-rules');
-                  
-                  aclRules.push(data);
-                  $multi.data('acl-rules', aclRules);
                   $(window).trigger('cloudStack.fullRefresh');
 
                   return data;
