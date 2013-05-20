@@ -17,7 +17,8 @@
  * under the License.
  */
 
-import com.cloud.network.element.MidoNetElement;
+package com.cloud.network.element;
+
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import junit.framework.TestCase;
