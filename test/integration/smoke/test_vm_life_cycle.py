@@ -292,28 +292,28 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.api_client, cls.services)
-        zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = zone.networktype
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         #if local storage is enabled, alter the offerings to use localstorage
         #this step is needed for devcloud
-        if zone.localstorageenabled == True:
+        if cls.zone.localstorageenabled == True:
             cls.services["service_offerings"]["tiny"]["storagetype"] = 'local'
             cls.services["service_offerings"]["small"]["storagetype"] = 'local'
             cls.services["service_offerings"]["medium"]["storagetype"] = 'local'
 
         template = get_template(
                             cls.api_client,
-                            zone.id,
+                            cls.zone.id,
                             cls.services["ostype"]
                             )
         # Set Zones and disk offerings
-        cls.services["small"]["zoneid"] = zone.id
+        cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
 
-        cls.services["medium"]["zoneid"] = zone.id
+        cls.services["medium"]["zoneid"] = cls.zone.id
         cls.services["medium"]["template"] = template.id
-        cls.services["iso"]["zoneid"] = zone.id
+        cls.services["iso"]["zoneid"] = cls.zone.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
