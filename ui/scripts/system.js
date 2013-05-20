@@ -11006,8 +11006,8 @@
                     */                    
                     args.response.success({
                       data: [
-                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-2/blade-2', associatedProfileDn: 'profile_2' },
-                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-1/blade-1', associatedProfileDn: 'profile_1' },
+                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-1/blade-1', associatedProfileDn: '' },
+                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-2/blade-2', associatedProfileDn: '' },                        
                         { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-3/blade-3', associatedProfileDn: '' }
                       ]
                     });                  
@@ -11043,6 +11043,10 @@
                               items.push({id: 'profile_1', description: 'profile_1'});
                               items.push({id: 'profile_2', description: 'profile_2'});
                               items.push({id: 'profile_3', description: 'profile_3'});
+                              items.push({id: 'profile_4', description: 'profile_4'});
+                              items.push({id: 'profile_5', description: 'profile_5'});
+                              items.push({id: 'profile_6', description: 'profile_6'});
+                              items.push({id: 'profile_7', description: 'profile_7'});
                               args.response.success({data: items});
                             },
                             validation: { required: true }
