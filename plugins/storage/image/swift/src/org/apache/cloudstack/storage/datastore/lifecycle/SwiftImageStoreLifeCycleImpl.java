@@ -80,6 +80,7 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         Long dcId = (Long) dsInfos.get("zoneId");
         String url = (String) dsInfos.get("url");
+        String name = (String)dsInfos.get("name");
         ScopeType scope = (ScopeType)dsInfos.get("scope");
         String providerName = (String)dsInfos.get("providerName");
         DataStoreRole role =(DataStoreRole) dsInfos.get("role");
@@ -90,6 +91,7 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         // just need to insert an entry in DB
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();
+        imageStoreParameters.put("name", name);
         imageStoreParameters.put("zoneId", dcId);
         imageStoreParameters.put("url", url);
         imageStoreParameters.put("protocol", "http");

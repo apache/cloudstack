@@ -1892,7 +1892,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("zoneId", dcId);
         params.put("url", cmd.getUrl());
-        params.put("name", cmd.getUrl());
+        params.put("name", cmd.getName());
         params.put("details", details);
         params.put("scope", scopeType);
         params.put("providerName", storeProvider.getName());

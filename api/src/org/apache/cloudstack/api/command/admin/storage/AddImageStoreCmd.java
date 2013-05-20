@@ -44,6 +44,9 @@ public class AddImageStoreCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name for the image store")
+    private String name;
+
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, description="the URL for the image store")
     private String url;
 
@@ -65,8 +68,13 @@ public class AddImageStoreCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+
     public String getUrl() {
         return url;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Long getZoneId() {

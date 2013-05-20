@@ -80,6 +80,10 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         Long dcId = (Long) dsInfos.get("zoneId");
         String url = (String) dsInfos.get("url");
+        String name = (String)dsInfos.get("name");
+        if ( name == null ){
+            name = url;
+        }
         String providerName = (String)dsInfos.get("providerName");
         DataStoreRole role =(DataStoreRole) dsInfos.get("role");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
@@ -111,7 +115,7 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
 
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();
-        imageStoreParameters.put("name", url);
+        imageStoreParameters.put("name", name);
         imageStoreParameters.put("zoneId", dcId);
         imageStoreParameters.put("url", url);
         imageStoreParameters.put("protocol", uri.getScheme().toLowerCase());

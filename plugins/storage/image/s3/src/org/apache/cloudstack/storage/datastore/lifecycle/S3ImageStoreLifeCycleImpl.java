@@ -84,6 +84,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         Long dcId = (Long) dsInfos.get("zoneId");
         String url = (String) dsInfos.get("url");
+        String name = (String)dsInfos.get("name");
         String providerName = (String)dsInfos.get("providerName");
         ScopeType scope = (ScopeType)dsInfos.get("scope");
         DataStoreRole role =(DataStoreRole) dsInfos.get("role");
@@ -102,7 +103,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         */
 
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();
-        imageStoreParameters.put("name", url);
+        imageStoreParameters.put("name", name);
         imageStoreParameters.put("zoneId", dcId);
         imageStoreParameters.put("url", url);
         String protocol = "http";
