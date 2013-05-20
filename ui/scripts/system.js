@@ -10989,7 +10989,9 @@
                 title: 'Blades',
                 listView: {
                   fields: {
-                    dn: { label: 'Distinguished Name' },
+                    //dn: { label: 'Distinguished Name' },
+                    chassis: { label: 'Chassis' }, 
+                    bladeid: { label: 'Blade ID' },
                     associatedProfileDn: { label: 'Associated Profile' }
                   },
                   dataProvider: function(args) {                    
@@ -11003,29 +11005,38 @@
                         
                       }                      
                     });
-                    */                    
+                    */         
+
+                    var data =  [
+                      { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-1/blade-1', associatedProfileDn: '' },
+                      { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-2/blade-2', associatedProfileDn: '' },                        
+                      { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-3/blade-3', associatedProfileDn: '' }
+                    ];
+                               
+                    for(var i = 0; i < data.length; i++) {
+                      var array1 = data[i].dn.split('/');                      
+                      data[i].chassis = array1[1];
+                      data[i].bladeid = array1[2];
+                    }
+
                     args.response.success({
-                      data: [
-                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-1/blade-1', associatedProfileDn: '' },
-                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-2/blade-2', associatedProfileDn: '' },                        
-                        { id: '85a2ff00-ed42-4a18-8f5f-bb75c9ffd413', hostId: '62be4b10-a828-4ea2-aed8-9ad1d0812ff9', dn: 'sys/chassis-3/blade-3', associatedProfileDn: '' }
-                      ]
+                      data: data
                     });                  
                   },                  
                   actions: {                      
                     associateProfileToBlade: {
-                      label: 'associate profile to blade',
+                      label: 'Associate Profile to Blade',
                       addRow: 'false',
                       messages: {
                         notification: function(args) {
-                          return 'associate profile to blade';
+                          return 'Associate Profile to Blade';
                         }
                       },
                       createForm: {
-                        title: 'associate profile to blade',
+                        title: 'Associate Profile to Blade',
                         fields: {
                           profiledn: {
-                            label: 'profile',
+                            label: 'Select Profile',
                             select: function(args) {
                               var items = [];     
                               
@@ -11041,13 +11052,13 @@
                               });
                               */
                               
-                              items.push({id: 'profile_1', description: 'profile_1'});
-                              items.push({id: 'profile_2', description: 'profile_2'});
-                              items.push({id: 'profile_3', description: 'profile_3'});
-                              items.push({id: 'profile_4', description: 'profile_4'});
-                              items.push({id: 'profile_5', description: 'profile_5'});
-                              items.push({id: 'profile_6', description: 'profile_6'});
-                              items.push({id: 'profile_7', description: 'profile_7'});
+                              items.push({id: 'Service_Profile_Demo1', description: 'Service_Profile_Demo1'});
+                              items.push({id: 'Service_Profile_Demo2', description: 'Service_Profile_Demo2'});
+                              items.push({id: 'Service_Profile_Demo3', description: 'Service_Profile_Demo3'});
+                              items.push({id: 'Service_Profile_Demo4', description: 'Service_Profile_Demo4'});
+                              items.push({id: 'Service_Profile_Demo5', description: 'Service_Profile_Demo5'});
+                              items.push({id: 'Service_Profile_Demo6', description: 'Service_Profile_Demo6'});
+                              items.push({id: 'Service_Profile_Demo7', description: 'Service_Profile_Demo7'});
                               args.response.success({data: items});
                             },
                             validation: { required: true }
@@ -11084,14 +11095,14 @@
                     noCompact: true,
                     actions: {                      
                       associateProfileToBlade: {
-                        label: 'associate profile to blade',
+                        label: 'Associate Profile to Blade',
                         messages: {
                           notification: function(args) {
-                            return 'associate profile to blade';
+                            return 'Associate Profile to Blade';
                           }
                         },
                         createForm: {
-                          title: 'associate profile to blade',
+                          title: 'Associate Profile to Blade',
                           fields: {
                             profiledn: {
                               label: 'profile',
