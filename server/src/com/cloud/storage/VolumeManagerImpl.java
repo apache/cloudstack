@@ -708,19 +708,19 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1,
                 new Long(-1), null, null, 0, Volume.Type.DATADISK);
+        Account owner = (caller.getId() == ownerId) ? caller : _accountMgr
+                          .getActiveAccountById(ownerId);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
         volume.setPodId(null);
         volume.setAccountId(ownerId);
-        volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller
-                .getDomainId()));
         long diskOfferingId = _diskOfferingDao.findByUniqueName(
                 "Cloud.com-Custom").getId();
         volume.setDiskOfferingId(diskOfferingId);
         // volume.setSize(size);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
-        volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller
+        volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner
                 .getDomainId());
 
         volume = _volsDao.persist(volume);
