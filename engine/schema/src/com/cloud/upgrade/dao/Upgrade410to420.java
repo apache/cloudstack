@@ -17,17 +17,19 @@
 
 package com.cloud.upgrade.dao;
 
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+import org.apache.log4j.Logger;
 import java.io.File;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.UUID;
-
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
+import com.cloud.network.vpc.NetworkACL;
 
 public class Upgrade410to420 implements DbUpgrade {
 	final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
@@ -67,11 +69,15 @@ public class Upgrade410to420 implements DbUpgrade {
         updatePrimaryStore(conn);
         addEgressFwRulesForSRXGuestNw(conn);
         upgradeEIPNetworkOfferings(conn);
+        updateGlobalDeploymentPlanner(conn);
         upgradeDefaultVpcOffering(conn);
         upgradePhysicalNtwksWithInternalLbProvider(conn);
+        updateNetworkACLs(conn);
+        addHostDetailsIndex(conn);
+        updateNetworksForPrivateGateways(conn);
     }
-	
-	private void updateSystemVmTemplates(Connection conn) {
+
+    private void updateSystemVmTemplates(Connection conn) {
 	    PreparedStatement sql = null;
         try {
             sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
@@ -87,7 +93,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
 	}
-	
+
 	private void updatePrimaryStore(Connection conn) {
 	    PreparedStatement sql = null;
 	    PreparedStatement sql2 = null;
@@ -96,7 +102,7 @@ public class Upgrade410to420 implements DbUpgrade {
             sql.setString(1, "ancient primary data store provider");
             sql.setString(2, "HOST");
             sql.executeUpdate();
-            
+
             sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
             sql2.setString(1, "ancient primary data store provider");
             sql2.setString(2, "CLUSTER");
@@ -110,7 +116,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 } catch (SQLException e) {
                 }
             }
-            
+
             if (sql2 != null) {
                 try {
                     sql2.close();
@@ -238,7 +244,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
+
     private void createPlaceHolderNics(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -259,7 +265,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt.setLong(4, networkId);
                     pstmt.executeUpdate();
                     s_logger.debug("Created placeholder nic for the ipAddress " + ip);
-                
+
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create placeholder nics", e);
@@ -275,8 +281,8 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
-    
+
+
     private void updateRemoteAccessVpn(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -309,6 +315,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
+
     private void addEgressFwRulesForSRXGuestNw(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -390,6 +397,206 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to set elastic_ip_service for network offerings with EIP service enabled.", e);
+        }
+    }
+
+    private void updateNetworkACLs(Connection conn) {
+        //Fetch all VPC Tiers
+        //For each tier create a network ACL and move all the acl_items to network_acl_item table
+        // If there are no acl_items for a tier, associate it with default ACL
+
+        s_logger.debug("Updating network ACLs");
+
+        PreparedStatement pstmt = null;
+        PreparedStatement pstmtDelete = null;
+        ResultSet rs = null;
+        ResultSet rsAcls = null;
+        ResultSet rsCidr = null;
+
+        //1,2 are default acl Ids, start acl Ids from 3
+        long nextAclId = 3;
+
+        try {
+            //Get all VPC tiers
+            pstmt = conn.prepareStatement("SELECT id, vpc_id, uuid FROM `cloud`.`networks` where vpc_id is not null and removed is null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Long networkId = rs.getLong(1);
+                s_logger.debug("Updating network ACLs for network: "+networkId);
+                Long vpcId = rs.getLong(2);
+                String tierUuid = rs.getString(3);
+                pstmt = conn.prepareStatement("SELECT id, uuid, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type FROM `cloud`.`firewall_rules` where network_id = ? and purpose = 'NetworkACL'");
+                pstmt.setLong(1, networkId);
+                rsAcls = pstmt.executeQuery();
+                boolean hasAcls = false;
+                Long aclId = null;
+                int number = 1;
+                while(rsAcls.next()){
+                    if(!hasAcls){
+                        hasAcls = true;
+                        aclId = nextAclId++;
+                        //create ACL for the tier
+                        s_logger.debug("Creating network ACL for tier: "+tierUuid);
+                        pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (?, UUID(), ? , ?, ?)");
+                        pstmt.setLong(1, aclId);
+                        pstmt.setLong(2, vpcId);
+                        pstmt.setString(3, "ACL for tier " + tierUuid);
+                        pstmt.setString(4, "tier_" + tierUuid);
+                        pstmt.executeUpdate();
+                    }
+
+                    Long fwRuleId = rsAcls.getLong(1);
+                    String cidr = null;
+                    //get cidr from firewall_rules_cidrs
+                    pstmt = conn.prepareStatement("SELECT id, source_cidr FROM `cloud`.`firewall_rules_cidrs` where firewall_rule_id = ?");
+                    pstmt.setLong(1, fwRuleId);
+                    rsCidr = pstmt.executeQuery();
+                    while(rsCidr.next()){
+                        Long cidrId = rsCidr.getLong(1);
+                        String sourceCidr = rsCidr.getString(2);
+                        if(cidr == null){
+                            cidr = sourceCidr;
+                        } else {
+                            cidr += ","+sourceCidr;
+                        }
+                        //Delete cidr entry
+                        pstmtDelete = conn.prepareStatement("DELETE FROM `cloud`.`firewall_rules_cidrs` where id = ?");
+                        pstmtDelete.setLong(1, cidrId);
+                        pstmtDelete.executeUpdate();
+                    }
+
+
+                    String aclItemUuid = rsAcls.getString(2);
+                    //Move acl to network_acl_item table
+                    s_logger.debug("Moving firewall rule: "+aclItemUuid);
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_acl_item` (uuid, acl_id, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type, cidr, number, action) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )");
+                    //uuid
+                    pstmt.setString(1, aclItemUuid);
+                    //aclId
+                    pstmt.setLong(2, aclId);
+                    //Start port
+                    Integer startPort = rsAcls.getInt(3);
+                    if(rsAcls.wasNull()){
+                        pstmt.setNull(3, Types.INTEGER);
+                    } else {
+                        pstmt.setLong(3, startPort);
+                    }
+                    //End port
+                    Integer endPort = rsAcls.getInt(4);
+                    if(rsAcls.wasNull()){
+                        pstmt.setNull(4, Types.INTEGER);
+                    } else {
+                        pstmt.setLong(4, endPort);
+                    }
+                    //State
+                    String state = rsAcls.getString(5);
+                    pstmt.setString(5, state);
+                    //protocol
+                    String protocol = rsAcls.getString(6);
+                    pstmt.setString(6, protocol);
+                    //icmp_code
+                    Integer icmpCode = rsAcls.getInt(7);
+                    if(rsAcls.wasNull()){
+                        pstmt.setNull(7, Types.INTEGER);
+                    } else {
+                        pstmt.setLong(7, icmpCode);
+                    }
+
+                    //icmp_type
+                    Integer icmpType = rsAcls.getInt(8);
+                    if(rsAcls.wasNull()){
+                        pstmt.setNull(8, Types.INTEGER);
+                    } else {
+                        pstmt.setLong(8, icmpType);
+                    }
+
+                    //created
+                    Date created = rsAcls.getDate(9);
+                    pstmt.setDate(9, created);
+                    //traffic type
+                    String trafficType = rsAcls.getString(10);
+                    pstmt.setString(10, trafficType);
+
+                    //cidr
+                    pstmt.setString(11, cidr);
+                    //number
+                    pstmt.setInt(12, number++);
+                    //action
+                    pstmt.setString(13, "Allow");
+                    pstmt.executeUpdate();
+
+                    //Delete firewall rule
+                    pstmtDelete = conn.prepareStatement("DELETE FROM `cloud`.`firewall_rules` where id = ?");
+                    pstmtDelete.setLong(1, fwRuleId);
+                    pstmtDelete.executeUpdate();
+                }
+                if(!hasAcls){
+                    //no network ACls for this network.
+                    // Assign default Deny ACL
+                    aclId = NetworkACL.DEFAULT_DENY;
+                }
+                //Assign acl to network
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` set network_acl_id=? where id=?");
+                pstmt.setLong(1, aclId);
+                pstmt.setLong(2, networkId);
+                pstmt.executeUpdate();
+            }
+            s_logger.debug("Done updating network ACLs ");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to move network acls from firewall rules table to network_acl_item table", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (rsAcls != null) {
+                    rsAcls.close();
+                }
+                if (rsCidr != null) {
+                    rsCidr.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void updateGlobalDeploymentPlanner(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn
+                    .prepareStatement("select value from `cloud`.`configuration` where name = 'vm.allocation.algorithm'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String globalValue = rs.getString(1);
+                String plannerName = "FirstFitPlanner";
+
+                if (globalValue != null) {
+                    if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.random.toString())) {
+                        plannerName = "FirstFitPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString())) {
+                        plannerName = "FirstFitPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_firstfit
+                            .toString())) {
+                        plannerName = "UserConcentratedPodPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random
+                            .toString())) {
+                        plannerName = "UserConcentratedPodPlanner";
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString())) {
+                        plannerName = "UserDispersingPlanner";
+                    }
+                }
+                // update vm.deployment.planner global config
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` set value=? where name = 'vm.deployment.planner'");
+                pstmt.setString(1, plannerName);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to set vm.deployment.planner global config", e);
         } finally {
             try {
                 if (rs != null) {
@@ -402,10 +609,9 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
-    
-    private void upgradeDefaultVpcOffering(Connection conn) {
 
+
+    private void upgradeDefaultVpcOffering(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
@@ -421,7 +627,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 pstmt.setString(3, "InternalLbVm");
                 pstmt.executeUpdate();
             }
-            
+
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable update the default VPC offering with the internal lb service", e);
         } finally {
@@ -436,8 +642,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
-    
+
     private void upgradePhysicalNtwksWithInternalLbProvider(Connection conn) {
 
         PreparedStatement pstmt = null;
@@ -456,7 +661,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 pstmt.setString(1, uuid);
                 pstmt.setLong(2, pNtwkId);
                 pstmt.executeUpdate();
-                
+
                 //Add internal lb vm to the list of physical network elements
                 PreparedStatement pstmt1 = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" +
                 		" WHERE physical_network_id=? AND provider_name='InternalLbVm'");
@@ -470,7 +675,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt1.executeUpdate();
                 }
             }
-            
+
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable existing physical networks with internal lb provider", e);
         } finally {
@@ -484,6 +689,62 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
-        
+    }
+
+    private void addHostDetailsIndex(Connection conn) {
+        s_logger.debug("Checking if host_details index exists, if not we will add it");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` where KEY_NAME = 'fk_host_details__host_id'");
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                s_logger.debug("Index already exists on host_details - not adding new one");
+            } else {
+                // add the index
+                PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER IGNORE TABLE `cloud`.`host_details` ADD INDEX `fk_host_details__host_id` (`host_id`)");
+                pstmtUpdate.executeUpdate();
+                s_logger.debug("Index did not exist on host_details -  added new one");
+                pstmtUpdate.close();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to check/update the host_details index ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    
+    private void updateNetworksForPrivateGateways(Connection conn) {
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            //1) get all non removed gateways
+            pstmt = conn.prepareStatement("SELECT network_id, vpc_id FROM `cloud`.`vpc_gateways` WHERE type='Private' AND removed IS null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Long networkId = rs.getLong(1);
+                Long vpcId = rs.getLong(2);
+                //2) Update networks with vpc_id if its set to NULL
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` set vpc_id=? where id=? and vpc_id is NULL and removed is NULL");
+                pstmt.setLong(1, vpcId);
+                pstmt.setLong(2, networkId);
+                pstmt.executeUpdate();
+                
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to update private networks with VPC id.", e);
+        }
     }
 }

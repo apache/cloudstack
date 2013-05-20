@@ -85,6 +85,8 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 	if (filter(avoid, pol, dskCh, plan)) {
                 		s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
                 		suitablePools.add(pol);
+                    } else {
+                        avoid.addPool(pool.getId());
                 	}
                 }
 
@@ -101,8 +103,19 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         		StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
         		if (filter(avoid, pol, dskCh, plan)) {
         			suitablePools.add(pol);
+                } else {
+                    avoid.addPool(pool.getId());
         		}
         	}
+
+            // add remaining pools in cluster, that did not match tags, to avoid
+            // set
+            List<StoragePoolVO> allPools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(),
+                    plan.getPodId(), plan.getClusterId(), null);
+            allPools.removeAll(availablePools);
+            for (StoragePoolVO pool : allPools) {
+                avoid.addPool(pool.getId());
+            }
         }
 
         if (s_logger.isDebugEnabled()) {

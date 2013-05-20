@@ -242,24 +242,23 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
 		_offering = offering;
 	}
 
-    public void setcpuOvercommitRatio(Float cpuOvercommitRatio){
-        this.cpuOvercommitRatio= cpuOvercommitRatio;
+    public void setCpuOvercommitRatio(Float cpuOvercommitRatio) {
+        this.cpuOvercommitRatio = cpuOvercommitRatio;
 
     }
 
-    public void setramOvercommitRatio(Float memoryOvercommitRatio){
-        this.memoryOvercommitRatio= memoryOvercommitRatio;
+    public void setMemoryOvercommitRatio(Float memoryOvercommitRatio) {
+        this.memoryOvercommitRatio = memoryOvercommitRatio;
 
-    }
-    @Override
-   public Float getCpuOvercommitRatio(){
-        return  cpuOvercommitRatio;
     }
 
     @Override
-    public Float getMemoryOvercommitRatio(){
+    public Float getCpuOvercommitRatio() {
+        return cpuOvercommitRatio;
+    }
+
+    @Override
+    public Float getMemoryOvercommitRatio() {
         return memoryOvercommitRatio;
     }
-
-
 }

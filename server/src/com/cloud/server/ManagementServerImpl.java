@@ -65,6 +65,7 @@ import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
@@ -81,6 +82,7 @@ import org.apache.cloudstack.api.command.admin.host.FindHostsForMigrationCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.ReleaseHostReservationCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
@@ -157,6 +159,7 @@ import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.MigrateSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StartSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
@@ -280,13 +283,18 @@ import org.apache.cloudstack.api.command.user.nat.DisableStaticNatCmd;
 import org.apache.cloudstack.api.command.user.nat.EnableStaticNatCmd;
 import org.apache.cloudstack.api.command.user.nat.ListIpForwardingRulesCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.ReplaceNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
@@ -366,14 +374,18 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
+import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.RemoveResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateStaticRouteCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
@@ -454,6 +466,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -464,10 +477,12 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -565,6 +580,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -706,6 +722,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    UserVmManager _userVmMgr;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -717,6 +735,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
+
+    protected List<DeploymentPlanner> _planners;
+
+    public List<DeploymentPlanner> getPlanners() {
+        return _planners;
+    }
+
+    public void setPlanners(List<DeploymentPlanner> _planners) {
+        this._planners = _planners;
+    }
 
     @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
@@ -879,10 +907,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public boolean archiveEvents(ArchiveEventsCmd cmd) {
+        Account caller = UserContext.current().getCaller();
         List<Long> ids = cmd.getIds();
         boolean result =true;
+        List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), cmd.getEntityOwnerId());
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            permittedAccountIds.add(caller.getId());
+        } else {
+            DomainVO domain = _domainDao.findById(caller.getDomainId());
+            List<Long> permittedDomainIds = _domainDao.getDomainChildrenIds(domain.getPath());
+            permittedAccountIds = _accountDao.getAccountIdsForDomains(permittedDomainIds);
+        }
+
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
         _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
 
@@ -896,10 +934,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public boolean deleteEvents(DeleteEventsCmd cmd) {
+        Account caller = UserContext.current().getCaller();
         List<Long> ids = cmd.getIds();
         boolean result =true;
+        List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), cmd.getEntityOwnerId());
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            permittedAccountIds.add(caller.getId());
+        } else {
+            DomainVO domain = _domainDao.findById(caller.getDomainId());
+            List<Long> permittedDomainIds = _domainDao.getDomainChildrenIds(domain.getPath());
+            permittedAccountIds = _accountDao.getAccountIdsForDomains(permittedDomainIds);
+        }
+
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
         _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
 
@@ -1045,17 +1093,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with given id");
             throw ex;
         }
 
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM is not Running, unable to migrate the vm" + vm);
+                s_logger.debug("VM is not running, cannot migrate the vm" + vm);
             }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to" +
-                    " migrate the vm with specified id");
+            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, cannot " +
+                    "migrate the vm with specified id");
             ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
@@ -1124,7 +1171,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (volumePools.isEmpty()) {
                     allHosts.remove(host);
                 } else {
-                    if (host.getClusterId() != srcHost.getClusterId() || usesLocal) {
+                    if (!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) {
                         requiresStorageMotion.put(host, true);
                     }
                 }
@@ -1625,6 +1672,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             paramCountCheck++;
         }
 
+
         if (paramCountCheck > 1) {
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
@@ -1858,7 +1906,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // Don't allow to modify system template
-        if (id == Long.valueOf(1)) {
+        if (id.equals(Long.valueOf(1))) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
             ex.addProxyObject(template, id, "templateId");
             throw ex;
@@ -2385,7 +2433,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             public int compare(SummedCapacity arg0, SummedCapacity arg1) {
                 if (arg0.getPercentUsed() < arg1.getPercentUsed()) {
                     return 1;
-                } else if (arg0.getPercentUsed() == arg1.getPercentUsed()) {
+                } else if (arg0.getPercentUsed().equals(arg1.getPercentUsed())) {
                     return 0;
                 }
                 return -1;
@@ -2811,6 +2859,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AttachVolumeCmd.class);
         cmdList.add(CreateVolumeCmd.class);
         cmdList.add(DeleteVolumeCmd.class);
+        cmdList.add(UpdateVolumeCmd.class);
         cmdList.add(DetachVolumeCmd.class);
         cmdList.add(ExtractVolumeCmd.class);
         cmdList.add(ListVolumesCmd.class);
@@ -2873,12 +2922,22 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAffinityGroupsCmd.class);
         cmdList.add(UpdateVMAffinityGroupCmd.class);
         cmdList.add(ListAffinityGroupTypesCmd.class);
+        cmdList.add(ListDeploymentPlannersCmd.class);
+        cmdList.add(ReleaseHostReservationCmd.class);
+        cmdList.add(ScaleSystemVMCmd.class);
+        cmdList.add(AddResourceDetailCmd.class);
+        cmdList.add(RemoveResourceDetailCmd.class);
+        cmdList.add(ListResourceDetailsCmd.class);
         cmdList.add(StopInternalLBVMCmd.class);
         cmdList.add(StartInternalLBVMCmd.class);
         cmdList.add(ListInternalLBVMsCmd.class);
         cmdList.add(ListNetworkIsolationMethodsCmd.class);
         cmdList.add(ListNetworkIsolationMethodsCmd.class);
-
+        cmdList.add(CreateNetworkACLListCmd.class);
+        cmdList.add(DeleteNetworkACLListCmd.class);
+        cmdList.add(ListNetworkACLListsCmd.class);
+        cmdList.add(ReplaceNetworkACLListCmd.class);
+        cmdList.add(UpdateNetworkACLItemCmd.class);
         return cmdList;
     }
 
@@ -3970,9 +4029,27 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException {
+
+        boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId());
+        if(result){
+            VirtualMachine vm = _vmInstanceDao.findById(cmd.getId());
+            return vm;
+        }else{
+            return null;
+        }
+    }
+
+
+    @Override
     public VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd) {
         Long systemVmId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
+        return upgradeStoppedSystemVm(systemVmId, serviceOfferingId);
+
+    }
+
+    private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId){
         Account caller = UserContext.current().getCaller();
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
@@ -4018,4 +4095,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
     }
+
+    @Override
+    public List<String> listDeploymentPlanners() {
+        List<String> plannersAvailable = new ArrayList<String>();
+        for (DeploymentPlanner planner : _planners) {
+            plannersAvailable.add(planner.getName());
+        }
+
+        return plannersAvailable;
+    }
+
 }

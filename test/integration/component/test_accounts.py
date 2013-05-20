@@ -78,7 +78,6 @@ class Services:
                          "template": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format": 'VHD',
@@ -243,7 +242,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -568,7 +567,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
                             self.apiclient,
                             self.services["account"]
                             )
-        self.debug("Created account: %s" % account_2.account.name)
+        self.debug("Created account: %s" % account_2.name)
         self.cleanup.append(account_2)
 
         accounts_response = list_accounts(
@@ -886,7 +885,7 @@ class TesttemplateHierarchy(cloudstackTestCase):
         cls.template = Template.register(
                                             cls.api_client,
                                             cls.services["template"],
-                                            account=cls.account_1.account.name,
+                                            account=cls.account_1.name,
                                             domainid=cls.domain_1.id
                                         )
         cls._cleanup = [
@@ -935,7 +934,7 @@ class TesttemplateHierarchy(cloudstackTestCase):
         templates = list_templates(
                                     self.apiclient,
                                     templatefilter='self',
-                                    account=self.account_1.account.name,
+                                    account=self.account_1.name,
                                     domainid=self.domain_1.id
                                 )
         self.assertEqual(
@@ -960,7 +959,7 @@ class TesttemplateHierarchy(cloudstackTestCase):
         templates = list_templates(
                                     self.apiclient,
                                     templatefilter='self',
-                                    account=self.account_2.account.name,
+                                    account=self.account_2.name,
                                     domainid=self.domain_2.id
                                 )
         self.assertEqual(
@@ -1033,15 +1032,15 @@ class TestAddVmToSubDomain(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.vm_1 = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=cls.template.id,
-                                    accountid=cls.account_1.account.name,
-                                    domainid=cls.account_1.account.domainid,
+                                    accountid=cls.account_1.name,
+                                    domainid=cls.account_1.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
 
@@ -1049,8 +1048,8 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=cls.template.id,
-                                    accountid=cls.account_2.account.name,
-                                    domainid=cls.account_2.account.domainid,
+                                    accountid=cls.account_2.name,
+                                    domainid=cls.account_2.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls._cleanup = [
@@ -1625,7 +1624,7 @@ class TestDomainForceRemove(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1719,31 +1718,31 @@ class TestDomainForceRemove(cloudstackTestCase):
                                     )
 
         self.debug("Deploying virtual machine in account 1: %s" %
-                                                self.account_1.account.name)
+                                                self.account_1.name)
         vm_1 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
-                                    accountid=self.account_1.account.name,
-                                    domainid=self.account_1.account.domainid,
+                                    accountid=self.account_1.name,
+                                    domainid=self.account_1.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
 
         self.debug("Deploying virtual machine in account 2: %s" %
-                                                self.account_2.account.name)
+                                                self.account_2.name)
         vm_2 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
-                                    accountid=self.account_2.account.name,
-                                    domainid=self.account_2.account.domainid,
+                                    accountid=self.account_2.name,
+                                    domainid=self.account_2.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
 
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account_1.account.name,
-                                domainid=self.account_1.account.domainid,
+                                account=self.account_1.name,
+                                domainid=self.account_1.domainid,
                                 listall=True
                                 )
         self.assertEqual(
@@ -1753,13 +1752,13 @@ class TestDomainForceRemove(cloudstackTestCase):
                          )
         network_1 = networks[0]
         self.debug("Default network in account 1: %s is %s" % (
-                                                self.account_1.account.name,
+                                                self.account_1.name,
                                                 network_1.name))
         src_nat_list = PublicIPAddress.list(
                                     self.apiclient,
                                     associatednetworkid=network_1.id,
-                                    account=self.account_1.account.name,
-                                    domainid=self.account_1.account.domainid,
+                                    account=self.account_1.name,
+                                    domainid=self.account_1.domainid,
                                     listall=True,
                                     issourcenat=True,
                                     )
@@ -1823,8 +1822,8 @@ class TestDomainForceRemove(cloudstackTestCase):
         self.debug("Checking if the resources in domain are deleted or not..")
         accounts = Account.list(
                                 self.apiclient,
-                                name=self.account_1.account.name,
-                                domainid=self.account_1.account.domainid,
+                                name=self.account_1.name,
+                                domainid=self.account_1.domainid,
                                 listall=True
                                 )
 
@@ -1894,31 +1893,31 @@ class TestDomainForceRemove(cloudstackTestCase):
         self.cleanup.append(self.service_offering)
 
         self.debug("Deploying virtual machine in account 1: %s" %
-                                                self.account_1.account.name)
+                                                self.account_1.name)
         vm_1 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
-                                    accountid=self.account_1.account.name,
-                                    domainid=self.account_1.account.domainid,
+                                    accountid=self.account_1.name,
+                                    domainid=self.account_1.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
 
         self.debug("Deploying virtual machine in account 2: %s" %
-                                                self.account_2.account.name)
+                                                self.account_2.name)
         vm_2 = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
-                                    accountid=self.account_2.account.name,
-                                    domainid=self.account_2.account.domainid,
+                                    accountid=self.account_2.name,
+                                    domainid=self.account_2.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
 
         networks = Network.list(
                                 self.apiclient,
-                                account=self.account_1.account.name,
-                                domainid=self.account_1.account.domainid,
+                                account=self.account_1.name,
+                                domainid=self.account_1.domainid,
                                 listall=True
                                 )
         self.assertEqual(
@@ -1928,13 +1927,13 @@ class TestDomainForceRemove(cloudstackTestCase):
                          )
         network_1 = networks[0]
         self.debug("Default network in account 1: %s is %s" % (
-                                                self.account_1.account.name,
+                                                self.account_1.name,
                                                 network_1.name))
         src_nat_list = PublicIPAddress.list(
                                     self.apiclient,
                                     associatednetworkid=network_1.id,
-                                    account=self.account_1.account.name,
-                                    domainid=self.account_1.account.domainid,
+                                    account=self.account_1.name,
+                                    domainid=self.account_1.domainid,
                                     listall=True,
                                     issourcenat=True,
                                     )

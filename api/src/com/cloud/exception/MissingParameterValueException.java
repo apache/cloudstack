@@ -14,26 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.baremetal.manager;
+package com.cloud.exception;
 
-import java.util.Map;
+import com.cloud.utils.exception.CloudRuntimeException;
+public class MissingParameterValueException extends CloudRuntimeException {
 
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
-import com.cloud.deploy.AbstractDeployPlannerSelector;
-import com.cloud.deploy.DeployPlannerSelector;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.vm.UserVmVO;
-@Local(value = {DeployPlannerSelector.class})
-public class BaremetalPlannerSelector extends AbstractDeployPlannerSelector{
-
-    @Override
-    public String selectPlanner(UserVmVO vm) {
-        if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-            return "BareMetalPlanner";
-        }
-        return null;
+    public MissingParameterValueException(String message) {
+        super(message);
     }
-
 }

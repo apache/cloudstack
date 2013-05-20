@@ -56,7 +56,12 @@ public class ApiConstants {
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String DISK_SIZE = "disksize";
     public static final String DISPLAY_NAME = "displayname";
+    public static final String DISPLAY_NETWORK = "displaynetwork";
+    public static final String DISPLAY_NIC = "displaynic";
     public static final String DISPLAY_TEXT = "displaytext";
+    public static final String DISPLAY_VM = "displayvm";
+    public static final String DISPLAY_OFFERING = "displayoffering";
+    public static final String DISPLAY_VOLUME = "displayvolume";
     public static final String DNS1 = "dns1";
     public static final String DNS2 = "dns2";
     public static final String IP6_DNS1 = "ip6dns1";
@@ -225,6 +230,7 @@ public class ApiConstants {
     public static final String VLAN_RANGE = "vlanrange";
     public static final String REMOVE_VLAN="removevlan";
     public static final String VLAN_ID = "vlanid";
+    public static final String ISOLATED_PVLAN = "isolatedpvlan";
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
@@ -306,6 +312,7 @@ public class ApiConstants {
     public static final String ACCEPT = "accept";
     public static final String SORT_KEY = "sortkey";
     public static final String ACCOUNT_DETAILS = "accountdetails";
+    public static final String SERVICE_OFFERING_DETAILS = "serviceofferingdetails";
     public static final String SERVICE_PROVIDER_LIST = "serviceproviderlist";
     public static final String SERVICE_CAPABILITY_LIST = "servicecapabilitylist";
     public static final String CAN_CHOOSE_SERVICE_CAPABILITY = "canchooseservicecapability";
@@ -490,6 +497,9 @@ public class ApiConstants {
     public static final String AFFINITY_GROUP_NAMES = "affinitygroupnames";
     public static final String ASA_INSIDE_PORT_PROFILE = "insideportprofile";
     public static final String AFFINITY_GROUP_ID = "affinitygroupid";
+    public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
+    public static final String ACL_ID = "aclid";
+    public static final String NUMBER = "number";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

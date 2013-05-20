@@ -177,6 +177,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "list of affinity groups associated with the virtual machine", responseObject = AffinityGroupResponse.class)
     private Set<AffinityGroupResponse> affinityGroupList;
 
+    @SerializedName(ApiConstants.DISPLAY_VM) @Param(description="an optional field whether to the display the vm to the end user or not.")
+    private Boolean displayVm;
+
     public UserVmResponse(){
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
@@ -196,7 +199,13 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return this.id;
     }
 
+    public Boolean getDisplayVm() {
+        return displayVm;
+    }
 
+    public void setDisplayVm(Boolean displayVm) {
+        this.displayVm = displayVm;
+    }
 
     @Override
     public String getObjectId() {

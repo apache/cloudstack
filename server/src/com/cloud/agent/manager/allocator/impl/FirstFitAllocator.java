@@ -169,6 +169,13 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             }
         }
         
+        // add all hosts that we are not considering to the avoid list
+        List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
+        allhostsInCluster.removeAll(clusterHosts);
+        for (HostVO host : allhostsInCluster) {
+            avoid.addHost(host.getId());
+        }
+
         return allocateTo(plan, offering, template, avoid, clusterHosts, returnUpTo, considerReservedCapacity, account);
     }
 
@@ -285,6 +292,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Not using host " + host.getId() + "; numCpusGood: " + numCpusGood + "; cpuFreqGood: " + cpuFreqGood + ", host has capacity?" + hostHasCapacity);
                 }
+                avoid.addHost(host.getId());
             }
         }
         

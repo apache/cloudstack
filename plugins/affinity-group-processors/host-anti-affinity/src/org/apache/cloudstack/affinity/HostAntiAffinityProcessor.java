@@ -17,18 +17,24 @@
 package org.apache.cloudstack.affinity;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -47,6 +53,9 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     protected AffinityGroupDao _affinityGroupDao;
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+    private int _vmCapacityReleaseInterval;
+    @Inject 
+    protected ConfigurationDao _configDao;
 
     @Override
     public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan,
@@ -77,18 +86,27 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                             }
                         } else if (VirtualMachine.State.Stopped.equals(groupVM.getState())
                                 && groupVM.getLastHostId() != null) {
+                            long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
+                            if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
                             avoid.addHost(groupVM.getLastHostId());
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Added host " + groupVM.getLastHostId() + " to avoid set, since VM "
-                                        + groupVM.getId() + " is present on the host, in Stopped state");
+                                            + groupVM.getId() + " is present on the host, in Stopped state but has reserved capacity");
+                                }
                             }
-
                         }
                     }
                 }
             }
         }
 
+    }
+
+    @Override
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()),3600);
+        return true;
     }
 
 }

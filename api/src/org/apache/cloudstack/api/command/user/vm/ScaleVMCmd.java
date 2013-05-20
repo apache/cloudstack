@@ -16,19 +16,22 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -38,7 +41,7 @@ import com.cloud.uservm.UserVm;
 
 
 @APICommand(name = "scaleVirtualMachine", description="Scales the virtual machine to a new service offering.", responseObject=SuccessResponse.class)
-public class ScaleVMCmd extends BaseCmd {
+public class ScaleVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ScaleVMCmd.class.getName());
     private static final String s_name = "scalevirtualmachineresponse";
 
@@ -94,7 +97,7 @@ public class ScaleVMCmd extends BaseCmd {
     @Override
     public void execute(){
         //UserContext.current().setEventDetails("Vm Id: "+getId());
-        boolean result;
+        UserVm result;
         try {
             result = _userVmService.upgradeVirtualMachine(this);
         } catch (ResourceUnavailableException ex) {
@@ -110,11 +113,23 @@ public class ScaleVMCmd extends BaseCmd {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-        if (result){
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+        if (result != null){
+            List<UserVmResponse> responseList = _responseGenerator.createUserVmResponse("virtualmachine", result);
+            UserVmResponse response = responseList.get(0);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to scale vm");
         }
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_SCALE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "scaling volume: " + getId() + " to service offering: " + getServiceOfferingId();
     }
 }

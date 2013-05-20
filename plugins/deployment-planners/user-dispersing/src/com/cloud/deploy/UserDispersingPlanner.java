@@ -29,14 +29,12 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=DeploymentPlanner.class)
-public class UserDispersingPlanner extends FirstFitPlanner implements DeploymentPlanner {
+public class UserDispersingPlanner extends FirstFitPlanner implements DeploymentClusterPlanner {
 
     private static final Logger s_logger = Logger.getLogger(UserDispersingPlanner.class);
     
@@ -191,17 +189,6 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
     }
     
 
-    @Override
-    public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
-        if(vm.getHypervisorType() != HypervisorType.BareMetal){
-            //check the allocation strategy
-            if (_allocationAlgorithm != null && _allocationAlgorithm.equals(AllocationAlgorithm.userdispersing.toString())) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     float _userDispersionWeight;
 
     

@@ -110,7 +110,7 @@ public class CitrixResourceBaseTest {
     @Test
     public void testScaleVMF2() throws Types.XenAPIException, XmlRpcException {
 
-        doReturn(null).when(vm).setMemoryDynamicRangeAsync(conn, 536870912L, 536870912L);
+        doNothing().when(vm).setMemoryDynamicRange(conn, 536870912L, 536870912L);
         doReturn(1).when(vmSpec).getCpus();
         doNothing().when(vm).setVCPUsNumberLive(conn, 1L);
         doReturn(500).when(vmSpec).getSpeed();
@@ -129,12 +129,12 @@ public class CitrixResourceBaseTest {
     @Test
     public void testScaleVMF3() throws Types.XenAPIException, XmlRpcException {
 
-        doReturn(null).when(vm).setMemoryDynamicRangeAsync(conn, 536870912L, 536870912L);
+        doNothing().when(vm).setMemoryDynamicRange(conn, 536870912L, 536870912L);
         doReturn(1).when(vmSpec).getCpus();
         doNothing().when(vm).setVCPUsNumberLive(conn, 1L);
         doReturn(500).when(vmSpec).getSpeed();
         doReturn(true).when(vmSpec).getLimitCpuUse();
-        doNothing().when(vm).addToVCPUsParamsLive(conn, "cap", "100");
+        doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "100", "vmname", "i-2-3-VM");
         Map<String, String> args = (Map<String, String>)mock(HashMap.class);
         when(host.callPlugin(conn, "vmops", "add_to_VCPUs_params_live", args)).thenReturn("Success");
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
@@ -143,6 +143,6 @@ public class CitrixResourceBaseTest {
 
         verify(vmSpec, times(1)).getLimitCpuUse();
         verify(_resource, times(1)).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
-        verify(vm, times(1)).addToVCPUsParamsLive(conn, "cap", "100");
+        verify(_resource, times(1)).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "100", "vmname", "i-2-3-VM");
     }
 }

@@ -25,6 +25,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.*;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -47,12 +50,6 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
@@ -79,6 +76,12 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     IPAddressDao _ipAddressDao;
     @Inject
     NetworkModel _ntwkModel;
+    @Inject
+    NetworkDao _networkDao;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    NetworkACLItemDao _networkACLItemDao;
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -338,7 +341,18 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         VirtualRouter router = routers.get(0);
 
-        return _vpcRouterMgr.setupPrivateGateway(gateway, router);
+        if ( _vpcRouterMgr.setupPrivateGateway(gateway, router) ) {
+            try {
+                if (!applyACLItemsToPrivateGw(gateway)) {
+                    s_logger.debug ("Failed to apply network acl id  "+ gateway.getNetworkACLId() + "  on gateway ");
+                    return  false;
+                }
+            } catch (Exception ex) {
+                s_logger.debug ("Failed to apply network acl id  "+ gateway.getNetworkACLId() + "  on gateway ");
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -390,7 +404,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean applyNetworkACLs(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyNetworkACLs(Network config, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
         if (canHandle(config, Service.NetworkACL)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
@@ -399,8 +413,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 return true;
             }
 
-            if (!_vpcRouterMgr.applyNetworkACLs(config, rules, routers)) {
-                throw new CloudRuntimeException("Failed to apply firewall rules in network " + config.getId());
+            if (!_vpcRouterMgr.applyNetworkACLs(config, rules, routers, false)) {
+                throw new CloudRuntimeException("Failed to apply network acl rules in network " + config.getId());
             } else {
                 return true;
             }
@@ -430,6 +444,30 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return true;
         }
     }
+
+    @Override
+    public boolean applyACLItemsToPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException {
+        VpcGatewayVO vpcGatewayVo = _vpcGatewayDao.findById(gateway.getId());
+        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(vpcGatewayVo.getNetworkACLId());
+        Network config = _networkDao.findById(gateway.getNetworkId());
+        boolean isPrivateGateway = true;
+
+
+        List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug("Virtual router element doesn't need to apply network acl rules on the backend; virtual " +
+                    "router doesn't exist in the network " + config.getId());
+            return true;
+        }
+
+        if (!_vpcRouterMgr.applyNetworkACLs(config, rules, routers, isPrivateGateway)) {
+            throw new CloudRuntimeException("Failed to apply network acl in network " + config.getId());
+        } else {
+            return true;
+        }
+
+    }
+
 
     @Override
     public boolean startSite2SiteVpn(Site2SiteVpnConnection conn) throws ResourceUnavailableException {

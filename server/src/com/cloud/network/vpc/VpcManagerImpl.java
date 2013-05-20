@@ -87,6 +87,7 @@ import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -180,6 +181,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     DataCenterDao _dcDao;
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    NetworkACLDao _networkAclDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
@@ -708,8 +711,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public boolean destroyVpc(Vpc vpc, Account caller, Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Destroying vpc " + vpc);
         
-        //don't allow to delete vpc if it's in use by existing networks
-        int networksCount = _ntwkDao.getNetworkCountByVpcId(vpc.getId());
+        //don't allow to delete vpc if it's in use by existing non system networks (system networks are networks of a private gateway of the VPC,
+        //and they will get removed as a part of VPC cleanup
+        int networksCount = _ntwkDao.getNonSystemNetworkCountByVpcId(vpc.getId());
         if (networksCount > 0) {
             throw new InvalidParameterValueException("Can't delete VPC " + vpc + " as its used by " + networksCount + " networks");
         }
@@ -1232,15 +1236,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return false;
         }
 
-        //4) Delete private gateway
-        PrivateGateway gateway = getVpcPrivateGateway(vpcId);
-        if (gateway != null) {
-            s_logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
-            if (!deleteVpcPrivateGateway(gateway.getId())) {
-                success = false;
-                s_logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
-            } else {
-                s_logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+        //4) Delete private gateways
+        List<PrivateGateway> gateways = getVpcPrivateGateways(vpcId);
+        if (gateways != null) {
+            for (PrivateGateway gateway: gateways) {
+                if (gateway != null) {
+                    s_logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    if (!deleteVpcPrivateGateway(gateway.getId())) {
+                        success = false;
+                        s_logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    } else {
+                        s_logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    }
+                }
             }
         }
         
@@ -1290,7 +1298,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }  
     }
     
-    
+
+    @Override
+    public List<PrivateGateway> getVpcPrivateGateways(long vpcId) {
+        List<VpcGatewayVO> gateways = _vpcGatewayDao.listByVpcIdAndType(vpcId, VpcGateway.Type.Private);
+
+        if (gateways != null) {
+            List<PrivateGateway> pvtGateway = new ArrayList();
+            for (VpcGatewayVO gateway: gateways) {
+                pvtGateway.add(getPrivateGatewayProfile(gateway));
+            }
+            return pvtGateway;
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public PrivateGateway getVpcPrivateGateway(long id) {
         VpcGateway gateway = _vpcGatewayDao.findById(id);
@@ -1315,7 +1338,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating vpc private gateway", create=true)
     public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress,
-                                                  String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat) throws ResourceAllocationException,
+           String gateway, String netmask, long gatewayOwnerId, Boolean isSourceNat, Long aclId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
         
         //Validate parameters
@@ -1342,10 +1365,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
         Network privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
                 vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat);
-        
+
+        long networkAclId = NetworkACL.DEFAULT_DENY;
+        if (aclId != null) {
+            if ( _networkAclDao.findById(aclId) == null) {
+                throw new InvalidParameterValueException("Invalid network acl id passed ");
+            }
+            networkAclId = aclId;
+        }
+
         //2) create gateway entry
         VpcGatewayVO gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
-                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat);
+                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat, networkAclId);
         _vpcGatewayDao.persist(gatewayVO);
         
         s_logger.debug("Created vpc gateway entry " + gatewayVO);
@@ -1967,9 +1998,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     
     @DB
     @Override
-    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, 
-            String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) 
+    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway,
+                                         String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
+                                         PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller, Boolean isDisplayNetworkEnabled)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         Vpc vpc = getActiveVpc(vpcId);
@@ -1993,9 +2024,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         validateNtwkOffForNtwkInVpc(null, ntwkOffId, cidr, networkDomain, vpc, gateway, owner);
 
         //2) Create network
-        Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
-                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null);
+        Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId,
+                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null);
 
+        if(guestNetwork != null){
+            guestNetwork.setNetworkACLId(aclId);
+            _ntwkDao.update(guestNetwork.getId(), (NetworkVO)guestNetwork);
+        }
         return guestNetwork;
     }
     

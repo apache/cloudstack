@@ -34,6 +34,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -261,6 +262,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected ResourceLimitService _resourceLimitMgr;
     @Inject
     protected RulesManager rulesMgr;
+    @Inject
+    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
     protected List<DeploymentPlanner> _planners;
     public List<DeploymentPlanner> getPlanners() {
@@ -720,6 +723,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
     
+    protected boolean areAffinityGroupsAssociated(VirtualMachineProfile vmProfile) {
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+
+        if (vmGroupCount > 0) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
     	ConcurrentOperationException, ResourceUnavailableException {
@@ -924,7 +937,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         reuseVolume = false;
                         continue;
                     }
-                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
+                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile,
+                            DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(vmProfile));
                 }
 
                 if (dest != null) {
@@ -939,8 +953,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 Long cluster_id = dest.getCluster().getId();
                 ClusterDetailsVO cluster_detail_cpu =  _clusterDetailsDao.findDetail(cluster_id,"cpuOvercommitRatio");
                 ClusterDetailsVO cluster_detail_ram =  _clusterDetailsDao.findDetail(cluster_id,"memoryOvercommitRatio");
-                vmProfile.setcpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
-                vmProfile.setramOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
+                vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
+                vmProfile.setMemoryOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
 
                 try {
                     if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
@@ -1667,7 +1681,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (migrationResult) {
                 //if the vm is migrated to different pod in basic mode, need to reallocate ip
 
-                if (vm.getPodIdToDeployIn() != destPool.getPodId()) {
+                if (!vm.getPodIdToDeployIn().equals(destPool.getPodId())) {
                     DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), destPool.getPodId(), null, null, null, null);
                     VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, null, null, null, null);
                     _networkMgr.reallocate(vmProfile, plan);
@@ -3138,7 +3152,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (vm.getState() == State.Running) {
             try {
-                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, to.getName());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, to.getName(), vm.getType());
 
                 Commands cmds = new Commands(OnError.Stop);
                 cmds.addCommand("plugnic", plugNicCmd);

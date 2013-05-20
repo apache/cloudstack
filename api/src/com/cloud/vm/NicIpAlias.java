@@ -14,11 +14,32 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.deploy;
+package com.cloud.vm;
 
-import com.cloud.utils.component.Adapter;
-import com.cloud.vm.UserVmVO;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface DeployPlannerSelector extends Adapter {
-    String selectPlanner(UserVmVO vm);
+/** Each entry represents the alis ip of a perticular nic.
+ *
+ */
+public interface NicIpAlias extends ControlledEntity, Identity, InternalIdentity{
+    /**
+     * @return id in the CloudStack database
+     */
+     enum  state {
+        active,
+        revoked,
+    }
+    long getId();
+    long getNicId();
+    String getIp4Address();
+    String getIp6Address();
+    long getNetworkId();
+    long getVmId();
+    Long getAliasCount();
+    String getNetmask();
+    String getGateway();
+
+
 }

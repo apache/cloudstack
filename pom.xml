@@ -84,6 +84,7 @@
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.4.9</cs.libvirt-java.version>
     <cs.target.dir>target</cs.target.dir>
+    <cs.daemon.version>1.0.10</cs.daemon.version>
   </properties>
 
   <distributionManagement>

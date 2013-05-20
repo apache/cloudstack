@@ -34,6 +34,8 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.vm.*;
@@ -50,6 +52,8 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     // Inject any stuff we need to use (DAOs etc)
     @Inject
     NetworkModel _networkModel;
+    @Inject
+    AccountDao _accountDao;
 
     // Don't need to change traffic type stuff, public is fine
 
@@ -228,9 +232,10 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     private URI generateBroadcastUri(Network network){
-        String accountIdStr = String.valueOf(network.getAccountId());
+        AccountVO acc = _accountDao.findById(network.getAccountId());
+        String accountUUIDStr = acc.getUuid();
         String networkUUIDStr = String.valueOf(network.getId());
-        return Networks.BroadcastDomainType.Mido.toUri(accountIdStr +
+        return Networks.BroadcastDomainType.Mido.toUri(accountUUIDStr +
                                                        "." +
                                                        networkUUIDStr +
                                                        ":" +

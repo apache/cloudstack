@@ -106,4 +106,10 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
+
+    boolean configDhcpForSubnet(Network network, NicProfile nic, VirtualMachineProfile uservm, DeployDestination dest, List<DomainRouterVO> routers)
+            throws ResourceUnavailableException;
+
+    boolean removeDhcpSupportForSubnet(Network network, List<DomainRouterVO> routers) throws ResourceUnavailableException;
+
 }

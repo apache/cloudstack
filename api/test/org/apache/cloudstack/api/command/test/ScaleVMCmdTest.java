@@ -24,11 +24,18 @@ import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 
+import org.apache.cloudstack.api.response.SwiftResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
+import static org.mockito.Matchers.anyInt;
+
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class ScaleVMCmdTest extends TestCase{
 
@@ -58,19 +65,34 @@ public class ScaleVMCmdTest extends TestCase{
     public void testCreateSuccess() {
 
         UserVmService userVmService = Mockito.mock(UserVmService.class);
+        UserVm userVm = Mockito.mock(UserVm.class);
+
 
         try {
             Mockito.when(
                     userVmService.upgradeVirtualMachine(scaleVMCmd))
-                    .thenReturn(true);
+                    .thenReturn(userVm);
         }catch (Exception e){
             Assert.fail("Received exception when success expected " +e.getMessage());
         }
 
-        scaleVMCmd._userVmService = userVmService;
-        responseGenerator = Mockito.mock(ResponseGenerator.class);
-
+        ResponseGenerator responseGenerator = Mockito.mock(ResponseGenerator.class);
         scaleVMCmd._responseGenerator = responseGenerator;
+
+        UserVmResponse userVmResponse = Mockito.mock(UserVmResponse.class);
+        //List<UserVmResponse> list = Mockito.mock(UserVmResponse.class);
+        //list.add(userVmResponse);
+        //LinkedList<UserVmResponse> mockedList = Mockito.mock(LinkedList.class);
+        //Mockito.when(mockedList.get(0)).thenReturn(userVmResponse);
+
+        List<UserVmResponse> list = new LinkedList<UserVmResponse>();
+        list.add(userVmResponse);
+
+        Mockito.when(responseGenerator.createUserVmResponse("virtualmachine", userVm)).thenReturn(
+                list);
+
+        scaleVMCmd._userVmService = userVmService;
+
         scaleVMCmd.execute();
 
     }
@@ -83,7 +105,7 @@ public class ScaleVMCmdTest extends TestCase{
         try {
             Mockito.when(
                     userVmService.upgradeVirtualMachine(scaleVMCmd))
-                    .thenReturn(false);
+                    .thenReturn(null);
         }catch (Exception e){
             Assert.fail("Received exception when success expected " +e.getMessage());
         }

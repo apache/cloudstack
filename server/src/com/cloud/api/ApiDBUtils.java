@@ -25,8 +25,6 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -186,12 +184,14 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcProvisioningService;
 import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
@@ -287,7 +287,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-@Component
 public class ApiDBUtils {
     private static ManagementServer _ms;
     static AsyncJobManager _asyncMgr;
@@ -397,6 +396,7 @@ public class ApiDBUtils {
     static AffinityGroupDao _affinityGroupDao;
     static AffinityGroupJoinDao _affinityGroupJoinDao;
     static GlobalLoadBalancingRulesService _gslbService;
+    static NetworkACLDao _networkACLDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -506,6 +506,7 @@ public class ApiDBUtils {
     @Inject private AffinityGroupDao affinityGroupDao;
     @Inject private AffinityGroupJoinDao affinityGroupJoinDao;
     @Inject private GlobalLoadBalancingRulesService gslbService;
+    @Inject private NetworkACLDao networkACLDao;
 
     @PostConstruct
     void init() {
@@ -615,6 +616,7 @@ public class ApiDBUtils {
         _gslbService = gslbService;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
+        _networkACLDao = networkACLDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1286,7 +1288,15 @@ public class ApiDBUtils {
         return _vpcOfferingDao.findById(offeringId);
     }
 
-    public static String findJobInstanceUuid(AsyncJob job) {
+    public static NetworkACL findByNetworkACLId(long aclId){
+        return _networkACLDao.findById(aclId);
+    }
+
+    public static AsyncJob findAsyncJobById(long jobId){
+        return _asyncJobDao.findById(jobId);
+    }
+
+    public static String findJobInstanceUuid(AsyncJob job){
         if ( job == null )
             return null;
         String jobInstanceId = null;
@@ -1649,5 +1659,10 @@ public class ApiDBUtils {
 
     public static List<? extends LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {
         return _gslbService.listSiteLoadBalancers(gslbRuleId);
+    }
+
+    public static String getDnsNameConfiguredForGslb() {
+        String providerDnsName = _configDao.getValue(Config.CloudDnsName.key());
+        return providerDnsName;
     }
 }

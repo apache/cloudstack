@@ -67,6 +67,13 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 		
 		List<StoragePoolVO> storagePools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
 	
+        // add remaining pools in zone, that did not match tags, to avoid set
+        List<StoragePoolVO> allPools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null);
+        allPools.removeAll(storagePools);
+        for (StoragePoolVO pool : allPools) {
+            avoid.addPool(pool.getId());
+        }
+
 		for (StoragePoolVO storage : storagePools) {
 			if (suitablePools.size() == returnUpTo) {
         		break;
@@ -74,6 +81,8 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 			StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
 			if (filter(avoid, pol, dskCh, plan)) {
 				suitablePools.add(pol);
+            } else {
+                avoid.addPool(pol.getId());
 			}
 		}
 		return suitablePools;

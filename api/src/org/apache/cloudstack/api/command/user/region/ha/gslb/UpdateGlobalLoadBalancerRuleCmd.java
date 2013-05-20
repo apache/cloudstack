@@ -23,15 +23,18 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 
+import com.cloud.event.EventTypes;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
+import com.cloud.user.Account;
 
 @APICommand(name = "updateGlobalLoadBalancerRule", description = "update global load balancer rules.", responseObject = LoadBalancerResponse.class)
-public class UpdateGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd {
+public class UpdateGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(GlobalLoadBalancerResponse.class.getName());
 
     private static final String s_name = "updategloballoadbalancerruleresponse";
@@ -91,8 +94,26 @@ public class UpdateGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd 
     }
 
     @Override
+    public long getEntityOwnerId() {
+        GlobalLoadBalancerRule lb = _entityMgr.findById(GlobalLoadBalancerRule.class, getId());
+        if (lb != null) {
+            return lb.getAccountId();
+        }
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
     public void execute() {
         _gslbService.updateGlobalLoadBalancerRule(this);
     }
 
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_GLOBAL_LOAD_BALANCER_UPDATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return null;
+    }
 }

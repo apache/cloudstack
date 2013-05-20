@@ -106,6 +106,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name="domain_path")
     private String domainPath = null;
 
+    @Column(name = "deployment_planner")
+    private String deploymentPlanner;
+
 
     public ServiceOfferingJoinVO() {
     }
@@ -305,6 +308,14 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public void setSystemVmType(String vm_type) {
         this.vm_type = vm_type;
+    }
+
+    public String getDeploymentPlanner() {
+        return deploymentPlanner;
+    }
+
+    public void setDeploymentPlanner(String deploymentPlanner) {
+        this.deploymentPlanner = deploymentPlanner;
     }
 
 

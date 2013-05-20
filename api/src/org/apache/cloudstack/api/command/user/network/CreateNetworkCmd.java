@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
@@ -87,6 +88,9 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
     private String vlan;
 
+    @Parameter(name=ApiConstants.ISOLATED_PVLAN, type=CommandType.STRING, description="the isolated private vlan for this network")
+    private String isolatedPvlan;
+
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
 
@@ -127,6 +131,12 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.IP6_CIDR, type=CommandType.STRING, description="the CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
+    @Parameter(name=ApiConstants.DISPLAY_NETWORK, type=CommandType.BOOLEAN, description="an optional field, whether to the display the network to the end user or not.")
+    private Boolean displayNetwork;
+
+    @Parameter(name=ApiConstants.ACL_ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
+            description="Network ACL Id associated for the network")
+    private Long aclId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -140,6 +150,10 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public String getVlan() {
         return vlan;
+    }
+
+    public String getIsolatedPvlan() {
+        return isolatedPvlan;
     }
 
     public String getAccountName() {
@@ -188,6 +202,10 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public Long getVpcId() {
         return vpcId;
+    }
+
+    public Boolean getDisplayNetwork() {
+        return displayNetwork;
     }
 
     public Long getZoneId() {
@@ -248,6 +266,10 @@ public class CreateNetworkCmd extends BaseCmd {
         return ip6Cidr.toLowerCase();
     }
 
+    public Long getAclId() {
+        return aclId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -273,7 +295,7 @@ public class CreateNetworkCmd extends BaseCmd {
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         }else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network");
         }

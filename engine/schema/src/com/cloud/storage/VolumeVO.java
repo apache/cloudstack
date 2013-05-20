@@ -130,7 +130,10 @@ public class VolumeVO implements Volume {
 
     @Column(name = "uuid")
     String uuid;
-    
+
+    @Column(name="display_volume", updatable=true, nullable=false)
+    protected boolean displayVolume;
+
     @Transient
     // @Column(name="reservation")
     String reservationId;
@@ -450,5 +453,14 @@ public class VolumeVO implements Volume {
     
     public void setUuid(String uuid) {
     	this.uuid = uuid;
+    }
+
+
+    public boolean isDisplayVolume() {
+        return displayVolume;
+    }
+
+    public void setDisplayVolume(boolean displayVolume) {
+        this.displayVolume = displayVolume;
     }
 }

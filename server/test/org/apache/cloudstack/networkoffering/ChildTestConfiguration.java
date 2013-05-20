@@ -19,14 +19,8 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.dao.*;
-import com.cloud.server.ConfigurationServer;
-import com.cloud.user.*;
 import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
@@ -44,6 +38,18 @@ import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.dao.AccountVlanMapDaoImpl;
+import com.cloud.dc.dao.ClusterDaoImpl;
+import com.cloud.dc.dao.DataCenterDaoImpl;
+import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
+import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
+import com.cloud.dc.dao.DataCenterVnetDaoImpl;
+import com.cloud.dc.dao.DcDetailsDaoImpl;
+import com.cloud.dc.dao.HostPodDaoImpl;
+import com.cloud.dc.dao.PodVlanDaoImpl;
+import com.cloud.dc.dao.PodVlanMapDaoImpl;
+import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
@@ -80,9 +86,11 @@ import com.cloud.network.vpc.dao.PrivateIpDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.projects.ProjectManager;
+import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ManagementService;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
+import com.cloud.service.dao.ServiceOfferingDetailsDaoImpl;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.S3DaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
@@ -93,6 +101,11 @@ import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
+import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserContext;
+import com.cloud.user.UserContextInitializer;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
@@ -109,6 +122,7 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         DomainDaoImpl.class,
         SwiftDaoImpl.class,
         ServiceOfferingDaoImpl.class,
+        ServiceOfferingDetailsDaoImpl.class,
         VlanDaoImpl.class,
         IPAddressDaoImpl.class,
         ResourceTagsDaoImpl.class,
@@ -155,162 +169,167 @@ useDefaultFilters=false
 )
 
 public class ChildTestConfiguration {
-    
+
+    @Bean
+    public ManagementService managementService() {
+        return Mockito.mock(ManagementService.class);
+    }
+
     @Bean
     public AccountManager acctMgr() {
         return Mockito.mock(AccountManager.class);
     }
-    
+
     @Bean
     public NetworkService ntwkSvc() {
         return Mockito.mock(NetworkService.class);
     }
-    
+
     @Bean
     public NetworkModel ntwkMdl() {
         return Mockito.mock(NetworkModel.class);
     }
-    
+
     @Bean
     public AlertManager alertMgr() {
         return Mockito.mock(AlertManager.class);
     }
-    
+
     @Bean
     public SecurityChecker securityChkr() {
         return Mockito.mock(SecurityChecker.class);
     }
-    
+
     @Bean
     public ResourceLimitService resourceSvc() {
         return Mockito.mock(ResourceLimitService.class);
     }
-    
+
     @Bean
     public ProjectManager projectMgr() {
         return Mockito.mock(ProjectManager.class);
     }
-    
+
     @Bean
     public SecondaryStorageVmManager ssvmMgr() {
         return Mockito.mock(SecondaryStorageVmManager.class);
     }
-    
+
     @Bean
     public SwiftManager swiftMgr() {
         return Mockito.mock(SwiftManager.class);
     }
-    
+
     @Bean
     public S3Manager s3Mgr() {
         return Mockito.mock(S3Manager.class);
     }
-    
+
     @Bean
     public VpcManager vpcMgr() {
         return Mockito.mock(VpcManager.class);
     }
-    
+
     @Bean
     public UserVmDao userVMDao() {
         return Mockito.mock(UserVmDao.class);
     }
-    
+
     @Bean
     public RulesManager rulesMgr() {
         return Mockito.mock(RulesManager.class);
     }
-    
+
     @Bean
     public LoadBalancingRulesManager lbRulesMgr() {
         return Mockito.mock(LoadBalancingRulesManager.class);
     }
-    
+
     @Bean
     public RemoteAccessVpnService vpnMgr() {
         return Mockito.mock(RemoteAccessVpnService.class);
     }
-    
+
     @Bean
     public NetworkGuru ntwkGuru() {
         return Mockito.mock(NetworkGuru.class);
     }
-    
+
     @Bean
     public NetworkElement ntwkElement() {
         return Mockito.mock(NetworkElement.class);
     }
-    
+
     @Bean
     public IpDeployer ipDeployer() {
         return Mockito.mock(IpDeployer.class);
     }
-    
+
     @Bean
     public DhcpServiceProvider dhcpProvider() {
         return Mockito.mock(DhcpServiceProvider.class);
     }
-    
+
     @Bean
     public FirewallManager firewallMgr() {
         return Mockito.mock(FirewallManager.class);
     }
-    
+
     @Bean
     public AgentManager agentMgr() {
         return Mockito.mock(AgentManager.class);
     }
-    
+
     @Bean
     public StorageNetworkManager storageNtwkMgr() {
         return Mockito.mock(StorageNetworkManager.class);
     }
-    
+
     @Bean
     public NetworkACLManager ntwkAclMgr() {
         return Mockito.mock(NetworkACLManager.class);
     }
-    
+
     @Bean
     public Ipv6AddressManager ipv6Mgr() {
         return Mockito.mock(Ipv6AddressManager.class);
     }
-    
+
     @Bean
     public ConfigurationDao configDao() {
         return Mockito.mock(ConfigurationDao.class);
     }
-    
+
     @Bean
     public UserContext userContext() {
         return Mockito.mock(UserContext.class);
     }
-    
+
     @Bean
     public UserContextInitializer userContextInitializer() {
         return Mockito.mock(UserContextInitializer.class);
     }
-    
+
     @Bean
     public NetworkManager networkManager() {
         return Mockito.mock(NetworkManager.class);
     }
-    
+
     @Bean
     public NetworkOfferingDao networkOfferingDao() {
         return Mockito.mock(NetworkOfferingDao.class);
     }
-    
+
     @Bean
     public NetworkDao networkDao() {
         return Mockito.mock(NetworkDao.class);
     }
-    
+
     @Bean
     public NetworkOfferingServiceMapDao networkOfferingServiceMapDao() {
         return Mockito.mock(NetworkOfferingServiceMapDao.class);
     }
-    
+
     @Bean
     public DataCenterLinkLocalIpAddressDao datacenterLinkLocalIpAddressDao() {
     	return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
@@ -342,5 +361,5 @@ public class ChildTestConfiguration {
         }
 
     }
-    
+
 }

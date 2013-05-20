@@ -19,6 +19,11 @@ package com.cloud.server;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
+import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.event.EventVO;
@@ -100,4 +105,5 @@ public interface ManagementServer extends ManagementService, PluggableService  {
     void resetEncryptionKeyIV();
     
     public void enableAdminUser(String password);
+
 }

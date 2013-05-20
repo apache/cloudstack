@@ -205,6 +205,7 @@ destroySystemVm=1
 listSystemVms=3
 migrateSystemVm=1
 changeServiceForSystemVm=1
+scaleSystemVm=1
 
 #### configuration commands
 updateConfiguration=1
@@ -212,6 +213,7 @@ listConfigurations=1
 ldapConfig=1
 ldapRemove=1
 listCapabilities=15
+listDeploymentPlanners=1
 
 #### pod commands
 createPod=1
@@ -261,6 +263,7 @@ listHosts=3
 findHostsForMigration=1
 addSecondaryStorage=1
 updateHostPassword=1
+releaseHostReservation=1
 
 #### volume commands
 attachVolume=15
@@ -272,6 +275,11 @@ listVolumes=15
 extractVolume=15
 migrateVolume=15
 resizeVolume=15
+updateVolume=1
+addVolumeDetail=1
+updateVolumeDetail=1
+removeVolumeDetail=1
+listVolumeDetails=1
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
@@ -342,6 +350,10 @@ updateNetwork=15
 addNicToVirtualMachine=15
 removeNicFromVirtualMachine=15
 updateDefaultNicForVirtualMachine=15
+addNicDetail=1
+updateNicDetail=1
+removeNicDetail=1
+listNicDetails=1
 
 ####
 addIpToNic=15
@@ -433,8 +445,14 @@ deletePrivateGateway=1
 
 #### Network ACL commands
 createNetworkACL=15
+updateNetworkACLItem=15
 deleteNetworkACL=15
 listNetworkACLs=15
+createNetworkACLList=15
+deleteNetworkACLList=15
+replaceNetworkACLList=15
+listNetworkACLLists=15
+
 
 #### Static route commands
 createStaticRoute=15
@@ -445,6 +463,11 @@ listStaticRoutes=15
 createTags=15
 deleteTags=15
 listTags=15
+
+#### Meta Data commands
+addResourceDetail=1
+removeResourceDetail=1
+listResourceDetails=1
 
 ### Site-to-site VPN commands
 createVpnCustomerGateway=15
@@ -583,9 +606,9 @@ listLoadBalancers=15
 deleteLoadBalancer=15
 
 #Internal Load Balancer Element commands
-configureInternalLoadBalancerElement=1
-createInternalLoadBalancerElement=1
-listInternalLoadBalancerElements=1
+configureInternalLoadBalancerElement=7
+createInternalLoadBalancerElement=7
+listInternalLoadBalancerElements=7
 
 
 #### Affinity group commands

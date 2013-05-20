@@ -1,0 +1,3603 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+""" Component tests VM life cycle in VPC network functionality
+"""
+#Import Local Modules
+import marvin
+from nose.plugins.attrib import attr
+from marvin.cloudstackTestCase import *
+from marvin.cloudstackAPI import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import *
+from marvin.remoteSSHClient import remoteSSHClient
+import datetime
+
+
+class Services:
+    """Test VM life cycle in VPC network services
+    """
+
+    def __init__(self):
+        self.services = {
+                         "account": {
+                                    "email": "test@test.com",
+                                    "firstname": "Test",
+                                    "lastname": "User",
+                                    "username": "test",
+                                    # Random characters are appended for unique
+                                    # username
+                                    "password": "password",
+                                    },
+                         "service_offering": {
+                                    "name": "Tiny Instance",
+                                    "displaytext": "Tiny Instance",
+                                    "cpunumber": 1,
+                                    "cpuspeed": 100,
+                                    "memory": 128,
+                                    },
+                        "service_offering_1": {
+                                    "name": "Tiny Instance- tagged host 1",
+                                    "displaytext": "Tiny off-tagged host2",
+                                    "cpunumber": 1,
+                                    "cpuspeed": 100,
+                                    "memory": 128,
+                                    "tags": "HOST_TAGS_HERE"
+                                    },
+                         "service_offering_2": {
+                                    "name": "Tiny Instance- tagged host 2",
+                                    "displaytext": "Tiny off-tagged host2",
+                                    "cpunumber": 1,
+                                    "cpuspeed": 100,
+                                    "memory": 128,
+                                    "tags": "HOST_TAGS_HERE"
+                                    },
+                         "network_offering": {
+                                    "name": 'VPC Network offering',
+                                    "displaytext": 'VPC Network off',
+                                    "guestiptype": 'Isolated',
+                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "useVpc": 'on',
+                                    "serviceProviderList": {
+                                            "Dhcp": 'VpcVirtualRouter',
+                                            "Dns": 'VpcVirtualRouter',
+                                            "SourceNat": 'VpcVirtualRouter',
+                                            "PortForwarding": 'VpcVirtualRouter',
+                                            "Lb": 'VpcVirtualRouter',
+                                            "UserData": 'VpcVirtualRouter',
+                                            "StaticNat": 'VpcVirtualRouter',
+                                            "NetworkACL": 'VpcVirtualRouter'
+                                        },
+                                },
+                         "network_offering_no_lb": {
+                                    "name": 'VPC Network offering',
+                                    "displaytext": 'VPC Network off',
+                                    "guestiptype": 'Isolated',
+                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,UserData,StaticNat,NetworkACL',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "useVpc": 'on',
+                                    "serviceProviderList": {
+                                            "Dhcp": 'VpcVirtualRouter',
+                                            "Dns": 'VpcVirtualRouter',
+                                            "SourceNat": 'VpcVirtualRouter',
+                                            "PortForwarding": 'VpcVirtualRouter',
+                                            "UserData": 'VpcVirtualRouter',
+                                            "StaticNat": 'VpcVirtualRouter',
+                                            "NetworkACL": 'VpcVirtualRouter'
+                                        },
+                                },
+                         "network_off_shared": {
+                                    "name": 'Shared Network offering',
+                                    "displaytext": 'Shared Network offering',
+                                    "guestiptype": 'Shared',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "useVpc": 'on',
+                                    "specifyIpRanges": True,
+                                    "specifyVlan": True
+                                    },
+                         "vpc_offering": {
+                                    "name": 'VPC off',
+                                    "displaytext": 'VPC off',
+                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat',
+                                },
+                         "vpc": {
+                                 "name": "TestVPC",
+                                 "displaytext": "TestVPC",
+                                 "cidr": '10.0.0.1/24'
+                                 },
+                         "network": {
+                                  "name": "Test Network",
+                                  "displaytext": "Test Network",
+                                  "netmask": '255.255.255.0',
+                                  "limit": 5,
+                                  # Max networks allowed as per hypervisor
+                                  # Xenserver -> 5, VMWare -> 9
+                                },
+                         "lbrule": {
+                                    "name": "SSH",
+                                    "alg": "leastconn",
+                                    # Algorithm used for load balancing
+                                    "privateport": 22,
+                                    "publicport": 2222,
+                                    "openfirewall": False,
+                                    "startport": 2222,
+                                    "endport": 2222,
+                                    "protocol": "TCP",
+                                    "cidrlist": '0.0.0.0/0',
+                                },
+                         "natrule": {
+                                    "privateport": 22,
+                                    "publicport": 22,
+                                    "startport": 22,
+                                    "endport": 22,
+                                    "protocol": "TCP",
+                                    "cidrlist": '0.0.0.0/0',
+                                },
+                         "fw_rule": {
+                                    "startport": 1,
+                                    "endport": 6000,
+                                    "cidr": '0.0.0.0/0',
+                                    # Any network (For creating FW rule)
+                                    "protocol": "TCP"
+                                },
+                         "http_rule": {
+                                    "startport": 80,
+                                    "endport": 80,
+                                    "cidrlist": '0.0.0.0/0',
+                                    "protocol": "ICMP"
+                                },
+                         "virtual_machine": {
+                                    "displayname": "Test VM",
+                                    "username": "root",
+                                    "password": "password",
+                                    "ssh_port": 22,
+                                    "hypervisor": 'XenServer',
+                                    # Hypervisor type should be same as
+                                    # hypervisor type of cluster
+                                    "privateport": 22,
+                                    "publicport": 22,
+                                    "protocol": 'TCP',
+                                    "userdata": 'This is sample data',
+                                },
+                         "ostype": 'CentOS 5.3 (64-bit)',
+                         # Cent OS 5.3 (64 bit)
+                         "sleep": 60,
+                         "timeout": 10,
+                         "mode": 'advanced'
+                    }
+
+
+class TestVMLifeCycleVPC(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestVMLifeCycleVPC,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.account = Account.create(
+                                     cls.api_client,
+                                     cls.services["account"],
+                                     admin=True,
+                                     domainid=cls.domain.id
+                                     )
+
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.services["vpc"]["cidr"] = '10.1.1.1/16'
+        cls.vpc = VPC.create(
+                         cls.api_client,
+                         cls.services["vpc"],
+                         vpcofferingid=cls.vpc_off.id,
+                         zoneid=cls.zone.id,
+                         account=cls.account.name,
+                         domainid=cls.account.account.domainid
+                         )
+
+        cls.nw_off = NetworkOffering.create(
+                                            cls.api_client,
+                                            cls.services["network_offering"],
+                                            conservemode=False
+                                            )
+        # Enable Network offering
+        cls.nw_off.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_1 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.nw_off.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.1.1',
+                                vpcid=cls.vpc.id
+                                )
+        cls.nw_off_no_lb = NetworkOffering.create(
+                                    cls.api_client,
+                                    cls.services["network_offering_no_lb"],
+                                    conservemode=False
+                                    )
+        # Enable Network offering
+        cls.nw_off_no_lb.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_2 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.nw_off_no_lb.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.2.1',
+                                vpcid=cls.vpc.id
+                                )
+        # Spawn an instance in that network
+        cls.vm_1 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering.id,
+                                  networkids=[str(cls.network_1.id)]
+                                  )
+        # Spawn an instance in that network
+        cls.vm_2 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering.id,
+                                  networkids=[str(cls.network_1.id)]
+                                  )
+        cls.vm_3 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering.id,
+                                  networkids=[str(cls.network_2.id)]
+                                  )
+
+        cls.public_ip_1 = PublicIPAddress.create(
+                                cls.api_client,
+                                accountid=cls.account.name,
+                                zoneid=cls.zone.id,
+                                domainid=cls.account.account.domainid,
+                                networkid=cls.network_1.id,
+                                vpcid=cls.vpc.id
+                                )
+        cls.lb_rule = LoadBalancerRule.create(
+                                    cls.api_client,
+                                    cls.services["lbrule"],
+                                    ipaddressid=cls.public_ip_1.ipaddress.id,
+                                    accountid=cls.account.name,
+                                    networkid=cls.network_1.id,
+                                    vpcid=cls.vpc.id,
+                                    domainid=cls.account.account.domainid
+                                )
+        cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
+
+        cls.public_ip_2 = PublicIPAddress.create(
+                                cls.api_client,
+                                accountid=cls.account.name,
+                                zoneid=cls.zone.id,
+                                domainid=cls.account.account.domainid,
+                                networkid=cls.network_1.id,
+                                vpcid=cls.vpc.id
+                                )
+
+        cls.nat_rule = NATRule.create(
+                                  cls.api_client,
+                                  cls.vm_1,
+                                  cls.services["natrule"],
+                                  ipaddressid=cls.public_ip_2.ipaddress.id,
+                                  openfirewall=False,
+                                  networkid=cls.network_1.id,
+                                  vpcid=cls.vpc.id
+                                  )
+
+        # Opening up the ports in VPC
+        cls.nwacl_nat = NetworkACL.create(
+                                         cls.api_client,
+                                         networkid=cls.network_1.id,
+                                         services=cls.services["natrule"],
+                                         traffictype='Ingress'
+                                    )
+
+        cls.nwacl_lb = NetworkACL.create(
+                                cls.api_client,
+                                networkid=cls.network_1.id,
+                                services=cls.services["lbrule"],
+                                traffictype='Ingress'
+                                )
+
+        cls.nwacl_internet_1 = NetworkACL.create(
+                                        cls.api_client,
+                                        networkid=cls.network_1.id,
+                                        services=cls.services["http_rule"],
+                                        traffictype='Egress'
+                                        )
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.nw_off,
+                        cls.nw_off_no_lb,
+                        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.account.delete(cls.api_client)
+            wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+
+            # Waiting for network cleanup to delete vpc offering
+            wait_for_cleanup(cls.api_client, ["network.gc.wait", "network.gc.interval"])
+            cls.vpc_off.delete(cls.api_client)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+            wait_for_cleanup(self.apiclient, [
+                                              "network.gc.interval",
+                                              "network.gc.wait"])
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def validate_vpc_offering(self, vpc_offering):
+        """Validates the VPC offering"""
+
+        self.debug("Check if the VPC offering is created successfully?")
+        vpc_offs = VpcOffering.list(
+                                    self.apiclient,
+                                    id=vpc_offering.id
+                                    )
+        self.assertEqual(
+                         isinstance(vpc_offs, list),
+                         True,
+                         "List VPC offerings should return a valid list"
+                         )
+        self.assertEqual(
+                 vpc_offering.name,
+                 vpc_offs[0].name,
+                "Name of the VPC offering should match with listVPCOff data"
+                )
+        self.debug(
+                "VPC offering is created successfully - %s" %
+                                                        vpc_offering.name)
+        return
+
+    def validate_vpc_network(self, network, state=None):
+        """Validates the VPC network"""
+
+        self.debug("Check if the VPC network is created successfully?")
+        vpc_networks = VPC.list(
+                                    self.apiclient,
+                                    id=network.id
+                          )
+        self.assertEqual(
+                         isinstance(vpc_networks, list),
+                         True,
+                         "List VPC network should return a valid list"
+                         )
+        self.assertEqual(
+                 network.name,
+                 vpc_networks[0].name,
+                "Name of the VPC network should match with listVPC data"
+                )
+        if state:
+            self.assertEqual(
+                 vpc_networks[0].state,
+                 state,
+                "VPC state should be '%s'" % state
+                )
+        self.debug("VPC network validated - %s" % network.name)
+        return
+
+    def validate_network_rules(self):
+        """Validates if the network rules work properly or not?"""
+        try:
+            ssh_1 = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+
+            self.debug("Verifying if we can ping to outside world from VM?")
+            # Ping to outsite world
+            res = ssh_1.execute("ping -c 1 www.google.com")
+            # res = 64 bytes from maa03s17-in-f20.1e100.net (74.125.236.212):
+            # icmp_req=1 ttl=57 time=25.9 ms
+            # --- www.l.google.com ping statistics ---
+            # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
+            # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
+        except Exception as e:
+            self.fail("Failed to SSH into VM - %s, %s" %
+                                    (self.public_ip_1.ipaddress.ipaddress, e))
+
+        result = str(res)
+        self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to outside world from VM should be successful"
+                         )
+
+        self.debug("Checking if we can SSH into VM_1?")
+        try:
+            ssh_2 = self.vm_1.get_ssh_client(
+                            ipaddress=self.public_ip_2.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+
+            self.debug("Verifying if we can ping to outside world from VM?")
+            res = ssh_2.execute("ping -c 1 www.google.com")
+        except Exception as e:
+            self.fail("Failed to SSH into VM - %s, %s" %
+                                    (self.public_ip_2.ipaddress.ipaddress, e))
+
+        result = str(res)
+        self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to outside world from VM should be successful"
+                         )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_01_deploy_instance_in_network(self):
+        """ Test deploy an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # Steps:
+        # 1. Deploy vm1 and vm2 in network1 and vm3 and vm4 in network2 using
+        #    the default CentOS 6.2 Template
+
+        self.debug("Check if deployed VMs are in running state?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  account=self.account.name,
+                                  domainid=self.account.account.domainid,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List VMs should return a valid response"
+                         )
+        for vm in vms:
+            self.debug("VM name: %s, VM state: %s" % (vm.name, vm.state))
+            self.assertEqual(
+                             vm.state,
+                             "Running",
+                             "Vm state should be running for each VM deployed"
+                             )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_02_stop_instance_in_network(self):
+        """ Test stop an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Stop the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Stopping the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.stop(self.apiclient)
+            self.vm_2.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         isinstance(nat_rules, list),
+                         True,
+                         "List NAT rules shall return a valid list"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         isinstance(lb_rules, list),
+                         True,
+                         "List LB rules shall return a valid list"
+                         )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_03_start_instance_in_network(self):
+        """ Test start an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Start the virtual machines.
+        # 2. Vm should be started successfully.
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Starting the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.start(self.apiclient)
+            self.vm_2.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start the virtual instances, %s" % e)
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_04_reboot_instance_in_network(self):
+        """ Test reboot an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Reboot the virtual machines.
+        # 2. Vm should be started successfully.
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Starting the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.reboot(self.apiclient)
+            self.vm_2.reboot(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to reboot the virtual instances, %s" % e)
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_05_destroy_instance_in_network(self):
+        """ Test destroy an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Destory the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Destroying the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         isinstance(nat_rules, list),
+                         True,
+                         "List NAT rules shall return a valid list"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         isinstance(lb_rules, list),
+                         True,
+                         "List LB rules shall return a valid list"
+                         )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_06_recover_instance_in_network(self):
+        """ Test recover an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Recover the virtual machines.
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Recovering the expunged virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.recover(self.apiclient)
+            self.vm_2.recover(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to recover the virtual instances, %s" % e)
+
+        self.debug("Starting the two instances..")
+        try:
+            self.vm_1.start(self.apiclient)
+            self.vm_2.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start the instances, %s" % e)
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_07_migrate_instance_in_network(self):
+        """ Test migrate an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Migrate the virtual machines to other hosts
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Checking if the host is available for migration?")
+        hosts = Host.list(
+                          self.apiclient,
+                          zoneid=self.zone.id,
+                          type='Routing'
+                          )
+
+        self.assertEqual(
+                         isinstance(hosts, list),
+                         True,
+                         "List hosts should return a valid list"
+                         )
+        if len(hosts) < 2:
+            raise unittest.SkipTest(
+            "No host available for migration. Test requires atleast 2 hosts")
+
+        # Remove the host of current VM from the hosts list
+        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
+
+        host = hosts[0]
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Migrating VM-ID: %s to Host: %s" % (
+                                                        self.vm_1.id,
+                                                        host.id
+                                                        ))
+
+        try:
+            self.vm_1.migrate(self.apiclient, hostid=host.id)
+        except Exception as e:
+            self.fail("Failed to migrate instance, %s" % e)
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_08_user_data(self):
+        """ Test user data in virtual machines
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # 3. Deploy a vm in network1 and a vm in network2 using userdata
+        # Steps
+        # 1.Query for the user data for both the user vms from both networks
+        #   User should be able to query the user data for the vms belonging to
+        #   both the networks from the VR
+
+        try:
+            ssh = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+        except Exception as e:
+            self.fail("Failed to SSH into instance")
+
+        # Find router associated with user account
+        routers = Router.list(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(routers, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = routers[0]
+        self.debug("check the userdata with that of present in router")
+        try:
+            cmds = [
+               "wget http://%s/latest/user-data" % router.guestipaddress,
+               "cat user-data",
+               ]
+            for c in cmds:
+                result = ssh.execute(c)
+                self.debug("%s: %s" % (c, result))
+        except Exception as e:
+            self.fail("Failed to SSH in Virtual machine: %s" % e)
+
+        res = str(result)
+        self.assertEqual(
+                            res.count(
+                                self.services["virtual_machine"]["userdata"]),
+                            1,
+                            "Verify user data from router"
+                        )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_09_meta_data(self):
+        """ Test meta data in virtual machines
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # 3. Deploy a vm in network1 and a vm in network2 using userdata
+        # Steps
+        # 1.Query for the meta data for both the user vms from both networks
+        #   User should be able to query the user data for the vms belonging to
+        #   both the networks from the VR
+
+        try:
+            ssh = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+        except Exception as e:
+            self.fail("Failed to SSH into instance")
+
+        # Find router associated with user account
+        routers = Router.list(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(routers, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = routers[0]
+        self.debug("check the metadata with that of present in router")
+        try:
+            cmds = [
+               "wget http://%s/latest/meta-data" % router.guestipaddress,
+               "cat user-data",
+               ]
+            for c in cmds:
+                result = ssh.execute(c)
+                self.debug("%s: %s" % (c, result))
+        except Exception as e:
+            self.fail("Failed to SSH in Virtual machine: %s" % e)
+
+        res = str(result)
+        self.assertNotEqual(
+                         res,
+                         None,
+                         "Meta data should be returned from router"
+                        )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_10_expunge_instance_in_network(self):
+        """ Test expunge an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Recover the virtual machines.
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Delete virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to destroy the virtual instances, %s" % e)
+
+        self.debug(
+            "Waiting for expunge interval to cleanup the network and VMs")
+
+        wait_for_cleanup(
+                         self.apiclient,
+                         ["expunge.interval", "expunge.delay"]
+                        )
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         nat_rules,
+                         None,
+                         "List NAT rules should not return anything"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         lb_rules,
+                         None,
+                         "List LB rules should not return anything"
+                         )
+        return
+
+
+class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestVMLifeCycleSharedNwVPC,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.account = Account.create(
+                                     cls.api_client,
+                                     cls.services["account"],
+                                     admin=True,
+                                     domainid=cls.domain.id
+                                     )
+
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.services["vpc"]["cidr"] = '10.1.1.1/16'
+        cls.vpc = VPC.create(
+                         cls.api_client,
+                         cls.services["vpc"],
+                         vpcofferingid=cls.vpc_off.id,
+                         zoneid=cls.zone.id,
+                         account=cls.account.name,
+                         domainid=cls.account.account.domainid
+                         )
+
+        cls.nw_off = NetworkOffering.create(
+                                            cls.api_client,
+                                            cls.services["network_offering"],
+                                            conservemode=False
+                                            )
+        # Enable Network offering
+        cls.nw_off.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_1 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.nw_off.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.1.1',
+                                vpcid=cls.vpc.id
+                                )
+        cls.nw_off_no_lb = NetworkOffering.create(
+                                    cls.api_client,
+                                    cls.services["network_offering_no_lb"],
+                                    conservemode=False
+                                    )
+        cls.shared_nw_off = NetworkOffering.create(
+                                        cls.api_client,
+                                        cls.services["network_off_shared"],
+                                        conservemode=False
+                                        )
+        # Enable Network offering
+        cls.shared_nw_off.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_2 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.shared_nw_off.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.2.1',
+                                vpcid=cls.vpc.id
+                                )
+        # Spawn an instance in that network
+        cls.vm_1 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering.id,
+                                  networkids=[str(cls.network_1.id),
+                                              str(cls.network_2.id)]
+                                  )
+        # Spawn an instance in that network
+        cls.vm_2 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering.id,
+                                  networkids=[str(cls.network_1.id),
+                                              str(cls.network_2.id)]
+                                  )
+        cls.vm_3 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering.id,
+                                  networkids=[str(cls.network_1.id),
+                                              str(cls.network_2.id)]
+                                  )
+        cls.public_ip_1 = PublicIPAddress.create(
+                                cls.api_client,
+                                accountid=cls.account.name,
+                                zoneid=cls.zone.id,
+                                domainid=cls.account.account.domainid,
+                                networkid=cls.network_1.id,
+                                vpcid=cls.vpc.id
+                                )
+        cls.lb_rule = LoadBalancerRule.create(
+                                    cls.api_client,
+                                    cls.services["lbrule"],
+                                    ipaddressid=cls.public_ip_1.ipaddress.id,
+                                    accountid=cls.account.name,
+                                    networkid=cls.network_1.id,
+                                    vpcid=cls.vpc.id,
+                                    domainid=cls.account.account.domainid
+                                )
+        cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2, cls.vm_3])
+
+        cls.public_ip_2 = PublicIPAddress.create(
+                                cls.api_client,
+                                accountid=cls.account.name,
+                                zoneid=cls.zone.id,
+                                domainid=cls.account.account.domainid,
+                                networkid=cls.network_1.id,
+                                vpcid=cls.vpc.id
+                                )
+
+        cls.nat_rule = NATRule.create(
+                                  cls.api_client,
+                                  cls.vm_1,
+                                  cls.services["natrule"],
+                                  ipaddressid=cls.public_ip_2.ipaddress.id,
+                                  openfirewall=False,
+                                  networkid=cls.network_1.id,
+                                  vpcid=cls.vpc.id
+                                  )
+
+        # Opening up the ports in VPC
+        cls.nwacl_nat = NetworkACL.create(
+                                         cls.api_client,
+                                         networkid=cls.network_1.id,
+                                         services=cls.services["natrule"],
+                                         traffictype='Ingress'
+                                    )
+
+        cls.nwacl_lb = NetworkACL.create(
+                                cls.api_client,
+                                networkid=cls.network_1.id,
+                                services=cls.services["lbrule"],
+                                traffictype='Ingress'
+                                )
+
+        cls.nwacl_internet_1 = NetworkACL.create(
+                                        cls.api_client,
+                                        networkid=cls.network_1.id,
+                                        services=cls.services["http_rule"],
+                                        traffictype='Egress'
+                                        )
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.nw_off,
+                        cls.shared_nw_off,
+                        cls.vpc_off
+                        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.account.delete(cls.api_client)
+            wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+            wait_for_cleanup(self.apiclient, [
+                                              "network.gc.interval",
+                                              "network.gc.wait"])
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def validate_vpc_offering(self, vpc_offering):
+        """Validates the VPC offering"""
+
+        self.debug("Check if the VPC offering is created successfully?")
+        vpc_offs = VpcOffering.list(
+                                    self.apiclient,
+                                    id=vpc_offering.id
+                                    )
+        self.assertEqual(
+                         isinstance(vpc_offs, list),
+                         True,
+                         "List VPC offerings should return a valid list"
+                         )
+        self.assertEqual(
+                 vpc_offering.name,
+                 vpc_offs[0].name,
+                "Name of the VPC offering should match with listVPCOff data"
+                )
+        self.debug(
+                "VPC offering is created successfully - %s" %
+                                                        vpc_offering.name)
+        return
+
+    def validate_vpc_network(self, network, state=None):
+        """Validates the VPC network"""
+
+        self.debug("Check if the VPC network is created successfully?")
+        vpc_networks = VPC.list(
+                                    self.apiclient,
+                                    id=network.id
+                          )
+        self.assertEqual(
+                         isinstance(vpc_networks, list),
+                         True,
+                         "List VPC network should return a valid list"
+                         )
+        self.assertEqual(
+                 network.name,
+                 vpc_networks[0].name,
+                "Name of the VPC network should match with listVPC data"
+                )
+        if state:
+            self.assertEqual(
+                 vpc_networks[0].state,
+                 state,
+                "VPC state should be '%s'" % state
+                )
+        self.debug("VPC network validated - %s" % network.name)
+        return
+
+    def validate_network_rules(self):
+        """Validating if the network rules (PF/LB) works properly or not?"""
+
+        try:
+            ssh_1 = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+
+            self.debug("Verifying if we can ping to outside world from VM?")
+            # Ping to outsite world
+            res = ssh_1.execute("ping -c 1 www.google.com")
+            # res = 64 bytes from maa03s17-in-f20.1e100.net (74.125.236.212):
+            # icmp_req=1 ttl=57 time=25.9 ms
+            # --- www.l.google.com ping statistics ---
+            # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
+            # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
+            result = str(res)
+            self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to outside world from VM should be successful"
+                         )
+
+            self.debug("We should be allowed to ping virtual gateway")
+            self.debug("VM gateway: %s" % self.vm_1.nic[0].gateway)
+
+            res = ssh_1.execute("ping -c 1 %s" % self.vm_1.nic[0].gateway)
+            self.debug("ping -c 1 %s: %s" % (self.vm_1.nic[0].gateway, res))
+
+            result = str(res)
+            self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to VM gateway should be successful"
+                         )
+        except Exception as e:
+            self.fail("Failed to SSH into VM - %s, %s" %
+                                    (self.public_ip_1.ipaddress.ipaddress, e))
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_01_deploy_instance_in_network(self):
+        """ Test deploy an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Successful deployment of the User VM.
+        # 2. Ping any host in the public Internet successfully.
+        # 3. Ping the gateways of the VPC's guest network and the
+        #    Shared Guest Network successfully.
+
+        self.debug("Check if deployed VMs are in running state?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  account=self.account.name,
+                                  domainid=self.account.account.domainid,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List VMs should return a valid response"
+                         )
+        for vm in vms:
+            self.debug("VM name: %s, VM state: %s" % (vm.name, vm.state))
+            self.assertEqual(
+                             vm.state,
+                             "Running",
+                             "Vm state should be running for each VM deployed"
+                             )
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_02_stop_instance_in_network(self):
+        """ Test stop an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Stop the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+
+        self.debug("Stopping one of the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_2.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
+
+        self.debug("Check if the instance is in stopped state?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  id=self.vm_2.id,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List virtual machines should return a valid list"
+                         )
+        vm = vms[0]
+        self.assertEqual(
+                         vm.state,
+                         "Stopped",
+                         "Virtual machine should be in stopped state"
+                         )
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_03_start_instance_in_network(self):
+        """ Test start an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Start the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+
+        self.debug("Starting one of the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_2.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start the virtual instances, %s" % e)
+
+        self.debug("Check if the instance is in stopped state?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  id=self.vm_2.id,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List virtual machines should return a valid list"
+                         )
+        vm = vms[0]
+        self.assertEqual(
+                         vm.state,
+                         "Running",
+                         "Virtual machine should be in running state"
+                         )
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_04_reboot_instance_in_network(self):
+        """ Test reboot an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Reboot the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+
+        self.debug("Restarting the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.reboot(self.apiclient)
+            self.vm_2.reboot(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to reboot the virtual instances, %s" % e)
+
+        self.debug("Check if the instance is in stopped state?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  account=self.account.name,
+                                  domainid=self.account.account.domainid,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List virtual machines should return a valid list"
+                         )
+        for vm in vms:
+            self.assertEqual(
+                         vm.state,
+                         "Running",
+                         "Virtual machine should be in running state"
+                         )
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_05_destroy_instance_in_network(self):
+        """ Test destroy an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Destroy one of the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Destroying one of the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to destroy the virtual instances, %s" % e)
+
+        self.debug("Check if the instance is in stopped state?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  id=self.vm_2.id,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List virtual machines should return a valid list"
+                         )
+        vm = vms[0]
+        self.assertEqual(
+                         vm.state,
+                         "Expunging",
+                         "Virtual machine should be in expunging state"
+                         )
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_06_recover_instance_in_network(self):
+        """ Test recover an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Recover the virtual machines.
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Recovering the expunged virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_2.recover(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to recover the virtual instances, %s" % e)
+
+        self.debug("Check if the instance is in stopped state?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  id=self.vm_2.id,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List virtual machines should return a valid list"
+                         )
+        vm = vms[0]
+        self.assertEqual(
+                         vm.state,
+                         "Stopped",
+                         "Virtual machine should be in stopped state"
+                         )
+
+        self.debug("Starting the instance: %s" % self.vm_2.name)
+        try:
+            self.vm_2.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start the instances, %s" % e)
+
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  id=self.vm_2.id,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List virtual machines should return a valid list"
+                         )
+        vm = vms[0]
+        self.assertEqual(
+                         vm.state,
+                         "Running",
+                         "Virtual machine should be in running state"
+                         )
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_07_migrate_instance_in_network(self):
+        """ Test migrate an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Migrate the virtual machines to other hosts
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Checking if the host is available for migration?")
+        hosts = Host.list(
+                          self.apiclient,
+                          zoneid=self.zone.id,
+                          type='Routing'
+                          )
+
+        self.assertEqual(
+                         isinstance(hosts, list),
+                         True,
+                         "List hosts should return a valid list"
+                         )
+        if len(hosts) < 2:
+            raise unittest.SkipTest(
+            "No host available for migration. Test requires atleast 2 hosts")
+
+        # Remove the host of current VM from the hosts list
+        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
+
+        host = hosts[0]
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+
+        self.debug("Migrating VM-ID: %s to Host: %s" % (
+                                                        self.vm_1.id,
+                                                        host.id
+                                                        ))
+
+        try:
+            self.vm_1.migrate(self.apiclient, hostid=host.id)
+        except Exception as e:
+            self.fail("Failed to migrate instance, %s" % e)
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_08_user_data(self):
+        """ Test user data in virtual machines
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # 3. Deploy a vm in network1 and a vm in network2 using userdata
+        # Steps
+        # 1.Query for the user data for both the user vms from both networks
+        #   User should be able to query the user data for the vms belonging to
+        #   both the networks from the VR
+
+        try:
+            ssh = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+        except Exception as e:
+            self.fail("Failed to SSH into instance")
+
+        # Find router associated with user account
+        routers = Router.list(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(routers, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = routers[0]
+        self.debug("check the userdata with that of present in router")
+        try:
+            cmds = [
+               "wget http://%s/latest/user-data" % router.guestipaddress,
+               "cat user-data",
+               ]
+            for c in cmds:
+                result = ssh.execute(c)
+                self.debug("%s: %s" % (c, result))
+        except Exception as e:
+            self.fail("Failed to SSH in Virtual machine: %s" % e)
+
+        res = str(result)
+        self.assertEqual(
+                            res.count(
+                                self.services["virtual_machine"]["userdata"]),
+                            1,
+                            "Verify user data from router"
+                        )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_09_meta_data(self):
+        """ Test meta data in virtual machines
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # 3. Deploy a vm in network1 and a vm in network2 using userdata
+        # Steps
+        # 1.Query for the meta data for both the user vms from both networks
+        #   User should be able to query the user data for the vms belonging to
+        #   both the networks from the VR
+
+        try:
+            ssh = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+        except Exception as e:
+            self.fail("Failed to SSH into instance")
+
+        # Find router associated with user account
+        routers = Router.list(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(routers, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = routers[0]
+        self.debug("check the metadata with that of present in router")
+        try:
+            cmds = [
+               "wget http://%s/latest/meta-data" % router.guestipaddress,
+               "cat user-data",
+               ]
+            for c in cmds:
+                result = ssh.execute(c)
+                self.debug("%s: %s" % (c, result))
+        except Exception as e:
+            self.fail("Failed to SSH in Virtual machine: %s" % e)
+
+        res = str(result)
+        self.assertNotEqual(
+                         res,
+                         None,
+                         "Meta data should be returned from router"
+                        )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_10_expunge_instance_in_network(self):
+        """ Test expunge an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Recover the virtual machines.
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+
+        self.debug("Delete virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to destroy the virtual instances, %s" % e)
+
+        self.debug(
+            "Waiting for expunge interval to cleanup the network and VMs")
+
+        wait_for_cleanup(
+                         self.apiclient,
+                         ["expunge.interval", "expunge.delay"]
+                        )
+
+        self.debug("Validating if network rules are coonfigured properly?")
+        self.validate_network_rules()
+
+        self.debug(
+            "Deleting the rest of the virtual machines in account: %s" %
+                                                    self.account.name)
+        try:
+            self.vm_1.delete(self.apiclient)
+            self.vm_3.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to destroy the virtual instances, %s" % e)
+
+        self.debug(
+            "Waiting for expunge interval to cleanup the network and VMs")
+
+        wait_for_cleanup(
+                         self.apiclient,
+                         ["expunge.interval", "expunge.delay"]
+                        )
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         nat_rules,
+                         None,
+                         "List NAT rules should not return anything"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         lb_rules,
+                         None,
+                         "List LB rules should not return anything"
+                         )
+        return
+
+
+class TestVMLifeCycleBothIsolated(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestVMLifeCycleBothIsolated,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.account = Account.create(
+                                     cls.api_client,
+                                     cls.services["account"],
+                                     admin=True,
+                                     domainid=cls.domain.id
+                                     )
+
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.services["vpc"]["cidr"] = '10.1.1.1/16'
+        cls.vpc = VPC.create(
+                         cls.api_client,
+                         cls.services["vpc"],
+                         vpcofferingid=cls.vpc_off.id,
+                         zoneid=cls.zone.id,
+                         account=cls.account.name,
+                         domainid=cls.account.account.domainid
+                         )
+
+        cls.nw_off = NetworkOffering.create(
+                                            cls.api_client,
+                                            cls.services["network_offering"],
+                                            conservemode=False
+                                            )
+        # Enable Network offering
+        cls.nw_off.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_1 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.nw_off.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.1.1',
+                                vpcid=cls.vpc.id
+                                )
+        cls.nw_off_no_lb = NetworkOffering.create(
+                                    cls.api_client,
+                                    cls.services["network_offering_no_lb"],
+                                    conservemode=False
+                                    )
+
+        # Enable Network offering
+        cls.nw_off_no_lb.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_2 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.nw_off_no_lb.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.2.1',
+                                vpcid=cls.vpc.id
+                                )
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.nw_off,
+                        cls.nw_off_no_lb,
+                        cls.vpc_off
+                        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.account.delete(cls.api_client)
+            wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+            wait_for_cleanup(self.apiclient, [
+                                              "network.gc.interval",
+                                              "network.gc.wait"])
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def validate_vpc_offering(self, vpc_offering):
+        """Validates the VPC offering"""
+
+        self.debug("Check if the VPC offering is created successfully?")
+        vpc_offs = VpcOffering.list(
+                                    self.apiclient,
+                                    id=vpc_offering.id
+                                    )
+        self.assertEqual(
+                         isinstance(vpc_offs, list),
+                         True,
+                         "List VPC offerings should return a valid list"
+                         )
+        self.assertEqual(
+                 vpc_offering.name,
+                 vpc_offs[0].name,
+                "Name of the VPC offering should match with listVPCOff data"
+                )
+        self.debug(
+                "VPC offering is created successfully - %s" %
+                                                        vpc_offering.name)
+        return
+
+    def validate_vpc_network(self, network, state=None):
+        """Validates the VPC network"""
+
+        self.debug("Check if the VPC network is created successfully?")
+        vpc_networks = VPC.list(
+                                    self.apiclient,
+                                    id=network.id
+                          )
+        self.assertEqual(
+                         isinstance(vpc_networks, list),
+                         True,
+                         "List VPC network should return a valid list"
+                         )
+        self.assertEqual(
+                 network.name,
+                 vpc_networks[0].name,
+                "Name of the VPC network should match with listVPC data"
+                )
+        if state:
+            self.assertEqual(
+                 vpc_networks[0].state,
+                 state,
+                "VPC state should be '%s'" % state
+                )
+        self.debug("VPC network validated - %s" % network.name)
+        return
+
+    def validate_network_rules(self):
+        """Validating if the network rules (PF/LB) works properly or not?"""
+
+        try:
+            ssh_1 = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+
+            self.debug("Verifying if we can ping to outside world from VM?")
+            # Ping to outsite world
+            res = ssh_1.execute("ping -c 1 www.google.com")
+            # res = 64 bytes from maa03s17-in-f20.1e100.net (74.125.236.212):
+            # icmp_req=1 ttl=57 time=25.9 ms
+            # --- www.l.google.com ping statistics ---
+            # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
+            # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
+            result = str(res)
+            self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to outside world from VM should be successful"
+                         )
+
+            self.debug("We should be allowed to ping virtual gateway")
+            self.debug("VM gateway: %s" % self.vm_1.nic[0].gateway)
+
+            res = ssh_1.execute("ping -c 1 %s" % self.vm_1.nic[0].gateway)
+            self.debug("ping -c 1 %s: %s" % (self.vm_1.nic[0].gateway, res))
+
+            result = str(res)
+            self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to VM gateway should be successful"
+                         )
+        except Exception as e:
+            self.fail("Failed to SSH into VM - %s, %s" %
+                                    (self.public_ip_1.ipaddress.ipaddress, e))
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_01_deploy_vm_two_isolated_nw(self):
+        """ Test deploy virtual machine in two isolated networks"""
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # Steps:
+        # 1. Deploy a VM such that the VM is part of both networks-network1
+        #    and network2. Fail to deploy a VM.
+
+        self.debug("Validating the VPC offering created")
+        self.validate_vpc_offering(self.vpc_off)
+
+        self.debug("Validating VPC created in setup class")
+        self.validate_vpc_network(self.vpc)
+
+        self.debug("Deploying virtual machine in two isolated networks")
+        with self.assertRaises(Exception):
+            VirtualMachine.create(
+                                  self.apiclient,
+                                  self.services["virtual_machine"],
+                                  accountid=self.account.name,
+                                  domainid=self.account.account.domainid,
+                                  serviceofferingid=self.service_offering.id,
+                                  networkids=[str(self.network_1.id),
+                                              str(self.network_2.id)]
+                                  )
+        self.debug("Deploy VM in 2 isolated networks failed")
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_02_deploy_vm_vpcvr_stopped(self):
+        """ Test deploy virtual machine when VPC VR in stopped state"""
+
+        # Validate the following
+        # Pre-Req:
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) to this VPC.
+        # 3. Stop the VPC Virtual Router
+        # Steps:
+        # 1. Deploy a VM using the default CentOS 6.2 Template
+
+        self.debug("Finding the virtual router for network: %s" %
+                                                        self.network_1.name)
+        routers = Router.list(
+                              self.apiclient,
+                              account=self.account.name,
+                              domainid=self.account.account.domainid,
+                              networkid=self.network_1.id,
+                              listall=True
+                              )
+        self.assertEqual(
+                         isinstance(routers, list),
+                         True,
+                         "List routers should return router for network: %s" %
+                                                        self.network_1.name
+                         )
+        router = routers[0]
+
+        self.debug("Check state of VPC virtual router, state: %s" %
+                                                                router.state)
+        if router.state == "Running":
+            self.debug("Router state is running, stop it!")
+            Router.stop(self.apiclient, id=router.id)
+
+            self.debug("Check the router state again")
+            routers = Router.list(
+                              self.apiclient,
+                              id=router.id,
+                              listall=True
+                              )
+            self.assertEqual(
+                         isinstance(routers, list),
+                         True,
+                         "List routers should return router for network: %s" %
+                                                        self.network_1.name
+                         )
+            router = routers[0]
+            self.assertEqual(
+                             router.state,
+                             "Stopped",
+                             "Router state should be stopped"
+                             )
+        self.debug("Deploy an instance in network: %s with stopped VPCVR" %
+                                                        self.network_1.name)
+        try:
+            vm = VirtualMachine.create(
+                                  self.apiclient,
+                                  self.services["virtual_machine"],
+                                  accountid=self.account.name,
+                                  domainid=self.account.account.domainid,
+                                  serviceofferingid=self.service_offering.id,
+                                  networkids=[str(self.network_1.id)]
+                                  )
+        except Exception as e:
+            self.fail("Failed to deploy the virtual instance: %s" % e)
+
+        self.debug("Verify the deployment of virtual instace")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  id=vm.id,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List vms shall return a valid resposnse"
+                         )
+        vm_response = vms[0]
+        self.assertEqaul(
+                         vm_response.state,
+                         "Running",
+                         "VM state should be running after deployment"
+                         )
+        return
+
+
+class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestVMLifeCycleStoppedVPCVR,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.account = Account.create(
+                                     cls.api_client,
+                                     cls.services["account"],
+                                     admin=True,
+                                     domainid=cls.domain.id
+                                     )
+
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.services["vpc"]["cidr"] = '10.1.1.1/16'
+        cls.vpc = VPC.create(
+                         cls.api_client,
+                         cls.services["vpc"],
+                         vpcofferingid=cls.vpc_off.id,
+                         zoneid=cls.zone.id,
+                         account=cls.account.name,
+                         domainid=cls.account.account.domainid
+                         )
+
+        cls.nw_off = NetworkOffering.create(
+                                            cls.api_client,
+                                            cls.services["network_offering"],
+                                            conservemode=False
+                                            )
+        # Enable Network offering
+        cls.nw_off.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_1 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.nw_off.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.1.1',
+                                vpcid=cls.vpc.id
+                                )
+        cls.nw_off_no_lb = NetworkOffering.create(
+                                    cls.api_client,
+                                    cls.services["network_offering_no_lb"],
+                                    conservemode=False
+                                    )
+        # Enable Network offering
+        cls.nw_off_no_lb.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_2 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.nw_off_no_lb.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.2.1',
+                                vpcid=cls.vpc.id
+                                )
+        # Spawn an instance in that network
+        cls.vm_1 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering.id,
+                                  networkids=[str(cls.network_1.id)]
+                                  )
+        # Spawn an instance in that network
+        cls.vm_2 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering.id,
+                                  networkids=[str(cls.network_1.id)]
+                                  )
+        cls.vm_3 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering.id,
+                                  networkids=[str(cls.network_2.id)]
+                                  )
+
+        cls.public_ip_1 = PublicIPAddress.create(
+                                cls.api_client,
+                                accountid=cls.account.name,
+                                zoneid=cls.zone.id,
+                                domainid=cls.account.account.domainid,
+                                networkid=cls.network_1.id,
+                                vpcid=cls.vpc.id
+                                )
+        cls.lb_rule = LoadBalancerRule.create(
+                                    cls.api_client,
+                                    cls.services["lbrule"],
+                                    ipaddressid=cls.public_ip_1.ipaddress.id,
+                                    accountid=cls.account.name,
+                                    networkid=cls.network_1.id,
+                                    vpcid=cls.vpc.id,
+                                    domainid=cls.account.account.domainid
+                                )
+        cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
+
+        cls.public_ip_2 = PublicIPAddress.create(
+                                cls.api_client,
+                                accountid=cls.account.name,
+                                zoneid=cls.zone.id,
+                                domainid=cls.account.account.domainid,
+                                networkid=cls.network_1.id,
+                                vpcid=cls.vpc.id
+                                )
+
+        cls.nat_rule = NATRule.create(
+                                  cls.api_client,
+                                  cls.vm_1,
+                                  cls.services["natrule"],
+                                  ipaddressid=cls.public_ip_2.ipaddress.id,
+                                  openfirewall=False,
+                                  networkid=cls.network_1.id,
+                                  vpcid=cls.vpc.id
+                                  )
+
+        # Opening up the ports in VPC
+        cls.nwacl_nat = NetworkACL.create(
+                                         cls.api_client,
+                                         networkid=cls.network_1.id,
+                                         services=cls.services["natrule"],
+                                         traffictype='Ingress'
+                                    )
+
+        cls.nwacl_lb = NetworkACL.create(
+                                cls.api_client,
+                                networkid=cls.network_1.id,
+                                services=cls.services["lbrule"],
+                                traffictype='Ingress'
+                                )
+
+        cls.nwacl_internet = NetworkACL.create(
+                                        cls.api_client,
+                                        networkid=cls.network_1.id,
+                                        services=cls.services["http_rule"],
+                                        traffictype='Egress'
+                                        )
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.nw_off,
+                        cls.nw_off_no_lb,
+                        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.account.delete(cls.api_client)
+            wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+
+            # Waiting for network cleanup to delete vpc offering
+            wait_for_cleanup(cls.api_client, ["network.gc.wait",
+                                              "network.gc.interval"])
+            cls.vpc_off.delete(cls.api_client)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.debug("Check the status of VPC virtual router")
+        routers = Router.list(
+                              self.apiclient,
+                              networkid=self.network_1.id,
+                              listall=True
+                              )
+        if not isinstance(routers, list):
+            raise Exception("No response from list routers API")
+
+        self.router = routers[0]
+        if self.router.state == "Running":
+            Router.stop(self.apiclient, id=self.router.id)
+
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+            wait_for_cleanup(self.apiclient, [
+                                              "network.gc.interval",
+                                              "network.gc.wait"])
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def validate_vpc_offering(self, vpc_offering):
+        """Validates the VPC offering"""
+
+        self.debug("Check if the VPC offering is created successfully?")
+        vpc_offs = VpcOffering.list(
+                                    self.apiclient,
+                                    id=vpc_offering.id
+                                    )
+        self.assertEqual(
+                         isinstance(vpc_offs, list),
+                         True,
+                         "List VPC offerings should return a valid list"
+                         )
+        self.assertEqual(
+                 vpc_offering.name,
+                 vpc_offs[0].name,
+                "Name of the VPC offering should match with listVPCOff data"
+                )
+        self.debug(
+                "VPC offering is created successfully - %s" %
+                                                        vpc_offering.name)
+        return
+
+    def validate_vpc_network(self, network, state=None):
+        """Validates the VPC network"""
+
+        self.debug("Check if the VPC network is created successfully?")
+        vpc_networks = VPC.list(
+                                    self.apiclient,
+                                    id=network.id
+                          )
+        self.assertEqual(
+                         isinstance(vpc_networks, list),
+                         True,
+                         "List VPC network should return a valid list"
+                         )
+        self.assertEqual(
+                 network.name,
+                 vpc_networks[0].name,
+                "Name of the VPC network should match with listVPC data"
+                )
+        if state:
+            self.assertEqual(
+                 vpc_networks[0].state,
+                 state,
+                "VPC state should be '%s'" % state
+                )
+        self.debug("VPC network validated - %s" % network.name)
+        return
+
+    def validate_network_rules(self):
+        """Validates if the network rules work properly or not?"""
+        try:
+            ssh_1 = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+
+            self.debug("Verifying if we can ping to outside world from VM?")
+            # Ping to outsite world
+            res = ssh_1.execute("ping -c 1 www.google.com")
+            # res = 64 bytes from maa03s17-in-f20.1e100.net (74.125.236.212):
+            # icmp_req=1 ttl=57 time=25.9 ms
+            # --- www.l.google.com ping statistics ---
+            # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
+            # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
+        except Exception as e:
+            self.fail("Failed to SSH into VM - %s, %s" %
+                                    (self.public_ip_1.ipaddress.ipaddress, e))
+
+        result = str(res)
+        self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to outside world from VM should be successful"
+                         )
+
+        self.debug("Checking if we can SSH into VM_1?")
+        try:
+            ssh_2 = self.vm_1.get_ssh_client(
+                            ipaddress=self.public_ip_2.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+
+            self.debug("Verifying if we can ping to outside world from VM?")
+            res = ssh_2.execute("ping -c 1 www.google.com")
+        except Exception as e:
+            self.fail("Failed to SSH into VM - %s, %s" %
+                                    (self.public_ip_2.ipaddress.ipaddress, e))
+
+        result = str(res)
+        self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to outside world from VM should be successful"
+                         )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_01_deploy_instance_in_network(self):
+        """ Test deploy an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # Steps:
+        # 1. Deploy vm1 and vm2 in network1 and vm3 and vm4 in network2 using
+        #    the default CentOS 6.2 Template
+
+        self.debug("Check if deployed VMs are in running state?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  account=self.account.name,
+                                  domainid=self.account.account.domainid,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List VMs should return a valid response"
+                         )
+        for vm in vms:
+            self.debug("VM name: %s, VM state: %s" % (vm.name, vm.state))
+            self.assertEqual(
+                             vm.state,
+                             "Running",
+                             "Vm state should be running for each VM deployed"
+                             )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_02_stop_instance_in_network(self):
+        """ Test stop an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Stop the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Stopping the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.stop(self.apiclient)
+            self.vm_2.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         isinstance(nat_rules, list),
+                         True,
+                         "List NAT rules shall return a valid list"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         isinstance(lb_rules, list),
+                         True,
+                         "List LB rules shall return a valid list"
+                         )
+        return
+
+    @unittest.skip("Skipping - Not able to SSH if VPCVR is stopped")
+    @attr(tags=["advanced", "intervlan"])
+    def test_03_start_instance_in_network(self):
+        """ Test start an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Start the virtual machines.
+        # 2. Vm should be started successfully.
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Starting the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.start(self.apiclient)
+            self.vm_2.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start the virtual instances, %s" % e)
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @unittest.skip("Skipping - Not able to SSH if VPCVR is stopped")
+    @attr(tags=["advanced", "intervlan"])
+    def test_04_reboot_instance_in_network(self):
+        """ Test reboot an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Reboot the virtual machines.
+        # 2. Vm should be started successfully.
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Starting the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.reboot(self.apiclient)
+            self.vm_2.reboot(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to reboot the virtual instances, %s" % e)
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @unittest.skip("Skipping - Not able to SSH if VPCVR is stopped")
+    @attr(tags=["advanced", "intervlan"])
+    def test_05_destroy_instance_in_network(self):
+        """ Test destroy an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Destory the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Destroying the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         isinstance(nat_rules, list),
+                         True,
+                         "List NAT rules shall return a valid list"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         isinstance(lb_rules, list),
+                         True,
+                         "List LB rules shall return a valid list"
+                         )
+        return
+
+    @unittest.skip("Skipping - Not able to SSH if VPCVR is stopped")
+    @attr(tags=["advanced", "intervlan"])
+    def test_06_recover_instance_in_network(self):
+        """ Test recover an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Recover the virtual machines.
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Recovering the expunged virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.recover(self.apiclient)
+            self.vm_2.recover(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to recover the virtual instances, %s" % e)
+
+        self.debug("Starting the two instances..")
+        try:
+            self.vm_1.start(self.apiclient)
+            self.vm_2.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start the instances, %s" % e)
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @unittest.skip("Skipping - Not able to SSH if VPCVR is stopped")
+    @attr(tags=["advanced", "intervlan"])
+    def test_07_migrate_instance_in_network(self):
+        """ Test migrate an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Migrate the virtual machines to other hosts
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Checking if the host is available for migration?")
+        hosts = Host.list(
+                          self.apiclient,
+                          zoneid=self.zone.id,
+                          type='Routing'
+                          )
+
+        self.assertEqual(
+                         isinstance(hosts, list),
+                         True,
+                         "List hosts should return a valid list"
+                         )
+        if len(hosts) < 2:
+            raise unittest.SkipTest(
+            "No host available for migration. Test requires atleast 2 hosts")
+
+        # Remove the host of current VM from the hosts list
+        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
+
+        host = hosts[0]
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Migrating VM-ID: %s to Host: %s" % (
+                                                        self.vm_1.id,
+                                                        host.id
+                                                        ))
+
+        try:
+            self.vm_1.migrate(self.apiclient, hostid=host.id)
+        except Exception as e:
+            self.fail("Failed to migrate instance, %s" % e)
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @unittest.skip("Skipping - Not able to SSH if VPCVR is stopped")
+    @attr(tags=["advanced", "intervlan"])
+    def test_08_user_data(self):
+        """ Test user data in virtual machines
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # 3. Deploy a vm in network1 and a vm in network2 using userdata
+        # Steps
+        # 1.Query for the user data for both the user vms from both networks
+        #   User should be able to query the user data for the vms belonging to
+        #   both the networks from the VR
+
+        try:
+            ssh = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+        except Exception as e:
+            self.fail("Failed to SSH into instance")
+
+        # Find router associated with user account
+        routers = Router.list(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(routers, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = routers[0]
+        self.debug("check the userdata with that of present in router")
+        try:
+            cmds = [
+               "wget http://%s/latest/user-data" % router.guestipaddress,
+               "cat user-data",
+               ]
+            for c in cmds:
+                result = ssh.execute(c)
+                self.debug("%s: %s" % (c, result))
+        except Exception as e:
+            self.fail("Failed to SSH in Virtual machine: %s" % e)
+
+        res = str(result)
+        self.assertEqual(
+                            res.count(
+                                self.services["virtual_machine"]["userdata"]),
+                            1,
+                            "Verify user data from router"
+                        )
+        return
+
+    @unittest.skip("Skipping - Not able to SSH if VPCVR is stopped")
+    @attr(tags=["advanced", "intervlan"])
+    def test_09_meta_data(self):
+        """ Test meta data in virtual machines
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # 3. Deploy a vm in network1 and a vm in network2 using userdata
+        # Steps
+        # 1.Query for the meta data for both the user vms from both networks
+        #   User should be able to query the user data for the vms belonging to
+        #   both the networks from the VR
+
+        try:
+            ssh = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+        except Exception as e:
+            self.fail("Failed to SSH into instance")
+
+        # Find router associated with user account
+        routers = Router.list(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(routers, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = routers[0]
+        self.debug("check the metadata with that of present in router")
+        try:
+            cmds = [
+               "wget http://%s/latest/meta-data" % router.guestipaddress,
+               "cat user-data",
+               ]
+            for c in cmds:
+                result = ssh.execute(c)
+                self.debug("%s: %s" % (c, result))
+        except Exception as e:
+            self.fail("Failed to SSH in Virtual machine: %s" % e)
+
+        res = str(result)
+        self.assertNotEqual(
+                         res,
+                         None,
+                         "Meta data should be returned from router"
+                        )
+        return
+
+    @unittest.skip("Skipping - Not able to SSH if VPCVR is stopped")
+    @attr(tags=["advanced", "intervlan"])
+    def test_10_expunge_instance_in_network(self):
+        """ Test expunge an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Recover the virtual machines.
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Delete virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to destroy the virtual instances, %s" % e)
+
+        self.debug(
+            "Waiting for expunge interval to cleanup the network and VMs")
+
+        wait_for_cleanup(
+                         self.apiclient,
+                         ["expunge.interval", "expunge.delay"]
+                        )
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         nat_rules,
+                         None,
+                         "List NAT rules should not return anything"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         lb_rules,
+                         None,
+                         "List LB rules should not return anything"
+                         )
+        return
+
+
+@unittest.skip("Skip - Requires Tagged hosts setup")
+class TestVMLifeCycleDiffHosts(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestVMLifeCycleDiffHosts,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering_1 = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering_1"]
+                                            )
+        cls.service_offering_2 = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering_2"]
+                                            )
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.account = Account.create(
+                                     cls.api_client,
+                                     cls.services["account"],
+                                     admin=True,
+                                     domainid=cls.domain.id
+                                     )
+
+        cls.vpc_off = VpcOffering.create(
+                                     cls.api_client,
+                                     cls.services["vpc_offering"]
+                                     )
+
+        cls.vpc_off.update(cls.api_client, state='Enabled')
+
+        cls.services["vpc"]["cidr"] = '10.1.1.1/16'
+        cls.vpc = VPC.create(
+                         cls.api_client,
+                         cls.services["vpc"],
+                         vpcofferingid=cls.vpc_off.id,
+                         zoneid=cls.zone.id,
+                         account=cls.account.name,
+                         domainid=cls.account.account.domainid
+                         )
+
+        cls.nw_off = NetworkOffering.create(
+                                            cls.api_client,
+                                            cls.services["network_offering"],
+                                            conservemode=False
+                                            )
+        # Enable Network offering
+        cls.nw_off.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_1 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.nw_off.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.1.1',
+                                vpcid=cls.vpc.id
+                                )
+        cls.nw_off_no_lb = NetworkOffering.create(
+                                    cls.api_client,
+                                    cls.services["network_offering_no_lb"],
+                                    conservemode=False
+                                    )
+        # Enable Network offering
+        cls.nw_off_no_lb.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_2 = Network.create(
+                                cls.api_client,
+                                cls.services["network"],
+                                accountid=cls.account.name,
+                                domainid=cls.account.account.domainid,
+                                networkofferingid=cls.nw_off_no_lb.id,
+                                zoneid=cls.zone.id,
+                                gateway='10.1.2.1',
+                                vpcid=cls.vpc.id
+                                )
+        # Spawn an instance in that network
+        cls.vm_1 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering_1.id,
+                                  networkids=[str(cls.network_1.id)]
+                                  )
+        # Spawn an instance in that network
+        cls.vm_2 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering_1.id,
+                                  networkids=[str(cls.network_1.id)]
+                                  )
+        cls.vm_3 = VirtualMachine.create(
+                                  cls.api_client,
+                                  cls.services["virtual_machine"],
+                                  accountid=cls.account.name,
+                                  domainid=cls.account.account.domainid,
+                                  serviceofferingid=cls.service_offering_2.id,
+                                  networkids=[str(cls.network_2.id)]
+                                  )
+
+        cls.public_ip_1 = PublicIPAddress.create(
+                                cls.api_client,
+                                accountid=cls.account.name,
+                                zoneid=cls.zone.id,
+                                domainid=cls.account.account.domainid,
+                                networkid=cls.network_1.id,
+                                vpcid=cls.vpc.id
+                                )
+        cls.lb_rule = LoadBalancerRule.create(
+                                    cls.api_client,
+                                    cls.services["lbrule"],
+                                    ipaddressid=cls.public_ip_1.ipaddress.id,
+                                    accountid=cls.account.name,
+                                    networkid=cls.network_1.id,
+                                    vpcid=cls.vpc.id,
+                                    domainid=cls.account.account.domainid
+                                )
+        cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
+
+        cls.public_ip_2 = PublicIPAddress.create(
+                                cls.api_client,
+                                accountid=cls.account.name,
+                                zoneid=cls.zone.id,
+                                domainid=cls.account.account.domainid,
+                                networkid=cls.network_1.id,
+                                vpcid=cls.vpc.id
+                                )
+
+        cls.nat_rule = NATRule.create(
+                                  cls.api_client,
+                                  cls.vm_1,
+                                  cls.services["natrule"],
+                                  ipaddressid=cls.public_ip_2.ipaddress.id,
+                                  openfirewall=False,
+                                  networkid=cls.network_1.id,
+                                  vpcid=cls.vpc.id
+                                  )
+
+        # Opening up the ports in VPC
+        cls.nwacl_nat = NetworkACL.create(
+                                         cls.api_client,
+                                         networkid=cls.network_1.id,
+                                         services=cls.services["natrule"],
+                                         traffictype='Ingress'
+                                    )
+
+        cls.nwacl_lb = NetworkACL.create(
+                                cls.api_client,
+                                networkid=cls.network_1.id,
+                                services=cls.services["lbrule"],
+                                traffictype='Ingress'
+                                )
+
+        cls.nwacl_internet = NetworkACL.create(
+                                        cls.api_client,
+                                        networkid=cls.network_1.id,
+                                        services=cls.services["http_rule"],
+                                        traffictype='Egress'
+                                        )
+        cls._cleanup = [
+                        cls.service_offering_1,
+                        cls.service_offering_2,
+                        cls.nw_off,
+                        cls.nw_off_no_lb,
+                        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.account.delete(cls.api_client)
+            wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+
+            # Waiting for network cleanup to delete vpc offering
+            wait_for_cleanup(cls.api_client, ["network.gc.wait",
+                                              "network.gc.interval"])
+            cls.vpc_off.delete(cls.api_client)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.debug("Check the status of VPC virtual router")
+        routers = Router.list(
+                              self.apiclient,
+                              networkid=self.network_1.id,
+                              listall=True
+                              )
+        if not isinstance(routers, list):
+            raise Exception("No response from list routers API")
+
+        self.router = routers[0]
+        if self.router.state == "Running":
+            Router.stop(self.apiclient, id=self.router.id)
+
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+            wait_for_cleanup(self.apiclient, [
+                                              "network.gc.interval",
+                                              "network.gc.wait"])
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def validate_vm_deployment(self):
+        """Validates VM deployment on different hosts"""
+
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  account=self.account.name,
+                                  domainid=self.account.account.domainid,
+                                  networkid=self.network_1.id,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List VMs shall return a valid response"
+                         )
+        host_1 = vms[0].hostid
+        self.debug("Host for network 1: %s" % vms[0].hostid)
+
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  account=self.account.name,
+                                  domainid=self.account.account.domainid,
+                                  networkid=self.network_2.id,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List VMs shall return a valid response"
+                         )
+        host_2 = vms[0].hostid
+        self.debug("Host for network 2: %s" % vms[0].hostid)
+
+        self.assertNotEqual(
+                host_1,
+                host_2,
+                "Both the virtual machines should be deployed on diff hosts "
+                )
+        return
+
+    def validate_vpc_offering(self, vpc_offering):
+        """Validates the VPC offering"""
+
+        self.debug("Check if the VPC offering is created successfully?")
+        vpc_offs = VpcOffering.list(
+                                    self.apiclient,
+                                    id=vpc_offering.id
+                                    )
+        self.assertEqual(
+                         isinstance(vpc_offs, list),
+                         True,
+                         "List VPC offerings should return a valid list"
+                         )
+        self.assertEqual(
+                 vpc_offering.name,
+                 vpc_offs[0].name,
+                "Name of the VPC offering should match with listVPCOff data"
+                )
+        self.debug(
+                "VPC offering is created successfully - %s" %
+                                                        vpc_offering.name)
+        return
+
+    def validate_vpc_network(self, network, state=None):
+        """Validates the VPC network"""
+
+        self.debug("Check if the VPC network is created successfully?")
+        vpc_networks = VPC.list(
+                                    self.apiclient,
+                                    id=network.id
+                          )
+        self.assertEqual(
+                         isinstance(vpc_networks, list),
+                         True,
+                         "List VPC network should return a valid list"
+                         )
+        self.assertEqual(
+                 network.name,
+                 vpc_networks[0].name,
+                "Name of the VPC network should match with listVPC data"
+                )
+        if state:
+            self.assertEqual(
+                 vpc_networks[0].state,
+                 state,
+                "VPC state should be '%s'" % state
+                )
+        self.debug("VPC network validated - %s" % network.name)
+        return
+
+    def validate_network_rules(self):
+        """Validates if the network rules work properly or not?"""
+        try:
+            ssh_1 = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+
+            self.debug("Verifying if we can ping to outside world from VM?")
+            # Ping to outsite world
+            res = ssh_1.execute("ping -c 1 www.google.com")
+            # res = 64 bytes from maa03s17-in-f20.1e100.net (74.125.236.212):
+            # icmp_req=1 ttl=57 time=25.9 ms
+            # --- www.l.google.com ping statistics ---
+            # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
+            # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
+        except Exception as e:
+            self.fail("Failed to SSH into VM - %s, %s" %
+                                    (self.public_ip_1.ipaddress.ipaddress, e))
+
+        result = str(res)
+        self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to outside world from VM should be successful"
+                         )
+
+        self.debug("Checking if we can SSH into VM_1?")
+        try:
+            ssh_2 = self.vm_1.get_ssh_client(
+                            ipaddress=self.public_ip_2.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+
+            self.debug("Verifying if we can ping to outside world from VM?")
+            res = ssh_2.execute("ping -c 1 www.google.com")
+        except Exception as e:
+            self.fail("Failed to SSH into VM - %s, %s" %
+                                    (self.public_ip_2.ipaddress.ipaddress, e))
+
+        result = str(res)
+        self.assertEqual(
+                         result.count("1 received"),
+                         1,
+                         "Ping to outside world from VM should be successful"
+                         )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_01_deploy_instance_in_network(self):
+        """ Test deploy an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # Steps:
+        # 1. Deploy vm1 and vm2 in network1 and vm3 and vm4 in network2 using
+        #    the default CentOS 6.2 Template
+
+        self.validate_vm_deployment()
+        self.debug("Check if deployed VMs are in running state?")
+        vms = VirtualMachine.list(
+                                  self.apiclient,
+                                  account=self.account.name,
+                                  domainid=self.account.account.domainid,
+                                  listall=True
+                                  )
+        self.assertEqual(
+                         isinstance(vms, list),
+                         True,
+                         "List VMs should return a valid response"
+                         )
+        for vm in vms:
+            self.debug("VM name: %s, VM state: %s" % (vm.name, vm.state))
+            self.assertEqual(
+                             vm.state,
+                             "Running",
+                             "Vm state should be running for each VM deployed"
+                             )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_02_stop_instance_in_network(self):
+        """ Test stop an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Stop the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Stopping the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.stop(self.apiclient)
+            self.vm_2.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         isinstance(nat_rules, list),
+                         True,
+                         "List NAT rules shall return a valid list"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         isinstance(lb_rules, list),
+                         True,
+                         "List LB rules shall return a valid list"
+                         )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_03_start_instance_in_network(self):
+        """ Test start an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Start the virtual machines.
+        # 2. Vm should be started successfully.
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Starting the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.start(self.apiclient)
+            self.vm_2.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start the virtual instances, %s" % e)
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_04_reboot_instance_in_network(self):
+        """ Test reboot an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Reboot the virtual machines.
+        # 2. Vm should be started successfully.
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Starting the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.reboot(self.apiclient)
+            self.vm_2.reboot(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to reboot the virtual instances, %s" % e)
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_05_destroy_instance_in_network(self):
+        """ Test destroy an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Destory the virtual machines.
+        # 2. Rules should be still configured on virtual router.
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Destroying the virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         isinstance(nat_rules, list),
+                         True,
+                         "List NAT rules shall return a valid list"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         isinstance(lb_rules, list),
+                         True,
+                         "List LB rules shall return a valid list"
+                         )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_06_recover_instance_in_network(self):
+        """ Test recover an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Recover the virtual machines.
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Recovering the expunged virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.recover(self.apiclient)
+            self.vm_2.recover(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to recover the virtual instances, %s" % e)
+
+        self.debug("Starting the two instances..")
+        try:
+            self.vm_1.start(self.apiclient)
+            self.vm_2.start(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to start the instances, %s" % e)
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_07_migrate_instance_in_network(self):
+        """ Test migrate an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Migrate the virtual machines to other hosts
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Checking if the host is available for migration?")
+        hosts = Host.list(
+                          self.apiclient,
+                          zoneid=self.zone.id,
+                          type='Routing'
+                          )
+
+        self.assertEqual(
+                         isinstance(hosts, list),
+                         True,
+                         "List hosts should return a valid list"
+                         )
+        if len(hosts) < 2:
+            raise unittest.SkipTest(
+            "No host available for migration. Test requires atleast 2 hosts")
+
+        # Remove the host of current VM from the hosts list
+        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
+
+        host = hosts[0]
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Migrating VM-ID: %s to Host: %s" % (
+                                                        self.vm_1.id,
+                                                        host.id
+                                                        ))
+
+        try:
+            self.vm_1.migrate(self.apiclient, hostid=host.id)
+        except Exception as e:
+            self.fail("Failed to migrate instance, %s" % e)
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_08_user_data(self):
+        """ Test user data in virtual machines
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # 3. Deploy a vm in network1 and a vm in network2 using userdata
+        # Steps
+        # 1.Query for the user data for both the user vms from both networks
+        #   User should be able to query the user data for the vms belonging to
+        #   both the networks from the VR
+
+        try:
+            ssh = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+        except Exception as e:
+            self.fail("Failed to SSH into instance")
+
+        # Find router associated with user account
+        routers = Router.list(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(routers, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = routers[0]
+        self.debug("check the userdata with that of present in router")
+        try:
+            cmds = [
+               "wget http://%s/latest/user-data" % router.guestipaddress,
+               "cat user-data",
+               ]
+            for c in cmds:
+                result = ssh.execute(c)
+                self.debug("%s: %s" % (c, result))
+        except Exception as e:
+            self.fail("Failed to SSH in Virtual machine: %s" % e)
+
+        res = str(result)
+        self.assertEqual(
+                            res.count(
+                                self.services["virtual_machine"]["userdata"]),
+                            1,
+                            "Verify user data from router"
+                        )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_09_meta_data(self):
+        """ Test meta data in virtual machines
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Add network1(10.1.1.1/24) and network2(10.1.2.1/24) to this VPC.
+        # 3. Deploy a vm in network1 and a vm in network2 using userdata
+        # Steps
+        # 1.Query for the meta data for both the user vms from both networks
+        #   User should be able to query the user data for the vms belonging to
+        #   both the networks from the VR
+
+        try:
+            ssh = self.vm_1.get_ssh_client(
+                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
+            self.debug("SSH into VM is successfully")
+        except Exception as e:
+            self.fail("Failed to SSH into instance")
+
+        # Find router associated with user account
+        routers = Router.list(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(routers, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = routers[0]
+        self.debug("check the metadata with that of present in router")
+        try:
+            cmds = [
+               "wget http://%s/latest/meta-data" % router.guestipaddress,
+               "cat user-data",
+               ]
+            for c in cmds:
+                result = ssh.execute(c)
+                self.debug("%s: %s" % (c, result))
+        except Exception as e:
+            self.fail("Failed to SSH in Virtual machine: %s" % e)
+
+        res = str(result)
+        self.assertNotEqual(
+                         res,
+                         None,
+                         "Meta data should be returned from router"
+                        )
+        return
+
+    @attr(tags=["advanced", "intervlan"])
+    def test_10_expunge_instance_in_network(self):
+        """ Test expunge an instance in VPC networks
+        """
+
+        # Validate the following
+        # 1. Recover the virtual machines.
+        # 2. Vm should be in stopped state. State both the instances
+        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 3. Make sure that we are able to access google.com from this user Vm
+
+        self.debug("Validating if the network rules work properly or not?")
+        self.validate_network_rules()
+
+        self.debug("Delete virtual machines in account: %s" %
+                                                self.account.name)
+        try:
+            self.vm_1.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to destroy the virtual instances, %s" % e)
+
+        self.debug(
+            "Waiting for expunge interval to cleanup the network and VMs")
+
+        wait_for_cleanup(
+                         self.apiclient,
+                         ["expunge.interval", "expunge.delay"]
+                        )
+
+        # Check if the network rules still exists after Vm stop
+        self.debug("Checking if NAT rules ")
+        nat_rules = NATRule.list(
+                                 self.apiclient,
+                                 id=self.nat_rule.id,
+                                 listall=True
+                                 )
+        self.assertEqual(
+                         nat_rules,
+                         None,
+                         "List NAT rules should not return anything"
+                         )
+
+        lb_rules = LoadBalancerRule.list(
+                                         self.apiclient,
+                                         id=self.lb_rule.id,
+                                         listall=True
+                                         )
+        self.assertEqual(
+                         lb_rules,
+                         None,
+                         "List LB rules should not return anything"
+                         )
+        return

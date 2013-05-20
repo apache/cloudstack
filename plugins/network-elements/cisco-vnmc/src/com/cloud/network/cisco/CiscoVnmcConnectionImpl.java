@@ -729,7 +729,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     @Override
     public boolean createTenantVDCEgressAclRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String destStartIp, String destEndIp,
+            String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_EGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_EGRESS_ACL_RULE.getService();
@@ -740,8 +740,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "descr", "Egress ACL rule for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "actiontype", "permit");
         xml = replaceXmlValue(xml, "protocolvalue", protocol);
-        xml = replaceXmlValue(xml, "deststartip", destStartIp);
-        xml = replaceXmlValue(xml, "destendip", destEndIp);
+        xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
+        xml = replaceXmlValue(xml, "sourceendip", sourceEndIp);
         xml = replaceXmlValue(xml, "deststartport", destStartPort);
         xml = replaceXmlValue(xml, "destendport", destEndPort);
 
@@ -759,7 +759,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     @Override
     public boolean createTenantVDCEgressAclRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String destStartIp, String destEndIp) throws ExecutionException {
+            String protocol, String sourceStartIp, String sourceEndIp) throws ExecutionException {
         String xml = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getService();
         if (protocol.equalsIgnoreCase("all")) { // any protocol
@@ -773,8 +773,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
         xml = replaceXmlValue(xml, "descr", "Egress ACL rule for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "actiontype", "permit");
-        xml = replaceXmlValue(xml, "deststartip", destStartIp);
-        xml = replaceXmlValue(xml, "destendip", destEndIp);
+        xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
+        xml = replaceXmlValue(xml, "sourceendip", sourceEndIp);
 
         List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
         int order = 100;
@@ -795,7 +795,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     private String getNameForPFPortPool(String tenantName, String identifier) {
-        return "PFPort-" + tenantName + "-" + identifier;
+        return "PortPool-" + tenantName + "-" + identifier;
     }
 
     private String getDnForPFPortPool(String tenantName, String identifier) {
@@ -803,7 +803,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     private String getNameForPFIpPool(String tenantName, String identifier) {
-        return "PFIp-" + tenantName + "-" + identifier;
+        return "IpPool-" + tenantName + "-" + identifier;
     }
 
     private String getDnForPFIpPool(String tenantName, String identifier) {
@@ -1010,8 +1010,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natruledn", getDnForPFRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "natrulename", getNameForPFRule(tenantName, identifier));
         xml = replaceXmlValue(xml, "descr", "PF rule for Tenant VDC " + tenantName);
-        xml = replaceXmlValue(xml, "ippoolname", getNameForPFIpPool(tenantName, policyIdentifier + "-" + identifier));
-        xml = replaceXmlValue(xml, "portpoolname", getNameForPFPortPool(tenantName, policyIdentifier + "-" + identifier));
+        xml = replaceXmlValue(xml, "ippoolname", getNameForPFIpPool(tenantName, identifier));
+        xml = replaceXmlValue(xml, "portpoolname", getNameForPFPortPool(tenantName, identifier));
         xml = replaceXmlValue(xml, "ip", publicIp);
         xml = replaceXmlValue(xml, "startport", startPort);
         xml = replaceXmlValue(xml, "endport", endPort);
@@ -1088,7 +1088,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     private String getNameForDNatIpPool(String tenantName, String identifier) {
-        return "DNATIp-" + tenantName + "-" + identifier;
+        return "IpPool-" + tenantName + "-" + identifier;
     }
 
     private String getDnForDNatIpPool(String tenantName, String identifier) {
@@ -1135,7 +1135,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natruledn", getDnForDNatRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "natrulename", getNameForDNatRule(tenantName, identifier));
         xml = replaceXmlValue(xml, "descr", "DNAT rule for Tenant VDC " + tenantName);
-        xml = replaceXmlValue(xml, "ippoolname", getNameForDNatIpPool(tenantName, policyIdentifier + "-" + identifier));
+        xml = replaceXmlValue(xml, "ippoolname", getNameForDNatIpPool(tenantName, identifier));
         xml = replaceXmlValue(xml, "ip", publicIp);
 
         List<String> rules = listChildren(getDnForDNatPolicy(tenantName, policyIdentifier));

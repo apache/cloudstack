@@ -19,7 +19,6 @@ package org.apache.cloudstack.api;
 import com.cloud.exception.ResourceAllocationException;
 
 public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
-    @Parameter(name = "id", type = CommandType.LONG)
     private Long id;
 
     private String uuid;

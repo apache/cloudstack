@@ -58,7 +58,7 @@ public class UpdateClusterCmd extends BaseCmd {
     @Parameter(name=ApiConstants.CPU_OVERCOMMIT_RATIO, type = CommandType.STRING, description = "Value of cpu overcommit ratio")
     private String cpuovercommitratio;
 
-    @Parameter(name=ApiConstants.MEMORY_OVERCOMMIT_RATIO, type = CommandType.STRING, description = "Value of ram overcommit ratio")
+    @Parameter(name=ApiConstants.MEMORY_OVERCOMMIT_RATIO, type = CommandType.STRING, description = "Value of memory overcommit ratio")
     private String memoryovercommitratio;
 
 

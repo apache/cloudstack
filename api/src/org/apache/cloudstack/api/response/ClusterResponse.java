@@ -69,7 +69,7 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("cpuovercommitratio") @Param(description = "The cpu overcommit ratio of the cluster")
     private String cpuovercommitratio;
 
-    @SerializedName("memoryovercommitratio") @Param (description = "The ram overcommit ratio of the cluster")
+    @SerializedName("memoryovercommitratio") @Param (description = "The memory overcommit ratio of the cluster")
     private String memoryovercommitratio;
 
     public String getId() {
@@ -133,7 +133,7 @@ public class ClusterResponse extends BaseResponse {
     }
 
     public String getHypervisorType() {
-        return this.hypervisorType;
+        return hypervisorType;
     }
 
     public void setHypervisorType(String hypervisorType) {
@@ -161,20 +161,22 @@ public class ClusterResponse extends BaseResponse {
     }
 
     public void setCapacitites(ArrayList<CapacityResponse> arrayList) {
-        this.capacitites = arrayList;
-    }
-    public void setCpuovercommitratio(String cpuovercommitratio){
-        this.cpuovercommitratio= cpuovercommitratio;
-    }
-    public void setRamovercommitratio (String memoryOvercommitRatio){
-        this.memoryovercommitratio= memoryOvercommitRatio;
+        capacitites = arrayList;
     }
 
-    public String getCpuovercommitratio (){
+    public void setCpuOvercommitRatio(String cpuovercommitratio){
+        this.cpuovercommitratio= cpuovercommitratio;
+    }
+
+    public String getCpuOvercommitRatio(){
         return cpuovercommitratio;
     }
 
-    public String getRamovercommitratio (){
+    public void setMemoryOvercommitRatio(String memoryovercommitratio){
+        this.memoryovercommitratio= memoryovercommitratio;
+    }
+
+    public String getMemoryOvercommitRatio(){
         return memoryovercommitratio;
     }
 }

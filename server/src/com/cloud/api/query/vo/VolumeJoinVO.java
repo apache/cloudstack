@@ -246,6 +246,9 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String tagCustomer;
 
 
+    @Column(name="display_volume", updatable=true, nullable=false)
+    protected boolean displayVolume;
+
 
     public VolumeJoinVO() {
     }
@@ -387,6 +390,13 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    public boolean isDisplayVolume() {
+        return displayVolume;
+    }
+
+    public void setDisplayVolume(boolean displayVolume) {
+        this.displayVolume = displayVolume;
+    }
 
     @Override
     public String getAccountUuid() {

@@ -17,53 +17,6 @@
 package com.cloud.hypervisor.xen.resource;
 
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import com.cloud.agent.api.*;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import com.cloud.agent.api.to.*;
-import com.cloud.network.rules.FirewallRule;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -130,6 +83,7 @@ import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -137,6 +91,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmAnswer;
+import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupAnswer;
@@ -161,7 +117,11 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.routing.CreateIpAliasCommand;
+import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
@@ -195,6 +155,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -207,6 +168,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.DnsMasqConfigurator;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
@@ -226,6 +188,7 @@ import com.cloud.network.ovs.OvsFetchInterfaceCommand;
 import com.cloud.network.ovs.OvsSetTagAndFlowAnswer;
 import com.cloud.network.ovs.OvsSetTagAndFlowCommand;
 import com.cloud.network.ovs.OvsSetupBridgeCommand;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.storage.Storage;
@@ -280,6 +243,48 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.XenAPIObject;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -330,6 +335,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     //Hypervisor specific params with generic value, may need to be overridden for specific versions
     long _xs_memory_used = 128 * 1024 * 1024L; // xen hypervisor used 128 M
     double _xs_virtualization_factor = 63.0/64.0;  // 1 - virtualization overhead
+
+    //static min values for guests on xen
+    private static final long mem_128m = 134217728L;
 
     protected boolean _canBridgeFirewall = false;
     protected boolean _isOvs = false;
@@ -461,6 +469,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((SavePasswordCommand) cmd);
         } else if (clazz == DhcpEntryCommand.class) {
             return execute((DhcpEntryCommand) cmd);
+        } else if (clazz == CreateIpAliasCommand.class) {
+            return execute((CreateIpAliasCommand) cmd);
+        } else if (clazz == DnsMasqConfigCommand.class) {
+            return execute((DnsMasqConfigCommand) cmd);
+        } else if (clazz == DeleteIpAliasCommand.class) {
+            return execute((DeleteIpAliasCommand) cmd);
         } else if (clazz == VmDataCommand.class) {
             return execute((VmDataCommand) cmd);
         } else if (clazz == ReadyCommand.class) {
@@ -605,6 +619,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((NetworkRulesVmSecondaryIpCommand)cmd);
         } else if (clazz == ScaleVmCommand.class) {
             return execute((ScaleVmCommand) cmd);
+        } else if (clazz == PvlanSetupCommand.class) {
+            return execute((PvlanSetupCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -630,7 +646,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (vmSpec.getLimitCpuUse()) {
                 long utilization = 0; // max CPU cap, default is unlimited
                 utilization = ((long)speed * 100 * vmSpec.getCpus()) / _host.speed ;
-                vm.addToVCPUsParamsLive(conn, "cap", Long.toString(utilization));
+                //vm.addToVCPUsParamsLive(conn, "cap", Long.toString(utilization)); currently xenserver doesnot support Xapi to add VCPUs params live.
+                callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", Long.toString(utilization), "vmname", vmSpec.getName() );
             }
             //vm.addToVCPUsParamsLive(conn, "weight", Integer.toString(cpuWeight));
             callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", Integer.toString(cpuWeight), "vmname", vmSpec.getName() );
@@ -663,6 +680,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (VM vm : vms) {
                 VM.Record vmr = vm.getRecord(conn);
                 try {
+                    Map<String, String> hostParams = new HashMap<String, String>();
+                    hostParams = host.getLicenseParams(conn);
+                    if (hostParams.get("restrict_dmc").equalsIgnoreCase("true")) {
+                        throw new CloudRuntimeException("Host "+ _host.uuid + " does not support Dynamic Memory Control, so we cannot scale up the vm");
+                    }
                     scaleVM(conn, vm, vmSpec, host);
 
                 } catch (Exception e) {
@@ -1015,6 +1037,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } else if (nic.getBroadcastType() == BroadcastDomainType.Lswitch) {
             // Nicira Logical Switch
             return network.getNetwork();
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Pvlan) {
+            URI broadcastUri = nic.getBroadcastUri();
+            assert broadcastUri.getScheme().equals(BroadcastDomainType.Pvlan.scheme());
+            long vlan = Long.parseLong(NetUtils.getPrimaryPvlanFromUri(broadcastUri));
+            return enableVlanNetwork(conn, vlan, network);
         }
 
         throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());
@@ -1185,8 +1212,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
+        if (!templates.iterator().hasNext()) {
+            throw new CloudRuntimeException("No matching OS type found for starting a [" + vmSpec.getOs()
+                    + "] VM on host " + host.getHostname(conn));
+        }
         VM template = templates.iterator().next();
-
         VM vm = template.createClone(conn, vmSpec.getName());
         VM.Record vmr = vm.getRecord(conn);
         if (s_logger.isDebugEnabled()) {
@@ -1460,6 +1490,55 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.warn("Destroy temp dom0 vif " + vifName + "failed", e);
             }
         }
+    }
+
+    private Answer execute(PvlanSetupCommand cmd) {
+    	Connection conn = getConnection();
+    	
+    	String primaryPvlan = cmd.getPrimary();
+    	String isolatedPvlan = cmd.getIsolated();
+    	String op = cmd.getOp();
+    	String dhcpName = cmd.getDhcpName();
+    	String dhcpMac = cmd.getDhcpMac();
+    	String dhcpIp = cmd.getDhcpIp();
+    	String vmMac = cmd.getVmMac();
+    	String networkTag = cmd.getNetworkTag();
+    	
+    	XsLocalNetwork nw = null;
+    	String nwNameLabel = null;
+    	try {
+			nw = getNativeNetworkForTraffic(conn, TrafficType.Guest, networkTag);
+			nwNameLabel = nw.getNetwork().getNameLabel(conn);
+		} catch (XenAPIException e) {
+			s_logger.warn("Fail to get network", e);
+    		return new Answer(cmd, false, e.toString());
+		} catch (XmlRpcException e) {
+			s_logger.warn("Fail to get network", e);
+    		return new Answer(cmd, false, e.toString());
+		}
+    	
+    	String result = null;
+    	if (cmd.getType() == PvlanSetupCommand.Type.DHCP) {
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "nw-label", nwNameLabel,
+    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "dhcp-name", dhcpName,
+    				"dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac);
+    		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+    			s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
+    			return new Answer(cmd, false, result);
+    		} else {
+    			s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
+    		}
+    	} else if (cmd.getType() == PvlanSetupCommand.Type.VM) {
+    		result = callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm", "op", op, "nw-label", nwNameLabel,
+    				"primary-pvlan", primaryPvlan, "isolated-pvlan", isolatedPvlan, "vm-mac", vmMac);
+    		if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+    			s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
+    			return new Answer(cmd, false, result);
+    		} else {
+    			s_logger.info("Programmed pvlan for vm with mac " + vmMac);
+    		}
+    	}
+    	return new Answer(cmd, true, result);
     }
 
     @Override
@@ -1890,6 +1969,68 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new Answer(cmd);
     }
 
+    protected Answer execute(final CreateIpAliasCommand cmd) {
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
+        String args=routerIp+" ";
+        for (IpAliasTO ipaliasto : ipAliasTOs) {
+            args = args + ipaliasto.getAlias_count()+":"+ipaliasto.getRouterip()+":"+ipaliasto.getNetmask()+"-";
+        }
+        String result = callHostPlugin(conn, "vmops", "createipAlias", "args", args);
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "CreateIPAliasCommand failed\n");
+        }
+
+        return  new Answer(cmd);
+    }
+
+    protected Answer execute(final DeleteIpAliasCommand cmd) {
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
+        String args=routerIp+" ";
+        for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
+            args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
+        }
+        args = args + " " ;
+        List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
+        for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
+            args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
+        }
+        String result = callHostPlugin(conn, "vmops", "deleteipAlias", "args", args);
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "DeleteipAliasCommand failed\n");
+        }
+
+        return  new Answer(cmd);
+    }
+
+    protected Answer execute(final DnsMasqConfigCommand cmd) {
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        DnsMasqConfigurator configurator = new DnsMasqConfigurator();
+        String [] config = configurator.generateConfiguration(cmd);
+        String tmpConfigFilePath = "/tmp/"+ routerIp.replace(".","-")+".cfg";
+        String tmpConfigFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpConfigFileContents += config[i];
+            tmpConfigFileContents += "\n";
+        }
+
+        String result = callHostPlugin(conn, "vmops", "createFileInDomr", "filepath", tmpConfigFilePath, "filecontents", tmpConfigFileContents, "domrip" ,routerIp);
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "DnsMasqConfigCommand failed to create DnsMasq cfg file.");
+        }
+        result = callHostPlugin(conn, "vmops", "configdnsmasq", "routerip", routerIp, "filepath", tmpConfigFilePath);
+
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "DnsMasqconfigCommand failed");
+        }
+
+        return new Answer(cmd);
+
+    }
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
         if ( cmd.getVpcId() != null ) {
             return VPCLoadBalancerConfig(cmd);
@@ -2255,7 +2396,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 result = callHostPlugin(conn, "vmops", "routerProxy", "args", snatArgs);
                 if (result == null || result.isEmpty()) {
-                    throw new InternalErrorException("Xen plugin \"vcp_privateGateway\" failed.");
+                    throw new InternalErrorException("Xen plugin \"vpc_privateGateway\" failed.");
                 }
             }
 
@@ -3369,8 +3510,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    /**
+     * WARN: static-min <= dynamic-min <= dynamic-max <= static-max
+     * @see XcpServerResource#setMemory(com.xensource.xenapi.Connection, com.xensource.xenapi.VM, long, long)
+     * @param conn
+     * @param vm
+     * @param minMemsize
+     * @param maxMemsize
+     * @throws XmlRpcException
+     * @throws XenAPIException
+     */
     protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
-        vm.setMemoryLimits(conn, maxMemsize, maxMemsize, minMemsize, maxMemsize);
+        vm.setMemoryLimits(conn, mem_128m, maxMemsize, minMemsize, maxMemsize);
     }
 
     protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
@@ -4165,7 +4316,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * @throws XenAPIException
      * @throws XmlRpcException
      * 
-     * @see enableVlanNetwork
+     * @see CitrixResourceBase#enableVlanNetwork
      */
     protected XsLocalNetwork getNetworkByName(Connection conn, String name) throws XenAPIException, XmlRpcException {
         Set<Network> networks = Network.getByNameLabel(conn, name);
@@ -8091,6 +8242,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
+
         try {
             VM router = getVM(conn, routerName);
             String [][] rules = cmd.generateFwRules();
@@ -8101,13 +8254,33 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 sb.append(aclRules[i]).append(',');
             }
 
+            if (privateGw != null) {
+                s_logger.debug("Private gateway configuration is set");
+            }
             NicTO nic = cmd.getNic();
             VIF vif = getVifByMac(conn, router, nic.getMac());
+
+            if (privateGw != null) {
+                s_logger.debug("Private gateway configuration is set");
+                String args = "vpc_privategw_acl.sh " + routerIp;
+                args += " -d " + "eth" + vif.getDevice(conn);
+                args += " -a " + sb.toString();
+
+                callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                if (callResult == null || callResult.isEmpty()) {
+                    //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+                    for (int i=0; i < results.length; i++) {
+                        results[i] = "Failed";
+                    }
+                    return new SetNetworkACLAnswer(cmd, false, results);
+                }
+            } else {
             String args = "vpc_acl.sh " + routerIp;
             args += " -d " + "eth" + vif.getDevice(conn);
             args += " -i " + nic.getIp();
             args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
             args += " -a " + sb.toString();
+
             callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
             if (callResult == null || callResult.isEmpty()) {
                 //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
@@ -8115,6 +8288,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     results[i] = "Failed";
                 }
                 return new SetNetworkACLAnswer(cmd, false, results);
+            }
             }
             return new SetNetworkACLAnswer(cmd, true, results);
         } catch (Exception e) {

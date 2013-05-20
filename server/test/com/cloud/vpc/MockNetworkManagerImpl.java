@@ -66,6 +66,7 @@ import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
@@ -310,7 +311,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
-            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr) {
+                                      User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr, Boolean displayNetwork) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -701,7 +702,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined,
             DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
-            ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException {
+            ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isNetworkDisplayEnabled) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -866,7 +867,8 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway,
             String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String gatewayv6, String cidrv6)
+                                      PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String gatewayv6, String cidrv6,
+                                      Boolean displayNetworkEnabled, String isolatedPvlan)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
@@ -1406,9 +1408,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
 
-
-
-
     @Override
     public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc,
             Pod pod, Account caller, String requestedIp)
@@ -1418,13 +1417,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
 
-
-
-
-
-
-
-
     @Override
     public boolean removeVmSecondaryIpsOfNic(long nicId) {
         // TODO Auto-generated method stub
@@ -1432,13 +1424,20 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
 
-
-
-
     @Override
     public NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public DhcpServiceProvider getDhcpServiceProvider(Network network) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
 

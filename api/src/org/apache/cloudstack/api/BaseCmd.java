@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroupService;
+import com.cloud.server.ResourceMetaDataService;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
@@ -53,7 +54,7 @@ import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleService;
 import com.cloud.network.firewall.FirewallService;
-import com.cloud.network.firewall.NetworkACLService;
+import com.cloud.network.vpc.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
@@ -133,6 +134,7 @@ public abstract class BaseCmd {
     @Inject public IdentityService _identityService;
     @Inject public StorageNetworkService _storageNetworkService;
     @Inject public TaggedResourceService _taggedResourceService;
+    @Inject public ResourceMetaDataService _resourceMetaDataService;
     @Inject public VpcService _vpcService;
     @Inject public NetworkACLService _networkACLService;
     @Inject public Site2SiteVpnService _s2sVpnService;

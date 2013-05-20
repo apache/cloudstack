@@ -77,8 +77,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
             description="the ID of the availability zone")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.DISPLAY_VOLUME, type=CommandType.BOOLEAN, description="an optional field, whether to display the volume to the end user or not.")
+    private Boolean displayVolume;
 
-    /////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
@@ -113,6 +115,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 
     private Long getProjectId() {
         return projectId;
+    }
+
+    public Boolean getDisplayVolume() {
+        return displayVolume;
     }
 
     /////////////////////////////////////////////////////

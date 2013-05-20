@@ -22,6 +22,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
+from nose.plugins.attrib import attr
 #Import System modules
 
 class TestUpdateConfigWithScope(cloudstackTestCase):
@@ -31,6 +32,7 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
 
+    @attr(tags=["simulator", "devcloud", "basic", "advanced"])
     def test_UpdateConfigParamWithScope(self):
         """
         test update configuration setting at zone level scope
@@ -54,7 +56,10 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
         self.assertNotEqual(len(listConfigurationsResponse), 0, "Check if the list API \
                             returns a non-empty response")
 
-        configParam = listConfigurationsResponse[7]
+        for item in listConfigurationsResponse:
+            if item.name == updateConfigurationResponse.name:
+                configParam = item
+
         self.assertEqual(configParam.value, updateConfigurationResponse.value, "Check if the update API returned \
                          is the same as the one we got in the list API")
 

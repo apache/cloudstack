@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -133,6 +134,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.s3.S3Manager;
@@ -301,6 +303,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    VolumeDetailsDao _volDetailDao;
     @Inject
     ManagementServer _msServer;
     @Inject
@@ -817,6 +821,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Account caller = UserContext.current().getCaller();
 
         long ownerId = cmd.getEntityOwnerId();
+        Boolean displayVolumeEnabled = cmd.getDisplayVolume();
 
         // permission check
         _accountMgr.checkAccess(caller, null, true,
@@ -889,6 +894,14 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
             if (diskOffering.getDiskSize() > 0) {
                 size = diskOffering.getDiskSize();
+            }
+
+            if(displayVolumeEnabled == null){
+                displayVolumeEnabled = true;
+            } else{
+                if(!_accountMgr.isRootAdmin(caller.getType())){
+                    throw new PermissionDeniedException( "Cannot update parameter displayvolume, only admin permitted ");
+                }
             }
 
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
@@ -971,6 +984,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         volume.setUpdated(new Date());
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller
                 .getDomainId());
+        volume.setDisplayVolume(displayVolumeEnabled);
         if (parentVolume != null) {
             volume.setTemplateId(parentVolume.getTemplateId());
         }  else {
@@ -1780,6 +1794,23 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
         return newVol;
     }
+
+    @Override
+    public Volume updateVolume(UpdateVolumeCmd cmd){
+        Long volumeId = cmd.getId();
+        String path = cmd.getPath();
+
+        if(path == null){
+            throw new InvalidParameterValueException("Failed to update the volume as path was null");
+        }
+
+        VolumeVO volume = ApiDBUtils.findVolumeById(volumeId);
+        volume.setPath(path);
+        _volumeDao.update(volumeId, volume);
+
+        return volume;
+    }
+
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async = true)

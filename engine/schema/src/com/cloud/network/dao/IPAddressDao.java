@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.network.dao;
 
-import java.util.List;
-
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
+
+import java.util.List;
 
 public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	
@@ -68,4 +68,8 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
     IPAddressVO findByAssociatedVmIdAndVmIp(long vmId, String vmIp);
 
     IPAddressVO findByIpAndNetworkId(long networkId, String ipAddress);
+
+    IPAddressVO findByIpAndVlanId(String ipAddress, long vlanid);
+
+    long countFreeIpsInVlan(long vlanDbId);
 }

@@ -745,11 +745,11 @@ public class VolumeServiceImpl implements VolumeService {
     protected Void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
         VolumeObject vo = (VolumeObject)context.volume;
-        /*if (result.isFailed()) {
+        if (result.isFailed()) {
             vo.stateTransit(Volume.Event.OperationFailed);
         } else {
             vo.stateTransit(Volume.Event.OperationSucceeded);
-        }*/
+        }
         VolumeApiResult res = new VolumeApiResult(vo);
         context.future.complete(res);
         return null;
@@ -770,8 +770,7 @@ public class VolumeServiceImpl implements VolumeService {
 		}
 		 CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volume, future);
 	        AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
-	        caller.setCallback(caller.getTarget().registerVolumeCallback(null, null))
-	        .setContext(context);
+        caller.setCallback(caller.getTarget().resizeVolumeCallback(caller, context)).setContext(context);
 		volume.getDataStore().getDriver().resize(volume, caller);
 		return future;
 	}

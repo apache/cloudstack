@@ -24,13 +24,11 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=DeploymentPlanner.class)
-public class UserConcentratedPodPlanner extends FirstFitPlanner implements DeploymentPlanner {
+public class UserConcentratedPodPlanner extends FirstFitPlanner implements DeploymentClusterPlanner {
 
     private static final Logger s_logger = Logger.getLogger(UserConcentratedPodPlanner.class);
     
@@ -140,16 +138,4 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
         }
         
     }
-
-    @Override
-    public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
-        if(vm.getHypervisorType() != HypervisorType.BareMetal){
-            //check the allocation strategy
-            if (_allocationAlgorithm != null && (_allocationAlgorithm.equals(AllocationAlgorithm.userconcentratedpod_random.toString()) || _allocationAlgorithm.equals(AllocationAlgorithm.userconcentratedpod_firstfit.toString()))){
-                return true;
-            }
-        }
-        return false;
-    }
-
 }

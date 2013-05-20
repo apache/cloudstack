@@ -27,6 +27,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -77,11 +79,14 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -121,6 +126,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     protected VMSnapshotDao _vmSnapshotDao;
     @Inject
     protected UserVmDao _userVMDao;
+    @Inject
+    protected UserVmDetailsDao _userVmDetailsDao;
 
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
@@ -131,6 +138,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     private boolean _stopped;
     long _extraBytesPerVolume = 0;
     private float _storageOverProvisioningFactor = 1.0f;
+
+    @Inject
+    MessageBus _messageBus;
+
+    private static final String MESSAGE_RESERVED_CAPACITY_FREED_FLAG = "Message.ReservedCapacityFreed.Flag";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -165,10 +177,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         ServiceOfferingVO svo = _offeringsDao.findById(vm.getServiceOfferingId());
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
         CapacityVO capacityMemory = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
-        Long clusterId=null;
+        Long clusterId = null;
         if (hostId != null) {
-        HostVO host = _hostDao.findById(hostId);
-        clusterId= host.getClusterId();
+            HostVO host = _hostDao.findById(hostId);
+            clusterId = host.getClusterId();
         }
         if (capacityCpu == null || capacityMemory == null || svo == null) {
             return false;
@@ -251,8 +263,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         long hostId = vm.getHostId();
         HostVO host = _hostDao.findById(hostId);
         long clusterId = host.getClusterId();
-        float cpuOvercommitRatio =Float.parseFloat(_clusterDetailsDao.findDetail(clusterId,"cpuOvercommitRatio").getValue());
-        float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId,"memoryOvercommitRatio").getValue());
+        float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio").getValue());
+        float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio").getValue());
 
         ServiceOfferingVO svo = _offeringsDao.findById(vm.getServiceOfferingId());
 
@@ -336,7 +348,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOvercommitRatio,float memoryOvercommitRatio, boolean considerReservedCapacity) {
+    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOvercommitRatio, float memoryOvercommitRatio, boolean considerReservedCapacity) {
         boolean hasCapacity = false;
 
         if (s_logger.isDebugEnabled()) {
@@ -369,7 +381,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         long actualTotalCpu = capacityCpu.getTotalCapacity();
         long actualTotalMem = capacityMem.getTotalCapacity();
         long totalCpu = (long) (actualTotalCpu * cpuOvercommitRatio );
-        long totalMem = (long) (actualTotalMem *memoryOvercommitRatio );
+        long totalMem = (long) (actualTotalMem * memoryOvercommitRatio);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Hosts's actual total CPU: " + actualTotalCpu + " and CPU after applying overprovisioning: " + totalCpu);
         }
@@ -552,6 +564,20 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
                 reservedMemory += so.getRamSize() * 1024L * 1024L;
                 reservedCpu += so.getCpu() * so.getSpeed();
+            } else {
+                // signal if not done already, that the VM has been stopped for skip.counting.hours,
+                // hence capacity will not be reserved anymore.
+                UserVmDetailVO messageSentFlag = _userVmDetailsDao.findDetail(vm.getId(), MESSAGE_RESERVED_CAPACITY_FREED_FLAG);
+                if (messageSentFlag == null || !Boolean.valueOf(messageSentFlag.getValue())) {
+                    _messageBus.publish(_name, "VM_ReservedCapacity_Free", PublishScope.LOCAL, vm);
+
+                    if (vm.getType() == VirtualMachine.Type.User) {
+                        UserVmVO userVM = _userVMDao.findById(vm.getId());
+                        _userVMDao.loadDetails(userVM);
+                        userVM.setDetail(MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "true");
+                        _userVMDao.saveDetails(userVM);
+                    }
+                }
             }
         }
 
@@ -681,11 +707,23 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
             boolean fromLastHost = false;
-            if (vm.getLastHostId() == vm.getHostId()) {
+            if (vm.getHostId().equals(vm.getLastHostId())) {
                 s_logger.debug("VM starting again on the last host it was stopped on");
                 fromLastHost = true;
             }
             allocateVmCapacity(vm, fromLastHost);
+        }
+
+        if (newState == State.Stopped) {
+            if (vm.getType() == VirtualMachine.Type.User) {
+
+                UserVmVO userVM = _userVMDao.findById(vm.getId());
+                _userVMDao.loadDetails(userVM);
+                // free the message sent flag if it exists
+                userVM.setDetail(MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
+                _userVMDao.saveDetails(userVM);
+
+            }
         }
 
         return true;
@@ -706,8 +744,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             capacityCPU.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
             capacityCPU.addAnd("capacityType", SearchCriteria.Op.EQ, CapacityVO.CAPACITY_TYPE_CPU);
             List<CapacityVO> capacityVOCpus = _capacityDao.search(capacitySC, null);
-            Float cpuovercommitratio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(),"cpuOvercommitRatio").getValue());
-            Float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(),"memoryOvercommitRatio").getValue());
+            Float cpuovercommitratio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(), "cpuOvercommitRatio").getValue());
+            Float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(), "memoryOvercommitRatio").getValue());
 
             if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
                 CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
@@ -740,7 +778,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
             if (capacityVOMems != null && !capacityVOMems.isEmpty()) {
                 CapacityVO CapacityVOMem = capacityVOMems.get(0);
-                long newTotalMem = (long)((server.getTotalMemory())* memoryOvercommitRatio);
+                long newTotalMem = (long) ((server.getTotalMemory()) * memoryOvercommitRatio);
                 if (CapacityVOMem.getTotalCapacity() <= newTotalMem
                         || (CapacityVOMem.getUsedCapacity() + CapacityVOMem.getReservedCapacity() <= newTotalMem)) {
                     CapacityVOMem.setTotalCapacity(newTotalMem);
