@@ -242,6 +242,7 @@ PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, Junip
         // Set capabilities for Firewall service
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp,all");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         firewallCapabilities.put(Capability.SupportedTrafficDirection, "ingress, egress");

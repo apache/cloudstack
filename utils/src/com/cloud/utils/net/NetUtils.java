@@ -61,6 +61,8 @@ public class NetUtils {
     public final static String ALL_PROTO = "all";
 
     public final static String ALL_CIDRS = "0.0.0.0/0";
+    public final static int PORT_RANGE_MIN = 0;
+    public final static int PORT_RANGE_MAX = 65535;
 
     public final static int DEFAULT_AUTOSCALE_VM_DESTROY_TIME = 2 * 60; // Grace period before Vm is destroyed
     public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
