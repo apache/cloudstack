@@ -47,6 +47,7 @@ import java.util.Set;
 
 @Local(value=ServerResource.class)
 public class XenServer56FP1Resource extends XenServer56Resource {
+    private static final long mem_128m = 134217728L;
     private static final Logger s_logger = Logger.getLogger(XenServer56FP1Resource.class);
     
     public XenServer56FP1Resource() {
@@ -126,41 +127,46 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
 
-        VM.Record record = template.getRecord(conn);
-        record.affinity = host;
-        record.otherConfig.remove("disks");
-        record.otherConfig.remove("default_template");
-        record.otherConfig.remove("mac_seed");
-        record.isATemplate = false;
-        record.nameLabel = vmSpec.getName();
-        record.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
-        record.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
-        record.memoryDynamicMin = vmSpec.getMinRam();
-        record.memoryDynamicMax = vmSpec.getMaxRam();
-        Map<String, String> hostParams = new HashMap<String, String>();
-        hostParams = host.getLicenseParams(conn);
-        if (hostParams.get("restrict_dmc").equalsIgnoreCase("false")) {
-            record.memoryStaticMin = vmSpec.getMinRam();
-            record.memoryStaticMax = vmSpec.getMaxRam();
+        VM.Record vmr = template.getRecord(conn);
+        vmr.affinity = host;
+        vmr.otherConfig.remove("disks");
+        vmr.otherConfig.remove("default_template");
+        vmr.otherConfig.remove("mac_seed");
+        vmr.isATemplate = false;
+        vmr.nameLabel = vmSpec.getName();
+        vmr.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
+        vmr.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
+
+        if (isDmcEnabled(conn, host)) {
+            //scaling is allowed
+            vmr.memoryStaticMin = mem_128m; //128MB
+            //TODO: Remove hardcoded 8GB and assign proportionate to ServiceOffering and mem overcommit ratio
+            vmr.memoryStaticMax = 8589934592L; //8GB
+            vmr.memoryDynamicMin = vmSpec.getMinRam();
+            vmr.memoryDynamicMax = vmSpec.getMaxRam();
         } else {
-            s_logger.warn("Host "+ _host.uuid + " does not support Dynamic Memory Control, so we cannot scale up the vm");
-            record.memoryStaticMin = 134217728L; //128MB
-            record.memoryStaticMax = 8589934592L; //8GB
+            //scaling disallowed, set static memory target
+            if (s_logger.isDebugEnabled()) {
+                s_logger.warn("Host "+ host.getHostname(conn) +" does not support dynamic scaling");
+            }
+            vmr.memoryStaticMin = vmSpec.getMinRam();
+            vmr.memoryStaticMax = vmSpec.getMaxRam();
+            vmr.memoryDynamicMin = vmSpec.getMinRam();
+            vmr.memoryDynamicMax = vmSpec.getMaxRam();
         }
 
         if (guestOsTypeName.toLowerCase().contains("windows")) {
-            record.VCPUsMax = (long) vmSpec.getCpus();
+            vmr.VCPUsMax = (long) vmSpec.getCpus();
         } else {
-            record.VCPUsMax = 32L;
+            vmr.VCPUsMax = 32L;
         }
 
-        record.VCPUsAtStartup = (long) vmSpec.getCpus();
-        record.consoles.clear();
+        vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
+        vmr.consoles.clear();
 
-        VM vm = VM.create(conn, record);
-        VM.Record vmr = vm.getRecord(conn);
+        VM vm = VM.create(conn, vmr);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Created VM " + vmr.uuid + " for " + vmSpec.getName());
+            s_logger.debug("Created VM " + vm.getUuid(conn) + " for " + vmSpec.getName());
         }
 
         Map<String, String> vcpuParams = new HashMap<String, String>();
@@ -227,4 +233,17 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         return vm;
     }
 
+    /**
+     * When Dynamic Memory Control (DMC) is enabled -
+     * xen allows scaling the guest memory while the guest is running
+     *
+     * This is determined by the 'restrict_dmc' option on the host.
+     * When false, scaling is allowed hence DMC is enabled
+     */
+    @Override
+    protected boolean isDmcEnabled(Connection conn, Host host) throws XenAPIException, XmlRpcException {
+        Map<String, String> hostParams = new HashMap<String, String>();
+        hostParams = host.getLicenseParams(conn);
+        return hostParams.get("restrict_dmc").equalsIgnoreCase("false");
+    }
 }

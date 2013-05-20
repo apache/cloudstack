@@ -3523,6 +3523,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vm.setMemoryLimits(conn, mem_128m, maxMemsize, minMemsize, maxMemsize);
     }
 
+    /**
+     * When Dynamic Memory Control (DMC) is enabled -
+     * xen allows scaling the guest memory while the guest is running
+     *
+     * By default this is disallowed, override the specific xen resource
+     * if this is enabled
+     */
+    protected boolean isDmcEnabled(Connection conn, Host host) throws XenAPIException, XmlRpcException {
+        return false;
+    }
+
     protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
         long beginTime = System.currentTimeMillis();
         while (task.getStatus(c) == Types.TaskStatusType.PENDING) {

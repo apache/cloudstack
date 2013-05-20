@@ -24,6 +24,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 import org.apache.log4j.Logger;
@@ -38,7 +39,6 @@ import java.util.List;
 public class XcpServerResource extends CitrixResourceBase {
     private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
     private static final long mem_32m = 33554432L;
-
     private String version;
 
     public XcpServerResource() {
@@ -147,5 +147,12 @@ public class XcpServerResource extends CitrixResourceBase {
                     + ", dynamicMin: " + minMemsize + ", dynamicMax:" + maxMemsize+"]]");
         }
         vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
+    }
+
+    @Override
+    protected boolean isDmcEnabled(Connection conn, Host host) {
+        //Dynamic Memory Control (DMC) is a technology provided by Xen Cloud Platform (XCP), starting from the 0.5 release
+        //For the supported XCPs dmc is default enabled, XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x;
+        return true;
     }
 }
