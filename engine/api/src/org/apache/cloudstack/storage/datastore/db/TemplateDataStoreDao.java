@@ -37,6 +37,8 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
 
     public void deletePrimaryRecordsForStore(long id);
 
+    public void deletePrimaryRecordsForTemplate(long templateId);
+
     List<TemplateDataStoreVO> listByTemplateStore(long templateId, long storeId);
 
     List<TemplateDataStoreVO> listByTemplateStoreStatus(long templateId, long storeId, State... states);

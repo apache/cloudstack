@@ -1456,6 +1456,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (privateTemplate == null) {
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
+                // Remove the template_store_ref record first, otherwise, we cannot remove the template record due to FK constraints
+                this._tmplStoreDao.deletePrimaryRecordsForTemplate(templateId);
                 // Remove the template record
                 this._tmpltDao.expunge(templateId);
 

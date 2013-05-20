@@ -182,6 +182,15 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         txn.commit();
     }
 
+    @Override
+    public void deletePrimaryRecordsForTemplate(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
+        sc.setParameters("template_id", templateId);
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        expunge(sc);
+        txn.commit();
+    }
 
     @Override
     public List<TemplateDataStoreVO> listByTemplateStore(long templateId, long storeId) {
