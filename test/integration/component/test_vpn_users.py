@@ -396,7 +396,7 @@ class TestVPNUsers(cloudstackTestCase):
                                     DomainName=self.account.domain)
 
         self.debug("Adding new user to VPN as a global admin: %s" %
-                                                            admin.account.name)
+                                                            admin.name)
         try:
             self.create_VPN_Users(api_client=api_client)
         except Exception as e:
@@ -438,7 +438,7 @@ class TestVPNUsers(cloudstackTestCase):
                                     DomainName=self.account.domain)
 
         self.debug("Adding new user to VPN as a domain admin: %s" %
-                                                            admin.account.name)
+                                                            admin.name)
         try:
             self.create_VPN_Users(api_client=api_client)
         except Exception as e:

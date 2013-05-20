@@ -214,7 +214,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
                          account=cls.account.name,
-                         domainid=cls.account.account.domainid
+                         domainid=cls.account.domainid
                          )
 
         cls._cleanup.append(cls.service_offering)
@@ -361,7 +361,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -436,7 +436,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -483,7 +483,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -499,7 +499,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -520,7 +520,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -548,7 +548,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -581,7 +581,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         router = routers[0]
@@ -639,7 +639,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
                          account=cls.account.name,
-                         domainid=cls.account.account.domainid
+                         domainid=cls.account.domainid
                          )
 
         cls.nw_off = NetworkOffering.create(
@@ -656,7 +656,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                 cls.apiclient,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.1.1',
@@ -668,7 +668,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                   cls.apiclient,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -676,7 +676,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                   cls.apiclient,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -686,7 +686,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                   cls.apiclient,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -694,14 +694,14 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   cls.apiclient,
                                   account=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   listall=True
                                   )
         public_ip_1 = PublicIPAddress.create(
                                 cls.apiclient,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -727,7 +727,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                 cls.apiclient,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -748,7 +748,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                     listall=True,
                                     isstaticnat=True,
                                     account=cls.account.name,
-                                    domainid=cls.account.account.domainid
+                                    domainid=cls.account.domainid
                                   )
 #        cls.assertEqual(
 #                         isinstance(public_ips, list),
@@ -766,7 +766,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                 cls.apiclient,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -779,7 +779,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                     accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
-                                    domainid=cls.account.account.domainid
+                                    domainid=cls.account.domainid
                                 )
 
         lb_rule.assign(cls.apiclient, [vm_3])
@@ -961,13 +961,13 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         public_ips = PublicIPAddress.list(
                                           self.apiclient,
                                           account=self.account.name,
-                                          domainid=self.account.account.domainid,
+                                          domainid=self.account.domainid,
                                           listall=True
                                          )
         for vm, public_ip in zip(vms, public_ips):
@@ -1086,7 +1086,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -1180,7 +1180,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -1247,7 +1247,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -1263,7 +1263,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -1306,7 +1306,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -1351,7 +1351,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -1384,7 +1384,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         router = routers[0]

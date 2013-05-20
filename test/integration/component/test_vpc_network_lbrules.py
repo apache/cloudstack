@@ -244,7 +244,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                         vpcofferingid=self.vpc_off.id,
                         zoneid=self.zone.id,
                         account=self.account.name,
-                        domainid=self.account.account.domainid
+                        domainid=self.account.domainid
                         )
         return
 
@@ -264,7 +264,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def get_Router_For_VPC(self):
         routers = list_routers(self.apiclient,
                             account=self.account.name,
-                            domainid=self.account.account.domainid,
+                            domainid=self.account.domainid,
                             )
         self.assertEqual(isinstance(routers, list),
                         True,
@@ -287,7 +287,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
         routers = list_routers(self.apiclient,
                             account=self.account.name,
-                            domainid=self.account.account.domainid,
+                            domainid=self.account.domainid,
                             )
         self.assertEqual(isinstance(routers, list),
                         True,
@@ -308,7 +308,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
         routers = list_routers(self.apiclient,
                             account=self.account.name,
-                            domainid=self.account.account.domainid,
+                            domainid=self.account.domainid,
                             zoneid=self.zone.id
                             )
         self.assertEqual(isinstance(routers, list),
@@ -391,7 +391,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         public_ip = PublicIPAddress.create(self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=None, #network.id,
                                 vpcid=self.vpc.id
                                 )
@@ -420,7 +420,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                         vpcofferingid=vpc_off.id,
                         zoneid=self.zone.id,
                         account=self.account.name,
-                        domainid=self.account.account.domainid
+                        domainid=self.account.domainid
                         )
         return vpc
 
@@ -442,7 +442,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             obj_network = Network.create(self.apiclient,
                                     self.services["network"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkofferingid=nw_off.id,
                                     zoneid=self.zone.id,
                                     gateway=gateway,
@@ -460,7 +460,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     networkids=[str(network.id)],
                                     hostid=host_id
@@ -487,7 +487,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     accountid=self.account.name,
                                     networkid=network.id,
                                     vpcid=self.vpc.id,
-                                    domainid=self.account.account.domainid
+                                    domainid=self.account.domainid
                                 )
         self.debug("Adding virtual machines %s and %s to LB rule" % (vmarray))
         lb_rule.assign(self.apiclient, vmarray)
