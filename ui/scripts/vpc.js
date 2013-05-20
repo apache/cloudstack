@@ -36,6 +36,17 @@
     },
     fields: {
       'cidrlist': { edit: true, label: 'label.cidr' },
+      action: {
+        label: 'Action',
+        select: function(args) {
+          args.response.success({
+            data: [
+              { name: 'Allow', description: 'Allow' },
+              { name: 'Deny', description: 'Deny' }
+            ]
+          });
+        }
+      },
       'protocol': {
         label: 'label.protocol',
         select: function(args) {
