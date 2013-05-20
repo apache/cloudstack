@@ -551,6 +551,7 @@
           id: 'aclLists',
           fields: {
             name: { label: 'label.name' },
+            description: {label:'Description'},
             id: { label: 'id' }
           },
           dataProvider: function(args) {
@@ -607,30 +608,27 @@
           detailView: {
             isMaximized: true,
             tabs: {
-            /*  details: {
               
+             details: {
+
                 title: 'label.details',
                 fields: [
                   {
                     name: { label: 'label.name', isEditable: true },
-                    id: {label:'id'}
+                    description: {label:'Description'},
+                    id:{label:'id'}
                   }
- 
+
                 ],
                 dataProvider: function(args) {
-                 $.ajax({
-                  url:createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
-                  success:function(json){
-                    var items = json.listnetworkaclsresponse.networkacl;
-                    args.response.success({
-                      data:items
-                    });
-                  }
-                 });
-               }
-              
-              },*/
+                     var items = args.context.aclLists[0];
+                     args.response.success({
+                        data: items
 
+                    });
+                }
+               },
+              
               aclRules: {
                 title: 'ACL List Rules',
                 custom: function(args) {
