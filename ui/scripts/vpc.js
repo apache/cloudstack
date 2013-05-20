@@ -189,8 +189,7 @@
         $.ajax({
           url: createURL('createNetworkACL'),
           data: $.extend(args.data, {
-            networkid: args.context.networks ?
-              args.context.networks[0].id : args.data.networkid
+            aclid: args.context.aclLists[0].id
           }),
           dataType: 'json',
           success: function(data) {
@@ -198,10 +197,11 @@
               _custom: {
                 jobId: data.createnetworkaclresponse.jobid,
                 getUpdatedItem: function(json) {
-                  var networkName = $multi.find('select[name=networkid] option[value=' + args.data.networkid + ']').html();
-                  var data = $.extend(json.queryasyncjobresultresponse.jobresult.networkacl, {
+                  //var networkName = $multi.find('select[name=networkid] option[value=' + args.data.networkid + ']').html();
+                 /* var data = $.extend(json.queryasyncjobresultresponse.jobresult.networkacl, {
                     networkid: networkName
-                  });
+                  });*/
+                  var data = json.queryasyncjobresultresponse.jobresult.networkacl; 
                   var aclRules = $multi.data('acl-rules');
                   
                   aclRules.push(data);
@@ -551,34 +551,88 @@
           id: 'aclLists',
           fields: {
             name: { label: 'label.name' },
-            total: { label: 'label.total' }
+            id: { label: 'id' }
           },
           dataProvider: function(args) {
-            args.response.success({
-              data: [
-                { name: 'ACL list 1', total: 3 },
-                { name: 'ACL list 2', total: 2 }
-              ]
-            });
-          },
 
+            $.ajax({
+
+            url:createURL('listNetworkACLLists&vpc_id=' + args.context.vpc[0].id),
+            success:function(json){  
+               var items = json.listnetworkacllistsresponse.networkacllist;
+ 
+               args.response.success({
+                 data:items
+                });
+             }
+           });
+          },
+          
+         actions:{
+           add:{
+             label:'Add ACL List',
+             createForm:{
+                label: 'Add ACL List',
+                fields:{
+                  name:{label:'ACL List Name',validation:{required:true}},
+                  description:{label:'Description',validation:{required:true}}
+                }
+              },
+               messages: {
+                    notification: function(args) {
+                      return 'Add Network ACL List';
+                    }
+                  },
+               action:function(args){
+                  var data = {
+                    name:args.data.name,
+                    description:args.data.description
+
+                  };
+
+                  $.ajax({
+                    url:createURL('createNetworkACLList&vpcid='+ args.context.vpc[0].id),
+                    data:data,
+                    success:function(json){
+                       var items = json.createnetworkacllistresponse;
+                       args.response.success({
+                          data:items
+                       });
+                    }
+                  });
+              }
+           }
+          },
+ 
           detailView: {
             isMaximized: true,
             tabs: {
-              details: {
+            /*  details: {
+              
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'label.name', isEditable: true }
+                    name: { label: 'label.name', isEditable: true },
+                    id: {label:'id'}
                   }
+ 
                 ],
                 dataProvider: function(args) {
-                  args.response.success({ data: args.context.aclLists[0] });
-                }
-              },
+                 $.ajax({
+                  url:createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
+                  success:function(json){
+                    var items = json.listnetworkaclsresponse.networkacl;
+                    args.response.success({
+                      data:items
+                    });
+                  }
+                 });
+               }
+              
+              },*/
 
               aclRules: {
-                title: 'label.acl.rules',
+                title: 'ACL List Rules',
                 custom: function(args) {
                   return $('<div>').multiEdit($.extend(true, {}, aclMultiEdit, {
                     context: args.context,
@@ -586,9 +640,14 @@
                       networkid: false
                     },
                     dataProvider: function(args) {
+                        $.ajax({
+                         url:createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
+                         success:function(json){
+                          var items = json.listnetworkaclsresponse.networkacl;
+
                       args.response.success({
-                        data: [
-                          {
+                        data:items
+                         /* {
                             cidrlist: '10.1.1.0/24',
                             protocol: 'TCP',
                             startport: 22, endport: 22,
@@ -602,9 +661,11 @@
                             networkid: 0,
                             trafficType: 'Ingress'
                           }
-                        ] 
+                        ]*/ 
                       });
-                    } 
+                    }
+                   });
+                  } 
                   }));
                 }
               }
@@ -2232,7 +2293,76 @@
             notification: {
               poll: pollAsyncJobResult
             }
-          }
+          },
+
+          replaceacllist:{
+
+             label:'Replace ACL List',
+              createForm:{
+                    title:'Replace ACL List',
+                    label:'Replace ACL List',
+                   fields:{
+                    aclid:{
+                 label:'ACL',
+                 select:function(args){
+                 $.ajax({
+                 url: createURL('listNetworkACLLists'),
+                 dataType: 'json',
+                 async: true,
+                 success: function(json) {
+                      var objs = json.listnetworkacllistsresponse.networkacllist;
+                      var items = [];
+                      $(objs).each(function() {
+
+                          items.push({id: this.id, description: this.name});
+                           });
+                     args.response.success({data: items});
+                       }
+                     });
+                    }
+                }
+              }
+             },
+              action: function(args) {
+                    $.ajax({
+                      url: createURL("replaceNetworkACLList&networkid=" + args.context.networks[0].id + "&aclid=" + args.data.aclid ),
+                      dataType: "json",
+                      success: function(json) {
+                        var jid = json.replacenetworkacllistresponse.jobid;
+                        args.response.success(
+
+                          {_custom:
+                           {
+                             jobId: jid,
+                             getUpdatedItem: function(json) {
+                               var item = json.queryasyncjobresultresponse.jobresult.aclid;
+                               return {data:item};
+                             }
+                           }
+                          }
+
+                       )
+                      },
+
+                      error:function(json){
+
+                         args.response.error(parseXMLHttpResponse(json));
+                     }
+                    });
+                  },
+                  notification: {
+                  poll: pollAsyncJobResult
+                },
+
+                    messages: {
+                    confirm: function(args) {
+                      return 'Do you want to replace the ACL with a new one ?';
+                    },
+                    notification: function(args) {
+                      return 'ACL replaced';
+                    }
+                  }
+             } 
         },
 
         tabFilter: function(args) {
