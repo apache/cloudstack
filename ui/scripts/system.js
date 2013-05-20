@@ -11015,6 +11015,7 @@
                   actions: {                      
                     associateProfileToBlade: {
                       label: 'associate profile to blade',
+                      addRow: 'false',
                       messages: {
                         notification: function(args) {
                           return 'associate profile to blade';
