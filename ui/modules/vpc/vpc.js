@@ -234,28 +234,7 @@
                 var $tier = elems.tier({
                   context: context,
                   tier: tier,
-                  dashboardItems: [
-                    {
-                      id: 'tierLoadBalancers',
-                      name: 'Load balancers',
-                      totalMultiLine: '5 Internal<br/>6 Public'
-                    },
-                    {
-                      id: 'tierPortForwarders',
-                      name: 'Port forwarders',
-                      total: 4
-                    },
-                    {
-                      id: 'tierStaticNATs',
-                      name: 'Static NATs',
-                      total: 3
-                    },
-                    {
-                      id: 'tierVMs',
-                      name: 'Virtual Machines',
-                      total: 300
-                    }
-                  ]
+                  dashboardItems: tier._dashboardItems
                 });
 
                 $tier.appendTo($tiers);
@@ -271,36 +250,15 @@
               if (args.complete) {
                 args.complete($chart);
               }
+              
+              // Router
+              $router = elems.router({
+                context: context,
+                dashboardItems: data.routerDashboard
+              }).appendTo($chart);
             }
-          }
+          }          
         });
-
-        // Router
-        $router = elems.router({
-          context: context,
-          dashboardItems: [
-            {
-              id: 'privateGateways',
-              name: 'Private gateways',
-              total: 1
-            },
-            {
-              id: 'publicIPs',
-              name: 'Public IP addresses',
-              total: 2
-            },
-            {
-              id: 'siteToSiteVPNs',
-              name: 'Site-to-site VPNs',
-              total: 3
-            },
-            {
-              id: 'networkACLLists',
-              name: 'Network ACL lists',
-              total: 2
-            }
-          ]
-        }).appendTo($chart);
 
         $chart.bind('reload', function() {
           chart({

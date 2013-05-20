@@ -2998,7 +2998,56 @@
                 });
               }
             }
-            args.response.success({ tiers: networks });
+            args.response.success({
+              routerDashboard: [
+                {
+                  id: 'privateGateways',
+                  name: 'Private gateways',
+                  total: 0
+                },
+                {
+                  id: 'publicIPs',
+                  name: 'Public IP addresses',
+                  total: 0
+                },
+                {
+                  id: 'siteToSiteVPNs',
+                  name: 'Site-to-site VPNs',
+                  total: 0
+                },
+                {
+                  id: 'networkACLLists',
+                  name: 'Network ACL lists',
+                  total: 0
+                }
+              ],
+              tiers: $(networks).map(function(index, tier) {
+                return $.extend(tier, {
+                  _dashboardItems: [
+                    {
+                      id: 'tierLoadBalancers',
+                      name: 'Load balancers',
+                      totalMultiLine: '0 Internal<br/>0 Public'
+                    },
+                    {
+                      id: 'tierPortForwarders',
+                      name: 'Port forwarders',
+                      total: 0
+                    },
+                    {
+                      id: 'tierStaticNATs',
+                      name: 'Static NATs',
+                      total: 0
+                    },
+                    {
+                      id: 'tierVMs',
+                      name: 'Virtual Machines',
+                      total: 0
+                    }
+                  ]
+                });
+              })
+            });
           }
         });
       }
