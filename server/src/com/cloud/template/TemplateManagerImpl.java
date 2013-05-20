@@ -78,6 +78,7 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -87,6 +88,7 @@ import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -110,6 +112,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -179,6 +182,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.S3Utils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -456,9 +460,32 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
         }
 
-        if ( tmpltStore.getProviderName().equalsIgnoreCase("S3") || tmpltStore.getProviderName().equalsIgnoreCase("Swift")){
-            // for S3 and Swift, no need to do anything, just return template url for extract template, here we use "-1" to indicate these case
-            return new Pair<Long, String>(null, tmpltStoreRef.getInstallPath());
+        if (tmpltStore.getProviderName().equalsIgnoreCase("Swift")){
+            throw new UnsupportedServiceException("ExtractTemplate is not yet supported for Swift image store provider");
+        }
+
+        if ( tmpltStore.getProviderName().equalsIgnoreCase("S3")){
+            // for S3, no need to do anything, just return template url for extract template. but we need to set object acl as public_read to
+            // make the url accessible
+           S3TO s3 = (S3TO)tmpltStore.getTO();
+           String key = tmpltStoreRef.getLocalDownloadPath();
+           try{
+               S3Utils.setObjectAcl(s3, s3.getBucketName(), key, CannedAccessControlList.PublicRead);
+           }
+           catch (Exception ex){
+               s_logger.error("Failed to set ACL on S3 object " + key + " to PUBLIC_READ", ex);
+               throw new CloudRuntimeException("Failed to set ACL on S3 object " + key + " to PUBLIC_READ");
+           }
+           // construct the url from s3
+           StringBuffer s3url = new StringBuffer();
+           s3url.append(s3.isHttps() ? "https://" : "http://");
+           s3url.append(s3.getEndPoint());
+           s3url.append("/");
+           s3url.append(s3.getBucketName());
+           s3url.append("/");
+           s3url.append(key);
+
+           return new Pair<Long, String>(null, s3url.toString());
         }
 
 
@@ -1049,7 +1076,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             s_logger.warn("ISO: " + isoId + " does not exist");
             return false;
         }
-      
+
         String vmName = vm.getInstanceName();
 
         HostVO host = _hostDao.findById(vm.getHostId());
@@ -1057,7 +1084,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             s_logger.warn("Host: " + vm.getHostId() + " does not exist");
             return false;
         }
-        
+
         DataTO isoTO = tmplt.getTO();
         DiskTO disk = new DiskTO(isoTO, null, Volume.Type.ISO);
         Command cmd = null;
@@ -1125,7 +1152,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     	if (template.getFormat() != ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid iso.");
     	}
-    	
+
     	 List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
          // check if there is any VM using this ISO.
          if (!userVmUsingIso.isEmpty()) {

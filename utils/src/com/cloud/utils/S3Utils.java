@@ -52,6 +52,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -167,6 +168,15 @@ public final class S3Utils {
 
     }
 
+    public static void setObjectAcl(final ClientOptions clientOptions, final String bucketName, final String key,
+            final CannedAccessControlList acl) {
+
+        assert clientOptions != null;
+        assert acl != null;
+
+        acquireClient(clientOptions).setObjectAcl(bucketName, key, acl);
+
+    }
 
     // Note that whenever S3Object is returned, client code needs to close the internal stream to avoid resource leak.
     public static S3Object getObject(final ClientOptions clientOptions,
