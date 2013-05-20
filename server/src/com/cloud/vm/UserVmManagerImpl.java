@@ -3228,7 +3228,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (vm == null || vm.getRemoved() != null) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Unable to find a virtual machine with specified vmId");
-            ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
 
