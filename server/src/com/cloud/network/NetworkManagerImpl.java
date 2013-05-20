@@ -105,6 +105,10 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.*;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpDao;
+import org.apache.cloudstack.region.PortableIpVO;
+import org.apache.cloudstack.region.Region;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -251,6 +255,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     UserIpv6AddressDao _ipv6Dao;
     @Inject
     Ipv6AddressManager _ipv6Mgr;
+    @Inject
+    PortableIpDao _portableIpDao;
 
     protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -702,6 +708,62 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return ip;
     }
 
+    @Override
+    @DB
+    public IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID)
+            throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
+
+        Transaction txn = Transaction.currentTxn();
+        GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
+        PortableIpVO allocatedPortableIp;
+        IPAddressVO ipaddr;
+
+        try {
+            portableIpLock.lock(5);
+
+            txn.start();
+            //TODO: get the region ID corresponding to running management server
+            List<PortableIpVO> portableIpVOs = _portableIpDao.listByRegionIdAndState(1, PortableIp.State.Free);
+            if (portableIpVOs == null || portableIpVOs.isEmpty()) {
+                InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException
+                        ("Unable to find available portable IP addresses", Region.class, new Long(1));
+                throw ex;
+            }
+
+            // allocate first portable IP to the user
+            allocatedPortableIp =   portableIpVOs.get(0);
+            allocatedPortableIp.setAllocatedTime(new Date());
+            allocatedPortableIp.setAllocatedToAccountId(ipOwner.getAccountId());
+            allocatedPortableIp.setAllocatedInDomainId(ipOwner.getDomainId());
+            allocatedPortableIp.setState(PortableIp.State.Allocated);
+            _portableIpDao.update(allocatedPortableIp.getId(), allocatedPortableIp);
+
+            // provision portable IP range VLAN
+            long physicalNetworkId = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Public).getId();
+            Network network = _networkModel.getNetwork(physicalNetworkId);
+            String range = allocatedPortableIp.getAddress() + "-" + allocatedPortableIp.getAddress();
+            VlanVO vlan = new VlanVO(VlanType.VirtualNetwork, allocatedPortableIp.getVlan(), allocatedPortableIp.getGateway(),
+                    allocatedPortableIp.getNetmask(), dcId, range, network.getId(), network.getId(), null, null, null);
+            vlan = _vlanDao.persist(vlan);
+
+            // provision the portable IP in to user_ip_address table
+            ipaddr = new IPAddressVO(new Ip(allocatedPortableIp.getAddress()), dcId, networkId, vpcID, network.getId(),
+                    network.getId(), vlan.getId(), true);
+            ipaddr.setState(State.Allocated);
+            ipaddr.setAllocatedTime(new Date());
+            ipaddr.setAllocatedInDomainId(ipOwner.getDomainId());
+            ipaddr.setAllocatedToAccountId(ipOwner.getId());
+            ipaddr= _ipAddressDao.persist(ipaddr);
+
+            txn.commit();
+
+        } finally {
+            portableIpLock.unlock();
+        }
+
+        return ipaddr;
+    }
+
     protected IPAddressVO getExistingSourceNatInNetwork(long ownerId, Long networkId) {
         
         List<? extends IpAddress> addrs = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
@@ -741,12 +803,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
 
             DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-            if (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced) {
-                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                    _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
-                } else {
-                    throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if " +
-                        "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
+            if (zone.getNetworkType() == NetworkType.Advanced) {
+                if (network.getGuestType() == Network.GuestType.Shared) {
+                    if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+                        _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
+                    } else {
+                        throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if " +
+                                "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
+                    }
                 }
             } else {
                 _accountMgr.checkAccess(caller, null, true, ipToAssoc);
@@ -844,6 +908,162 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
     }
 
+    @Override
+    public IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
+            InsufficientAddressCapacityException, ConcurrentOperationException {
+        return associateIPToGuestNetwork(ipAddrId, networkId, releaseOnFailure);
+    }
+
+    @DB
+    @Override
+    public IPAddressVO disassociatePortableIPToGuestNetwork(long ipId, long networkId)
+            throws ResourceAllocationException, ResourceUnavailableException,
+            InsufficientAddressCapacityException, ConcurrentOperationException {
+
+        Account caller = UserContext.current().getCaller();
+        Account owner = null;
+
+        Network network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Invalid network id is given");
+        }
+
+        IPAddressVO ipToAssoc = _ipAddressDao.findById(ipId);
+        if (ipToAssoc != null) {
+
+            if (ipToAssoc.getAssociatedWithNetworkId() == null) {
+                throw new InvalidParameterValueException("IP " + ipToAssoc + " is not associated with any network");
+            }
+
+            if (ipToAssoc.getAssociatedWithNetworkId() != network.getId()) {
+                throw new InvalidParameterValueException("IP " + ipToAssoc + " is not associated with network id" + networkId);
+            }
+
+            DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+            if (zone.getNetworkType() == NetworkType.Advanced) {
+                if (network.getGuestType() == Network.GuestType.Shared) {
+                    assert (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()));
+                    _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
+                }
+            } else {
+                _accountMgr.checkAccess(caller, null, true, ipToAssoc);
+            }
+            owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
+        } else {
+            s_logger.debug("Unable to find ip address by id: " + ipId);
+            return null;
+        }
+
+        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+
+        // Check that network belongs to IP owner - skip this check
+        //     - if zone is basic zone as there is just one guest network,
+        //     - if shared network in Advanced zone
+        //     - and it belongs to the system
+        if (network.getAccountId() != owner.getId()) {
+            if (zone.getNetworkType() != NetworkType.Basic && !(zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Shared)) {
+                throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
+            }
+        }
+
+        // Check if IP has any services (rules) associated in the network
+        List<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
+        PublicIp publicIp = PublicIp.createFromAddrAndVlan(ipToAssoc, _vlanDao.findById(ipToAssoc.getVlanId()));
+        ipList.add(publicIp);
+        Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(ipList, false, true);
+        if (ipToServices != null & !ipToServices.isEmpty()) {
+            Set<Service> services = ipToServices.get(publicIp);
+            if (services != null && !services.isEmpty()) {
+                throw new InvalidParameterValueException("IP " + ipToAssoc + " has services and rules associated in the network " +  networkId);
+            }
+        }
+
+        IPAddressVO ip = _ipAddressDao.findById(ipId);
+        ip.setAssociatedWithNetworkId(null);
+        _ipAddressDao.update(ipId, ip);
+
+        try {
+            boolean success = applyIpAssociations(network, false);
+            if (success) {
+                s_logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
+            } else {
+                s_logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
+            }
+            return ip;
+        } finally {
+
+        }
+    }
+
+    @Override
+    public boolean isPortableIpTransferableFromNetwork(long ipAddrId, long networkId) {
+        Network network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Invalid network id is given");
+        }
+
+        IPAddressVO ip = _ipAddressDao.findById(ipAddrId);
+        if (ip == null) {
+            throw new InvalidParameterValueException("Invalid network id is given");
+        }
+
+        // Check if IP has any services (rules) associated in the network
+        List<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
+        PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
+        ipList.add(publicIp);
+        Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(ipList, false, true);
+        if (ipToServices != null & !ipToServices.isEmpty()) {
+            Set<Service> ipServices = ipToServices.get(publicIp);
+            if (ipServices != null && !ipServices.isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @DB
+    @Override
+    public void transferPortableIP(long ipAddrId, long currentNetworkId, long newNetworkId)  throws ResourceAllocationException, ResourceUnavailableException,
+            InsufficientAddressCapacityException, ConcurrentOperationException {
+
+        Network srcNetwork = _networksDao.findById(currentNetworkId);
+        if (srcNetwork == null) {
+            throw new InvalidParameterValueException("Invalid source network id " + currentNetworkId +" is given");
+        }
+
+        Network dstNetwork = _networksDao.findById(newNetworkId);
+        if (dstNetwork == null) {
+            throw new InvalidParameterValueException("Invalid source network id " + newNetworkId +" is given");
+        }
+
+        IPAddressVO ip = _ipAddressDao.findById(ipAddrId);
+        if (ip == null) {
+            throw new InvalidParameterValueException("Invalid portable ip address id is given");
+        }
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        assert(isPortableIpTransferableFromNetwork(ipAddrId, currentNetworkId));
+
+        if (srcNetwork.getVpcId() != null) {
+            _vpcMgr.unassignIPFromVpcNetwork(ipAddrId, currentNetworkId);
+        } else {
+            disassociatePortableIPToGuestNetwork(ipAddrId, currentNetworkId);
+        }
+
+        associatePortableIPToGuestNetwork(ipAddrId, newNetworkId, false);
+
+        if (dstNetwork.getVpcId() != null) {
+            ip.setVpcId(dstNetwork.getVpcId());
+        } else {
+            ip.setVpcId(null);
+        }
+
+        _ipAddressDao.update(ipAddrId, ip);
+        txn.commit();
+    }
 
     @Override
     @DB
@@ -884,10 +1104,40 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         if (success) {
+            if (ip.isPortable()) {
+                releasePortableIpAddress(addrId);
+            }
             s_logger.debug("Released a public ip id=" + addrId);
         }
 
         return success;
+    }
+
+    @DB
+    private void releasePortableIpAddress(long addrId) {
+        Transaction txn = Transaction.currentTxn();
+        GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
+
+        txn.start();
+        try {
+            portableIpLock.lock(5);
+            IPAddressVO ip = _ipAddressDao.findById(addrId);
+
+            // unassign portable IP
+            PortableIpVO portableIp = _portableIpDao.findByIpAddress(ip.getAddress().addr());
+            _portableIpDao.unassignIpAddress(portableIp.getId());
+
+            // removed the provisioned vlan
+            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+            _vlanDao.expunge(vlan.getId());
+
+            // remove the provisioned public ip address
+            _ipAddressDao.expunge(ip.getId());
+
+            txn.commit();
+        } finally {
+            portableIpLock.releaseRef();
+        }
     }
 
     @Override

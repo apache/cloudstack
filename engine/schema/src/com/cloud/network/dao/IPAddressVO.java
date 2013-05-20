@@ -111,6 +111,8 @@ public class IPAddressVO implements IpAddress {
     @Column(name="dnat_vmip")
     private String vmIp;
 
+    @Column(name="is_portable")
+    private boolean portable = false;
 
 	protected IPAddressVO() {
 		this.uuid = UUID.randomUUID().toString();
@@ -133,6 +135,19 @@ public class IPAddressVO implements IpAddress {
 		this.macAddress = macAddress;
 		this.uuid = UUID.randomUUID().toString();
 	}
+
+    public  IPAddressVO(Ip address, long dataCenterId, Long networkId, Long vpcId, long physicalNetworkId, long sourceNetworkId,
+                        long vlanDbId, boolean portable) {
+        this.address = address;
+        this.dataCenterId = dataCenterId;
+        this.associatedWithNetworkId = networkId;
+        this.vpcId = vpcId;
+        this.physicalNetworkId = physicalNetworkId;
+        this.sourceNetworkId = sourceNetworkId;
+        this.vlanId = vlanDbId;
+        this.portable = portable;
+        this.uuid = UUID.randomUUID().toString();
+    }
 
     public long getMacAddress() {
 	    return macAddress;
@@ -282,6 +297,15 @@ public class IPAddressVO implements IpAddress {
 	public void setSystem(boolean isSystem) {
 		this.system = isSystem;
 	}
+
+    @Override
+    public boolean isPortable() {
+        return portable;
+    }
+
+    public void setPortable(boolean portable) {
+        this.portable = portable;
+    }
 
 	@Override
     public Long getVpcId() {

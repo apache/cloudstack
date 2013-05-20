@@ -39,6 +39,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -184,32 +185,6 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.*;
-import com.cloud.vm.dao.*;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
-import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
-import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.InvalidParameterException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
 
 
 /**
@@ -314,6 +289,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     DataCenterVnetDao _datacneter_vnet;
     @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
+    @Inject
+    VpcDao _vpcDao;
     @Inject
     NetworkACLDao _networkACLDao;
 
@@ -527,22 +504,23 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId)
              throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
 
+        Account caller = UserContext.current().getCaller();
+        long callerUserId = UserContext.current().getCallerUserId();
+        DataCenter zone = _configMgr.getZone(zoneId);
+
         if (networkId != null) {
             Network network = _networksDao.findById(networkId);
             if (network == null) {
                 throw new InvalidParameterValueException("Invalid network id is given");
             }
+
             if (network.getGuestType() == Network.GuestType.Shared) {
-                DataCenter zone = _configMgr.getZone(zoneId);
                 if (zone == null) {
                     throw new InvalidParameterValueException("Invalid zone Id is given");
                 }
-
                 // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
                 if (zone.getNetworkType() == NetworkType.Advanced) {
                     if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                        Account caller = UserContext.current().getCaller();
-                        long callerUserId = UserContext.current().getCallerUserId();
                         _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
@@ -554,20 +532,67 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     }
                 }
             }
+        } else {
+            _accountMgr.checkAccess(caller, null, false, ipOwner);
         }
 
-        return allocateIP(ipOwner, false,  zoneId);
+        return _networkMgr.allocateIp(ipOwner, false, caller, callerUserId, zone);
     }
 
-    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId)
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_ASSIGN, eventDescription = "allocating portable public Ip", create = true)
+    public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
-        // check permissions
-        _accountMgr.checkAccess(caller, null, false, ipOwner);
         long callerUserId = UserContext.current().getCallerUserId();
         DataCenter zone = _configMgr.getZone(zoneId);
 
-        return _networkMgr.allocateIp(ipOwner, isSystem, caller, callerUserId, zone);
+        if ((networkId == null && vpcId == null) && (networkId != null && vpcId != null)) {
+            throw new InvalidParameterValueException("One of Network id or VPC is should be passed");
+        }
+
+        if (networkId != null) {
+            Network network = _networksDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Invalid network id is given");
+            }
+
+            if (network.getGuestType() == Network.GuestType.Shared) {
+                if (zone == null) {
+                    throw new InvalidParameterValueException("Invalid zone Id is given");
+                }
+                // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
+                if (zone.getNetworkType() == NetworkType.Advanced) {
+                    if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+                        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+                        }
+                        return _networkMgr.allocatePortableIp(ipOwner, caller, zoneId, networkId, null);
+                    } else {
+                        throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
+                                " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
+                    }
+                }
+            }
+        }
+
+        if (vpcId != null) {
+            Vpc vpc = _vpcDao.findById(vpcId);
+            if (vpc != null) {
+                throw new InvalidParameterValueException("Invalid vpc id is given");
+            }
+        }
+
+        _accountMgr.checkAccess(caller, null, false, ipOwner);
+
+        return _networkMgr.allocatePortableIp(ipOwner, caller, zoneId, null, null);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RELEASE, eventDescription = "disassociating portable Ip", async = true)
+    public boolean releasePortableIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        return releaseIpAddressInternal(ipAddressId);
     }
 
     @Override
@@ -810,9 +835,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     }
 
     @Override
-    @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "disassociating Ip", async = true)
     public boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        return releaseIpAddressInternal(ipAddressId);
+    }
+
+    @DB
+    private boolean releaseIpAddressInternal(long ipAddressId) throws InsufficientAddressCapacityException {
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
 
@@ -851,6 +880,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         boolean success = _networkMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
 
         if (success) {
+            if (!ipVO.isPortable()) {
+                return success;
+            }
             Long networkId = ipVO.getAssociatedWithNetworkId();
             if (networkId != null) {
                 Network guestNetwork = getNetwork(networkId);
@@ -866,7 +898,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
         return success;
     }
-
 
     @Override
     @DB
