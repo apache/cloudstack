@@ -295,11 +295,9 @@ class TestTemplates(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
-        zones = cls.api_client.listZones(cmd)
-        if not isinstance(zones, list):
+        cls.zones = cls.api_client.listZones(cmd)
+        if not isinstance(cls.zones, list):
             raise Exception("Failed to find zones.")
-        if len(zones) >= 2:
-            cls.services["destzoneid"] = zones[1].id
 
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -663,6 +661,11 @@ class TestTemplates(cloudstackTestCase):
         # Validate the following
         # 1. copy template should be successful and
         #    secondary storage should contain new copied template.
+
+        if len(self.zones) <= 1:
+            self.skipTest("Not enough zones available to perform copy template")
+
+        self.services["destzoneid"] = filter(lambda z: z.id != self.services["sourcezoneid"], self.zones)[0]
 
         self.debug("Copy template from Zone: %s to %s" % (
                                             self.services["sourcezoneid"],
