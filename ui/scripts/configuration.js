@@ -1122,7 +1122,7 @@
                 title: 'label.add.network.offering',               														
 								preFilter: function(args) {								  									
                   var $availability = args.$form.find('.form-item[rel=availability]');
-                  var $serviceOfferingId = args.$form.find('.form-item[rel=serviceOfferingId]');									
+                  var $systemOfferingForRouter = args.$form.find('.form-item[rel=systemOfferingForRouter]');									
 									var $conservemode = args.$form.find('.form-item[rel=conservemode]');										
                   var $serviceSourceNatRedundantRouterCapabilityCheckbox = args.$form.find('.form-item[rel="service.SourceNat.redundantRouterCapabilityCheckbox"]');	                  		
                   var hasAdvancedZones = false;
@@ -1185,10 +1185,10 @@
 											}																					
 										});                    
                     if(havingVirtualRouterForAtLeastOneService == true) {
-                      $serviceOfferingId.css('display', 'inline-block');
+                      $systemOfferingForRouter.css('display', 'inline-block');
 										}
                     else {
-                      $serviceOfferingId.hide();		
+                      $systemOfferingForRouter.hide();		
 										}
 
 										
@@ -1569,8 +1569,8 @@
                   },
 
 									//show or hide upon checked services and selected providers above (begin)
-                  serviceOfferingId: {
-                    label: 'label.system.offering',
+                  systemOfferingForRouter: {
+                    label: 'System Offering for Router',
                     docID: 'helpNetworkOfferingSystemOffering',
                     select: function(args) {
                       $.ajax({
@@ -1829,8 +1829,8 @@
 								if(args.$form.find('.form-item[rel=availability]').css("display") == "none")
                   inputData['availability'] = 'Optional';
 								
-                if(args.$form.find('.form-item[rel=serviceOfferingId]').css("display") == "none")									
-									delete inputData.serviceOfferingId;
+                if(args.$form.find('.form-item[rel=systemOfferingForRouter]').css("display") == "none")									
+									delete inputData.systemOfferingForRouter;
 								
                 inputData['traffictype'] = 'GUEST'; //traffic type dropdown has been removed since it has only one option ('Guest'). Hardcode traffic type value here.
 								
