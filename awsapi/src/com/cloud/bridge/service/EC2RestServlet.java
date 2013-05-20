@@ -2043,8 +2043,9 @@ public class EC2RestServlet extends HttpServlet {
             throws ADBException, XMLStreamException, IOException {
         OutputStream os = response.getOutputStream();
         response.setStatus(200);	
-        response.setContentType("text/xml; charset=UTF-8");
+        response.setContentType("text/xml");
         XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
+        xmlWriter.writeStartDocument("UTF-8","1.0");
         MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
         MTOMWriter.setDefaultNamespace("http://ec2.amazonaws.com/doc/" + wsdlVersion + "/");
         EC2Response.serialize( null, factory, MTOMWriter );
