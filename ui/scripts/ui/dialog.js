@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($, cloudStack) {
+(function($, cloudStack, _l) {
   cloudStack.dialog = {
     /**
      * Error message form
@@ -506,6 +506,94 @@
       }
     },
 
+    // Dialog with list view selector
+    listView: function(args) {
+      var listView = args.listView;
+      var after = args.after;
+      var context = args.context;
+      var $listView = $('<div>');
+
+      listView.actions = {
+        select: {
+          label: _l('label.select.instance'),
+          type: listView.type,
+          action: {
+            uiCustom: function(args) {
+              var $item = args.$item;
+              var $input = $item.find('td.actions input:visible');
+
+              if ($input.attr('type') == 'checkbox') {
+                if ($input.is(':checked'))
+                  $item.addClass('multi-edit-selected');
+                else
+                  $item.removeClass('multi-edit-selected');
+              } else {
+                $item.siblings().removeClass('multi-edit-selected');
+                $item.addClass('multi-edit-selected');
+              }
+            }
+          }
+        }
+      };
+
+      // Init list view
+      $listView = $('<div>').listView({
+        context: context,
+        uiCustom: true,
+        listView: listView
+      });
+
+      // Change action label
+      $listView.find('th.actions').html(_l('label.select'));
+      
+      $listView.dialog({
+        dialogClass: 'multi-edit-add-list panel',
+        width: 825,
+        title: _l('Select VM'),
+        buttons: [
+          {
+            text: _l('label.apply'),
+            'class': 'ok',
+            click: function() {
+              if (!$listView.find(
+                'input[type=radio]:checked, input[type=checkbox]:checked'
+              ).size()) {
+                cloudStack.dialog.notice({ message: _l('message.select.instance')});
+
+                return false;
+              }
+              
+              after({
+                context: $.extend(true, {}, context, {
+                  instances: $listView.find('tr.multi-edit-selected').map(function(index, row) {
+                    var $row = $(row);
+
+                    return $row.data('json-obj');
+                  })
+                })
+              });
+              
+              $listView.remove();
+
+              $('div.overlay').remove();
+            }
+          },
+          {
+            text: _l('label.cancel'),
+            'class': 'cancel',
+            click: function() {
+              $listView.fadeOut(function() {
+                $listView.remove();
+              });
+              $('div.overlay').fadeOut(function() {
+                $('div.overlay').remove();
+              });
+            }
+          }
+        ]
+      }).parent('.ui-dialog').overlay();
+    },
+
     /**
      * to change a property(e.g. validation) of a createForm field after a createForm is rendered
      */
@@ -612,4 +700,4 @@
       return false;
     }
   };
-})(window.jQuery, window.cloudStack);
+})(window.jQuery, window.cloudStack, _l);
