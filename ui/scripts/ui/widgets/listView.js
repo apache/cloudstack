@@ -1873,7 +1873,7 @@
     if (!options) options = {};
 
     var viewArgs = listView.data('view-args');
-    var listViewArgs = viewArgs.listView ? viewArgs.listView : viewArgs;
+    var listViewArgs = $.isPlainObject(viewArgs.listView) ? viewArgs.listView : viewArgs;
     var targetArgs = listViewArgs.activeSection ? listViewArgs.sections[
       listViewArgs.activeSection
     ].listView : listViewArgs;
@@ -1903,7 +1903,7 @@
     var $newRow;
     var $listView = $row.closest('.list-view');
     var viewArgs = $listView.data('view-args');
-    var listViewArgs = viewArgs.listView ? viewArgs.listView : viewArgs;
+    var listViewArgs = $.isPlainObject(viewArgs.listView) ? viewArgs.listView : viewArgs;
     var targetArgs = listViewArgs.activeSection ? listViewArgs.sections[
       listViewArgs.activeSection
     ].listView : listViewArgs;
