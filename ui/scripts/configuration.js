@@ -1741,9 +1741,9 @@
                     dependsOn: 'service.SourceNat.isEnabled',
                     select: function(args) {
                       args.response.success({
-                        data: [                          
-                          { id: 'perzone', description: 'Per zone'},
-													{ id: 'peraccount', description: 'Per account'}
+                        data: [     
+													{ id: 'peraccount', description: 'Per account'},
+													{ id: 'perzone', description: 'Per zone'}
                         ]
                       });
                     }
