@@ -902,15 +902,19 @@ public class EC2Engine extends ManagerBase {
 
         try {
             String[] templateIds = request.getImageSet();
+            EC2ImageFilterSet ifs = request.getFilterSet();
 
-            if ( 0 == templateIds.length ) {
-                return listTemplates(null, images);
+            if ( templateIds.length == 0 ) {
+                images = listTemplates(null, images);
+            } else {
+                for (String s : templateIds) {
+                    images = listTemplates(s, images);
+                }
             }
-            for (String s : templateIds) {
-                images = listTemplates(s, images);
-            }
-            return images;
-
+            if (ifs == null)
+                return images;
+            else
+                return ifs.evaluate(images);
         } catch( Exception e ) {
             logger.error( "EC2 DescribeImages - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
@@ -1951,8 +1955,22 @@ public class EC2Engine extends ManagerBase {
                     ec2Image.setDescription(temp.getDisplayText());
                     ec2Image.setOsTypeId(temp.getOsTypeId().toString());
                     ec2Image.setIsPublic(temp.getIsPublic());
-                    ec2Image.setIsReady(temp.getIsReady());
+                    ec2Image.setState( temp.getIsReady() ? "available" : "pending");
                     ec2Image.setDomainId(temp.getDomainId());
+                    if ( temp.getHyperVisor().equalsIgnoreCase("xenserver"))
+                        ec2Image.setHypervisor("xen");
+                    else if ( temp.getHyperVisor().equalsIgnoreCase("ovm"))
+                        ec2Image.setHypervisor( "ovm"); // valid values for hypervisor is 'ovm' and 'xen'
+                    else
+                        ec2Image.setHypervisor("");
+                    if (temp.getDisplayText() == null)
+                        ec2Image.setArchitecture("");
+                    else if (temp.getDisplayText().indexOf( "x86_64" ) != -1)
+                        ec2Image.setArchitecture("x86_64");
+                    else if (temp.getDisplayText().indexOf( "i386" ) != -1)
+                        ec2Image.setArchitecture("i386");
+                    else
+                        ec2Image.setArchitecture("");
                     List<CloudStackKeyValue> resourceTags = temp.getTags();
                     for(CloudStackKeyValue resourceTag : resourceTags) {
                         EC2TagKeyValue param = new EC2TagKeyValue();

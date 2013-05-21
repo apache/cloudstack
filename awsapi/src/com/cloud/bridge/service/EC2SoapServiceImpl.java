@@ -51,6 +51,7 @@ import com.cloud.bridge.service.core.ec2.EC2DescribeInstances;
 import com.cloud.bridge.service.core.ec2.EC2DescribeInstancesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairs;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairsResponse;
+import com.cloud.bridge.service.core.ec2.EC2ImageFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2ImageLaunchPermission;
 import com.cloud.bridge.service.core.ec2.EC2ResourceTag;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroups;
@@ -407,7 +408,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			    for( int i=0; i < items3.length; i++ ) request.addOwnersSet( items3[i].getOwner());
 		    }
 		}    
-
+        FilterSetType fst = dit.getFilterSet();
+        if ( fst != null) {
+            request.setFilterSet(toImageFilterSet(fst));
+        }
 		return toDescribeImagesResponse( engine.describeImages( request ));
 	}
 
@@ -948,7 +952,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		    DescribeImagesResponseItemType param3 = new DescribeImagesResponseItemType();
 		    param3.setImageId( images[i].getId());
 		    param3.setImageLocation( "" );
-		    param3.setImageState( (images[i].getIsReady() ? "available" : "unavailable" ));
+            param3.setImageState( images[i].getState());
 		    param3.setImageOwnerId(ownerId);    
 		    param3.setIsPublic( images[i].getIsPublic());
 
@@ -960,16 +964,14 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		    
 		    String description = images[i].getDescription();
 		    param3.setDescription( (null == description ? "" : description));
-		    
-		         if (null == description) param3.setArchitecture( "" );
-			else if (-1 != description.indexOf( "x86_64" )) param3.setArchitecture( "x86_64" );
-			else if (-1 != description.indexOf( "i386"   )) param3.setArchitecture( "i386" );
-			else param3.setArchitecture( "" );
-		         
-			param3.setImageType( "machine" );
+
+            param3.setArchitecture( images[i].getArchitecture());
+
+            param3.setImageType( images[i].getImageType());
 		    param3.setKernelId( "" );
 		    param3.setRamdiskId( "" );
 		    param3.setPlatform( "" );
+            param3.setHypervisor( images[i].getHypervisor());
 		    
 		    StateReasonType param6 = new StateReasonType();
 	        param6.setCode( "" );
@@ -1285,6 +1287,27 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             }
         }
         return tfs;
+    }
+
+    private EC2ImageFilterSet toImageFilterSet( FilterSetType fst ) {
+        EC2ImageFilterSet ifs = new EC2ImageFilterSet();
+
+        FilterType[] items = fst.getItem();
+        if (items != null) {
+            for (FilterType item : items) {
+                EC2Filter oneFilter = new EC2Filter();
+                String filterName = item.getName();
+                oneFilter.setName( filterName );
+
+                ValueSetType vft = item.getValueSet();
+                ValueType[] valueItems = vft.getItem();
+                for (ValueType valueItem : valueItems) {
+                    oneFilter.addValueEncoded( valueItem.getValue());
+                }
+                ifs.addFilter( oneFilter );
+            }
+        }
+        return ifs;
     }
 
 	// toMethods

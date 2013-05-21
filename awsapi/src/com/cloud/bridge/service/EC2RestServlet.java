@@ -135,6 +135,7 @@ import com.cloud.bridge.service.core.ec2.EC2Engine;
 import com.cloud.bridge.service.core.ec2.EC2Filter;
 import com.cloud.bridge.service.core.ec2.EC2GroupFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2Image;
+import com.cloud.bridge.service.core.ec2.EC2ImageFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2ImageAttributes.ImageAttribute;
 import com.cloud.bridge.service.core.ec2.EC2ImageLaunchPermission;
 import com.cloud.bridge.service.core.ec2.EC2ImportKeyPair;
@@ -1380,6 +1381,15 @@ public class EC2RestServlet extends HttpServlet {
                 if (null != value && 0 < value.length) EC2request.addImageSet( value[0] );
             }
         }		
+        // add filters
+        EC2Filter[] filterSet = extractFilters( request );
+        if ( filterSet != null ) {
+            EC2ImageFilterSet ifs = new EC2ImageFilterSet();
+            for( int i=0; i < filterSet.length; i++ ) {
+                ifs.addFilter(filterSet[i]);
+            }
+            EC2request.setFilterSet( ifs );
+        }
         // -> execute the request
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
         DescribeImagesResponse EC2response = EC2SoapServiceImpl.toDescribeImagesResponse( engine.describeImages( EC2request ));
