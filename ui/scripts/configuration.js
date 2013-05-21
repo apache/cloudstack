@@ -1834,7 +1834,13 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'; 
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
 											serviceCapabilityIndex++;
-										} 		
+										} 	
+                    else if((key == 'service.Lb.provider') && ("Lb" in serviceProviderMap) && (serviceProviderMap.Lb  == "InternalLbVm")) {                    
+                      inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
+                      inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'lbSchemes';
+                      inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = 'internal';
+                      serviceCapabilityIndex++;
+                    }
                   } 									
 									else if (value != '') { // Normal data
                     inputData[key] = value;
