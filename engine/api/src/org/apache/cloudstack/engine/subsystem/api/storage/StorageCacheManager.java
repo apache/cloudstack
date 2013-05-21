@@ -28,5 +28,5 @@ public interface StorageCacheManager {
      * @return
      */
     DataObject getCacheObject(DataObject data, Scope scope);
-    DataObject deleteCacheObject(DataObject data);
+    boolean deleteCacheObject(DataObject data);
 }

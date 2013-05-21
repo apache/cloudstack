@@ -81,8 +81,6 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 	@Column (name="install_path")
     private String installPath;
 
-    @Column(name = GenericDao.REMOVED_COLUMN)
-    Date removed;
 
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updatedCount;

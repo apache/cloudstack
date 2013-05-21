@@ -59,7 +59,7 @@ public class VolumeObject implements VolumeInfo {
     @Inject
     VolumeDataStoreDao volumeStoreDao;
     @Inject
-    ObjectInDataStoreManager ojbectInStoreMgr;
+    ObjectInDataStoreManager objectInStoreMgr;
     @Inject
     VMInstanceDao vmInstanceDao;
     private Object payload;
@@ -159,7 +159,7 @@ public class VolumeObject implements VolumeInfo {
         if (this.dataStore == null) {
             throw new CloudRuntimeException("datastore must be set before using this object");
         }
-        DataObjectInStore obj = ojbectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
+        DataObjectInStore obj = objectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return this.dataStore.getUri() +
                     "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME +
@@ -187,11 +187,11 @@ public class VolumeObject implements VolumeInfo {
         try {
             Volume.Event volEvent = null;
             if ( this.dataStore.getRole() == DataStoreRole.ImageCache){
-                ojbectInStoreMgr.update(this, event);
+                objectInStoreMgr.update(this, event);
                 return;
             }
             if (this.dataStore.getRole() == DataStoreRole.Image) {
-                ojbectInStoreMgr.update(this, event);
+                objectInStoreMgr.update(this, event);
                 if (event == ObjectInDataStoreStateMachine.Event.CreateRequested) {
                     volEvent = Volume.Event.UploadRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
@@ -225,6 +225,11 @@ public class VolumeObject implements VolumeInfo {
         } catch (Exception e) {
             s_logger.debug("Failed to update state", e);
             throw new CloudRuntimeException("Failed to update state:" + e.toString());
+        } finally{
+            // in case of OperationFailed, expunge the entry
+            if ( event == ObjectInDataStoreStateMachine.Event.OperationFailed){
+                objectInStoreMgr.delete(this);
+            }
         }
 
     }
@@ -249,7 +254,7 @@ public class VolumeObject implements VolumeInfo {
         if (this.dataStore.getRole() == DataStoreRole.Primary) {
             return this.volumeVO.getPath();
         } else {
-            DataObjectInStore objInStore = this.ojbectInStoreMgr.findObject(this, dataStore);
+            DataObjectInStore objInStore = this.objectInStoreMgr.findObject(this, dataStore);
             return objInStore.getInstallPath();
         }
     }
@@ -379,34 +384,41 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
-       if (this.dataStore.getRole() == DataStoreRole.Primary) {
-           if (answer instanceof CopyCmdAnswer) {
-               CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
-               VolumeVO vol = this.volumeDao.findById(this.getId());
-               VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
-               vol.setPath(newVol.getPath());
-               vol.setSize(newVol.getSize());
-               vol.setPoolId(this.getDataStore().getId());
-               volumeDao.update(vol.getId(), vol);
-           } else if (answer instanceof CreateObjectAnswer) {
-               CreateObjectAnswer createAnswer =(CreateObjectAnswer)answer;
-               VolumeObjectTO newVol = (VolumeObjectTO)createAnswer.getData();
-               VolumeVO vol = this.volumeDao.findById(this.getId());
-               vol.setPath(newVol.getPath());
-               vol.setSize(newVol.getSize());
-               vol.setPoolId(this.getDataStore().getId());
-               volumeDao.update(vol.getId(), vol);
-           }
-       } else if (this.dataStore.getRole() == DataStoreRole.Image) {
-           if (answer instanceof DownloadAnswer) {
-               DownloadAnswer dwdAnswer = (DownloadAnswer)answer;
-               VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
-               volStore.setInstallPath(dwdAnswer.getInstallPath());
-               volStore.setChecksum(dwdAnswer.getCheckSum());
-               this.volumeStoreDao.update(volStore.getId(), volStore);
-           }
-       }
+        try {
+            if (this.dataStore.getRole() == DataStoreRole.Primary) {
+                if (answer instanceof CopyCmdAnswer) {
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
+                    VolumeVO vol = this.volumeDao.findById(this.getId());
+                    VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
+                    vol.setPath(newVol.getPath());
+                    vol.setSize(newVol.getSize());
+                    vol.setPoolId(this.getDataStore().getId());
+                    volumeDao.update(vol.getId(), vol);
+                } else if (answer instanceof CreateObjectAnswer) {
+                    CreateObjectAnswer createAnswer = (CreateObjectAnswer) answer;
+                    VolumeObjectTO newVol = (VolumeObjectTO) createAnswer.getData();
+                    VolumeVO vol = this.volumeDao.findById(this.getId());
+                    vol.setPath(newVol.getPath());
+                    vol.setSize(newVol.getSize());
+                    vol.setPoolId(this.getDataStore().getId());
+                    volumeDao.update(vol.getId(), vol);
+                }
+            } else if (this.dataStore.getRole() == DataStoreRole.Image) {
+                if (answer instanceof DownloadAnswer) {
+                    DownloadAnswer dwdAnswer = (DownloadAnswer) answer;
+                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
+                    volStore.setInstallPath(dwdAnswer.getInstallPath());
+                    volStore.setChecksum(dwdAnswer.getCheckSum());
+                    this.volumeStoreDao.update(volStore.getId(), volStore);
+                }
+            }
+        } catch (RuntimeException ex) {
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+                objectInStoreMgr.delete(this);
+            }
+            throw ex;
+        }
+        this.processEvent(event);
 
-       this.processEvent(event);
     }
 }

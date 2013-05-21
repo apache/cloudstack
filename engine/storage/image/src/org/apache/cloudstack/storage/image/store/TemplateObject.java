@@ -63,7 +63,7 @@ public class TemplateObject implements TemplateInfo {
     @Inject
     VMTemplateDao imageDao;
     @Inject
-    ObjectInDataStoreManager ojbectInStoreMgr;
+    ObjectInDataStoreManager objectInStoreMgr;
     @Inject VMTemplatePoolDao templatePoolDao;
     @Inject TemplateDataStoreDao templateStoreDao;
 
@@ -191,10 +191,15 @@ public class TemplateObject implements TemplateInfo {
                 }
             }
 
-            ojbectInStoreMgr.update(this, event);
+            objectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
             throw new CloudRuntimeException("Failed to update state" + e.toString());
+        } finally{
+            // in case of OperationFailed, expunge the entry
+            if ( event == ObjectInDataStoreStateMachine.Event.OperationFailed){
+                objectInStoreMgr.delete(this);
+            }
         }
     }
 
@@ -247,10 +252,15 @@ public class TemplateObject implements TemplateInfo {
         		    this.stateTransit(templEvent);
         		}
         	}
-            ojbectInStoreMgr.update(this, event);
+            objectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
             throw new CloudRuntimeException("Failed to update state" + e.toString());
+        } finally{
+            // in case of OperationFailed, expunge the entry
+            if ( event == ObjectInDataStoreStateMachine.Event.OperationFailed){
+                objectInStoreMgr.delete(this);
+            }
         }
     }
 
@@ -266,7 +276,7 @@ public class TemplateObject implements TemplateInfo {
 
 	@Override
 	public String getInstallPath() {
-		 DataObjectInStore obj = ojbectInStoreMgr.findObject(this, this.dataStore);
+		 DataObjectInStore obj = objectInStoreMgr.findObject(this, this.dataStore);
          return obj.getInstallPath();
 	}
 

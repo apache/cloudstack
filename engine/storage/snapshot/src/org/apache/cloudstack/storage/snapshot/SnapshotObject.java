@@ -52,34 +52,37 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public class SnapshotObject implements SnapshotInfo {
-	private static final Logger s_logger = Logger.getLogger(SnapshotObject.class);
+    private static final Logger s_logger = Logger.getLogger(SnapshotObject.class);
     private SnapshotVO snapshot;
     private DataStore store;
     @Inject
     protected SnapshotDao snapshotDao;
     @Inject
     protected VolumeDao volumeDao;
-    @Inject protected VolumeDataFactory volFactory;
-    @Inject protected SnapshotStateMachineManager stateMachineMgr;
+    @Inject
+    protected VolumeDataFactory volFactory;
+    @Inject
+    protected SnapshotStateMachineManager stateMachineMgr;
     @Inject
     SnapshotDataFactory snapshotFactory;
     @Inject
-    ObjectInDataStoreManager ojbectInStoreMgr;
+    ObjectInDataStoreManager objectInStoreMgr;
     @Inject
     SnapshotDataStoreDao snapshotStoreDao;
+
     public SnapshotObject() {
 
     }
 
     protected void configure(SnapshotVO snapshot, DataStore store) {
-    	this.snapshot = snapshot;
-    	this.store = store;
+        this.snapshot = snapshot;
+        this.store = store;
     }
 
     public static SnapshotObject getSnapshotObject(SnapshotVO snapshot, DataStore store) {
-    	SnapshotObject snapObj = ComponentContext.inject(SnapshotObject.class);
-    	snapObj.configure(snapshot, store);
-    	return snapObj;
+        SnapshotObject snapObj = ComponentContext.inject(SnapshotObject.class);
+        snapObj.configure(snapshot, store);
+        return snapObj;
     }
 
     public DataStore getStore() {
@@ -88,17 +91,17 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getParent() {
-    	SnapshotDataStoreVO snapStoreVO = this.snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(), this.snapshot.getId());
-    	if (snapStoreVO == null) {
-    	    return null;
-    	}
+        SnapshotDataStoreVO snapStoreVO = this.snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(), this.snapshot.getId());
+        if (snapStoreVO == null) {
+            return null;
+        }
 
-    	long parentId = snapStoreVO.getParentSnapshotId();
-    	if (parentId == 0) {
-    	    return null;
-    	}
+        long parentId = snapStoreVO.getParentSnapshotId();
+        if (parentId == 0) {
+            return null;
+        }
 
-    	return this.snapshotFactory.getSnapshot(parentId, store);
+        return this.snapshotFactory.getSnapshot(parentId, store);
     }
 
     @Override
@@ -121,7 +124,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public long getId() {
-       return this.snapshot.getId();
+        return this.snapshot.getId();
     }
 
     @Override
@@ -136,100 +139,100 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public Long getSize() {
-    	return this.snapshot.getSize();
+        return this.snapshot.getSize();
     }
 
     @Override
     public DataObjectType getType() {
-    	return DataObjectType.SNAPSHOT;
+        return DataObjectType.SNAPSHOT;
     }
-
 
     @Override
     public String getUuid() {
         return this.snapshot.getUuid();
     }
 
-	@Override
-	public void processEvent(
-			ObjectInDataStoreStateMachine.Event event) {
-		try {
-			ojbectInStoreMgr.update(this, event);
-		} catch (Exception e) {
-			s_logger.debug("Failed to update state:" + e.toString());
-			throw new CloudRuntimeException("Failed to update state: " + e.toString());
-		}
-	}
+    @Override
+    public void processEvent(ObjectInDataStoreStateMachine.Event event) {
+        try {
+            objectInStoreMgr.update(this, event);
+        } catch (Exception e) {
+            s_logger.debug("Failed to update state:" + e.toString());
+            throw new CloudRuntimeException("Failed to update state: " + e.toString());
+        } finally {
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+                objectInStoreMgr.delete(this);
+            }
+        }
+    }
 
-	@Override
-	public long getAccountId() {
-		return this.snapshot.getAccountId();
-	}
+    @Override
+    public long getAccountId() {
+        return this.snapshot.getAccountId();
+    }
 
-	@Override
-	public long getVolumeId() {
-		return this.snapshot.getVolumeId();
-	}
+    @Override
+    public long getVolumeId() {
+        return this.snapshot.getVolumeId();
+    }
 
-	@Override
-	public String getPath() {
-		return this.ojbectInStoreMgr.findObject(this, getDataStore()).getInstallPath();
-	}
+    @Override
+    public String getPath() {
+        return this.objectInStoreMgr.findObject(this, getDataStore()).getInstallPath();
+    }
 
-	@Override
-	public String getName() {
-		return this.snapshot.getName();
-	}
+    @Override
+    public String getName() {
+        return this.snapshot.getName();
+    }
 
-	@Override
-	public Date getCreated() {
-		return this.snapshot.getCreated();
-	}
+    @Override
+    public Date getCreated() {
+        return this.snapshot.getCreated();
+    }
 
-	@Override
-	public Type getRecurringType() {
-		return this.snapshot.getRecurringType();
-	}
+    @Override
+    public Type getRecurringType() {
+        return this.snapshot.getRecurringType();
+    }
 
-	@Override
-	public State getState() {
-		return this.snapshot.getState();
-	}
+    @Override
+    public State getState() {
+        return this.snapshot.getState();
+    }
 
-	@Override
-	public HypervisorType getHypervisorType() {
-		return this.snapshot.getHypervisorType();
-	}
+    @Override
+    public HypervisorType getHypervisorType() {
+        return this.snapshot.getHypervisorType();
+    }
 
-	@Override
-	public boolean isRecursive() {
-		return this.snapshot.isRecursive();
-	}
+    @Override
+    public boolean isRecursive() {
+        return this.snapshot.isRecursive();
+    }
 
-	@Override
-	public short getsnapshotType() {
-		return this.snapshot.getsnapshotType();
-	}
+    @Override
+    public short getsnapshotType() {
+        return this.snapshot.getsnapshotType();
+    }
 
-	@Override
-	public long getDomainId() {
-		return this.snapshot.getDomainId();
-	}
+    @Override
+    public long getDomainId() {
+        return this.snapshot.getDomainId();
+    }
 
+    @Override
+    public Long getDataCenterId() {
+        return this.snapshot.getDataCenterId();
+    }
 
-	@Override
-	public Long getDataCenterId() {
-		return this.snapshot.getDataCenterId();
-	}
+    public void processEvent(Snapshot.Event event) throws NoTransitionException {
+        stateMachineMgr.processEvent(this.snapshot, event);
+    }
 
-	public void processEvent(Snapshot.Event event)
-			throws NoTransitionException {
-		stateMachineMgr.processEvent(this.snapshot, event);
-	}
-
-	public SnapshotVO getSnapshotVO(){
-	    return this.snapshot;
-	}
+    public SnapshotVO getSnapshotVO() {
+        return this.snapshot;
+    }
 
     @Override
     public DataTO getTO() {
@@ -242,34 +245,41 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
-    	SnapshotDataStoreVO snapshotStore = this.snapshotStoreDao.findByStoreSnapshot(this.getDataStore().getRole(),
-    		   this.getDataStore().getId(), this.getId());
-    	if (answer instanceof CreateObjectAnswer) {
-    		SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CreateObjectAnswer) answer).getData();
-    		snapshotStore.setInstallPath(snapshotTO.getPath());
-    		this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
-    	} else if (answer instanceof CopyCmdAnswer) {
-    	    SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer) answer).getNewData();
-    	    snapshotStore.setInstallPath(snapshotTO.getPath());
-    	    if (snapshotTO.getParentSnapshotPath() == null) {
-    	        snapshotStore.setParentSnapshotId(0L);
-    	    }
-    	    this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
-    	} else {
-    		throw new CloudRuntimeException("Unknown answer: " + answer.getClass());
-    	}
-    	this.processEvent(event);
+        try {
+            SnapshotDataStoreVO snapshotStore = this.snapshotStoreDao.findByStoreSnapshot(this.getDataStore().getRole(), this.getDataStore().getId(),
+                    this.getId());
+            if (answer instanceof CreateObjectAnswer) {
+                SnapshotObjectTO snapshotTO = (SnapshotObjectTO) ((CreateObjectAnswer) answer).getData();
+                snapshotStore.setInstallPath(snapshotTO.getPath());
+                this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
+            } else if (answer instanceof CopyCmdAnswer) {
+                SnapshotObjectTO snapshotTO = (SnapshotObjectTO) ((CopyCmdAnswer) answer).getNewData();
+                snapshotStore.setInstallPath(snapshotTO.getPath());
+                if (snapshotTO.getParentSnapshotPath() == null) {
+                    snapshotStore.setParentSnapshotId(0L);
+                }
+                this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
+            } else {
+                throw new CloudRuntimeException("Unknown answer: " + answer.getClass());
+            }
+        } catch (RuntimeException ex) {
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+                objectInStoreMgr.delete(this);
+            }
+            throw ex;
+        }
+        this.processEvent(event);
     }
 
     @Override
     public ObjectInDataStoreStateMachine.State getStatus() {
-       return this.ojbectInStoreMgr.findObject(this, store).getObjectInStoreState();
+        return this.objectInStoreMgr.findObject(this, store).getObjectInStoreState();
     }
 
-	@Override
-	public void addPayload(Object data) {
-		// TODO Auto-generated method stub
+    @Override
+    public void addPayload(Object data) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
 }
