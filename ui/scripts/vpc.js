@@ -432,7 +432,41 @@
                     }
                   }
                 }
-              }
+              },
+              
+              detailView: {
+                name: 'Internal Lb details',
+                actions: {
+                  //assignVm: { 
+                    
+                  //}
+                },                
+                tabs: {
+                  details: {
+                    title: 'label.details',
+                    fields: [
+                      {
+                        name: { label: 'label.name' }
+                      },
+                      {
+                        id: { label: 'label.id' }
+                      }
+                    ],                    
+                    dataProvider: function(args) {      
+                      $.ajax({
+                        url: createURL('listLoadBalancers'),
+                        data: {
+                          id: args.context.internalLoadBalancers[0].id
+                        },
+                        success: function(json) {     
+                          var item = json.listloadbalancerssresponse.loadbalancer[0];
+                          args.response.success({ data: item });                          
+                        }
+                      });                        
+                    }
+                  }
+                }                
+              }              
             }
           },
 
