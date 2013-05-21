@@ -81,7 +81,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
         AddImageStoreCmd cmd = new AddImageStoreCmd();
         cmd.setUrl(this.getUrl());
         cmd.setZoneId(this.getZoneId());
-        cmd.setProviderName("CloudStack ImageStore Provider");
+        cmd.setProviderName("NFS");
 
         try{
             ImageStore result = _storageService.discoverImageStore(cmd);
