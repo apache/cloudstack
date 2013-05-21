@@ -335,17 +335,21 @@
             listView: {
               id: 'internalLoadBalancers',
               fields: {
-                ipaddress: { label: 'label.ip.address' },
-                type: { label: 'label.type' }
+                name: { label: 'label.name' },
+                sourceipaddress: { label: 'Source IP Address' }                
               },
-              dataProvider: function(args) {
-                args.response.success({
-                  data: [
-                    { ipaddress: '10.3.2.1', type: 'Internal' },
-                    { ipaddress: '10.3.2.3', type: 'Internal' },
-                    { ipaddress: '10.232.1.4', type: 'Public' }
-                  ]
-                });
+              dataProvider: function(args) {                
+                $.ajax({
+                  url: createURL('listLoadBalancers'),
+                  data: {
+                    networkid: args.context.networks[0].id
+                  },
+                  success: function(json) {                    
+                    var items = json.listloadbalancerssresponse.loadbalancer;
+                    args.response.success({ data: items });
+                    
+                  }
+                });                
               },
               actions: {
                 add: {
