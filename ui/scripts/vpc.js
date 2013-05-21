@@ -446,13 +446,33 @@
                       type: 'checkbox',
                       filters: false
                     }),
-                    action: function(args) {
-                      args.response.success();
+                    action: function(args) {                      
+                      var vms = args.context.instances;
+                      var array1 = [];
+                      for(var i = 0; i < vms.length; i++) {
+                        array1.push(vms[i].id);
+                      }
+                      var virtualmachineids = array1.join(',');
+                               
+                      $.ajax({
+                        url: createURL('assignToLoadBalancerRule'),
+                        data: {
+                          id: args.context.internalLoadBalancers[0].id,
+                          virtualmachineids: virtualmachineids
+                        },
+                        dataType: 'json',
+                        async: true,
+                        success: function(data) {
+                          debugger;
+                          var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
+                          args.response.success({
+                            _custom: { jobId: jid }
+                          });
+                        }
+                      });
                     },
                     notification: {
-                      poll: function(args) {
-                        args.complete();
-                      }
+                      poll: pollAsyncJobResult
                     }
                   }
                 },                
