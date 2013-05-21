@@ -661,7 +661,7 @@
           detailView: {
             isMaximized: true,
             actions:{
-              deleteacllist:{
+              remove: {
                 label:'Delete ACL List',
                 messages: {
                   confirm: function(args) {
@@ -682,26 +682,20 @@
                          }
                         }
                       );
-
                     },
                     error:function(json){
                       args.response.error(parseXMLHttpResponse(json));
-
                     }
                   });
                 },
                 notification: {
                   poll: pollAsyncJobResult
                 }
-
               }
             },
 
-
             tabs: {
-              
               details: {
-
                 title: 'label.details',
                 fields: [
                   {
@@ -709,7 +703,6 @@
                     description: {label:'Description'},
                     id:{label:'id'}
                   }
-
                 ],
                 dataProvider: function(args) {
                   var items = args.context.aclLists[0];
@@ -718,13 +711,11 @@
                     actionFilter: function(args) {
                       var allowedActions = [];
                       if(isAdmin()) {
-                        allowedActions.push("deleteacllist");
+                        allowedActions.push("remove");
 
                       }
                       return allowedActions;
                     }
-
-
                   });
                 }
               },
