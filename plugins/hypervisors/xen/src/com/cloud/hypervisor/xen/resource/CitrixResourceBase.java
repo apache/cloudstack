@@ -660,6 +660,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Connection conn = getConnection();
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             Host host = Host.getByUuid(conn, _host.uuid);
+
+            // If DMC is not enable then dont execute this command.
+            if (isDmcEnabled(conn, host)) {
+                String msg = "Unable to scale the vm: " + vmName + " as DMC - Dynamic memory control is not enabled for the XenServer:" + _host.uuid + " ,check your license and hypervisor version.";
+                s_logger.info(msg);
+                return new ScaleVmAnswer(cmd, false, msg);
+            }
             // stop vm which is running on this host or is in halted state
             Iterator<VM> iter = vms.iterator();
             while ( iter.hasNext() ) {

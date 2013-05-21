@@ -58,7 +58,10 @@ public class CitrixResourceBaseTest {
             super.scaleVM(conn, vm, vmSpec, host);
         }
 
-
+        @Override
+        protected boolean isDmcEnabled(Connection conn, Host host) throws Types.XenAPIException, XmlRpcException {
+            return true;
+        }
     };
     @Mock XsHost _host;
     @Mock Host host;
