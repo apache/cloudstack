@@ -74,5 +74,4 @@ public class ImageStoreTO implements DataStoreTO {
     public DataStoreRole getRole() {
         return this.role;
     }
-
 }

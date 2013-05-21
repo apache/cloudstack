@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.resource;
 
 import static com.cloud.utils.S3Utils.getDirectory;
+import static com.cloud.utils.S3Utils.putFile;
 import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
 import static java.lang.String.format;
@@ -27,6 +28,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -118,7 +120,9 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
+import com.cloud.utils.S3Utils.ClientOptions;
 import com.cloud.utils.S3Utils.FileNamingStrategy;
+import com.cloud.utils.S3Utils.ObjectNamingStrategy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
@@ -214,8 +218,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((DownloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
         } else if (cmd instanceof UploadTemplateToSwiftFromSecondaryStorageCommand) {
             return execute((UploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
-        } else if (cmd instanceof UploadTemplateToS3FromSecondaryStorageCommand) {
-            return execute((UploadTemplateToS3FromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof CleanupSnapshotBackupCommand) {
             return execute((CleanupSnapshotBackupCommand) cmd);
         } else if (cmd instanceof CopyCommand) {
@@ -424,6 +426,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         return new CopyCmdAnswer("");
     }
+    
+    protected Answer copyFromNfsToImage(CopyCommand cmd) {
+           DataTO destData = cmd.getDestTO();
+           DataStoreTO destDataStore = destData.getDataStore();
+           
+           if (destDataStore instanceof S3TO) {
+        	   return copyFromNfsToS3(cmd);
+           } else {
+        	   return new CopyCmdAnswer("unsupported ");
+           }
+    }
 
     protected Answer execute(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
@@ -439,6 +452,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             S3TO s3 = (S3TO)srcDataStore;
             NfsTO destImageStore = (NfsTO)destDataStore;
             return this.copyFromS3ToNfs(cmd, srcData, s3, destData, destImageStore);
+        }
+        
+        if (srcDataStore.getRole() == DataStoreRole.ImageCache && destDataStore.getRole() == DataStoreRole.Image) {
+        	return copyFromNfsToImage(cmd);
         }
 
 
@@ -608,86 +625,47 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
-    private Answer execute(UploadTemplateToS3FromSecondaryStorageCommand cmd) {
-        /*
-                final S3TO s3 = cmd.getS3();
-                final Long accountId = cmd.getAccountId();
-                final Long templateId = cmd.getTemplateId();
-
-                try {
-        final S3TO s3 = cmd.getS3();
-        final Long accountId = cmd.getAccountId();
-        final Long templateId = cmd.getTemplateId();
-
+    protected Answer copyFromNfsToS3(CopyCommand cmd) {
+    	 final DataTO srcData = cmd.getSrcTO();
+         final DataTO destData = cmd.getDestTO();
+         DataStoreTO srcDataStore = srcData.getDataStore();
+         NfsTO srcStore = (NfsTO)srcDataStore;
+         DataStoreTO destDataStore = destData.getDataStore();
+         
+         final S3TO s3 = (S3TO)destDataStore;
+    
         try {
-
             final String templatePath = determineStorageTemplatePath(
-                    cmd.getStoragePath(), accountId, templateId);
+            		srcStore.getUrl(), srcData.getPath());
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found template id " + templateId
-                        + " account id " + accountId + " from directory "
+                s_logger.debug("Found " + srcData.getObjectType() +  " from directory "
                         + templatePath + " to upload to S3.");
             }
 
-            if (!_storage.isDirectory(templatePath)) {
-                final String errMsg = format("S3 Sync Failure: Directory %1$s"
-                        + "for template id %2$s does not exist.", templatePath,
-                        templateId);
-                s_logger.error(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
-
-            if (!_storage.isFile(templatePath + "/template.properties")) {
-                final String errMsg = format("S3 Sync Failure: Template id "
-                        + "%1$s does not exist on the file system.",
-                        templatePath);
-                s_logger.error(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(format(
-                        "Pushing template id %1$s from %2$s to S3...",
-                        templateId, templatePath));
-            }
-
             final String bucket = s3.getBucketName();
-            putDirectory(s3, bucket, _storage.getFile(templatePath),
-                    new FilenameFilter() {
-                @Override
-                public boolean accept(final File directory,
-                        final String fileName) {
-                    File fileToUpload = new File(directory.getAbsolutePath() + "/" + fileName);
-                    return !fileName.startsWith(".") && !fileToUpload.isDirectory();
-                }
-            }, new ObjectNamingStrategy() {
-                @Override
-                public String determineKey(final File file) {
-                    s_logger.debug(String
-                            .format("Determining key using account id %1$s and template id %2$s",
-                                    accountId, templateId));
-                    return join(
-                            asList(determineS3TemplateDirectory(
-                                    accountId, templateId), file
-                                    .getName()), S3Utils.SEPARATOR);
-                }
-            });
-
-            return new Answer(
-                    cmd,
-                    true,
-                    format("Uploaded the contents of directory %1$s for template id %2$s to S3 bucket %3$s",
-                            templatePath, templateId, bucket));
-
+            final File srcFile = _storage.getFile(templatePath);
+            String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
+            putFile(s3, srcFile, bucket, key);
+                  
+            DataTO retObj = null;
+            if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+            	TemplateObjectTO newTemplate = new TemplateObjectTO();
+            	newTemplate.setPath(key);
+            	newTemplate.setSize(srcFile.length());
+            	retObj = newTemplate;
+            } else if (destData.getObjectType() == DataObjectType.VOLUME) {
+            	VolumeObjectTO newVol = new VolumeObjectTO();
+            	newVol.setPath(key);
+            	newVol.setSize(srcFile.length());
+            	retObj = newVol;
+            }
+            
+            return new CopyCmdAnswer(retObj);
         } catch (Exception e) {
-
-            final String errMsg = format("Failed to upload template id %1$s",
-                    templateId);
-            s_logger.error(errMsg, e);
-            return new Answer(cmd, false, errMsg);
-        */
-        return new Answer(cmd, false, "not supported ");
+            s_logger.error("failed to upload" + srcData.getPath(), e);
+            return new CopyCmdAnswer("failed to upload" + srcData.getPath() + e.toString());
+        }
     }
 
     String swiftDownload(SwiftTO swift, String container, String rfilename, String lFullPath) {
