@@ -153,6 +153,7 @@ install:
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-bridge
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-bridge/setup
+	ln -s /usr/share/$(PACKAGE)-bridge/webapps/awsapi $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps7080/awsapi
 	cp -r awsapi/target/cloud-awsapi-$(VERSION)-SNAPSHOT/* $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi
 	install -D awsapi-setup/setup/cloud-setup-bridge $(DESTDIR)/usr/bin/cloudstack-setup-bridge
 	install -D awsapi-setup/setup/cloudstack-aws-api-register $(DESTDIR)/usr/bin/cloudstack-aws-api-register
