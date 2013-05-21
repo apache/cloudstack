@@ -1436,20 +1436,37 @@
                     docID: 'helpNetworkOfferingVPC',
                     isBoolean: true,
                     onChange: function(args) {                      
-                      var $checkbox = args.$checkbox;
-                      var $selects = $checkbox.closest('form').find('.dynamic-input select');
-                      var $vpcOptions = $selects.find('option[value=VpcVirtualRouter]');
+                      var $vpc = args.$checkbox;
+                      var $providers = $vpc.closest('form').find('.dynamic-input select');                     
+                      var $optionsOfProviders = $providers.find('option');
                      
-                      if ($checkbox.is(':checked')) {
-                        $vpcOptions.siblings().attr('disabled', true);
-                        $selects.val('VpcVirtualRouter');
-                      } else {
-                        $vpcOptions.siblings().attr('disabled', false);
-                        $vpcOptions.attr('disabled', true);
-                        $selects.each(function() {
-                          $(this).val($(this).find('option:first'));
-                        });
+                      //p.s. Netscaler is supported in both vpc and non-vpc
+                      
+                      if ($vpc.is(':checked')) { //*** vpc ***
+                        $optionsOfProviders.each(function(index) {                         
+                          if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler') {
+                            $(this).attr('disabled', false);
+                          }
+                          else {
+                            $(this).attr('disabled', true);
+                          }
+                        });     
+                      } 
+                      else { //*** non-vpc ***
+                        $optionsOfProviders.each(function(index) {                          
+                          if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter') { 
+                            $(this).attr('disabled', true);
+                          }
+                          else {
+                            $(this).attr('disabled', false);
+                          }
+                        });                                              
                       }
+                      
+                      $providers.each(function() {
+                        $(this).val($(this).find('option:first'));
+                      });
+                      
                     }
                   },
 					                  
