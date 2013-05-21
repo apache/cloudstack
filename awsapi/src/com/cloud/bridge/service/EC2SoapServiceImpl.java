@@ -18,7 +18,10 @@ package com.cloud.bridge.service;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.codec.binary.Base64;
@@ -210,87 +213,103 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 
     public CreateTagsResponse createTags(CreateTags createTags) {
         EC2Tags request = new EC2Tags();
+        ArrayList<String> resourceIdList = new ArrayList<String>();
+        Map<String, String> resourceTagList = new HashMap<String, String>();
+
         CreateTagsType ctt = createTags.getCreateTags();
 
         ResourceIdSetType resourceIds = ctt.getResourcesSet();
         ResourceTagSetType resourceTags = ctt.getTagSet();
-        request = toResourceTypeAndIds(resourceIds);
-        //add resource tag's to the request
-        if (resourceTags != null) {
-            ResourceTagSetItemType[] items = resourceTags.getItem();
-            if (items != null) {
-                for( int i=0; i < items.length; i++ ) {
-                    EC2TagKeyValue param1 = new EC2TagKeyValue();
-                    param1.setKey(items[i].getKey());
-                    param1.setValue(items[i].getValue());
-                    request.addResourceTag(param1);
-                }
-            }
+
+        ResourceIdSetItemType[] resourceIdItems = resourceIds.getItem();
+        if (resourceIdItems != null) {
+            for( int i=0; i < resourceIdItems.length; i++ )
+               resourceIdList.add(resourceIdItems[i].getResourceId());
         }
+        request = toResourceTypeAndIds(request, resourceIdList);
+
+        //add resource tag's to the request
+        ResourceTagSetItemType[] resourceTagItems = resourceTags.getItem();
+        if (resourceTagItems != null) {
+            for( int i=0; i < resourceTagItems.length; i++ )
+               resourceTagList.put(resourceTagItems[i].getKey(), resourceTagItems[i].getValue());
+        }
+        request = toResourceTag(request, resourceTagList);
+
         return toCreateTagsResponse( engine.modifyTags( request, "create"));
     }
 
     public DeleteTagsResponse deleteTags(DeleteTags deleteTags) {
         EC2Tags request = new EC2Tags();
+        ArrayList<String> resourceIdList = new ArrayList<String>();
+        Map<String, String> resourceTagList = new HashMap<String, String>();
+
         DeleteTagsType dtt = deleteTags.getDeleteTags();
 
         ResourceIdSetType resourceIds = dtt.getResourcesSet();
         DeleteTagsSetType resourceTags = dtt.getTagSet();
-        request = toResourceTypeAndIds(resourceIds);
-        //add resource tag's to the request
-        if (resourceTags != null) {
-            DeleteTagsSetItemType[] items = resourceTags.getItem();
-            if (items != null) {
-                for( int i=0; i < items.length; i++ ) {
-                    EC2TagKeyValue param1 = new EC2TagKeyValue();
-                    param1.setKey(items[i].getKey());
-                    if (items[i].getValue() != null)
-                        param1.setValue(items[i].getValue());
-                    request.addResourceTag(param1);
-                }
-            }
+
+        ResourceIdSetItemType[] resourceIdItems = resourceIds.getItem();
+
+        if (resourceIdItems != null) {
+            for( int i=0; i < resourceIdItems.length; i++ )
+               resourceIdList.add(resourceIdItems[i].getResourceId());
         }
+        request = toResourceTypeAndIds(request, resourceIdList);
+
+        //add resource tag's to the request
+        DeleteTagsSetItemType[] resourceTagItems = resourceTags.getItem();
+        if (resourceTagItems != null) {
+            for( int i=0; i < resourceTagItems.length; i++ )
+               resourceTagList.put(resourceTagItems[i].getKey(), resourceTagItems[i].getValue());
+        }
+        request = toResourceTag(request, resourceTagList);
+
         return toDeleteTagsResponse( engine.modifyTags( request, "delete"));
     }
 
-    private EC2Tags toResourceTypeAndIds(ResourceIdSetType resourceIds) {
-        EC2Tags request = new EC2Tags();
-        //add resource-type and resource-id's to the request
-        if (resourceIds != null) {
-            ResourceIdSetItemType[] items = resourceIds.getItem();
-            List<String> resourceTypeList = new ArrayList<String>();
-            if (items != null) {
-                for( int i=0; i < items.length; i++ ) {
-                    if (!items[i].getResourceId().contains(":") || items[i].getResourceId().split(":").length != 2) {
-                        throw new EC2ServiceException( ClientError.InvalidResourceId_Format,
-                                "Invalid Format. ResourceId format is resource-type:resource-uuid");
-                    }
-                    String resourceType = items[i].getResourceId().split(":")[0];
-                    if (resourceTypeList.isEmpty())
-                        resourceTypeList.add(resourceType);
-                    else {
-                        Boolean existsInList = false;
-                        for (String addedResourceType : resourceTypeList) {
-                            if (addedResourceType.equalsIgnoreCase(resourceType)) {
-                                existsInList = true;
-                                break;
-                            }
-                        }
-                        if (!existsInList)
-                            resourceTypeList.add(resourceType);
-                    }
-                }
-                for (String resourceType : resourceTypeList){
-                    EC2TagTypeId param1 = new EC2TagTypeId();
-                    param1.setResourceType(resourceType);
-                    for( int i=0; i < items.length; i++ ) {
-                        String[] resourceTag = items[i].getResourceId().split(":");
-                        if (resourceType.equals(resourceTag[0]))
-                            param1.addResourceId(resourceTag[1]);
-                    }
-                    request.addResourceType(param1);
-                }
+    public static EC2Tags toResourceTypeAndIds( EC2Tags request, ArrayList<String> resourceIdList ) {
+        List<String> resourceTypeList = new ArrayList<String>();
+        for (String resourceId : resourceIdList) {
+            if (!resourceId.contains(":") || resourceId.split(":").length != 2) {
+                throw new EC2ServiceException( ClientError.InvalidResourceId_Format,
+                        "Invalid Format. ResourceId format is resource-type:resource-uuid");
             }
+            String resourceType = resourceId.split(":")[0];
+            if (resourceTypeList.isEmpty())
+                resourceTypeList.add(resourceType);
+            else {
+                Boolean existsInList = false;
+                for (String addedResourceType : resourceTypeList) {
+                    if (addedResourceType.equalsIgnoreCase(resourceType)) {
+                        existsInList = true;
+                        break;
+                    }
+                }
+                if (!existsInList)
+                   resourceTypeList.add(resourceType);
+            }
+        }
+        for (String resourceType : resourceTypeList) {
+            EC2TagTypeId param1 = new EC2TagTypeId();
+            param1.setResourceType(resourceType);
+            for (String resourceId : resourceIdList) {
+                String[] resourceTag = resourceId.split(":");
+                if (resourceType.equals(resourceTag[0]))
+                   param1.addResourceId(resourceTag[1]);
+            }
+            request.addResourceType(param1);
+        }
+        return request;
+    }
+
+    public static EC2Tags toResourceTag( EC2Tags request, Map<String, String> resourceTagList ) {
+        Set<String> resourceTagKeySet = resourceTagList.keySet();
+        for (String resourceTagKey : resourceTagKeySet) {
+            EC2TagKeyValue param1 = new EC2TagKeyValue();
+            param1.setKey(resourceTagKey);
+            param1.setValue(resourceTagList.get(resourceTagKey));
+            request.addResourceTag(param1);
         }
         return request;
     }
