@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -27,32 +28,33 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value={VMTemplateZoneDao.class})
 public class VMTemplateZoneDaoImpl extends GenericDaoBase<VMTemplateZoneVO, Long> implements VMTemplateZoneDao {
 	public static final Logger s_logger = Logger.getLogger(VMTemplateZoneDaoImpl.class.getName());
-	
+
 	protected final SearchBuilder<VMTemplateZoneVO> ZoneSearch;
 	protected final SearchBuilder<VMTemplateZoneVO> TemplateSearch;
 	protected final SearchBuilder<VMTemplateZoneVO> ZoneTemplateSearch;
-	
-	
+
+
 	public VMTemplateZoneDaoImpl () {
 		ZoneSearch = createSearchBuilder();
 		ZoneSearch.and("zone_id", ZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
 		ZoneSearch.done();
-		
+
 		TemplateSearch = createSearchBuilder();
 		TemplateSearch.and("template_id", TemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
 		TemplateSearch.done();
-		
+
 		ZoneTemplateSearch = createSearchBuilder();
 		ZoneTemplateSearch.and("zone_id", ZoneTemplateSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
 		ZoneTemplateSearch.and("template_id", ZoneTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
 		ZoneTemplateSearch.done();
 	}
-	
+
 
 	@Override
 	public List<VMTemplateZoneVO> listByZoneId(long id) {
@@ -84,6 +86,19 @@ public class VMTemplateZoneDaoImpl extends GenericDaoBase<VMTemplateZoneVO, Long
         }
 	    sc.setParameters("template_id", templateId);
 	    return listBy(sc);
-	}	
+	}
+
+
+    @Override
+    public void deletePrimaryRecordsForTemplate(long templateId) {
+        SearchCriteria<VMTemplateZoneVO> sc = TemplateSearch.create();
+        sc.setParameters("template_id", templateId);
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        remove(sc);
+        txn.commit();
+
+    }
+
 
 }

@@ -142,7 +142,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 			s_logger.debug("there is already one in the cache store");
 			return objectInStoreMgr.get(data, cacheStore);
 		}
-		
+
 		//TODO: consider multiple thread to create
 		DataObject objOnCacheStore = cacheStore.create(data);
 
@@ -155,7 +155,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 		    result = future.get();
 
 		    if (result.isFailed()) {
-		        cacheStore.delete(data);
+		        objOnCacheStore.processEvent(Event.OperationFailed);
 		    } else {
 		        objOnCacheStore.processEvent(Event.OperationSuccessed, result.getAnswer());
 		        return objOnCacheStore;
@@ -168,7 +168,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
             s_logger.debug("create cache storage failed: " + e.toString());
         } finally {
             if (result == null) {
-                cacheStore.delete(data);
+                objOnCacheStore.processEvent(Event.OperationFailed);
             }
         }
 
@@ -191,8 +191,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 	}
 
     @Override
-    public DataObject deleteCacheObject(DataObject data) {
-        // TODO Auto-generated method stub
-        return null;
+    public boolean deleteCacheObject(DataObject data) {
+        return objectInStoreMgr.delete(data);
     }
 }
