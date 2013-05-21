@@ -11736,13 +11736,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .destroy .icon,
 .remove .icon,
 .delete .icon,
-.decline .icon {
+.decline .icon,
+.deleteacllist .icon {
   background-position: 1px -92px;
 }
 
 .destroy:hover .icon,
 .remove:hover .icon,
-.delete:hover .icon {
+.delete:hover .icon,
+.deleteacllist:hover .icon {
   background-position: 1px -674px;
 }
 

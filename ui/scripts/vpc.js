@@ -663,7 +663,16 @@
                 dataProvider: function(args) {
                      var items = args.context.aclLists[0];
                      args.response.success({
-                        data: items
+                        data: items,
+                         actionFilter: function(args) {
+                            var allowedActions = [];
+                            if(isAdmin()) {
+                              allowedActions.push("deleteacllist");
+
+                            }
+                            return allowedActions;
+                          }
+
 
                     });
                 }
