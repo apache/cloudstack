@@ -198,7 +198,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
     }
 
     public void setGslbProvider(boolean gslbProvider) {
-        gslbProvider = gslbProvider;
+        this.gslbProvider = gslbProvider;
     }
 
     public void setGslbSitePublicIP(String gslbSitePublicIP) {
