@@ -16,24 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.discoverer;
 
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.persistence.EntityExistsException;
-
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -65,6 +47,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xen.resource.XcpOssResource;
+import com.cloud.hypervisor.xen.resource.XcpServer16Resource;
 import com.cloud.hypervisor.xen.resource.XcpServerResource;
 import com.cloud.hypervisor.xen.resource.XenServer56FP1Resource;
 import com.cloud.hypervisor.xen.resource.XenServer56Resource;
@@ -79,9 +62,9 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.user.Account;
@@ -97,6 +80,22 @@ import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types.SessionAuthenticationFailed;
 import com.xensource.xenapi.Types.XenAPIException;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 @Local(value=Discoverer.class)
 public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
@@ -316,6 +315,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
                 params.put(Config.XenMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenMaxNics.toString()));
+                params.put(Config.XenHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenHeartBeatInterval.toString()));
                 params.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 details.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 try {
@@ -420,6 +420,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     	} else {
     		prodBrand = prodBrand.trim();
     	}
+
     	String prodVersion = record.softwareVersion.get("product_version");
     	if (prodVersion == null) {
     		prodVersion = record.softwareVersion.get("platform_version").trim();
@@ -427,36 +428,35 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     		prodVersion = prodVersion.trim();
     	}
 
-        if(prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") ||  prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4"))) {
-            return new XcpServerResource("1.1");
+        // Xen Cloud Platform group of hypervisors
+        if (prodBrand.equals("XCP") && (
+                prodVersion.equals("1.0.0")
+                        || prodVersion.equals("1.1.0")
+                        || prodVersion.equals("5.6.100")
+                        || prodVersion.startsWith("1.4")
+        )) {
+            return new XcpServerResource();
         } else if (prodBrand.equals("XCP") && prodVersion.startsWith("1.6")) {
-        	return new XcpServerResource("1.6");
-        }
-
-    	if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
-    		return new XenServer56Resource();
-
-    	if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.0"))
-    		return new XenServer600Resource();
-
-    	if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2"))
-    		return new XenServer602Resource();
-    	
-        if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
+            return new XcpServer16Resource();
+        } // Citrix Xenserver group of hypervisors
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.0"))
+            return new XenServer56Resource();
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.0"))
+            return new XenServer600Resource();
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2"))
+            return new XenServer602Resource();
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
             return new XenServer610Resource();
-
-    	if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100"))  {
-    		String prodVersionTextShort = record.softwareVersion.get("product_version_text_short").trim();
-    		if("5.6 SP2".equals(prodVersionTextShort)) {
-    			return new XenServer56SP2Resource();
-    		} else if("5.6 FP1".equals(prodVersionTextShort)) {
-    			return new XenServer56FP1Resource();
-    		}
-    	}
-    	
-    	if (prodBrand.equals("XCP_Kronos")) {
-    		return new XcpOssResource();
-    	}
+        else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) {
+            String prodVersionTextShort = record.softwareVersion.get("product_version_text_short").trim();
+            if ("5.6 SP2".equals(prodVersionTextShort)) {
+                return new XenServer56SP2Resource();
+            } else if ("5.6 FP1".equals(prodVersionTextShort)) {
+                return new XenServer56FP1Resource();
+            }
+        } else if (prodBrand.equals("XCP_Kronos")) {
+            return new XcpOssResource();
+        }
     	
         String msg = "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0 but this one is " + prodBrand + " " + prodVersion;
     			_alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
@@ -585,10 +585,12 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         Map<String, String> details = startup.getHostDetails();
         String prodBrand = details.get("product_brand").trim();
         String prodVersion = details.get("product_version").trim();
-        
-        if(prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") || prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100")  || prodVersion.startsWith("1.4") || prodVersion.startsWith("1.6"))) {
+
+        if (prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") || prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4"))) {
             resource = XcpServerResource.class.getName();
-        } else if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) {
+        } else if (prodBrand.equals("XCP") && prodVersion.startsWith("1.6")) {
+            resource = XcpServer16Resource.class.getName();
+        } else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) {
             resource = XenServer56Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.0")) {
             resource = XenServer600Resource.class.getName();
@@ -596,15 +598,15 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             resource = XenServer602Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0")) {
             resource = XenServer610Resource.class.getName();
-        } else if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100"))  {
+        } else if (prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) {
             String prodVersionTextShort = details.get("product_version_text_short").trim();
-            if("5.6 SP2".equals(prodVersionTextShort)) {
+            if ("5.6 SP2".equals(prodVersionTextShort)) {
                 resource = XenServer56SP2Resource.class.getName();
-            } else if("5.6 FP1".equals(prodVersionTextShort)) {
+            } else if ("5.6 FP1".equals(prodVersionTextShort)) {
                 resource = XenServer56FP1Resource.class.getName();
             }
         } else if (prodBrand.equals("XCP_Kronos")) {
-        	resource = XcpOssResource.class.getName();
+            resource = XcpOssResource.class.getName();
         }
         
         if( resource == null ){

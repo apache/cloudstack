@@ -16,12 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
@@ -33,6 +27,11 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of VirtualMachineProfile.
@@ -239,28 +238,27 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
 	    return _params;
 	}
 
-	public void setServiceOffering(ServiceOfferingVO offering) {
-		_offering = offering;
-	}
+    public void setServiceOffering(ServiceOfferingVO offering) {
+        _offering = offering;
+    }
 
-    public void setcpuOvercommitRatio(Float cpuOvercommitRatio){
-        this.cpuOvercommitRatio= cpuOvercommitRatio;
+    public void setCpuOvercommitRatio(Float cpuOvercommitRatio) {
+        this.cpuOvercommitRatio = cpuOvercommitRatio;
 
     }
 
-    public void setramOvercommitRatio(Float memoryOvercommitRatio){
-        this.memoryOvercommitRatio= memoryOvercommitRatio;
+    public void setMemoryOvercommitRatio(Float memoryOvercommitRatio) {
+        this.memoryOvercommitRatio = memoryOvercommitRatio;
 
-    }
-    @Override
-   public Float getCpuOvercommitRatio(){
-        return  this.cpuOvercommitRatio;
     }
 
     @Override
-    public Float getMemoryOvercommitRatio(){
+    public Float getCpuOvercommitRatio() {
+        return this.cpuOvercommitRatio;
+    }
+
+    @Override
+    public Float getMemoryOvercommitRatio() {
         return this.memoryOvercommitRatio;
     }
-
-
 }

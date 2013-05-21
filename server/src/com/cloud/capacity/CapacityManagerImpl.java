@@ -177,10 +177,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         ServiceOfferingVO svo = _offeringsDao.findById(vm.getServiceOfferingId());
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
         CapacityVO capacityMemory = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
-        Long clusterId=null;
+        Long clusterId = null;
         if (hostId != null) {
-        HostVO host = _hostDao.findById(hostId);
-        clusterId= host.getClusterId();
+            HostVO host = _hostDao.findById(hostId);
+            clusterId = host.getClusterId();
         }
         if (capacityCpu == null || capacityMemory == null || svo == null) {
             return false;
@@ -263,8 +263,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         long hostId = vm.getHostId();
         HostVO host = _hostDao.findById(hostId);
         long clusterId = host.getClusterId();
-        float cpuOvercommitRatio =Float.parseFloat(_clusterDetailsDao.findDetail(clusterId,"cpuOvercommitRatio").getValue());
-        float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId,"memoryOvercommitRatio").getValue());
+        float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio").getValue());
+        float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio").getValue());
 
         ServiceOfferingVO svo = _offeringsDao.findById(vm.getServiceOfferingId());
 
@@ -348,7 +348,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOvercommitRatio,float memoryOvercommitRatio, boolean considerReservedCapacity) {
+    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOvercommitRatio, float memoryOvercommitRatio, boolean considerReservedCapacity) {
         boolean hasCapacity = false;
 
         if (s_logger.isDebugEnabled()) {
@@ -381,7 +381,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         long actualTotalCpu = capacityCpu.getTotalCapacity();
         long actualTotalMem = capacityMem.getTotalCapacity();
         long totalCpu = (long) (actualTotalCpu * cpuOvercommitRatio );
-        long totalMem = (long) (actualTotalMem *memoryOvercommitRatio );
+        long totalMem = (long) (actualTotalMem * memoryOvercommitRatio);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Hosts's actual total CPU: " + actualTotalCpu + " and CPU after applying overprovisioning: " + totalCpu);
         }
@@ -744,8 +744,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             capacityCPU.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
             capacityCPU.addAnd("capacityType", SearchCriteria.Op.EQ, CapacityVO.CAPACITY_TYPE_CPU);
             List<CapacityVO> capacityVOCpus = _capacityDao.search(capacitySC, null);
-            Float cpuovercommitratio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(),"cpuOvercommitRatio").getValue());
-            Float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(),"memoryOvercommitRatio").getValue());
+            Float cpuovercommitratio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(), "cpuOvercommitRatio").getValue());
+            Float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(), "memoryOvercommitRatio").getValue());
 
             if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
                 CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
@@ -778,7 +778,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
             if (capacityVOMems != null && !capacityVOMems.isEmpty()) {
                 CapacityVO CapacityVOMem = capacityVOMems.get(0);
-                long newTotalMem = (long)((server.getTotalMemory())* memoryOvercommitRatio);
+                long newTotalMem = (long) ((server.getTotalMemory()) * memoryOvercommitRatio);
                 if (CapacityVOMem.getTotalCapacity() <= newTotalMem
                         || (CapacityVOMem.getUsedCapacity() + CapacityVOMem.getReservedCapacity() <= newTotalMem)) {
                     CapacityVOMem.setTotalCapacity(newTotalMem);

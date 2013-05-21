@@ -202,11 +202,9 @@ class TestISO(cloudstackTestCase):
         cls.services["sourcezoneid"] = cls.zone.id
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
-        zones = cls.api_client.listZones(cmd)
-        if not isinstance(zones, list):
+        cls.zones = cls.api_client.listZones(cmd)
+        if not isinstance(cls.zones, list):
             raise Exception("Failed to find zones.")
-        if len(zones) >= 2:
-            cls.services["destzoneid"] = zones[1].id
 
         #Create an account, ISOs etc.
         cls.account = Account.create(
@@ -484,6 +482,10 @@ class TestISO(cloudstackTestCase):
         #Validate the following
         #1. copy ISO should be successful and secondary storage
         #   should contain new copied ISO.
+        if len(self.zones) <= 1:
+            self.skipTest("Not enough zones available to perform copy template")
+
+        self.services["destzoneid"] = filter(lambda z: z.id != self.zone.id, self.zones)[0]
 
         self.debug("Copy ISO from %s to %s" % (
                                                self.zone.id,

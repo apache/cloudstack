@@ -224,7 +224,7 @@ class TestResourceTags(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     accountid=cls.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.zone.networktype
                                 )
@@ -280,7 +280,7 @@ class TestResourceTags(cloudstackTestCase):
         networks = Network.list(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 listall=True
                                 )
         self.assertEqual(
@@ -297,7 +297,7 @@ class TestResourceTags(cloudstackTestCase):
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=network.id
                                     )
         self.cleanup.append(public_ip)
@@ -346,7 +346,7 @@ class TestResourceTags(cloudstackTestCase):
                         resourceType='LoadBalancer',
                         key='LB',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         value=40
                         )
 
@@ -393,7 +393,7 @@ class TestResourceTags(cloudstackTestCase):
                         resourceType='LoadBalancer',
                         key='LB',
                         account=self.account.name,
-                        domainid=self.account.account.domainid
+                        domainid=self.account.domainid
                         )
 
         self.assertEqual(
@@ -423,7 +423,7 @@ class TestResourceTags(cloudstackTestCase):
         networks = Network.list(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 listall=True
                                 )
         self.assertEqual(
@@ -440,7 +440,7 @@ class TestResourceTags(cloudstackTestCase):
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=network.id
                                     )
         self.cleanup.append(public_ip)
@@ -484,7 +484,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='portForwardingRule',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='PF',
                         value=40
                         )
@@ -529,7 +529,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='portForwardingRule',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='PF',
                         value=40
                         )
@@ -560,7 +560,7 @@ class TestResourceTags(cloudstackTestCase):
         networks = Network.list(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 listall=True
                                 )
         self.assertEqual(
@@ -577,7 +577,7 @@ class TestResourceTags(cloudstackTestCase):
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=network.id
                                     )
         self.cleanup.append(public_ip)
@@ -626,7 +626,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='FirewallRule',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='FW',
                         value='40'
                         )
@@ -671,7 +671,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='FirewallRule',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='FW',
                         value='40'
                         )
@@ -704,7 +704,7 @@ class TestResourceTags(cloudstackTestCase):
         networks = Network.list(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 listall=True
                                 )
         self.assertEqual(
@@ -721,7 +721,7 @@ class TestResourceTags(cloudstackTestCase):
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=network.id
                                     )
         self.cleanup.append(public_ip)
@@ -754,7 +754,7 @@ class TestResourceTags(cloudstackTestCase):
                         self.apiclient,
                         public_ip.ipaddress.id,
                         account=self.account.name,
-                        domainid=self.account.account.domainid
+                        domainid=self.account.domainid
                         )
 
         except Exception as e:
@@ -792,7 +792,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='VPN',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='protocol',
                         value='L2TP'
                         )
@@ -823,7 +823,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='VPN',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='protocol',
                         value='L2TP'
                         )
@@ -863,7 +863,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -907,7 +907,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -978,7 +978,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='Template',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='OS',
                         value='CentOS'
                         )
@@ -1019,7 +1019,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='Template',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='OS',
                         value='CentOS'
                         )
@@ -1042,7 +1042,7 @@ class TestResourceTags(cloudstackTestCase):
                          self.apiclient,
                          self.services["iso"],
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.debug("ISO created with ID: %s" % iso.id)
 
@@ -1070,7 +1070,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='ISO',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='OS',
                         value='CentOS'
                         )
@@ -1115,7 +1115,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='ISO',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='OS',
                         value='CentOS'
                         )
@@ -1141,7 +1141,7 @@ class TestResourceTags(cloudstackTestCase):
                                self.services["volume"],
                                zoneid=self.zone.id,
                                account=self.account.name,
-                               domainid=self.account.account.domainid,
+                               domainid=self.account.domainid,
                                diskofferingid=self.disk_offering.id
                                )
         self.cleanup.append(volume)
@@ -1162,7 +1162,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='volume',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -1205,7 +1205,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='volume',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region'
                         )
         self.assertEqual(
@@ -1262,7 +1262,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='snapshot',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='type',
                         value='manual'
                         )
@@ -1312,7 +1312,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='snapshot',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='type',
                         value='manual'
                         )
@@ -1337,7 +1337,7 @@ class TestResourceTags(cloudstackTestCase):
         networks = Network.list(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 listall=True
                                 )
         self.assertEqual(
@@ -1363,7 +1363,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='Network',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -1381,7 +1381,7 @@ class TestResourceTags(cloudstackTestCase):
         networks = Network.list(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 listall=True,
                                 key='region',
                                 value='India'       
@@ -1409,7 +1409,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='Network',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -1479,7 +1479,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -1516,7 +1516,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -1550,7 +1550,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -1596,7 +1596,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -1642,7 +1642,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -1691,7 +1691,7 @@ class TestResourceTags(cloudstackTestCase):
                                  self.apiclient,
                                  self.services["project"],
                                  account=self.account.name,
-                                 domainid=self.account.account.domainid
+                                 domainid=self.account.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -1758,7 +1758,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='project',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -1799,7 +1799,7 @@ class TestResourceTags(cloudstackTestCase):
                          self.apiclient,
                          self.services["iso"],
                          account=user_account.name,
-                         domainid=user_account.account.domainid
+                         domainid=user_account.domainid
                          )
         self.debug("ISO created with ID: %s" % iso.id)
 
@@ -1827,7 +1827,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='ISO',
                         account=user_account.name,
-                        domainid=user_account.account.domainid,
+                        domainid=user_account.domainid,
                         key='region',
                         )
     
@@ -1849,7 +1849,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='ISO',
                         account=other_user_account.name,
-                        domainid=other_user_account.account.domainid,
+                        domainid=other_user_account.domainid,
                         key='region',
                         )
         
@@ -1884,7 +1884,7 @@ class TestResourceTags(cloudstackTestCase):
                          self.apiclient,
                          self.services["iso"],
                          account=user_account.name,
-                         domainid=user_account.account.domainid
+                         domainid=user_account.domainid
                          )
         self.debug("ISO created with ID: %s" % iso.id)
 
@@ -1912,7 +1912,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='ISO',
                         account=user_account.name,
-                        domainid=user_account.account.domainid,
+                        domainid=user_account.domainid,
                         key='region',
                         )
     
@@ -2009,7 +2009,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -2042,7 +2042,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -2065,7 +2065,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                             )
@@ -2103,7 +2103,7 @@ class TestResourceTags(cloudstackTestCase):
                                self.services["volume"],
                                zoneid=self.zone.id,
                                account=self.account.name,
-                               domainid=self.account.account.domainid,
+                               domainid=self.account.domainid,
                                diskofferingid=self.disk_offering.id
                                )
         self.cleanup.append(volume)
@@ -2124,7 +2124,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='volume',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         )
         self.assertEqual(
@@ -2152,7 +2152,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -2185,7 +2185,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -2246,7 +2246,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )
@@ -2295,7 +2295,7 @@ class TestResourceTags(cloudstackTestCase):
                         listall=True,
                         resourceType='userVM',
                         account=self.account.name,
-                        domainid=self.account.account.domainid,
+                        domainid=self.account.domainid,
                         key='region',
                         value='India'
                         )

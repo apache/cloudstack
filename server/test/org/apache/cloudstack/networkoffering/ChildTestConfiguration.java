@@ -20,6 +20,9 @@ package org.apache.cloudstack.networkoffering;
 import java.io.IOException;
 
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.region.PortableIpDaoImpl;
+import org.apache.cloudstack.region.dao.RegionDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
@@ -113,6 +116,7 @@ import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
 
 @Configuration
 @ComponentScan(basePackageClasses={
@@ -162,6 +166,9 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         NetworkServiceMapDaoImpl.class,
         PrimaryDataStoreDaoImpl.class,
         StoragePoolDetailsDaoImpl.class,
+        PortableIpRangeDaoImpl.class,
+        RegionDaoImpl.class,
+        PortableIpDaoImpl.class,
         AccountGuestVlanMapDaoImpl.class
     },
 includeFilters={@Filter(value=ChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},

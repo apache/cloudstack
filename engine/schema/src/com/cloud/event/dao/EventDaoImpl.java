@@ -44,6 +44,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         CompletedEventSearch = createSearchBuilder();
         CompletedEventSearch.and("state",CompletedEventSearch.entity().getState(),SearchCriteria.Op.EQ);
         CompletedEventSearch.and("startId", CompletedEventSearch.entity().getStartId(), SearchCriteria.Op.EQ);
+        CompletedEventSearch.and("archived", CompletedEventSearch.entity().getArchived(), Op.EQ);
         CompletedEventSearch.done();
 
         ToArchiveOrDeleteEventSearch = createSearchBuilder();
@@ -51,6 +52,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         ToArchiveOrDeleteEventSearch.and("type", ToArchiveOrDeleteEventSearch.entity().getType(), Op.EQ);
         ToArchiveOrDeleteEventSearch.and("accountIds", ToArchiveOrDeleteEventSearch.entity().getAccountId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("createDateL", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LT);
+        ToArchiveOrDeleteEventSearch.and("archived", ToArchiveOrDeleteEventSearch.entity().getArchived(), Op.EQ);
         ToArchiveOrDeleteEventSearch.done();
     }
 
@@ -64,6 +66,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         if (oldTime == null) return null;
         SearchCriteria<EventVO> sc = createSearchCriteria();
         sc.addAnd("createDate", SearchCriteria.Op.LT, oldTime);
+        sc.addAnd("archived", SearchCriteria.Op.EQ, false);
         return listIncludingRemovedBy(sc, null);
     }
 
@@ -72,6 +75,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         SearchCriteria<EventVO> sc = CompletedEventSearch.create();
         sc.setParameters("state", State.Completed);
         sc.setParameters("startId", startId);
+        sc.setParameters("archived", false);
         return findOneIncludingRemovedBy(sc);
     }
 
@@ -90,6 +94,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         if (accountIds != null && !accountIds.isEmpty()) {
             sc.setParameters("accountIds", accountIds.toArray(new Object[accountIds.size()]));
         }
+        sc.setParameters("archived", false);
         return search(sc, null);
     }
 

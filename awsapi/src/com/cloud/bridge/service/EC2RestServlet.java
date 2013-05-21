@@ -35,8 +35,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -68,10 +71,12 @@ import com.amazon.ec2.CreateImageResponse;
 import com.amazon.ec2.CreateKeyPairResponse;
 import com.amazon.ec2.CreateSecurityGroupResponse;
 import com.amazon.ec2.CreateSnapshotResponse;
+import com.amazon.ec2.CreateTagsResponse;
 import com.amazon.ec2.CreateVolumeResponse;
 import com.amazon.ec2.DeleteKeyPairResponse;
 import com.amazon.ec2.DeleteSecurityGroupResponse;
 import com.amazon.ec2.DeleteSnapshotResponse;
+import com.amazon.ec2.DeleteTagsResponse;
 import com.amazon.ec2.DeleteVolumeResponse;
 import com.amazon.ec2.DeregisterImageResponse;
 import com.amazon.ec2.DescribeAvailabilityZonesResponse;
@@ -82,6 +87,7 @@ import com.amazon.ec2.DescribeInstancesResponse;
 import com.amazon.ec2.DescribeKeyPairsResponse;
 import com.amazon.ec2.DescribeSecurityGroupsResponse;
 import com.amazon.ec2.DescribeSnapshotsResponse;
+import com.amazon.ec2.DescribeTagsResponse;
 import com.amazon.ec2.DescribeVolumesResponse;
 import com.amazon.ec2.DetachVolumeResponse;
 import com.amazon.ec2.DisassociateAddressResponse;
@@ -122,12 +128,14 @@ import com.cloud.bridge.service.core.ec2.EC2DescribeInstances;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairs;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroups;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSnapshots;
+import com.cloud.bridge.service.core.ec2.EC2DescribeTags;
 import com.cloud.bridge.service.core.ec2.EC2DescribeVolumes;
 import com.cloud.bridge.service.core.ec2.EC2DisassociateAddress;
 import com.cloud.bridge.service.core.ec2.EC2Engine;
 import com.cloud.bridge.service.core.ec2.EC2Filter;
 import com.cloud.bridge.service.core.ec2.EC2GroupFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2Image;
+import com.cloud.bridge.service.core.ec2.EC2ImageFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2ImageAttributes.ImageAttribute;
 import com.cloud.bridge.service.core.ec2.EC2ImageLaunchPermission;
 import com.cloud.bridge.service.core.ec2.EC2ImportKeyPair;
@@ -143,6 +151,10 @@ import com.cloud.bridge.service.core.ec2.EC2SecurityGroup;
 import com.cloud.bridge.service.core.ec2.EC2SnapshotFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2StartInstances;
 import com.cloud.bridge.service.core.ec2.EC2StopInstances;
+import com.cloud.bridge.service.core.ec2.EC2TagKeyValue;
+import com.cloud.bridge.service.core.ec2.EC2TagTypeId;
+import com.cloud.bridge.service.core.ec2.EC2Tags;
+import com.cloud.bridge.service.core.ec2.EC2TagsFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2Volume;
 import com.cloud.bridge.service.core.ec2.EC2VolumeFilterSet;
 import com.cloud.bridge.service.exception.EC2ServiceException;
@@ -294,6 +306,9 @@ public class EC2RestServlet extends HttpServlet {
             else if (action.equalsIgnoreCase( "ImportKeyPair"             )) importKeyPair(request, response);
             else if (action.equalsIgnoreCase( "DeleteKeyPair"             )) deleteKeyPair(request, response);
             else if (action.equalsIgnoreCase( "DescribeKeyPairs"          )) describeKeyPairs(request, response);
+            else if (action.equalsIgnoreCase( "CreateTags"                )) createTags(request, response);
+            else if (action.equalsIgnoreCase( "DeleteTags"                )) deleteTags(request, response);
+            else if (action.equalsIgnoreCase( "DescribeTags"              )) describeTags(request, response);
             else if (action.equalsIgnoreCase( "GetPasswordData"           )) getPasswordData(request, response);
             else {
                 logger.error("Unsupported action " + action);
@@ -1366,6 +1381,15 @@ public class EC2RestServlet extends HttpServlet {
                 if (null != value && 0 < value.length) EC2request.addImageSet( value[0] );
             }
         }		
+        // add filters
+        EC2Filter[] filterSet = extractFilters( request );
+        if ( filterSet != null ) {
+            EC2ImageFilterSet ifs = new EC2ImageFilterSet();
+            for( int i=0; i < filterSet.length; i++ ) {
+                ifs.addFilter(filterSet[i]);
+            }
+            EC2request.setFilterSet( ifs );
+        }
         // -> execute the request
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
         DescribeImagesResponse EC2response = EC2SoapServiceImpl.toDescribeImagesResponse( engine.describeImages( EC2request ));
@@ -1824,6 +1848,83 @@ public class EC2RestServlet extends HttpServlet {
         serializeResponse(response, EC2Response);
     }
 
+    private void createTags(HttpServletRequest request, HttpServletResponse response)
+            throws ADBException, XMLStreamException, IOException {
+        EC2Tags ec2Request = createTagsRequest(request, response);
+        if (ec2Request == null) return;
+        CreateTagsResponse EC2Response = EC2SoapServiceImpl.toCreateTagsResponse(
+                ServiceProvider.getInstance().getEC2Engine().modifyTags( ec2Request, "create"));
+        serializeResponse(response, EC2Response);
+    }
+
+    private void deleteTags(HttpServletRequest request, HttpServletResponse response)
+            throws ADBException, XMLStreamException, IOException {
+        EC2Tags ec2Request = createTagsRequest(request, response);
+        if (ec2Request == null) return;
+        DeleteTagsResponse EC2Response = EC2SoapServiceImpl.toDeleteTagsResponse(
+                ServiceProvider.getInstance().getEC2Engine().modifyTags( ec2Request, "delete"));
+        serializeResponse(response, EC2Response);
+    }
+
+    private EC2Tags createTagsRequest(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        EC2Tags ec2Request = new EC2Tags();
+        ArrayList<String> resourceIdList = new ArrayList<String>();
+        Map<String, String> resourceTagList = new HashMap<String, String>();
+
+        int nCount = 1;
+        do {
+            String[] resourceIds = request.getParameterValues( "ResourceId." + nCount );
+            if (resourceIds != null && resourceIds.length > 0)
+                resourceIdList.add(resourceIds[0]);
+            else break;
+            nCount++;
+        } while (true);
+        if ( resourceIdList.isEmpty() ) {
+            response.sendError(530, "At least one Resource is required" );
+            return null;
+        }
+        ec2Request = EC2SoapServiceImpl.toResourceTypeAndIds(ec2Request, resourceIdList);
+
+        nCount = 1;
+        do {
+            String[] tagKey = request.getParameterValues( "Tag." + nCount + ".Key" );
+            if ( tagKey != null && tagKey.length > 0 ) {
+               String[] tagValue = request.getParameterValues( "Tag." + nCount + ".Value" );
+            if ( tagValue != null && tagValue.length > 0 ) {
+                resourceTagList.put(tagKey[0], tagValue[0]);
+            } else
+                resourceTagList.put(tagKey[0], null);
+            } else break;
+            nCount++;
+        } while (true);
+        if ( resourceTagList.isEmpty() ) {
+            response.sendError(530, "At least one Tag is required" );
+            return null;
+        }
+        ec2Request = EC2SoapServiceImpl.toResourceTag(ec2Request, resourceTagList);
+
+        return ec2Request;
+    }
+
+    private void describeTags(HttpServletRequest request, HttpServletResponse response)
+            throws ADBException, XMLStreamException, IOException {
+        EC2DescribeTags ec2Request = new EC2DescribeTags();
+
+        EC2Filter[] filterSet = extractFilters( request );
+        if (null != filterSet) {
+            EC2TagsFilterSet tfs = new EC2TagsFilterSet();
+            for( int i=0; i < filterSet.length; i++ )
+                tfs.addFilter( filterSet[i] );
+            ec2Request.setFilterSet( tfs );
+        }
+        DescribeTagsResponse EC2Response = EC2SoapServiceImpl.toDescribeTagsResponse(
+                ServiceProvider.getInstance().getEC2Engine().describeTags( ec2Request));
+        serializeResponse(response, EC2Response);
+    }
+
+    
+
     /**
      * This function implements the EC2 REST authentication algorithm.   It uses the given
      * "AWSAccessKeyId" parameter to look up the Cloud.com account holder's secret key which is
@@ -2043,8 +2144,9 @@ public class EC2RestServlet extends HttpServlet {
             throws ADBException, XMLStreamException, IOException {
         OutputStream os = response.getOutputStream();
         response.setStatus(200);	
-        response.setContentType("text/xml; charset=UTF-8");
+        response.setContentType("text/xml");
         XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
+        xmlWriter.writeStartDocument("UTF-8","1.0");
         MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
         MTOMWriter.setDefaultNamespace("http://ec2.amazonaws.com/doc/" + wsdlVersion + "/");
         EC2Response.serialize( null, factory, MTOMWriter );

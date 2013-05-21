@@ -320,7 +320,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -339,7 +339,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -363,7 +363,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.2.1',
@@ -378,7 +378,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.3.1',
@@ -392,7 +392,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -404,7 +404,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
                                   )
@@ -415,7 +415,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_3.id)]
                                   )
@@ -425,7 +425,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -468,7 +468,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   state="Running",
                                   listall=True
                                   )
@@ -535,7 +535,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -554,7 +554,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -578,7 +578,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.2.1',
@@ -593,7 +593,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.3.1',
@@ -607,7 +607,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -619,7 +619,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
                                   )
@@ -630,7 +630,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_3.id)]
                                   )
@@ -640,7 +640,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -720,7 +720,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   state="Running",
                                   listall=True
                                   )
@@ -788,7 +788,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -807,7 +807,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -831,7 +831,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.2.1',
@@ -846,7 +846,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.3.1',
@@ -860,7 +860,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -872,7 +872,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
                                   )
@@ -883,7 +883,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_3.id)]
                                   )
@@ -893,7 +893,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -965,7 +965,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.4.1',
@@ -978,7 +978,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_4.id)]
                                   )
@@ -989,7 +989,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   state="Running",
                                   listall=True
                                   )
@@ -1057,7 +1057,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1076,7 +1076,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1100,7 +1100,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.2.1',
@@ -1115,7 +1115,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.3.1',
@@ -1129,7 +1129,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -1141,7 +1141,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
                                   )
@@ -1152,7 +1152,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_3.id)]
                                   )
@@ -1162,7 +1162,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -1236,7 +1236,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.4.1',
@@ -1249,7 +1249,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_4.id)]
                                   )
@@ -1283,7 +1283,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   state="Running",
                                   listall=True
                                   )
@@ -1337,7 +1337,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1360,7 +1360,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.0.1',
@@ -1399,7 +1399,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway=gateway,
@@ -1417,7 +1417,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway=gateway,
@@ -1436,7 +1436,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway=gateway,
@@ -1453,7 +1453,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -1512,7 +1512,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1531,7 +1531,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1555,7 +1555,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.2.1',
@@ -1569,7 +1569,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -1578,7 +1578,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -1590,7 +1590,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
                                   )
@@ -1599,7 +1599,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
                                   )
@@ -1609,7 +1609,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -1650,7 +1650,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   networkid=network_1.id,
                                   listall=True
                                   )
@@ -1685,7 +1685,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   networkid=network_2.id,
                                   listall=True
                                   )
@@ -1704,7 +1704,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -1777,7 +1777,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -1796,7 +1796,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.1.1',
@@ -1820,7 +1820,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=nw_off_no_lb.id,
                                 zoneid=self.zone.id,
                                 gateway='10.1.2.1',
@@ -1834,7 +1834,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -1843,7 +1843,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_1.id)]
                                   )
@@ -1855,7 +1855,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
                                   )
@@ -1864,7 +1864,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network_2.id)]
                                   )
@@ -1874,7 +1874,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -1895,7 +1895,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network_1.id,
                                 vpcid=vpc.id
                                 )
@@ -1927,7 +1927,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network_1.id,
                                 vpcid=vpc.id
                                 )
@@ -1956,7 +1956,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     listall=True,
                                     isstaticnat=True,
                                     account=self.account.name,
-                                    domainid=self.account.account.domainid
+                                    domainid=self.account.domainid
                                   )
         self.assertEqual(
                          isinstance(public_ips, list),
@@ -1974,7 +1974,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network_2.id,
                                 vpcid=vpc.id
                                 )
@@ -1993,7 +1993,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     accountid=self.account.name,
                                     networkid=network_2.id,
                                     vpcid=vpc.id,
-                                    domainid=self.account.account.domainid
+                                    domainid=self.account.domainid
                                 )
 
         self.debug("Adding virtual machines %s and %s to LB rule" % (
@@ -2066,7 +2066,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network_2.id,
                                 vpcid=vpc.id
                                 )
@@ -2098,7 +2098,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network_2.id,
                                 vpcid=vpc.id
                                 )
@@ -2127,7 +2127,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     listall=True,
                                     isstaticnat=True,
                                     account=self.account.name,
-                                    domainid=self.account.account.domainid
+                                    domainid=self.account.domainid
                                   )
         self.assertEqual(
                          isinstance(public_ips, list),
@@ -2145,7 +2145,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network_2.id,
                                 vpcid=vpc.id
                                 )
@@ -2164,7 +2164,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                     accountid=self.account.name,
                                     networkid=network_2.id,
                                     vpcid=vpc.id,
-                                    domainid=self.account.account.domainid
+                                    domainid=self.account.domainid
                                 )
 
         self.debug("Adding virtual machines %s and %s to LB rule" % (
@@ -2339,7 +2339,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   networkid=network_1.id,
                                   listall=True
                                   )
@@ -2447,7 +2447,7 @@ class TestVMDeployVPC(cloudstackTestCase):
         networks = Network.list(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid
+                                domainid=self.account.domainid
                                 )
         self.assertEqual(
                          networks,

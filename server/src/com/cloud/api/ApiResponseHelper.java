@@ -40,12 +40,6 @@ import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
-import com.cloud.vm.*;
-import com.cloud.network.vpc.NetworkACL;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcOffering;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -55,6 +49,8 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
@@ -104,6 +100,8 @@ import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.PortableIpRangeResponse;
+import org.apache.cloudstack.api.response.PortableIpResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -728,6 +726,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        ipResponse.setPortable(ipAddr.isPortable());
+
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.PublicIpAddress, ipAddr.getId());
         List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
@@ -975,8 +975,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setManagedState(cluster.getManagedState().toString());
         String cpuOvercommitRatio=ApiDBUtils.findClusterDetails(cluster.getId(),"cpuOvercommitRatio").getValue();
         String memoryOvercommitRatio=ApiDBUtils.findClusterDetails(cluster.getId(),"memoryOvercommitRatio").getValue();
-        clusterResponse.setCpuovercommitratio(cpuOvercommitRatio);
-        clusterResponse.setRamovercommitratio(memoryOvercommitRatio);
+        clusterResponse.setCpuOvercommitRatio(cpuOvercommitRatio);
+        clusterResponse.setMemoryOvercommitRatio(memoryOvercommitRatio);
 
 
         if (showCapacities != null && showCapacities) {
@@ -3830,6 +3830,69 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
     }
 
+    @Override
+    public PortableIpRangeResponse createPortableIPRangeResponse(PortableIpRange ipRange) {
+        PortableIpRangeResponse response = new PortableIpRangeResponse();
+        response.setId(ipRange.getUuid());
+        String ipRangeStr = ipRange.getIpRange();
+        if (ipRangeStr != null) {
+            String[] range = ipRangeStr.split("-");
+            response.setStartIp(range[0]);
+            response.setEndIp(range[1]);
+        }
+        response.setVlan(ipRange.getVlanTag());
+        response.setGateway(ipRange.getGateway());
+        response.setNetmask(ipRange.getNetmask());
+        response.setRegionId(ipRange.getRegionId());
+        return response;
+    }
+
+    @Override
+    public PortableIpResponse createPortableIPResponse(PortableIp portableIp) {
+        PortableIpResponse response = new PortableIpResponse();
+        response.setAddress(portableIp.getAddress());
+        Long accountId =  portableIp.getAllocatedInDomainId();
+        if (accountId != null) {
+            Account account = ApiDBUtils.findAccountById(accountId);
+            response.setAllocatedToAccountId(account.getAccountName());
+            Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
+            response.setAllocatedInDomainId(domain.getUuid());
+        }
+
+        response.setAllocatedTime(portableIp.getAllocatedTime());
+
+        if (portableIp.getAssociatedDataCenterId() != null) {
+            DataCenter zone = ApiDBUtils.findZoneById(portableIp.getAssociatedDataCenterId());
+            if (zone != null) {
+                response.setAssociatedDataCenterId(zone.getUuid());
+            }
+        }
+
+        if (portableIp.getPhysicalNetworkId() != null) {
+            PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(portableIp.getPhysicalNetworkId());
+            if (pnw != null) {
+                response.setPhysicalNetworkId(pnw.getUuid());
+            }
+        }
+
+        if (portableIp.getAssociatedWithNetworkId() != null) {
+            Network ntwk = ApiDBUtils.findNetworkById(portableIp.getAssociatedWithNetworkId());
+            if (ntwk != null) {
+                response.setAssociatedWithNetworkId(ntwk.getUuid());
+            }
+        }
+
+        if (portableIp.getAssociatedWithVpcId() != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(portableIp.getAssociatedWithVpcId());
+            if (vpc != null) {
+                response.setAssociatedWithVpcId(vpc.getUuid());
+            }
+        }
+
+        response.setState(portableIp.getState().name());
+
+        return response;
+    }
 
     @Override
     public InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result) {
@@ -3847,7 +3910,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("internalloadbalancerelement");
         return response;
     }
-
 
     @Override
     public IsolationMethodResponse createIsolationMethodResponse(IsolationType method) {

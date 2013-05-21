@@ -188,7 +188,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
                                     mode=self.zone.networktype
@@ -242,7 +242,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=True,
                                     diskofferingid=self.disk_offering.id,
@@ -299,7 +299,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
                                     diskofferingid=self.disk_offering.id,
@@ -332,7 +332,7 @@ class TestDeployVM(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -389,7 +389,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
                                     diskofferingid=self.disk_offering.id,
@@ -426,7 +426,7 @@ class TestDeployVM(cloudstackTestCase):
                                 self.services["volume"],
                                 zoneid=self.zone.id,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 diskofferingid=self.disk_offering.id
                                 )
         self.debug("Created volume in account: %s" % self.account.name)
@@ -457,7 +457,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
                                     diskofferingid=self.disk_offering.id,
@@ -494,7 +494,7 @@ class TestDeployVM(cloudstackTestCase):
                                 self.services["volume"],
                                 zoneid=self.zone.id,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 diskofferingid=self.disk_offering.id
                                 )
         self.debug("Created volume in account: %s" % self.account.name)
@@ -570,7 +570,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
                                     diskofferingid=self.disk_offering.id,
@@ -607,7 +607,7 @@ class TestDeployVM(cloudstackTestCase):
                                 self.services["volume"],
                                 zoneid=self.zone.id,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 diskofferingid=self.disk_offering.id
                                 )
         self.debug("Created volume in account: %s" % self.account.name)
@@ -653,7 +653,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
                                     diskofferingid=self.disk_offering.id,
@@ -689,7 +689,7 @@ class TestDeployVM(cloudstackTestCase):
                          self.apiclient,
                          self.services["iso"],
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
 
         self.debug("Successfully created ISO with ID: %s" % iso.id)
@@ -746,7 +746,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
                                 )
@@ -782,7 +782,7 @@ class TestDeployVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id
                                 )
@@ -819,7 +819,7 @@ class TestDeployVM(cloudstackTestCase):
                               self.apiclient,
                               type='DATADISK',
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -943,7 +943,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
                                     startvm=False
@@ -990,7 +990,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["iso"],
                                 account=self.account.name,
-                                domainid=self.account.account.domainid
+                                domainid=self.account.domainid
                                 )
         try:
             # Dowanload the ISO
@@ -1007,7 +1007,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     templateid=self.iso.id,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
@@ -1057,7 +1057,7 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
                                     startvm=False
@@ -1175,7 +1175,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
                                     startvm=False
@@ -1210,7 +1210,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -1225,7 +1225,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     diskofferingid=self.disk_offering.id,
                                     startvm=True
@@ -1260,7 +1260,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -1295,7 +1295,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertNotEqual(
@@ -1397,7 +1397,7 @@ class TestDeployVMBasicZone(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=True,
                                     diskofferingid=self.disk_offering.id,
@@ -1455,7 +1455,7 @@ class TestDeployVMBasicZone(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     startvm=False,
                                     mode=self.zone.networktype
@@ -1570,7 +1570,7 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                                         self.services["template"],
                                         zoneid=self.zone.id,
                                         account=self.account.name,
-                                        domainid=self.account.account.domainid
+                                        domainid=self.account.domainid
                                         )
         try:
             self.template.download(self.apiclient)
@@ -1606,7 +1606,7 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     templateid=self.template.id,
                                     startvm=False,
@@ -1744,7 +1744,7 @@ class TestVMAccountLimit(cloudstackTestCase):
                               self.apiclient,
                               0,    # Instance
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               max=1
                               )
         self.debug(
@@ -1756,7 +1756,7 @@ class TestVMAccountLimit(cloudstackTestCase):
                                 self.services["virtual_machine"],
                                 templateid=self.template.id,
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 serviceofferingid=self.service_offering.id,
                                 startvm=False
                                 )
@@ -1775,7 +1775,7 @@ class TestVMAccountLimit(cloudstackTestCase):
                                 self.services["virtual_machine"],
                                 templateid=self.template.id,
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 serviceofferingid=self.service_offering.id,
                                 startvm=False
                                 )
@@ -1861,7 +1861,7 @@ class TestUploadAttachVolume(cloudstackTestCase):
                                self.services["volume"],
                                zoneid=self.zone.id,
                                account=self.account.name,
-                               domainid=self.account.account.domainid
+                               domainid=self.account.domainid
                                )
             self.debug("Uploading the volume: %s" % volume.name)
             volume.wait_for_upload(self.apiclient)
@@ -1878,7 +1878,7 @@ class TestUploadAttachVolume(cloudstackTestCase):
                                 self.services["virtual_machine"],
                                 templateid=self.template.id,
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 serviceofferingid=self.service_offering.id,
                                 startvm=False
                                 )
@@ -1999,7 +1999,7 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
                                     accountid=self.account.name,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     hostid=host.id
                                     )
@@ -2013,7 +2013,7 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
                                 id=vm.id,
                                 listall=True,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid
+                                domainid=self.account.domainid
                                 )
 
         self.assertEqual(

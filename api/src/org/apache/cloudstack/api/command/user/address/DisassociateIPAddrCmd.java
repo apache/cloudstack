@@ -74,7 +74,12 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws InsufficientAddressCapacityException{
         UserContext.current().setEventDetails("Ip Id: " + getIpAddressId());
-        boolean result = _networkService.releaseIpAddress(getIpAddressId());
+        boolean result = false;
+        if (!isPortable(id)) {
+            _networkService.releaseIpAddress(getIpAddressId());
+        } else {
+            _networkService.releaseIpAddress(getIpAddressId());
+        }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -138,5 +143,10 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     @Override
     public Long getInstanceId() {
         return getIpAddressId();
+    }
+
+    private boolean isPortable(long id) {
+        IpAddress ip = getIpAddress(id);
+        return  ip.isPortable();
     }
 }

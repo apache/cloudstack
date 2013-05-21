@@ -2131,6 +2131,42 @@ class PublicIpRange:
         cmd.id = self.vlan.id
         return apiclient.releasePublicIpRange(cmd)
 
+
+class PortablePublicIpRange:
+    """Manage portable public Ip Range"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services):
+        """Create portable public Ip Range"""
+
+        cmd = createPortableIpRange.createPortableIpRangeCmd()
+        cmd.gateway = services["gateway"]
+        cmd.netmask = services["netmask"]
+        cmd.startip = services["startip"]
+        cmd.endip = services["endip"]
+        cmd.regionid = services["regionid"]
+        cmd.vlan = services["vlan"]
+
+        return PortablePublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete portable IpRange"""
+
+        cmd = deletePortableIpRange.deletePortableIpRangeCmd()
+        cmd.id = self.id
+        apiclient.deletePortableIpRange(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists all portable public IP ranges."""
+
+        cmd = listPortableIpRanges.listPortableIpRangesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listPortableIpRanges(cmd))
+
 class SecondaryStorage:
     """Manage Secondary storage"""
 

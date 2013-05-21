@@ -16,16 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.org.Cluster;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.org.Cluster;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import java.util.ArrayList;
+import java.util.List;
 
 @EntityReference(value = Cluster.class)
 public class ClusterResponse extends BaseResponse {
@@ -68,7 +67,7 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("cpuovercommitratio") @Param(description = "The cpu overcommit ratio of the cluster")
     private String cpuovercommitratio;
 
-    @SerializedName("memoryovercommitratio") @Param (description = "The ram overcommit ratio of the cluster")
+    @SerializedName("memoryovercommitratio") @Param (description = "The memory overcommit ratio of the cluster")
     private String memoryovercommitratio;
 
     public String getId() {
@@ -162,18 +161,20 @@ public class ClusterResponse extends BaseResponse {
     public void setCapacitites(ArrayList<CapacityResponse> arrayList) {
         this.capacitites = arrayList;
     }
-    public void setCpuovercommitratio(String cpuovercommitratio){
+
+    public void setCpuOvercommitRatio(String cpuovercommitratio){
         this.cpuovercommitratio= cpuovercommitratio;
     }
-    public void setRamovercommitratio (String memoryOvercommitRatio){
-        this.memoryovercommitratio= memoryOvercommitRatio;
-    }
 
-    public String getCpuovercommitratio (){
+    public String getCpuOvercommitRatio(){
         return cpuovercommitratio;
     }
 
-    public String getRamovercommitratio (){
+    public void setMemoryOvercommitRatio(String memoryovercommitratio){
+        this.memoryovercommitratio= memoryovercommitratio;
+    }
+
+    public String getMemoryOvercommitRatio(){
         return memoryovercommitratio;
     }
 }

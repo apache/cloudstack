@@ -36,6 +36,7 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
@@ -332,6 +333,14 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             } else {
                 // verify permissions
                 _accountMgr.checkAccess(caller, null, true, owner, ag);
+                // Root admin has access to both VM and AG by default, but make sure the
+                // owner of these entities is same
+                if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                    if (ag.getAccountId() != owner.getAccountId()) {
+                        throw new PermissionDeniedException("Affinity Group " + ag
+                                + " does not belong to the VM's account");
+                    }
+                }
             }
         }
         _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);

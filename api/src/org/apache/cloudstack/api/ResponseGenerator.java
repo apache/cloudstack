@@ -119,6 +119,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.api.response.*;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.usage.Usage;
 
 import com.cloud.async.AsyncJob;
@@ -441,7 +443,12 @@ public interface ResponseGenerator {
 
     Long getAffinityGroupId(String name, long entityOwnerId);
 
+    PortableIpRangeResponse createPortableIPRangeResponse(PortableIpRange range);
+
+    PortableIpResponse createPortableIPResponse(PortableIp portableIp);
+
     InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result);
-    
+
     IsolationMethodResponse createIsolationMethodResponse(IsolationType method);
+
 }

@@ -28,7 +28,6 @@ public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
 
     public CreateEntityDownloadURLCommand(String installPath, String uuid) {
         super();
-        this.parent = parent;
         this.installPath = installPath;
         this.extractLinkUUID = uuid;
     }

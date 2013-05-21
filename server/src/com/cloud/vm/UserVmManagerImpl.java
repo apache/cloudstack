@@ -2366,6 +2366,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 } else {
                     // verify permissions
                     _accountMgr.checkAccess(caller, null, true, owner, ag);
+                    // Root admin has access to both VM and AG by default, but
+                    // make sure the owner of these entities is same
+                    if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                        if (ag.getAccountId() != owner.getAccountId()) {
+                            throw new PermissionDeniedException("Affinity Group " + ag
+                                    + " does not belong to the VM's account");
+                        }
+                    }
                 }
             }
         }
@@ -2813,8 +2821,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         return true;
     }
 
-    private boolean setupVmForPvlan(boolean add, Long hostId, NicVO nic) {
-        if (!nic.getBroadcastUri().getScheme().equals("pvlan")) {
+    @Override
+    public boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic) {
+        if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
     		return false;
     	}
         String op = "add";
@@ -2825,7 +2834,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         Network network = _networkDao.findById(nic.getNetworkId());
         Host host = _hostDao.findById(hostId);
         String networkTag = _networkModel.getNetworkTag(host.getHypervisorType(), network);
-    	PvlanSetupCommand cmd = PvlanSetupCommand.createVmSetup(op, nic.getBroadcastUri(), networkTag, nic.getMacAddress());
+    	PvlanSetupCommand cmd = PvlanSetupCommand.createVmSetup(op, nic.getBroadCastUri(), networkTag, nic.getMacAddress());
         Answer answer = null;
         try {
             answer = _agentMgr.send(hostId, cmd);
@@ -2908,7 +2917,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 // In vmware, we will be effecting pvlan settings in portgroups in StartCommand.
                 if (profile.getHypervisorType() != HypervisorType.VMware) {
                 if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
-                	if (!setupVmForPvlan(true, hostId, nic)) {
+                	NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
+                	if (!setupVmForPvlan(true, hostId, nicProfile)) {
                 		return false;
                 	}
                 }
@@ -3050,7 +3060,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest) {
                 if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
-                	setupVmForPvlan(false, vm.getHostId(), nic);
+                	NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
+                	setupVmForPvlan(false, vm.getHostId(), nicProfile);
                 }
             }
         }
@@ -3220,7 +3231,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (vm == null || vm.getRemoved() != null) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Unable to find a virtual machine with specified vmId");
-            ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
 

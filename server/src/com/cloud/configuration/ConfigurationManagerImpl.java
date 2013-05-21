@@ -43,6 +43,7 @@ import com.cloud.dc.*;
 import com.cloud.dc.dao.*;
 import com.cloud.user.*;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.utils.db.*;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -59,6 +60,9 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
@@ -67,6 +71,8 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.region.*;
+import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -186,10 +192,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
@@ -331,6 +333,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     FirewallRulesDao _firewallDao;
     @Inject
     VpcManager _vpcMgr;
+    @Inject
+    PortableIpRangeDao _portableIpRangeDao;
+    @Inject
+    RegionDao _regionDao;
+    @Inject
+    PortableIpDao _portableIpDao;
     @Inject
     ConfigurationServer _configServer;
     @Inject
@@ -4717,5 +4725,154 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return null;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RANGE_CREATE, eventDescription = "creating portable ip range", async = false)
+    public PortableIpRange createPortableIpRange(CreatePortableIpRangeCmd cmd) throws ConcurrentOperationException {
+        Integer regionId = cmd.getRegionId();
+        String startIP = cmd.getStartIp();
+        String endIP = cmd.getEndIp();
+        String gateway = cmd.getGateway();
+        String netmask = cmd.getNetmask();
+        Long userId = UserContext.current().getCallerUserId();
+        String vlanId = cmd.getVlan();
+
+        Region region = _regionDao.findById(regionId);
+        if (region == null) {
+            throw new InvalidParameterValueException("Invalid region ID: " + regionId);
+        }
+
+        if (!NetUtils.isValidIp(startIP) || !NetUtils.isValidIp(endIP) || !NetUtils.validIpRange(startIP, endIP)) {
+            throw new InvalidParameterValueException("Invalid portable ip  range: " + startIP + "-" + endIP);
+        }
+
+        if (!NetUtils.sameSubnet(startIP, gateway, netmask)) {
+            throw new InvalidParameterValueException("Please ensure that your start IP is in the same subnet as " +
+                    "your portable IP range's gateway and as per the IP range's netmask.");
+        }
+
+        if (!NetUtils.sameSubnet(endIP, gateway, netmask)) {
+            throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as " +
+                    "your portable IP range's gateway and as per the IP range's netmask.");
+        }
+
+        if (checkOverlapPortableIpRange(regionId, startIP, endIP)) {
+            throw new InvalidParameterValueException("Ip  range: " + startIP + "-" + endIP + " overlaps with a portable" +
+                    " IP range already configured in the region " + regionId);
+        }
+
+        if (vlanId == null) {
+            vlanId = Vlan.UNTAGGED;
+        } else {
+            if (!NetUtils.isValidVlan(vlanId)) {
+                throw new InvalidParameterValueException("Invalid vlan id " + vlanId);
+            }
+        }
+        GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
+        portableIpLock.lock(5);
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        PortableIpRangeVO portableIpRange = new PortableIpRangeVO(regionId, vlanId, gateway, netmask, startIP, endIP);
+        portableIpRange = _portableIpRangeDao.persist(portableIpRange);
+
+        long startIpLong =  NetUtils.ip2Long(startIP);
+        long endIpLong = NetUtils.ip2Long(endIP);
+        while(startIpLong <= endIpLong) {
+            PortableIpVO portableIP = new PortableIpVO(regionId, portableIpRange.getId(), vlanId,
+                    gateway, netmask,NetUtils.long2Ip(startIpLong));
+            _portableIpDao.persist(portableIP);
+            startIpLong++;
+        }
+
+        txn.commit();
+        portableIpLock.unlock();
+        return portableIpRange;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RANGE_DELETE, eventDescription = "deleting portable ip range", async = false)
+    public boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd) {
+        long rangeId = cmd.getId();
+        PortableIpRangeVO portableIpRange = _portableIpRangeDao.findById(rangeId);
+        if (portableIpRange == null) {
+            throw new InvalidParameterValueException("Please specify a valid portable IP range id.");
+        }
+
+        List<PortableIpVO> fullIpRange = _portableIpDao.listByRangeId(portableIpRange.getId());
+        List<PortableIpVO> freeIpRange = _portableIpDao.listByRangeIdAndState(portableIpRange.getId(), PortableIp.State.Free);
+
+        if (fullIpRange != null && freeIpRange != null) {
+            if (fullIpRange.size() == freeIpRange.size()) {
+                _portableIpRangeDao.expunge(portableIpRange.getId());
+                return true;
+            } else {
+                throw new InvalidParameterValueException("Can't delete portable IP range as there are IP's assigned.");
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public List<? extends PortableIpRange> listPortableIpRanges(ListPortableIpRangesCmd cmd) {
+        Integer regionId = cmd.getRegionIdId();
+        Long rangeId = cmd.getPortableIpRangeId();
+
+        List <PortableIpRangeVO> ranges = new ArrayList<PortableIpRangeVO>();
+        if (regionId != null) {
+            Region region = _regionDao.findById(regionId);
+            if (region == null) {
+                throw new InvalidParameterValueException("Invalid region ID: " + regionId);
+            }
+            return  _portableIpRangeDao.listByRegionId(regionId);
+        }
+
+        if (rangeId != null) {
+            PortableIpRangeVO range =  _portableIpRangeDao.findById(rangeId);
+            if (range == null) {
+                throw new InvalidParameterValueException("Invalid portable IP range ID: " + regionId);
+            }
+            ranges.add(range);
+            return ranges;
+        }
+
+        return _portableIpRangeDao.listAll();
+    }
+
+    @Override
+    public List<? extends PortableIp> listPortableIps(long id) {
+
+        PortableIpRangeVO portableIpRange = _portableIpRangeDao.findById(id);
+        if (portableIpRange == null) {
+            throw new InvalidParameterValueException("Please specify a valid portable IP range id.");
+        }
+
+        return _portableIpDao.listByRangeId(portableIpRange.getId());
+    }
+
+    private boolean checkOverlapPortableIpRange(int regionId, String newStartIpStr, String newEndIpStr) {
+        long newStartIp = NetUtils.ip2Long(newStartIpStr);
+        long newEndIp = NetUtils.ip2Long(newEndIpStr);
+
+        List<PortableIpRangeVO> existingPortableIPRanges = _portableIpRangeDao.listByRegionId(regionId);
+        for (PortableIpRangeVO portableIpRange : existingPortableIPRanges) {
+            String ipRangeStr = portableIpRange.getIpRange();
+            String[] range = ipRangeStr.split("-");
+            long startip = NetUtils.ip2Long(range[0]);
+            long endIp = NetUtils.ip2Long(range[1]);
+
+            if ((newStartIp >= startip && newStartIp <= endIp) || (newEndIp >= startip && newEndIp <= endIp)) {
+                return true;
+            }
+
+            if ((startip >= newStartIp && startip <= newEndIp) || (endIp >= newStartIp && endIp <= newEndIp)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

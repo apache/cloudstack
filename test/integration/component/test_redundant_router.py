@@ -331,7 +331,7 @@ class TestCreateRvRNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -375,7 +375,7 @@ class TestCreateRvRNetwork(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -538,7 +538,7 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 guestcidr=' 192.168.2.0/23'
@@ -593,7 +593,7 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -760,7 +760,7 @@ class TestRVRInternals(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -804,7 +804,7 @@ class TestRVRInternals(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -1019,7 +1019,7 @@ class TestRedundancy(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -1031,7 +1031,7 @@ class TestRedundancy(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -1572,7 +1572,7 @@ class TestRedundancy(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
@@ -1712,7 +1712,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -1756,7 +1756,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -1801,7 +1801,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -1870,7 +1870,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -1902,7 +1902,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -2037,7 +2037,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -2081,7 +2081,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -2126,7 +2126,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -2142,7 +2142,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                          self.apiclient,
                          publicipid=public_ip.ipaddress.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         except Exception as e:
             self.fail("Failed to create VPN for account: %s - %s" % (
@@ -2154,7 +2154,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                                  username="root",
                                  password="password",
                                  account=self.account.name,
-                                 domainid=self.account.account.domainid
+                                 domainid=self.account.domainid
                                  )
         except Exception as e:
             self.fail("Failed to create VPN user: %s" % e)
@@ -2163,7 +2163,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         remote_vpns = Vpn.list(
                                self.apiclient,
                                account=self.account.name,
-                               domainid=self.account.account.domainid,
+                               domainid=self.account.domainid,
                                publicipid=public_ip.ipaddress.id,
                                listall=True
                                )
@@ -2184,7 +2184,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         remote_vpns = Vpn.list(
                                self.apiclient,
                                account=self.account.name,
-                               domainid=self.account.account.domainid,
+                               domainid=self.account.domainid,
                                publicipid=public_ip.ipaddress.id,
                                listall=True
                                )
@@ -2306,7 +2306,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -2350,7 +2350,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -2412,7 +2412,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -2481,7 +2481,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -2513,7 +2513,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -2694,7 +2694,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -2738,7 +2738,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -2790,7 +2790,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -2851,7 +2851,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -2872,7 +2872,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -3058,7 +3058,7 @@ class TestRestartRvRNetworkWithoutCleanup(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -3102,7 +3102,7 @@ class TestRestartRvRNetworkWithoutCleanup(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -3279,7 +3279,7 @@ class TestRestartRvRNetworkWithCleanup(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -3323,7 +3323,7 @@ class TestRestartRvRNetworkWithCleanup(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -3500,7 +3500,7 @@ class TestDeleteRvRNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -3544,7 +3544,7 @@ class TestDeleteRvRNetwork(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -3719,7 +3719,7 @@ class TestNetworkGCRvR(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -3763,7 +3763,7 @@ class TestNetworkGCRvR(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -3999,7 +3999,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -4043,7 +4043,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -4095,7 +4095,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -4156,7 +4156,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -4177,7 +4177,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id
                                 )
         self.debug("Associated %s with network %s" % (
@@ -4439,7 +4439,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=network_off_vr.id,
                                 zoneid=self.zone.id
                                 )
@@ -4471,7 +4471,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -4500,7 +4500,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -4528,7 +4528,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -4574,7 +4574,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -4606,7 +4606,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -4635,7 +4635,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -4676,7 +4676,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               listall=True
                               )
         self.assertEqual(
@@ -4808,7 +4808,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -4852,7 +4852,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -4972,7 +4972,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -5016,7 +5016,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -5208,7 +5208,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -5265,7 +5265,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)],
                                   hostid=host.id
@@ -5449,7 +5449,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id
                                 )
@@ -5506,7 +5506,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)],
                                   hostid=host.id

@@ -1267,6 +1267,43 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'Netwo
 
 
 alter table `cloud_usage`.`usage_network_offering` add column nic_id bigint(20) unsigned NOT NULL;
+
+CREATE TABLE `cloud`.`portable_ip_range` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `uuid` varchar(40),
+  `region_id` int unsigned NOT NULL,
+  `vlan_id` varchar(255),
+  `gateway` varchar(255),
+  `netmask` varchar(255),
+  `start_ip` varchar(255),
+  `end_ip` varchar(255),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_portableip__region_id` FOREIGN KEY (`region_id`) REFERENCES `region`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`portable_ip_address` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `account_id` bigint unsigned NULL,
+  `domain_id` bigint unsigned NULL,
+  `allocated` datetime NULL COMMENT 'Date portable ip was allocated',
+  `state` char(32) NOT NULL default 'Free' COMMENT 'state of the portable ip address',
+  `region_id` int unsigned NOT NULL,
+  `vlan` varchar(255),
+  `gateway` varchar(255),
+  `netmask` varchar(255),
+  `portable_ip_address` varchar(255),
+  `portable_ip_range_id` bigint unsigned NOT NULL,
+  `data_center_id` bigint unsigned NULL COMMENT 'zone to which portable IP is associated',
+  `physical_network_id` bigint unsigned NULL COMMENT 'physical network id in the zone to which portable IP is associated',
+  `network_id` bigint unsigned NULL COMMENT 'guest network to which portable ip address is associated with',
+  `vpc_id` bigint unsigned COMMENT 'vpc to which portable ip address is associated with',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_portable_ip_address__portable_ip_range_id` FOREIGN KEY (`portable_ip_range_id`) REFERENCES `portable_ip_range`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_portable_ip_address__region_id` FOREIGN KEY (`region_id`) REFERENCES `region`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN is_portable int(1) unsigned NOT NULL default '0';
+
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
     select
@@ -1666,6 +1703,10 @@ CREATE  TABLE `cloud`.`nic_ip_alias` (
 
 alter table `cloud`.`vpc_gateways` add column network_acl_id bigint unsigned default 1 NOT NULL;
 update `cloud`.`vpc_gateways` set network_acl_id = 2;
+
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'VpcManager', 'blacklisted.routes', NULL, 'Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway');
+
 
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			
