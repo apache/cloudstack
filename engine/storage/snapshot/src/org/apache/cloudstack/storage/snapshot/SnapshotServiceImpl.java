@@ -163,7 +163,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 			} catch (Exception e) {
 				s_logger.debug("Failed to update snapshot state due to " + e.getMessage());
 			}
-			
+
 			snapResult.setResult(result.getResult());
 			future.complete(snapResult);
 			return null;
@@ -186,12 +186,12 @@ public class SnapshotServiceImpl implements SnapshotService {
 		return null;
 	}
 
-	
+
 
 	@Override
 	public SnapshotResult takeSnapshot(SnapshotInfo snap) {
 		SnapshotObject snapshot = (SnapshotObject)snap;
-		
+
 		SnapshotObject snapshotOnPrimary = null;
 		try {
 		    snapshotOnPrimary = (SnapshotObject)snap.getDataStore().create(snapshot);
@@ -268,13 +268,11 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 			snapObj.processEvent(Snapshot.Event.BackupToSecondary);
 
-			ZoneScope scope = new ZoneScope(snapshot.getDataCenterId());
-			List<DataStore> stores = this.dataStoreMgr.getImageStoresByScope(scope);
-			if (stores.size() != 1) {
-				throw new CloudRuntimeException("find out more than one image stores");
+			DataStore imageStore = this.dataStoreMgr.getImageStore(snapshot.getDataCenterId());
+			if (imageStore == null) {
+				throw new CloudRuntimeException("can not find an image stores");
 			}
 
-			DataStore imageStore = stores.get(0);
 			SnapshotInfo snapshotOnImageStore = (SnapshotInfo)imageStore.create(snapshot);
 
 			snapshotOnImageStore.processEvent(Event.CreateOnlyRequested);
@@ -431,7 +429,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 		} catch (ExecutionException e) {
 			s_logger.debug("delete snapshot is failed: " + e.toString());
 		}
-		
+
 		return false;
 
 	}
