@@ -15,8 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
+/etc/cloudstack/management/cloud-bridge.properties
+/etc/cloudstack/management/commons-logging.properties
+/etc/cloudstack/management/crypto.properties
+/etc/cloudstack/management/xes.keystore
+/etc/cloudstack/management/ec2-service.properties
 /var/log/cloudstack/awsapi
-/usr/share/cloudstack-bridge/*
+/usr/share/cloudstack-bridge
 /usr/bin/cloudstack-aws-api-register
 /usr/bin/cloudstack-setup-bridge
 /usr/share/cloudstack-management/webapps7080/awsapi
