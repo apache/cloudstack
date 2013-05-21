@@ -2003,7 +2003,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                     )
         self.debug("Checking if we can SSH into VM using NAT rule?")
         try:
-            ssh_3 = vm_3.get_ssh_client(
+            ssh_3 = vm_1.get_ssh_client(
                             ipaddress=public_ip_3.ipaddress.ipaddress,
                             reconnect=True,
                             port=self.services["natrule"]["publicport"]
