@@ -3084,72 +3084,105 @@
           async: true,
           success: function(json) {
             var networks = json.listnetworksresponse.network;
-            if(networks != null && networks.length > 0) {
-              for(var i = 0; i < networks.length; i++) {
-                $.ajax({
-                  url: createURL("listVirtualMachines"),
-                  dataType: "json",
-                  data: {
-                    networkid: networks[i].id,
-                    listAll: true
-                  },
-                  async: false,
-                  success: function(json) {
-                    networks[i].virtualMachines = json.listvirtualmachinesresponse.virtualmachine;
-                  }
-                });
+            var loadBalancers;
+            var error = false;
+
+            // Get load balancers
+            $.ajax({
+              url: createURL('listLoadBalancers'),
+              data: { details: 'min', vpcid: args.context.vpc[0].id },
+              success: function(json) {
+                loadBalancers = json.listloadbalancerssresponse.loadbalancer ?
+                  json.listloadbalancerssresponse.loadbalancer : []
+              },
+              error: function(json) {
+                error = true;
               }
-            }
-            args.response.success({
-              routerDashboard: [
-                {
-                  id: 'privateGateways',
-                  name: 'Private gateways',
-                  total: 0
-                },
-                {
-                  id: 'publicIPs',
-                  name: 'Public IP addresses',
-                  total: 0
-                },
-                {
-                  id: 'siteToSiteVPNs',
-                  name: 'Site-to-site VPNs',
-                  total: 0
-                },
-                {
-                  id: 'networkACLLists',
-                  name: 'Network ACL lists',
-                  total: 0
-                }
-              ],
-              tiers: $(networks).map(function(index, tier) {
-                return $.extend(tier, {
-                  _dashboardItems: [
-                    {
-                      id: 'tierLoadBalancers',
-                      name: 'Load balancers',
-                      totalMultiLine: '0 Internal<br/>0 Public'
-                    },
-                    {
-                      id: 'tierPortForwarders',
-                      name: 'Port forwarders',
-                      total: 0
-                    },
-                    {
-                      id: 'tierStaticNATs',
-                      name: 'Static NATs',
-                      total: 0
-                    },
-                    {
-                      id: 'tierVMs',
-                      name: 'Virtual Machines',
-                      total: $.isArray(tier.virtualMachines) ? tier.virtualMachines.length : 0
-                    }
-                  ]
-                });
-              })
             });
+
+            var dataTimer = setInterval(function() {
+              console.log('timer');
+              
+              var complete = loadBalancers;
+              
+              if (complete) {
+                clearInterval(dataTimer);
+
+                if(networks != null && networks.length > 0) {
+                  for(var i = 0; i < networks.length; i++) {
+                    $.ajax({
+                      url: createURL("listVirtualMachines"),
+                      dataType: "json",
+                      data: {
+                        networkid: networks[i].id,
+                        listAll: true
+                      },
+                      async: false,
+                      success: function(json) {
+                        networks[i].virtualMachines = json.listvirtualmachinesresponse.virtualmachine;
+                      }
+                    });
+                  }
+                }
+                args.response.success({
+                  routerDashboard: [
+                    {
+                      id: 'privateGateways',
+                      name: 'Private gateways',
+                      total: 0
+                    },
+                    {
+                      id: 'publicIPs',
+                      name: 'Public IP addresses',
+                      total: 0
+                    },
+                    {
+                      id: 'siteToSiteVPNs',
+                      name: 'Site-to-site VPNs',
+                      total: 0
+                    },
+                    {
+                      id: 'networkACLLists',
+                      name: 'Network ACL lists',
+                      total: 0
+                    }
+                  ],
+                  tiers: $(networks).map(function(index, tier) {
+                    var internalLoadBalancers = $.grep(loadBalancers, function(lb) {
+                      return lb.networkid == tier.id;
+                    });
+                    
+                    return $.extend(tier, {
+                      _dashboardItems: [
+                        {
+                          id: 'tierLoadBalancers',
+                          name: 'Load balancers',
+                          totalMultiLine: internalLoadBalancers.length + ' Internal<br/>0 Public'
+                        },
+                        {
+                          id: 'tierPortForwarders',
+                          name: 'Port forwarders',
+                          total: 0
+                        },
+                        {
+                          id: 'tierStaticNATs',
+                          name: 'Static NATs',
+                          total: 0
+                        },
+                        {
+                          id: 'tierVMs',
+                          name: 'Virtual Machines',
+                          total: $.isArray(tier.virtualMachines) ? tier.virtualMachines.length : 0
+                        }
+                      ]
+                    });
+                  })
+                });
+              } else if (error) {
+                clearInterval(dataTimer);
+                cloudStack.dialog.notice({ message: 'Error loading dashboard data.' });
+              }
+            }, 500);            
           }
         });
       }
