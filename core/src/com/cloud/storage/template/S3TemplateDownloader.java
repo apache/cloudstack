@@ -61,6 +61,7 @@ import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.S3Utils;
+import com.cloud.utils.UriUtils;
 
 /**
  * Download a template file using HTTP
@@ -132,7 +133,8 @@ public class S3TemplateDownloader implements TemplateDownloader {
 			this.request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
 			this.completionCallback = callback;
 
-			Pair<String, Integer> hostAndPort = validateUrl(downloadUrl);
+			Pair<String, Integer> hostAndPort = UriUtils.validateUrl(downloadUrl);
+            this.fileName = StringUtils.substringAfterLast(downloadUrl, "/");
 
 			if (proxy != null) {
 				client.getHostConfiguration().setProxy(proxy.getHost(), proxy.getPort());
@@ -162,48 +164,6 @@ public class S3TemplateDownloader implements TemplateDownloader {
 		}
 	}
 
-
-	private  Pair<String, Integer> validateUrl(String url) throws IllegalArgumentException {
-		try {
-			URI uri = new URI(url);
-			if (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") ) {
-				throw new IllegalArgumentException("Unsupported scheme for url");
-			}
-			int port = uri.getPort();
-			if (!(port == 80 || port == 8080 || port == 443 || port == -1)) {
-				throw new IllegalArgumentException("Only ports 80, 8080 and 443 are allowed");
-			}
-
-			if (port == -1 && uri.getScheme().equalsIgnoreCase("https")) {
-				port = 443;
-			} else if (port == -1 && uri.getScheme().equalsIgnoreCase("http")) {
-				port = 80;
-			}
-
-            this.fileName = StringUtils.substringAfterLast(url, "/");
-
-			String host = uri.getHost();
-			try {
-				InetAddress hostAddr = InetAddress.getByName(host);
-				if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
-					throw new IllegalArgumentException("Illegal host specified in url");
-				}
-				if (hostAddr instanceof Inet6Address) {
-					throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-				}
-			    return new Pair<String, Integer>(host, port);
-			} catch (UnknownHostException uhe) {
-				throw new IllegalArgumentException("Unable to resolve " + host);
-			}
-
-		} catch (IllegalArgumentException iae) {
-			s_logger.warn("Failed uri validation check: " + iae.getMessage());
-			throw iae;
-		} catch (URISyntaxException use) {
-			s_logger.warn("Failed uri syntax check: " + use.getMessage());
-			throw new IllegalArgumentException(use.getMessage());
-		}
-	}
 
 	@Override
 	public long download(boolean resume, DownloadCompleteCallback callback) {

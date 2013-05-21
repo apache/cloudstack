@@ -133,8 +133,9 @@ public class UriUtils {
     public static  Pair<String, Integer> validateUrl(String url) throws IllegalArgumentException {
         try {
             URI uri = new URI(url);
-            if (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") ) {
-                throw new IllegalArgumentException("Unsupported scheme for url");
+            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http")
+                    && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+                    throw new IllegalArgumentException("Unsupported scheme for url: " + url);
             }
             int port = uri.getPort();
             if (!(port == 80 || port == 8080 || port == 443 || port == -1)) {

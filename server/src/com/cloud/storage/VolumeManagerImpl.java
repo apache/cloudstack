@@ -481,7 +481,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                             + " is an invalid for the format "
                             + format.toLowerCase());
         }
-        validateUrl(url);
+        UriUtils.validateUrl(url);
 
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage,
@@ -2478,47 +2478,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     }
 
 
-    private String validateUrl(String url) {
-        try {
-            URI uri = new URI(url);
-            if ((uri.getScheme() == null)
-                    || (!uri.getScheme().equalsIgnoreCase("http")
-                            && !uri.getScheme().equalsIgnoreCase("https") && !uri
-                            .getScheme().equalsIgnoreCase("file"))) {
-                throw new IllegalArgumentException(
-                        "Unsupported scheme for url: " + url);
-            }
 
-            int port = uri.getPort();
-            if (!(port == 80 || port == 8080 || port == 443 || port == -1)) {
-                throw new IllegalArgumentException(
-                        "Only ports 80, 8080 and 443 are allowed");
-            }
-            String host = uri.getHost();
-            try {
-                InetAddress hostAddr = InetAddress.getByName(host);
-                if (hostAddr.isAnyLocalAddress()
-                        || hostAddr.isLinkLocalAddress()
-                        || hostAddr.isLoopbackAddress()
-                        || hostAddr.isMulticastAddress()) {
-                    throw new IllegalArgumentException(
-                            "Illegal host specified in url");
-                }
-                if (hostAddr instanceof Inet6Address) {
-                    throw new IllegalArgumentException(
-                            "IPV6 addresses not supported ("
-                                    + hostAddr.getHostAddress() + ")");
-                }
-            } catch (UnknownHostException uhe) {
-                throw new IllegalArgumentException("Unable to resolve " + host);
-            }
-
-            return uri.toString();
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid URL " + url);
-        }
-
-    }
 
     @Override
     public boolean canVmRestartOnAnotherServer(long vmId) {
