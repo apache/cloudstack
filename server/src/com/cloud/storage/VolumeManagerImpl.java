@@ -878,14 +878,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 size = diskOffering.getDiskSize();
             }
 
-            if(displayVolumeEnabled == null){
-                displayVolumeEnabled = true;
-            } else{
-                if(!_accountMgr.isRootAdmin(caller.getType())){
-                    throw new PermissionDeniedException( "Cannot update parameter displayvolume, only admin permitted ");
-                }
-            }
-
             if (!validateVolumeSizeRange(size)) {// convert size from mb to gb
                                                  // for validation
                 throw new InvalidParameterValueException(
@@ -915,6 +907,14 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
+        }
+
+        if(displayVolumeEnabled == null){
+            displayVolumeEnabled = true;
+        } else{
+            if(!_accountMgr.isRootAdmin(caller.getType())){
+                throw new PermissionDeniedException( "Cannot update parameter displayvolume, only admin permitted ");
+            }
         }
 
         // Check that the resource limit for primary storage won't be exceeded
