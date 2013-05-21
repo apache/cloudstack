@@ -138,7 +138,7 @@ class TestPortablePublicIPRange(cloudstackTestCase):
 
     @attr(tags = ["simulator", "basic", "advanced",  "portablepublicip"])
     def test_createPortablePublicIPRange(self):
-        """
+        """ Test to create a portable public ip range
         """
         self.debug("attempting to create a portable Public IP range")
         self.portable_ip_range = PortablePublicIpRange.create(
@@ -155,7 +155,6 @@ class TestPortablePublicIPRange(cloudstackTestCase):
 
 
 class TestPortablePublicIPAcquire(cloudstackTestCase):
-
     """
     This test validates functionality where
       - admin has provisioned a portable public ip range
@@ -223,7 +222,7 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
 
     @attr(tags = ["simulator", "basic", "advanced",  "portablepublicip"])
     def test_createPortablePublicIPAcquire(self):
-        """
+        """ Test to acquire a provisioned public ip range
         """
         self.debug("attempting to create a portable Public IP range")
         self.portable_ip_range = PortablePublicIpRange.create(
