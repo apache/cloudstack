@@ -437,9 +437,24 @@
               detailView: {
                 name: 'Internal Lb details',
                 actions: {
-                  //assignVm: { 
-                    
-                  //}
+                  assignVm: { 
+                    label: 'Assign VMs to LB',
+                    messages: {
+                      notification: function(args) { return 'Assign VM to internal LB rule'; }
+                    },
+                    listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
+                      type: 'checkbox',
+                      filters: false
+                    }),
+                    action: function(args) {
+                      args.response.success();
+                    },
+                    notification: {
+                      poll: function(args) {
+                        args.complete();
+                      }
+                    }
+                  }
                 },                
                 tabs: {
                   details: {

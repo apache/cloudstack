@@ -11871,12 +11871,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .add .icon,
-.addNew .icon {
+.addNew .icon,
+.assignVm .icon {
   background-position: -37px -61px;
 }
 
 .add:hover .icon,
-.addNew:hover .icon {
+.addNew:hover .icon,
+.assignVm:hover .icon {
   background-position: -37px -643px;
 }
 
