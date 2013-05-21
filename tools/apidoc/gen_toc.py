@@ -143,6 +143,7 @@ known_categories = {
 	'AffinityGroup': 'Affinity Group',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
+    'PortableIp': 'Portable IP'
     }
 
 
