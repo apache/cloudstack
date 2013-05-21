@@ -3080,7 +3080,7 @@
                     {
                       id: 'tierVMs',
                       name: 'Virtual Machines',
-                      total: 0
+                      total: $.isArray(tier.virtualMachines) ? tier.virtualMachines.length : 0
                     }
                   ]
                 });
