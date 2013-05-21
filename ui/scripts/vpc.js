@@ -610,99 +610,97 @@
             id: { label: 'id' }
           },
           dataProvider: function(args) {
-
             $.ajax({
-
-            url:createURL('listNetworkACLLists&vpc_id=' + args.context.vpc[0].id),
-            success:function(json){  
-               var items = json.listnetworkacllistsresponse.networkacllist;
- 
-               args.response.success({
-                 data:items
+              url:createURL('listNetworkACLLists&vpc_id=' + args.context.vpc[0].id),
+              success:function(json){  
+                var items = json.listnetworkacllistsresponse.networkacllist;
+                
+                args.response.success({
+                  data:items
                 });
-             }
-           });
+              }
+            });
           },
           
-         actions:{
-           add:{
-             label:'Add ACL List',
-             createForm:{
+          actions:{
+            add:{
+              label:'Add ACL List',
+              createForm:{
                 label: 'Add ACL List',
                 fields:{
                   name:{label:'ACL List Name',validation:{required:true}},
                   description:{label:'Description',validation:{required:true}}
                 }
               },
-               messages: {
-                    notification: function(args) {
-                      return 'Add Network ACL List';
-                    }
-                  },
-               action:function(args){
-                  var data = {
-                    name:args.data.name,
-                    description:args.data.description
+              messages: {
+                notification: function(args) {
+                  return 'Add Network ACL List';
+                }
+              },
+              action:function(args){
+                var data = {
+                  name:args.data.name,
+                  description:args.data.description
 
-                  };
+                };
 
-                  $.ajax({
-                    url:createURL('createNetworkACLList&vpcid='+ args.context.vpc[0].id),
-                    data:data,
-                    success:function(json){
-                       var items = json.createnetworkacllistresponse;
-                       args.response.success({
-                          data:items
-                       });
-                    }
-                  });
+                $.ajax({
+                  url:createURL('createNetworkACLList&vpcid='+ args.context.vpc[0].id),
+                  data:data,
+                  success:function(json){
+                    var items = json.createnetworkacllistresponse;
+                    args.response.success({
+                      data:items
+                    });
+                  }
+                });
               }
-           }
+            }
           },
  
           detailView: {
             isMaximized: true,
-             actions:{
-                  deleteacllist:{
-                     label:'Delete ACL List',
-                     messages: {
-                     confirm: function(args) {
-                       return 'Are you sure you want to delete this ACL list ?';
-                     },
-                      notification: function(args) {
-                         return 'Delete ACL list';
-                     }
-                   },
-                     action:function(args){
-                        $.ajax({
-                          url:createURL('deleteNetworkACLList&id=' + args.context.aclLists[0].id),
-                          success:function(json){
-                            var jid = json.deletenetworkacllistresponse.jobid;
-                            args.response.success(
-                            {_custom:
-                              {   jobId: jid
-                            }
-                          }
-                           );
-
-                          },
-                          error:function(json){
-                               args.response.error(parseXMLHttpResponse(json));
-
-                           }
-                         });
-                       },
-                     notification: {
-                       poll: pollAsyncJobResult
-                           }
-
+            actions:{
+              deleteacllist:{
+                label:'Delete ACL List',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to delete this ACL list ?';
+                  },
+                  notification: function(args) {
+                    return 'Delete ACL list';
                   }
                 },
+                action:function(args){
+                  $.ajax({
+                    url:createURL('deleteNetworkACLList&id=' + args.context.aclLists[0].id),
+                    success:function(json){
+                      var jid = json.deletenetworkacllistresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {   jobId: jid
+                         }
+                        }
+                      );
+
+                    },
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+
+              }
+            },
 
 
             tabs: {
               
-             details: {
+              details: {
 
                 title: 'label.details',
                 fields: [
@@ -714,22 +712,22 @@
 
                 ],
                 dataProvider: function(args) {
-                     var items = args.context.aclLists[0];
-                     args.response.success({
-                        data: items,
-                         actionFilter: function(args) {
-                            var allowedActions = [];
-                            if(isAdmin()) {
-                              allowedActions.push("deleteacllist");
+                  var items = args.context.aclLists[0];
+                  args.response.success({
+                    data: items,
+                    actionFilter: function(args) {
+                      var allowedActions = [];
+                      if(isAdmin()) {
+                        allowedActions.push("deleteacllist");
 
-                            }
-                            return allowedActions;
-                          }
+                      }
+                      return allowedActions;
+                    }
 
 
-                    });
+                  });
                 }
-               },
+              },
               
               aclRules: {
                 title: 'ACL List Rules',
@@ -740,32 +738,32 @@
                       networkid: false
                     },
                     dataProvider: function(args) {
-                        $.ajax({
-                         url:createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
-                         success:function(json){
+                      $.ajax({
+                        url:createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
+                        success:function(json){
                           var items = json.listnetworkaclsresponse.networkacl;
 
-                      args.response.success({
-                        data:items
-                         /* {
-                            cidrlist: '10.1.1.0/24',
-                            protocol: 'TCP',
-                            startport: 22, endport: 22,
-                            networkid: 0,
-                            traffictype: 'Egress'
-                          },
-                          {
-                            cidrlist: '10.2.1.0/24',
-                            protocol: 'UDP',
-                            startport: 56, endport: 72,
-                            networkid: 0,
-                            trafficType: 'Ingress'
-                          }
-                        ]*/ 
+                          args.response.success({
+                            data:items
+                            /* {
+                               cidrlist: '10.1.1.0/24',
+                               protocol: 'TCP',
+                               startport: 22, endport: 22,
+                               networkid: 0,
+                               traffictype: 'Egress'
+                               },
+                               {
+                               cidrlist: '10.2.1.0/24',
+                               protocol: 'UDP',
+                               startport: 56, endport: 72,
+                               networkid: 0,
+                               trafficType: 'Ingress'
+                               }
+                               ]*/ 
+                          });
+                        }
                       });
-                    }
-                   });
-                  } 
+                    } 
                   }));
                 }
               }
