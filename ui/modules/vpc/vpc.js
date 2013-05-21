@@ -188,6 +188,9 @@
 
               if (section.listView) {
                 $section.listView($.extend(true, {}, section, {
+                  onActionComplete: function() {
+                    $dashboardItem.closest('.vpc-network-chart').trigger('reload');
+                  },
                   context: context
                 }));
               }

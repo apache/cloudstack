@@ -104,6 +104,10 @@
               cloudStack.ui.notifications.add(
                 notification,
                 function(args) {
+                  if (listViewArgs.onActionComplete) {
+                    listViewArgs.onActionComplete();
+                  }
+                  
                   if ($item.is(':visible') && !isHeader) {
                     replaceItem(
                       $item,
@@ -175,6 +179,10 @@
 
                 if (additional && additional.success) additional.success(args);
 
+                if (listViewArgs.onActionComplete == true) {
+                  listViewArgs.onActionComplete();
+                }
+                
                 cloudStack.ui.notifications.add(
                   notification,
 
@@ -212,6 +220,10 @@
 
                     if (options.complete) {
                       options.complete(args);
+                    }
+
+                    if (listViewArgs.onActionComplete) {
+                      listViewArgs.onActionComplete();
                     }
                   },
 
@@ -1187,6 +1199,10 @@
                       $quickViewTooltip.hide();
                     },
                     onActionComplete: function() {
+                      if (listViewArgs.onActionComplete) {
+                        listViewArgs.onActionComplete();
+                      }
+                      
                       $tr.removeClass('loading').find('td:last .loading').remove();
                       $quickViewTooltip.remove();
                     }
@@ -1797,6 +1813,8 @@
             context: detailViewArgs.context
           });
         }
+
+        detailViewArgs.data.onActionComplete = listViewArgs.onActionComplete;
 
         createDetailView(
           detailViewArgs,
