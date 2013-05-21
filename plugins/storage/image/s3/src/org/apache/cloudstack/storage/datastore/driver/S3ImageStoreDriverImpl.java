@@ -286,11 +286,10 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
             eventType = EventTypes.EVENT_TEMPLATE_DELETE;
         }
 
-        // TODO: need to understand why we need to mark destroyed in
-        // template_store_ref table here instead of in callback.
-        // Currently I did that in callback, so I removed previous code to mark template_host_ref
-
-        UsageEventUtils.publishUsageEvent(eventType, account.getId(), sZoneId, templateId, null, null, null);
+        if ( sZoneId != null ){
+            //TODO: how to handle region wide usage data where sZoneId == null
+            UsageEventUtils.publishUsageEvent(eventType, account.getId(), sZoneId, templateId, null, null, null);
+        }
 
         List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
         // check if there is any VM using this ISO.

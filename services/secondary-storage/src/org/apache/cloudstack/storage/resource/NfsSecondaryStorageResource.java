@@ -1535,7 +1535,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteDirectory(s3, bucket, path);
-                return new Answer(cmd, true, String.format("Deleted template %1%s from bucket %2$s.", path, bucket));
+                return new Answer(cmd, true, String.format("Deleted template %1$s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
                 final String errorMessage = String.format("Failed to delete template %1$s from bucket %2$s due to the following error: %3$s", path,
                         bucket, e.getMessage());
