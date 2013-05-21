@@ -1458,7 +1458,7 @@ public class EC2Engine extends ManagerBase {
                     vm.setIpAddress(resp.getIpAddress());
                     vm.setAccountName(resp.getAccountName());
                     vm.setDomainId(resp.getDomainId());
-                    vm.setHypervisor(resp.getHypervisor());
+                    vm.setHypervisor( mapToAmazonHypervisorType(resp.getHypervisor()) );
                     vm.setServiceOffering( svcOffering.getName());
                     vm.setKeyPairName(resp.getKeyPairName());
                     instances.addInstance(vm);
@@ -1860,7 +1860,7 @@ public class EC2Engine extends ManagerBase {
                 ec2Vm.setIpAddress(cloudVm.getIpAddress());
                 ec2Vm.setAccountName(cloudVm.getAccountName());
                 ec2Vm.setDomainId(cloudVm.getDomainId());
-                ec2Vm.setHypervisor(cloudVm.getHypervisor());
+                ec2Vm.setHypervisor( mapToAmazonHypervisorType(cloudVm.getHypervisor()) );
                 ec2Vm.setRootDeviceType(cloudVm.getRootDeviceType());
                 ec2Vm.setRootDeviceId(cloudVm.getRootDeviceId());
                 ec2Vm.setServiceOffering(serviceOfferingIdToInstanceType(cloudVm.getServiceOfferingId().toString()));
@@ -2496,6 +2496,21 @@ public class EC2Engine extends ManagerBase {
             return("instance");
         else
             return (resourceType.toLowerCase());
+    }
+
+    /**
+     * Map CloudStack hypervisor to CloudStack hypervisor
+     *
+     * @param CloudStack hypervisor
+     * @return Amazon hypervisor
+     */
+    private String mapToAmazonHypervisorType( String hypervisor) {
+        if (hypervisor.equalsIgnoreCase("Xenserver"))
+            return("xen");
+        else if(hypervisor.equalsIgnoreCase("Ovm"))
+            return("ovm");
+        else
+            return ("");
     }
 
     /**
