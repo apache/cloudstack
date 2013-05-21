@@ -1122,6 +1122,7 @@
                 title: 'label.add.network.offering',               														
 								preFilter: function(args) {								  									
                   var $availability = args.$form.find('.form-item[rel=availability]');
+                  var $lbType = args.$form.find('.form-item[rel=lbType]');  
                   var $systemOfferingForRouter = args.$form.find('.form-item[rel=systemOfferingForRouter]');									
 									var $conservemode = args.$form.find('.form-item[rel=conservemode]');										
                   var $serviceSourceNatRedundantRouterCapabilityCheckbox = args.$form.find('.form-item[rel="service.SourceNat.redundantRouterCapabilityCheckbox"]');	                  		
@@ -1147,18 +1148,18 @@
 									  //check whether to show or hide availability field
                     var $sourceNATField = args.$form.find('input[name=\"service.SourceNat.isEnabled\"]');
                     var $guestTypeField = args.$form.find('select[name=guestIpType]');
-                    											
+                    
+                    var $useVpc = args.$form.find('.form-item[rel=\"useVpc\"]');
+                    var $useVpcCb = $useVpc.find("input[type=checkbox]");
                     if($guestTypeField.val() == 'Shared') { //Shared network offering
-                      args.$form.find('.form-item[rel=\"useVpc\"]').hide();
-																						
-											var $useVpcCb = args.$form.find('.form-item[rel=\"useVpc\"]').find("input[type=checkbox]");
+                      $useVpc.hide();											
 											if($useVpcCb.is(':checked')) { //if useVpc is checked,											  
 												$useVpcCb.removeAttr("checked");  //remove "checked" attribute in useVpc
 												$useVpcCb.trigger("click");  //trigger useVpc.onChange()
 											}
 										}
 										else { //Isolated network offering 
-                      args.$form.find('.form-item[rel=\"useVpc\"]').css('display', 'inline-block');
+										  $useVpc.css('display', 'inline-block');
 										}
 										
 											
@@ -1170,7 +1171,14 @@
                       $availability.hide();
                     }
 
-										
+										//when useVpc is checked and service.Lb.isEnabled is checked                    
+                    if($useVpcCb.is(':checked') && $("input[name='service.Lb.isEnabled']").is(":checked") == true) {  
+                      $lbType.css('display', 'inline-block');    
+                    }
+                    else {
+                      $lbType.hide();
+                    }
+                    
 										//when service(s) has Virtual Router as provider.....							
                     var havingVirtualRouterForAtLeastOneService = false;									
 										$(serviceCheckboxNames).each(function(){										  
@@ -1427,7 +1435,7 @@
                     label: 'VPC',
                     docID: 'helpNetworkOfferingVPC',
                     isBoolean: true,
-                    onChange: function(args) {
+                    onChange: function(args) {                      
                       var $checkbox = args.$checkbox;
                       var $selects = $checkbox.closest('form').find('.dynamic-input select');
                       var $vpcOptions = $selects.find('option[value=VpcVirtualRouter]');
@@ -1444,7 +1452,67 @@
                       }
                     }
                   },
-								
+					                  
+                  lbType: { //only shown when VPC is checked and LB service is checked
+                    label: 'Load Balancer Type', 
+                    isHidden: true,
+                    select: function(args) {
+                      args.response.success({data: [
+                        {id: 'publicLb', description: 'Public LB'}, 
+                        {id: 'internalLb', description: 'Internal LB'}
+                      ]}); 
+                                                       
+                      args.$select.change(function() {  
+                        if($(this).is(':visible') == false) 
+                          return; //if lbType is not visible, do nothing.
+                        
+                        var $lbProvider = $(this).closest('form').find('.form-item[rel=\"service.Lb.provider\"]').find('select');
+                        var $lbProviderOptions = $lbProvider.find('option');
+                                                                        
+                        if($(this).val() == 'publicLb') { //disable all providers except the ones in lbProviderMap.publicLb.vpc => ["VpcVirtualRouter", "Netscaler"] 
+                          for(var i = 0; i < $lbProviderOptions.length; i++ ) {
+                            var $option = $lbProviderOptions.eq(i);                           
+                            var supportedProviders = lbProviderMap.publicLb.vpc;                            
+                            var thisOpionIsSupported = false;
+                            for(var k = 0; k < supportedProviders.length; k++ ) {
+                              if($option.val() == supportedProviders[k]) {
+                                thisOpionIsSupported = true;
+                                break;
+                              }                               
+                            }   
+                            if(thisOpionIsSupported == true) {
+                              $option.attr('disabled', false);
+                            }
+                            else {
+                              $option.attr('disabled', true);
+                            }                            
+                          }                                                    
+                        }                          
+                        else if($(this).val() == 'internalLb') { //disable all providers except the ones in lbProviderMap.internalLb.vpc => ["InternalLbVm"]
+                          for(var i = 0; i < $lbProviderOptions.length; i++ ) {
+                            var $option = $lbProviderOptions.eq(i);                           
+                            var supportedProviders = lbProviderMap.internalLb.vpc;                            
+                            var thisOpionIsSupported = false;                            
+                            for(var k = 0; k < supportedProviders.length; k++ ) {
+                              if($option.val() == supportedProviders[k]) {
+                                thisOpionIsSupported = true;
+                                break;
+                              }                               
+                            }  
+                            if(thisOpionIsSupported == true) {
+                              $option.attr('disabled', false);
+                            }
+                            else {
+                              $option.attr('disabled', true);
+                            }                            
+                          }                             
+                        }     
+                        
+                        $lbProvider.val($lbProvider.find('option:first'));                        
+                      });
+                    }
+                  },
+                                    
                   supportedServices: {
                     label: 'label.supported.services',
 
@@ -1571,6 +1639,7 @@
 									//show or hide upon checked services and selected providers above (begin)
                   systemOfferingForRouter: {
                     label: 'System Offering for Router',
+                    isHidden: true,
                     docID: 'helpNetworkOfferingSystemOffering',
                     select: function(args) {
                       $.ajax({
