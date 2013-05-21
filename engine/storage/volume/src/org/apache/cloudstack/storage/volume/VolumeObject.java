@@ -186,6 +186,10 @@ public class VolumeObject implements VolumeInfo {
         }
         try {
             Volume.Event volEvent = null;
+            if ( this.dataStore.getRole() == DataStoreRole.ImageCache){
+                ojbectInStoreMgr.update(this, event);
+                return;
+            }
             if (this.dataStore.getRole() == DataStoreRole.Image) {
                 ojbectInStoreMgr.update(this, event);
                 if (event == ObjectInDataStoreStateMachine.Event.CreateRequested) {
