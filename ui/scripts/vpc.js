@@ -609,6 +609,44 @@
  
           detailView: {
             isMaximized: true,
+             actions:{
+                  deleteacllist:{
+                     label:'Delete ACL List',
+                     messages: {
+                     confirm: function(args) {
+                       return 'Are you sure you want to delete this ACL list ?';
+                     },
+                      notification: function(args) {
+                         return 'Delete ACL list';
+                     }
+                   },
+                     action:function(args){
+                        $.ajax({
+                          url:createURL('deleteNetworkACLList&id=' + args.context.aclLists[0].id),
+                          success:function(json){
+                            var jid = json.deletenetworkacllistresponse.jobid;
+                            args.response.success(
+                            {_custom:
+                              {   jobId: jid
+                            }
+                          }
+                           );
+
+                          },
+                          error:function(json){
+                               args.response.error(parseXMLHttpResponse(json));
+
+                           }
+                         });
+                       },
+                     notification: {
+                       poll: pollAsyncJobResult
+                           }
+
+                  }
+                },
+
+
             tabs: {
               
              details: {
