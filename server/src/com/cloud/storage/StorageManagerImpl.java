@@ -1687,6 +1687,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (storeProvider == null) {
                 throw new InvalidParameterValueException("can't find image store provider: " + providerName);
             }
+            providerName = storeProvider.getName(); // ignored passed provider name and use default image store provider name
         }
 
         Long dcId = cmd.getZoneId();
