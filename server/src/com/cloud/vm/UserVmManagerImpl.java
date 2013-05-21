@@ -3059,7 +3059,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest) {
-                if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
+                if (nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
                 	NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
                 	setupVmForPvlan(false, vm.getHostId(), nicProfile);
                 }
