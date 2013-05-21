@@ -3101,8 +3101,6 @@
             });
 
             var dataTimer = setInterval(function() {
-              console.log('timer');
-              
               var complete = loadBalancers;
               
               if (complete) {
