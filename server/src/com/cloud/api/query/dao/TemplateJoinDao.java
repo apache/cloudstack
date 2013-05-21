@@ -39,4 +39,6 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
     List<TemplateJoinVO> searchByIds(Long... ids);
 
+    List<TemplateJoinVO> listActiveTemplates(long storeId);
+
  }

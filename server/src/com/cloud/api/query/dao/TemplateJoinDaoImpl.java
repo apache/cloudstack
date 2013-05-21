@@ -75,6 +75,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
     private final SearchBuilder<TemplateJoinVO> tmpltZoneSearch;
 
+    private final SearchBuilder<TemplateJoinVO> activeTmpltSearch;
+
 
     protected TemplateJoinDaoImpl() {
 
@@ -91,6 +93,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         tmpltZoneSearch.and("dataCenterId", tmpltZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         tmpltZoneSearch.and("downloadState", tmpltZoneSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
         tmpltZoneSearch.done();
+
+        activeTmpltSearch = createSearchBuilder();
+        activeTmpltSearch.and("store_id", activeTmpltSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        activeTmpltSearch.and("type", activeTmpltSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+        activeTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
         this._count = "select count(distinct id) from template_view WHERE ";
@@ -434,6 +441,17 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
             }
         }
         return uvList;
+    }
+
+
+
+
+    @Override
+    public List<TemplateJoinVO> listActiveTemplates(long storeId) {
+        SearchCriteria<TemplateJoinVO> sc = activeTmpltSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("type", TemplateType.USER);
+        return searchIncludingRemoved(sc, null, null, false);
     }
 
 

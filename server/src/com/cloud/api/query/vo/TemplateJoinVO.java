@@ -179,6 +179,9 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="data_center_name")
     private String dataCenterName;
 
+    @Column(name="store_id")
+    private Long dataStoreId; // this can be null for baremetal templates
+
     @Column (name="download_state")
     @Enumerated(EnumType.STRING)
     private Status downloadState;
@@ -999,6 +1002,18 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public void setErrorString(String errorString) {
         this.errorString = errorString;
+    }
+
+
+
+    public Long getDataStoreId() {
+        return dataStoreId;
+    }
+
+
+
+    public void setDataStoreId(Long dataStoreId) {
+        this.dataStoreId = dataStoreId;
     }
 
 
