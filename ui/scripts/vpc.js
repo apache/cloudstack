@@ -3084,7 +3084,7 @@
           async: true,
           success: function(json) {
             var networks = json.listnetworksresponse.network;
-            var loadBalancers;
+            var loadBalancers, networkACLLists;
             var error = false;
 
             // Get load balancers
@@ -3100,8 +3100,21 @@
               }
             });
 
+            // Get network ACL lists
+            $.ajax({
+              url: createURL('listNetworkACLLists'),
+              data: { details: 'min', 'vpc_id': args.context.vpc[0].id },
+              success: function(json) {
+                networkACLLists = json.listnetworkacllistsresponse.networkacllist ?
+                  json.listnetworkacllistsresponse.networkacllist : []
+              },
+              error: function(json) {
+                error = true;
+              }
+            });            
+
             var dataTimer = setInterval(function() {
-              var complete = loadBalancers;
+              var complete = loadBalancers && networkACLLists;
               
               if (complete) {
                 clearInterval(dataTimer);
@@ -3142,7 +3155,7 @@
                     {
                       id: 'networkACLLists',
                       name: 'Network ACL lists',
-                      total: 0
+                      total: networkACLLists.length
                     }
                   ],
                   tiers: $(networks).map(function(index, tier) {
