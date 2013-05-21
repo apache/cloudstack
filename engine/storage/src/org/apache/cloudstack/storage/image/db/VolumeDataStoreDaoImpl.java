@@ -93,6 +93,9 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         UpdateBuilder builder = getUpdateBuilder(dataObj);
         builder.set(dataObj, "state", nextState);
         builder.set(dataObj, "updated", new Date());
+        if (nextState == State.Destroyed){
+            builder.set(dataObj, "destroyed", true);
+        }
 
         int rows = update(dataObj, sc);
         if (rows == 0 && s_logger.isDebugEnabled()) {
