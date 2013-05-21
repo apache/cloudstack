@@ -918,43 +918,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         self.debug("VPC network validated - %s" % network.name)
         return
 
-        try:
-            ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip_1.ipaddress.ipaddress)
-            self.debug("SSH into VM is successfully")
-
-            self.debug("Verifying if we can ping to outside world from VM?")
-            # Ping to outsite world
-            res = ssh_1.execute("ping -c 1 www.google.com")
-            # res = 64 bytes from maa03s17-in-f20.1e100.net (74.125.236.212):
-            # icmp_req=1 ttl=57 time=25.9 ms
-            # --- www.l.google.com ping statistics ---
-            # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
-            # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
-            result = str(res)
-            self.assertEqual(
-                         result.count("1 received"),
-                         1,
-                         "Ping to outside world from VM should be successful"
-                         )
-
-            self.debug("We should be allowed to ping virtual gateway")
-            self.debug("VM gateway: %s" % self.vm_1.nic[0].gateway)
-
-            res = ssh_1.execute("ping -c 1 %s" % self.vm_1.nic[0].gateway)
-            self.debug("ping -c 1 %s: %s" % (self.vm_1.nic[0].gateway, res))
-
-            result = str(res)
-            self.assertEqual(
-                         result.count("1 received"),
-                         1,
-                         "Ping to VM gateway should be successful"
-                         )
-        except Exception as e:
-            self.fail("Failed to SSH into VM - %s, %s" %
-                                    (self.public_ip_1.ipaddress.ipaddress, e))
-        return
-
     def validate_network_rules(self):
 	""" Validate network rules
 	"""
