@@ -2609,7 +2609,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
             for (Nic nic : routerNics) {
             	Network network = _networkModel.getNetwork(nic.getNetworkId());
-            	if (network.getTrafficType() == TrafficType.Guest && nic.getBroadcastUri().getScheme().equals("pvlan")) {
+            	if (network.getTrafficType() == TrafficType.Guest && nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
                 	NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
             		setupDhcpForPvlan(false, domR, domR.getHostId(), nicProfile);
             	}
