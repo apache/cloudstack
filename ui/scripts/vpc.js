@@ -410,8 +410,8 @@
                         args.response.success(
                           {_custom:
                            {jobId: jid,
-                            getUpdatedItem: function(json) {                          
-                              return json.queryasyncjobresultresponse.jobresult.loadbalancerrule;
+                            getUpdatedItem: function(json) {    
+                              return json.queryasyncjobresultresponse.jobresult.loadbalancer;
                             }
                            }
                           }
@@ -422,14 +422,7 @@
                     args.response.success();
                   },
                   notification: {
-                    poll: function(args) {
-                      args.complete({
-                        data: {
-                          ipaddress: '10.0.3.2',
-                          type: 'Internal'
-                        }
-                      });
-                    }
+                    poll: pollAsyncJobResult
                   }
                 }
               },
