@@ -28,6 +28,7 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -239,7 +240,9 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="tag_customer")
     private String tagCustomer;
 
-
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    private TemplateState state;
 
     public TemplateJoinVO() {
     }
@@ -1015,6 +1018,18 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     public void setDataStoreId(Long dataStoreId) {
         this.dataStoreId = dataStoreId;
     }
+
+
+
+	public TemplateState getState() {
+		return state;
+	}
+
+
+
+	public void setState(TemplateState state) {
+		this.state = state;
+	}
 
 
 

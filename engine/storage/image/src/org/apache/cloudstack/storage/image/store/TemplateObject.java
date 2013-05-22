@@ -266,19 +266,27 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public DataTO getTO() {
-        DataTO to = this.dataStore.getDriver().getTO(this);
-        if (to == null) {
-            to = new TemplateObjectTO(this);
-        }
+    	DataTO to = null;
+    	if (this.dataStore == null) {
+    		to = new TemplateObjectTO(this);
+    	} else {
+    		to = this.dataStore.getDriver().getTO(this);
+    		if (to == null) {
+    			to = new TemplateObjectTO(this);
+    		}
+    	}
 
         return to;
     }
 
-	@Override
-	public String getInstallPath() {
-		 DataObjectInStore obj = objectInStoreMgr.findObject(this, this.dataStore);
-         return obj.getInstallPath();
-	}
+    @Override
+    public String getInstallPath() {
+    	if (this.dataStore == null) {
+    		return null;
+    	}
+    	DataObjectInStore obj = objectInStoreMgr.findObject(this, this.dataStore);
+    	return obj.getInstallPath();
+    }
 
     @Override
     public long getAccountId() {

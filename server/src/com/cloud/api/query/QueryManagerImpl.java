@@ -69,6 +69,7 @@ import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -2712,8 +2713,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
 
             if (onlyReady) {
-                sc.addAnd("downloadState", SearchCriteria.Op.EQ, Status.DOWNLOADED);
-                sc.addAnd("destroyed", SearchCriteria.Op.EQ, false);
+                sc.addAnd("state", SearchCriteria.Op.EQ, TemplateState.Ready);
             }
 
             if (zoneId != null) {

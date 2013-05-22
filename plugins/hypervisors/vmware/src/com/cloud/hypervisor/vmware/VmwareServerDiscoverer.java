@@ -466,7 +466,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		Long id;
 		if (tmplt == null) {
 			id = _tmpltDao.getNextInSequence(Long.class, "id");
-			VMTemplateVO template = new VMTemplateVO(id, isoName, isoName,
+			VMTemplateVO template = VMTemplateVO.createPreHostIso(id, isoName, isoName,
 					ImageFormat.ISO, true, true, TemplateType.PERHOST, null,
 					null, true, 64, Account.ACCOUNT_ID_SYSTEM, null,
 					"VMware Tools Installer ISO", false, 1, false,

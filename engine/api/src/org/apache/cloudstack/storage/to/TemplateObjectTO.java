@@ -68,7 +68,9 @@ public class TemplateObjectTO implements DataTO {
         this.accountId = template.getAccountId();
         this.name = template.getUniqueName();
         this.format = template.getFormat();
-        this.imageDataStore = template.getDataStore().getTO();
+        if (template.getDataStore() != null) {
+        	this.imageDataStore = template.getDataStore().getTO();
+        }
     }
 
     @Override

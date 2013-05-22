@@ -1724,6 +1724,7 @@ CREATE VIEW `cloud`.`template_view` AS
         vm_template.display_text,
         vm_template.enable_password,
         vm_template.guest_os_id,
+        vm_template.state,
         guest_os.uuid guest_os_uuid,
         guest_os.display_name guest_os_name,
         vm_template.bootable,

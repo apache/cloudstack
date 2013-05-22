@@ -103,12 +103,18 @@ public class XenServerStorageProcessor implements StorageProcessor {
         DataTO data = disk.getData();
         DataStoreTO store = data.getDataStore();
 
-        if (!(store instanceof NfsTO)) {
-            s_logger.debug("Can't attach a iso which is not created on nfs: ");
-            return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
+        String isoURL = null;
+        if (store == null) {
+        	TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
+        	isoURL = iso.getName();
+        } else {
+        	if (!(store instanceof NfsTO)) {
+        		s_logger.debug("Can't attach a iso which is not created on nfs: ");
+        		return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
+        	}
+        	NfsTO nfsStore = (NfsTO)store;
+        	isoURL = nfsStore.getUrl() + File.separator + data.getPath();
         }
-        NfsTO nfsStore = (NfsTO)store;
-        String isoURL = nfsStore.getUrl() + File.separator + data.getPath();
 
         String vmName = cmd.getVmName();
         try {
@@ -237,12 +243,18 @@ public class XenServerStorageProcessor implements StorageProcessor {
         DataTO data = disk.getData();
         DataStoreTO store = data.getDataStore();
 
-        if (!(store instanceof NfsTO)) {
-            s_logger.debug("Can't attach a iso which is not created on nfs: ");
-            return new DettachAnswer("Can't attach a iso which is not created on nfs: ");
+        String isoURL = null;
+        if (store == null) {
+        	TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
+        	isoURL = iso.getName();
+        } else {
+        	if (!(store instanceof NfsTO)) {
+        		s_logger.debug("Can't attach a iso which is not created on nfs: ");
+        		return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
+        	}
+        	NfsTO nfsStore = (NfsTO)store;
+        	isoURL = nfsStore.getUrl() + File.separator + data.getPath();
         }
-        NfsTO nfsStore = (NfsTO)store;
-        String isoURL = nfsStore.getUrl() + File.separator + data.getPath();
 
         try {
             Connection conn = this.hypervisorResource.getConnection();
