@@ -606,14 +606,8 @@
 			  //Advanced zone supports 2 isolation method(VLAN, GRE), so show dropdown including the 2 options
 				if($wizard.find('.select-network-model input:radio[name=network-model]:checked').val() == 'Advanced') { 
 					$nameField.append(
-						$('<div>').addClass('name').append(
-							$('<label>').html('Physical network name')
-						),
-						$('<div>').addClass('value').append(
-							$('<input>').attr({ type: 'text' }).addClass('required')
-						),
 						$('<div>').append(
-							$('<span style=\"font-size:11px\;padding-right:5px;padding-left:50px">').html('Isolation method'),
+							$('<span style=\"font-size:11px;padding-right:5px;padding-left:40px\">').html('Isolation method'),
 							$('<select>').append(		
 								$('<option>').attr({
 									value: 'VLAN'
