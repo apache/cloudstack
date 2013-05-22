@@ -110,6 +110,7 @@ CREATE VIEW `cloud`.`image_store_view` AS
         image_store.url,
         image_store.scope,
         image_store.role,
+        image_store.removed,
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,

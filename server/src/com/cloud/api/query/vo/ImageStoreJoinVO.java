@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.query.vo;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -26,6 +28,8 @@ import javax.persistence.Table;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
+import com.cloud.utils.db.GenericDao;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -79,6 +83,8 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Column(name="detail_value")
     private String detailValue;
 
+    @Column(name=GenericDao.REMOVED_COLUMN)
+    private Date removed;
 
     @Override
     public long getId() {
@@ -188,5 +194,14 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     public void setRole(DataStoreRole role) {
         this.role = role;
     }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
 
 }
