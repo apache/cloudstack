@@ -490,12 +490,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "srcendip", endSourceIp);
         xml = replaceXmlValue(xml, "ippoolname", getNameForSourceNatIpPool(tenantName));
 
-        List<String> rules = listChildren(getDnForSourceNatPolicy(tenantName));
-        int order = 100;
-        if (rules != null) {
-            order += rules.size();
-        }
-        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+        long order = 100;
+        xml = replaceXmlValue(xml, "order", Long.toString(order));
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
@@ -671,12 +667,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createTenantVDCIngressAclRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_INGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_INGRESS_ACL_RULE.getService();
 
+        String identifier = Long.toString(ruleId);
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
@@ -688,12 +685,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "deststartport", destStartPort);
         xml = replaceXmlValue(xml, "destendport", destEndPort);
 
-        List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
-        int order = 100;
-        if (rules != null) {
-            order += rules.size();
-        }
-        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+        long order = 100 + ruleId;
+        xml = replaceXmlValue(xml, "order", Long.toString(order));
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
@@ -701,11 +694,12 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createTenantVDCIngressAclRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp) throws ExecutionException {
         String xml = VnmcXml.CREATE_GENERIC_INGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_GENERIC_INGRESS_ACL_RULE.getService();
 
+        String identifier = Long.toString(ruleId);
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
@@ -715,12 +709,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
         xml = replaceXmlValue(xml, "sourceendip", sourceEndIp);
 
-        List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
-        int order = 100;
-        if (rules != null) {
-            order += rules.size();
-        }
-        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+        long order = 100 + ruleId;
+        xml = replaceXmlValue(xml, "order", Long.toString(order));
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
@@ -728,12 +718,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createTenantVDCEgressAclRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_EGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_EGRESS_ACL_RULE.getService();
 
+        String identifier = Long.toString(ruleId);
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
@@ -745,12 +736,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "deststartport", destStartPort);
         xml = replaceXmlValue(xml, "destendport", destEndPort);
 
-        List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
-        int order = 100;
-        if (rules != null) {
-            order += rules.size();
-        }
-        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+        long order = 100 + ruleId;
+        xml = replaceXmlValue(xml, "order", Long.toString(order));
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
@@ -758,7 +745,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createTenantVDCEgressAclRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp) throws ExecutionException {
         String xml = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_GENERIC_EGRESS_ACL_RULE.getService();
@@ -768,6 +755,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         } else { // specific protocol
             xml = replaceXmlValue(xml, "protocolvalue", protocol);
         }
+
+        String identifier = Long.toString(ruleId);
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
@@ -776,19 +765,16 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
         xml = replaceXmlValue(xml, "sourceendip", sourceEndIp);
 
-        List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
-        int order = 100;
-        if (rules != null) {
-            order += rules.size();
-        }
-        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+        long order = 100 + ruleId;
+        xml = replaceXmlValue(xml, "order", Long.toString(order));
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean deleteTenantVDCAclRule(String tenantName, String identifier, String policyIdentifier) throws ExecutionException {
+    public boolean deleteTenantVDCAclRule(String tenantName, long ruleId, String policyIdentifier) throws ExecutionException {
+        String identifier = Long.toString(ruleId);
         return deleteTenantVDCRule(
                 getDnForAclRule(tenantName, identifier, policyIdentifier),
                 getNameForAclRule(tenantName, identifier));
@@ -1001,11 +987,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createTenantVDCPFRule(String tenantName,
-            String identifier, String policyIdentifier,
+            long ruleId, String policyIdentifier,
             String protocol, String publicIp,
             String startPort, String endPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_PF_RULE.getXml();
         String service = VnmcXml.CREATE_PF_RULE.getService();
+
+        String identifier = Long.toString(ruleId);
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "natruledn", getDnForPFRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "natrulename", getNameForPFRule(tenantName, identifier));
@@ -1017,20 +1005,16 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "endport", endPort);
         xml = replaceXmlValue(xml, "protocolvalue", protocol);
 
-        List<String> rules = listChildren(getDnForPFPolicy(tenantName, policyIdentifier));
-        int order = 100;
-        if (rules != null) {
-            order += rules.size();
-        }
-        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+        long order = 100 + ruleId;
+        xml = replaceXmlValue(xml, "order", Long.toString(order));
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean deleteTenantVDCPFRule(String tenantName, String identifier,
-            String policyIdentifier) throws ExecutionException {
+    public boolean deleteTenantVDCPFRule(String tenantName, long ruleId, String policyIdentifier) throws ExecutionException {
+        String identifier = Long.toString(ruleId);
         return deleteTenantVDCRule(
                 getDnForPFRule(tenantName, identifier, policyIdentifier),
                 getNameForPFRule(tenantName, identifier));
@@ -1038,11 +1022,13 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createTenantVDCAclRuleForPF(String tenantName,
-            String identifier, String policyIdentifier, String protocol,
+            long ruleId, String policyIdentifier, String protocol,
             String ipAddress, String startPort, String endPort)
             throws ExecutionException {
         String xml = VnmcXml.CREATE_ACL_RULE_FOR_PF.getXml();
         String service = VnmcXml.CREATE_ACL_RULE_FOR_PF.getService();
+
+        String identifier = Long.toString(ruleId);
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
@@ -1053,12 +1039,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "startport", startPort);
         xml = replaceXmlValue(xml, "endport", endPort);
 
-        List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
-        int order = 100;
-        if (rules != null) {
-            order += rules.size();
-        }
-        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+        long order = 100 + ruleId;
+        xml = replaceXmlValue(xml, "order", Long.toString(order));
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
@@ -1127,10 +1109,12 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createTenantVDCDNatRule(String tenantName,
-            String identifier, String policyIdentifier, String publicIp)
+            long ruleId, String policyIdentifier, String publicIp)
             throws ExecutionException {
         String xml = VnmcXml.CREATE_DNAT_RULE.getXml();
         String service = VnmcXml.CREATE_DNAT_RULE.getService();
+
+        String identifier = Long.toString(ruleId);
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "natruledn", getDnForDNatRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "natrulename", getNameForDNatRule(tenantName, identifier));
@@ -1138,21 +1122,17 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "ippoolname", getNameForDNatIpPool(tenantName, identifier));
         xml = replaceXmlValue(xml, "ip", publicIp);
 
-        List<String> rules = listChildren(getDnForDNatPolicy(tenantName, policyIdentifier));
-        int order = 100;
-        if (rules != null) {
-            order += rules.size();
-        }
-        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+        long order = 100 + ruleId;
+        xml = replaceXmlValue(xml, "order", Long.toString(order));
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
     }
 
     @Override
-    public boolean deleteTenantVDCDNatRule(String tenantName,
-            String identifier, String policyIdentifier)
+    public boolean deleteTenantVDCDNatRule(String tenantName, long ruleId, String policyIdentifier)
             throws ExecutionException {
+        String identifier = Long.toString(ruleId);
         return deleteTenantVDCRule(
                 getDnForDNatRule(tenantName, identifier, policyIdentifier),
                 getNameForDNatRule(tenantName, identifier));
@@ -1160,10 +1140,12 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createTenantVDCAclRuleForDNat(String tenantName,
-            String identifier, String policyIdentifier, String ipAddress)
+            long ruleId, String policyIdentifier, String ipAddress)
             throws ExecutionException {
         String xml = VnmcXml.CREATE_ACL_RULE_FOR_DNAT.getXml();
         String service = VnmcXml.CREATE_ACL_RULE_FOR_DNAT.getService();
+
+        String identifier = Long.toString(ruleId);
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
@@ -1171,12 +1153,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "actiontype", "permit");
         xml = replaceXmlValue(xml, "ip", ipAddress);
 
-        List<String> rules = listChildren(getDnForAclPolicy(tenantName, policyIdentifier));
-        int order = 100;
-        if (rules != null) {
-            order += rules.size();
-        }
-        xml = replaceXmlValue(xml, "order", Integer.toString(order));
+        long order = 100 + ruleId;
+        xml = replaceXmlValue(xml, "order", Long.toString(order));
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
