@@ -96,7 +96,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
     public XenServerStorageProcessor(CitrixResourceBase resource) {
         this.hypervisorResource = resource;
     }
-    
+
     @Override
     public AttachAnswer attachIso(AttachCommand cmd) {
         DiskTO disk = cmd.getDisk();
@@ -161,7 +161,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             return new AttachAnswer(e.toString());
         }
     }
-    
+
     @Override
     public AttachAnswer attachVolume(AttachCommand cmd) {
         String vmName = cmd.getVmName();
@@ -236,7 +236,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             return new AttachAnswer(msg);
         }
     }
-    
+
     @Override
     public Answer dettachIso(DettachCommand cmd) {
         DiskTO disk = cmd.getDisk();
@@ -298,7 +298,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             String msg = "Failed to dettach volume" + " for uuid: " + data.getPath() + "  due to "  + e.getMessage();
             s_logger.warn(msg, e);
             return new DettachAnswer(msg);
-        } 
+        }
     }
 
 
@@ -330,7 +330,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 return new DettachAnswer("You attempted an operation that requires PV drivers to be installed on the VM. Please install them by inserting xen-pv-drv.iso.");
             }
 
-            
+
             // Look up all VBDs for this VDI
             Set<VBD> vbds = vdi.getVBDs(conn);
 
@@ -356,7 +356,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             return new DettachAnswer("Failed dettach volume: " + data.getPath() + ", due to " + e.toString());
         }
     }
-    
+
 
     protected SR getSRByNameLabel(Connection conn, String nameLabel) throws BadServerResponse, XenAPIException, XmlRpcException {
         Set<SR> srs = SR.getByNameLabel(conn, nameLabel);
@@ -431,7 +431,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
         return new CreateObjectAnswer(details);
     }
-    
+
     @Override
     public Answer deleteVolume(DeleteCommand cmd) {
     	DataTO volume = cmd.getData();
@@ -507,7 +507,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
         }
     }
-    
+
     protected SR getIscsiSR(Connection conn, StorageFilerTO pool) {
         synchronized (pool.getUuid().intern()) {
             Map<String, String> deviceConfig = new HashMap<String, String>();
@@ -831,7 +831,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 NfsTO srcImageStore = (NfsTO)srcStore;
                 TemplateObjectTO srcTemplate = (TemplateObjectTO)srcData;
                 String storeUrl = srcImageStore.getUrl();
-            
+
                 URI uri = new URI(storeUrl);
                 String tmplpath = uri.getHost() + ":" + uri.getPath() + "/" + srcData.getPath();
                 PrimaryDataStoreTO destStore = (PrimaryDataStoreTO)destData.getDataStore();
@@ -994,7 +994,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 }
 
                 // Create a SR for the volume UUID folder
-                secondaryStorage = hypervisorResource.createNfsSRbyURI(conn, new URI(nfsStore.getUrl() + destVolume.getPath()), false);
+                secondaryStorage = hypervisorResource.createNfsSRbyURI(conn, new URI(nfsStore.getUrl() + File.separator + destVolume.getPath()), false);
                 // Look up the volume on the source primary storage pool
                 VDI srcVdi = getVDIbyUuid(conn, srcVolume.getPath());
                 // Copy the volume to secondary storage
@@ -1343,7 +1343,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
         return new CopyCmdAnswer(details);
     }
-    
+
     @Override
     public Answer createTemplateFromVolume(CopyCommand cmd) {
         Connection conn = this.hypervisorResource.getConnection();
@@ -1351,13 +1351,13 @@ public class XenServerStorageProcessor implements StorageProcessor {
         TemplateObjectTO template = (TemplateObjectTO)cmd.getDestTO();
         NfsTO destStore = (NfsTO)cmd.getDestTO().getDataStore();
         int wait = cmd.getWait();
-        
+
         String secondaryStoragePoolURL = destStore.getUrl();
         String volumeUUID = volume.getPath();
-       
+
         String userSpecifiedName = template.getName();
-      
-     
+
+
         String details = null;
         SR tmpltSR = null;
         boolean result = false;
@@ -1454,7 +1454,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 			String snapshotInstallPath = snapshot.getPath();
 			int index = snapshotInstallPath.lastIndexOf(File.separator);
 			String snapshotName = snapshotInstallPath.substring(index + 1);
-		
+
 			if (!snapshotName.startsWith("VHD-") && !snapshotName.endsWith(".vhd")) {
 				snapshotInstallPath = snapshotInstallPath + ".vhd";
 			}
@@ -1491,7 +1491,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 		DataStoreTO store = snapshot.getDataStore();
 		if (store.getRole() == DataStoreRole.Primary) {
 			Connection conn = this.hypervisorResource.getConnection();
-			VDI snapshotVdi = getVDIbyUuid(conn, snapshot.getPath()); 
+			VDI snapshotVdi = getVDIbyUuid(conn, snapshot.getPath());
 			if (snapshotVdi == null) {
 				return new Answer(null);
 			}
