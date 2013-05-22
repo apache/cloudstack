@@ -77,13 +77,14 @@ public class DefaultEndPointSelector implements EndPointSelector {
     protected boolean moveBetweenCacheAndImage(DataStore srcStore, DataStore destStore) {
     	  DataStoreRole srcRole = srcStore.getRole();
           DataStoreRole destRole = destStore.getRole();
-          if (srcRole == DataStoreRole.Image && destRole == DataStoreRole.ImageCache) {
+          if (srcRole == DataStoreRole.Image && destRole == DataStoreRole.ImageCache  ||
+                  srcRole == DataStoreRole.ImageCache && destRole == DataStoreRole.Image) {
         	  return true;
           } else {
         	  return false;
           }
     }
-    
+
     protected boolean moveBetweenImages(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
         DataStoreRole destRole = destStore.getRole();

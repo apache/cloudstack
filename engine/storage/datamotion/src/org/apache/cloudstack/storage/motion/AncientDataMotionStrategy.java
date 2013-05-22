@@ -140,28 +140,44 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     protected Answer copyObject(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
-        if (needCacheStorage(srcData, destData)) {
-            //need to copy it to image cache store
-            Scope destScope = destData.getDataStore().getScope();
-            if (destScope instanceof ClusterScope){
-                ClusterScope clusterScope = (ClusterScope)destScope;
-                destScope = new ZoneScope(clusterScope.getZoneId());
-            } else if (destScope instanceof HostScope){
-                HostScope hostScope = (HostScope)destScope;
-                destScope = new ZoneScope(hostScope.getZoneId());
+        Answer answer = null;
+        DataObject cacheData = null;
+        try {
+            if (needCacheStorage(srcData, destData)) {
+                // need to copy it to image cache store
+                Scope destScope = destData.getDataStore().getScope();
+                if (destScope instanceof ClusterScope) {
+                    ClusterScope clusterScope = (ClusterScope) destScope;
+                    destScope = new ZoneScope(clusterScope.getZoneId());
+                } else if (destScope instanceof HostScope) {
+                    HostScope hostScope = (HostScope) destScope;
+                    destScope = new ZoneScope(hostScope.getZoneId());
+                }
+                cacheData = cacheMgr.createCacheObject(srcData, destScope);
+                CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
+                EndPoint ep = selector.select(cacheData, destData);
+                answer = ep.sendMessage(cmd);
+            } else {
+                // handle copy it to/from cache store
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
+                EndPoint ep = selector.select(srcData, destData);
+                answer = ep.sendMessage(cmd);
             }
-            DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
-            CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
-            EndPoint ep = selector.select(cacheData, destData);
-            Answer answer = ep.sendMessage(cmd);
+            // clean up cache entry in case of failure
+            if (answer == null || !answer.getResult()) {
+                if (cacheData != null) {
+                    cacheMgr.deleteCacheObject(cacheData);
+                }
+            }
             return answer;
-        } else {
-            //handle copy it to/from cache store
-            CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
-            EndPoint ep = selector.select(srcData, destData);
-            Answer answer = ep.sendMessage(cmd);
-            return answer;
+        } catch (Exception e) {
+            s_logger.debug("copy object failed: " + e.toString());
+            if (cacheData != null) {
+                cacheMgr.deleteCacheObject(cacheData);
+            }
+            throw new CloudRuntimeException(e.toString());
         }
+
     }
 
     protected DataObject cacheSnapshotChain(SnapshotInfo snapshot) {
@@ -203,7 +219,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait);
             EndPoint ep = selector.select(snapObj, volObj);
             Answer answer = ep.sendMessage(cmd);
-           
+
            return answer;
         } catch (Exception e) {
             s_logger.error(basicErrMsg, e);
@@ -245,7 +261,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         Answer answer = null;
         String errMsg = null;
         try {
-           
+
             if (srcData.getType() == DataObjectType.SNAPSHOT
                     && destData.getType() == DataObjectType.VOLUME) {
             	answer = copyVolumeFromSnapshot(srcData, destData);
@@ -306,21 +322,27 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
 
         DataObject cacheData = null;
+        Answer answer = null;
         try {
-        if (needCacheStorage(srcData, destData)) {
-            cacheData = cacheMgr.getCacheObject(srcData, destData.getDataStore().getScope());
+            if (needCacheStorage(srcData, destData)) {
+                cacheData = cacheMgr.getCacheObject(srcData, destData.getDataStore().getScope());
 
-            CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait);
-            cmd.setCacheTO(cacheData.getTO());
-            EndPoint ep = selector.select(srcData, destData);
-            Answer answer = ep.sendMessage(cmd);
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait);
+                cmd.setCacheTO(cacheData.getTO());
+                EndPoint ep = selector.select(srcData, destData);
+                answer = ep.sendMessage(cmd);
+            } else {
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait);
+                EndPoint ep = selector.select(srcData, destData);
+                answer = ep.sendMessage(cmd);
+            }
+            // clean up cache entry in case of failure
+            if (answer == null || !answer.getResult()) {
+                if (cacheData != null) {
+                    cacheMgr.deleteCacheObject(cacheData);
+                }
+            }
             return answer;
-        } else {
-            CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait);
-            EndPoint ep = selector.select(srcData, destData);
-            Answer answer = ep.sendMessage(cmd);
-            return answer;
-        }
         } catch (Exception e) {
             s_logger.debug("copy snasphot failed: " + e.toString());
             if (cacheData != null) {

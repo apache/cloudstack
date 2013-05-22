@@ -403,12 +403,20 @@ public class VolumeObject implements VolumeInfo {
                     vol.setPoolId(this.getDataStore().getId());
                     volumeDao.update(vol.getId(), vol);
                 }
-            } else if (this.dataStore.getRole() == DataStoreRole.Image) {
+            } else {
+                // image store or imageCache store
                 if (answer instanceof DownloadAnswer) {
                     DownloadAnswer dwdAnswer = (DownloadAnswer) answer;
                     VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
                     volStore.setInstallPath(dwdAnswer.getInstallPath());
                     volStore.setChecksum(dwdAnswer.getCheckSum());
+                    this.volumeStoreDao.update(volStore.getId(), volStore);
+                } else if (answer instanceof CopyCmdAnswer ){
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
+                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
+                    VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
+                    volStore.setInstallPath(newVol.getPath());
+                    volStore.setSize(newVol.getSize());
                     this.volumeStoreDao.update(volStore.getId(), volStore);
                 }
             }
