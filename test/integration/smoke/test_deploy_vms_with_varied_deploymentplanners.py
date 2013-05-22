@@ -15,150 +15,236 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#!/usr/bin/env python
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering
+from marvin.integration.lib.common import get_zone, get_domain, get_template, cleanup_resources
 
-import marvin
-from marvin import cloudstackTestCase
-from marvin.cloudstackTestCase import *
+from nose.plugins.attrib import attr
 
-import unittest
-import hashlib
-import random
+class Services:
+    def __init__(self):
+	self.services = {
+	    "account": {
+		"email": "test@test.com",
+		"firstname": "Test",
+		"lastname": "User",
+		"username": "test",
+		# Random characters are appended for unique
+		# username
+		"password": "password",
+	    },
+	    "service_offering": {
+		"name": "Planner Service Offering",
+		"displaytext": "Planner Service Offering",
+		"cpunumber": 1,
+		"cpuspeed": 100,
+		# in MHz
+		"memory": 128,
+		# In MBs
+	    },
+	    "ostype": 'CentOS 5.3 (64-bit)',
+	    "virtual_machine": {
+		"hypervisor": "XenServer",
+	    }
+	}
+
 
 class TestDeployVmWithVariedPlanners(cloudstackTestCase):
+    """ Test to create services offerings for deployment planners
+	- firstfit, userdispersing
     """
-    This test tests that we can create serviceOfferings with different deployment Planners and deploy virtual machines into a user account
-    using these service offerings and builtin template
-    """
-    def setUp(self):
-        """
-        CloudStack internally saves its passwords in md5 form and that is how we
-        specify it in the API. Python's hashlib library helps us to quickly hash
-        strings as follows
-        """
-        mdf = hashlib.md5()
-        mdf.update('password')
-        mdf_pass = mdf.hexdigest()
-		
-        self.apiClient = self.testClient.getApiClient() #Get ourselves an API client
 
-        self.acct = createAccount.createAccountCmd() #The createAccount command
-        self.acct.accounttype = 0                    #We need a regular user. admins have accounttype=1
-        self.acct.firstname = 'test'
-        self.acct.lastname = 'user'                 #What's up doc?
-        self.acct.username = 'testuser'
-        self.acct.password = mdf_pass				#The md5 hashed password string
-        self.acct.email = 'test@domain.com'
-        self.acct.account = 'testacct'
-        self.acct.domainid = 1                       #The default ROOT domain
-        self.acctResponse = self.apiClient.createAccount(self.acct)
-        # And upon successful creation we'll log a helpful message in our logs
-        # using the default debug logger of the test framework
-        self.debug("successfully created account: %s, id: \
-                   %s"%(self.acctResponse.name, \
-                        self.acctResponse.id))
-        
-        #Create service offerings with varied planners
-        self.svcOfferingFirstFit = createServiceOffering.createServiceOfferingCmd()
-        self.svcOfferingFirstFit.name = 'Tiny Instance FirstFit'
-        self.svcOfferingFirstFit.displaytext = 'Tiny Instance with FirstFitPlanner'
-        self.svcOfferingFirstFit.cpuspeed = 100
-        self.svcOfferingFirstFit.cpunumber = 1
-        self.svcOfferingFirstFit.memory = 256
-        self.svcOfferingFirstFit.deploymentplanner = 'FirstFitPlanner'
-        self.svcOfferingFirstFitResponse = self.apiClient.createServiceOffering(self.svcOfferingFirstFit)
-        
-        self.debug("successfully created serviceofferring name: %s, id: \
-				   %s, deploymentPlanner: %s"%(self.svcOfferingFirstFitResponse.name, \
-						self.svcOfferingFirstFitResponse.id,self.svcOfferingFirstFitResponse.deploymentplanner))
-        
-		#Create service offerings with varied planners
-        self.svcOfferingUserDispersing = createServiceOffering.createServiceOfferingCmd()
-        self.svcOfferingUserDispersing.name = 'Tiny Instance UserDispersing'
-        self.svcOfferingUserDispersing.displaytext = 'Tiny Instance with UserDispersingPlanner'
-        self.svcOfferingUserDispersing.cpuspeed = 100
-        self.svcOfferingUserDispersing.cpunumber = 1
-        self.svcOfferingUserDispersing.memory = 256
-        self.svcOfferingUserDispersing.deploymentplanner = 'FirstFitPlanner'
-        self.svcOfferingUserDispersingResponse = self.apiClient.createServiceOffering(self.svcOfferingUserDispersing)
-        
-        self.debug("successfully created serviceofferring name: %s, id: \
-                   %s, deploymentPlanner: %s"%(self.svcOfferingUserDispersingResponse.name, \
-                        self.svcOfferingUserDispersingResponse.id,self.svcOfferingUserDispersingResponse.deploymentplanner))
+    @classmethod
+    def setUpClass(cls):
+	cls.apiclient = super(TestDeployVmWithVariedPlanners, cls).getClsTestClient().getApiClient()
+	cls.services = Services().services
+	# Get Zone, Domain and templates
+	cls.domain = get_domain(cls.apiclient, cls.services)
+	cls.zone = get_zone(cls.apiclient, cls.services)
+	cls.template = get_template(
+	    cls.apiclient,
+	    cls.zone.id,
+	    cls.services["ostype"]
+	)
+	cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+	cls.services["template"] = cls.template.id
+	cls.services["zoneid"] = cls.zone.id
 
-    def test_DeployVm(self):
-        """
-        Let's start by defining the attributes of our VM that we will be
-        deploying on CloudStack. We will be assuming a single zone is available
-        and is configured and all templates are Ready
+	cls.account = Account.create(
+	    cls.apiclient,
+	    cls.services["account"],
+	    domainid=cls.domain.id
+	)
+	cls.services["account"] = cls.account.name
+	cls.cleanup = [
+	    cls.account
+	]
 
-        The hardcoded values are used only for brevity.
-        """
-        deployVmCmd = deployVirtualMachine.deployVirtualMachineCmd()
-        deployVmCmd.zoneid = 1
-        deployVmCmd.account = self.acct.account
-        deployVmCmd.domainid = self.acct.domainid
-        deployVmCmd.templateid = 5                   #For default template- CentOS 5.6(64 bit)
-        deployVmCmd.serviceofferingid = self.svcOfferingFirstFitResponse.id
+    @attr(tags=["simulator", "advanced", "basic", "sg"])
+    def test_deployvm_firstfit(self):
+	"""Test to deploy vm with a first fit offering
+	"""
+	#FIXME: How do we know that first fit actually happened?
+	self.service_offering_firstfit = ServiceOffering.create(
+	    self.apiclient,
+	    self.services["service_offering"],
+	    deploymentplanner='FirstFitPlanner'
+	)
 
-        deployVmResponse = self.apiClient.deployVirtualMachine(deployVmCmd)
-        self.debug("VM %s was deployed in the job %s"%(deployVmResponse.id, deployVmResponse.jobid))
+	self.virtual_machine = VirtualMachine.create(
+	    self.apiclient,
+	    self.services["virtual_machine"],
+	    accountid=self.account.name,
+	    zoneid=self.zone.id,
+	    domainid=self.account.domainid,
+	    serviceofferingid=self.service_offering_firstfit.id,
+	    templateid=self.template.id
+	)
 
-        # At this point our VM is expected to be Running. Let's find out what
-        # listVirtualMachines tells us about VMs in this account
+	list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
+	self.debug(
+	    "Verify listVirtualMachines response for virtual machine: %s"\
+	    % self.virtual_machine.id
+	)
+	self.assertEqual(
+	    isinstance(list_vms, list),
+	    True,
+	    "List VM response was not a valid list"
+	)
+	self.assertNotEqual(
+	    len(list_vms),
+	    0,
+	    "List VM response was empty"
+	)
 
-        listVmCmd = listVirtualMachines.listVirtualMachinesCmd()
-        listVmCmd.id = deployVmResponse.id
-        listVmResponse = self.apiClient.listVirtualMachines(listVmCmd)
+	vm = list_vms[0]
+	self.assertEqual(
+	    vm.state,
+	    "Running",
+	    msg="VM is not in Running state"
+	)
 
-        self.assertNotEqual(len(listVmResponse), 0, "Check if the list API \
-                            returns a non-empty response")
+    @attr(tags=["simulator", "advanced", "basic", "sg"])
+    def test_deployvm_userdispersing(self):
+	"""Test deploy VMs using user dispersion planner
+	"""
+	self.service_offering_userdispersing = ServiceOffering.create(
+	    self.apiclient,
+	    self.services["service_offering"],
+	    deploymentplanner='UserDispersingPlanner'
+	)
 
-        vm1 = listVmResponse[0]
+	self.virtual_machine_1 = VirtualMachine.create(
+	    self.apiclient,
+	    self.services["virtual_machine"],
+	    accountid=self.account.name,
+	    zoneid=self.zone.id,
+	    domainid=self.account.domainid,
+	    serviceofferingid=self.service_offering_userdispersing.id,
+	    templateid=self.template.id
+	)
+	self.virtual_machine_2 = VirtualMachine.create(
+	    self.apiclient,
+	    self.services["virtual_machine"],
+	    accountid=self.account.name,
+	    zoneid=self.zone.id,
+	    domainid=self.account.domainid,
+	    serviceofferingid=self.service_offering_userdispersing.id,
+	    templateid=self.template.id
+	)
 
-        self.assertEqual(vm1.id, deployVmResponse.id, "Check if the VM returned \
-                         is the same as the one we deployed")
-        self.assertEqual(vm1.state, "Running", "Check if VM has reached \
-                         a state of running")
-        
+	list_vm_1 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_1.id)
+	list_vm_2 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_2.id)
+	self.assertEqual(
+	    isinstance(list_vm_1, list),
+	    True,
+	    "List VM response was not a valid list"
+	)
+	self.assertEqual(
+	    isinstance(list_vm_2, list),
+	    True,
+	    "List VM response was not a valid list"
+	)
+	vm1 = list_vm_1[0]
+	vm2 = list_vm_2[0]
+	self.assertEqual(
+	    vm1.state,
+	    "Running",
+	    msg="VM is not in Running state"
+	)
+	self.assertEqual(
+	    vm2.state,
+	    "Running",
+	    msg="VM is not in Running state"
+	)
+	self.assertNotEqual(
+	    vm1.hostid,
+	    vm2.hostid,
+	    msg="VMs meant to be dispersed are deployed on the same host"
+	)
 
-        deployVm2Cmd = deployVirtualMachine.deployVirtualMachineCmd()
-        deployVm2Cmd.zoneid = 1
-        deployVm2Cmd.account = self.acct.account
-        deployVm2Cmd.domainid = self.acct.domainid
-        deployVm2Cmd.templateid = 5                   #For default template- CentOS 5.6(64 bit)
-        deployVm2Cmd.serviceofferingid = self.svcOfferingFirstFitResponse.id
+    @attr(tags=["simulator", "advanced", "basic", "sg"])
+    def test_deployvm_userconcentrated(self):
+	"""Test deploy VMs using user concentrated planner
+	"""
+	self.service_offering_userconcentrated = ServiceOffering.create(
+	    self.apiclient,
+	    self.services["service_offering"],
+	    deploymentplanner='UserConcentratedPodPlanner'
+	)
 
-        deployVm2Response = self.apiClient.deployVirtualMachine(deployVm2Cmd)
-        self.debug("VM %s was deployed in the job %s"%(deployVm2Response.id, deployVm2Response.jobid))
+	self.virtual_machine_1 = VirtualMachine.create(
+	    self.apiclient,
+	    self.services["virtual_machine"],
+	    accountid=self.account.name,
+	    zoneid=self.zone.id,
+	    domainid=self.account.domainid,
+	    serviceofferingid=self.service_offering_userconcentrated.id,
+	    templateid=self.template.id
+	)
+	self.virtual_machine_2 = VirtualMachine.create(
+	    self.apiclient,
+	    self.services["virtual_machine"],
+	    accountid=self.account.name,
+	    zoneid=self.zone.id,
+	    domainid=self.account.domainid,
+	    serviceofferingid=self.service_offering_userconcentrated.id,
+	    templateid=self.template.id
+	)
 
-        # At this point our VM is expected to be Running. Let's find out what
-        # listVirtualMachines tells us about VMs in this account
+	list_vm_1 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_1.id)
+	list_vm_2 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_2.id)
+	self.assertEqual(
+	    isinstance(list_vm_1, list),
+	    True,
+	    "List VM response was not a valid list"
+	)
+	self.assertEqual(
+	    isinstance(list_vm_2, list),
+	    True,
+	    "List VM response was not a valid list"
+	)
+	vm1 = list_vm_1[0]
+	vm2 = list_vm_2[0]
+	self.assertEqual(
+	    vm1.state,
+	    "Running",
+	    msg="VM is not in Running state"
+	)
+	self.assertEqual(
+	    vm2.state,
+	    "Running",
+	    msg="VM is not in Running state"
+	)
+	self.assertNotEqual(
+	    vm1.hostid,
+	    vm2.hostid,
+	    msg="VMs meant to be concentrated are deployed on the different hosts"
+	)
 
-        listVm2Cmd = listVirtualMachines.listVirtualMachinesCmd()
-        listVm2Cmd.id = deployVm2Response.id
-        listVm2Response = self.apiClient.listVirtualMachines(listVm2Cmd)
-        self.assertNotEqual(len(listVm2Response), 0, "Check if the list API \
-                            returns a non-empty response")
-        vm2 = listVm2Response[0]
-        self.assertEqual(vm2.id, deployVm2Response.id, "Check if the VM returned \
-                         is the same as the one we deployed")
-        self.assertEqual(vm2.state, "Running", "Check if VM has reached \
-                         a state of running")
-
-
-    def tearDown(self):                               # Teardown will delete the Account as well as the VM once the VM reaches "Running" state
-        """
-        And finally let us cleanup the resources we created by deleting the
-        account. All good unittests are atomic and rerunnable this way
-        """
-        deleteAcct = deleteAccount.deleteAccountCmd()
-        deleteAcct.id = self.acctResponse.id
-        self.apiClient.deleteAccount(deleteAcct)
-        deleteSvcOfferingFirstFit = deleteServiceOffering.deleteServiceOfferingCmd()
-        deleteSvcOfferingFirstFit.id = self.svcOfferingFirstFitResponse.id
-        self.apiClient.deleteServiceOffering(deleteSvcOfferingFirstFit);
-        deleteSvcOfferingUserDispersing = deleteServiceOffering.deleteServiceOfferingCmd()
-        deleteSvcOfferingUserDispersing.id = self.svcOfferingUserDispersingResponse.id
-        self.apiClient.deleteServiceOffering(deleteSvcOfferingUserDispersing);
-        
+    @classmethod
+    def tearDownClass(cls):
+	try:
+	    cleanup_resources(cls.apiclient, cls.cleanup)
+	except Exception as e:
+	    raise Exception("Warning: Exception during cleanup : %s" % e)
