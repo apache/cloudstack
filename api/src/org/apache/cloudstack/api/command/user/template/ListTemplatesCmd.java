@@ -125,8 +125,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
         List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
         for (Pair<Long, Long> template : templateZonePairSet) {
-            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            responses = _responseGenerator.createTemplateResponses(template.first().longValue(), template.second(), listInReadyState());
+            List<TemplateResponse> responses = _responseGenerator.createTemplateResponses(template.first().longValue(), template.second(), listInReadyState());
             templateResponses.addAll(responses);
         }
 

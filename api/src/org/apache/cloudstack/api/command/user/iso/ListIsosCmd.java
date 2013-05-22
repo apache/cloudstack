@@ -153,8 +153,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
         for (Pair<Long, Long> iso : isoZonePairSet) {
-            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            responses = _responseGenerator.createIsoResponses(iso.first(), iso.second(), listInReadyState());
+            List<TemplateResponse> responses = _responseGenerator.createIsoResponses(iso.first(), iso.second(), listInReadyState());
             templateResponses.addAll(responses);
         }
         response.setResponses(templateResponses);

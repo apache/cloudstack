@@ -171,11 +171,10 @@ public class ListHostsCmd extends BaseListCmd {
             response = _queryService.searchForServers(this);
         } else {
             Pair<List<? extends Host>,Integer> result;
-            List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
             Ternary<Pair<List<? extends Host>,Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
                     _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
             result = hostsForMigration.first();
-            hostsWithCapacity = hostsForMigration.second();
+            List<? extends Host> hostsWithCapacity = hostsForMigration.second();
 
             response = new ListResponse<HostResponse>();
             List<HostResponse> hostResponses = new ArrayList<HostResponse>();
