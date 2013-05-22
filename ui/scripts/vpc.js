@@ -444,7 +444,34 @@
                     },
                     listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
                       type: 'checkbox',
-                      filters: false
+                      filters: false,
+                      dataProvider: function(args) {
+                        $.ajax({
+                          url: createURL('listVirtualMachines'),
+                          data: {
+                            networkid: args.context.networks[0].id,
+                            listAll: true
+                          },
+                          success: function(json) {
+                            var instances = json.listvirtualmachinesresponse.virtualmachine;
+
+                            // Pre-select existing instances in LB rule
+                            $(instances).map(function(index, instance) {
+                              instance._isSelected = $.grep(
+                                args.context.internalLoadBalancers[0].loadbalancerinstance,
+                                
+                                function(lbInstance) {
+                                  return lbInstance.id == instance.id;
+                                }
+                              ).length ? true : false;
+                            });
+                            
+                            args.response.success({
+                              data: instances
+                            });
+                          }
+                        });
+                      }
                     }),
                     action: function(args) {                      
                       var vms = args.context.instances;
