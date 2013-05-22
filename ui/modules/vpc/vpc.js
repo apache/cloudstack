@@ -168,7 +168,7 @@
           $total.find('span').html(dashboardItem.totalMultiLine);
           $total.addClass('multiline');
         } else {
-          $total.find('span').html(dashboardItem.total);
+          $total.find('span').html(dashboardItem.total ? dashboardItem.total : 0);
         }
         
         $dashboardItem.append($total, $name);
@@ -183,7 +183,7 @@
               var $section = $('<div>');
 
               if ($.isFunction(section)) {
-                section = cloudStack.vpc.sections[id]()
+                section = cloudStack.vpc.sections[id]();
               }
 
               if (section.listView) {

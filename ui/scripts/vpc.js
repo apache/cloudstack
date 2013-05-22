@@ -341,7 +341,7 @@
       },
 
       tierStaticNATs: function() {
-        return cloudStack.vpc.ipAddresses.listView();
+        return cloudStack.vpc.staticNatIpAddresses.listView();
       },
       
       // Internal load balancers
@@ -1185,12 +1185,41 @@
     ipAddresses: {
       listView: function() {
         var listView = $.extend(true, {}, cloudStack.sections.network.sections.ipAddresses);
-        
+
         listView.listView.fields = {
           ipaddress: listView.listView.fields.ipaddress,
           zonename: listView.listView.fields.zonename,
           associatednetworkname: { label: 'label.network.name' },
           state: listView.listView.fields.state
+        };
+
+        return listView;
+      }
+    },
+    staticNatIpAddresses: {
+      listView: function() {
+        var listView = $.extend(true, {}, cloudStack.sections.network.sections.ipAddresses);
+
+        listView.listView.fields = {
+          ipaddress: listView.listView.fields.ipaddress,
+          zonename: listView.listView.fields.zonename,
+          associatednetworkname: { label: 'label.network.name' },
+          state: listView.listView.fields.state
+        };
+
+        listView.listView.dataProvider = function(args) {
+          $.ajax({
+            url: createURL('listPublicIpAddresses'),
+            data: { networkid: args.context.networks[0].id, isstaticnat: true },
+            success: function(json) {
+              args.response.success({
+                data: json.listpublicipaddressesresponse.publicipaddress
+              });
+            },
+            error: function(json) {
+              args.response.error(parseXMLHttpResponse(json));
+            }
+          });                
         };
 
         return listView;
@@ -3171,29 +3200,16 @@
           async: true,
           success: function(json) {
             var networks = json.listnetworksresponse.network;
-            var loadBalancers, networkACLLists, publicIpAddresses, privateGateways, vpnGateways, portForwardingRules;
+            var networkACLLists, publicIpAddresses, privateGateways, vpnGateways;
             var error = false;
-
-            // Get load balancers
-            $.ajax({
-              url: createURL('listLoadBalancers'),
-              data: { vpcid: args.context.vpc[0].id },
-              success: function(json) {
-                loadBalancers = json.listloadbalancerssresponse.loadbalancer ?
-                  json.listloadbalancerssresponse.loadbalancer : [];
-              },
-              error: function(json) {
-                error = true;
-              }
-            });
 
             // Get network ACL lists
             $.ajax({
               url: createURL('listNetworkACLLists'),
               data: { 'vpc_id': args.context.vpc[0].id },
+              async: false,
               success: function(json) {
-                networkACLLists = json.listnetworkacllistsresponse.networkacllist ?
-                  json.listnetworkacllistsresponse.networkacllist : [];
+                networkACLLists = json.listnetworkacllistsresponse;
               },
               error: function(json) {
                 error = true;
@@ -3203,23 +3219,10 @@
             // Get public IPs
             $.ajax({
               url: createURL('listPublicIpAddresses'),
+              async: false,
               data: { 'vpcid': args.context.vpc[0].id },
               success: function(json) {
-                publicIpAddresses = json.listpublicipaddressesresponse.publicipaddress ?
-                  json.listpublicipaddressesresponse.publicipaddress : [];
-              },
-              error: function(json) {
-                error = true;
-              }
-            });
-
-            // Get port forwarding rules
-            $.ajax({
-              url: createURL('listPortForwardingRules'),
-              data: { 'vpcid': args.context.vpc[0].id },
-              success: function(json) {
-                portForwardingRules = json.listportforwardingrulesresponse.portforwardingrule ?
-                  json.listportforwardingrulesresponse.portforwardingrule : [];
+                publicIpAddresses = json.listpublicipaddressesresponse;
               },
               error: function(json) {
                 error = true;
@@ -3229,10 +3232,10 @@
             // Get private gateways
             $.ajax({
               url: createURL('listPrivateGateways'),
+              async: false,
               data: { 'vpcid': args.context.vpc[0].id },
               success: function(json) {
-                privateGateways = json.listprivategatewaysresponse.privategateway ?
-                  json.listprivategatewaysresponse.privategateway : [];
+                privateGateways = json.listprivategatewaysresponse;
               },
               error: function(json) {
                 error = true;
@@ -3242,106 +3245,111 @@
             // Get VPN gateways
             $.ajax({
               url: createURL('listVpnGateways'),
+              async: false,
               data: { 'vpcid': args.context.vpc[0].id },
               success: function(json) {
-                vpnGateways = json.listvpngatewaysresponse.vpngateway ?
-                  json.listvpngatewaysresponse.vpngateway : [];
+                vpnGateways = json.listvpngatewaysresponse;
               },
               error: function(json) {
                 error = true;
               }
             });
 
-            var dataTimer = setInterval(function() {
-              var complete = loadBalancers && networkACLLists && publicIpAddresses && privateGateways && vpnGateways;
-              
-              if (complete) {
-                clearInterval(dataTimer);
-
-                if(networks != null && networks.length > 0) {
-                  for(var i = 0; i < networks.length; i++) {
-                    $.ajax({
-                      url: createURL("listVirtualMachines"),
-                      dataType: "json",
-                      data: {
-                        networkid: networks[i].id,
-                        listAll: true
-                      },
-                      async: false,
-                      success: function(json) {
-                        networks[i].virtualMachines = json.listvirtualmachinesresponse.virtualmachine;
-                      }
-                    });
-                  }
+            args.response.success({
+              routerDashboard: [
+                {
+                  id: 'privateGateways',
+                  name: 'Private gateways',
+                  total: privateGateways.count
+                },
+                {
+                  id: 'publicIPs',
+                  name: 'Public IP addresses',
+                  total: publicIpAddresses.count
+                },
+                {
+                  id: 'siteToSiteVPNs',
+                  name: 'Site-to-site VPNs',
+                  total: vpnGateways.count
+                },
+                {
+                  id: 'networkACLLists',
+                  name: 'Network ACL lists',
+                  total: networkACLLists.count
                 }
-                args.response.success({
-                  routerDashboard: [
-                    {
-                      id: 'privateGateways',
-                      name: 'Private gateways',
-                      total: privateGateways.length
-                    },
-                    {
-                      id: 'publicIPs',
-                      name: 'Public IP addresses',
-                      total: publicIpAddresses.length
-                    },
-                    {
-                      id: 'siteToSiteVPNs',
-                      name: 'Site-to-site VPNs',
-                      total: vpnGateways.length
-                    },
-                    {
-                      id: 'networkACLLists',
-                      name: 'Network ACL lists',
-                      total: networkACLLists.length
-                    }
-                  ],
-                  tiers: $(networks).map(function(index, tier) {
-                    var internalLoadBalancers = $.grep(loadBalancers, function(lb) {
-                      return lb.networkid == tier.id;
-                    });
-                    
-                    return $.extend(tier, {
-                      _dashboardItems: [
-                        {
-                          id: 'tierLoadBalancers',
-                          name: 'Load balancers',
-                          totalMultiLine: internalLoadBalancers.length + ' Internal<br/>0 Public'
-                        },
-                        {
-                          id: 'tierPortForwarders',
-                          name: 'Port forwarders',
-                          total: $.grep(publicIpAddresses, function(ip) {
-                            return $.grep(
-                              portForwardingRules,
-                              function(pf) {
-                                return pf.ipaddressid == ip.id;
-                              }
-                            ).length ? true : false;
-                          }).length
-                        },
-                        {
-                          id: 'tierStaticNATs',
-                          name: 'Static NATs',
-                          total: $.grep(publicIpAddresses, function(ip) {
-                            return ip.associatednetworkid == tier.id && ip.isstaticnat;
-                          }).length
-                        },
-                        {
-                          id: 'tierVMs',
-                          name: 'Virtual Machines',
-                          total: $.isArray(tier.virtualMachines) ? tier.virtualMachines.length : 0
-                        }
-                      ]
-                    });
-                  })
+              ],
+              tiers: $(networks).map(function(index, tier) {
+                var internalLoadBalancers, publicLoadBalancers, virtualMachines, staticNatIps;
+
+                // Get internal load balancers
+                $.ajax({
+                  url: createURL('listLoadBalancers'),
+                  async: false,
+                  data: { networkid: tier.id },
+                  success: function(json) {
+                    internalLoadBalancers = json.listloadbalancerssresponse;
+                  },
+                  error: function(json) {
+                    error = true;
+                  }
                 });
-              } else if (error) {
-                clearInterval(dataTimer);
-                cloudStack.dialog.notice({ message: 'Error loading dashboard data.' });
-              }
-            }, 500);            
+
+                // Get VMs
+                $.ajax({
+                  url: createURL('listVirtualMachines'),
+                  async: false,
+                  data: { networkid: tier.id },
+                  success: function(json) {
+                    virtualMachines = json.listvirtualmachinesresponse;
+                  },
+                  error: function(json) {
+                    error = true;
+                  }
+                });
+
+                // Get static NAT IPs
+                $.ajax({
+                  url: createURL('listPublicIpAddresses'),
+                  async: false,
+                  data: { networkid: tier.id, isstaticnat: true },
+                  success: function(json) {
+                    staticNatIps = json.listpublicipaddressesresponse;
+                  },
+                  error: function(json) {
+                    error = true;
+                  }
+                });                
+                
+                return $.extend(tier, {
+                  _dashboardItems: [
+                    {
+                      id: 'tierLoadBalancers',
+                      name: 'Internal LB',
+                      total: internalLoadBalancers.count
+                    },
+                    {
+                      id: 'tierLoadBalancers',
+                      name: 'Public LB',
+                      total: 0
+                    },
+                    {
+                      id: 'tierStaticNATs',
+                      name: 'Static NATs',
+                      total: staticNatIps.count
+                    },
+                    {
+                      id: 'tierVMs',
+                      name: 'Virtual Machines',
+                      total: virtualMachines.count
+                    }
+                  ]
+                });
+              })
+            });
+            
+            if (error) {
+              cloudStack.dialog.notice({ message: 'Error loading dashboard data.' });
+            }
           }
         });
       }
