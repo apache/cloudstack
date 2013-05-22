@@ -482,8 +482,7 @@
                         },
                         dataType: 'json',
                         async: true,
-                        success: function(data) {
-                          debugger;
+                        success: function(data) {                          
                           var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
                           args.response.success({
                             _custom: { jobId: jid }
@@ -519,7 +518,51 @@
                         }
                       });                        
                     }
-                  }
+                  },                                              
+                  rules: {
+                    title: 'label.rules',
+                    multiple: true,
+                    fields: [
+                      {
+                        sourceport: { label: 'Source Port' },
+                        instanceport: { label: 'Instance Port' }
+                      }
+                    ],
+                    dataProvider: function(args) {
+                      $.ajax({
+                        url: createURL('listLoadBalancers'),
+                        data: {
+                          id: args.context.internalLoadBalancers[0].id
+                        },
+                        success: function(json) {     
+                          var item = json.listloadbalancerssresponse.loadbalancer[0];
+                          args.response.success({ data: item.loadbalancerrule });                          
+                        }
+                      }); 
+                    }
+                  } ,              
+                  assignedVms: {
+                    title: 'Assigned VMs',
+                    multiple: true,
+                    fields: [
+                      {
+                        name: { label: 'label.name' },
+                        ipaddress: { label: 'label.ip.address' }
+                      }
+                    ],
+                    dataProvider: function(args) {
+                      $.ajax({
+                        url: createURL('listLoadBalancers'),
+                        data: {
+                          id: args.context.internalLoadBalancers[0].id
+                        },
+                        success: function(json) {     
+                          var item = json.listloadbalancerssresponse.loadbalancer[0];
+                          args.response.success({ data: item.loadbalancerinstance });                          
+                        }
+                      }); 
+                    }
+                  }               
                 }                
               }              
             }
