@@ -56,195 +56,195 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-	cls.apiclient = super(TestDeployVmWithVariedPlanners, cls).getClsTestClient().getApiClient()
-	cls.services = Services().services
-	# Get Zone, Domain and templates
-	cls.domain = get_domain(cls.apiclient, cls.services)
-	cls.zone = get_zone(cls.apiclient, cls.services)
-	cls.template = get_template(
-	    cls.apiclient,
-	    cls.zone.id,
-	    cls.services["ostype"]
-	)
-	cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-	cls.services["template"] = cls.template.id
-	cls.services["zoneid"] = cls.zone.id
+        cls.apiclient = super(TestDeployVmWithVariedPlanners, cls).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient, cls.services)
+        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["template"] = cls.template.id
+        cls.services["zoneid"] = cls.zone.id
 
-	cls.account = Account.create(
-	    cls.apiclient,
-	    cls.services["account"],
-	    domainid=cls.domain.id
-	)
-	cls.services["account"] = cls.account.name
-	cls.cleanup = [
-	    cls.account
-	]
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
+        cls.services["account"] = cls.account.name
+        cls.cleanup = [
+            cls.account
+        ]
 
     @attr(tags=["simulator", "advanced", "basic", "sg"])
     def test_deployvm_firstfit(self):
-	"""Test to deploy vm with a first fit offering
-	"""
-	#FIXME: How do we know that first fit actually happened?
-	self.service_offering_firstfit = ServiceOffering.create(
-	    self.apiclient,
-	    self.services["service_offering"],
-	    deploymentplanner='FirstFitPlanner'
-	)
+        """Test to deploy vm with a first fit offering
+        """
+        #FIXME: How do we know that first fit actually happened?
+        self.service_offering_firstfit = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offering"],
+            deploymentplanner='FirstFitPlanner'
+        )
 
-	self.virtual_machine = VirtualMachine.create(
-	    self.apiclient,
-	    self.services["virtual_machine"],
-	    accountid=self.account.name,
-	    zoneid=self.zone.id,
-	    domainid=self.account.domainid,
-	    serviceofferingid=self.service_offering_firstfit.id,
-	    templateid=self.template.id
-	)
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering_firstfit.id,
+            templateid=self.template.id
+        )
 
-	list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
-	self.debug(
-	    "Verify listVirtualMachines response for virtual machine: %s"\
-	    % self.virtual_machine.id
-	)
-	self.assertEqual(
-	    isinstance(list_vms, list),
-	    True,
-	    "List VM response was not a valid list"
-	)
-	self.assertNotEqual(
-	    len(list_vms),
-	    0,
-	    "List VM response was empty"
-	)
+        list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
+        self.debug(
+            "Verify listVirtualMachines response for virtual machine: %s"\
+            % self.virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vms, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vms),
+            0,
+            "List VM response was empty"
+        )
 
-	vm = list_vms[0]
-	self.assertEqual(
-	    vm.state,
-	    "Running",
-	    msg="VM is not in Running state"
-	)
+        vm = list_vms[0]
+        self.assertEqual(
+            vm.state,
+            "Running",
+            msg="VM is not in Running state"
+        )
 
     @attr(tags=["simulator", "advanced", "basic", "sg"])
     def test_deployvm_userdispersing(self):
-	"""Test deploy VMs using user dispersion planner
-	"""
-	self.service_offering_userdispersing = ServiceOffering.create(
-	    self.apiclient,
-	    self.services["service_offering"],
-	    deploymentplanner='UserDispersingPlanner'
-	)
+        """Test deploy VMs using user dispersion planner
+        """
+        self.service_offering_userdispersing = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offering"],
+            deploymentplanner='UserDispersingPlanner'
+        )
 
-	self.virtual_machine_1 = VirtualMachine.create(
-	    self.apiclient,
-	    self.services["virtual_machine"],
-	    accountid=self.account.name,
-	    zoneid=self.zone.id,
-	    domainid=self.account.domainid,
-	    serviceofferingid=self.service_offering_userdispersing.id,
-	    templateid=self.template.id
-	)
-	self.virtual_machine_2 = VirtualMachine.create(
-	    self.apiclient,
-	    self.services["virtual_machine"],
-	    accountid=self.account.name,
-	    zoneid=self.zone.id,
-	    domainid=self.account.domainid,
-	    serviceofferingid=self.service_offering_userdispersing.id,
-	    templateid=self.template.id
-	)
+        self.virtual_machine_1 = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering_userdispersing.id,
+            templateid=self.template.id
+        )
+        self.virtual_machine_2 = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering_userdispersing.id,
+            templateid=self.template.id
+        )
 
-	list_vm_1 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_1.id)
-	list_vm_2 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_2.id)
-	self.assertEqual(
-	    isinstance(list_vm_1, list),
-	    True,
-	    "List VM response was not a valid list"
-	)
-	self.assertEqual(
-	    isinstance(list_vm_2, list),
-	    True,
-	    "List VM response was not a valid list"
-	)
-	vm1 = list_vm_1[0]
-	vm2 = list_vm_2[0]
-	self.assertEqual(
-	    vm1.state,
-	    "Running",
-	    msg="VM is not in Running state"
-	)
-	self.assertEqual(
-	    vm2.state,
-	    "Running",
-	    msg="VM is not in Running state"
-	)
-	self.assertNotEqual(
-	    vm1.hostid,
-	    vm2.hostid,
-	    msg="VMs meant to be dispersed are deployed on the same host"
-	)
+        list_vm_1 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_1.id)
+        list_vm_2 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_2.id)
+        self.assertEqual(
+            isinstance(list_vm_1, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        self.assertEqual(
+            isinstance(list_vm_2, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        vm1 = list_vm_1[0]
+        vm2 = list_vm_2[0]
+        self.assertEqual(
+            vm1.state,
+            "Running",
+            msg="VM is not in Running state"
+        )
+        self.assertEqual(
+            vm2.state,
+            "Running",
+            msg="VM is not in Running state"
+        )
+        self.assertNotEqual(
+            vm1.hostid,
+            vm2.hostid,
+            msg="VMs meant to be dispersed are deployed on the same host"
+        )
 
     @attr(tags=["simulator", "advanced", "basic", "sg"])
     def test_deployvm_userconcentrated(self):
-	"""Test deploy VMs using user concentrated planner
-	"""
-	self.service_offering_userconcentrated = ServiceOffering.create(
-	    self.apiclient,
-	    self.services["service_offering"],
-	    deploymentplanner='UserConcentratedPodPlanner'
-	)
+        """Test deploy VMs using user concentrated planner
+        """
+        self.service_offering_userconcentrated = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offering"],
+            deploymentplanner='UserConcentratedPodPlanner'
+        )
 
-	self.virtual_machine_1 = VirtualMachine.create(
-	    self.apiclient,
-	    self.services["virtual_machine"],
-	    accountid=self.account.name,
-	    zoneid=self.zone.id,
-	    domainid=self.account.domainid,
-	    serviceofferingid=self.service_offering_userconcentrated.id,
-	    templateid=self.template.id
-	)
-	self.virtual_machine_2 = VirtualMachine.create(
-	    self.apiclient,
-	    self.services["virtual_machine"],
-	    accountid=self.account.name,
-	    zoneid=self.zone.id,
-	    domainid=self.account.domainid,
-	    serviceofferingid=self.service_offering_userconcentrated.id,
-	    templateid=self.template.id
-	)
+        self.virtual_machine_1 = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering_userconcentrated.id,
+            templateid=self.template.id
+        )
+        self.virtual_machine_2 = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering_userconcentrated.id,
+            templateid=self.template.id
+        )
 
-	list_vm_1 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_1.id)
-	list_vm_2 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_2.id)
-	self.assertEqual(
-	    isinstance(list_vm_1, list),
-	    True,
-	    "List VM response was not a valid list"
-	)
-	self.assertEqual(
-	    isinstance(list_vm_2, list),
-	    True,
-	    "List VM response was not a valid list"
-	)
-	vm1 = list_vm_1[0]
-	vm2 = list_vm_2[0]
-	self.assertEqual(
-	    vm1.state,
-	    "Running",
-	    msg="VM is not in Running state"
-	)
-	self.assertEqual(
-	    vm2.state,
-	    "Running",
-	    msg="VM is not in Running state"
-	)
-	self.assertNotEqual(
-	    vm1.hostid,
-	    vm2.hostid,
-	    msg="VMs meant to be concentrated are deployed on the different hosts"
-	)
+        list_vm_1 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_1.id)
+        list_vm_2 = VirtualMachine.list(self.apiclient, id=self.virtual_machine_2.id)
+        self.assertEqual(
+            isinstance(list_vm_1, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        self.assertEqual(
+            isinstance(list_vm_2, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        vm1 = list_vm_1[0]
+        vm2 = list_vm_2[0]
+        self.assertEqual(
+            vm1.state,
+            "Running",
+            msg="VM is not in Running state"
+        )
+        self.assertEqual(
+            vm2.state,
+            "Running",
+            msg="VM is not in Running state"
+        )
+        self.assertNotEqual(
+            vm1.hostid,
+            vm2.hostid,
+            msg="VMs meant to be concentrated are deployed on the different hosts"
+        )
 
     @classmethod
     def tearDownClass(cls):
-	try:
-	    cleanup_resources(cls.apiclient, cls.cleanup)
-	except Exception as e:
-	    raise Exception("Warning: Exception during cleanup : %s" % e)
+        try:
+            cleanup_resources(cls.apiclient, cls.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
