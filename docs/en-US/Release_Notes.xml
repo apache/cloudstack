@@ -4675,7 +4675,7 @@ under the License.
     <chapter id="upgrade-instructions">
         <title>Upgrade Instructions</title>
         <para>This section contains upgrade instructions from prior versions of CloudStack to Apache CloudStack 4.1.0. We include instructions on upgrading to Apache CloudStack from pre-Apache versions of Citrix CloudStack (last version prior to Apache is 3.0.2) and from the releases made while CloudStack was in the Apache Incubator.</para>
-        <para>If you run into any issues during upgrades, please feel free to ask questions on users@apache.cloudstack.org or dev@apache.cloudstack.org.</para>
+        <para>If you run into any issues during upgrades, please feel free to ask questions on users@cloudstack.apache.org or dev@cloudstack.apache.org.</para>
         <section id="upgrade-from-4.0-to-4.1">
             <title>Upgrade from 4.0.x to 4.1.0</title>
             <para>This section will guide you from &PRODUCT; 4.0.x versions to &PRODUCT; 4.1.0.</para>
