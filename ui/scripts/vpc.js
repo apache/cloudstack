@@ -3239,7 +3239,9 @@
                         {
                           id: 'tierStaticNATs',
                           name: 'Static NATs',
-                          total: 0
+                          total: $.grep(publicIpAddresses, function(ip) {
+                            return ip.associatednetworkid == tier.id && ip.isstaticnat;
+                          }).length
                         },
                         {
                           id: 'tierVMs',
