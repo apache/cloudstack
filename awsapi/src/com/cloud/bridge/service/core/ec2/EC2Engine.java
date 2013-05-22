@@ -25,12 +25,11 @@ import java.security.SignatureException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -67,7 +66,6 @@ import com.cloud.stack.models.CloudStackPasswordData;
 import com.cloud.stack.models.CloudStackResourceLimit;
 import com.cloud.stack.models.CloudStackResourceTag;
 import com.cloud.stack.models.CloudStackSecurityGroup;
-import com.cloud.stack.models.CloudStackSecurityGroupIngress;
 import com.cloud.stack.models.CloudStackSnapshot;
 import com.cloud.stack.models.CloudStackTemplate;
 import com.cloud.stack.models.CloudStackTemplatePermission;
@@ -227,7 +225,7 @@ public class EC2Engine extends ManagerBase {
             return true;
         } catch(Exception e) {
             logger.error("Validate account failed!");
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            throw new EC2ServiceException(ClientError.AuthFailure, "User not authorised");
         }
     }
 
@@ -247,8 +245,9 @@ public class EC2Engine extends ManagerBase {
             return false;
         } catch( Exception e ) {
             logger.error( "EC2 CreateSecurityGroup - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return false;
     }
 
     /**
@@ -266,8 +265,9 @@ public class EC2Engine extends ManagerBase {
             return false;
         } catch( Exception e ) {
             logger.error( "EC2 DeleteSecurityGroup - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return false;
     }
 
     /**
@@ -276,19 +276,19 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2DescribeSecurityGroupsResponse describeSecurityGroups(EC2DescribeSecurityGroups request) 
-    {
+    public EC2DescribeSecurityGroupsResponse describeSecurityGroups(EC2DescribeSecurityGroups request) {
+        EC2DescribeSecurityGroupsResponse response = new EC2DescribeSecurityGroupsResponse();
         try {
-            EC2DescribeSecurityGroupsResponse response = listSecurityGroups( request.getGroupSet());
+            response = listSecurityGroups( request.getGroupSet());
             EC2GroupFilterSet gfs = request.getFilterSet();
-
-            if ( null == gfs )
-                return response;
-            else return gfs.evaluate( response );     
+            if ( gfs != null ) {
+            response = gfs.evaluate( response );
+            }
         } catch( Exception e ) {
             logger.error( "EC2 DescribeSecurityGroups - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, "An unexpected error occurred.");
+            handleException(e);
         }
+        return response;
     }
 
     /**
@@ -300,7 +300,6 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean revokeSecurityGroup( EC2AuthorizeRevokeSecurityGroup request ) 
     {
-        if (null == request.getName()) throw new EC2ServiceException(ServerError.InternalError, "Name is a required parameter");
         try {   
             String[] groupSet = new String[1];
             groupSet[0] = request.getName();
@@ -310,6 +309,9 @@ public class EC2Engine extends ManagerBase {
 
             EC2DescribeSecurityGroupsResponse response = listSecurityGroups( groupSet );
             EC2SecurityGroup[] groups = response.getGroupSet();
+            if ( groups.length == 0 ) {
+                throw new Exception("Unable to find security group name");
+            }
 
             for (EC2SecurityGroup group : groups) {
                 EC2IpPermission[] perms = group.getIpPermissionSet();
@@ -320,17 +322,16 @@ public class EC2Engine extends ManagerBase {
             }
 
             if (null == ruleId)
-                throw new EC2ServiceException(ClientError.InvalidGroup_NotFound, "Cannot find matching ruleid.");
-
+                throw new Exception("Specified Ip permission is invalid");
             CloudStackInfoResponse resp = getApi().revokeSecurityGroupIngress(ruleId);
             if (resp != null) {
                 return resp.getSuccess();
             }
-            return false;
         } catch( Exception e ) {
             logger.error( "EC2 revokeSecurityGroupIngress" + " - " + e.getMessage());
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
-        } 	
+            handleException(e);
+        }
+        return false;
     }
 
     /**
@@ -338,10 +339,7 @@ public class EC2Engine extends ManagerBase {
      * 
      * @param request - ip permission parameters
      */
-    public boolean authorizeSecurityGroup(EC2AuthorizeRevokeSecurityGroup request ) 
-    {
-        if (null == request.getName()) throw new EC2ServiceException(ServerError.InternalError, "Name is a required parameter");
-
+    public boolean authorizeSecurityGroup(EC2AuthorizeRevokeSecurityGroup request ) {
         EC2IpPermission[] items = request.getIpPermissionSet();
 
         try {
@@ -374,7 +372,7 @@ public class EC2Engine extends ManagerBase {
 			}
         } catch(Exception e) {
             logger.error( "EC2 AuthorizeSecurityGroupIngress - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
         return true;
     }
@@ -444,13 +442,14 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2DescribeSnapshotsResponse handleRequest( EC2DescribeSnapshots request ) 
+    public EC2DescribeSnapshotsResponse describeSnapshots( EC2DescribeSnapshots request ) 
     {
+        EC2DescribeSnapshotsResponse response = new EC2DescribeSnapshotsResponse();
         EC2SnapshotFilterSet sfs = request.getFilterSet();
         EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
 
         try { 
-            EC2DescribeSnapshotsResponse response = listSnapshots( request.getSnapshotSet(),
+            response = listSnapshots( request.getSnapshotSet(),
                     getResourceTags(tagKeyValueSet));
             if (response == null) {
                 return new EC2DescribeSnapshotsResponse();
@@ -475,17 +474,14 @@ public class EC2Engine extends ManagerBase {
                 }
                 snap.setVolumeSize(size);
             }
-            if ( null == sfs )
-                return response;
-            else return sfs.evaluate( response );
-        } catch( EC2ServiceException error ) {
-            logger.error( "EC2 DescribeSnapshots - ", error);
-            throw error;
-
+            if (sfs != null) {
+                response = sfs.evaluate( response );
+            }
         } catch( Exception e ) {
             logger.error( "EC2 DescribeSnapshots - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, "An unexpected error occurred.");
+            handleException(e);
         }
+        return response;
     }
 
     /**
@@ -495,14 +491,12 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2Snapshot createSnapshot( String volumeId ) {
+        EC2Snapshot ec2Snapshot = new EC2Snapshot();
         try {
-
             CloudStackSnapshot snap = getApi().createSnapshot(volumeId, null, null, null);
             if (snap == null) {
-                throw new EC2ServiceException(ServerError.InternalError, "Unable to create snapshot!");
+                throw new Exception("Unable to create snapshot");
             }
-            EC2Snapshot ec2Snapshot = new EC2Snapshot();
-
             ec2Snapshot.setId(snap.getId());
             ec2Snapshot.setName(snap.getName());
             ec2Snapshot.setType(snap.getSnapshotType());
@@ -518,12 +512,11 @@ public class EC2Engine extends ManagerBase {
                 Long sizeInGB = vols.get(0).getSize().longValue()/1073741824;
                 ec2Snapshot.setVolumeSize(sizeInGB);
             }
-
-            return ec2Snapshot;
         } catch( Exception e ) {
             logger.error( "EC2 CreateSnapshot - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return ec2Snapshot;
     }
 
     /**
@@ -543,8 +536,9 @@ public class EC2Engine extends ManagerBase {
             return false;
         } catch(Exception e) {
             logger.error( "EC2 DeleteSnapshot - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return false;
     }
 
 
@@ -595,15 +589,11 @@ public class EC2Engine extends ManagerBase {
                 }
                 return false;
             }
-
         } catch (Exception e) {
             logger.error( "EC2 modifyImageAttribute - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
-
         return false;
-
-
     }
 
     public EC2ImageAttributes describeImageAttribute(EC2DescribeImageAttribute request) {
@@ -632,7 +622,7 @@ public class EC2Engine extends ManagerBase {
 
         } catch (Exception e) {
             logger.error( "EC2 describeImageAttribute - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
 
         return imageAtts;
@@ -646,18 +636,18 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2PasswordData getPasswordData(String instanceId) {
+        EC2PasswordData passwdData = new EC2PasswordData();
         try {
             CloudStackPasswordData resp = getApi().getVMPassword(instanceId);
-            EC2PasswordData passwdData = new EC2PasswordData();
             if (resp != null) {
                 passwdData.setInstanceId(instanceId);
                 passwdData.setEncryptedPassword(resp.getEncryptedpassword());
             }
-            return passwdData;
         } catch(Exception e) {
             logger.error("EC2 GetPasswordData - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return passwdData;
     }
 
     /**
@@ -667,18 +657,17 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2DescribeKeyPairsResponse describeKeyPairs( EC2DescribeKeyPairs request ) {
+        EC2DescribeKeyPairsResponse response = new EC2DescribeKeyPairsResponse();
         try {
-            EC2DescribeKeyPairsResponse response = listKeyPairs(request.getKeyNames());
+            response = listKeyPairs(request.getKeyNames());
             EC2KeyPairFilterSet kfs = request.getKeyFilterSet();
-
-            if (kfs == null)
-                return response;
-            else
-                return kfs.evaluate(response);
+            if (kfs != null)
+                response = kfs.evaluate(response);
         } catch(Exception e) {
             logger.error("EC2 DescribeKeyPairs - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return response;
     }
 
     /**
@@ -688,17 +677,18 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public boolean deleteKeyPair( EC2DeleteKeyPair request ) {
+        CloudStackInfoResponse resp = new CloudStackInfoResponse();
+        String keyPairName = request.getKeyName();
         try {
-            CloudStackInfoResponse resp = getApi().deleteSSHKeyPair(request.getKeyName(), null, null);
+            resp = getApi().deleteSSHKeyPair(keyPairName, null, null);
             if (resp == null) { 
                 throw new Exception("Ivalid CloudStack API response");
             }
-
-            return resp.getSuccess();
         } catch(Exception e) {
             logger.error("EC2 DeleteKeyPair - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return resp.getSuccess();
     }
 
     /**
@@ -708,22 +698,21 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2SSHKeyPair createKeyPair(EC2CreateKeyPair request) {
+        String keyPairName = request.getKeyName();
+        EC2SSHKeyPair response = new EC2SSHKeyPair();
         try {
-            CloudStackKeyPair resp = getApi().createSSHKeyPair(request.getKeyName(), null, null);
+            CloudStackKeyPair resp = getApi().createSSHKeyPair(keyPairName, null, null);
             if (resp == null) {
                 throw new Exception("Ivalid CloudStack API response");
             }
-
-            EC2SSHKeyPair response = new EC2SSHKeyPair();
             response.setFingerprint(resp.getFingerprint());
             response.setKeyName(resp.getName());
             response.setPrivateKey(resp.getPrivatekey());
-
-            return response;
         } catch (Exception e) {
             logger.error("EC2 CreateKeyPair - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return response;
     }
 
     /**
@@ -733,22 +722,20 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2SSHKeyPair importKeyPair( EC2ImportKeyPair request ) {
+        EC2SSHKeyPair response = new EC2SSHKeyPair();
         try {
             CloudStackKeyPair resp = getApi().registerSSHKeyPair(request.getKeyName(), request.getPublicKeyMaterial());
             if (resp == null) {
                 throw new Exception("Ivalid CloudStack API response");
             }
-
-            EC2SSHKeyPair response = new EC2SSHKeyPair();
             response.setFingerprint(resp.getFingerprint());
             response.setKeyName(resp.getName());
             response.setPrivateKey(resp.getPrivatekey());
-
-            return response;
         } catch (Exception e) {
             logger.error("EC2 ImportKeyPair - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return response;
     }
 
     /**
@@ -758,18 +745,17 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2DescribeAddressesResponse describeAddresses( EC2DescribeAddresses request ) {
+        EC2DescribeAddressesResponse response = new EC2DescribeAddressesResponse();
         try {
-            EC2DescribeAddressesResponse response = listAddresses(request.getPublicIpsSet());
+            response = listAddresses(request.getPublicIpsSet());
             EC2AddressFilterSet afs = request.getFilterSet();
-
-            if (afs ==null)
-                return response;
-            else
-                return afs.evaluate(response);
+            if (afs != null)
+                response = afs.evaluate(response);
         } catch(Exception e) {
             logger.error("EC2 DescribeAddresses - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return response;
     }
 
     /**
@@ -782,7 +768,7 @@ public class EC2Engine extends ManagerBase {
         try {
             List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
             if (cloudIps == null)
-                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+                throw new Exception("Specified ipAddress doesn't exist");
             CloudStackIpAddress cloudIp = cloudIps.get(0);
             CloudStackInfoResponse resp = getApi().disassociateIpAddress(cloudIp.getId());
             if (resp != null) {
@@ -790,7 +776,7 @@ public class EC2Engine extends ManagerBase {
             }
         } catch(Exception e) {
             logger.error("EC2 ReleaseAddress - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
         return false;
     }
@@ -805,13 +791,13 @@ public class EC2Engine extends ManagerBase {
         try {
             List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
             if (cloudIps == null)
-                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+                throw new Exception("Specified ipAddress doesn't exist");
             CloudStackIpAddress cloudIp = cloudIps.get(0);
 
             List<CloudStackUserVm> vmList = getApi().listVirtualMachines(null, null, true, null, null, null, null,
                     request.getInstanceId(), null, null, null, null, null, null, null, null, null);
             if (vmList == null || vmList.size() == 0) {
-                throw new EC2ServiceException(ServerError.InternalError, "Specified instance-id doesn't exist");
+                throw new Exception("Instance not found");
             }
             CloudStackUserVm cloudVm = vmList.get(0);
 
@@ -821,7 +807,7 @@ public class EC2Engine extends ManagerBase {
             }
         } catch(Exception e) {
             logger.error( "EC2 AssociateAddress - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
         return false;
     }
@@ -836,7 +822,7 @@ public class EC2Engine extends ManagerBase {
         try {
             List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
             if (cloudIps == null)
-                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+                throw new Exception("Specified ipAddress doesn't exist");
             CloudStackIpAddress cloudIp = cloudIps.get(0);
 
             CloudStackInfoResponse resp = getApi().disableStaticNat(cloudIp.getId());
@@ -845,7 +831,7 @@ public class EC2Engine extends ManagerBase {
             }
         } catch(Exception e) {
             logger.error( "EC2 DisassociateAddress - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
         return false;
     }
@@ -856,10 +842,9 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2Address allocateAddress()
-    {
+    public EC2Address allocateAddress() {
+        EC2Address ec2Address = new EC2Address();
         try {
-            EC2Address ec2Address = new EC2Address();
             // this gets our networkId
             CloudStackAccount caller = getCurrentAccount();
 
@@ -881,12 +866,11 @@ public class EC2Engine extends ManagerBase {
             } else {
                 ec2Address.setIpAddress(resp.getIpAddress());
             }
-
-            return ec2Address;
         } catch(Exception e) { 
             logger.error( "EC2 AllocateAddress - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return ec2Address;
     }
 
     /**
@@ -896,10 +880,8 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2DescribeImagesResponse describeImages(EC2DescribeImages request) 
-    {
+    public EC2DescribeImagesResponse describeImages(EC2DescribeImages request) {
         EC2DescribeImagesResponse images = new EC2DescribeImagesResponse();
-
         try {
             String[] templateIds = request.getImageSet();
             EC2ImageFilterSet ifs = request.getFilterSet();
@@ -911,14 +893,13 @@ public class EC2Engine extends ManagerBase {
                     images = listTemplates(s, images);
                 }
             }
-            if (ifs == null)
-                return images;
-            else
+            if (ifs != null)
                 return ifs.evaluate(images);
         } catch( Exception e ) {
             logger.error( "EC2 DescribeImages - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return images;
     }
 
     /**
@@ -938,10 +919,9 @@ public class EC2Engine extends ManagerBase {
      */
     public EC2CreateImageResponse createImage(EC2CreateImage request) 
     {
-        EC2CreateImageResponse response = null;
+        EC2CreateImageResponse response = new EC2CreateImageResponse();
         boolean needsRestart = false;
         String volumeId      = null;
-
         try {
             // [A] Creating a template from a VM volume should be from the ROOT volume
             //     Also for this to work the VM must be in a Stopped state so we 'reboot' it if its not
@@ -954,7 +934,7 @@ public class EC2Engine extends ManagerBase {
                     if (vmState.equalsIgnoreCase( "running" ) || vmState.equalsIgnoreCase( "starting" )) {
                         needsRestart = true;
                         if (!stopVirtualMachine( request.getInstanceId() ))
-                            throw new EC2ServiceException(ClientError.IncorrectState, "CreateImage - instance must be in a stopped state");
+                            throw new Exception("Instance must be in a stopped state");
                     }           		 
                     volumeId = vol.getId();
                     break;
@@ -975,25 +955,22 @@ public class EC2Engine extends ManagerBase {
             CloudStackTemplate resp = getApi().createTemplate((request.getDescription() == null ? "" : request.getDescription()), request.getName(), 
                     osTypeId, null, null, null, null, null, null, volumeId);
             if (resp == null || resp.getId() == null) {
-                throw new EC2ServiceException(ServerError.InternalError, "An upexpected error occurred.");
+                throw new Exception("Image couldn't be created");
             }
 
             //if template was created succesfully, create the new image response
-            response = new EC2CreateImageResponse();
             response.setId(resp.getId());
 
             // [C] If we stopped the virtual machine now we need to restart it
             if (needsRestart) {
-                if (!startVirtualMachine( request.getInstanceId() )) 
-                    throw new EC2ServiceException(ServerError.InternalError, 
-                            "CreateImage - restarting instance " + request.getInstanceId() + " failed");
+                if (!startVirtualMachine( request.getInstanceId() ))
+                        throw new Exception("Failed to start the stopped instance");
             }
-            return response;
-
         } catch( Exception e ) {
             logger.error( "EC2 CreateImage - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return response;
     }
 
     /**
@@ -1002,13 +979,9 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2CreateImageResponse registerImage(EC2RegisterImage request) 
-    {
+    public EC2CreateImageResponse registerImage(EC2RegisterImage request) {
+        EC2CreateImageResponse image = new EC2CreateImageResponse();
         try {
-            CloudStackAccount caller = getCurrentAccount();
-            if (null == request.getName())
-                throw new EC2ServiceException(ClientError.Unsupported, "Missing parameter - name");
-
             List<CloudStackTemplate> templates = getApi().registerTemplate((request.getDescription() == null ? request.getName() : request.getDescription()), 
                     request.getFormat(), request.getHypervisor(), request.getName(), toOSTypeId(request.getOsTypeName()), request.getLocation(), 
                     toZoneId(request.getZoneName(), null), null, null, null, null, null, null, null, null, null);
@@ -1016,17 +989,16 @@ public class EC2Engine extends ManagerBase {
                 // technically we will only ever register a single template...
                 for (CloudStackTemplate template : templates) {
                     if (template != null && template.getId() != null) {
-                        EC2CreateImageResponse image = new EC2CreateImageResponse();
                         image.setId(template.getId().toString());
                         return image;
                     }
                 }
             }
-            return null;
         } catch( Exception e ) {
             logger.error( "EC2 RegisterImage - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return image;
     }
 
     /**
@@ -1044,8 +1016,9 @@ public class EC2Engine extends ManagerBase {
             return resp.getSuccess();
         } catch( Exception e ) {
             logger.error( "EC2 DeregisterImage - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return false;
     }
 
     /**
@@ -1055,14 +1028,16 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2DescribeInstancesResponse describeInstances(EC2DescribeInstances request ) {
+        EC2DescribeInstancesResponse response = new EC2DescribeInstancesResponse();
         try {
             EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
-            return listVirtualMachines( request.getInstancesSet(), request.getFilterSet(),
+            response = listVirtualMachines( request.getInstancesSet(), request.getFilterSet(),
                     getResourceTags(tagKeyValueSet));
         } catch( Exception e ) {
             logger.error( "EC2 DescribeInstances - " ,e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return response;
     }
 
     /**
@@ -1071,22 +1046,18 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2DescribeAvailabilityZonesResponse handleRequest(EC2DescribeAvailabilityZones request) {	
+    public EC2DescribeAvailabilityZonesResponse describeAvailabilityZones(EC2DescribeAvailabilityZones request) {	
+        EC2DescribeAvailabilityZonesResponse availableZones = new EC2DescribeAvailabilityZonesResponse();
         try {
-            EC2DescribeAvailabilityZonesResponse availableZones = listZones(request.getZoneSet(), null);
+            availableZones = listZones(request.getZoneSet(), null);
             EC2AvailabilityZonesFilterSet azfs = request.getFilterSet();
-            if ( null == azfs )
-                return availableZones;
-            else
-                return azfs.evaluate(availableZones);
-        } catch( EC2ServiceException error ) {
-            logger.error( "EC2 DescribeAvailabilityZones - ", error);
-            throw error;
-
+            if ( azfs != null )
+                availableZones = azfs.evaluate(availableZones);
         } catch( Exception e ) {
             logger.error( "EC2 DescribeAvailabilityZones - " ,e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return availableZones;
     }
 
     /**
@@ -1095,7 +1066,7 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2DescribeVolumesResponse handleRequest( EC2DescribeVolumes request ) {
+    public EC2DescribeVolumesResponse describeVolumes( EC2DescribeVolumes request ) {
         EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
         EC2VolumeFilterSet vfs = request.getFilterSet();
         EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
@@ -1107,14 +1078,13 @@ public class EC2Engine extends ManagerBase {
                 for (String s : volumeIds) 
                     volumes = listVolumes(s, null, volumes, getResourceTags(tagKeyValueSet) );
             }
-
-            if ( null == vfs )
-                return volumes;
-            else return vfs.evaluate( volumes );     
+            if ( vfs != null )
+                volumes = vfs.evaluate( volumes );     
         }  catch( Exception e ) {
             logger.error( "EC2 DescribeVolumes - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return volumes;
     }
 
     /**
@@ -1124,10 +1094,9 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2Volume attachVolume( EC2Volume request ) {
+        EC2Volume resp = new EC2Volume();
         try {   
             request.setDeviceId(mapDeviceToCloudDeviceId(request.getDevice()));
-            EC2Volume resp = new EC2Volume();
-
             CloudStackVolume vol = getApi().attachVolume(request.getId(), request.getInstanceId(), request.getDeviceId());
             if(vol != null) {
                 resp.setAttached(vol.getAttached());
@@ -1144,13 +1113,12 @@ public class EC2Engine extends ManagerBase {
                 resp.setVMState(vol.getVirtualMachineState());
                 resp.setAttachmentState(mapToAmazonVolumeAttachmentState(vol.getVirtualMachineState()));
                 resp.setZoneName(vol.getZoneName());
-                return resp;
             }
-            throw new EC2ServiceException( ServerError.InternalError, "An unexpected error occurred." );
         } catch( Exception e ) {
-            logger.error( "EC2 AttachVolume 2 - ", e);
-            throw new EC2ServiceException( ServerError.InternalError, e.getMessage() != null ? e.getMessage() : e.toString());
-        }   	    
+            logger.error( "EC2 AttachVolume - ", e);
+            handleException(e);
+        }
+        return resp;
     }
 
     /**
@@ -1160,10 +1128,27 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2Volume detachVolume(EC2Volume request) {
+        EC2Volume resp = new EC2Volume();
         try {
-            CloudStackVolume vol = getApi().detachVolume(null, request.getId(), null);
-            EC2Volume resp = new EC2Volume();
+            // verifying if instanceId and deviceId provided is valid
+            EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
+            volumes = listVolumes(request.getId(), null, volumes, null);
+            if (volumes != null) {
+               EC2Volume[] volumeSet = volumes.getVolumeSet();
+                if (request.getInstanceId() != null) {
+                    if ( !request.getInstanceId().equalsIgnoreCase(volumeSet[0].getInstanceId()) )
+                        throw new Exception("Volume is not attached to the Instance");
+                }
+                if (request.getDevice() != null) {
+                    String devicePath = null;
+                    if ( volumeSet[0].getDeviceId() != null )
+                        devicePath = cloudDeviceIdToDevicePath( volumeSet[0].getHypervisor(), volumeSet[0].getDeviceId());
+                    if ( !request.getDevice().equalsIgnoreCase(devicePath) )
+                        throw new Exception("Volume is not attached to the Device");
+                }
+            }
 
+            CloudStackVolume vol = getApi().detachVolume(null , request.getId(), null);
             if(vol != null) {
                 resp.setAttached(vol.getAttached());
                 resp.setCreated(vol.getCreated());
@@ -1178,14 +1163,12 @@ public class EC2Engine extends ManagerBase {
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
                 resp.setZoneName(vol.getZoneName());
-                return resp;
             }
-
-            throw new EC2ServiceException( ServerError.InternalError, "An unexpected error occurred." );
         } catch( Exception e ) {
             logger.error( "EC2 DetachVolume - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-        }   	    
+            handleException(e);
+        }
+        return resp;
     }
 
     /**
@@ -1195,9 +1178,8 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2Volume createVolume( EC2CreateVolume request ) {
+        EC2Volume resp = new EC2Volume();
         try {
-
-            CloudStackAccount caller = getCurrentAccount();
             // -> put either snapshotid or diskofferingid on the request
             String snapshotId = request.getSnapshotId();
             Long size = request.getSize();
@@ -1216,7 +1198,6 @@ public class EC2Engine extends ManagerBase {
 //			// -> no volume name is given in the Amazon request but is required in the cloud API
             CloudStackVolume vol = getApi().createVolume(UUID.randomUUID().toString(), null, diskOfferingId, null, size, snapshotId, toZoneId(request.getZoneName(), null));
             if (vol != null) {
-                EC2Volume resp = new EC2Volume();
                 resp.setAttached(vol.getAttached());
                 resp.setCreated(vol.getCreated());
 //				resp.setDevice();
@@ -1231,13 +1212,12 @@ public class EC2Engine extends ManagerBase {
                 resp.setVMState(vol.getVirtualMachineState());
                 resp.setAttachmentState("detached");
                 resp.setZoneName(vol.getZoneName());
-                return resp;
             }
-            return null;
         } catch( Exception e ) {
             logger.error( "EC2 CreateVolume - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-        }   	    
+            handleException(e);
+        }
+        return resp;
     }
 
     /**
@@ -1251,14 +1231,12 @@ public class EC2Engine extends ManagerBase {
             CloudStackInfoResponse resp = getApi().deleteVolume(request.getId());
             if(resp != null) {
                 request.setState("deleted");
-                return request;
             }
-
-            throw new EC2ServiceException(ServerError.InternalError, "An unexpected error occurred.");
         } catch( Exception e ) {
-            logger.error( "EC2 DeleteVolume 2 - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-        }   	    
+            logger.error( "EC2 DeleteVolume - ", e);
+            handleException(e);
+        }
+        return request;
     }
 
     /**
@@ -1295,9 +1273,9 @@ public class EC2Engine extends ManagerBase {
             return true;
         } catch (Exception e){
             logger.error( "EC2 Create/Delete Tags - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ?
-                    e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return false;
     }
 
     /**
@@ -1307,11 +1285,11 @@ public class EC2Engine extends ManagerBase {
      * @return
      */
     public EC2DescribeTagsResponse describeTags (EC2DescribeTags request) {
+        EC2DescribeTagsResponse tagResponse = new EC2DescribeTagsResponse();
         try {
-            EC2DescribeTagsResponse tagResponse = new EC2DescribeTagsResponse();
+            tagResponse = new EC2DescribeTagsResponse();
             List<CloudStackResourceTag> resourceTagList = getApi().listTags(null, null, null, true, null);
 
-            List<EC2ResourceTag> tagList = new ArrayList<EC2ResourceTag>();
             if (resourceTagList != null && resourceTagList.size() > 0) {
                 for (CloudStackResourceTag resourceTag: resourceTagList) {
                     EC2ResourceTag tag = new EC2ResourceTag();
@@ -1325,14 +1303,13 @@ public class EC2Engine extends ManagerBase {
             }
 
             EC2TagsFilterSet tfs = request.getFilterSet();
-            if (tfs == null)
-                return tagResponse;
-            else
-                return tfs.evaluate(tagResponse);
+            if (tfs != null)
+                tagResponse =  tfs.evaluate(tagResponse);
         } catch(Exception e) {
             logger.error("EC2 DescribeTags - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            handleException(e);
         }
+        return tagResponse;
     }
 
     /**
@@ -1362,13 +1339,14 @@ public class EC2Engine extends ManagerBase {
 
             // -> if some specified VMs where not found we have to tell the caller
             if (instanceSet.length != vms.length) 
-                throw new EC2ServiceException(ClientError.InvalidAMIID_NotFound, "One or more instanceIds do not exist, other instances rebooted.");
+                throw new Exception("One or more instanceIds do not exist, other instances rebooted.");
 
             return true;
         } catch( Exception e ) {
             logger.error( "EC2 RebootInstances - ", e );
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return false;
     }
 
     /**
@@ -1384,15 +1362,13 @@ public class EC2Engine extends ManagerBase {
         int countCreated       = 0;
 
         try {
-            CloudStackAccount caller = getCurrentAccount();
-
             // ugly...
             canCreateInstances = calculateAllowedInstances();
             if (-1 == canCreateInstances) canCreateInstances = request.getMaxCount();
 
             if (canCreateInstances < request.getMinCount()) {
                 logger.info( "EC2 RunInstances - min count too big (" + request.getMinCount() + "), " + canCreateInstances + " left to allocate");
-                throw new EC2ServiceException(ClientError.InstanceLimitExceeded ,"Only " + canCreateInstances + " instance(s) left to allocate");	
+                throw new Exception("Min Count is greater than the number of instances left to allocate");
             }
 
             if ( canCreateInstances < request.getMaxCount()) 
@@ -1408,7 +1384,7 @@ public class EC2Engine extends ManagerBase {
             CloudStackServiceOfferingVO svcOffering = getCSServiceOfferingId(instanceType);
             if(svcOffering == null){
                 logger.info("No ServiceOffering found to be defined by name, please contact the administrator "+instanceType );
-                throw new EC2ServiceException(ClientError.Unsupported, "instanceType: [" + instanceType + "] not found!");
+                throw new Exception("instanceType not found");
             }
 
             // zone stuff
@@ -1417,7 +1393,7 @@ public class EC2Engine extends ManagerBase {
             List<CloudStackZone> zones = getApi().listZones(null, null, zoneId, null);
             if (zones == null || zones.size() == 0) {
                 logger.info("EC2 RunInstances - zone [" + request.getZoneName() + "] not found!");
-                throw new EC2ServiceException(ClientError.InvalidZone_NotFound, "ZoneId [" + request.getZoneName() + "] not found!");
+                throw new Exception("zone not found");
             }
             // we choose first zone?
             CloudStackZone zone = zones.get(0);
@@ -1467,19 +1443,17 @@ public class EC2Engine extends ManagerBase {
                     logger.error("Failed to deploy VM number: "+ (i+1) +" due to error: "+e.getMessage());
                     break;
                 }
-            }    		
-
+            }
             if (0 == countCreated) {
                 // TODO, we actually need to destroy left-over VMs when the exception is thrown
-                throw new EC2ServiceException(ServerError.InternalError, "Failed to deploy instances" );
+                throw new Exception("Insufficient Instance Capacity");
             }
             logger.debug("Could deploy "+ countCreated + " VM's successfully");
-
-            return instances;
         } catch( Exception e ) {
             logger.error( "EC2 RunInstances - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return instances;
     }
 
     /**
@@ -1515,11 +1489,11 @@ public class EC2Engine extends ManagerBase {
                 }
                 instances.addInstance(vm);
             }
-            return instances;
         } catch( Exception e ) {
             logger.error( "EC2 StartInstances - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            handleException(e);
         }
+        return instances;
     }
 
     /**
@@ -1566,11 +1540,48 @@ public class EC2Engine extends ManagerBase {
                     instances.addInstance(vm);
                 }
             }
-            return instances;
         } catch( Exception e ) {
             logger.error( "EC2 StopInstances - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() + ", might already be destroyed" : "An unexpected error occurred.");
+            handleException(e);
         }
+        return instances;
+    }
+
+    /**
+     * @param request
+     * @return
+     * @throws Exception
+     */
+    public boolean modifyInstanceAttribute(EC2ModifyInstanceAttribute request) {
+        boolean status = true;
+        String instanceId = request.getInstanceId();
+        try {
+            // AWS requires VM to be in stopped state to modify 'InstanceType' and 'UserData'
+            EC2DescribeInstancesResponse vmResponse = new EC2DescribeInstancesResponse();
+            vmResponse = lookupInstances(instanceId, vmResponse, null);
+            EC2Instance[] instances = vmResponse.getInstanceSet();
+            if ( !instances[0].getState().equalsIgnoreCase("stopped")) {
+                throw new Exception("Cannot modify, instance should be in stopped state");
+            }
+
+            if (request.getInstanceType() != null) {
+                String instanceType = request.getInstanceType();
+                CloudStackServiceOfferingVO svcOffering = getCSServiceOfferingId(instanceType);
+                if (svcOffering == null)
+                    throw new Exception("instanceType not found");
+                CloudStackUserVm userVm = getApi().changeServiceForVirtualMachine(instanceId, svcOffering.getId());
+                status = (userVm != null);
+            }
+            if (status != false && request.getUserData() != null) {
+                CloudStackUserVm userVm = getApi().updateVirtualMachine(instanceId, null, null, null,
+                        null, request.getUserData());
+                status = (userVm != null);
+            }
+        } catch (Exception e) {
+            logger.error("ModifyInstanceAttribute - ", e);
+            handleException(e);
+        }
+        return status;
     }
 
     /**
@@ -1719,7 +1730,7 @@ public class EC2Engine extends ManagerBase {
         zones = listZones(interestedZones, domainId);
 
         if (zones == null || zones.getAvailabilityZoneSet().length == 0)
-            throw new EC2ServiceException(ClientError.InvalidParameterValue, "Unknown zoneName value - " + zoneName);
+            throw new Exception("Unknown zoneName value");
 
         EC2AvailabilityZone[] zoneSet = zones.getAvailabilityZoneSet();
         return zoneSet[0].getId();
@@ -1731,15 +1742,22 @@ public class EC2Engine extends ManagerBase {
      * 
      */
 
-    private CloudStackServiceOfferingVO getCSServiceOfferingId(String instanceType){
+    private CloudStackServiceOfferingVO getCSServiceOfferingId(String instanceType) throws Exception {
         try {
-            if (null == instanceType) instanceType = "m1.small";
+            // list of valid values for AWS EC2 instanceType
+            String[] validInstanceTypes = {"t1.micro", "m1.small", "m1.medium", "m1.large", "m1.xlarge",
+                    "c1.medium", "c1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge",
+                    "m3.xlarge", "m3.2xlarge", "hi1.4xlarge", "cc1.4xlarge", "cg1.4xlarge", "cc2.8xlarge"};
 
+            if (instanceType == null)
+                instanceType = "m1.small"; // default value
+            else if ( !Arrays.asList(validInstanceTypes).contains(instanceType)) { 
+                throw new Exception("Specified instance type is invalid");
+            }
             return scvoDao.getSvcOfferingByName(instanceType);
-
         } catch(Exception e) {
             logger.error( "Error while retrieving ServiceOffering information by name - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            throw new Exception("No ServiceOffering found to be defined by name");
         }
     }
 
@@ -1751,7 +1769,7 @@ public class EC2Engine extends ManagerBase {
      * @return A valid value for the Amazon defined instanceType
      * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException 
      */
-    private String serviceOfferingIdToInstanceType( String serviceOfferingId ){	
+    private String serviceOfferingIdToInstanceType( String serviceOfferingId ) throws Exception {
         try{
 
             CloudStackServiceOfferingVO offering =  scvoDao.getSvcOfferingById(serviceOfferingId); //dao.getSvcOfferingById(serviceOfferingId);
@@ -1762,8 +1780,8 @@ public class EC2Engine extends ManagerBase {
             return offering.getName();
         }
         catch(Exception e) {
-            logger.error( "sError while retrieving ServiceOffering information by id - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            logger.error( "Error while retrieving ServiceOffering information by id - ", e);
+            throw new Exception( e.getMessage() != null ? e.getMessage() : e.toString() );
         }
     }
 
@@ -1784,7 +1802,7 @@ public class EC2Engine extends ManagerBase {
             return null;
         } catch(Exception e) {
             logger.error( "List OS Types - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            throw new Exception( e.getMessage() != null ? e.getMessage() : e.toString() );
         }
 
     }
@@ -1898,7 +1916,7 @@ public class EC2Engine extends ManagerBase {
         }else{
             if(instanceId != null){
                 //no such instance found
-                throw new EC2ServiceException(ServerError.InternalError, "Instance:" + instanceId + " not found");
+                throw new Exception("Instance not found");
             }
         }
         return instances;
@@ -1915,7 +1933,7 @@ public class EC2Engine extends ManagerBase {
      * @return the same object passed in as the "images" parameter modified with one or more
      *         EC2Image objects loaded.
      */
-    private EC2DescribeImagesResponse listTemplates( String templateId, EC2DescribeImagesResponse images ) throws EC2ServiceException {
+    private EC2DescribeImagesResponse listTemplates( String templateId, EC2DescribeImagesResponse images ) throws Exception {
         try {
             List<CloudStackTemplate> result = new ArrayList<CloudStackTemplate>();
 
@@ -1985,7 +2003,7 @@ public class EC2Engine extends ManagerBase {
             return images;
         } catch(Exception e) {
             logger.error( "List Templates - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            throw new Exception( e.getMessage() != null ? e.getMessage() : e.toString() );
         }
     }
 
@@ -2036,7 +2054,7 @@ public class EC2Engine extends ManagerBase {
             return groupSet;
         } catch(Exception e) {
             logger.error( "List Security Groups - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            throw new Exception( e.getMessage() != null ? e.getMessage() : e.toString() );
         }
     }
 
@@ -2068,7 +2086,7 @@ public class EC2Engine extends ManagerBase {
             return keyPairSet;
         } catch(Exception e) {
             logger.error( "List Keypairs - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            throw new Exception( e.getMessage() != null ? e.getMessage() : e.toString() );
         }
     }
 
@@ -2101,7 +2119,7 @@ public class EC2Engine extends ManagerBase {
             return addressSet;
         } catch(Exception e) {
             logger.error( "List Addresses - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            throw new Exception(e.getMessage() != null ? e.getMessage() : e.toString());
         }
     }
 
@@ -2148,7 +2166,7 @@ public class EC2Engine extends ManagerBase {
             return snapshotSet;
         } catch(Exception e) {
             logger.error( "List Snapshots - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            throw new Exception(e.getMessage() != null ? e.getMessage() : e.toString());
         }
     }
 
@@ -2298,7 +2316,7 @@ public class EC2Engine extends ManagerBase {
         }
 
         // if we get this far and haven't returned already return an error
-        throw new EC2ServiceException(ServerError.InternalError, "Unable to find an appropriate network for account " + caller.getName());
+        throw new Exception("Unable to find an appropriate network for account ");
     }
 
     /**
@@ -2344,12 +2362,12 @@ public class EC2Engine extends ManagerBase {
     /**
      * Finds the defaultZone marked for the account
      */
-    private String getDefaultZoneId(String accountId) {
+    private String getDefaultZoneId(String accountId) throws Exception {
         try {
             return accDao.getDefaultZoneId(accountId);
         } catch(Exception e) {
             logger.error( "Error while retrieving Account information by id - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+            throw new Exception("Unable to retrieve account account information");
         }
     }
 
@@ -2400,7 +2418,7 @@ public class EC2Engine extends ManagerBase {
      * @param device string
      * @return deviceId value
      */
-    private String mapDeviceToCloudDeviceId( String device ) 
+    private String mapDeviceToCloudDeviceId( String device ) throws Exception 
     {	
         if (device.equalsIgnoreCase( "/dev/sdb"  )) return "1";
         else if (device.equalsIgnoreCase( "/dev/sdc"  )) return "2"; 
@@ -2429,7 +2447,7 @@ public class EC2Engine extends ManagerBase {
         else if (device.equalsIgnoreCase( "xvdi"      )) return "8";  
         else if (device.equalsIgnoreCase( "xvdj"      )) return "9";  
 
-        else throw new EC2ServiceException( ClientError.Unsupported, device + " is not supported" );
+        else throw new Exception("Device is not supported");
     }
 
     /**
@@ -2529,7 +2547,7 @@ public class EC2Engine extends ManagerBase {
             return resp != null;
         } catch(Exception e) {
             logger.error( "StopVirtualMachine - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            throw new Exception( e.getMessage() != null ? e.getMessage() : e.toString() );
         }
     }
 
@@ -2548,7 +2566,7 @@ public class EC2Engine extends ManagerBase {
             return resp != null;
         } catch(Exception e) {
             logger.error("StartVirtualMachine - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            throw new Exception( e.getMessage() != null ? e.getMessage() : e.toString() );
         }
     }
 
@@ -2576,5 +2594,270 @@ public class EC2Engine extends ManagerBase {
             resourceTags.add(resourceTag);
         }
         return resourceTags;
+    }
+
+    private void handleException( Exception e) {
+        String[] error = e.getMessage().split("Error Code - ");
+        String errorMessage = error[0];
+        if (error.length == 2) { // error code has been supplied
+            int errorCode = Integer.parseInt(error[1]);
+            if (errorCode == 431) {
+                if ( errorMessage.contains("Object vm_instance(uuid:") && errorMessage.contains(") does not exist") ) {
+                    throw new EC2ServiceException( ClientError.InvalidInstanceID_NotFound,
+                            "Specified Instance ID does not exist");
+                } else if ( errorMessage.contains("Unable to find security group by name") ||
+                        errorMessage.contains("Unable to find security group") ||
+                        ( errorMessage.contains("Object security_group(uuid:") && errorMessage.contains(") does not exist") ) ||
+                        errorMessage.contains("Unable to find group by name ") ) {
+                    throw new EC2ServiceException( ClientError.InvalidGroup_NotFound,
+                            "Specified Security Group does not exist");
+                } else if ( errorMessage.contains("Invalid port numbers") ) {
+                    throw new EC2ServiceException( ClientError.InvalidPermission_Malformed,
+                            "Specified Port value is invalid");
+                } else if (errorMessage.contains("Nonexistent account") && errorMessage.contains("when trying to authorize security group rule for security group") ) {
+                        throw new EC2ServiceException( ClientError.InvalidPermission_Malformed,
+                                "Specified account doesn't exist");
+                } else if ( errorMessage.contains("Nonexistent group") && errorMessage.contains("unable to authorize security group rule") ) {
+                    throw new EC2ServiceException( ClientError.InvalidPermission_Malformed,
+                            "Specified source security group doesn't exist");
+                } else if ( errorMessage.contains("Invalid protocol") ) {
+                    throw new EC2ServiceException( ClientError.InvalidPermission_Malformed,
+                            "Specified protocol is invalid");
+                } else if ( errorMessage.contains("is an Invalid CIDR") ) {
+                    throw new EC2ServiceException( ClientError.InvalidPermission_Malformed,
+                            "Specified CIDR is invalid");
+                 }else if ( errorMessage.contains("Nonexistent account") ) {
+                    throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "Specified Account name is invalid");
+                } else if ( errorMessage.contains("Object volumes(uuid:") && errorMessage.contains(") does not exist") ) {
+                    throw new EC2ServiceException( ClientError.InvalidVolume_NotFound,
+                            "Specified Volume ID doesn't exist");
+                } else if ( errorMessage.contains("Object snapshots(uuid:") && errorMessage.contains(") does not exist") ) {
+                    throw new EC2ServiceException( ClientError.InvalidSnapshot_NotFound,
+                            "Specified Snapshot ID doesn't exist");
+                } else if ( (errorMessage.contains("A key pair with name '") && errorMessage.contains("' does not exist")) ||
+                            (errorMessage.contains("A key pair with name '") && errorMessage.contains("' was not found")) ) {
+                    throw new EC2ServiceException( ClientError.InvalidKeyPair_NotFound,
+                            "Specified Key pair name is invalid");
+                } else if ( errorMessage.contains("A key pair with name '") && errorMessage.contains("' already exists") ) {
+                    throw new EC2ServiceException( ClientError.InvalidKeyPair_Duplicate,
+                            "Specified Key pair already exists");
+                } else if ( errorMessage.contains("Unknown zoneName value") ) {
+                    throw new EC2ServiceException( ClientError.InvalidZone_NotFound,
+                            "Specified AvailabilityZone name is invalid");
+                } else if ( errorMessage.contains("specify a volume that is not attached to any VM") ) {
+                    throw new EC2ServiceException( ClientError.DependencyViolation,
+                            "Specified Volume is attached to a VM");
+                } else if ( errorMessage.contains("Object vm_template(uuid: ")&& errorMessage.contains(") does not exist") ) {
+                    throw new EC2ServiceException( ClientError.InvalidAMIID_NotFound,
+                            "Specified Image ID does not exist");
+                } else if ( errorMessage.contains("unable to find template by id") ) {
+                    throw new EC2ServiceException( ClientError.InvalidAMIID_NotFound,
+                            "Specified Image ID does not exist");
+                } else if ( errorMessage.contains("a group with name") && errorMessage.contains("already exists") ) {
+                    throw new EC2ServiceException( ClientError.InvalidGroup_Duplicate,
+                            "Specified Security Group already exists");
+                } else if ( errorMessage.contains("specified volume is not attached to a VM") ) {
+                    throw new EC2ServiceException( ClientError.IncorrectState,
+                            "Specified volume is not in the correct state 'attached' for detachment");
+                } else if ( errorMessage.contains("Snapshot with specified snapshotId is not in BackedUp state yet and can't be used for volume creation") ) {
+                    throw new EC2ServiceException( ClientError.IncorrectState,
+                            "Specified snapshot is not in the correct state 'completed' for volume creation");
+                } else if ( errorMessage.contains("Can't delete snapshotshot 4 due to it is not in BackedUp Status") ) {
+                    throw new EC2ServiceException( ClientError.IncorrectState,
+                            "Specified snapshot is not in the correct state 'completed' for deletion");
+                } else if ( errorMessage.contains("Public key is invalid") ) {
+                    throw new EC2ServiceException( ClientError.InvalidKeyPair_Format,
+                            "Format of the specified key is invalid");
+                } else if ( errorMessage.contains("Invalid resource type") ) {
+                    throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "Specified resourceId is invalid");
+                } else if ( errorMessage.contains("Unable to find tags by parameters specified") ) {
+                       throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "Specified resourceTag for the specified resourceId doesn't exist");
+                } else if ( errorMessage.contains("Failed to enable static nat for the ip address with specified ipId " +
+                        "as vm with specified vmId is already associated with specified currentIp") ) {
+                    throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "Specified publicIp is already associated to the specified VM");
+                } else if ( errorMessage.contains("Specified IP address id is not associated with any vm Id") ) {
+                    throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "Specified publicIp is not associated to any VM");
+                } else if ( errorMessage.contains("specify a VM that is either running or stopped") ) {
+                    throw new EC2ServiceException( ClientError.IncorrectInstanceState,
+                            "Unable to attach. Specified instances is in an incorrect state");
+                } else if ( errorMessage.contains("specify a valid data volume") ) {
+                    throw new EC2ServiceException( ClientError.InvalidVolume_NotFound,
+                            "Specified volume doen't exist");
+                } else if ( errorMessage.contains("VolumeId is not in Ready state, but  in state Allocated. Cannot take snapshot") ) {
+                    throw new EC2ServiceException( ClientError.IncorrectState,
+                            "Cannot take snapshot. Specified volume is not in the correct state");
+                } else if ( errorMessage.contains("Can't delete snapshot") && errorMessage.contains("it is not in BackedUp Status") ) {
+                    throw new EC2ServiceException( ClientError.IncorrectState,
+                            "Cannot delete snapshot. Specified snapshot is not in the correct state");
+                } else if ( errorMessage.contains("Invalid port range") ) {
+                    throw new EC2ServiceException( ClientError.InvalidPermission_Malformed,
+                            "The specified port range is invalid");
+                } else if ( errorMessage.contains("specify a valid User VM") ) {
+                    throw new EC2ServiceException( ClientError.InvalidInstanceID_NotFound,
+                            "Specified instance is invalid");
+                } else if ( errorMessage.contains("No password for VM with specified id found") ) {
+                    throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "No password for VM with the specified id found");
+                } else if ( errorMessage.contains("make sure the virtual machine is stopped and not in an error state before upgrading") ) {
+                    throw new EC2ServiceException( ClientError.IncorrectInstanceState,
+                            "Unable to modify. Specified instances is not in the correct state 'Stopped'");
+                } else if ( errorMessage.contains("Not upgrading vm") && errorMessage.contains("it already has the" +
+                        " requested service offering") ) {
+                    throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "Unable to modify. Specified instance already has the requested instanceType");
+                }
+                // Can't enable static, ip address with specified id is a sourceNat ip address ?
+                else {
+                    throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "The value supplied for a parameter is invalid");
+                }
+            }
+            else if (errorCode == 536) {
+                if ( errorMessage.contains("Cannot delete group when it's in use by virtual machines") ) {
+                       throw new EC2ServiceException( ClientError.InvalidGroup_InUse,
+                            "Group is in use by a virtual machine");
+                } else {
+                       throw new EC2ServiceException( ClientError.DependencyViolation,
+                            "Specified resource is in use");
+                }
+            }
+            else if (errorCode == 531) {
+                if ( errorMessage.contains("Acct") && errorMessage.contains("does not have permission to launch" +
+                        " instances from Tmpl") ) {
+                    throw new EC2ServiceException( ClientError.AuthFailure,
+                            "User not authorized to operate on the specified AMI");
+                } else {
+                    throw new EC2ServiceException( ClientError.AuthFailure, "User not authorized");
+                }
+            }
+            else if (errorCode == 530) {
+               if ( errorMessage.contains("deviceId") && errorMessage.contains("is used by VM") ) {
+                    throw new EC2ServiceException( ClientError.InvalidDevice_InUse,
+                            "Specified Device is already being used by the VM");
+                } else if (errorMessage.contains("Entity already exists") ){
+                    throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "Specified resource tag already exists");
+                } else if ( errorMessage.contains("Template") && errorMessage.contains("has not been completely downloaded") ){
+                    throw new EC2ServiceException( ClientError.InvalidAMIID_NotFound,
+                            "Specified ImageId is unavailable");
+                } else if ( errorMessage.contains("cannot stop VM") && errorMessage.contains("when it is in state Starting") ){
+                    throw new EC2ServiceException( ClientError.IncorrectInstanceState,
+                            "Unable to stop. One or more of the specified instances is in an incorrect state 'pending'");
+                } else if ( errorMessage.contains("Failed to authorize security group ingress rule(s)") ) {
+                    throw new EC2ServiceException(ClientError.InvalidParameterValue, "Specified Ip-permission is invalid" +
+                            " or the Ip-permission already exists");
+                } else if ( errorMessage.contains("Failed to reboot vm instance") ) {
+                    throw new EC2ServiceException(ClientError.IncorrectInstanceState,
+                            "Unable to reboot. One or more of the specified instances is in an incorrect state");
+                } else if ( errorMessage.contains("specify a template that is not currently being downloaded") ) {
+                    throw new EC2ServiceException(ClientError.IncorrectState,
+                            "Unable to deregister. Image is not in the correct state 'available'");
+                } else {
+                    throw new EC2ServiceException( ServerError.InternalError, "An unexpected error occured");
+                }
+            }
+            else if (errorCode == 534) {
+                if ( errorMessage.contains("Maximum number of resources of type 'volume' for account")
+                        && errorMessage.contains("has been exceeded") ) {
+                    throw new EC2ServiceException( ClientError.VolumeLimitExceeded,
+                            "You have reached the limit on the number of volumes that can be created");
+                } else if ( errorMessage.contains("Maximum number of resources of type 'public_ip' for account")
+                        && errorMessage.contains("has been exceeded") ) {
+                    throw new EC2ServiceException( ClientError.AddressLimitExceeded,
+                            "You have reached the limit on the number of elastic ip addresses your account can have");
+                } else if ( errorMessage.contains("Unable to apply save userdata entry on router") ) {
+                    throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                            "The value supplied for parameter UserData is invalid");
+                } else {
+                    throw new EC2ServiceException( ServerError.InternalError, "An unexpected error occured");
+                }
+            }
+            else if (errorCode == 533) {
+                if ( errorMessage.contains("Unable to create a deployment for VM") ) {
+                    throw new EC2ServiceException( ClientError.InsufficientInstanceCapacity,
+                            "There is insufficient capacity available to deploy a VM");
+                } else if ( errorMessage.contains("Insufficient address capacity") ) {
+                    throw new EC2ServiceException( ServerError.InsufficientAddressCapacity,
+                            "Not enough available addresses to satisfy your minimum request");
+                } else {
+                    throw new EC2ServiceException( ServerError.InternalError, "There is insufficient capacity");
+                } 
+            } else if (errorCode == 401) {
+                if ( errorMessage.contains("Unauthorized") ) {
+                    throw new EC2ServiceException(ClientError.AuthFailure, "User not authorised");
+                } else {
+                    throw new EC2ServiceException(ClientError.AuthFailure, "User not authorised");
+                }
+            } else {
+               throw new EC2ServiceException( ServerError.InternalError, "An unexpected error occured");
+            }
+        } else {
+            if ( errorMessage.contains("Unknown zoneName value") ) {
+                throw new EC2ServiceException( ClientError.InvalidZone_NotFound,
+                        "AvailabilityZone name is invalid");
+            } else if ( errorMessage.contains("No ServiceOffering found to be defined by name") ) {
+                throw new EC2ServiceException(ClientError.InvalidParameterValue, "Specified InstanceType is invalid");
+            } else if ( errorMessage.contains("Specified Ip permission is invalid") ) {
+                throw new EC2ServiceException(ClientError.InvalidPermission_Malformed, "Specified Ip permission is invalid");
+            } else if ( errorMessage.contains("One or more instanceIds do not exist, other instances rebooted") ) {
+                throw new EC2ServiceException(ClientError.InvalidInstanceID_NotFound,
+                        "One or more InstanceId doesn't exist, other instances rebooted");
+            } else if ( errorMessage.contains("Device is not supported") ) {
+                throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                        "Value specified for parameter Device is invalid");
+            } else if ( errorMessage.contains("Volume is not attached to the Instance") ) {
+                throw new EC2ServiceException(ClientError.InvalidAttachment_NotFound,
+                        "Specified Volume is not attached to the specified Instance");
+            } else if ( errorMessage.contains("Volume is not attached to the Device") ) {
+                throw new EC2ServiceException(ClientError.InvalidAttachment_NotFound,
+                        "Specified Volume is not attached to the specified device");
+            } else if ( errorMessage.contains("Unable to create snapshot") ) {
+                throw new EC2ServiceException(ServerError.InternalError,
+                        "Unable to create snapshot");
+            } else if ( errorMessage.contains("Instance must be in stopped state") ) {
+                throw new EC2ServiceException(ClientError.IncorrectInstanceState,
+                        "Specified instance is not in the correct state 'stopped'");
+            } else if ( errorMessage.contains("Image couldn't be created") ) {
+                throw new EC2ServiceException(ServerError.InternalError,
+                        "Unable to create image");
+            } else if ( errorMessage.contains("Failed to start the stopped instance") ) {
+                throw new EC2ServiceException(ServerError.InternalError,
+                        "Unable to start the instance that was stopped during image creation");
+            } else if ( errorMessage.contains("One or more of instanceIds specified is in stopped state") ) {
+                throw new EC2ServiceException(ClientError.IncorrectInstanceState,
+                        "Unable to reboot. One or more of the specified instances is in an incorrect state 'stopped'");
+            } else if ( errorMessage.contains("Specified ipAddress doesn't exist") ) {
+                throw new EC2ServiceException(ClientError.InvalidParameterValue, "Specified publicIp doesn't exist");
+            } else if ( errorMessage.contains("Min Count is greater than the number of instances left to allocate") ) {
+                throw new EC2ServiceException(ClientError.InstanceLimitExceeded,
+                        "Specified MinCount parameter is greater than the number of instances you can create");
+            } else if ( errorMessage.contains("instanceType not found") ) {
+                throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                        "Specified instanceType not found");
+            } else if ( errorMessage.contains("zone not found") ) {
+                throw new EC2ServiceException(ClientError.InvalidZone_NotFound,
+                        "Specified zone doesn't exist");
+            } else if ( errorMessage.contains("Both groupId and groupName has been specified") ) {
+                throw new EC2ServiceException(ClientError.InvalidParameterCombination,
+                        " for EC2 groups either a group ID or a group name is accepted");
+            } else if ( errorMessage.contains("Insufficient Instance Capacity") ) {
+                throw new EC2ServiceException(ServerError.InsufficientInstanceCapacity, "Insufficient Instance Capacity" );
+            } else if ( errorMessage.contains("Unable to find security group name") ) {
+                throw new EC2ServiceException(ClientError.InvalidGroup_NotFound, "Specified Security Group does not exist" );
+            } else if ( errorMessage.contains("Instance not found") ) {
+                throw new EC2ServiceException(ClientError.InvalidInstanceID_NotFound,
+                        "One or more of the specified instanceId not found");
+            } else if ( errorMessage.contains("Cannot modify, instance should be in stopped state") ) {
+                throw new EC2ServiceException(ClientError.IncorrectInstanceState,
+                        "Unable to modify instance attribute. Specified instance is not in the correct state 'stopped'");
+            } else {
+                throw new EC2ServiceException( ServerError.InternalError, "An unexpected error occured");
+            }
+        }
     }
 }

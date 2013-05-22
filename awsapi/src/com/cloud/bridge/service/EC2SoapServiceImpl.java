@@ -53,6 +53,7 @@ import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairs;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairsResponse;
 import com.cloud.bridge.service.core.ec2.EC2ImageFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2ImageLaunchPermission;
+import com.cloud.bridge.service.core.ec2.EC2ModifyInstanceAttribute;
 import com.cloud.bridge.service.core.ec2.EC2ResourceTag;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroups;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroupsResponse;
@@ -96,7 +97,6 @@ import com.cloud.bridge.service.core.ec2.EC2Volume;
 import com.cloud.bridge.service.core.ec2.EC2VolumeFilterSet;
 import com.cloud.bridge.service.exception.EC2ServiceException;
 import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
-import com.cloud.bridge.service.exception.EC2ServiceException.ServerError;
 import com.cloud.bridge.util.EC2RestAuth;
 
 
@@ -273,8 +273,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
         List<String> resourceTypeList = new ArrayList<String>();
         for (String resourceId : resourceIdList) {
             if (!resourceId.contains(":") || resourceId.split(":").length != 2) {
-                throw new EC2ServiceException( ClientError.InvalidResourceId_Format,
-                        "Invalid Format. ResourceId format is resource-type:resource-uuid");
+                throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                        "Invalid usage. ResourceId format is resource-type:resource-uuid");
             }
             String resourceType = resourceId.split(":")[0];
             if (resourceTypeList.isEmpty())
@@ -356,7 +356,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             request.setFilterSet( toAvailabiltyZonesFilterSet(fst));
         }
 
-		return toDescribeAvailabilityZonesResponse( engine.handleRequest( request ));
+		return toDescribeAvailabilityZonesResponse( engine.describeAvailabilityZones( request ));
 	}
 
 	/**
@@ -422,11 +422,11 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	    EmptyElementType instanceType = diag.getInstanceType();
 		
 	    // -> toEC2DescribeInstances
-	    if (null != instanceType) {
-		    request.addInstanceId( diat.getInstanceId());
+           if (null != instanceType) {
+                   request.addInstanceId( diat.getInstanceId());
 		    return toDescribeInstanceAttributeResponse( engine.describeInstances( request ));
 	    }
-	    throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - only instanceType supported");
+           throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - only instanceType supported");
 	}
 
 	
@@ -549,7 +549,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             request = toSnapshotFilterSet( request, fst, timeFilters );
 		}
 
-		return toDescribeSnapshotsResponse(engine.handleRequest(request));
+        return toDescribeSnapshotsResponse(engine.describeSnapshots(request));
 	}
 
     public DescribeTagsResponse describeTags(DescribeTags decsribeTags) {
@@ -588,7 +588,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             request = toVolumeFilterSet( request, fst, timeFilters );
 		}
 		
-		return toDescribeVolumesResponse( engine.handleRequest( request ));
+        return toDescribeVolumesResponse( engine.describeVolumes( request ), engine);
 	}
 	
 	public DetachVolumeResponse detachVolume(DetachVolume detachVolume) {
@@ -628,6 +628,26 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		}
 		throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - can only modify image description or launchPermission");
 	}	
+
+    public ModifyInstanceAttributeResponse modifyInstanceAttribute(ModifyInstanceAttribute modifyInstanceAttribute) {
+        EC2ModifyInstanceAttribute request = new EC2ModifyInstanceAttribute();
+
+        ModifyInstanceAttributeType modifyInstanceAttribute2 = modifyInstanceAttribute.getModifyInstanceAttribute();
+        ModifyInstanceAttributeTypeChoice_type0 mia = modifyInstanceAttribute2.getModifyInstanceAttributeTypeChoice_type0();
+
+        request.setInstanceId(modifyInstanceAttribute2.getInstanceId());
+
+        // we only support instanceType and userData
+        if (mia.getInstanceType() != null) {
+            request.setInstanceType(mia.getInstanceType().getValue());
+        } else if (mia.getUserData() != null) {
+            request.setUserData(mia.getUserData().getValue());
+        } else {
+            throw new EC2ServiceException( ClientError.MissingParamter,
+                    "Missing required parameter - InstanceType/UserData should be provided");
+        }
+        return toModifyInstanceAttributeResponse(engine.modifyInstanceAttribute(request));
+    }
 
     private void setAccountOrGroupList(LaunchPermissionItemType[] items, EC2ModifyImageAttribute request, String operation){
         EC2ImageLaunchPermission launchPermission = new EC2ImageLaunchPermission();
@@ -858,26 +878,20 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		response.setUnmonitorInstancesResponse( param1 );
 		return response;
 	}
-	
-	
-	public static DescribeImageAttributeResponse toDescribeImageAttributeResponse(EC2DescribeImagesResponse engineResponse) {
-		DescribeImageAttributeResponse response = new DescribeImageAttributeResponse();
-		DescribeImageAttributeResponseType param1 = new DescribeImageAttributeResponseType();
-		
-		EC2Image[] imageSet = engineResponse.getImageSet();
-		if ( 0 < imageSet.length ) {
-		     DescribeImageAttributeResponseTypeChoice_type0 param2 = new DescribeImageAttributeResponseTypeChoice_type0();
-		     NullableAttributeValueType param3 = new NullableAttributeValueType();
-		     param3.setValue( imageSet[0].getDescription());
-		     param2.setDescription( param3 );
-		     param1.setDescribeImageAttributeResponseTypeChoice_type0( param2 );
-		     param1.setImageId( imageSet[0].getId());	
-		}
-		
-		param1.setRequestId( UUID.randomUUID().toString());
-        response.setDescribeImageAttributeResponse( param1 );
-		return response;
-	}
+
+    /**
+     * @param modifyInstanceAttribute
+     * @return	
+     */
+    public static ModifyInstanceAttributeResponse toModifyInstanceAttributeResponse(Boolean status) {
+        ModifyInstanceAttributeResponse miat = new ModifyInstanceAttributeResponse();
+
+        ModifyInstanceAttributeResponseType param = new ModifyInstanceAttributeResponseType();
+        param.set_return(status);
+        param.setRequestId(UUID.randomUUID().toString());
+        miat.setModifyInstanceAttributeResponse(param);
+        return miat;
+    }
 	
 	public static DescribeImageAttributeResponse toDescribeImageAttributeResponse(EC2ImageAttributes engineResponse) {
        DescribeImageAttributeResponse response = new DescribeImageAttributeResponse();
@@ -1311,7 +1325,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     }
 
 	// toMethods
-	public static DescribeVolumesResponse toDescribeVolumesResponse( EC2DescribeVolumesResponse engineResponse ) 
+	public static DescribeVolumesResponse toDescribeVolumesResponse( EC2DescribeVolumesResponse engineResponse, EC2Engine engine ) 
 	{
 	    DescribeVolumesResponse      response = new DescribeVolumesResponse();
 	    DescribeVolumesResponseType    param1 = new DescribeVolumesResponseType();
@@ -1342,8 +1356,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        	AttachmentSetItemResponseType param5 = new AttachmentSetItemResponseType();
 	        	param5.setVolumeId(vol.getId().toString());
 	        	param5.setInstanceId(vol.getInstanceId().toString());
-	        	String devicePath = engine.cloudDeviceIdToDevicePath( vol.getHypervisor(), vol.getDeviceId());
-	        	param5.setDevice( devicePath );
+                String devicePath = engine.cloudDeviceIdToDevicePath( vol.getHypervisor(), vol.getDeviceId());
+                param5.setDevice( devicePath );
                 param5.setStatus(vol.getAttachmentState());
                 if (vol.getAttached() == null) {
                     param5.setAttachTime( cal );
@@ -1876,7 +1890,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		param1.setVolumeId( engineResponse.getId().toString());
         Long volSize = new Long( engineResponse.getSize());
         param1.setSize( volSize.toString());  
-        param1.setSnapshotId( "" );
+        if (engineResponse.getSnapshotId() != null)
+            param1.setSnapshotId( engineResponse.getSnapshotId() );
+        else
+            param1.setSnapshotId( "" );
         param1.setAvailabilityZone( engineResponse.getZoneName());
 		if ( null != engineResponse.getState())
 		     param1.setStatus( engineResponse.getState());
@@ -2501,10 +2518,6 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	}
 
 	public ImportVolumeResponse importVolume(ImportVolume importVolume) {
-		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
-	}
-	
-	public ModifyInstanceAttributeResponse modifyInstanceAttribute(ModifyInstanceAttribute modifyInstanceAttribute) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
 	}
 

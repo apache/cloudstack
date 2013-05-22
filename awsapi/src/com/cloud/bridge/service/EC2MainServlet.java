@@ -94,7 +94,7 @@ public class EC2MainServlet extends HttpServlet{
         if(!isEC2APIEnabled){
             //response.sendError(404, "EC2 API is disabled.");
             response.setStatus(404);
-            faultResponse(response, "404" , "EC2 API is disabled.");
+            faultResponse(response, "Unavailable" , "EC2 API is disabled");
             return;
         }
 

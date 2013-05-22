@@ -61,6 +61,7 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.network.nicira.ControlClusterStatus;
+import com.cloud.network.nicira.DestinationNatRule;
 import com.cloud.network.nicira.L3GatewayAttachment;
 import com.cloud.network.nicira.LogicalRouterConfig;
 import com.cloud.network.nicira.LogicalRouterPort;
@@ -75,6 +76,7 @@ import com.cloud.network.nicira.NiciraNvpTag;
 import com.cloud.network.nicira.PatchAttachment;
 import com.cloud.network.nicira.RouterNextHop;
 import com.cloud.network.nicira.SingleDefaultRouteImplictRoutingConfig;
+import com.cloud.network.nicira.SourceNatRule;
 import com.cloud.network.nicira.TransportZoneBinding;
 import com.cloud.network.nicira.VifAttachment;
 import com.cloud.resource.ServerResource;
@@ -449,13 +451,13 @@ public class NiciraNvpResource implements ServerResource {
 	            		new PatchAttachment(lrpi.getUuid()));
 	            
 	            // Setup the source nat rule
-	            NatRule snr = new NatRule();
-	            snr.setType("SourceNatRule");
+	            SourceNatRule snr = new SourceNatRule();
 	            snr.setToSourceIpAddressMin(publicNetworkIpAddress.split("/")[0]);
 	            snr.setToSourceIpAddressMax(publicNetworkIpAddress.split("/")[0]);
 	            Match match = new Match();
 	            match.setSourceIpAddresses(internalNetworkAddress);
 	            snr.setMatch(match);
+	            snr.setOrder(200); 
 	            _niciraNvpApi.createLogicalRouterNatRule(lrc.getUuid(), snr);
         	} catch (NiciraNvpApiException e) {
         		// We need to destroy the router if we already created it
@@ -604,7 +606,8 @@ public class NiciraNvpResource implements ServerResource {
     				continue;
     			}
     			
-    			if (rule.getDstPortRange()[0] != rule.getDstPortRange()[1]) {
+    			if (rule.getDstPortRange()[0] != rule.getDstPortRange()[1] || 
+    			        rule.getSrcPortRange()[0] != rule.getSrcPortRange()[1]    ) {
     				return new ConfigurePortForwardingRulesOnLogicalRouterAnswer(cmd, false, "Nicira NVP doesn't support port ranges for port forwarding");
     			}
     			
@@ -700,32 +703,24 @@ public class NiciraNvpResource implements ServerResource {
 		natRuleStr.append(" ");
 		natRuleStr.append(m.getSourceIpAddresses());
 		natRuleStr.append(" [");
-		natRuleStr.append(m.getSourcePortMin());
-		natRuleStr.append("-");
-		natRuleStr.append(m.getSourcePortMax());
+		natRuleStr.append(m.getSourcePort());
 		natRuleStr.append(" ] -> ");
 		natRuleStr.append(m.getDestinationIpAddresses());
 		natRuleStr.append(" [");
-		natRuleStr.append(m.getDestinationPortMin());
-		natRuleStr.append("-");
-		natRuleStr.append(m.getDestinationPortMax());
+		natRuleStr.append(m.getDestinationPort());
 		natRuleStr.append(" ]) -->");
 		if ("SourceNatRule".equals(rule.getType())) {
-			natRuleStr.append(rule.getToSourceIpAddressMin());
+			natRuleStr.append(((SourceNatRule)rule).getToSourceIpAddressMin());
 			natRuleStr.append("-");
-			natRuleStr.append(rule.getToSourceIpAddressMax());
+			natRuleStr.append(((SourceNatRule)rule).getToSourceIpAddressMax());
 			natRuleStr.append(" [");
-			natRuleStr.append(rule.getToSourcePortMin());
-			natRuleStr.append("-");
-			natRuleStr.append(rule.getToSourcePortMax());
+			natRuleStr.append(((SourceNatRule)rule).getToSourcePort());
 			natRuleStr.append(" ])");
 		}
 		else {
-			natRuleStr.append(rule.getToDestinationIpAddressMin());
-			natRuleStr.append("-");
-			natRuleStr.append(rule.getToDestinationIpAddressMax());
+			natRuleStr.append(((DestinationNatRule)rule).getToDestinationIpAddress());
 			natRuleStr.append(" [");
-			natRuleStr.append(rule.getToDestinationPort());
+			natRuleStr.append(((DestinationNatRule)rule).getToDestinationPort());
 			natRuleStr.append(" ])");
 		}
 		return natRuleStr.toString();
@@ -742,23 +737,24 @@ public class NiciraNvpResource implements ServerResource {
     
     protected NatRule[] generateStaticNatRulePair(String insideIp, String outsideIp) {
     	NatRule[] rulepair = new NatRule[2];
-    	rulepair[0] = new NatRule();
+    	rulepair[0] = new DestinationNatRule();
     	rulepair[0].setType("DestinationNatRule");
-    	rulepair[1] = new NatRule();
+    	rulepair[0].setOrder(100);
+    	rulepair[1] = new SourceNatRule();
     	rulepair[1].setType("SourceNatRule");
+    	rulepair[1].setOrder(100);
     	
 		Match m = new Match();
 		m.setDestinationIpAddresses(outsideIp);
 		rulepair[0].setMatch(m);
-		rulepair[0].setToDestinationIpAddressMin(insideIp);
-		rulepair[0].setToDestinationIpAddressMax(insideIp);
+		((DestinationNatRule)rulepair[0]).setToDestinationIpAddress(insideIp);
 
 		// create matching snat rule
 		m = new Match();
 		m.setSourceIpAddresses(insideIp);
 		rulepair[1].setMatch(m);
-		rulepair[1].setToSourceIpAddressMin(outsideIp);
-		rulepair[1].setToSourceIpAddressMax(outsideIp);
+		((SourceNatRule)rulepair[1]).setToSourceIpAddressMin(outsideIp);
+		((SourceNatRule)rulepair[1]).setToSourceIpAddressMax(outsideIp);
     	
     	return rulepair;
     	
@@ -768,9 +764,9 @@ public class NiciraNvpResource implements ServerResource {
        	// Start with a basic static nat rule, then add port and protocol details
     	NatRule[] rulepair = generateStaticNatRulePair(insideIp, outsideIp);
     	
-    	rulepair[0].setToDestinationPort(insidePorts[0]);
-    	rulepair[0].getMatch().setDestinationPortMin(outsidePorts[0]);
-    	rulepair[0].getMatch().setDestinationPortMax(outsidePorts[1]);
+    	((DestinationNatRule)rulepair[0]).setToDestinationPort(insidePorts[0]);
+    	rulepair[0].getMatch().setDestinationPort(outsidePorts[0]);
+    	rulepair[0].setOrder(50);
     	rulepair[0].getMatch().setEthertype("IPv4");
 		if ("tcp".equals(protocol)) {
 			rulepair[0].getMatch().setProtocol(6);
@@ -779,10 +775,9 @@ public class NiciraNvpResource implements ServerResource {
 			rulepair[0].getMatch().setProtocol(17);
 		}
 
-    	rulepair[1].setToSourcePortMin(outsidePorts[0]);
-    	rulepair[1].setToSourcePortMax(outsidePorts[1]);
-    	rulepair[1].getMatch().setSourcePortMin(insidePorts[0]);
-    	rulepair[1].getMatch().setSourcePortMax(insidePorts[1]);
+    	((SourceNatRule)rulepair[1]).setToSourcePort(outsidePorts[0]);
+    	rulepair[1].getMatch().setSourcePort(insidePorts[0]);
+    	rulepair[1].setOrder(50);
     	rulepair[1].getMatch().setEthertype("IPv4");
 		if ("tcp".equals(protocol)) {
 			rulepair[1].getMatch().setProtocol(6);

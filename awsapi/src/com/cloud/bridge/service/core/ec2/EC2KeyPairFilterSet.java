@@ -25,6 +25,9 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.bridge.service.exception.EC2ServiceException;
+import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
+
 public class EC2KeyPairFilterSet {
 	protected final static Logger logger = Logger.getLogger(EC2KeyPairFilterSet.class);
 	
@@ -42,16 +45,9 @@ public class EC2KeyPairFilterSet {
 		String filterName = param.getName();
 		String value = (String) filterTypes.get( filterName );
 		
-		if (null == value) {
-			// Changing this to silently ignore
-			logger.error("Unsupported filter [" + filterName + "] - 1");
-			return;
-		}
-		
-		if (null != value && value.equalsIgnoreCase( "null" )) {
-			logger.error("Unsupported filter [" + filterName + "] - 2");
-			return;
-		}	
+        if ( value == null || value.equalsIgnoreCase("null") ) {
+            throw new EC2ServiceException( ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
+        }
 
 		// ToDo we could add checks to make sure the type of a filters value is correct (e.g., an integer)
 		filterSet.add( param );

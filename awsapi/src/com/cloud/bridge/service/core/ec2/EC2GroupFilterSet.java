@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.bridge.service.exception.EC2ServiceException;
+import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 
 
 public class EC2GroupFilterSet {
@@ -52,11 +53,9 @@ public class EC2GroupFilterSet {
 		String filterName = param.getName();
 		String value = (String) filterTypes.get( filterName );
 
-		if (null == value)
-			throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 1", 501 );
-
-		if (null != value && value.equalsIgnoreCase( "null" ))
-			throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 2", 501 );
+        if ( value == null || value.equalsIgnoreCase("null")) {
+            throw new EC2ServiceException( ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
+        }
 
 		// ToDo we could add checks to make sure the type of a filters value is correct (e.g., an integer)
 		filterSet.add( param );

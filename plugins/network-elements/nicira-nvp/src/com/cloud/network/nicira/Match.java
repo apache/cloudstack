@@ -22,15 +22,9 @@ package com.cloud.network.nicira;
 public class Match {
 	private Integer protocol;
 	private String source_ip_addresses;
-	private Boolean source_ip_addresses_not;
 	private String destination_ip_addresses;
-	private Boolean destination_ip_addresses_not;
-	private Integer source_port_min;
-	private Integer source_port_max;
-	private Boolean source_port_not;
-	private Integer destination_port_min;
-	private Integer destination_port_max;
-	private Boolean destination_port_not;
+	private Integer source_port;
+	private Integer destination_port;
 	private String ethertype = "IPv4";
 	
 	public Integer getProtocol() {
@@ -41,54 +35,22 @@ public class Match {
 		this.protocol = protocol;
 	}
 	
-	public Integer getSourcePortMin() {
-		return source_port_min;
+	public Integer getSourcePort() {
+		return source_port;
 	}
 	
-	public void setSourcePortMin(Integer source_port_min) {
-		this.source_port_min = source_port_min;
+	public void setSourcePort(Integer source_port) {
+		this.source_port = source_port;
+	}
+		
+	public Integer getDestinationPort() {
+		return destination_port;
 	}
 	
-	public Integer getSourcePortMax() {
-		return source_port_max;
+	public void setDestinationPort(Integer destination_port) {
+		this.destination_port = destination_port;
 	}
-	
-	public void setSourcePortMax(Integer source_port_max) {
-		this.source_port_max = source_port_max;
-	}
-	
-	public Boolean isSourcePortNot() {
-		return source_port_not;
-	}
-
-	public void setSourcePortNot(Boolean source_port_not) {
-		this.source_port_not = source_port_not;
-	}
-
-	public Integer getDestinationPortMin() {
-		return destination_port_min;
-	}
-	
-	public void setDestinationPortMin(Integer destination_port_min) {
-		this.destination_port_min = destination_port_min;
-	}
-	
-	public Integer getDestinationPortMax() {
-		return destination_port_max;
-	}
-	
-	public void setDestinationPortMax(Integer destination_port_max) {
-		this.destination_port_max = destination_port_max;
-	}
-	
-	public Boolean isDestinationPortNot() {
-		return destination_port_not;
-	}
-
-	public void setDestinationPortNot(Boolean destination_port_not) {
-		this.destination_port_not = destination_port_not;
-	}
-
+		
 	public String getEthertype() {
 		return ethertype;
 	}
@@ -105,28 +67,12 @@ public class Match {
 		this.source_ip_addresses = source_ip_addresses;
 	}
 
-	public boolean isSourceIpAddressesNot() {
-		return source_ip_addresses_not;
-	}
-
-	public void setSourceIpAddresses_not(boolean source_ip_addresses_not) {
-		this.source_ip_addresses_not = source_ip_addresses_not;
-	}
-
 	public String getDestinationIpAddresses() {
 		return destination_ip_addresses;
 	}
 
 	public void setDestinationIpAddresses(String destination_ip_addresses) {
 		this.destination_ip_addresses = destination_ip_addresses;
-	}
-
-	public Boolean isDestinationIpAddressesNot() {
-		return destination_ip_addresses_not;
-	}
-
-	public void setDestinationIpAddressesNot(Boolean destination_ip_addresses_not) {
-		this.destination_ip_addresses_not = destination_ip_addresses_not;
 	}
 
 	@Override
@@ -139,19 +85,7 @@ public class Match {
 						: destination_ip_addresses.hashCode());
 		result = prime
 				* result
-				+ ((destination_ip_addresses_not == null) ? 0
-						: destination_ip_addresses_not.hashCode());
-		result = prime
-				* result
-				+ ((destination_port_max == null) ? 0 : destination_port_max
-						.hashCode());
-		result = prime
-				* result
-				+ ((destination_port_min == null) ? 0 : destination_port_min
-						.hashCode());
-		result = prime
-				* result
-				+ ((destination_port_not == null) ? 0 : destination_port_not
+				+ ((destination_port == null) ? 0 : destination_port
 						.hashCode());
 		result = prime * result
 				+ ((ethertype == null) ? 0 : ethertype.hashCode());
@@ -161,16 +95,8 @@ public class Match {
 				* result
 				+ ((source_ip_addresses == null) ? 0 : source_ip_addresses
 						.hashCode());
-		result = prime
-				* result
-				+ ((source_ip_addresses_not == null) ? 0
-						: source_ip_addresses_not.hashCode());
 		result = prime * result
-				+ ((source_port_max == null) ? 0 : source_port_max.hashCode());
-		result = prime * result
-				+ ((source_port_min == null) ? 0 : source_port_min.hashCode());
-		result = prime * result
-				+ ((source_port_not == null) ? 0 : source_port_not.hashCode());
+				+ ((source_port == null) ? 0 : source_port.hashCode());
 		return result;
 	}
 
@@ -189,26 +115,10 @@ public class Match {
 		} else if (!destination_ip_addresses
 				.equals(other.destination_ip_addresses))
 			return false;
-		if (destination_ip_addresses_not == null) {
-			if (other.destination_ip_addresses_not != null)
+		if (destination_port == null) {
+			if (other.destination_port != null)
 				return false;
-		} else if (!destination_ip_addresses_not
-				.equals(other.destination_ip_addresses_not))
-			return false;
-		if (destination_port_max == null) {
-			if (other.destination_port_max != null)
-				return false;
-		} else if (!destination_port_max.equals(other.destination_port_max))
-			return false;
-		if (destination_port_min == null) {
-			if (other.destination_port_min != null)
-				return false;
-		} else if (!destination_port_min.equals(other.destination_port_min))
-			return false;
-		if (destination_port_not == null) {
-			if (other.destination_port_not != null)
-				return false;
-		} else if (!destination_port_not.equals(other.destination_port_not))
+		} else if (!destination_port.equals(other.destination_port))
 			return false;
 		if (ethertype == null) {
 			if (other.ethertype != null)
@@ -225,26 +135,10 @@ public class Match {
 				return false;
 		} else if (!source_ip_addresses.equals(other.source_ip_addresses))
 			return false;
-		if (source_ip_addresses_not == null) {
-			if (other.source_ip_addresses_not != null)
+		if (source_port == null) {
+			if (other.source_port != null)
 				return false;
-		} else if (!source_ip_addresses_not
-				.equals(other.source_ip_addresses_not))
-			return false;
-		if (source_port_max == null) {
-			if (other.source_port_max != null)
-				return false;
-		} else if (!source_port_max.equals(other.source_port_max))
-			return false;
-		if (source_port_min == null) {
-			if (other.source_port_min != null)
-				return false;
-		} else if (!source_port_min.equals(other.source_port_min))
-			return false;
-		if (source_port_not == null) {
-			if (other.source_port_not != null)
-				return false;
-		} else if (!source_port_not.equals(other.source_port_not))
+		} else if (!source_port.equals(other.source_port))
 			return false;
 		return true;
 	}

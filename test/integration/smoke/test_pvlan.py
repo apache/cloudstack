@@ -41,6 +41,7 @@ class TestPVLAN(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
 
+    @attr(tags = ["advanced"])
     def test_create_pvlan_network(self):
         self.debug("Test create pvlan network")
         createNetworkCmd = createNetwork.createNetworkCmd()

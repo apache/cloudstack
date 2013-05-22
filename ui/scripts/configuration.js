@@ -144,6 +144,38 @@
 
                    },
 
+                  deploymentPlanner:{
+                    label:'Deployment Planner',
+                    select:function(args){
+                      $.ajax({
+                           url:createURL('listDeploymentPlanners'),
+                           dataType:'json',
+                           success:function(json){
+                              var items=[];
+                               var plannerObjs = json.listdeploymentplannersresponse.deploymentPlanner;
+                          $(plannerObjs).each(function(){
+                            items.push({id: this.name, description: this.name});
+                          });
+                          args.response.success({data: items});
+
+
+                            }
+                      });
+                     }
+                  },
+
+                  plannerKey:{label:'Planner Key' , docID:'helpImplicitPlannerKey'},
+                  plannerMode:{
+                    label:'Planner Mode',
+                    select:function(args){
+                       var items=[];
+                       items.push({id:'',description:''});
+                       items.push({id:'Strict', description:'Strict'});
+                       items.push({id:'Preffered', description:'Preffered'});
+                       args.response.success({data:items});
+                    }
+                  },
+
                   domainId: {
                     label: 'label.domain',
                     docID: 'helpComputeOfferingDomain',
@@ -176,9 +208,15 @@
 									storageType: args.data.storageType,
 									cpuNumber: args.data.cpuNumber,
 									cpuSpeed: args.data.cpuSpeed,
-									memory: args.data.memory
+									memory: args.data.memory,
+                                                                        deploymentplanner: args.data.deploymentPlanner
+
 								};															
-               
+                var array1 =[];
+                 if(args.data.plannerMode != null && args.data.plannerKey !=""){
+                   array1.push("&serviceofferingdetails[0]." + args.data.plannerKey + "=" + args.data.plannerMode);
+                }
+
                 if(args.data.networkRate != null && args.data.networkRate.length > 0) {
 								  $.extend(data, {
 									  networkrate: args.data.networkRate
@@ -216,7 +254,7 @@
 								}
 
                 $.ajax({
-                  url: createURL('createServiceOffering'),
+                  url: createURL('createServiceOffering' + array1.join("")),
                   data: data,                 
                   success: function(json) {
                     var item = json.createserviceofferingresponse.serviceoffering;
@@ -362,6 +400,7 @@
                       converter: cloudStack.converters.toBooleanText
                     },
                     isvolatile:{ label:'Volatile' , converter: cloudStack.converters.toBooleanText },
+                    deploymentplanner:{label:'Deployment Planner'},
                     tags: { label: 'label.storage.tags' },
                     hosttags: { label: 'label.host.tags' },
                     domain: { label: 'label.domain' },
