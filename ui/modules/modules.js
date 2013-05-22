@@ -18,7 +18,6 @@
   cloudStack.modules = [
     'infrastructure',
     'vnmcNetworkProvider',
-    'vnmcAsa1000v',
-    'internalLbProvider'
+    'vnmcAsa1000v'
   ];
 }(jQuery, cloudStack));
