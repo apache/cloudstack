@@ -194,7 +194,7 @@ class TestDefaultSecurityGroupEgress(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_deployVM_InDefaultSecurityGroup(self):
         """Test deploy VM in default security group with no egress rules
         """
@@ -351,7 +351,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_authorizeIngressRule(self):
         """Test authorize ingress rule
         """
@@ -509,7 +509,7 @@ class TestDefaultGroupEgress(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_default_group_with_egress(self):
         """Test default group with egress rule before VM deploy and ping, ssh
         """
@@ -710,7 +710,7 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_default_group_with_egress(self):
         """ Test default group with egress rule added after vm deploy and ping,
             ssh test
@@ -893,7 +893,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_revoke_egress_rule(self):
         """Test revoke security group egress rule
         """
@@ -1155,7 +1155,7 @@ class TestInvalidAccountAuthroize(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_invalid_account_authroize(self):
         """Test invalid account authroize
         """
@@ -1283,7 +1283,7 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_multiple_account_egress_rule_negative(self):
         """Test multiple account egress rules negative case
         """
@@ -1531,7 +1531,7 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_multiple_account_egress_rule_positive(self):
         """Test multiple account egress rules positive case
         """
@@ -1822,7 +1822,7 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_start_stop_vm_egress(self):
         """ Test stop start Vm with egress rules
         """
@@ -2034,7 +2034,7 @@ class TestInvalidParametersForEgress(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_invalid_parameters(self):
         """ Test invalid parameters for egress rules
         """

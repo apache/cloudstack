@@ -638,6 +638,126 @@ def describe_setup_in_advanced_mode():
     
     return zs
 
+'''sample code to generate setup configuration file'''
+def describe_setup_in_advancedsg_mode():
+    zs = cloudstackConfiguration()
+
+    for l in range(1):
+        z = zone()
+        z.dns1 = "8.8.8.8"
+        z.dns2 = "4.4.4.4"
+        z.internaldns1 = "192.168.110.254"
+        z.internaldns2 = "192.168.110.253"
+        z.name = "test"+str(l)
+        z.networktype = 'Advanced'
+        z.vlan = "100-2000"
+        z.securitygroupenabled = "true"
+
+        pn = physical_network()
+        pn.name = "test-network"
+        pn.traffictypes = [traffictype("Guest"), traffictype("Management")]
+
+        #If security groups are reqd
+        sgprovider = provider()
+        sgprovider.broadcastdomainrange = 'ZONE'
+        sgprovider.name = 'SecurityGroupProvider'
+		
+        pn.providers.append(sgprovider)
+        z.physical_networks.append(pn)
+
+        '''create 10 pods'''
+        for i in range(2):
+            p = pod()
+            p.name = "test" +str(l) + str(i)
+            p.gateway = "192.168.%d.1"%i
+            p.netmask = "255.255.255.0"
+            p.startip = "192.168.%d.200"%i
+            p.endip = "192.168.%d.220"%i
+
+            '''add 10 clusters'''
+            for j in range(2):
+                c = cluster()
+                c.clustername = "test"+str(l)+str(i) + str(j)
+                c.clustertype = "CloudManaged"
+                c.hypervisor = "Simulator"
+
+                '''add 10 hosts'''
+                for k in range(2):
+                    h = host()
+                    h.username = "root"
+                    h.password = "password"
+                    memory = 8*1024*1024*1024
+                    localstorage=1*1024*1024*1024*1024
+                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
+                    h.url = "http://sim/%d%d%d%d"%(l,i,j,k)
+                    c.hosts.append(h)
+
+                '''add 2 primary storages'''
+                for m in range(2):
+                    primary = primaryStorage()
+                    primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
+                    #primary.url = "nfs://localhost/path%s/size=%d"%(str(l) + str(i) + str(j) + str(m), size)
+                    primary.url = "nfs://localhost/path%s"%(str(l) + str(i) + str(j) + str(m))
+                    c.primaryStorages.append(primary)
+
+                p.clusters.append(c)
+
+            z.pods.append(p)
+
+        '''add two secondary'''
+        for i in range(5):
+            secondary = secondaryStorage()
+            secondary.url = "nfs://localhost/path"+str(l) + str(i)
+            z.secondaryStorages.append(secondary)
+
+        '''add default guest network'''
+        ips = iprange()
+        ips.vlan = "26"
+        ips.startip = "172.16.26.2"
+        ips.endip = "172.16.26.100"
+        ips.gateway = "172.16.26.1"
+        ips.netmask = "255.255.255.0"
+        z.ipranges.append(ips)
+
+
+        zs.zones.append(z)
+
+    '''Add one mgt server'''
+    mgt = managementServer()
+    mgt.mgtSvrIp = "localhost"
+    zs.mgtSvr.append(mgt)
+
+    '''Add a database'''
+    db = dbServer()
+    db.dbSvr = "localhost"
+
+    zs.dbSvr = db
+
+    '''add global configuration'''
+    global_settings = {'expunge.delay': '60',
+                       'expunge.interval': '60',
+                       'expunge.workers': '3',
+                       }
+    for k,v in global_settings.iteritems():
+        cfg = configuration()
+        cfg.name = k
+        cfg.value = v
+        zs.globalConfig.append(cfg)
+
+    ''''add loggers'''
+    testClientLogger = logger()
+    testClientLogger.name = "TestClient"
+    testClientLogger.file = "/tmp/testclient.log"
+
+    testCaseLogger = logger()
+    testCaseLogger.name = "TestCase"
+    testCaseLogger.file = "/tmp/testcase.log"
+
+    zs.logger.append(testClientLogger)
+    zs.logger.append(testCaseLogger)
+
+    return zs
+
 def generate_setup_config(config, file=None):
     describe = config
     if file is None:
@@ -666,6 +786,7 @@ if __name__ == "__main__":
   
     parser.add_option("-i", "--input", action="store", default=None , dest="inputfile", help="input file")
     parser.add_option("-a", "--advanced", action="store_true", default=False, dest="advanced", help="use advanced networking")
+    parser.add_option("-s", "--advancedsg", action="store_true", default=False, dest="advancedsg", help="use advanced networking with security groups")
     parser.add_option("-o", "--output", action="store", default="./datacenterCfg", dest="output", help="the path where the json config file generated, by default is ./datacenterCfg")
     
     (options, args) = parser.parse_args()
@@ -674,6 +795,8 @@ if __name__ == "__main__":
         config = get_setup_config(options.inputfile)
     if options.advanced:
         config = describe_setup_in_advanced_mode()
+    elif options.advancedsg:
+        config = describe_setup_in_advancedsg_mode()
     else:
         config = describe_setup_in_basic_mode()
         
