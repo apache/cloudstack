@@ -157,7 +157,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         if(plan.getHostId() != null && haVmTag == null){
             Long hostIdSpecified = plan.getHostId();
             if (s_logger.isDebugEnabled()){
-                s_logger.debug("DeploymentPlan has host_id specified, making no checks on this host, looks like admin test: "+hostIdSpecified);
+                s_logger.debug("DeploymentPlan has host_id specified, choosing this host and making no checks on this host: "+hostIdSpecified);
             }
             HostVO host = _hostDao.findById(hostIdSpecified);
             if (s_logger.isDebugEnabled()) {

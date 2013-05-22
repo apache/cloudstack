@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.Column;
 import javax.persistence.Transient;
 
 import net.sf.cglib.proxy.Factory;
@@ -163,13 +164,16 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
 				set(fieldName);
 				return null;
 			} else {
-				name = name.toLowerCase();
-				for (String fieldName : _attrs.keySet()) {
-					if (name.endsWith(fieldName.toLowerCase())) {
-						set(fieldName);
-						return null;
-					}
-				}
+			    Column ann = method.getAnnotation(Column.class);
+			    if (ann != null) {
+    			    String colName = ann.name();
+    			    for (Map.Entry<String, Attribute> attr : _attrs.entrySet()) {
+        			    if (colName.equals(attr.getValue().columnName)) {
+            			    set(attr.getKey());
+            			    return null;
+        			    }
+    			    }
+			    }
 				assert false : "Perhaps you need to make the method start with get or is?";
 			}
 		}

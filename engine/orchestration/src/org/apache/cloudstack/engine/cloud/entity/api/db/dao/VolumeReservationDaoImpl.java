@@ -49,7 +49,7 @@ public class VolumeReservationDaoImpl extends GenericDaoBase<VolumeReservationVO
         VmIdSearch.done();
         
         VmReservationIdSearch = createSearchBuilder();
-        VmReservationIdSearch.and("vmReservationId", VmReservationIdSearch.entity().geVmReservationId(), SearchCriteria.Op.EQ);
+        VmReservationIdSearch.and("vmReservationId", VmReservationIdSearch.entity().getVmReservationId(), SearchCriteria.Op.EQ);
         VmReservationIdSearch.done();
     }
     
