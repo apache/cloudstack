@@ -3317,7 +3317,7 @@
 										gslbprovider: {
 											label: 'GSLB service',
 											isBoolean: true,
-											isChecked: true
+											isChecked: false
 										},
 										gslbproviderpublicip: {
 											label: 'GSLB service Public IP'
@@ -7009,7 +7009,7 @@
 									gslbprovider: {
 										label: 'GSLB service',
 										isBoolean: true,
-										isChecked: true
+										isChecked: false
 									},
 									gslbproviderpublicip: {
 										label: 'GSLB service Public IP'
