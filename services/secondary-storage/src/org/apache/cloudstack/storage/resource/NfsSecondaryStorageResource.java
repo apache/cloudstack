@@ -426,11 +426,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         return new CopyCmdAnswer("");
     }
-    
+
     protected Answer copyFromNfsToImage(CopyCommand cmd) {
            DataTO destData = cmd.getDestTO();
            DataStoreTO destDataStore = destData.getDataStore();
-           
+
            if (destDataStore instanceof S3TO) {
         	   return copyFromNfsToS3(cmd);
            } else {
@@ -453,7 +453,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             NfsTO destImageStore = (NfsTO)destDataStore;
             return this.copyFromS3ToNfs(cmd, srcData, s3, destData, destImageStore);
         }
-        
+
         if (srcDataStore.getRole() == DataStoreRole.ImageCache && destDataStore.getRole() == DataStoreRole.Image) {
         	return copyFromNfsToImage(cmd);
         }
@@ -625,15 +625,40 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+    private ImageFormat getTemplateFormat(String filePath){
+        String ext = null;
+        int extensionPos = filePath.lastIndexOf('.');
+        int lastSeparator = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+        int i =  lastSeparator > extensionPos ? -1 : extensionPos;
+        if (i > 0 ) {
+            ext = filePath.substring(i+1);
+        }
+        if ( ext != null){
+            if ( ext.equalsIgnoreCase("vhd"))
+                return ImageFormat.VHD;
+            else if (ext.equalsIgnoreCase("qcow2"))
+                return ImageFormat.QCOW2;
+            else if (ext.equalsIgnoreCase("ova"))
+                return ImageFormat.OVA;
+            else if (ext.equalsIgnoreCase("tar"))
+                return ImageFormat.TAR;
+            else if (ext.equalsIgnoreCase("img"))
+                return ImageFormat.RAW;
+        }
+
+        return null;
+
+    }
+
     protected Answer copyFromNfsToS3(CopyCommand cmd) {
     	 final DataTO srcData = cmd.getSrcTO();
          final DataTO destData = cmd.getDestTO();
          DataStoreTO srcDataStore = srcData.getDataStore();
          NfsTO srcStore = (NfsTO)srcDataStore;
          DataStoreTO destDataStore = destData.getDataStore();
-         
+
          final S3TO s3 = (S3TO)destDataStore;
-    
+
         try {
             final String templatePath = determineStorageTemplatePath(
             		srcStore.getUrl(), srcData.getPath());
@@ -645,14 +670,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             final String bucket = s3.getBucketName();
             final File srcFile = _storage.getFile(templatePath);
+            ImageFormat format = this.getTemplateFormat(templatePath);
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
             putFile(s3, srcFile, bucket, key);
-                  
+
             DataTO retObj = null;
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
             	TemplateObjectTO newTemplate = new TemplateObjectTO();
             	newTemplate.setPath(key);
             	newTemplate.setSize(srcFile.length());
+            	newTemplate.setFormat(format);
             	retObj = newTemplate;
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
             	VolumeObjectTO newVol = new VolumeObjectTO();
@@ -660,7 +687,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             	newVol.setSize(srcFile.length());
             	retObj = newVol;
             }
-            
+
             return new CopyCmdAnswer(retObj);
         } catch (Exception e) {
             s_logger.error("failed to upload" + srcData.getPath(), e);

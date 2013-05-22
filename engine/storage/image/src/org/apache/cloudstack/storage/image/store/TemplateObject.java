@@ -256,6 +256,10 @@ public class TemplateObject implements TemplateInfo {
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
             throw new CloudRuntimeException("Failed to update state" + e.toString());
+        } catch (Exception ex){
+            s_logger.debug("failed to process event and answer", ex);
+            objectInStoreMgr.delete(this);
+            throw new CloudRuntimeException("Failed to process event", ex);
         } finally{
             // in case of OperationFailed, expunge the entry
             if ( event == ObjectInDataStoreStateMachine.Event.OperationFailed){

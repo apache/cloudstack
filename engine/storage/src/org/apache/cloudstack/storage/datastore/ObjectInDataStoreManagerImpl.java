@@ -25,6 +25,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
@@ -43,6 +44,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -136,7 +138,12 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ts.setTemplateId(obj.getId());
                 ts.setDataStoreId(dataStore.getId());
                 ts.setDataStoreRole(dataStore.getRole());
-                ts.setInstallPath(TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR  + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId());
+                String installPath = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR  + templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId();
+                if ( dataStore.getTO() instanceof S3TO ){
+                    TemplateInfo tmpl = (TemplateInfo)obj;
+                    installPath +=  "/" + tmpl.getUniqueName(); // for S3, we append template name in the path for template sync since we don't have template.properties there
+                }
+                ts.setInstallPath(installPath);
                 ts.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ts = templateDataStoreDao.persist(ts);
                 break;

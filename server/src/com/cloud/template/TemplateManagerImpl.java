@@ -1456,7 +1456,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (privateTemplate == null) {
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
-                // template_store_ref entries should have been removed using our DataObject.processEvent command in case of failure.
+                // template_store_ref entries should have been removed using our DataObject.processEvent command in case of failure, but clean it up here to avoid
+                // some leftovers which will cause removing template from vm_template table fail.
+                this._tmplStoreDao.deletePrimaryRecordsForTemplate(templateId);
                 // Remove the template_zone_ref record
                 this._tmpltZoneDao.deletePrimaryRecordsForTemplate(templateId);
                 // Remove the template record
