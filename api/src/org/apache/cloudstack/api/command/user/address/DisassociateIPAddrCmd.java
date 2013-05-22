@@ -76,9 +76,9 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
         UserContext.current().setEventDetails("Ip Id: " + getIpAddressId());
         boolean result = false;
         if (!isPortable(id)) {
-            _networkService.releaseIpAddress(getIpAddressId());
+            result = _networkService.releaseIpAddress(getIpAddressId());
         } else {
-            _networkService.releaseIpAddress(getIpAddressId());
+            result = _networkService.releaseIpAddress(getIpAddressId());
         }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
