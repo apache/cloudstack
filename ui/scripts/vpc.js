@@ -2635,6 +2635,8 @@
                   isEditable: true
                 },
 
+                aclid:{label:'ACL id'},
+
                 domain: { label: 'label.domain' },
                 account: { label: 'label.account' }
               }
