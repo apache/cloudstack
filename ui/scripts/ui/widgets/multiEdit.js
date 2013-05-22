@@ -34,6 +34,7 @@
 
       $item.append($('<table>').append($('<tbody>')));
       $tr = $('<tr>').appendTo($item.find('tbody'));
+      $item.data('json-obj', multiRule);
 
       if (itemData) {
         $tr.data('multi-edit-data', itemData);
@@ -828,7 +829,22 @@ $.fn.multiEdit = function(args) {
     $('<th>').addClass('reorder').appendTo($thead);
     $('<td>').addClass('reorder').appendTo($inputForm);
     $multi.find('.data-body').sortable({
-      handle: '.action.moveDrag'
+      handle: '.action.moveDrag',
+      
+      update: function(event, ui) {
+        reorder.moveDrag.action({
+          context: $.extend(true, {}, context, {
+            // Passes all rules, so that each index can be updated
+            multiRule: $multi.find('.data-item').map(function(index, item) {
+              return $(item).data('json-obj');
+            })
+          }),
+          response: {
+            success: function(args) {
+            }
+          }
+        });
+      }
     });
   }
 
