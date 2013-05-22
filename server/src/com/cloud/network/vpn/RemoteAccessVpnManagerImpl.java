@@ -226,10 +226,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     }
 
     @Override @DB
-    public void destroyRemoteAccessVpn(long ipId, Account caller) throws ResourceUnavailableException {
+    public void destroyRemoteAccessVpnForIp(long ipId, Account caller) throws ResourceUnavailableException {
         RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByPublicIpAddress(ipId);
         if (vpn == null) {
-            s_logger.debug("vpn id=" + ipId + " does not exists ");
+            s_logger.debug("there are no Remote access vpns for public ip address id=" + ipId);
             return;
         }
 
