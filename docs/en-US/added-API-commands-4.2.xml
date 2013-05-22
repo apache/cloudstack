@@ -117,5 +117,21 @@
         pagesize; projectid (lists objects by project); regionid; tags (lists resources by tags:
         key/value pairs)</para>
     </listitem>
+    <listitem>
+      <para>createPortableIpAddressRange</para>
+      <para>Creates portable IP addresses from the portable public IP address pool.</para>
+      <para>The request parameters are region id, start ip, end ip, netmask, gateway, and
+        vlan.</para>
+    </listitem>
+    <listitem>
+      <para>deletePortableIpAddressRange</para>
+      <para>Deletes portable IP addresses from the portable public IP address pool.</para>
+      <para>The request parameters is portable ip address range id.</para>
+    </listitem>
+    <listitem>
+      <para>createPortableIpAddressRange</para>
+      <para>Lists portable IP addresses in the portable public IP address pool.</para>
+      <para>The request parameters are elastic ip id and region id.</para>
+    </listitem>
   </itemizedlist>
 </section>
