@@ -3106,16 +3106,16 @@
           async: true,
           success: function(json) {
             var networks = json.listnetworksresponse.network;
-            var loadBalancers, networkACLLists;
+            var loadBalancers, networkACLLists, publicIpAddresses, privateGateways, vpnGateways;
             var error = false;
 
             // Get load balancers
             $.ajax({
               url: createURL('listLoadBalancers'),
-              data: { details: 'min', vpcid: args.context.vpc[0].id },
+              data: { vpcid: args.context.vpc[0].id },
               success: function(json) {
                 loadBalancers = json.listloadbalancerssresponse.loadbalancer ?
-                  json.listloadbalancerssresponse.loadbalancer : []
+                  json.listloadbalancerssresponse.loadbalancer : [];
               },
               error: function(json) {
                 error = true;
@@ -3125,18 +3125,57 @@
             // Get network ACL lists
             $.ajax({
               url: createURL('listNetworkACLLists'),
-              data: { details: 'min', 'vpc_id': args.context.vpc[0].id },
+              data: { 'vpc_id': args.context.vpc[0].id },
               success: function(json) {
                 networkACLLists = json.listnetworkacllistsresponse.networkacllist ?
-                  json.listnetworkacllistsresponse.networkacllist : []
+                  json.listnetworkacllistsresponse.networkacllist : [];
               },
               error: function(json) {
                 error = true;
               }
-            });            
+            });
+
+            // Get public IPs
+            $.ajax({
+              url: createURL('listPublicIpAddresses'),
+              data: { 'vpcid': args.context.vpc[0].id },
+              success: function(json) {
+                publicIpAddresses = json.listpublicipaddressesresponse.publicipaddress ?
+                  json.listpublicipaddressesresponse.publicipaddress : [];
+              },
+              error: function(json) {
+                error = true;
+              }
+            });
+
+            // Get private gateways
+            $.ajax({
+              url: createURL('listPrivateGateways'),
+              data: { 'vpcid': args.context.vpc[0].id },
+              success: function(json) {
+                privateGateways = json.listprivategatewaysresponse.privategateway ?
+                  json.listprivategatewaysresponse.privategateway : [];
+              },
+              error: function(json) {
+                error = true;
+              }
+            });
+
+            // Get VPN gateways
+            $.ajax({
+              url: createURL('listVpnGateways'),
+              data: { 'vpcid': args.context.vpc[0].id },
+              success: function(json) {
+                vpnGateways = json.listvpngatewaysresponse.vpngateway ?
+                  json.listvpngatewaysresponse.vpngateway : [];
+              },
+              error: function(json) {
+                error = true;
+              }
+            });
 
             var dataTimer = setInterval(function() {
-              var complete = loadBalancers && networkACLLists;
+              var complete = loadBalancers && networkACLLists && publicIpAddresses && privateGateways && vpnGateways;
               
               if (complete) {
                 clearInterval(dataTimer);
@@ -3162,17 +3201,17 @@
                     {
                       id: 'privateGateways',
                       name: 'Private gateways',
-                      total: 0
+                      total: privateGateways.length
                     },
                     {
                       id: 'publicIPs',
                       name: 'Public IP addresses',
-                      total: 0
+                      total: publicIpAddresses.length
                     },
                     {
                       id: 'siteToSiteVPNs',
                       name: 'Site-to-site VPNs',
-                      total: 0
+                      total: vpnGateways.length
                     },
                     {
                       id: 'networkACLLists',
