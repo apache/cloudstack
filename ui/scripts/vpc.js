@@ -345,349 +345,338 @@
       },
       
       // Internal load balancers
-      tierLoadBalancers: {
-        listView: true,
-        sectionSelect: {
-          label: 'Select LB type'
-        },
-        sections: {
-          internalLoadBalancers: {
-            type: 'select',
-            title: 'Internal LB',
-            listView: {
-              id: 'internalLoadBalancers',
-              fields: {
-                name: { label: 'label.name' },
-                sourceipaddress: { label: 'Source IP Address' }                
+      internalLoadBalancers: {
+        title: 'Internal LB',
+        listView: {
+          id: 'internalLoadBalancers',
+          fields: {
+            name: { label: 'label.name' },
+            sourceipaddress: { label: 'Source IP Address' }                
+          },
+          dataProvider: function(args) {                
+            $.ajax({
+              url: createURL('listLoadBalancers'),
+              data: {
+                networkid: args.context.networks[0].id
               },
-              dataProvider: function(args) {                
-                $.ajax({
-                  url: createURL('listLoadBalancers'),
-                  data: {
-                    networkid: args.context.networks[0].id
-                  },
-                  success: function(json) {                    
-                    var items = json.listloadbalancerssresponse.loadbalancer;
-                    args.response.success({ data: items });
-                    
-                  }
-                });                
-              },
-              actions: {
-                add: {
-                  label: 'Add Internal LB',
-                  createForm: {
-                    title: 'Add Internal LB',                
-                    fields: {                                   
-                      name: { label: 'label.name', validation: { required: true } },
-                      description: { label: 'label.description', validation: { required: false } },
-                      sourceipaddress: { label: 'Source IP Address', validation: { required: false } },
-                      sourceport: { label: 'sourceport', validation: { required: true } },
-                      instanceport: { label: 'instanceport', validation: { required: true } },
-                      algorithm: { 
-                        label: 'label.algorithm',
-                        validation: { required: true },
-                        select: function(args) {
-                          args.response.success({
-                            data: [
-                              { id: 'source', description: 'source' },
-                              { id: 'roundrobin', description: 'roundrobin' },
-                              { id: 'leastconn', description: 'leastconn' }
-                            ]
-                          });
-                        }
-                      }                  
+              success: function(json) {                    
+                var items = json.listloadbalancerssresponse.loadbalancer;
+                args.response.success({ data: items });
+                
+              }
+            });                
+          },
+          actions: {
+            add: {
+              label: 'Add Internal LB',
+              createForm: {
+                title: 'Add Internal LB',                
+                fields: {                                   
+                  name: { label: 'label.name', validation: { required: true } },
+                  description: { label: 'label.description', validation: { required: false } },
+                  sourceipaddress: { label: 'Source IP Address', validation: { required: false } },
+                  sourceport: { label: 'sourceport', validation: { required: true } },
+                  instanceport: { label: 'instanceport', validation: { required: true } },
+                  algorithm: { 
+                    label: 'label.algorithm',
+                    validation: { required: true },
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'source', description: 'source' },
+                          { id: 'roundrobin', description: 'roundrobin' },
+                          { id: 'leastconn', description: 'leastconn' }
+                        ]
+                      });
                     }
-                  },
-                  messages: {
-                    notification: function(args) {
-                      return 'Add Internal LB';
-                    }
-                  },
-                  action: function(args) {               
-                    var data = {
-                      name: args.data.name,
-                      sourceport: args.data.sourceport,
-                      instanceport: args.data.instanceport,
-                      algorithm: args.data.algorithm,
-                      networkid: args.context.networks[0].id,
-                      sourceipaddressnetworkid: args.context.networks[0].id,
-                      scheme: 'Internal'
-                    };
-                    if(args.data.description != null && args.data.description.length > 0){
-                      $.extend(data, {
-                        description: args.data.description
-                      });                  
-                    }
-                    if(args.data.sourceipaddress != null && args.data.sourceipaddress.length > 0){
-                      $.extend(data, {
-                        sourceipaddress: args.data.sourceipaddress
-                      });                  
-                    }                
-                    $.ajax({
-                      url: createURL('createLoadBalancer'),
-                      data: data,
-                      success: function(json){                    
-                        var jid = json.createloadbalancerresponse.jobid;   
-                        args.response.success(
-                          {_custom:
-                           {jobId: jid,
-                            getUpdatedItem: function(json) {    
-                              return json.queryasyncjobresultresponse.jobresult.loadbalancer;
-                            }
-                           }
-                          }
-                        );    
-                      }
-                    });
-                    
-                    args.response.success();
-                  },
-                  notification: {
-                    poll: pollAsyncJobResult
-                  }
+                  }                  
                 }
               },
-              
-              detailView: {
-                name: 'Internal Lb details',
-                actions: {
-                  assignVm: { 
-                    label: 'Assign VMs to LB',
-                    messages: {
-                      notification: function(args) { return 'Assign VM to internal LB rule'; }
-                    },
-                    listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
-                      type: 'checkbox',
-                      filters: false,
-                      dataProvider: function(args) {
-                        $.ajax({
-                          url: createURL('listVirtualMachines'),
-                          data: {
-                            networkid: args.context.networks[0].id,
-                            listAll: true
-                          },
-                          success: function(json) {
-                            var instances = json.listvirtualmachinesresponse.virtualmachine;
-
-                            // Pre-select existing instances in LB rule
-                            $(instances).map(function(index, instance) {
-                              instance._isSelected = $.grep(
-                                args.context.internalLoadBalancers[0].loadbalancerinstance,
-                                
-                                function(lbInstance) {
-                                  return lbInstance.id == instance.id;
-                                }
-                              ).length ? true : false;
-                            });
-                            
-                            args.response.success({
-                              data: instances
-                            });
-                          }
-                        });
-                      }
-                    }),
-                    action: function(args) {                      
-                      var vms = args.context.instances;
-                      var array1 = [];
-                      for(var i = 0; i < vms.length; i++) {
-                        array1.push(vms[i].id);
-                      }
-                      var virtualmachineids = array1.join(',');
-                               
-                      $.ajax({
-                        url: createURL('assignToLoadBalancerRule'),
-                        data: {
-                          id: args.context.internalLoadBalancers[0].id,
-                          virtualmachineids: virtualmachineids
-                        },
-                        dataType: 'json',
-                        async: true,
-                        success: function(data) {                          
-                          var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
-                          args.response.success({
-                            _custom: { jobId: jid }
-                          });
-                        }
-                      });
-                    },
-                    notification: {
-                      poll: pollAsyncJobResult
-                    }
-                  }
-                },                
-                tabs: {
-                  details: {
-                    title: 'label.details',
-                    fields: [
-                      {
-                        name: { label: 'label.name' }
-                      },
-                      {
-                        id: { label: 'label.id' }
-                      }
-                    ],                    
-                    dataProvider: function(args) {      
-                      $.ajax({
-                        url: createURL('listLoadBalancers'),
-                        data: {
-                          id: args.context.internalLoadBalancers[0].id
-                        },
-                        success: function(json) {     
-                          var item = json.listloadbalancerssresponse.loadbalancer[0];
-                          args.response.success({ data: item });                          
-                        }
-                      });                        
-                    }
-                  },                                              
-                  rules: {
-                    title: 'label.rules',
-                    multiple: true,
-                    fields: [
-                      {
-                        sourceport: { label: 'Source Port' },
-                        instanceport: { label: 'Instance Port' }
-                      }
-                    ],
-                    dataProvider: function(args) {
-                      $.ajax({
-                        url: createURL('listLoadBalancers'),
-                        data: {
-                          id: args.context.internalLoadBalancers[0].id
-                        },
-                        success: function(json) {     
-                          var item = json.listloadbalancerssresponse.loadbalancer[0];
-                          args.response.success({ data: item.loadbalancerrule });                          
-                        }
-                      }); 
-                    }
-                  } ,              
-                  assignedVms: {
-                    title: 'Assigned VMs',
-                    multiple: true,
-                    fields: [
-                      {
-                        name: { label: 'label.name' },
-                        ipaddress: { label: 'label.ip.address' }
-                      }
-                    ],
-                    dataProvider: function(args) {
-                      $.ajax({
-                        url: createURL('listLoadBalancers'),
-                        data: {
-                          id: args.context.internalLoadBalancers[0].id
-                        },
-                        success: function(json) {     
-                          var item = json.listloadbalancerssresponse.loadbalancer[0];
-                          args.response.success({ data: item.loadbalancerinstance });                          
-                        }
-                      }); 
-                    }
-                  }               
+              messages: {
+                notification: function(args) {
+                  return 'Add Internal LB';
+                }
+              },
+              action: function(args) {               
+                var data = {
+                  name: args.data.name,
+                  sourceport: args.data.sourceport,
+                  instanceport: args.data.instanceport,
+                  algorithm: args.data.algorithm,
+                  networkid: args.context.networks[0].id,
+                  sourceipaddressnetworkid: args.context.networks[0].id,
+                  scheme: 'Internal'
+                };
+                if(args.data.description != null && args.data.description.length > 0){
+                  $.extend(data, {
+                    description: args.data.description
+                  });                  
+                }
+                if(args.data.sourceipaddress != null && args.data.sourceipaddress.length > 0){
+                  $.extend(data, {
+                    sourceipaddress: args.data.sourceipaddress
+                  });                  
                 }                
-              }              
+                $.ajax({
+                  url: createURL('createLoadBalancer'),
+                  data: data,
+                  success: function(json){                    
+                    var jid = json.createloadbalancerresponse.jobid;   
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {    
+                          return json.queryasyncjobresultresponse.jobresult.loadbalancer;
+                        }
+                       }
+                      }
+                    );    
+                  }
+                });
+                
+                args.response.success();
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
             }
           },
-
-          publicLoadBalancers: {
-            type: 'select',
-            title: 'Public LB',
-            listView: {
-              id: 'publicLoadBalancers',
-              fields: {
-                ipaddress: { label: 'label.ip.address' },
-                type: { label: 'label.type' }
-              },
-              dataProvider: function(args) {
-                args.response.success({
-                  data: [
-                    { ipaddress: '10.3.2.1', type: 'Internal' },
-                    { ipaddress: '10.3.2.3', type: 'Internal' },
-                    { ipaddress: '10.232.1.4', type: 'Public' }
-                  ]
-                });
-              },
-              actions: {
-                add: {
-                  label: 'Add Public LB',
-                  createForm: {
-                    title: 'Add Public LB',                
-                    fields: {                                   
-                      name: { label: 'label.name', validation: { required: true } },
-                      description: { label: 'label.description', validation: { required: false } },
-                      sourceipaddress: { label: 'Source IP Address', validation: { required: false } },
-                      sourceport: { label: 'sourceport', validation: { required: true } },
-                      instanceport: { label: 'instanceport', validation: { required: true } },
-                      algorithm: { 
-                        label: 'label.algorithm',
-                        validation: { required: true },
-                        select: function(args) {
-                          args.response.success({
-                            data: [
-                              { id: 'source', description: 'source' },
-                              { id: 'roundrobin', description: 'roundrobin' },
-                              { id: 'leastconn', description: 'leastconn' }
-                            ]
-                          });
-                        }
-                      }                  
-                    }
-                  },
-                  messages: {
-                    notification: function(args) {
-                      return 'Add Public LB';
-                    }
-                  },
-                  action: function(args) {               
-                    var data = {
-                      name: args.data.name,
-                      sourceport: args.data.sourceport,
-                      instanceport: args.data.instanceport,
-                      algorithm: args.data.algorithm,
-                      networkid: args.context.networks[0].id,
-                      sourceipaddressnetworkid: args.context.networks[0].id,
-                      scheme: 'Public'
-                    };
-                    if(args.data.description != null && args.data.description.length > 0){
-                      $.extend(data, {
-                        description: args.data.description
-                      });                  
-                    }
-                    if(args.data.sourceipaddress != null && args.data.sourceipaddress.length > 0){
-                      $.extend(data, {
-                        sourceipaddress: args.data.sourceipaddress
-                      });                  
-                    }                
+          
+          detailView: {
+            name: 'Internal Lb details',
+            actions: {
+              assignVm: { 
+                label: 'Assign VMs to LB',
+                messages: {
+                  notification: function(args) { return 'Assign VM to internal LB rule'; }
+                },
+                listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
+                  type: 'checkbox',
+                  filters: false,
+                  dataProvider: function(args) {
                     $.ajax({
-                      url: createURL('createLoadBalancer'),
-                      data: data,
-                      success: function(json){                    
-                        var jid = json.createloadbalancerresponse.jobid;   
-                        args.response.success(
-                          {_custom:
-                           {jobId: jid,
-                            getUpdatedItem: function(json) {                          
-                              return json.queryasyncjobresultresponse.jobresult.loadbalancerrule;
+                      url: createURL('listVirtualMachines'),
+                      data: {
+                        networkid: args.context.networks[0].id,
+                        listAll: true
+                      },
+                      success: function(json) {
+                        var instances = json.listvirtualmachinesresponse.virtualmachine;
+
+                        // Pre-select existing instances in LB rule
+                        $(instances).map(function(index, instance) {
+                          instance._isSelected = $.grep(
+                            args.context.internalLoadBalancers[0].loadbalancerinstance,
+                            
+                            function(lbInstance) {
+                              return lbInstance.id == instance.id;
                             }
-                           }
-                          }
-                        );    
+                          ).length ? true : false;
+                        });
+                        
+                        args.response.success({
+                          data: instances
+                        });
                       }
                     });
-                    
-                    args.response.success();
-                  },
-                  notification: {
-                    poll: function(args) {
-                      args.complete({
-                        data: {
-                          ipaddress: '10.0.3.2',
-                          type: 'Internal'
-                        }
+                  }
+                }),
+                action: function(args) {                      
+                  var vms = args.context.instances;
+                  var array1 = [];
+                  for(var i = 0; i < vms.length; i++) {
+                    array1.push(vms[i].id);
+                  }
+                  var virtualmachineids = array1.join(',');
+                  
+                  $.ajax({
+                    url: createURL('assignToLoadBalancerRule'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id,
+                      virtualmachineids: virtualmachineids
+                    },
+                    dataType: 'json',
+                    async: true,
+                    success: function(data) {                          
+                      var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
+                      args.response.success({
+                        _custom: { jobId: jid }
                       });
                     }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            },                
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {
+                    id: { label: 'label.id' }
                   }
+                ],                    
+                dataProvider: function(args) {      
+                  $.ajax({
+                    url: createURL('listLoadBalancers'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id
+                    },
+                    success: function(json) {     
+                      var item = json.listloadbalancerssresponse.loadbalancer[0];
+                      args.response.success({ data: item });                          
+                    }
+                  });                        
+                }
+              },                                              
+              rules: {
+                title: 'label.rules',
+                multiple: true,
+                fields: [
+                  {
+                    sourceport: { label: 'Source Port' },
+                    instanceport: { label: 'Instance Port' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL('listLoadBalancers'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id
+                    },
+                    success: function(json) {     
+                      var item = json.listloadbalancerssresponse.loadbalancer[0];
+                      args.response.success({ data: item.loadbalancerrule });                          
+                    }
+                  }); 
+                }
+              } ,              
+              assignedVms: {
+                title: 'Assigned VMs',
+                multiple: true,
+                fields: [
+                  {
+                    name: { label: 'label.name' },
+                    ipaddress: { label: 'label.ip.address' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL('listLoadBalancers'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id
+                    },
+                    success: function(json) {     
+                      var item = json.listloadbalancerssresponse.loadbalancer[0];
+                      args.response.success({ data: item.loadbalancerinstance });                          
+                    }
+                  }); 
+                }
+              }               
+            }                
+          }              
+        }
+      },
+      publicLoadBalancers: {
+        title: 'Public LB',
+        listView: {
+          id: 'publicLoadBalancers',
+          fields: {
+            ipaddress: { label: 'label.ip.address' },
+            type: { label: 'label.type' }
+          },
+          dataProvider: function(args) {
+            args.response.success({
+              data: [
+                { ipaddress: '10.3.2.1', type: 'Internal' },
+                { ipaddress: '10.3.2.3', type: 'Internal' },
+                { ipaddress: '10.232.1.4', type: 'Public' }
+              ]
+            });
+          },
+          actions: {
+            add: {
+              label: 'Add Public LB',
+              createForm: {
+                title: 'Add Public LB',                
+                fields: {                                   
+                  name: { label: 'label.name', validation: { required: true } },
+                  description: { label: 'label.description', validation: { required: false } },
+                  sourceipaddress: { label: 'Source IP Address', validation: { required: false } },
+                  sourceport: { label: 'sourceport', validation: { required: true } },
+                  instanceport: { label: 'instanceport', validation: { required: true } },
+                  algorithm: { 
+                    label: 'label.algorithm',
+                    validation: { required: true },
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'source', description: 'source' },
+                          { id: 'roundrobin', description: 'roundrobin' },
+                          { id: 'leastconn', description: 'leastconn' }
+                        ]
+                      });
+                    }
+                  }                  
+                }
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Add Public LB';
+                }
+              },
+              action: function(args) {               
+                var data = {
+                  name: args.data.name,
+                  sourceport: args.data.sourceport,
+                  instanceport: args.data.instanceport,
+                  algorithm: args.data.algorithm,
+                  networkid: args.context.networks[0].id,
+                  sourceipaddressnetworkid: args.context.networks[0].id,
+                  scheme: 'Public'
+                };
+                if(args.data.description != null && args.data.description.length > 0){
+                  $.extend(data, {
+                    description: args.data.description
+                  });                  
+                }
+                if(args.data.sourceipaddress != null && args.data.sourceipaddress.length > 0){
+                  $.extend(data, {
+                    sourceipaddress: args.data.sourceipaddress
+                  });                  
+                }                
+                $.ajax({
+                  url: createURL('createLoadBalancer'),
+                  data: data,
+                  success: function(json){                    
+                    var jid = json.createloadbalancerresponse.jobid;   
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {                          
+                          return json.queryasyncjobresultresponse.jobresult.loadbalancerrule;
+                        }
+                       }
+                      }
+                    );    
+                  }
+                });
+                
+                args.response.success();
+              },
+              notification: {
+                poll: function(args) {
+                  args.complete({
+                    data: {
+                      ipaddress: '10.0.3.2',
+                      type: 'Internal'
+                    }
+                  });
                 }
               }
             }
@@ -3323,12 +3312,12 @@
                 return $.extend(tier, {
                   _dashboardItems: [
                     {
-                      id: 'tierLoadBalancers',
+                      id: 'internalLoadBalancers',
                       name: 'Internal LB',
                       total: internalLoadBalancers.count
                     },
                     {
-                      id: 'tierLoadBalancers',
+                      id: 'publicLoadBalancers',
                       name: 'Public LB',
                       total: 0
                     },
