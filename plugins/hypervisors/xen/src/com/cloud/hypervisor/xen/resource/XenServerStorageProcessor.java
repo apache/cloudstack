@@ -990,7 +990,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 String destVolumeUUID = destVdi.getUuid(conn);
 
                 VolumeObjectTO newVol = new VolumeObjectTO();
-                newVol.setPath(destVolumeUUID);
+                newVol.setPath(destVolume.getPath() + File.separator + destVolumeUUID + ".vhd");
                 newVol.setSize(srcVolume.getSize());
                 return new CopyCmdAnswer(newVol);
             } catch (Exception e) {
