@@ -130,6 +130,9 @@ public class VolumeVO implements Volume {
 
     @Column(name = "uuid")
     String uuid;
+    
+    @Column(name="format")
+    private Storage.ImageFormat format;
 
     @Column(name="display_volume", updatable=true, nullable=false)
     protected boolean displayVolume;
@@ -463,4 +466,12 @@ public class VolumeVO implements Volume {
     public void setDisplayVolume(boolean displayVolume) {
         this.displayVolume = displayVolume;
     }
+
+	public Storage.ImageFormat getFormat() {
+		return format;
+	}
+
+	public void setFormat(Storage.ImageFormat format) {
+		this.format = format;
+	}
 }

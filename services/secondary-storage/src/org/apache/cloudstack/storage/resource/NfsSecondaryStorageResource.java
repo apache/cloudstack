@@ -290,7 +290,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if ( srcData.getObjectType() == DataObjectType.TEMPLATE){
                 extension = ((TemplateObjectTO)srcData).getFormat().getFileExtension();
             } else{
-                extension = ((VolumeObjectTO)srcData).getDiskType().toString().toLowerCase();
+                extension = ((VolumeObjectTO)srcData).getFormat().getFileExtension();
             }
 
             String templateName = UUID.randomUUID().toString();

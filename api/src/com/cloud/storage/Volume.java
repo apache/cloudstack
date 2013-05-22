@@ -173,4 +173,5 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 	 * @param reserv
 	 */
 	void setReservationId(String reserv);
+	Storage.ImageFormat getFormat();
 }

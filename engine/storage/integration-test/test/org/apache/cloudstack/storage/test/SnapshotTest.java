@@ -32,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -42,7 +43,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -56,8 +56,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.volume.db.VolumeDao2;
-import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.testng.AssertJUnit;
@@ -66,18 +64,18 @@ import org.testng.annotations.Test;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceManager;
@@ -87,13 +85,16 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 
 @ContextConfiguration(locations={"classpath:/storageContext.xml"})
@@ -115,8 +116,6 @@ public class SnapshotTest extends CloudStackTestNGBase {
     VolumeService volumeService;
     @Inject
     VMTemplateDao imageDataDao;
-    @Inject
-    VolumeDao2 volumeDao;
     @Inject
     HostPodDao podDao;
     @Inject
@@ -152,6 +151,8 @@ public class SnapshotTest extends CloudStackTestNGBase {
     SnapshotDao snapshotDao;
     @Inject
     EndPointSelector epSelector;
+    @Inject
+    VolumeDao volumeDao;
 
     long primaryStoreId;
     VMTemplateVO image;
@@ -332,7 +333,8 @@ public class SnapshotTest extends CloudStackTestNGBase {
     }
 
     private VolumeVO createVolume(Long templateId, long dataStoreId) {
-        VolumeVO volume = new VolumeVO(1000, new RootDisk().toString(), UUID.randomUUID().toString(), templateId);
+    	
+        VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, UUID.randomUUID().toString(), this.dcId, 1L, 1L, 1L, 1000);
         volume.setDataCenterId(this.dcId);
         volume.setPoolId(dataStoreId);
         volume = volumeDao.persist(volume);

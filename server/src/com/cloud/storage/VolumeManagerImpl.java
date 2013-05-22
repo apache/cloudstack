@@ -504,6 +504,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         newVol.setDeviceId(oldVol.getDeviceId());
         newVol.setInstanceId(oldVol.getInstanceId());
         newVol.setRecreatable(oldVol.isRecreatable());
+        newVol.setFormat(oldVol.getFormat());
         return _volsDao.persist(newVol);
     }
 
@@ -690,6 +691,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 s_logger.debug("create volume failed: " + result.getResult());
                 throw new CloudRuntimeException("create volume failed:" + result.getResult());
             }
+            
+            
             UsageEventVO usageEvent = new UsageEventVO(
                     EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
                     volume.getDataCenterId(), volume.getId(), volume.getName(),
@@ -732,7 +735,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         volume.setUpdated(new Date());
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller
                 .getDomainId());
-
+        volume.setFormat(ImageFormat.valueOf(format));
         volume = _volsDao.persist(volume);
         try {
             stateTransitTo(volume, Event.UploadRequested);
@@ -979,6 +982,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         volume.setDisplayVolume(displayVolumeEnabled);
         if (parentVolume != null) {
             volume.setTemplateId(parentVolume.getTemplateId());
+            volume.setFormat(parentVolume.getFormat());
         }  else {
             volume.setTemplateId(null);
         }
@@ -1358,7 +1362,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         } else {
             vol.setDeviceId(1l);
         }
-
+        
+        vol.setFormat(this.getSupportedImageFormatForCluster(vm.getHypervisorType()));
         vol = _volsDao.persist(vol);
 
         // Save usage event and update resource count for user vm volumes
@@ -1388,6 +1393,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(),
                 owner.getDomainId(), owner.getId(), offering.getId(), size);
+        vol.setFormat(this.getSupportedImageFormatForCluster(template.getHypervisorType()));
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -1427,17 +1433,15 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         return toDiskProfile(vol, offering);
     }
 
-    private String getSupportedImageFormatForCluster(Long clusterId) {
-        ClusterVO cluster = ApiDBUtils.findClusterById(clusterId);
-
-        if (cluster.getHypervisorType() == HypervisorType.XenServer) {
-            return "vhd";
-        } else if (cluster.getHypervisorType() == HypervisorType.KVM) {
-            return "qcow2";
-        } else if (cluster.getHypervisorType() == HypervisorType.VMware) {
-            return "ova";
-        } else if (cluster.getHypervisorType() == HypervisorType.Ovm) {
-            return "raw";
+    private  ImageFormat getSupportedImageFormatForCluster(HypervisorType hyperType) {
+        if (hyperType == HypervisorType.XenServer) {
+            return ImageFormat.VHD;
+        } else if (hyperType == HypervisorType.KVM) {
+            return ImageFormat.QCOW2;
+        } else if (hyperType == HypervisorType.VMware) {
+            return ImageFormat.OVA;
+        } else if (hyperType == HypervisorType.Ovm) {
+            return ImageFormat.RAW;
         } else {
             return null;
         }
@@ -1446,16 +1450,14 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     private VolumeInfo copyVolume(StoragePoolVO rootDiskPool
             , VolumeInfo volume, VMInstanceVO vm, VMTemplateVO rootDiskTmplt, DataCenterVO dcVO,
             HostPodVO pod, DiskOfferingVO diskVO, ServiceOfferingVO svo, HypervisorType rootDiskHyperType) throws NoTransitionException {
-        VolumeDataStoreVO volStoreVO = _volumeStoreDao.findByStoreVolume(volume.getDataStore().getId(), volume.getId());
-        if (!volStoreVO
+     
+        if (!volume
                 .getFormat()
-                .getFileExtension()
                 .equals(
-                        getSupportedImageFormatForCluster(rootDiskPool
-                                .getClusterId()))) {
+                        getSupportedImageFormatForCluster(rootDiskHyperType))) {
             throw new InvalidParameterValueException(
                     "Failed to attach volume to VM since volumes format "
-                            + volStoreVO.getFormat()
+                            + volume.getFormat()
                             .getFileExtension()
                             + " is not compatible with the vm hypervisor type");
         }
@@ -1502,7 +1504,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                         ResourceType.primary_storage, new Long(volume.getSize()));
             }
         }
-        return vol;
+        
+        VolumeVO volVO = this._volsDao.findById(vol.getId());
+        volVO.setFormat(this.getSupportedImageFormatForCluster(rootDiskHyperType));
+        this._volsDao.update(volVO.getId(), volVO);
+        return this.volFactory.getVolume(volVO.getId());
     }
 
     private boolean needMoveVolume(VolumeVO rootVolumeOfVm, VolumeInfo volume) {

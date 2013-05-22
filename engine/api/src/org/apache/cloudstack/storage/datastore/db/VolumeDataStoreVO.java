@@ -97,9 +97,6 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 	@Column (name="url")
 	private String downloadUrl;
 
-	@Column(name="format")
-    private Storage.ImageFormat format;
-
     @Column(name="destroyed")
     boolean destroyed = false;
 
@@ -222,7 +219,6 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 		this.installPath = installPath;
 		this.setDownloadUrl(downloadUrl);
 		this.checksum = checksum;
-		this.format = format;
 	}
 
 	public VolumeDataStoreVO() {
@@ -306,14 +302,6 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 
 	public String getDownloadUrl() {
 		return downloadUrl;
-	}
-
-    public Storage.ImageFormat getFormat() {
-		return format;
-	}
-
-	public void setFormat(Storage.ImageFormat format) {
-		this.format = format;
 	}
 
 	public long getVolumeSize() {

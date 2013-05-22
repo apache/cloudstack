@@ -38,6 +38,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -429,4 +430,9 @@ public class VolumeObject implements VolumeInfo {
         this.processEvent(event);
 
     }
+
+	@Override
+	public ImageFormat getFormat() {
+		return this.volumeVO.getFormat();
+	}
 }

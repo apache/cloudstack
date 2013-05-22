@@ -388,6 +388,8 @@ ALTER TABLE `cloud`.`user_vm_details` ADD COLUMN `display_detail` tinyint(1) NOT
 
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `display_volume` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should volume be displayed to the end user';
 
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `format` varchar(255) COMMENT 'volume format';
+
 ALTER TABLE `cloud`.`networks` ADD COLUMN `display_network` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should network be displayed to the end user';
 
 ALTER TABLE `cloud`.`nics` ADD COLUMN `display_nic` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should nic be displayed to the end user';

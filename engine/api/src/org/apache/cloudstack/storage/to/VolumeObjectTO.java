@@ -17,18 +17,16 @@
 package org.apache.cloudstack.storage.to;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
-import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 
 public class VolumeObjectTO implements DataTO {
     private String uuid;
     private Volume.Type volumeType;
-    private DiskFormat diskType;
     private DataStoreTO dataStore;
     private String name;
     private long size;
@@ -37,6 +35,7 @@ public class VolumeObjectTO implements DataTO {
     private String vmName;
     private long accountId;
     private String chainInfo;
+    private Storage.ImageFormat format;
     private long id;
 
     public VolumeObjectTO() {
@@ -59,6 +58,7 @@ public class VolumeObjectTO implements DataTO {
         this.volumeType = volume.getVolumeType();
         this.name = volume.getName();
         this.setId(volume.getId());
+        this.format = volume.getFormat();
     }
 
     public String getUuid() {
@@ -72,11 +72,7 @@ public class VolumeObjectTO implements DataTO {
     public Volume.Type getVolumeType() {
         return this.volumeType;
     }
-
-    public DiskFormat getDiskType() {
-        return this.diskType;
-    }
-
+   
     public DataStoreTO getDataStore() {
         return this.dataStore;
     }
@@ -151,6 +147,14 @@ public class VolumeObjectTO implements DataTO {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public Storage.ImageFormat getFormat() {
+		return format;
+	}
+
+	public void setFormat(Storage.ImageFormat format) {
+		this.format = format;
 	}
 
 

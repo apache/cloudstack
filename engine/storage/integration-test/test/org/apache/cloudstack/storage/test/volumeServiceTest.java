@@ -21,7 +21,6 @@ package org.apache.cloudstack.storage.test;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +38,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -49,13 +47,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
-import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.volume.db.VolumeDao2;
-import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.testng.Assert;
@@ -79,11 +74,13 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 
 @ContextConfiguration(locations={"classpath:/storageContext.xml"})
@@ -97,7 +94,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	@Inject
 	VMTemplateDao imageDataDao;
 	@Inject
-	VolumeDao2 volumeDao;
+	VolumeDao volumeDao;
 	@Inject
 	HostDao hostDao;
 	@Inject
@@ -359,7 +356,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	}
 
 	private VolumeVO createVolume(Long templateId, long dataStoreId) {
-		VolumeVO volume = new VolumeVO(1000, new RootDisk().toString(), UUID.randomUUID().toString(), templateId);
+		VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, UUID.randomUUID().toString(), this.dcId, 1L, 1L, 1L, 1000);
 		volume.setPoolId(dataStoreId);
 		volume = volumeDao.persist(volume);
 		return volume;
