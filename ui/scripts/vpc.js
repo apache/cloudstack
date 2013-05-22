@@ -3106,7 +3106,7 @@
           async: true,
           success: function(json) {
             var networks = json.listnetworksresponse.network;
-            var loadBalancers, networkACLLists, publicIpAddresses, privateGateways, vpnGateways;
+            var loadBalancers, networkACLLists, publicIpAddresses, privateGateways, vpnGateways, portForwardingRules;
             var error = false;
 
             // Get load balancers
@@ -3142,6 +3142,19 @@
               success: function(json) {
                 publicIpAddresses = json.listpublicipaddressesresponse.publicipaddress ?
                   json.listpublicipaddressesresponse.publicipaddress : [];
+              },
+              error: function(json) {
+                error = true;
+              }
+            });
+
+            // Get port forwarding rules
+            $.ajax({
+              url: createURL('listPortForwardingRules'),
+              data: { 'vpcid': args.context.vpc[0].id },
+              success: function(json) {
+                portForwardingRules = json.listportforwardingrulesresponse.portforwardingrule ?
+                  json.listportforwardingrulesresponse.portforwardingrule : [];
               },
               error: function(json) {
                 error = true;
@@ -3234,7 +3247,14 @@
                         {
                           id: 'tierPortForwarders',
                           name: 'Port forwarders',
-                          total: 0
+                          total: $.grep(publicIpAddresses, function(ip) {
+                            return $.grep(
+                              portForwardingRules,
+                              function(pf) {
+                                return pf.ipaddressid == ip.id;
+                              }
+                            ).length ? true : false;
+                          }).length
                         },
                         {
                           id: 'tierStaticNATs',
