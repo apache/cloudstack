@@ -204,7 +204,6 @@ CREATE TABLE  `cloud`.`volume_store_ref` (
   `install_path` varchar(255),
   `url` varchar(255),
   `state` varchar(255) NOT NULL,  
-  `format` varchar(32) NOT NULL COMMENT 'format for the volume', 
   `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
   `update_count` bigint unsigned,
   `updated` datetime,   
