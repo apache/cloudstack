@@ -144,6 +144,27 @@
 
                    },
 
+                  deploymentPlanner:{
+                    label:'Deployment Planner',
+                    select:function(args){
+                      $.ajax({
+                           url:createURL('listDeploymentPlanners'),
+                           dataType:'json',
+                           success:function(json){
+                              var items=[];
+                               var plannerObjs = json.listdeploymentplannersresponse.deploymentPlanner;
+                          $(plannerObjs).each(function(){
+                            items.push({id: this.name, description: this.name});
+                          });
+                          args.response.success({data: items});
+
+
+                            }
+                      });
+                     }
+                  },
+
+
                   domainId: {
                     label: 'label.domain',
                     docID: 'helpComputeOfferingDomain',
@@ -176,7 +197,9 @@
 									storageType: args.data.storageType,
 									cpuNumber: args.data.cpuNumber,
 									cpuSpeed: args.data.cpuSpeed,
-									memory: args.data.memory
+									memory: args.data.memory,
+                                                                        deploymentplanner: args.data.deploymentPlanner
+
 								};															
                
                 if(args.data.networkRate != null && args.data.networkRate.length > 0) {
@@ -362,6 +385,7 @@
                       converter: cloudStack.converters.toBooleanText
                     },
                     isvolatile:{ label:'Volatile' , converter: cloudStack.converters.toBooleanText },
+                    deploymentplanner:{label:'Deployment Planner'},
                     tags: { label: 'label.storage.tags' },
                     hosttags: { label: 'label.host.tags' },
                     domain: { label: 'label.domain' },
