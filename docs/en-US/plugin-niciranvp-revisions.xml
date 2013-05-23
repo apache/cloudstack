@@ -40,6 +40,20 @@
                     </simplelist>
                 </revdescription>
             </revision>
+            <revision>
+                <revnumber>1-0</revnumber>
+                <date>Wed May 22 2013</date>
+                <author>
+                    <firstname>Hugo</firstname>
+                    <surname>Trippaers</surname>
+                    <email>hugo@apache.org</email>
+                </author>
+                <revdescription>
+                    <simplelist>
+                        <member>Documentation updated for &PRODUCT; 4.1.0</member>
+                    </simplelist>
+                </revdescription>
+            </revision>
         </revhistory>
     </simpara>
 </appendix>
