@@ -19,6 +19,7 @@ from cloudException import CloudRuntimeException, CloudInternalException
 import logging
 import os
 import re
+import subprocess
 
 class networkConfig:
     class devInfo:
@@ -85,15 +86,22 @@ class networkConfig:
 
     @staticmethod
     def isNetworkDev(devName):
-        return os.path.exists("/sys/class/net/%s"%devName)
+        return os.path.exists("/sys/class/net/%s" % devName)
 
     @staticmethod
     def isBridgePort(devName):
-        return os.path.exists("/sys/class/net/%s/brport"%devName)
+        return os.path.exists("/sys/class/net/%s/brport" % devName)
     
     @staticmethod
     def isBridge(devName):
-        return os.path.exists("/sys/class/net/%s/bridge"%devName)
+        return os.path.exists("/sys/class/net/%s/bridge" % devName)
+
+    @staticmethod
+    def isOvsBridge(devName):
+        try:
+            return 0==subprocess.check_call(("ovs-vsctl", "br-exists", devName))
+        except subprocess.CalledProcessError:
+            return False
 
     @staticmethod
     def getBridge(devName):
