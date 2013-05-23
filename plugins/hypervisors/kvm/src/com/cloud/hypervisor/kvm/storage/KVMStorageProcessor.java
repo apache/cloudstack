@@ -680,7 +680,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     	DiskTO disk = cmd.getDisk();
         VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getDataStore();
-        String vmName = vol.getVmName();
+        String vmName = cmd.getVmName();
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
             KVMStoragePool primary = storagePoolMgr.getStoragePool(
@@ -714,7 +714,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     	DiskTO disk = cmd.getDisk();
         VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getDataStore();
-        String vmName = vol.getVmName();
+        String vmName = cmd.getVmName();
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
             KVMStoragePool primary = storagePoolMgr.getStoragePool(
