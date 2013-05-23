@@ -50,7 +50,7 @@
         nicId: nic.id
       },
       success: function(json) {
-        var nic = json.listnics.nic[0];
+        var nic = json.listnicsresponse.nic[0];
         var ips = nic.secondaryip ? nic.secondaryip : [];
         var ipSelection = [];
 

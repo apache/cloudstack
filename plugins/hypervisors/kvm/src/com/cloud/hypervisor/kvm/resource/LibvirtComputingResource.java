@@ -2619,8 +2619,7 @@ ServerResource {
         Domain vms = null;
         while (retry-- > 0) {
             try {
-                vms = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                        .getBytes()));
+                vms = conn.domainLookupByName(vmName);
                 State s = convertToState(vms.getInfo().state);
                 return s;
             } catch (final LibvirtException e) {
@@ -2712,8 +2711,7 @@ ServerResource {
         try {
             conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             ifaces = getInterfaces(conn, vmName);
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp()
                     + "/system");
             /*
@@ -2728,6 +2726,9 @@ ServerResource {
         } finally {
             try {
                 if (dm != null) {
+                    if (dm.isPersistent() == 1) {
+                        dm.undefine();
+                    }
                     dm.free();
                 }
                 if (dconn != null) {
@@ -3159,8 +3160,7 @@ ServerResource {
     protected LibvirtVMDef createVMFromSpec(VirtualMachineTO vmTO) {
         LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
-        vm.setDomUUID(UUID.nameUUIDFromBytes(vmTO.getName().getBytes())
-                .toString());
+        vm.setDomUUID(vmTO.getUuid());
         vm.setDomDescription(vmTO.getOs());
 
         GuestDef guest = new GuestDef();
@@ -3584,8 +3584,7 @@ ServerResource {
         KVMStoragePool attachingPool = attachingDisk.getPool();
         try {
             if (!attach) {
-                dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                        .getBytes()));
+                dm = conn.domainLookupByName(vmName);
                 LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
                 String xml = dm.getXMLDesc(0);
                 parser.parseDomainXML(xml);
@@ -3634,9 +3633,7 @@ ServerResource {
             InternalErrorException {
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes((vmName
-                    .getBytes())));
-
+            dm = conn.domainLookupByName(vmName);
             if (attach) {
                 s_logger.debug("Attaching device: " + xml);
                 dm.attachDevice(xml);
@@ -3867,8 +3864,7 @@ ServerResource {
         for (; i < 5; i++) {
             try {
                 Connect conn = LibvirtConnection.getConnectionByVmName(vm);
-                dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vm
-                        .getBytes()));
+                dm = conn.domainLookupByName(vm);
                 DomainInfo.DomainState vps = dm.getInfo().state;
                 if (vps != null
                         && vps != DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF
@@ -4005,8 +4001,7 @@ ServerResource {
         for (int i = 0; i < vms.length; i++) {
             try {
 
-                dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vms[i]
-                        .getBytes()));
+                dm = conn.domainLookupByName(vms[i]);
 
                 DomainInfo.DomainState ps = dm.getInfo().state;
                 final State state = convertToState(ps);
@@ -4111,8 +4106,7 @@ ServerResource {
         Domain dm = null;
         String msg = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             String vmDef = dm.getXMLDesc(0);
             s_logger.debug(vmDef);
             msg = stopVM(conn, vmName);
@@ -4154,8 +4148,7 @@ ServerResource {
             /* Retry 3 times, to make sure we can get the vm's status */
             for (int i = 0; i < 3; i++) {
                 try {
-                    dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                            .getBytes()));
+                    dm = conn.domainLookupByName(vmName);
                     state = dm.getInfo().state;
                     break;
                 } catch (LibvirtException e) {
@@ -4191,8 +4184,7 @@ ServerResource {
     protected String stopVM(Connect conn, String vmName, boolean force) {
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             int persist = dm.isPersistent();
             if (force) {
                 if (dm.isActive() == 1) {
@@ -4279,8 +4271,7 @@ ServerResource {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             String xmlDesc = dm.getXMLDesc(0);
             parser.parseDomainXML(xmlDesc);
             return parser.getVncPort();
@@ -4325,8 +4316,7 @@ ServerResource {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             String xmlDesc = dm.getXMLDesc(0);
             parser.parseDomainXML(xmlDesc);
             return parser.getDescription();
@@ -4424,15 +4414,14 @@ ServerResource {
     private Domain getDomain(Connect conn, String vmName)
             throws LibvirtException {
         return conn
-                .domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
+                .domainLookupByName(vmName);
     }
 
     protected List<InterfaceDef> getInterfaces(Connect conn, String vmName) {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             parser.parseDomainXML(dm.getXMLDesc(0));
             return parser.getInterfaces();
 
@@ -4454,8 +4443,7 @@ ServerResource {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             parser.parseDomainXML(dm.getXMLDesc(0));
             return parser.getDisks();
 

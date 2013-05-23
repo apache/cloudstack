@@ -20,18 +20,9 @@
  specific language governing permissions and limitations
  under the License.
 -->
-<section id="Prerequisites">
-    <title>Prerequisites</title>
-    <para>Before enabling the Nicira NVP plugin the NVP Controller needs to be configured. Please review the NVP User Guide on how to do that.</para>
-    <para>Make sure you have the following information ready:</para>
-    <itemizedlist>
-        <listitem><para>The IP address of the NVP Controller</para></listitem>
-        <listitem><para>The username to access the API</para></listitem>
-        <listitem><para>The password to access the API</para></listitem>
-        <listitem><para>The UUID of the Transport Zone that contains the hypervisors in this Zone</para></listitem>
-        <listitem>
-            <para>The UUID of the Gateway Service used to provide router and NAT services.</para>
-        </listitem>
-    </itemizedlist>
-    <note><para>The gateway service uuid is optional and is used for Layer 3 services only (SourceNat, StaticNat and PortForwarding)</para></note>
+<section id="vpc-features">
+    <title>Supported VPC features</title>
+    <para>The Nicira NVP plugin supports &PRODUCT; VPC to a certain extent. Starting with &PRODUCT; version 4.1 VPCs can be deployed using NVP isolated networks.</para>
+    <para>It is not possible to use a Nicira NVP Logical Router for as a VPC Router</para>
+    <para>It is not possible to connect a private gateway using a Nicira NVP Logical Switch</para>
 </section>
