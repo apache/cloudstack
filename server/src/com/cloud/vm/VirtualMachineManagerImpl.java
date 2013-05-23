@@ -358,7 +358,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Allocaing disks for " + vm);
+            s_logger.debug("Allocating disks for " + vm);
         }
 
         if (template.getFormat() == ImageFormat.ISO) {
