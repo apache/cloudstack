@@ -72,7 +72,7 @@ class TestCaseExecuteEngine(object):
                 self.injectTestCase(test)
             else:
                 #logger bears the name of the test class
-                testcaselogger = logging.getLogger("testclient.testcase.%s"%test.__class__.__name__)
+                testcaselogger = logging.getLogger("%s" % (test))
                 fh = logging.FileHandler(self.logfile) 
                 fh.setFormatter(self.logformat)
                 testcaselogger.addHandler(fh)
