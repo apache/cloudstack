@@ -48,6 +48,7 @@
     </bookinfo>
     <xi:include href="plugin-niciranvp-about.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="plugin-niciranvp-usage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="plugin-niciranvp-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
     <xi:include href="plugin-niciranvp-troubleshooting.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="plugin-niciranvp-revisions.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </book>

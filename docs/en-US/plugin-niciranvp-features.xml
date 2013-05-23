@@ -22,12 +22,63 @@
 -->
 <section id="Features-of-the-Nicira-NVP-Plugin">
     <title>Features of the Nicira NVP Plugin</title>
-    <para>In &PRODUCT; release 4.0.0-incubating this plugin supports the Connectivity service. This service is responsible for creating Layer 2 networks supporting the networks created by Guests. In other words when an tenant creates a new network, instead of the traditional VLAN a logical network will be created by sending the appropriate calls to the Nicira NVP Controller.</para>
-    <para>The plugin has been tested with Nicira NVP versions 2.1.0, 2.2.0 and 2.2.1</para>
-    <note><para>In &PRODUCT; 4.0.0-incubating only the XenServer hypervisor is supported for use in
-            combination with Nicira NVP.</para>
-        <para>In &PRODUCT; 4.1.0-incubating both KVM and XenServer hypervisors are
-            supported.</para></note>
-    <note><para>In &PRODUCT; 4.0.0-incubating the UI components for this plugin are not complete,
-            configuration is done by sending commands to the API.</para></note>
+    <para>The following table lists the CloudStack network services provided by the Nicira NVP Plugin.</para>
+    <table>
+        <title>Supported Services</title>
+        <tgroup cols="3">
+        <thead>
+            <row>
+                <entry>Network Service</entry>
+                <entry>CloudStack version</entry>
+                <entry>NVP version</entry>
+            </row>
+        </thead>
+        <tbody>
+            <row>
+                <entry>Virtual Networking</entry>
+                <entry>&gt;= 4.0</entry>
+                <entry>&gt;= 2.2.1</entry>
+            </row>
+            <row>
+                <entry>Source NAT</entry>
+                <entry>&gt;= 4.1</entry>
+                <entry>&gt;= 3.0.1</entry>
+            </row>
+            <row>
+                <entry>Static NAT</entry>
+                <entry>&gt;= 4.1</entry>
+                <entry>&gt;= 3.0.1</entry>
+            </row>
+            <row>
+                <entry>Port Forwarding</entry>
+                <entry>&gt;= 4.1</entry>
+                <entry>&gt;= 3.0.1</entry>
+            </row>
+        </tbody>
+        </tgroup>
+    </table>
+    <note><para>The Virtual Networking service was originally called 'Connectivity' in CloudStack 4.0</para></note>
+    <para>The following hypervisors are supported by the Nicira NVP Plugin.</para>
+    <table>
+        <title>Supported Hypervisors</title>
+        <tgroup cols="2">
+        <thead>
+            <row>
+                <entry>Hypervisor</entry>
+                <entry>CloudStack version</entry>
+            </row>
+        </thead>
+        <tbody>
+            <row>
+                <entry>XenServer</entry>
+                <entry>&gt;= 4.0</entry>
+            </row>
+            <row>
+                <entry>KVM</entry>
+                <entry>&gt;= 4.1</entry>
+            </row>
+        </tbody>
+        </tgroup>
+    </table>
+    <note><para>Please refer to the Nicira NVP configuration guide on how to prepare the hypervisors for Nicira NVP integration.</para></note>
 </section>
