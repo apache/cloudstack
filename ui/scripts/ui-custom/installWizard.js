@@ -298,6 +298,17 @@
      * Layout/behavior for each step in wizard
      */
     var steps = {
+      start: function(args) {
+        if (cloudStack.preInstall) {
+          return cloudStack.preInstall({
+            complete: function() {
+              goTo('intro');
+            }
+          });
+        }
+
+        return steps.intro(args);
+      },
       intro: function(args) {
         var $intro = $('<div></div>').addClass('intro what-is-cloudstack');
         var $title = $('<div></div>').addClass('title').html(_l('label.what.is.cloudstack'));
@@ -775,7 +786,7 @@
       }
     };
 
-    var initialStep = steps.intro().addClass('step');
+    var initialStep = steps.start().addClass('step');
     
 
     showDiagram('');
