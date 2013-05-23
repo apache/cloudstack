@@ -2060,7 +2060,7 @@
 														listAll: true
 													},
 													success: function(json) {
-														var items = json.listvpncustomergatewaysresponse.vpncustomergateway;
+														var items = json.listvpncustomergatewaysresponse.vpncustomergateway ? json.listvpncustomergatewaysresponse.vpncustomergateway: [];
 														args.response.success({
 														  data: $.map(items, function(item) {
                                 return {
