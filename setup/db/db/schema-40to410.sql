@@ -1639,3 +1639,15 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'manageme
 
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (163, UUID(), 10, 'Ubuntu 12.04 (32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (164, UUID(), 10, 'Ubuntu 12.04 (64-bit)');
+
+DROP TABLE IF EXISTS `cloud`.`netscaler_pod_ref`;
+CREATE TABLE  `cloud`.`netscaler_pod_ref` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external load balancer device',
+  `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_ns_pod_ref__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ns_pod_ref__device_id` FOREIGN KEY (`external_load_balancer_device_id`) REFERENCES `external_load_balancer_devices`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'eip.use.multiple.netscalers' , 'false', 'Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone');
