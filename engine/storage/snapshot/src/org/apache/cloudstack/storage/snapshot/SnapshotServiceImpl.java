@@ -30,6 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -259,6 +260,22 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 	}
 
+	// if a snapshot has parent snapshot, the new snapshot should be stored in the same store as its parent since
+	// we are taking delta snapshot
+	private DataStore findSnapshotImageStore(SnapshotInfo snapshot){
+	    if ( snapshot.getParent() == null ){
+	        return dataStoreMgr.getImageStore(snapshot.getDataCenterId());
+	    } else{
+	        SnapshotInfo parentSnapshot = snapshot.getParent();
+	        // Note that DataStore information in parentSnapshot is for primary data store here, we need to
+	        // find the image store where the parent snapshot backup is located
+	        SnapshotDataStoreVO parentSnapshotOnBackupStore = _snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
+	        return dataStoreMgr.getDataStore(parentSnapshotOnBackupStore.getDataStoreId(),
+	                        parentSnapshotOnBackupStore.getRole());
+	    }
+	}
+
+
 	@Override
 	public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
 		SnapshotObject snapObj = (SnapshotObject)snapshot;
@@ -268,7 +285,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
 			snapObj.processEvent(Snapshot.Event.BackupToSecondary);
 
-			DataStore imageStore = this.dataStoreMgr.getImageStore(snapshot.getDataCenterId());
+			DataStore imageStore = this.findSnapshotImageStore(snapshot);
 			if (imageStore == null) {
 				throw new CloudRuntimeException("can not find an image stores");
 			}
