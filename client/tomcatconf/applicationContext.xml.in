@@ -361,7 +361,6 @@
   <bean id="versionDaoImpl" class="com.cloud.upgrade.dao.VersionDaoImpl" />
   <bean id="virtualRouterProviderDaoImpl" class="com.cloud.network.dao.VirtualRouterProviderDaoImpl" />
   <bean id="vmRulesetLogDaoImpl" class="com.cloud.network.security.dao.VmRulesetLogDaoImpl" />
-  <bean id="volumeDao2Impl" class="org.apache.cloudstack.storage.volume.db.VolumeDao2Impl" />
   <bean id="volumeDaoImpl" class="com.cloud.storage.dao.VolumeDaoImpl" />
   <bean id="volumeDetailsDaoImpl" class="com.cloud.storage.dao.VolumeDetailsDaoImpl" />
   <bean id="volumeHostDaoImpl" class="com.cloud.storage.dao.VolumeHostDaoImpl" />
