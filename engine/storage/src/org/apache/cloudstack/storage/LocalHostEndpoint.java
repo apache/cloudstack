@@ -57,7 +57,11 @@ public class LocalHostEndpoint implements EndPoint {
 
     @Override
     public String getPublicAddr() {
-        return NetUtils.getDefaultHostIp();
+        String hostIp= NetUtils.getDefaultHostIp();
+        if (hostIp != null)
+            return hostIp;
+        else
+            return "127.0.0.0";
     }
 
     @Override
