@@ -77,6 +77,8 @@
   </bean>
   <bean id="VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
   <bean id="vmwareContextFactory" class="com.cloud.hypervisor.vmware.resource.VmwareContextFactory" />
+  <bean id="VmwareDatacenterDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterDaoImpl" />
+  <bean id="VmwareDatacenterZoneMapDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDaoImpl" />
 
   <!--
     Nicira support components
