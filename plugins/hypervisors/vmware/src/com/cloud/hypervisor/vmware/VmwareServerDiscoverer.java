@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
+import org.springframework.beans.NullValueInNestedPathException;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -51,6 +52,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
@@ -107,11 +110,16 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 	@Inject
 	CiscoNexusVSMDeviceDao _nexusDao;
 	@Inject
-	CiscoNexusVSMElementService _nexusElement;
+	CiscoNexusVSMElement _nexusElement;
 	@Inject
     NetworkModel _netmgr;
     @Inject
     HypervisorCapabilitiesDao _hvCapabilitiesDao;
+    @Inject
+    VmwareDatacenterZoneMapDao _vmwareDcZoneMapDao;
+    @Inject
+    VmwareDatacenterDao _vmwareDcDao;
+
     protected Map<String, String> _urlParams;
     protected boolean useDVS = false;
     protected boolean nexusDVS = false;
@@ -140,6 +148,18 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 			return null;
 		}
 
+        Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
+        boolean legacyZone = false;
+        //Check if NOT a legacy zone.
+        if (!legacyZone) {
+            String updatedInventoryPath = validateCluster(dcId, url, username, password);
+            if (url.getPath() != updatedInventoryPath) {
+                // If url from API doesn't specifiy DC then update url in database with DC assocaited with this zone.
+                clusterDetails.put("url", url.getScheme() + "://" + url.getHost() + updatedInventoryPath);
+                _clusterDetailsDao.persist(clusterId, clusterDetails);
+            }
+        }
+
         List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
         if (hosts != null && hosts.size() > 0) {
             int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(hosts.get(0).getHypervisorType(), hosts.get(0).getHypervisorVersion());
@@ -164,7 +184,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 
         VmwareTrafficLabel guestTrafficLabelObj = new VmwareTrafficLabel(TrafficType.Guest);
         VmwareTrafficLabel publicTrafficLabelObj = new VmwareTrafficLabel(TrafficType.Public);
-        Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
         DataCenterVO zone = _dcDao.findById(dcId);
         NetworkType zoneType = zone.getNetworkType();
         _readGlobalConfigParameters();
@@ -394,6 +413,63 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				context.close();
 		}
 	}
+
+    private String validateCluster(Long dcId, URI url, String username, String password) throws DiscoveryException {
+        String msg;
+        long vmwareDcId;
+        VmwareDatacenterVO vmwareDc;
+        String vmwareDcNameFromDb;
+        String vmwareDcNameFromApi;
+        String vCenterHost;
+        String updatedInventoryPath = url.getPath();
+        String clusterName = null;
+
+        // Check if zone is associated with DC
+        VmwareDatacenterZoneMapVO vmwareDcZone = _vmwareDcZoneMapDao.findByZoneId(dcId);
+        if (vmwareDcZone == null) {
+            msg = "Zone " + dcId + " is not associated with any VMware DC yet. "
+                        + "Please add VMware DC to this zone first and then try to add clusters.";
+            s_logger.error(msg);
+            throw new DiscoveryException(msg);
+        }
+
+        // Retrieve DC added to this zone from database
+        vmwareDcId = vmwareDcZone.getVmwareDcId();
+        vmwareDc = _vmwareDcDao.findById(vmwareDcId);
+        vmwareDcNameFromApi = vmwareDcNameFromDb = vmwareDc.getVmwareDatacenterName();
+        vCenterHost = vmwareDc.getVcenterHost();
+        String inventoryPath = url.getPath();
+
+        assert (inventoryPath != null);
+
+        String[] pathTokens = inventoryPath.split("/");
+        if (pathTokens.length == 2) {
+            // DC name is not present in url.
+            // Using DC name read from database.
+            clusterName = pathTokens[1];
+            updatedInventoryPath = "/" + vmwareDcNameFromDb + "/" + clusterName;
+        } else if (pathTokens.length == 3) {
+            vmwareDcNameFromApi = pathTokens[1];
+            clusterName = pathTokens[2];
+        }
+
+        if (!vCenterHost.equalsIgnoreCase(url.getHost())) {
+            msg = "This cluster " + clusterName + " belongs to vCenter " + url.getHost()
+                + " .But this zone is associated with VMware DC from vCenter " + vCenterHost
+                + ". Make sure the cluster being added belongs to vCenter " + vCenterHost
+                + " and DC " + vmwareDcNameFromDb;
+            s_logger.error(msg);
+            throw new DiscoveryException(msg);
+        } else if (!vmwareDcNameFromDb.equalsIgnoreCase(vmwareDcNameFromApi)) {
+            msg = "This cluster " + clusterName + " belongs to VMware DC " + vmwareDcNameFromApi
+                + " .But this zone is associated with VMware DC " + vmwareDcNameFromDb
+                + ". Make sure the cluster being added belongs to DC " + vmwareDcNameFromDb
+                + " in vCenter " + vCenterHost;
+            s_logger.error(msg);
+            throw new DiscoveryException(msg);
+        }
+        return updatedInventoryPath;
+    }
 
 	private boolean validateDiscoveredHosts(VmwareContext context,
 			ManagedObjectReference morCluster,
