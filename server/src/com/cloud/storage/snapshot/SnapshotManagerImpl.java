@@ -288,7 +288,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         	throw new InvalidParameterValueException("Volume is not in ready state");
         }
 
-    
+
         boolean backedUp = false;
         // does the caller have the authority to act on this volume
         _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
@@ -351,7 +351,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     /*
     @Override
     public void downloadSnapshotsFromSwift(SnapshotVO ss) {
-       
+
         long volumeId = ss.getVolumeId();
         VolumeVO volume = _volsDao.findById(volumeId);
         Long dcId = volume.getDataCenterId();
@@ -581,7 +581,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
-        sb.and("status", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("statusNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ); //exclude those Destroyed snapshot, not showing on UI
         sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -602,12 +602,14 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         if(zoneType != null) {
             SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
+            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
             sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-        
+
         SearchCriteria<SnapshotVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        sc.setParameters("statusNEQ", Snapshot.State.Destroyed);
 
         if (volumeId != null) {
             sc.setParameters("volumeId", volumeId);
@@ -624,9 +626,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
 
         if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
-        
+
         if (name != null) {
             sc.setParameters("name", "%" + name + "%");
         }
@@ -925,8 +927,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         return null;
     }
 
-    
-    
+
+
     private boolean hostSupportSnapsthot(HostVO host) {
 		if (host.getHypervisorType() != HypervisorType.KVM) {
 			return true;
@@ -944,14 +946,14 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 		}
 		return false;
 	}
-    
+
     private boolean supportedByHypervisor(VolumeInfo volume) {
     	StoragePool storagePool = (StoragePool)volume.getDataStore();
         ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
         if (cluster != null && cluster.getHypervisorType() == HypervisorType.Ovm) {
             throw new InvalidParameterValueException("Ovm won't support taking snapshot");
         }
-        
+
 		if (volume.getHypervisorType().equals(HypervisorType.KVM)) {
 			List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
 			if (hosts != null && !hosts.isEmpty()) {
@@ -995,7 +997,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Account snapshotOwner = payload.getAccount();
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotId, volume.getDataStore());
         boolean processed = false;
-        
+
         try {
             for (SnapshotStrategy strategy : snapshotStrategies) {
                 if (strategy.canHandle(snapshot)) {
@@ -1008,7 +1010,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 throw new CloudRuntimeException("Can't find snapshot strategy to deal with snapshot:" + snapshotId);
             }
             postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
-        
+
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(),
                     snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
                     volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
@@ -1159,7 +1161,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         HypervisorType hypervisorType = volume.getHypervisorType();
         SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
                 (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
-        
+
         SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
         if (snapshot == null) {
             throw new CloudRuntimeException("Failed to create snapshot for volume: " + volume.getId());
