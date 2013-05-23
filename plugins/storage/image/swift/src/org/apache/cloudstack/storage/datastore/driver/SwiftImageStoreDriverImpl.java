@@ -285,48 +285,37 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
             UsageEventUtils.publishUsageEvent(eventType, account.getId(), sZoneId, templateId, null, null, null);
         }
 
-        List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
-        // check if there is any VM using this ISO.
-        if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
-             // get installpath of this template on image store
-            TemplateDataStoreVO tmplStore = _templateStoreDao.findByStoreTemplate(storeId, templateId);
-            String installPath = tmplStore.getInstallPath();
-            if (installPath != null) {
-                DeleteTemplateCommand cmd = new DeleteTemplateCommand(store.getTO(), installPath, template.getId(), template.getAccountId());
-                EndPoint ep = _epSelector.select(templateObj);
-                Answer answer = ep.sendMessage(cmd);
+        // get installpath of this template on image store
+        TemplateDataStoreVO tmplStore = _templateStoreDao.findByStoreTemplate(storeId, templateId);
+        String installPath = tmplStore.getInstallPath();
+        if (installPath != null) {
+            DeleteTemplateCommand cmd = new DeleteTemplateCommand(store.getTO(), installPath, template.getId(), template.getAccountId());
+            EndPoint ep = _epSelector.select(templateObj);
+            Answer answer = ep.sendMessage(cmd);
 
-                if (answer == null || !answer.getResult()) {
-                    s_logger.debug("Failed to deleted template at store: " + store.getName());
-                    CommandResult result = new CommandResult();
-                    //result.setSucess(false);
-                    result.setResult("Delete template failed");
-                    callback.complete(result);
+            if (answer == null || !answer.getResult()) {
+                s_logger.debug("Failed to deleted template at store: " + store.getName());
+                CommandResult result = new CommandResult();
+                // result.setSucess(false);
+                result.setResult("Delete template failed");
+                callback.complete(result);
 
-                } else {
-                    s_logger.debug("Deleted template at: " + installPath);
-                    CommandResult result = new CommandResult();
-                    //result.setSucess(true);
-                    callback.complete(result);
-                }
+            } else {
+                s_logger.debug("Deleted template at: " + installPath);
+                CommandResult result = new CommandResult();
+                // result.setSucess(true);
+                callback.complete(result);
+            }
 
-                // for Swift, a template can be associated with multiple zones
-                List<VMTemplateZoneVO> templateZones = templateZoneDao
-                        .listByZoneTemplate(sZoneId, templateId);
-                if (templateZones != null) {
-                    for (VMTemplateZoneVO templateZone : templateZones) {
-                        templateZoneDao.remove(templateZone.getId());
-                    }
+            // for Swift, a template can be associated with multiple zones
+            List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, templateId);
+            if (templateZones != null) {
+                for (VMTemplateZoneVO templateZone : templateZones) {
+                    templateZoneDao.remove(templateZone.getId());
                 }
             }
-        } else{
-            // cannot delete iso due to some VMs are using this
-            s_logger.debug("Cannot delete iso since some user vms are referencing it");
-            CommandResult result = new CommandResult();
-            result.setResult("Cannot delete iso since some user vms are referencing it");
-            callback.complete(result);
         }
-    }
+     }
 
     private void deleteSnapshot(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
         SnapshotObject snapshotObj = (SnapshotObject)data;

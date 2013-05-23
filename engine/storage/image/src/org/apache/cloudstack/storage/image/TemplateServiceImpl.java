@@ -40,11 +40,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -57,6 +59,7 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.image.manager.ImageDataManager;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 
 import com.cloud.agent.api.Answer;
@@ -64,9 +67,12 @@ import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
@@ -84,6 +90,7 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -121,12 +128,17 @@ public class TemplateServiceImpl implements TemplateService {
     @Inject
     UserVmDao _userVmDao;
     @Inject
+    UserVmJoinDao _userVmJoinDao;
+    @Inject
     VolumeDao _volumeDao;
     @Inject
     TemplateDataFactory _templateFactory;
     @Inject VMTemplatePoolDao _tmpltPoolDao;
     @Inject
     EndPointSelector _epSelector;
+    @Inject
+    ImageDataManager imageMgr;
+
 
     class TemplateOpContext<T> extends AsyncRpcConext<T> {
         final TemplateObject template;
@@ -264,7 +276,7 @@ public class TemplateServiceImpl implements TemplateService {
         List<VMTemplateVO> allTemplates = null;
         if (zoneId == null){
             // region wide store
-            allTemplates = _templateDao.listAll();
+            allTemplates = _templateDao.listAllActive();
         }
         else{
             // zone wide store
@@ -326,7 +338,7 @@ public class TemplateServiceImpl implements TemplateService {
                         tmlpt.setSize(tmpltInfo.getSize());
                         _templateDao.update(tmplt.getId(), tmlpt);
 
-                        if (tmpltInfo.getSize() > 0) {
+                        if (tmpltInfo.getSize() > 0 && tmplt.getUrl() != null) {
                             long accountId = tmplt.getAccountId();
                             try {
                                 _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
@@ -418,7 +430,7 @@ public class TemplateServiceImpl implements TemplateService {
 
        for (String uniqueName : templateInfos.keySet()) {
             TemplateProp tInfo = templateInfos.get(uniqueName);
-            List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(tInfo.getId());
+            List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(tInfo.getId());
             //check if there is any Vm using this ISO.
             if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
                 //TODO: we cannot directly call deleteTemplateSync here to reuse delete logic since in this case, our db does not have this template at all.
@@ -610,6 +622,18 @@ public class TemplateServiceImpl implements TemplateService {
         long storeId = store.getId();
         List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
         for ( VMTemplateVO tmplt : rtngTmplts ) {
+            // set template ready state
+            if ( tmplt.getState() != TemplateState.Ready ){
+                try {
+                    imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null,
+                            _templateDao);
+                    imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null,
+                            _templateDao);
+                } catch (NoTransitionException e) {
+                    // non fatal though
+                    s_logger.debug("failed to update system vm template state to Ready", e);
+                }
+            }
             TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
             if ( tmpltStore == null ) {
                 tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, tmplt.getUrl());

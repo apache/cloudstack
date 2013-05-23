@@ -1155,7 +1155,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     	 List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(templateId);
          // check if there is any VM using this ISO.
-         if (!userVmUsingIso.isEmpty()) {
+         if (userVmUsingIso != null && !userVmUsingIso.isEmpty()) {
         	 throw new InvalidParameterValueException("Unable to delete iso, as it's used by other vms");
          }
 
