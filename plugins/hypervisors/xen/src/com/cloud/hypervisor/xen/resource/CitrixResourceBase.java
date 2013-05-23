@@ -2006,7 +2006,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
         }
-        args = args + " " ;
+        //this is to ensure that thre is some argument passed to the deleteipAlias script  when there are no revoked rules.
+        args = args + "- " ;
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";

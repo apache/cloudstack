@@ -2473,18 +2473,21 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         //Reapply dhcp and dns configuration.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
             List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(guestNetworkId, NicIpAlias.state.revoked);
-            s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to apply on the router as a part of dhco configuration");
+            s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to revoke on the router as a part of dhcp configuration");
             List<IpAliasTO> revokedIpAliasTOs = new ArrayList<IpAliasTO>();
             for (NicIpAliasVO revokedAliasVO : revokedIpAliasVOs) {
                 revokedIpAliasTOs.add(new IpAliasTO(revokedAliasVO.getIp4Address(), revokedAliasVO.getNetmask(), revokedAliasVO.getAliasCount().toString()));
             }
             List<NicIpAliasVO> aliasVOs = _nicIpAliasDao.listByNetworkIdAndState(guestNetworkId, NicIpAlias.state.active);
-            s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhco configuration");
+            s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhcp configuration");
             List<IpAliasTO> activeIpAliasTOs = new ArrayList<IpAliasTO>();
             for (NicIpAliasVO aliasVO : aliasVOs) {
                    activeIpAliasTOs.add(new IpAliasTO(aliasVO.getIp4Address(), aliasVO.getNetmask(), aliasVO.getAliasCount().toString()));
             }
-            createDeleteIpAliasCommand(router, revokedIpAliasTOs, activeIpAliasTOs, guestNetworkId, cmds);
+            if (revokedIpAliasTOs.size() != 0 || activeIpAliasTOs.size() != 0){
+                createDeleteIpAliasCommand(router, revokedIpAliasTOs, activeIpAliasTOs, guestNetworkId, cmds);
+                configDnsMasq(router, _networkDao.findById(guestNetworkId), cmds);
+            }
 
         }
     }
@@ -2844,13 +2847,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             Commands cmds = new Commands(OnError.Continue);
             List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.revoked);
-            s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to apply on the router as a part of dhco configuration");
+            s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to revoke on the router as a part of dhcp configuration");
             List<IpAliasTO> revokedIpAliasTOs = new ArrayList<IpAliasTO>();
             for (NicIpAliasVO revokedAliasVO : revokedIpAliasVOs) {
                 revokedIpAliasTOs.add(new IpAliasTO(revokedAliasVO.getIp4Address(), revokedAliasVO.getNetmask(), revokedAliasVO.getAliasCount().toString()));
             }
             List<NicIpAliasVO> aliasVOs = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.active);
-            s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhco configuration");
+            s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhcp configuration");
             List<IpAliasTO> activeIpAliasTOs = new ArrayList<IpAliasTO>();
             for (NicIpAliasVO aliasVO : aliasVOs) {
                 activeIpAliasTOs.add(new IpAliasTO(aliasVO.getIp4Address(), aliasVO.getNetmask(), aliasVO.getAliasCount().toString()));

@@ -24,7 +24,7 @@ set -x
 var="$1"
 cert="/root/.ssh/id_rsa.cloud"
 
-while [ -n "$var" ]
+while [[ !( "$var" == "-" ) ]]
 do
  var1=$(echo $var | cut -f1 -d "-")
  alias_count=$( echo $var1 | cut -f1 -d ":" )
