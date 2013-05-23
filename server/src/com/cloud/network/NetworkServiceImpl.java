@@ -789,10 +789,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (dc.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Isolated) {
             //check PF or static NAT is configured on this ip address
             String secondaryIp = secIpVO.getIp4Address();
-            List<PortForwardingRuleVO> pfRuleList = _portForwardingDao.listByDestIpAddr(secondaryIp);
-            if (pfRuleList.size() != 0) {
-                s_logger.debug("VM nic IP " + secondaryIp + " is associated with the port forwarding rule");
-                throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is associate with the port forwarding rule");
+            List<FirewallRuleVO> fwRulesList =  _firewallDao.listByNetworkAndPurpose(network.getId(), Purpose.PortForwarding);
+
+            if (fwRulesList.size() != 0) {
+                for (FirewallRuleVO rule: fwRulesList) {
+                    if (_portForwardingDao.findByIdAndIp(rule.getId(), secondaryIp) != null) {
+                        s_logger.debug("VM nic IP " + secondaryIp + " is associated with the port forwarding rule");
+                        throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is associate with the port forwarding rule");
+                    }
+                }
             }
             //check if the secondary ip associated with any static nat rule
             IPAddressVO publicIpVO = _ipAddressDao.findByVmIp(secondaryIp);
