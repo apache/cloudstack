@@ -128,7 +128,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
     @Test(priority = -1)
 	public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-  
+
         host = hostDao.findByGuid(this.getHostGuid());
         if (host != null) {
             dcId = host.getDataCenterId();
@@ -170,7 +170,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		host.setClusterId(cluster.getId());
 
 		host = hostDao.persist(host);
-		
+
 		imageStore = new ImageStoreVO();
 		imageStore.setName("test");
 		imageStore.setDataCenterId(dcId);
@@ -194,7 +194,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
         List<EndPoint> eps = new ArrayList<EndPoint>();
         eps.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
-                host.getPrivateIpAddress()));
+                host.getPrivateIpAddress(), host.getPublicIpAddress()));
         Mockito.when(selector.selectAll(Mockito.any(DataStore.class))).thenReturn(eps);
         Mockito.when(selector.select(Mockito.any(DataObject.class))).thenReturn(eps.get(0));
         Mockito.when(selector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(eps.get(0));
@@ -219,10 +219,10 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		image.setCrossZones(true);
 		image.setExtractable(true);
 
-		
+
 		//image.setImageDataStoreId(storeId);
 		image = imageDataDao.persist(image);
-		
+
 
 		return image;
 	}

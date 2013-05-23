@@ -247,7 +247,7 @@ public class VolumeTest extends CloudStackTestNGBase {
         hosts.add(this.host);
         Mockito.when(resourceMgr.listAllUpAndEnabledHosts((Type) Mockito.any(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(hosts);
 
-        RemoteHostEndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress());
+        RemoteHostEndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress(), this.host.getPublicIpAddress());
         Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);

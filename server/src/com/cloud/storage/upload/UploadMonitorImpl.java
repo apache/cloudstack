@@ -239,7 +239,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             }
 
     	    //Construct actual URL locally now that the symlink exists at SSVM
-            String extractURL = generateCopyUrl(ep.getHostAddr(), uuid);
+            String extractURL = generateCopyUrl(ep.getPublicAddr(), uuid);
             UploadVO vo = _uploadDao.createForUpdate();
             vo.setLastUpdated(new Date());
             vo.setUploadUrl(extractURL);

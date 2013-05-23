@@ -33,6 +33,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.download.DownloadListener;
+import com.cloud.utils.net.NetUtils;
 
 public class LocalHostEndpoint implements EndPoint {
 	private ScheduledExecutorService executor;
@@ -51,6 +52,12 @@ public class LocalHostEndpoint implements EndPoint {
 	@Override
     public String getHostAddr() {
         return "127.0.0.0";
+    }
+
+
+    @Override
+    public String getPublicAddr() {
+        return NetUtils.getDefaultHostIp();
     }
 
     @Override

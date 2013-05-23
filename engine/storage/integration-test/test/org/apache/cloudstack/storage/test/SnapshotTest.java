@@ -266,12 +266,12 @@ public class SnapshotTest extends CloudStackTestNGBase {
         hosts.add(this.host);
         Mockito.when(resourceMgr.listAllUpAndEnabledHosts((Type) Mockito.any(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(hosts);
 
-        remoteEp = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress());
+        remoteEp = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress(), this.host.getPublicIpAddress());
         Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(remoteEp);
         Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(remoteEp);
         Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(remoteEp);
         Mockito.when(hyGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(this.host.getId());
-        
+
     }
 
     public DataStore createPrimaryDataStore() {
@@ -333,7 +333,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
     }
 
     private VolumeVO createVolume(Long templateId, long dataStoreId) {
-    	
+
         VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, UUID.randomUUID().toString(), this.dcId, 1L, 1L, 1L, 1000);
         volume.setDataCenterId(this.dcId);
         volume.setPoolId(dataStoreId);
@@ -376,18 +376,18 @@ public class SnapshotTest extends CloudStackTestNGBase {
             }
         }
         AssertJUnit.assertNotNull(newSnapshot);
-        
+
         LocalHostEndpoint ep = new MockLocalHostEndPoint();
         ep.setResource(new MockLocalNfsSecondaryStorageResource());
         Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
-        
+
         //delete snapshot
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
             if (strategy.canHandle(snapshot)) {
             	strategy.deleteSnapshot(newSnapshot.getId());
             }
         }
-        
+
         Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(remoteEp);
     }
 
@@ -412,7 +412,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         image = imageDataDao.persist(image);
         return image;
     }
-    
+
     @Test
     public void createVolumeFromSnapshot() {
         VolumeInfo vol = createCopyBaseImage();
@@ -432,7 +432,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         VolumeInfo newVol = this.volFactory.getVolume(volVO.getId());
         this.volumeService.createVolumeFromSnapshot(newVol, newVol.getDataStore(), snapshot);
     }
-    
+
     @Test
     public void deleteSnapshot() {
     	VolumeInfo vol = createCopyBaseImage();
@@ -445,14 +445,14 @@ public class SnapshotTest extends CloudStackTestNGBase {
             }
         }
         AssertJUnit.assertNotNull(newSnapshot);
-        
+
         //create another snapshot
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
             if (strategy.canHandle(snapshot)) {
             	strategy.deleteSnapshot(newSnapshot.getId());
             }
         }
-        
+
     }
 
     @Test
@@ -477,6 +477,6 @@ public class SnapshotTest extends CloudStackTestNGBase {
         DataStore imageStore = this.dataStoreMgr.getImageStore(this.dcId);
         this.imageService.createTemplateFromSnapshotAsync(snapshot, tmpl, imageStore);
     }
-    
-   
+
+
 }

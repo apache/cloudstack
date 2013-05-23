@@ -144,7 +144,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
 
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
-                host.getPrivateIpAddress());
+                host.getPrivateIpAddress(), host.getPublicIpAddress());
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore,
@@ -204,7 +204,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
         Collections.shuffle(ssAHosts);
         HostVO host = ssAHosts.get(0);
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress());
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress());
     }
 
     private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
@@ -243,7 +243,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         if (store.getScope().getScopeType() == ScopeType.HOST) {
             HostVO host = hostDao.findById(store.getScope().getScopeId());
             endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
-                    host.getPrivateIpAddress()));
+                    host.getPrivateIpAddress(), host.getPublicIpAddress()));
         } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
             SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
             sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, store.getScope().getScopeId());
@@ -251,7 +251,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             List<HostVO> hosts = sc.find();
             for (HostVO host : hosts) {
                 endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
-                        host.getPrivateIpAddress()));
+                        host.getPrivateIpAddress(), host.getPublicIpAddress()));
             }
 
         } else {

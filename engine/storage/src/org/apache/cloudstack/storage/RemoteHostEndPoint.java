@@ -49,6 +49,7 @@ public class RemoteHostEndPoint implements EndPoint {
     private static final Logger s_logger = Logger.getLogger(RemoteHostEndPoint.class);
     private  long hostId;
     private  String hostAddress;
+    private  String publicAddress;
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -61,20 +62,26 @@ public class RemoteHostEndPoint implements EndPoint {
     	executor = Executors.newScheduledThreadPool(10);
     }
 
-    private void configure(long hostId, String hostAddress) {
+    private void configure(long hostId, String hostAddress, String publicAddress) {
         this.hostId = hostId;
         this.hostAddress = hostAddress;
+        this.publicAddress = publicAddress;
     }
 
-    public static RemoteHostEndPoint getHypervisorHostEndPoint(long hostId, String hostAddress) {
+    public static RemoteHostEndPoint getHypervisorHostEndPoint(long hostId, String hostAddress, String publicAddress) {
         RemoteHostEndPoint ep = ComponentContext.inject(RemoteHostEndPoint.class);
-        ep.configure(hostId, hostAddress);
+        ep.configure(hostId, hostAddress, publicAddress);
         return ep;
     }
 
     @Override
     public String getHostAddr() {
         return this.hostAddress;
+    }
+
+
+    public String getPublicAddr() {
+        return this.publicAddress;
     }
 
     @Override
