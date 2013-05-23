@@ -1710,5 +1710,5 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'VpcMa
 
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			
-
+UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;
 
