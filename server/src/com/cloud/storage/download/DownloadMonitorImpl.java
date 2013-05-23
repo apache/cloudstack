@@ -232,7 +232,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         volumeHost = _volumeStoreDao.findByStoreVolume(store.getId(), volume.getId());
         if (volumeHost == null) {
             volumeHost = new VolumeDataStoreVO(store.getId(), volume.getId(), new Date(), 0, Status.NOT_DOWNLOADED,
-                    null, null, "jobid0000", null, url, checkSum, format);
+                    null, null, "jobid0000", null, url, checkSum);
             _volumeStoreDao.persist(volumeHost);
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
             downloadJobExists = true;
