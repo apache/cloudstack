@@ -1005,6 +1005,31 @@ CREATE TABLE `cloud`.`network_asa1000v_map` (
   CONSTRAINT `fk_network_asa1000v_map__asa1000v_id` FOREIGN KEY (`asa1000v_id`) REFERENCES `external_cisco_asa1000v_devices`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`vmware_data_center` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `name` varchar(255) NOT NULL COMMENT 'Name of VMware datacenter',
+  `guid` varchar(255) NOT NULL UNIQUE COMMENT 'id of VMware datacenter',
+  `vcenter_host` varchar(255) NOT NULL COMMENT 'vCenter host containing this VMware datacenter',
+  `username` varchar(255) NOT NULL COMMENT 'Name of vCenter host user',
+  `password` varchar(255) NOT NULL COMMENT 'Password of vCenter host user',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`vmware_data_center_zone_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `zone_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of CloudStack zone',
+  `vmware_data_center_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of VMware datacenter',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vmware_data_center_zone_map__vmware_data_center_id` FOREIGN KEY (`vmware_data_center_id`) REFERENCES `vmware_data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`legacy_zones` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `zone_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of CloudStack zone',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_legacy_zones__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `eip_associate_public_ip` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if public IP is associated with user VM creation by default when EIP service is enabled.' AFTER `elastic_ip_service`;
 
