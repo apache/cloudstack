@@ -37,6 +37,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -46,8 +49,6 @@ import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserAccountJoinDao;
@@ -265,7 +266,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 	}
 
 	public void setSecurityCheckers(List<SecurityChecker> securityCheckers) {
-		this._securityCheckers = securityCheckers;
+		_securityCheckers = securityCheckers;
 	}
     
     @Override
@@ -603,7 +604,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (VolumeVO volume : volumes) {
                 if (!volume.getState().equals(Volume.State.Destroy)) {
                     try {
-                        this.volumeMgr.deleteVolume(volume.getId(), caller);
+                        volumeMgr.deleteVolume(volume.getId(), caller);
                     } catch (Exception ex) {
                         s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                         accountCleanupNeeded = true;
@@ -774,11 +775,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             try {
                 try {
                     if (vm.getType() == Type.User) {
-                        success = (success && _itMgr.advanceStop(_userVmDao.findById(vm.getId()), false, getSystemUser(), getSystemAccount()));
+                        success = (success && _itMgr.advanceStop(vm.getUuid(), false, getSystemUser(), getSystemAccount()));
                     } else if (vm.getType() == Type.DomainRouter) {
-                        success = (success && _itMgr.advanceStop(_routerDao.findById(vm.getId()), false, getSystemUser(), getSystemAccount()));
+                        success = (success && _itMgr.advanceStop(vm.getUuid(), false, getSystemUser(), getSystemAccount()));
                     } else {
-                        success = (success && _itMgr.advanceStop(vm, false, getSystemUser(), getSystemAccount()));
+                        success = (success && _itMgr.advanceStop(vm.getUuid(), false, getSystemUser(), getSystemAccount()));
                     }
                 } catch (OperationTimedoutException ote) {
                     s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);

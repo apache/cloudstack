@@ -33,7 +33,6 @@ import org.apache.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -48,7 +47,6 @@ import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.manager.Commands;
-import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
@@ -98,7 +96,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -113,10 +110,8 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
-import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -143,9 +138,6 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VmWork;
-import com.cloud.vm.VmWorkStart;
-import com.cloud.vm.VmWorkStop;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -569,7 +561,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (proxy.getState() == VirtualMachine.State.Stopped) {
-                return _itMgr.start(proxy, null, systemUser, systemAcct);
+                if (_itMgr.start(proxy.getUuid(), null, systemUser, systemAcct) != null) {
+                    return _consoleProxyDao.findById(proxyVmId);
+                } else {
+                    return null;
+                }
             }
 
             // For VMs that are in Stopping, Starting, Migrating state, let client to wait by returning null
@@ -731,12 +727,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(),
                 systemAcct.getId(), 0, _serviceOffering.getOfferHA());
-        try {
-            proxy = _itMgr.allocate(proxy, template, _serviceOffering, networks, plan, null, systemAcct);
-        } catch (InsufficientCapacityException e) {
-            s_logger.warn("InsufficientCapacity", e);
-            throw new CloudRuntimeException("Insufficient capacity exception", e);
+        proxy = _consoleProxyDao.persist(proxy);
+        VirtualMachine vm = _itMgr.allocate(proxy.getInstanceName(), template, _serviceOffering, networks, plan, null, systemAcct);
+        if (vm == null) {
+            s_logger.warn("Unable to allocate proxy");
+            throw new CloudRuntimeException("Insufficient capacity exception");
         }
+        proxy = _consoleProxyDao.findById(proxy.getId());
 
         Map<String, Object> context = new HashMap<String, Object>();
         context.put("dc", dc);
@@ -873,7 +870,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return false;
         }
         List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Stopped,
-                VirtualMachine.State.Migrating, VirtualMachine.State.Shutdowned, VirtualMachine.State.Unknown);
+                VirtualMachine.State.Migrating);
 
         String value = _configDao.getValue(Config.ConsoleProxyLaunchMax.key());
         int launchLimit = NumbersUtil.parseInt(value, 10);
@@ -882,7 +879,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     private HypervisorType currentHypervisorType(long dcId) {
         List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Stopped,
-                VirtualMachine.State.Migrating, VirtualMachine.State.Shutdowned, VirtualMachine.State.Unknown);
+                VirtualMachine.State.Migrating);
 
         return l.size() > 0 ? l.get(0).getHypervisorType() : HypervisorType.Any;
     }
@@ -1041,12 +1038,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return false;
         }
 
-        try {
-            return _itMgr.stop(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-        } catch (ResourceUnavailableException e) {
-            s_logger.warn("Stopping console proxy " + proxy.getHostName() + " failed : exception " + e.toString());
-            return false;
-        }
+        return _itMgr.stop(proxy.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
     }
 
     @Override
@@ -1165,7 +1157,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ConsoleProxyVO proxy = _consoleProxyDao.findById(vmId);
         try {
             //expunge the vm
-            boolean result = _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            boolean result = _itMgr.expunge(proxy.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (result) {
                 HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(),
                         Host.Type.ConsoleProxy);
@@ -1722,44 +1714,44 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public void prepareStop(VirtualMachineProfile profile) {
     }
 
-    @Override
-    public void vmWorkStart(VmWork work) {
-    	assert(work instanceof VmWorkStart);
-    	
-        ConsoleProxyVO vm = _consoleProxyDao.findById(work.getVmId());
-    	
-    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
-    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
-    	
-    	try {
-	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(),
-	    		user, account,  ((VmWorkStart)work).getPlan());
-	    	
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
-    	} catch(Exception e) {
-    		s_logger.error("Exception in process VM-start work", e);
-    		String result = SerializerHelper.toObjectSerializedString(e);
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
-    	}
-    }
-    
-    @Override
-    public void vmWorkStop(VmWork work) {
-    	assert(work instanceof VmWorkStop);
-    	
-        ConsoleProxyVO vm = _consoleProxyDao.findById(work.getVmId());
-    	
-    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
-    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
-    	
-    	try {
-	    	_itMgr.processVmStopWork(vm, ((VmWorkStop)work).isForceStop(), user, account);
-	    	
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
-    	} catch(Exception e) {
-    		s_logger.error("Exception in process VM-stop work", e);
-    		String result = SerializerHelper.toObjectSerializedString(e);
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
-    	}
-    }
+//    @Override
+//    public void vmWorkStart(VmWork work) {
+//    	assert(work instanceof VmWorkStart);
+//
+//        ConsoleProxyVO vm = _consoleProxyDao.findById(work.getVmId());
+//
+//    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
+//    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
+//
+//    	try {
+//	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(),
+//	    		user, account,  ((VmWorkStart)work).getPlan());
+//
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
+//    	} catch(Exception e) {
+//    		s_logger.error("Exception in process VM-start work", e);
+//    		String result = SerializerHelper.toObjectSerializedString(e);
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
+//    	}
+//    }
+//
+//    @Override
+//    public void vmWorkStop(VmWork work) {
+//    	assert(work instanceof VmWorkStop);
+//
+//        ConsoleProxyVO vm = _consoleProxyDao.findById(work.getVmId());
+//
+//    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
+//    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
+//
+//    	try {
+//	    	_itMgr.processVmStopWork(vm, ((VmWorkStop)work).isForceStop(), user, account);
+//
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
+//    	} catch(Exception e) {
+//    		s_logger.error("Exception in process VM-stop work", e);
+//    		String result = SerializerHelper.toObjectSerializedString(e);
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
+//    	}
+//    }
 }

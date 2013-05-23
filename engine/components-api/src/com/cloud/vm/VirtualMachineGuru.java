@@ -62,6 +62,6 @@ public interface VirtualMachineGuru {
      * VM work handlers
      * @param work
      */
-    void vmWorkStart(VmWork work);
-    void vmWorkStop(VmWork work);
+//    void vmWorkStart(VmWork work);
+//    void vmWorkStop(VmWork work);
 }

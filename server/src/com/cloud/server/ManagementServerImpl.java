@@ -2191,7 +2191,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         User caller = _userDao.findById(UserContext.current().getCallerUserId());
 
-        if (_itMgr.advanceStop(systemVm, isForced, caller, UserContext.current().getCaller())) {
+        if (_itMgr.advanceStop(systemVm.getUuid(), isForced, caller, UserContext.current().getCaller())) {
             return _consoleProxyDao.findById(systemVm.getId());
         }
         return null;
@@ -3072,7 +3072,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         User caller = _userDao.findById(UserContext.current().getCallerUserId());
 
-        if (_itMgr.advanceStop(systemVm, isForced, caller, UserContext.current().getCaller())) {
+        if (_itMgr.advanceStop(systemVm.getUuid(), isForced, caller, UserContext.current().getCaller())) {
             return _secStorageVmDao.findById(systemVm.getId());
         }
         return null;

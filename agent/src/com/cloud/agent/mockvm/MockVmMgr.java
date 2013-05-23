@@ -140,6 +140,7 @@ public class MockVmMgr implements VmMgr {
         return false;
     }
 
+    @Override
     public MockVm getVm(String vmName) {
         synchronized (this) {
             MockVm vm = vms.get(vmName);
@@ -155,7 +156,7 @@ public class MockVmMgr implements VmMgr {
             if (vm != null)
                 return vm.getState();
         }
-        return State.Unknown;
+        return null;
     }
 
     @Override

@@ -2321,7 +2321,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 						.listByStoragePool(storagePool.getId());
                 for (VMInstanceVO vm : vmsOnLocalStorage) {
                     try {
-						if (!_vmMgr.destroy(vm, caller,
+                        if (!_vmMgr.destroy(vm.getUuid(), caller,
 								_accountMgr.getAccount(vm.getAccountId()))) {
 							String errorMsg = "There was an error Destory the vm: "
 									+ vm
@@ -2354,7 +2354,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 									+ " as a part of deleteHost id="
 									+ host.getId());
                             try {
-								if (!_vmMgr.advanceStop(vm, true, caller,
+                                if (!_vmMgr.advanceStop(vm.getUuid(), true, caller,
 										_accountMgr.getAccount(vm
 												.getAccountId()))) {
 									String errorMsg = "There was an error stopping the vm: "

@@ -120,41 +120,29 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template,
+    public VirtualMachine allocate(String vmInstanceName, VMTemplateVO template,
 			ServiceOfferingVO serviceOffering,
 			Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
 			List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
 			List<Pair<NetworkVO, NicProfile>> networks,
 			Map<Param, Object> params, DeploymentPlan plan,
-			HypervisorType hyperType, Account owner)
-			throws InsufficientCapacityException {
+            HypervisorType hyperType, Account owner) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
-	public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template,
-			ServiceOfferingVO serviceOffering, Long rootSize,
-			Pair<DiskOfferingVO, Long> dataDiskOffering,
-			List<Pair<NetworkVO, NicProfile>> networks, DeploymentPlan plan,
-			HypervisorType hyperType, Account owner)
-			throws InsufficientCapacityException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
-	public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template,
+    public VirtualMachine allocate(String vmInstanceName, VMTemplateVO template,
 			ServiceOfferingVO serviceOffering,
 			List<Pair<NetworkVO, NicProfile>> networkProfiles,
-			DeploymentPlan plan, HypervisorType hyperType, Account owner)
-			throws InsufficientCapacityException {
+            DeploymentPlan plan, HypervisorType hyperType, Account owner) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public <T extends VMInstanceVO> T start(T vm, Map<Param, Object> params,
+    public VirtualMachine start(String vmUuid, Map<Param, Object> params,
 			User caller, Account account) throws InsufficientCapacityException,
 			ResourceUnavailableException {
 		// TODO Auto-generated method stub
@@ -162,7 +150,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> T start(T vm, Map<Param, Object> params,
+    public VirtualMachine start(String vmUuid, Map<Param, Object> params,
 			User caller, Account account, DeploymentPlan planToDeploy)
 			throws InsufficientCapacityException, ResourceUnavailableException {
 		// TODO Auto-generated method stub
@@ -170,14 +158,14 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> boolean stop(T vm, User caller,
-			Account account) throws ResourceUnavailableException {
+    public boolean stop(String vmUuid, User caller,
+            Account account) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public <T extends VMInstanceVO> boolean expunge(T vm, User caller,
+    public boolean expunge(String vmUuid, User caller,
 			Account account) throws ResourceUnavailableException {
 		// TODO Auto-generated method stub
 		return false;
@@ -209,7 +197,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> T advanceStart(T vm,
+    public VirtualMachine advanceStart(String vmUuid,
 			Map<Param, Object> params, User caller, Account account)
 			throws InsufficientCapacityException, ResourceUnavailableException,
 			ConcurrentOperationException, OperationTimedoutException {
@@ -218,7 +206,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> T advanceStart(T vm,
+    public VirtualMachine advanceStart(String vmUuid,
 			Map<Param, Object> params, User caller, Account account,
 			DeploymentPlan planToDeploy) throws InsufficientCapacityException,
 			ResourceUnavailableException, ConcurrentOperationException,
@@ -228,7 +216,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced,
+    public boolean advanceStop(String vmUuid, boolean forced,
 			User caller, Account account) throws ResourceUnavailableException,
 			OperationTimedoutException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
@@ -236,7 +224,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller,
+    public boolean advanceExpunge(String vmUuid, User caller,
 			Account account) throws ResourceUnavailableException,
 			OperationTimedoutException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
@@ -244,14 +232,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> boolean remove(T vm, User caller,
-			Account account) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public <T extends VMInstanceVO> boolean destroy(T vm, User caller,
+    public boolean destroy(String vmUuid, User caller,
 			Account account) throws AgentUnavailableException,
 			OperationTimedoutException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
@@ -267,7 +248,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> T migrate(T vm, long srcHostId,
+    public VirtualMachine migrate(String vmUuid, long srcHostId,
 			DeployDestination dest) throws ResourceUnavailableException,
 			ConcurrentOperationException, ManagementServerException,
 			VirtualMachineMigrationException {
@@ -276,43 +257,22 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> T reboot(T vm, Map<Param, Object> params,
-			User caller, Account account) throws InsufficientCapacityException,
-			ResourceUnavailableException {
+    public boolean reboot(String vmUuid,
+            User caller, Account account) {
 		// TODO Auto-generated method stub
-		return null;
+        return false;
 	}
 
 	@Override
-	public <T extends VMInstanceVO> T advanceReboot(T vm,
-			Map<Param, Object> params, User caller, Account account)
+    public boolean advanceReboot(String vmUuid, User caller, Account account)
 			throws InsufficientCapacityException, ResourceUnavailableException,
 			ConcurrentOperationException, OperationTimedoutException {
 		// TODO Auto-generated method stub
-		return null;
+        return false;
 	}
 
 	@Override
-	public VMInstanceVO findByIdAndType(Type type, long vmId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean isVirtualMachineUpgradable(VirtualMachine vm,
-			ServiceOffering offering) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public VMInstanceVO findById(long vmId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public <T extends VMInstanceVO> T storageMigration(T vm,
+    public VirtualMachine storageMigration(String vmUuid,
 			StoragePool storagePoolId) {
 		// TODO Auto-generated method stub
 		return null;
@@ -368,7 +328,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public VMInstanceVO reConfigureVm(VMInstanceVO vm,
+    public VMInstanceVO reConfigureVm(VirtualMachine vm,
 			ServiceOffering newServiceOffering, boolean sameHost)
 			throws ResourceUnavailableException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
@@ -376,7 +336,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public VMInstanceVO findHostAndMigrate(Type vmType, VMInstanceVO vm,
+    public VirtualMachine findHostAndMigrate(String vmUUid,
 			Long newSvcOfferingId) throws InsufficientCapacityException,
 			ConcurrentOperationException, ResourceUnavailableException,
 			VirtualMachineMigrationException, ManagementServerException {
@@ -385,7 +345,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-	public <T extends VMInstanceVO> T migrateForScale(T vm, long srcHostId,
+    public VirtualMachine migrateForScale(String vmUuid, long srcHostId,
 			DeployDestination dest, Long newSvcOfferingId)
 			throws ResourceUnavailableException, ConcurrentOperationException,
 			ManagementServerException, VirtualMachineMigrationException {
@@ -394,7 +354,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+    public VirtualMachine processVmStartWork(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
     	
 		try {
@@ -402,7 +362,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 		} catch (InterruptedException e) {
 		}
     	
-    	return vm;
+        return null;
     }
 
 	int wakeupCount = 0;
@@ -417,13 +377,13 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 	
 	@Override
-    public <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account)
+    public boolean processVmStopWork(String vmUuid, boolean forced, User user, Account account)
         throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
     	return true;
     }
 
     @Override
-    public <T extends VMInstanceVO> T migrateWithStorage(T vm, long srcId, long destId, Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException,
+    public VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException,
             ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
         // TODO Auto-generated method stub
         return null;

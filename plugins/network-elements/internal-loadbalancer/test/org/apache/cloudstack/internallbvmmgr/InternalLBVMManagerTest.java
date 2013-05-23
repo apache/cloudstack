@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -26,14 +26,15 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
-import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -100,6 +101,7 @@ public class InternalLBVMManagerTest extends TestCase {
     long validVmId = 1L;
     long invalidVmId = 2L;
     
+    @Override
     @Before
     public void setUp() {
         //mock system offering creation as it's used by configure() method called by initComponentsLifeCycle
@@ -156,11 +158,11 @@ public class InternalLBVMManagerTest extends TestCase {
         
         
         try {
-            Mockito.when(_itMgr.expunge(Mockito.any(DomainRouterVO.class), Mockito.any(User.class), Mockito.any(Account.class))).thenReturn(true);
+            Mockito.when(_itMgr.expunge("1234", Mockito.any(User.class), Mockito.any(Account.class))).thenReturn(true);
         } catch (ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } 
+        }
         
         Mockito.when(_domainRouterDao.findById(validVmId)).thenReturn(vm);
         Mockito.when(_domainRouterDao.findById(invalidVmId)).thenReturn(null);

@@ -31,8 +31,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -49,7 +47,6 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerNode;
@@ -92,7 +89,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.SnapshotVO;
@@ -109,10 +105,8 @@ import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
-import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
-import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -138,9 +132,6 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VmWork;
-import com.cloud.vm.VmWorkStart;
-import com.cloud.vm.VmWorkStop;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -269,7 +260,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
             Account systemAcct = _accountMgr.getSystemAccount();
             User systemUser = _accountMgr.getSystemUser();
-            return _itMgr.start(secStorageVm, null, systemUser, systemAcct);
+            if (_itMgr.start(secStorageVm.getUuid(), null, systemUser, systemAcct) != null) {
+                return _secStorageVmDao.findById(secStorageVmId);
+            } else {
+                return null;
+            }
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start secondary storage vm", e);
             return null;
@@ -587,12 +582,14 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
                 systemAcct.getDomainId(), systemAcct.getId(), role, _serviceOffering.getOfferHA());
-        try {
-            secStorageVm = _itMgr.allocate(secStorageVm, template, _serviceOffering, networks, plan, null, systemAcct);
-        } catch (InsufficientCapacityException e) {
-            s_logger.warn("InsufficientCapacity", e);
-            throw new CloudRuntimeException("Insufficient capacity exception", e);
+        secStorageVm = _secStorageVmDao.persist(secStorageVm);
+        if (_itMgr.allocate(secStorageVm.getInstanceName(), template, _serviceOffering, networks, plan, null, systemAcct) == null) {
+            s_logger.warn("Unable to allocate");
+            _secStorageVmDao.remove(secStorageVm.getId());
+            throw new CloudRuntimeException("Unable to allocate sec storage vm");
         }
+        
+        secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
 
         Map<String, Object> context = new HashMap<String, Object>();
         context.put("secStorageVmId", secStorageVm.getId());
@@ -923,38 +920,29 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
             return false;
         }
-        try {
-            if (secStorageVm.getHostId() != null) {
-                GlobalLock secStorageVmLock = GlobalLock.getInternLock(getSecStorageVmLockName(secStorageVm.getId()));
-                try {
-                    if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-                        try {
-                            boolean result = _itMgr.stop(secStorageVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-                            if (result) {
-                            }
-
-                            return result;
-                        } finally {
-                            secStorageVmLock.unlock();
-                        }
-                    } else {
-                        String msg = "Unable to acquire secondary storage vm lock : " + secStorageVm.toString();
-                        s_logger.debug(msg);
-                        return false;
+        if (secStorageVm.getHostId() != null) {
+            GlobalLock secStorageVmLock = GlobalLock.getInternLock(getSecStorageVmLockName(secStorageVm.getId()));
+            try {
+                if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+                    try {
+                        boolean result = _itMgr.stop(secStorageVm.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                        return result;
+                    } finally {
+                        secStorageVmLock.unlock();
                     }
-                } finally {
-                    secStorageVmLock.releaseRef();
+                } else {
+                    String msg = "Unable to acquire secondary storage vm lock : " + secStorageVm.toString();
+                    s_logger.debug(msg);
+                    return false;
                 }
+            } finally {
+                secStorageVmLock.releaseRef();
             }
-
-            // vm was already stopped, return true
-            return true;
-        } catch (ResourceUnavailableException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Stopping secondary storage vm " + secStorageVm.getHostName() + " faled : exception " + e.toString());
-            }
-            return false;
         }
+
+        // vm was already stopped, return true
+        return true;
+
     }
 
     @Override
@@ -995,7 +983,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         SecondaryStorageVmVO ssvm = _secStorageVmDao.findById(vmId);
 
         try {
-            boolean result = _itMgr.expunge(ssvm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            boolean result = _itMgr.expunge(ssvm.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (result) {
                 HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(),
                         Host.Type.SecondaryStorageVM);
@@ -1464,44 +1452,44 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public void prepareStop(VirtualMachineProfile profile) {
 	}
 	
-    @Override
-    public void vmWorkStart(VmWork work) {
-    	assert(work instanceof VmWorkStart);
-    	
-        SecondaryStorageVmVO vm = _secStorageVmDao.findById(work.getVmId());
-    	
-    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
-    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
-    	
-    	try {
-	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(),
-	    		user, account,  ((VmWorkStart)work).getPlan());
-	    	
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
-    	} catch(Exception e) {
-    		s_logger.error("Exception in process VM-start work", e);
-    		String result = SerializerHelper.toObjectSerializedString(e);
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
-    	}
-    }
-    
-    @Override
-    public void vmWorkStop(VmWork work) {
-    	assert(work instanceof VmWorkStop);
-    	
-        SecondaryStorageVmVO vm = _secStorageVmDao.findById(work.getVmId());
-    	
-    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
-    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
-    	
-    	try {
-	    	_itMgr.processVmStopWork(vm, ((VmWorkStop)work).isForceStop(), user, account);
-	    	
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
-    	} catch(Exception e) {
-    		s_logger.error("Exception in process VM-stop work", e);
-    		String result = SerializerHelper.toObjectSerializedString(e);
-    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
-    	}
-    }
+//    @Override
+//    public void vmWorkStart(VmWork work) {
+//    	assert(work instanceof VmWorkStart);
+//
+//        SecondaryStorageVmVO vm = _secStorageVmDao.findById(work.getVmId());
+//
+//    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
+//    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
+//
+//    	try {
+//	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(),
+//	    		user, account,  ((VmWorkStart)work).getPlan());
+//
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
+//    	} catch(Exception e) {
+//    		s_logger.error("Exception in process VM-start work", e);
+//    		String result = SerializerHelper.toObjectSerializedString(e);
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
+//    	}
+//    }
+//
+//    @Override
+//    public void vmWorkStop(VmWork work) {
+//    	assert(work instanceof VmWorkStop);
+//
+//        SecondaryStorageVmVO vm = _secStorageVmDao.findById(work.getVmId());
+//
+//    	UserVO user = _entityMgr.findById(UserVO.class, work.getUserId());
+//    	AccountVO account = _entityMgr.findById(AccountVO.class, work.getAccountId());
+//
+//    	try {
+//	    	_itMgr.processVmStopWork(vm, ((VmWorkStop)work).isForceStop(), user, account);
+//
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
+//    	} catch(Exception e) {
+//    		s_logger.error("Exception in process VM-stop work", e);
+//    		String result = SerializerHelper.toObjectSerializedString(e);
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
+//    	}
+//    }
 }

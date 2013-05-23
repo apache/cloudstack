@@ -30,6 +30,12 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
@@ -41,8 +47,6 @@ import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRul
 import org.apache.cloudstack.api.response.ServiceResponse;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.Config;
@@ -155,8 +159,6 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 @Component
 @Local(value = { LoadBalancingRulesManager.class, LoadBalancingRulesService.class })
@@ -872,7 +874,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (lbrules.size() > 0) {
                         isHandled = false;
                         for (LoadBalancingServiceProvider lbElement : _lbProviders) {
-                            stateRules = lbElement.updateHealthChecks(network, (List<LoadBalancingRule>) lbrules);
+                            stateRules = lbElement.updateHealthChecks(network, lbrules);
                             if (stateRules != null && stateRules.size() > 0) {
                                 for (LoadBalancerTO lbto : stateRules) {
                                     LoadBalancerVO ulb = _lbDao.findByUuid(lbto.getUuid());
@@ -1837,7 +1839,6 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             case Destroyed:
             case Expunging:
             case Error:
-            case Unknown:
                 continue;
             }
 

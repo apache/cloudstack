@@ -39,11 +39,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         Stopping(true, "VM is being stopped.  host id has the host that it is being stopped on."),
         Stopped(false, "VM is stopped.  host id should be null."),
         Destroyed(false, "VM is marked for destroy."),
-        Expunging(true, "VM is being   expunged."),
+        Expunging(true, "VM is being expunged."),
         Migrating(true, "VM is being migrated.  host id holds to from host"),
-        Error(false, "VM is in error"),
-        Unknown(false, "VM state is unknown."),
-        Shutdowned(false, "VM is shutdowned from inside");
+        Error(false, "VM is in error");
 
         private final boolean _transitional;
         String _description;

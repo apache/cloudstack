@@ -68,7 +68,7 @@ import com.cloud.vm.dao.UserVmDao;
 @Component
 @Local(value={OvsTunnelManager.class})
 public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManager {
-	public static final Logger s_logger = 
+	public static final Logger s_logger =
 			Logger.getLogger(OvsTunnelManagerImpl.class.getName());
 	
 	boolean _isEnabled;
@@ -104,7 +104,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 		OvsTunnelNetworkVO ta = null;
 		try {
 			ta = new OvsTunnelNetworkVO(from, to, key, networkId);
-			OvsTunnelNetworkVO lock = 
+			OvsTunnelNetworkVO lock =
 					_tunnelNetworkDao.acquireInLockTable(Long.valueOf(1));
 			if (lock == null) {
 			    s_logger.warn("Cannot lock table ovs_tunnel_account");
@@ -113,14 +113,14 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 			_tunnelNetworkDao.persist(ta);
 			_tunnelNetworkDao.releaseFromLockTable(lock.getId());
 		} catch (EntityExistsException e) {
-			s_logger.debug("A record for the tunnel from " + from + 
+			s_logger.debug("A record for the tunnel from " + from +
 						   " to " + to + " already exists");
 		}
 		return ta;
 	}
 
 	@DB
-	protected OvsTunnelInterfaceVO createInterfaceRecord(String ip, 
+	protected OvsTunnelInterfaceVO createInterfaceRecord(String ip,
 			String netmask,String mac,long hostId, String label) {
 		OvsTunnelInterfaceVO ti = null;
 		try {
@@ -144,7 +144,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 	private String handleFetchInterfaceAnswer(Answer[] answers, Long hostId){
 		OvsFetchInterfaceAnswer ans = (OvsFetchInterfaceAnswer) answers[0];
 		if (ans.getResult()) {
-			if (ans.getIp() != null && 
+			if (ans.getIp() != null &&
 				!("".equals(ans.getIp()))) {
 				OvsTunnelInterfaceVO ti =
 						createInterfaceRecord(ans.getIp(), ans.getNetmask(),
@@ -194,7 +194,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 		// Fetch fefault name for network label from configuration
 		String physNetLabel = _configDao.getValue(Config.OvsTunnelNetworkDefaultLabel.key());
         Long physNetId = nw.getPhysicalNetworkId();
-        PhysicalNetworkTrafficType physNetTT = 
+        PhysicalNetworkTrafficType physNetTT =
         		_physNetTTDao.findBy(physNetId, TrafficType.Guest);
         HypervisorType hvType = host.getHypervisorType();
         
@@ -202,7 +202,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         	case XenServer:
         		String label = physNetTT.getXenNetworkLabel();
         		if ((label!=null) && (!label.equals(""))) {
-        			physNetLabel = label; 
+        			physNetLabel = label;
         		}
         		break;
         	default:
@@ -212,7 +212,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         }
 		
         // Try to fetch GRE endpoint IP address for cloud db
-        // If not found, then find it on the hypervisor            
+        // If not found, then find it on the hypervisor
         OvsTunnelInterfaceVO tunnelIface =
         		_tunnelInterfaceDao.getByHostAndLabel(host.getId(),
         											  physNetLabel);
@@ -221,7 +221,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         	//for network with label on target host
 			Commands fetchIfaceCmds =
 					new Commands(new OvsFetchInterfaceCommand(physNetLabel));
-			s_logger.debug("Ask host " + host.getId() + 
+			s_logger.debug("Ask host " + host.getId() +
 						   " to retrieve interface for phy net with label:" +
 						   physNetLabel);
 			Answer[] fetchIfaceAnswers = _agentMgr.send(host.getId(),
@@ -241,11 +241,11 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 			//The GRE key is actually in the host part of the URI
 			String keyStr = network.getBroadcastUri().getHost();
     		// The key is most certainly and int.
-    		// So we feel quite safe in converting it into a string			
+    		// So we feel quite safe in converting it into a string
     		key = Integer.valueOf(keyStr);
     		return key;
 		} catch (NumberFormatException e) {
-			s_logger.debug("Well well, how did '" + key + 
+			s_logger.debug("Well well, how did '" + key +
 					       "' end up in the broadcast URI for the network?");
 			throw new CloudRuntimeException(
 					String.format("Invalid GRE key parsed from" +
@@ -274,7 +274,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 		// Find active VMs with a NIC on the target network
 		List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(nw.getId(),
 							  State.Running, State.Starting,
-							  State.Stopping, State.Unknown, State.Migrating);
+                State.Stopping, State.Migrating);
 		// Find routers for the network
 		List<DomainRouterVO> routers = _routerDao.findByNetwork(nw.getId());
 		List<VMInstanceVO>ins = new ArrayList<VMInstanceVO>();
@@ -299,24 +299,24 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             	s_logger.debug("Attempting to create tunnel from:" +
             			hostId + " to:" + rh.longValue());
             	if (ta == null) {
-            		this.createTunnelRecord(hostId, rh.longValue(),
+            		createTunnelRecord(hostId, rh.longValue(),
             				nw.getId(), key);
             	}
                 if (!toHostIds.contains(rh)) {
                     toHostIds.add(rh);
-                } 
+                }
             }
 
             ta = _tunnelNetworkDao.getByFromToNetwork(rh.longValue(),
             		hostId, nw.getId());
-            // Try and create the tunnel even if a previous attempt failed            
+            // Try and create the tunnel even if a previous attempt failed
             if (ta == null || ta.getState().equals("FAILED")) {
             	s_logger.debug("Attempting to create tunnel from:" +
             			rh.longValue() + " to:" + hostId);
             	if (ta == null) {
-            		this.createTunnelRecord(rh.longValue(), hostId,
+            		createTunnelRecord(rh.longValue(), hostId,
             				nw.getId(), key);
-            	} 
+            	}
                 if (!fromHostIds.contains(rh)) {
                     fromHostIds.add(rh);
                 }
@@ -338,9 +338,9 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 	            								 "endpoint for the GRE tunnel." +
 	            								 "Failure is on host:" + rHost.getId());
 				Commands cmds = new Commands(
-						new OvsCreateTunnelCommand(otherIp, key, 
+						new OvsCreateTunnelCommand(otherIp, key,
 								Long.valueOf(hostId), i, nw.getId(), myIp));
-				s_logger.debug("Ask host " + hostId + 
+				s_logger.debug("Ask host " + hostId +
 						" to create gre tunnel to " + i);
 				Answer[] answers = _agentMgr.send(hostId, cmds);
 				handleCreateTunnelAnswer(answers);
@@ -365,7 +365,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 			if (noHost) {
 				Commands cmds = new Commands(
 						new OvsSetupBridgeCommand(key, hostId, nw.getId()));
-				s_logger.debug("Ask host " + hostId + 
+				s_logger.debug("Ask host " + hostId +
 						" to configure bridge for network:" + nw.getId());
 				Answer[] answers = _agentMgr.send(hostId, cmds);
 				handleSetupBridgeAnswer(answers);
@@ -373,7 +373,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 		} catch (Exception e) {
 		    // I really thing we should do a better handling of these exceptions
 			s_logger.warn("Ovs Tunnel network created tunnel failed", e);
-		}	
+		}
 	}
 	
 	@Override
@@ -385,7 +385,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
     public void VmCheckAndCreateTunnel(
     		VirtualMachineProfile vm,
     		Network nw, DeployDestination dest) {
-        CheckAndCreateTunnel(vm.getVirtualMachine(), nw, dest);    
+        CheckAndCreateTunnel(vm.getVirtualMachine(), nw, dest);
     }
 
     @DB
@@ -395,7 +395,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             OvsTunnelNetworkVO lock = _tunnelNetworkDao.acquireInLockTable(Long.valueOf(1));
             if (lock == null) {
                 s_logger.warn(String.format("failed to lock" +
-                		"ovs_tunnel_account, remove record of " + 
+                		"ovs_tunnel_account, remove record of " +
                          "tunnel(from=%1$s, to=%2$s account=%3$s) failed",
                          from, to, network_id));
                 return;
@@ -406,7 +406,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             
             s_logger.debug(String.format("Destroy tunnel(account:%1$s," +
             		"from:%2$s, to:%3$s) successful",
-            		network_id, from, to)); 
+            		network_id, from, to));
         } else {
             s_logger.debug(String.format("Destroy tunnel(account:%1$s," +
             		"from:%2$s, to:%3$s) failed",
@@ -431,10 +431,10 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             _tunnelNetworkDao.releaseFromLockTable(lock.getId());
             
             s_logger.debug(String.format("Destroy bridge for" +
-            		"network %1$s successful", network_id)); 
+            		"network %1$s successful", network_id));
         } else {
         	s_logger.debug(String.format("Destroy bridge for" +
-        			"network %1$s failed", network_id));        
+        			"network %1$s failed", network_id));
         }
     }
 
@@ -468,7 +468,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 return;
         }
         try {
-            /* Now we are last one on host, destroy the bridge with all 
+            /* Now we are last one on host, destroy the bridge with all
              * the tunnels for this network  */
         	int key = getGreKey(nw);
             Command cmd = new OvsDestroyBridgeCommand(nw.getId(), key);
@@ -478,7 +478,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             handleDestroyBridgeAnswer(ans, vm.getHostId(), nw.getId());
             
             /* Then ask hosts have peer tunnel with me to destroy them */
-            List<OvsTunnelNetworkVO> peers = 
+            List<OvsTunnelNetworkVO> peers =
             		_tunnelNetworkDao.listByToNetwork(vm.getHostId(),
             				nw.getId());
             for (OvsTunnelNetworkVO p : peers) {
@@ -486,7 +486,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             	if (p.getState().equals("SUCCESS")) {
 	                cmd = new OvsDestroyTunnelCommand(p.getNetworkId(), key,
 	                		p.getPortName());
-	                s_logger.debug("Destroying tunnel to " + vm.getHostId() + 
+	                s_logger.debug("Destroying tunnel to " + vm.getHostId() +
 	                		" from " + p.getFrom());
 	                ans = _agentMgr.send(p.getFrom(), cmd);
 	                handleDestroyTunnelAnswer(ans, p.getFrom(),

@@ -239,16 +239,16 @@ public class VMEntityManagerImpl implements VMEntityManager {
             DataCenterDeployment reservedPlan = new DataCenterDeployment(vm.getDataCenterId(),
                     vmReservation.getPodId(), vmReservation.getClusterId(), vmReservation.getHostId(), null, null);
             try {
-                VMInstanceVO vmDeployed = _itMgr.start(vm, params, _userDao.findById(new Long(caller)),
+                VirtualMachine vmDeployed = _itMgr.start(vm.getUuid(), params, _userDao.findById(new Long(caller)),
                         _accountDao.findById(vm.getAccountId()), reservedPlan);
             } catch (Exception ex) {
                 // Retry the deployment without using the reservation plan
-                _itMgr.start(vm, params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()),
+                _itMgr.start(vm.getUuid(), params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()),
                         null);
             }
         } else {
             // no reservation found. Let VirtualMachineManager retry
-            _itMgr.start(vm, params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()), null);
+            _itMgr.start(vm.getUuid(), params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()), null);
         }
 
     }
@@ -257,7 +257,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     public boolean stop(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException {
 
         VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
-        return _itMgr.stop(vm, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
+        return _itMgr.stop(vm.getUuid(), _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
 
     }
 
@@ -265,7 +265,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     public boolean destroy(VMEntityVO vmEntityVO, String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException{
 
          VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
-         return _itMgr.destroy(vm, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
+        return _itMgr.destroy(vm.getUuid(), _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
 
 
     }

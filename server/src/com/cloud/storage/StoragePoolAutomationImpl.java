@@ -22,16 +22,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -108,7 +106,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         Long userId = UserContext.current().getCallerUserId();
         User user = _userDao.findById(userId);
         Account account = UserContext.current().getCaller();
-        StoragePoolVO pool = this.primaryDataStoreDao.findById(store.getId());
+        StoragePoolVO pool = primaryDataStoreDao.findById(store.getId());
         try {
             StoragePool storagePool = (StoragePool) store;
             List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(
@@ -151,7 +149,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             }
 
             // 2. Get a list of all the ROOT volumes within this storage pool
-            List<VolumeVO> allVolumes = this.volumeDao.findByPoolId(pool
+            List<VolumeVO> allVolumes = volumeDao.findByPoolId(pool
                     .getId());
 
             // 3. Enqueue to the work queue
@@ -208,7 +206,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     // call the consoleproxymanager
                     ConsoleProxyVO consoleProxy = _consoleProxyDao
                             .findById(vmInstance.getId());
-                    if (!vmMgr.advanceStop(consoleProxy, true, user, account)) {
+                    if (!vmMgr.advanceStop(consoleProxy.getUuid(), false, user, account)) {
                         String errorMsg = "There was an error stopping the console proxy id: "
                                 + vmInstance.getId()
                                 + " ,cannot enable storage maintenance";
@@ -222,7 +220,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
                     if (restart) {
 
-                        if (this.vmMgr.advanceStart(consoleProxy, null, user,
+                        if (vmMgr.advanceStart(consoleProxy.getUuid(), null, user,
                                 account) == null) {
                             String errorMsg = "There was an error starting the console proxy id: "
                                     + vmInstance.getId()
@@ -239,7 +237,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 // if the instance is of type uservm, call the user vm manager
                 if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
                     UserVmVO userVm = userVmDao.findById(vmInstance.getId());
-                    if (!vmMgr.advanceStop(userVm, true, user, account)) {
+                    if (!vmMgr.advanceStop(userVm.getUuid(), false, user, account)) {
                         String errorMsg = "There was an error stopping the user vm id: "
                                 + vmInstance.getId()
                                 + " ,cannot enable storage maintenance";
@@ -258,7 +256,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                         VirtualMachine.Type.SecondaryStorageVm)) {
                     SecondaryStorageVmVO secStrgVm = _secStrgDao
                             .findById(vmInstance.getId());
-                    if (!vmMgr.advanceStop(secStrgVm, true, user, account)) {
+                    if (!vmMgr.advanceStop(secStrgVm.getUuid(), false, user, account)) {
                         String errorMsg = "There was an error stopping the ssvm id: "
                                 + vmInstance.getId()
                                 + " ,cannot enable storage maintenance";
@@ -271,7 +269,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
 
                     if (restart) {
-                        if (vmMgr.advanceStart(secStrgVm, null, user, account) == null) {
+                        if (vmMgr.advanceStart(secStrgVm.getUuid(), null, user, account) == null) {
                             String errorMsg = "There was an error starting the ssvm id: "
                                     + vmInstance.getId()
                                     + " on another storage pool, cannot enable primary storage maintenance";
@@ -289,7 +287,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (vmInstance.getType().equals(
                         VirtualMachine.Type.DomainRouter)) {
                     DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
-                    if (!vmMgr.advanceStop(domR, true, user, account)) {
+                    if (!vmMgr.advanceStop(domR.getUuid(), false, user, account)) {
                         String errorMsg = "There was an error stopping the domain router id: "
                                 + vmInstance.getId()
                                 + " ,cannot enable primary storage maintenance";
@@ -302,7 +300,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
 
                     if (restart) {
-                        if (vmMgr.advanceStart(domR, null, user, account) == null) {
+                        if (vmMgr.advanceStart(domR.getUuid(), null, user, account) == null) {
                             String errorMsg = "There was an error starting the domain router id: "
                                     + vmInstance.getId()
                                     + " on another storage pool, cannot enable primary storage maintenance";
@@ -320,7 +318,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             s_logger.error(
                     "Exception in enabling primary storage maintenance:", e);
             pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
-            this.primaryDataStoreDao.update(pool.getId(), pool);
+            primaryDataStoreDao.update(pool.getId(), pool);
             throw new CloudRuntimeException(e.getMessage());
         }
         return true;
@@ -332,7 +330,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         Long userId = UserContext.current().getCallerUserId();
         User user = _userDao.findById(userId);
         Account account = UserContext.current().getCaller();
-        StoragePoolVO poolVO = this.primaryDataStoreDao
+        StoragePoolVO poolVO = primaryDataStoreDao
                 .findById(store.getId());
         StoragePool pool = (StoragePool)store;
        
@@ -379,7 +377,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
                     ConsoleProxyVO consoleProxy = _consoleProxyDao
                             .findById(vmInstance.getId());
-                    if (vmMgr.advanceStart(consoleProxy, null, user, account) == null) {
+                    if (vmMgr.advanceStart(consoleProxy.getUuid(), null, user, account) == null) {
                         String msg = "There was an error starting the console proxy id: "
                                 + vmInstance.getId()
                                 + " on storage pool, cannot complete primary storage maintenance";
@@ -397,7 +395,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                         VirtualMachine.Type.SecondaryStorageVm)) {
                     SecondaryStorageVmVO ssVm = _secStrgDao.findById(vmInstance
                             .getId());
-                    if (vmMgr.advanceStart(ssVm, null, user, account) == null) {
+                    if (vmMgr.advanceStart(ssVm.getUuid(), null, user, account) == null) {
                         String msg = "There was an error starting the ssvm id: "
                                 + vmInstance.getId()
                                 + " on storage pool, cannot complete primary storage maintenance";
@@ -414,7 +412,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (vmInstance.getType().equals(
                         VirtualMachine.Type.DomainRouter)) {
                     DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
-                    if (vmMgr.advanceStart(domR, null, user, account) == null) {
+                    if (vmMgr.advanceStart(domR.getUuid(), null, user, account) == null) {
                         String msg = "There was an error starting the domR id: "
                                 + vmInstance.getId()
                                 + " on storage pool, cannot complete primary storage maintenance";
@@ -431,7 +429,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
                     UserVmVO userVm = userVmDao.findById(vmInstance.getId());
 
-                    if (vmMgr.advanceStart(userVm, null, user, account) == null) {
+                    if (vmMgr.advanceStart(userVm.getUuid(), null, user, account) == null) {
 
                         String msg = "There was an error starting the user vm id: "
                                 + vmInstance.getId()

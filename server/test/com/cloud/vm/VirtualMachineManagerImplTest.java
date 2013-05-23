@@ -226,7 +226,7 @@ public class VirtualMachineManagerImplTest {
         long l = 1L;
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
-        _vmMgr.migrateForScale(_vmInstance, l, dest, l);
+        _vmMgr.migrateForScale(_vmInstance.getUuid(), l, dest, l);
 
     }
 
@@ -259,7 +259,7 @@ public class VirtualMachineManagerImplTest {
 
         when(_vmInstance.getHostId()).thenReturn(null);
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
-        _vmMgr.findHostAndMigrate(VirtualMachine.Type.User, _vmInstance, 2l);
+        _vmMgr.findHostAndMigrate(_vmInstance.getUuid(), 2l);
 
     }
 
@@ -387,7 +387,7 @@ public class VirtualMachineManagerImplTest {
         when(_srcHostMock.getClusterId()).thenReturn(3L);
         when(_destHostMock.getClusterId()).thenReturn(3L);
 
-        _vmMgr.migrateWithStorage(_vmInstance, _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
+        _vmMgr.migrateWithStorage(_vmInstance.getUuid(), _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
     }
 
     // Check migration of a vm with its volumes across a cluster.
@@ -399,7 +399,7 @@ public class VirtualMachineManagerImplTest {
         when(_srcHostMock.getClusterId()).thenReturn(3L);
         when(_destHostMock.getClusterId()).thenReturn(4L);
 
-        _vmMgr.migrateWithStorage(_vmInstance, _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
+        _vmMgr.migrateWithStorage(_vmInstance.getUuid(), _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
     }
 
     // Check migration of a vm fails when src and destination pool are not of same type; that is, one is shared and
@@ -415,7 +415,7 @@ public class VirtualMachineManagerImplTest {
         when(_destStoragePoolMock.isLocal()).thenReturn(true);
         when(_diskOfferingMock.getUseLocalStorage()).thenReturn(false);
 
-        _vmMgr.migrateWithStorage(_vmInstance, _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
+        _vmMgr.migrateWithStorage(_vmInstance.getUuid(), _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
     }
 
     // Check migration of a vm fails when vm is not in Running state.
@@ -429,6 +429,6 @@ public class VirtualMachineManagerImplTest {
 
         when(_vmMock.getState()).thenReturn(State.Stopped);
 
-        _vmMgr.migrateWithStorage(_vmInstance, _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
+        _vmMgr.migrateWithStorage(_vmInstance.getUuid(), _srcHostMock.getId(), _destHostMock.getId(), _volumeToPoolMock);
     }
 }

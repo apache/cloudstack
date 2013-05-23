@@ -246,7 +246,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
-import com.cloud.vm.VmWork;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
@@ -419,7 +418,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         _accountMgr.checkAccess(caller, null, true, router);
 
-        boolean result = _itMgr.expunge(router, _accountMgr.getActiveUser(callerUserId), _accountMgr.getAccount(router.getAccountId()));
+        boolean result = _itMgr.expunge(router.getUuid(), _accountMgr.getActiveUser(callerUserId), _accountMgr.getAccount(router.getAccountId()));
 
         if (result) {
             return router;
@@ -1604,59 +1603,59 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         DomainRouterVO router = null;
         for (Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             HypervisorType hType = iter.next();
-            try {
-                s_logger.debug("Allocating the domR with the hypervisor type " + hType);
-                String templateName = null;
-                switch (hType) {
-                case XenServer:
-                    templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                    break;
-                case KVM:
-                    templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                    break;
-                case VMware:
-                    templateName = _configServer
-                            .getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                    break;
-                case Hyperv:
-                    templateName = _configServer
-                            .getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                    break;
-                case LXC:
-                    templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                    break;
-                default:
-                    break;
-                }
-                VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
+            s_logger.debug("Allocating the domR with the hypervisor type " + hType);
+            String templateName = null;
+            switch (hType) {
+            case XenServer:
+                templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            case KVM:
+                templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            case VMware:
+                templateName = _configServer
+                        .getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            case Hyperv:
+                templateName = _configServer
+                        .getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            case LXC:
+                templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            default:
+                break;
+            }
+            VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
-                if (template == null) {
-                    s_logger.debug(hType + " won't support system vm, skip it");
-                    continue;
-                }
+            if (template == null) {
+                s_logger.debug(hType + " won't support system vm, skip it");
+                continue;
+            }
 
-                boolean offerHA = routerOffering.getOfferHA();
-                /* We don't provide HA to redundant router VMs, admin should own it all, and redundant router themselves are HA */
-                if (isRedundant) {
-                    offerHA = false;
-                }
+            boolean offerHA = routerOffering.getOfferHA();
+            /* We don't provide HA to redundant router VMs, admin should own it all, and redundant router themselves are HA */
+            if (isRedundant) {
+                offerHA = false;
+            }
 
-                router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(),
-                        VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
-                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), isRedundant, 0, false,
-                        RedundantState.UNKNOWN, offerHA, false, vpcId);
-                router.setRole(Role.VIRTUAL_ROUTER);
-                router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
-            } catch (InsufficientCapacityException ex) {
+            router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(),
+                    VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                    template.getGuestOSId(), owner.getDomainId(), owner.getId(), isRedundant, 0, false,
+                    RedundantState.UNKNOWN, offerHA, false, vpcId);
+            router.setRole(Role.VIRTUAL_ROUTER);
+            router = _routerDao.persist(router);
+            if (_itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, plan, null, owner) == null) {
                 if (allocateRetry < 2 && iter.hasNext()) {
+                    _routerDao.remove(router.getId());
+                    allocateRetry++;
                     s_logger.debug("Failed to allocate the VR with hypervisor type " + hType + ", retrying one more time");
                     continue;
                 } else {
-                    throw ex;
+                    throw new CloudRuntimeException("Failed to allocate a VR");
                 }
-            } finally {
-                allocateRetry++;
             }
+            router = _routerDao.findById(router.getId());
 
             if (startRouter) {
                 try {
@@ -2697,7 +2696,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
-        if (_itMgr.start(router, params, user, caller, planToDeploy) != null) {
+        if (_itMgr.start(router.getUuid(), params, user, caller, planToDeploy) != null) {
             if (router.isStopPending()) {
                 s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after start router successfully!");
                 router.setStopPending(false);
@@ -2719,7 +2718,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public DomainRouterVO stop(VirtualRouter router, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
-            if (_itMgr.advanceStop((DomainRouterVO)router, forced, user, caller)) {
+            if (_itMgr.advanceStop(router.getUuid(), forced, user, caller)) {
                 return _routerDao.findById(router.getId());
             } else {
                 return null;
@@ -3985,13 +3984,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
     }
 
-    @Override
-    public void vmWorkStart(VmWork work) {
-    }
-
-    @Override
-    public void vmWorkStop(VmWork work) {
-    }
+//    @Override
+//    public void vmWorkStart(VmWork work) {
+//    }
+//
+//    @Override
+//    public void vmWorkStop(VmWork work) {
+//    }
 
     @Override
     public VirtualRouter findRouter(long routerId) {

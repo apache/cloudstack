@@ -33,17 +33,18 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.ConfigurationManager;
@@ -177,8 +178,8 @@ public class UserVmManagerTest {
         when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
         doReturn(3L).when(_volumeMock).getTemplateId();
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
-        when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
-        when(_itMgr.start(_vmMock, null, _userMock, _account)).thenReturn(_vmMock);
+        when(_itMgr.stop(null, _userMock, _account)).thenReturn(true);
+        when(_itMgr.start(null, null, _userMock, _account)).thenReturn(_vmMock);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
@@ -202,13 +203,13 @@ public class UserVmManagerTest {
         doReturn(3L).when(_volumeMock).getTemplateId();
         when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
         doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
-        when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
+        when(_itMgr.stop(null, _userMock, _account)).thenReturn(true);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, 14L)).thenReturn(_volumeMock);
         when(_templateMock.getGuestOSId()).thenReturn(5L);
         doNothing().when(_vmMock).setGuestOSId(anyLong());
         doNothing().when(_vmMock).setTemplateId(3L);
         when(_vmDao.update(314L, _vmMock)).thenReturn(true);
-        when(_itMgr.start(_vmMock, null, _userMock, _account)).thenReturn(_vmMock);
+        when(_itMgr.start(null, null, _userMock, _account)).thenReturn(_vmMock);
         when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
@@ -236,7 +237,7 @@ public class UserVmManagerTest {
         serviceOfferingIdField.set(cmd, 1L);
 
        // UserContext.current().setEventDetails("Vm Id: "+getId());
-        Account account = (Account) new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
        UserContext.registerContext(1, account, null, true);
 
@@ -272,8 +273,8 @@ public class UserVmManagerTest {
         doNothing().when(_itMgr).checkIfCanUpgrade(_vmMock, cmd.getServiceOfferingId());
 
 
-        ServiceOffering so1 =  (ServiceOffering) getSvcoffering(512);
-        ServiceOffering so2 =  (ServiceOffering) getSvcoffering(256);
+        ServiceOffering so1 =  getSvcoffering(512);
+        ServiceOffering so2 =  getSvcoffering(256);
 
         when(_configMgr.getServiceOffering(anyLong())).thenReturn(so1);
         when(_configMgr.getServiceOffering(1L)).thenReturn(so1);
@@ -306,8 +307,8 @@ public class UserVmManagerTest {
         doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
 
 
-        ServiceOffering so1 =  (ServiceOffering) getSvcoffering(512);
-        ServiceOffering so2 =  (ServiceOffering) getSvcoffering(256);
+        ServiceOffering so1 =  getSvcoffering(512);
+        ServiceOffering so2 =  getSvcoffering(256);
 
         when(_configMgr.getServiceOffering(anyLong())).thenReturn(so2);
         when(_configMgr.getServiceOffering(1L)).thenReturn(so1);
@@ -346,8 +347,8 @@ public class UserVmManagerTest {
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
 
-        ServiceOffering so1 =  (ServiceOffering) getSvcoffering(512);
-        ServiceOffering so2 =  (ServiceOffering) getSvcoffering(256);
+        ServiceOffering so1 =  getSvcoffering(512);
+        ServiceOffering so2 =  getSvcoffering(256);
 
         when(_configMgr.getServiceOffering(anyLong())).thenReturn(so2);
         when(_configMgr.getServiceOffering(1L)).thenReturn(so1);
@@ -401,7 +402,7 @@ public class UserVmManagerTest {
         domainIdField.set(cmd, 1L);
 
         // caller is of type 0
-        Account caller = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0,
+        Account caller = new AccountVO("testaccount", 1, "networkdomain", (short) 0,
                 UUID.randomUUID().toString());
         UserContext.registerContext(1, caller, null, true);
 
@@ -428,13 +429,13 @@ public class UserVmManagerTest {
         domainIdField.set(cmd, 1L);
 
         // caller is of type 0
-        Account caller = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 1,
+        Account caller = new AccountVO("testaccount", 1, "networkdomain", (short) 1,
                 UUID.randomUUID().toString());
         UserContext.registerContext(1, caller, null, true);
 
-        Account oldAccount = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0,
+        Account oldAccount = new AccountVO("testaccount", 1, "networkdomain", (short) 0,
                 UUID.randomUUID().toString());
-        Account newAccount = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 1,
+        Account newAccount = new AccountVO("testaccount", 1, "networkdomain", (short) 1,
                 UUID.randomUUID().toString());
 
         UserVmVO vm = new UserVmVO(10L, "test", "test", 1L, HypervisorType.Any, 1L, false, false, 1L, 1L,

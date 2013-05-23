@@ -718,8 +718,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
     }
 
-    private UserVm rebootVirtualMachine(long userId, long vmId)
-            throws InsufficientCapacityException, ResourceUnavailableException {
+    private UserVm rebootVirtualMachine(long userId, long vmId) {
         UserVmVO vm = _vmDao.findById(vmId);
         User caller = _accountMgr.getActiveUser(userId);
         Account owner = _accountMgr.getAccount(vm.getAccountId());
@@ -730,13 +729,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             return null;
         }
 
-        if (vm.getState() == State.Running && vm.getHostId() != null) {
-            return _itMgr.reboot(vm, null, caller, owner);
-        } else {
-            s_logger.error("Vm id=" + vmId
-                    + " is not in Running state, failed to reboot");
+        if (_itMgr.reboot(vm.getUuid(), caller, owner)) {
             return null;
         }
+        return _vmDao.findById(vmId);
     }
 
     @Override
@@ -1091,7 +1087,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
-        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+        VirtualMachine vmInstance = _vmInstanceDao.findById(vmId);
         if(vmInstance.getHypervisorType() != HypervisorType.XenServer && vmInstance.getHypervisorType() != HypervisorType.VMware){
             throw new InvalidParameterValueException("This operation not permitted for this hypervisor of the vm");
         }
@@ -1126,7 +1122,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
                     // #2 migrate the vm if host doesn't have capacity
                     if (!existingHostHasCapacity){
-                        vmInstance = _itMgr.findHostAndMigrate(vmInstance.getType(), vmInstance, newServiceOfferingId);
+                        vmInstance = _itMgr.findHostAndMigrate(vmInstance.getUuid(), newServiceOfferingId);
                     }
 
                     // #3 scale the vm now
@@ -1405,10 +1401,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         ctx.setAccountId(vm.getAccountId());
 
         try {
+            List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             // expunge the vm
-            if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
+            if (!_itMgr.advanceExpunge(vm.getUuid(), _accountMgr.getSystemUser(), caller)) {
                 s_logger.info("Did not expunge " + vm);
                 return false;
+            }
+
+            // Update Resource count
+            if (vm.getAccountId() != Account.ACCOUNT_ID_SYSTEM && !rootVol.isEmpty()) {
+                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.volume);
+                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.primary_storage,
+                        new Long(rootVol.get(0).getSize()));
             }
 
             // Only if vm is not expunged already, cleanup it's resources
@@ -1425,8 +1429,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + vm + " expunge");
                     return false;
                 }
-
-                _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
             }
 
             return true;
@@ -3525,7 +3527,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + destHypervisorType.toString() + ", vm: "
                             + vm.getHypervisorType().toString());
         }
-        VMInstanceVO migratedVm = _itMgr.storageMigration(vm, destPool);
+        VirtualMachine migratedVm = _itMgr.storageMigration(vm.getUuid(), destPool);
         return migratedVm;
 
     }
@@ -3642,8 +3644,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + " already has max Running VMs(count includes system VMs), cannot migrate to this host");
         }
 
-        VMInstanceVO migratedVm = _itMgr.migrate(vm, srcHostId, dest);
-        return migratedVm;
+        return _itMgr.migrate(vm.getUuid(), srcHostId, dest);
     }
 
     @Override
@@ -3763,8 +3764,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     " migrate to this host");
         }
 
-        VMInstanceVO migratedVm = _itMgr.migrateWithStorage(vm, srcHostId, destinationHost.getId(), volToPoolObjectMap);
-        return migratedVm;
+        return _itMgr.migrateWithStorage(vm.getUuid(), srcHostId, destinationHost.getId(), volToPoolObjectMap);
     }
 
     @DB
@@ -3956,7 +3956,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         txn.commit();
 
-        VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
+        VMInstanceVO vmoi = _vmInstanceDao.findById(vm.getId());
         VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(vmoi);
 
         // OS 3: update the network
@@ -4033,7 +4033,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             networks.add(new Pair<NetworkVO, NicProfile>(networkList.get(0),
                     profile));
 
-            VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
+            VMInstanceVO vmi = _vmInstanceDao.findById(vm.getId());
             VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
             _networkMgr.allocate(vmProfile, networks);
 
@@ -4166,8 +4166,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     networks.add(new Pair<NetworkVO, NicProfile>(appNet,
                             defaultNic));
                 }
-                VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(),
-                        vm.getId());
+                VMInstanceVO vmi = _vmInstanceDao.findById(vm.getId());
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
                 _networkMgr.allocate(vmProfile, networks);
                 s_logger.debug("AssignVM: Advance virtual, adding networks no "
@@ -4263,12 +4262,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         if (needRestart) {
-            try {
-                _itMgr.stop(vm, user, caller);
-            } catch (ResourceUnavailableException e) {
-                s_logger.debug("Stop vm " + vm.getUuid() + " failed", e);
-                CloudRuntimeException ex = new CloudRuntimeException(
-                        "Stop vm failed for specified vmId");
+            if (!_itMgr.stop(vm.getUuid(), user, caller)) {
+                s_logger.debug("Stop vm " + vm.getUuid() + " failed");
+                CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
                 ex.addProxyObject(vm, vmId, "vmId");
                 throw ex;
             }
@@ -4317,7 +4313,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (needRestart) {
             try {
-                _itMgr.start(vm, null, user, caller);
+                _itMgr.start(vm.getUuid(), null, user, caller);
             } catch (Exception e) {
                 s_logger.debug("Unable to start VM " + vm.getUuid(), e);
                 CloudRuntimeException ex = new CloudRuntimeException(
@@ -4337,12 +4333,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public void prepareStop(VirtualMachineProfile profile) {
     }
     
-    @Override
-    public void vmWorkStart(VmWork work) {
-    }
-    
-    @Override
-    public void vmWorkStop(VmWork work) {
-    }
+//    @Override
+//    public void vmWorkStart(VmWork work) {
+//    }
+//
+//    @Override
+//    public void vmWorkStop(VmWork work) {
+//    }
 
 }

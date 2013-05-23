@@ -134,7 +134,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
-import com.cloud.vm.VmWork;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
@@ -458,6 +457,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
             throw new ConcurrentOperationException("Unable to acquire network lock: " + guestNetworkId);
         }
 
+        DomainRouterVO elbVm = null;
+        boolean error = false;
+
         try {
 
             if (_networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
@@ -472,7 +474,6 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
                     || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: " + guestNetwork;
 
             DataCenterDeployment plan = null;
-            DomainRouterVO elbVm = null;
             
             plan = new DataCenterDeployment(dcId, dest.getPod().getId(), null, null, null, null);
 
@@ -510,7 +511,12 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
                         template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, RedundantState.UNKNOWN,
                         _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm, null);
                 elbVm.setRole(Role.LB);
-                elbVm = _itMgr.allocate(elbVm, template, _elasticLbVmOffering, networks, plan, null, owner);
+                elbVm = _routerDao.persist(elbVm);
+                if (_itMgr.allocate(elbVm.getInstanceName(), template, _elasticLbVmOffering, networks, plan, null, owner) != null) {
+                    elbVm = _routerDao.findById(elbVm.getId());
+                } else {
+                    error = true;
+                }
                 //TODO: create usage stats
             }
 
@@ -521,6 +527,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
 
             return elbVm;
         } finally {
+            if (error && elbVm != null) {
+                _routerDao.remove(elbVm.getId());
+            }
             _networkDao.releaseFromLockTable(guestNetworkId);
         }
     }
@@ -528,7 +537,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     private DomainRouterVO start(DomainRouterVO elbVm, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting ELB VM " + elbVm);
-        if (_itMgr.start(elbVm, params, user, caller) != null) {
+        if (_itMgr.start(elbVm.getUuid(), params, user, caller) != null) {
             return _routerDao.findById(elbVm.getId());
         } else {
             return null;
@@ -538,7 +547,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping ELB vm " + elbVm);
         try {
-            if (_itMgr.advanceStop( elbVm, forced, user, caller)) {
+            if (_itMgr.advanceStop(elbVm.getUuid(), forced, user, caller)) {
                 return _routerDao.findById(elbVm.getId());
             } else {
                 return null;
@@ -732,7 +741,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
             if (gceed) {
                 try {
                     s_logger.info("Attempting to destroy ELB VM: " + elbVm);
-                    _itMgr.expunge(elbVm, user, _systemAcct);
+                    _itMgr.expunge(elbVm.getUuid(), user, _systemAcct);
                 } catch (ResourceUnavailableException e) {
                     s_logger.warn("Unable to destroy unused ELB vm " + elbVm + " due to ", e);
                     gceed = false;
@@ -985,12 +994,12 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     public void prepareStop(VirtualMachineProfile profile) {
     }
     
-    @Override
-    public void vmWorkStart(VmWork work) {
-    }
-    
-    @Override
-    public void vmWorkStop(VmWork work) {
-    }
+//    @Override
+//    public void vmWorkStart(VmWork work) {
+//    }
+//
+//    @Override
+//    public void vmWorkStop(VmWork work) {
+//    }
 
 }

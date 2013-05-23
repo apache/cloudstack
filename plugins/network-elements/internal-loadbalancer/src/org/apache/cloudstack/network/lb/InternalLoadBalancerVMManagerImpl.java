@@ -113,7 +113,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
-import com.cloud.vm.VmWork;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
@@ -526,7 +525,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
 
         _accountMgr.checkAccess(caller, null, true, internalLbVm);
 
-        return _itMgr.expunge(internalLbVm, _accountMgr.getActiveUser(callerUserId), caller);
+        return _itMgr.expunge(internalLbVm.getUuid(), _accountMgr.getActiveUser(callerUserId), caller);
     }
 
     
@@ -547,7 +546,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     protected VirtualRouter stopInternalLbVm(DomainRouterVO internalLbVm, boolean forced, Account caller, long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
         s_logger.debug("Stopping internal lb vm " + internalLbVm);
         try {
-            if (_itMgr.advanceStop(internalLbVm, forced, _accountMgr.getActiveUser(callerUserId), caller)) {
+            if (_itMgr.advanceStop(internalLbVm.getUuid(), forced, _accountMgr.getActiveUser(callerUserId), caller)) {
                 return _internalLbVmDao.findById(internalLbVm.getId());
             } else {
                 return null;
@@ -747,50 +746,50 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         DomainRouterVO internalLbVm = null;
         for (Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             HypervisorType hType = iter.next();
-            try {
-                s_logger.debug("Allocating the Internal lb with the hypervisor type " + hType);
-                String templateName = null;
-                switch (hType) {
-                    case XenServer:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                        break;
-                    case KVM:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                        break;
-                    case VMware:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                        break;
-                    case Hyperv:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                        break;
-                    case LXC:
-                        templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
-                        break;
-                    default: break;
-                }
-                VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
+            s_logger.debug("Allocating the Internal lb with the hypervisor type " + hType);
+            String templateName = null;
+            switch (hType) {
+            case XenServer:
+                templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            case KVM:
+                templateName = _configServer.getConfigValue(Config.RouterTemplateKVM.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            case VMware:
+                templateName = _configServer.getConfigValue(Config.RouterTemplateVmware.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            case Hyperv:
+                templateName = _configServer.getConfigValue(Config.RouterTemplateHyperv.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            case LXC:
+                templateName = _configServer.getConfigValue(Config.RouterTemplateLXC.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());
+                break;
+            default:
+                break;
+            }
+            VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
-                if (template == null) {
-                    s_logger.debug(hType + " won't support system vm, skip it");
-                    continue;
-                }
+            if (template == null) {
+                s_logger.debug(hType + " won't support system vm, skip it");
+                continue;
+            }
 
-                internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId,
-                VirtualMachineName.getSystemVmName(id, _instance, _internalLbVmNamePrefix), template.getId(), template.getHypervisorType(),
-                template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false,
-                RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
-                internalLbVm.setRole(Role.INTERNAL_LB_VM);
-                internalLbVm = _itMgr.allocate(internalLbVm, template, routerOffering, networks, plan, null, owner);
-            } catch (InsufficientCapacityException ex) {
+            internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId,
+                    VirtualMachineName.getSystemVmName(id, _instance, _internalLbVmNamePrefix), template.getId(), template.getHypervisorType(),
+                    template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false,
+                    RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
+            internalLbVm.setRole(Role.INTERNAL_LB_VM);
+            internalLbVm = _internalLbVmDao.persist(internalLbVm);
+            if (_itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null, owner) == null) {
                 if (allocateRetry < 2 && iter.hasNext()) {
+                    allocateRetry++;
+                    _internalLbVmDao.remove(internalLbVm.getId());
                     s_logger.debug("Failed to allocate the Internal lb vm with hypervisor type " + hType + ", retrying one more time");
                     continue;
-                } else {
-                    throw ex;
                 }
-            } finally {
-                allocateRetry++;
             }
+
+            internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
 
             if (startVm) {
                 try {
@@ -823,7 +822,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
-        if (_itMgr.start(internalLbVm, params, _accountMgr.getUserIncludingRemoved(callerUserId), caller, null) != null) {
+        if (_itMgr.start(internalLbVm.getUuid(), params, _accountMgr.getUserIncludingRemoved(callerUserId), caller, null) != null) {
             if (internalLbVm.isStopPending()) {
                 s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");
                 internalLbVm.setStopPending(false);
@@ -944,15 +943,15 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         return startInternalLbVm(internalLbVm, caller, callerUserId, null);
     }
 
-    @Override
-    public void vmWorkStart(VmWork work) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void vmWorkStop(VmWork work) {
-        // TODO Auto-generated method stub
-
-    }
+//    @Override
+//    public void vmWorkStart(VmWork work) {
+//        // TODO Auto-generated method stub
+//
+//    }
+//
+//    @Override
+//    public void vmWorkStop(VmWork work) {
+//        // TODO Auto-generated method stub
+//
+//    }
 }

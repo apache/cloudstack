@@ -55,7 +55,7 @@ import com.cloud.utils.fsm.NoTransitionException;
  */
 public interface VirtualMachineManager extends Manager {
 
-    <T extends VMInstanceVO> T allocate(T vm,
+    VirtualMachine allocate(String vmInstanceName,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
@@ -64,33 +64,25 @@ public interface VirtualMachineManager extends Manager {
             Map<VirtualMachineProfile.Param, Object> params,
             DeploymentPlan plan,
             HypervisorType hyperType,
-            Account owner) throws InsufficientCapacityException;
+            Account owner);
 
-    <T extends VMInstanceVO> T allocate(T vm,
-            VMTemplateVO template,
-            ServiceOfferingVO serviceOffering,
-            Long rootSize,
-            Pair<DiskOfferingVO, Long> dataDiskOffering,
-            List<Pair<NetworkVO, NicProfile>> networks,
-            DeploymentPlan plan,
-            HypervisorType hyperType,
-            Account owner) throws InsufficientCapacityException;
-
-    <T extends VMInstanceVO> T allocate(T vm,
+    VirtualMachine allocate(String vmInstanceName,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkVO, NicProfile>> networkProfiles,
             DeploymentPlan plan,
             HypervisorType hyperType,
-            Account owner) throws InsufficientCapacityException;
+            Account owner);
 
-    <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
+    VirtualMachine start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
+            ResourceUnavailableException;
 
-    <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException, ResourceUnavailableException;
+    VirtualMachine start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+            throws InsufficientCapacityException, ResourceUnavailableException;
 
-    <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws ResourceUnavailableException;
+    boolean stop(String vmUuid, User caller, Account account);
 
-    <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException;
+    boolean expunge(String vmUuid, User caller, Account account) throws ResourceUnavailableException;
 
     void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
     
@@ -102,42 +94,32 @@ public interface VirtualMachineManager extends Manager {
     
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
-    <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+    VirtualMachine advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
+            ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
-    <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+    VirtualMachine advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
-    <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    boolean advanceStop(String vmUuid, boolean forced, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
-    <T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    boolean advanceExpunge(String vmUuid, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
-    <T extends VMInstanceVO> boolean remove(T vm, User caller, Account account);
-
-    <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    boolean destroy(String vmUuid, User caller, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     boolean migrateAway(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException;
 
-    <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+    VirtualMachine migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+            VirtualMachineMigrationException;
 
-    <T extends VMInstanceVO> T migrateWithStorage(T vm, long srcId, long destId, Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+    VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException,
+            ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
-    <T extends VMInstanceVO> T reboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
+    boolean reboot(String vmUuid, User caller, Account account);
 
-    <T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+    boolean advanceReboot(String vmUuid, User caller, Account account) throws InsufficientCapacityException,
+            ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
-    VMInstanceVO findByIdAndType(VirtualMachine.Type type, long vmId);
-
-    /**
-     * Check to see if a virtual machine can be upgraded to the given service offering
-     * 
-     * @param vm
-     * @param offering
-     * @return true if the host can handle the upgrade, false otherwise
-     */
-    boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
-    
-    VMInstanceVO findById(long vmId);
-
-	<T extends VMInstanceVO> T storageMigration(T vm, StoragePool storagePoolId);
+    VirtualMachine storageMigration(String vmUuid, StoragePool storagePoolId);
 
     /**
      * @param vmInstance
@@ -184,13 +166,6 @@ public interface VirtualMachineManager extends Manager {
     boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
-     * @param nic
-     * @param hypervisorType
-     * @return
-     */
-    NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType);
-
-    /**
      * @param profile
      * @param hvGuru
      * @return
@@ -198,23 +173,25 @@ public interface VirtualMachineManager extends Manager {
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
 
-    VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering newServiceOffering, boolean sameHost)
+    VirtualMachine reConfigureVm(VirtualMachine vm, ServiceOffering newServiceOffering, boolean sameHost)
             throws ResourceUnavailableException, ConcurrentOperationException;
 
-    VMInstanceVO findHostAndMigrate(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId) throws InsufficientCapacityException,
+    VirtualMachine findHostAndMigrate(String vmUuid, Long newSvcOfferingId) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException,
             VirtualMachineMigrationException, ManagementServerException;
 
-    <T extends VMInstanceVO> T migrateForScale(T vm, long srcHostId, DeployDestination dest, Long newSvcOfferingId)
+    VirtualMachine migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId)
             throws ResourceUnavailableException, ConcurrentOperationException,
             ManagementServerException, VirtualMachineMigrationException;
 
     //
     // VM work handlers
     //
-    <T extends VMInstanceVO> T processVmStartWork(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+    VirtualMachine processVmStartWork(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
-    <T extends VMInstanceVO> boolean processVmStopWork(T vm, boolean forced, User user, Account account)
+    boolean processVmStopWork(String vmUuid, boolean forced, User user, Account account)
     	throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+
+    NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType);
 }
