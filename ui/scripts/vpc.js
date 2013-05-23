@@ -582,10 +582,10 @@
           }              
         }
       },
-      publicLoadBalancers: {
+      publicLbIps: {
         title: 'Public LB',
         listView: {
-          id: 'publicLoadBalancers',
+          id: 'publicLbIps',
           fields: {
             ipaddress: { label: 'label.ip.address' },
             type: { label: 'label.type' }
@@ -3268,7 +3268,7 @@
                 }
               ],
               tiers: $(networks).map(function(index, tier) {
-                var internalLoadBalancers, publicLoadBalancers, virtualMachines, staticNatIps;
+                var internalLoadBalancers, publicLbIps, virtualMachines, staticNatIps;
 
                 // Get internal load balancers
                 $.ajax({
@@ -3283,19 +3283,19 @@
                   }
                 });
 
-                // Get VMs
+                // Get Public LB IPs
                 $.ajax({
-                  url: createURL('listVirtualMachines'),
+                  url: createURL('listPublicIpAddresses'),
                   async: false,
-                  data: { networkid: tier.id },
+                  data: { networkid: tier.id, forloadbalancing: true },
                   success: function(json) {
-                    virtualMachines = json.listvirtualmachinesresponse;
+                    publicLbIps = json.listpublicipaddressesresponse;
                   },
                   error: function(json) {
                     error = true;
                   }
-                });
-
+                });            
+                
                 // Get static NAT IPs
                 $.ajax({
                   url: createURL('listPublicIpAddresses'),
@@ -3309,6 +3309,19 @@
                   }
                 });                
                 
+                // Get VMs
+                $.ajax({
+                  url: createURL('listVirtualMachines'),
+                  async: false,
+                  data: { networkid: tier.id },
+                  success: function(json) {
+                    virtualMachines = json.listvirtualmachinesresponse;
+                  },
+                  error: function(json) {
+                    error = true;
+                  }
+                });
+                
                 return $.extend(tier, {
                   _dashboardItems: [
                     {
@@ -3317,9 +3330,9 @@
                       total: internalLoadBalancers.count
                     },
                     {
-                      id: 'publicLoadBalancers',
-                      name: 'Public LB',
-                      total: 0
+                      id: 'publicLbIps',
+                      name: 'Public LB IP',
+                      total: publicLbIps.count
                     },
                     {
                       id: 'tierStaticNATs',
