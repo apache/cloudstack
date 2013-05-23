@@ -18,6 +18,7 @@
 package com.cloud.upgrade.dao;
 
 import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
@@ -64,6 +65,7 @@ public class Upgrade410to420 implements DbUpgrade {
 	@Override
 	public void performDataMigration(Connection conn) {
         upgradeVmwareLabels(conn);
+        persistLegacyZones(conn);
         createPlaceHolderNics(conn);
         updateRemoteAccessVpn(conn);
         updateSystemVmTemplates(conn);
@@ -271,6 +273,180 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
                 if (pstmt != null) {
                     pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void persistLegacyZones(Connection conn) {
+        List<Long> listOfLegacyZones = new ArrayList<Long>();
+        PreparedStatement pstmt = null;
+        PreparedStatement clustersQuery = null;
+        PreparedStatement clusterDetailsQuery = null;
+        ResultSet rs = null;
+        ResultSet clusters = null;
+        ResultSet clusterDetails = null;
+        ResultSet dcInfo = null;
+        Long vmwareDcId = 1L;
+        Long zoneId;
+        Long clusterId;
+        String clusterHypervisorType;
+        boolean legacyZone;
+        boolean ignoreZone;
+        Long count;
+        String dcOfPreviousCluster = null;
+        String dcOfCurrentCluster = null;
+        String[] tokens;
+        String url;
+        String user = "";
+        String password = "";
+        String vc = "";
+        String dcName = "";
+        String guid;
+        String key;
+        String value;
+
+        try {
+            clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL");
+            pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where removed is NULL");
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                zoneId = rs.getLong("id");
+                legacyZone = false;
+                ignoreZone = true;
+                count = 0L;
+                // Legacy zone term is meant only for VMware
+                // Legacy zone is a zone with atleast 2 clusters & with multiple DCs or VCs
+                clusters = clustersQuery.executeQuery();
+                if (!clusters.next()) {
+                    continue; // Ignore the zone without any clusters
+                } else {
+                    dcOfPreviousCluster = null;
+                    dcOfCurrentCluster = null;
+                    do {
+                        clusterHypervisorType = clusters.getString("hypervisor_type");
+                        clusterId = clusters.getLong("id");
+                        if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
+                            ignoreZone = false;
+                            clusterDetailsQuery = conn.prepareStatement("select value from `cloud`.`cluster_details` where name='url' and cluster_id=?");
+                            clusterDetailsQuery.setLong(1, clusterId);
+                            clusterDetails = clusterDetailsQuery.executeQuery();
+                            clusterDetails.next();
+                            url = clusterDetails.getString("value");
+                            tokens = url.split("/"); // url format - http://vcenter/dc/cluster
+                            vc = tokens[2];
+                            dcName = tokens[3];
+                            if (count > 0) {
+                                dcOfPreviousCluster = dcOfCurrentCluster;
+                                dcOfCurrentCluster = dcName + "@" + vc;
+                                if (!dcOfPreviousCluster.equals(dcOfCurrentCluster)) {
+                                    legacyZone = true;
+                                    s_logger.debug("Marking the zone " + zoneId + " as legacy zone.");
+                                }
+                            }
+                        } else {
+                            s_logger.debug("Ignoring zone " + zoneId + " with hypervisor type " + clusterHypervisorType);
+                            break;
+                        }
+                        count++;
+                    } while (clusters.next());
+                    if (ignoreZone) {
+                        continue; // Ignore the zone with hypervisors other than VMware
+                    }
+                }
+                if (legacyZone) {
+                    listOfLegacyZones.add(zoneId);
+                } else {
+                    assert(clusterDetails != null) : "Couldn't retrieve details of cluster!";
+                    s_logger.debug("Discovered non-legacy zone " + zoneId + ". Processing the zone to associate with VMware datacenter.");
+
+                    clusterDetailsQuery = conn.prepareStatement("select name, value from `cloud`.`cluster_details` where cluster_id=?");
+                    clusterDetailsQuery.setLong(1, clusterId);
+                    clusterDetails = clusterDetailsQuery.executeQuery();
+                    while (clusterDetails.next()) {
+                        key = clusterDetails.getString(1);
+                        value = clusterDetails.getString(2);
+                        if (key.equalsIgnoreCase("username")) {
+                            user = value;
+                        } else if (key.equalsIgnoreCase("password")) {
+                            password = value;
+                        }
+                    }
+                    guid = dcName + "@" + vc;
+
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");
+                    pstmt.setString(1, UUID.randomUUID().toString());
+                    pstmt.setString(2, dcName);
+                    pstmt.setString(3, guid);
+                    pstmt.setString(4, vc);
+                    pstmt.setString(5, user);
+                    pstmt.setString(6, password);
+                    pstmt.executeUpdate();
+
+                    pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vmware_data_center` where guid=?");
+                    pstmt.setString(1, guid);
+                    dcInfo = pstmt.executeQuery();
+                    if(dcInfo.next()) {
+                        vmwareDcId = dcInfo.getLong("id");
+                    }
+
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center_zone_map` (zone_id, vmware_data_center_id) values(?, ?)");
+                    pstmt.setLong(1, zoneId);
+                    pstmt.setLong(2, vmwareDcId);
+                    pstmt.executeUpdate();
+                }
+            }
+            updateLegacyZones(conn, listOfLegacyZones);
+        } catch (SQLException e) {
+            String msg = "Unable to discover legacy zones." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+                if (dcInfo != null) {
+                    dcInfo.close();
+                }
+                if (clusters != null) {
+                    clusters.close();
+                }
+                if (clusterDetails != null) {
+                    clusterDetails.close();
+                }
+                if (clustersQuery != null) {
+                    clustersQuery.close();
+                }
+                if (clusterDetailsQuery != null) {
+                    clusterDetailsQuery.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void updateLegacyZones(Connection conn, List<Long> zones) {
+        PreparedStatement legacyZonesQuery = null;
+        //Insert legacy zones into table for legacy zones.
+        try {
+            legacyZonesQuery = conn.prepareStatement("INSERT INTO `cloud`.`legacy_zones` (zone_id) VALUES (?)");
+            for(Long zoneId : zones) {
+                legacyZonesQuery.setLong(1, zoneId);
+                legacyZonesQuery.executeUpdate();
+                s_logger.debug("Inserted zone " + zoneId + " into cloud.legacyzones table");
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable add zones to cloud.legacyzones table.", e);
+        } finally {
+            try {
+                if (legacyZonesQuery != null) {
+                    legacyZonesQuery.close();
                 }
             } catch (SQLException e) {
             }
