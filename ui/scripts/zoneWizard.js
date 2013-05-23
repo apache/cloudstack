@@ -1520,7 +1520,8 @@
         }
       },
       secondaryStorage: {
-        fields: {       
+        fields: {  
+          name: { label: 'label.name' },
           provider: {
             label: 'Provider',
             select: function(args){                  
@@ -1565,6 +1566,7 @@
                       $fields.filter('[rel=sockettimeout]').hide();
                       
                       $fields.filter('[rel=createNfsCache]').hide();
+                      $fields.filter('[rel=createNfsCache]').find('input').removeAttr('checked');
                       $fields.filter('[rel=nfsCacheNfsServer]').hide();
                       $fields.filter('[rel=nfsCachePath]').hide();
                       
@@ -1618,6 +1620,7 @@
                       $fields.filter('[rel=sockettimeout]').hide();
 
                       $fields.filter('[rel=createNfsCache]').hide();
+                      $fields.filter('[rel=createNfsCache]').find('input').removeAttr('checked');
                       $fields.filter('[rel=nfsCacheNfsServer]').hide();
                       $fields.filter('[rel=nfsCachePath]').hide();
                       
@@ -3664,16 +3667,23 @@
         addSecondaryStorage: function(args) {
           message(dictionary['message.creating.secondary.storage']);
 
+          var data = {};
+          if(args.data.secondaryStorage.name != null && args.data.secondaryStorage.name.length > 0) {
+            $.extend(data, {
+              name: args.data.secondaryStorage.name
+            });
+          }
+          
           if(args.data.secondaryStorage.provider == 'NFS') {
             var nfs_server = args.data.secondaryStorage.nfsServer;
             var path = args.data.secondaryStorage.path;
             var url = nfsURL(nfs_server, path);
   
-            var data = {
+            $.extend(data, {
               provider: 'NFS',
               zoneid: args.data.returnedZone.id,
               url: url                   
-            };
+            });                      
             
             $.ajax({
               url: createURL('addImageStore'),
@@ -3692,7 +3702,7 @@
             });
           }  
           else if(args.data.secondaryStorage.provider == 'S3') {                  
-            var data = {
+            $.extend(data, {
               provider: args.data.secondaryStorage.provider,                                           
               'details[0].key': 'accesskey',
               'details[0].value': args.data.secondaryStorage.accesskey,                                            
@@ -3702,7 +3712,8 @@
               'details[2].value': args.data.secondaryStorage.bucket,
               'details[3].key': 'usehttps',
               'details[3].value': (args.data.secondaryStorage.usehttps != null && args.data.secondaryStorage.usehttps == 'on' ? 'true' : 'false')
-            };                  
+            });      
+                        
             var index = 4;
             if(args.data.secondaryStorage.endpoint != null && args.data.secondaryStorage.endpoint.length > 0){
               data['details[' + index.toString() + '].key'] = 'endpoint';
@@ -3766,10 +3777,11 @@
             }     
           }
           else if(args.data.secondaryStorage.provider == 'Swift') {            
-            var data = {
+            $.extend(data, {
               provider: args.data.secondaryStorage.provider,
               url: args.data.secondaryStorage.url
-            };                 
+            });    
+                                   
             var index = 0;
             if(args.data.secondaryStorage.account != null && args.data.secondaryStorage.account.length > 0){
               data['details[' + index.toString() + '].key'] = 'account';
