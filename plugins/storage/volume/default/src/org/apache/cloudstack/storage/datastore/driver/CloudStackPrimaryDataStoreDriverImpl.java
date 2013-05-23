@@ -36,16 +36,10 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.ManageSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataObjectType;
@@ -54,19 +48,15 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.dao.HostDao;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ResizeVolumePayload;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeManager;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
@@ -82,7 +72,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 	@Inject SnapshotDao snapshotDao;
 	@Inject PrimaryDataStoreDao primaryStoreDao;
 	@Inject SnapshotManager snapshotMgr;
-	@Inject EndPointSelector epSelecotor;
+	@Inject EndPointSelector epSelector;
 	@Override
 	public String grantAccess(DataObject data, EndPoint ep) {
 		// TODO Auto-generated method stub
@@ -118,9 +108,9 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 		if (s_logger.isDebugEnabled()) {
 			s_logger.debug("Creating volume: " + volume);
 		}
-		
+
 		CreateObjectCommand cmd = new CreateObjectCommand(volume.getTO());
-		EndPoint ep = epSelecotor.select(volume);
+		EndPoint ep = epSelector.select(volume);
 		Answer answer = ep.sendMessage(cmd);
 		return answer;
 	}
@@ -157,7 +147,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
 		CommandResult result = new CommandResult();
 		try {
-		    EndPoint ep = epSelecotor.select(data);
+		    EndPoint ep = epSelector.select(data);
 			Answer answer = ep.sendMessage(cmd);
 			if (answer != null && !answer.getResult()) {
 				result.setResult(answer.getDetails());
@@ -188,11 +178,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 	    CreateCmdResult result = null;
 	    try {
 	        DataTO snapshotTO = snapshot.getTO();
-	        
+
 	        CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
-	        EndPoint ep = this.epSelecotor.select(snapshot);
+	        EndPoint ep = this.epSelector.select(snapshot);
 	        Answer answer = ep.sendMessage(cmd);
-	
+
 	        result = new CreateCmdResult(null, answer);
 	        if (answer != null && !answer.getResult()) {
 	            result.setResult(answer.getDetails());
