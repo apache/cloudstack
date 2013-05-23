@@ -527,6 +527,19 @@ class VirtualMachine:
         if isinstance(response, list):
             return response[0].password
 
+    def assign_virtual_machine(self, apiclient, account, domainid):
+        """Move a user VM to another user under same domain."""
+
+        cmd                  = assignVirtualMachine.assignVirtualMachineCmd()
+        cmd.virtualmachineid = self.id
+        cmd.account          = account
+        cmd.domainid         = domainid
+        try:
+            response = apiclient.assignVirtualMachine(cmd)
+            return response
+        except Exception as e:
+            raise Exception("assignVirtualMachine failed - %s" %e)
+
 
 class Volume:
     """Manage Volume Life cycle
