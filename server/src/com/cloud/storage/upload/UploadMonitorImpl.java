@@ -260,7 +260,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 	}
 
 	@Override
-    public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId) {
+    public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId, ImageFormat format) {
 
 	    String errorString = "";
 	    boolean success = false;
@@ -278,7 +278,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             _uploadDao.update(uploadJob.getId(), uploadJob);
 
             // Create Symlink at ssvm
-            String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
+            String uuid = UUID.randomUUID().toString() + "." + format.toString().toLowerCase() ;
             DataStore secStore = this.storeMgr.getDataStore(ApiDBUtils.findUploadById(uploadId).getDataStoreId(), DataStoreRole.Image);
             EndPoint ep = _epSelector.select(secStore);
             if( ep == null ) {

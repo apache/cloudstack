@@ -22,6 +22,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.async.AsyncJobManager;
 import com.cloud.host.HostVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.Upload.Status;
 import com.cloud.storage.Upload.Type;
@@ -57,6 +58,6 @@ public interface UploadMonitor extends Manager{
             TemplateDataStoreVO vmTemplateStore, Long dataCenterId, long eventId);
 
     void createVolumeDownloadURL(Long entityId, String path, Type type,
-            Long dataCenterId, Long uploadId);
+            Long dataCenterId, Long uploadId, ImageFormat format);
 
 }

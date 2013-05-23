@@ -3440,33 +3440,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
 
-        // If mode is upload perform extra checks on url and also see if there
-        // is an ongoing upload on the same.
-        if (extractMode == Upload.Mode.FTP_UPLOAD) {
-            URI uri = new URI(url);
-            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp"))) {
-                throw new IllegalArgumentException("Unsupported scheme for url: " + url);
-            }
-
-            String host = uri.getHost();
-            try {
-                InetAddress hostAddr = InetAddress.getByName(host);
-                if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
-                    throw new IllegalArgumentException("Illegal host specified in url");
-                }
-                if (hostAddr instanceof Inet6Address) {
-                    throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-                }
-            } catch (UnknownHostException uhe) {
-                throw new IllegalArgumentException("Unable to resolve " + host);
-            }
-
-            if (_uploadMonitor.isTypeUploadInProgress(volumeId, Upload.Type.VOLUME)) {
-                throw new IllegalArgumentException(volume.getName()
-                        + " upload is in progress. Please wait for some time to schedule another upload for the same");
-            }
-        }
-
         long accountId = volume.getAccountId();
         StoragePool srcPool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
         DataStore secStore = this.dataStoreMgr.getImageStore(zoneId);
@@ -3526,7 +3499,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 throw new CloudRuntimeException(errorString);
             }
 
-            String volumeLocalPath = "volumes/" + volume.getId() + "/" + cvAnswer.getVolumePath() + "." + getFormatForPool(srcPool);
+            String volumeLocalPath = "volumes/" + volume.getId() + "/" + cvAnswer.getVolumePath() + "." + volume.getFormat().toString().toLowerCase();
           //Fang:  volss, handle the ova special case;
             if (getFormatForPool(srcPool) == "ova") {
                 CreateVolumeOVACommand cvOVACmd = new CreateVolumeOVACommand(secondaryStorageURL, volumeLocalPath, cvAnswer.getVolumePath(), srcPool, copyvolumewait);
@@ -3546,16 +3519,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             uploadJob.setInstallPath(volumeLocalPath);
             _uploadDao.update(uploadJob.getId(), uploadJob);
 
-            if (extractMode == Mode.FTP_UPLOAD) { // Now that the volume is
-                // copied perform the actual
-                // uploading
-                _uploadMonitor.extractVolume(uploadJob, secStore, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
-                return uploadJob.getId();
-            } else { // Volume is copied now make it visible under apache and
-                // create a URL.
-                _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId());
-                return uploadJob.getId();
-            }
+            // create a URL.
+            _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId(), volume.getFormat());
+            return uploadJob.getId();
         }
     }
 
