@@ -55,6 +55,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -67,9 +69,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -81,13 +83,13 @@ import org.springframework.stereotype.Component;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
 
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -271,6 +273,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Inject
     protected List<TemplateAdapter> _adapters;
+
+    @Inject
+    StorageCacheManager cacheMgr;
+    @Inject
+    EndPointSelector selector;
+
 
     private TemplateAdapter getAdapter(HypervisorType type) {
     	TemplateAdapter adapter = null;
@@ -1050,11 +1058,26 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else if (vm.getState() != State.Running) {
             return true;
         }
-        //FIXME: if it's s3, need to download into cache store
         TemplateInfo tmplt = this._tmplFactory.getTemplate(isoId, DataStoreRole.Image, vm.getDataCenterId());
         if (tmplt == null) {
             s_logger.warn("ISO: " + isoId + " does not exist");
             return false;
+        }
+        if (tmplt.getDataStore() != null && !(tmplt.getDataStore().getTO() instanceof NfsTO)) {
+            String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
+            int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+            // if it is s3, need to download into cache storage first
+            Scope destScope = new ZoneScope(vm.getDataCenterId());
+            TemplateInfo cacheData = (TemplateInfo) cacheMgr.createCacheObject(tmplt, destScope);
+            CopyCommand cmd = new CopyCommand(tmplt.getTO(), cacheData.getTO(), _primaryStorageDownloadWait);
+            EndPoint ep = selector.select(tmplt, cacheData);
+            Answer answer = ep.sendMessage(cmd);
+            if (answer != null && answer.getResult()) {
+                tmplt = cacheData;
+            } else {
+                s_logger.error("Failed in copy iso from S3 to cache storage");
+                return false;
+            }
         }
 
         String vmName = vm.getInstanceName();
