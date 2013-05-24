@@ -8866,23 +8866,53 @@
                       },
                       label: 'label.allocation.state'
                     }
-                  }
+                  },
+
+                   {
+
+                   isdedicated:{label:'Dedicated'},
+                   domainid:{label:'Domain ID'}
+
+                   }
+
                 ],
 
                 dataProvider: function(args) {								  
-									$.ajax({
-										url: createURL("listPods&id=" + args.context.pods[0].id),
-										dataType: "json",
-										async: true,
-										success: function(json) {										  
-											var item = json.listpodsresponse.pod[0];
-											args.response.success({
-												actionFilter: podActionfilter,
-												data:item
-											});
-										}
-									});									              
-                }
+                
+                                                                        $.ajax({
+                                                                                url: createURL("listPods&id=" + args.context.pods[0].id),
+                                                                                dataType: "json",
+                                                                                async: false,
+                                                                                success: function(json) {
+                                                                                     var  item = json.listpodsresponse.pod[0];
+
+
+                                                                                       $.ajax({
+                                                    url:createURL("listDedicatedPods&podid=" +args.context.pods[0].id),
+                                                    dataType:"json",
+                                                    async:false,
+                                                    success:function(json){
+                                                        var podItem = json.listdedicatedpodsresponse ? json.listdedicatedpodsresponse.dedicatedpod[0]:[];
+                                                        if (podItem.domainid != null) {
+                                                            $.extend(item, podItem , { isdedicated: 'Yes' });
+                                                   }
+                                                 },
+                                                 error:function(json){
+                                                        $.extend(item ,{ isdedicated: 'No' })
+
+
+                                                 }
+                                           });
+                                             args.response.success({
+                                                actionFilter: podActionfilter,
+                                                data: item
+                                            });
+
+                                         }
+                                                                        });
+
+
+                 }
               },
 
               ipAllocations: {
