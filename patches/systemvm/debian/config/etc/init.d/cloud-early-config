@@ -33,6 +33,9 @@ PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 # Fix haproxy directory issue
 mkdir -p /var/lib/haproxy
 
+# Clear boot up flag, it would be created by rc.local after boot up done
+rm /var/cache/cloud/boot_up_done
+
 [ -x /sbin/ifup ] || exit 0
 
 . /lib/lsb/init-functions
