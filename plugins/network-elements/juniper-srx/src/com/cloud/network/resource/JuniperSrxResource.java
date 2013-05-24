@@ -750,7 +750,7 @@ public class JuniperSrxResource implements ServerResource {
         s_logger.debug(msg);
     }
 
-    private void shutdownGuestNetwork(GuestNetworkType type, long accountId, Long publicVlanTag, String sourceNatIpAddress, long privateVlanTag, String privateGateway, String privateSubnet, long privateCidrSize) throws ExecutionException {	    
+    private void shutdownGuestNetwork(GuestNetworkType type, long accountId, Long publicVlanTag, String sourceNatIpAddress, long privateVlanTag, String privateGateway, String privateSubnet, long privateCidrSize) throws ExecutionException {
         // Remove static and destination NAT rules for the guest network
         removeStaticAndDestNatRulesInPrivateVlan(privateVlanTag, privateGateway, privateCidrSize);
 
@@ -766,10 +766,10 @@ public class JuniperSrxResource implements ServerResource {
             manageSourceNatPool(SrxCommand.DELETE, sourceNatIpAddress);
             manageProxyArp(SrxCommand.DELETE, publicVlanTag, sourceNatIpAddress);
             manageUsageFilter(SrxCommand.DELETE, _usageFilterIPOutput, privateSubnet, null, genIpFilterTermName(sourceNatIpAddress));
-            manageUsageFilter(SrxCommand.DELETE, _usageFilterIPInput, sourceNatIpAddress, null, genIpFilterTermName(sourceNatIpAddress));					    					   		    		   
+            manageUsageFilter(SrxCommand.DELETE, _usageFilterIPInput, sourceNatIpAddress, null, genIpFilterTermName(sourceNatIpAddress));
         } else if (type.equals(GuestNetworkType.INTERFACE_NAT)) {
             manageUsageFilter(SrxCommand.DELETE, _usageFilterVlanOutput, null, privateVlanTag, null);         
-            manageUsageFilter(SrxCommand.DELETE, _usageFilterVlanInput, null, privateVlanTag, null); 		       		    
+            manageUsageFilter(SrxCommand.DELETE, _usageFilterVlanInput, null, privateVlanTag, null);
         }				
 
         String msg = "Shut down guest network with type " + type +". Guest VLAN tag: " + privateVlanTag + ", guest gateway: " + privateGateway;
@@ -841,21 +841,24 @@ public class JuniperSrxResource implements ServerResource {
                 commitConfiguration();
             } else {
                 for (FirewallRuleTO rule : rules) {
-                    int startPort = 0, endPort = 0;
+                    int startPort = NetUtils.PORT_RANGE_MIN, endPort = NetUtils.PORT_RANGE_MAX;
                     if (rule.getSrcPortRange() != null) {
                         startPort = rule.getSrcPortRange()[0];
                         endPort = rule.getSrcPortRange()[1];
-                        FirewallFilterTerm term = new FirewallFilterTerm(genIpIdentifier(rule.getSrcIp()) + "-" + String.valueOf(rule.getId()), rule.getSourceCidrList(),
-                                rule.getSrcIp(), rule.getProtocol(), startPort, endPort,
-                                rule.getIcmpType(), rule.getIcmpCode(), genIpIdentifier(rule.getSrcIp()) + _usageFilterIPInput.getCounterIdentifier());
-                        if (!rule.revoked()) {
-                            manageFirewallFilter(SrxCommand.ADD, term, _publicZoneInputFilterName);
-                        } else {
-                            manageFirewallFilter(SrxCommand.DELETE, term, _publicZoneInputFilterName);
-                        }
                     }
-                    commitConfiguration();
+
+                    FirewallFilterTerm term = new FirewallFilterTerm(genIpIdentifier(rule.getSrcIp()) + "-" + String.valueOf(rule.getId()), rule.getSourceCidrList(),
+                            rule.getSrcIp(), rule.getProtocol(), startPort, endPort,
+                            rule.getIcmpType(), rule.getIcmpCode(), genIpIdentifier(rule.getSrcIp()) + _usageFilterIPInput.getCounterIdentifier());
+                    if (!rule.revoked()) {
+                        manageProxyArp(SrxCommand.ADD, getVlanTag(rule.getSrcVlanTag()), rule.getSrcIp());
+                        manageFirewallFilter(SrxCommand.ADD, term, _publicZoneInputFilterName);
+                    } else {
+                        manageFirewallFilter(SrxCommand.DELETE, term, _publicZoneInputFilterName);
+                        manageProxyArp(SrxCommand.DELETE, getVlanTag(rule.getSrcVlanTag()), rule.getSrcIp());
+                    }
                 }
+                commitConfiguration();
             }
                 
             return new Answer(cmd);
@@ -925,7 +928,6 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     private void addStaticNatRule(Long publicVlanTag, String publicIp, String privateIp, List<FirewallRuleTO> rules) throws ExecutionException {
-        manageProxyArp(SrxCommand.ADD, publicVlanTag, publicIp);
         manageStaticNatRule(SrxCommand.ADD, publicIp, privateIp);
         manageAddressBookEntry(SrxCommand.ADD, _privateZone, privateIp, null);
 
@@ -937,7 +939,6 @@ public class JuniperSrxResource implements ServerResource {
 
     private void removeStaticNatRule(Long publicVlanTag, String publicIp, String privateIp) throws ExecutionException {	    
         manageStaticNatRule(SrxCommand.DELETE, publicIp, privateIp);
-        manageProxyArp(SrxCommand.DELETE, publicVlanTag, publicIp);   
 
         // Remove any existing security policy and clean up applications
         removeSecurityPolicyAndApplications(SecurityPolicyType.STATIC_NAT, privateIp);
@@ -1196,8 +1197,7 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     private void addDestinationNatRule(Protocol protocol, Long publicVlanTag, String publicIp, String privateIp, int srcPortStart, int srcPortEnd, int destPortStart, int destPortEnd) throws ExecutionException {
-        manageProxyArp(SrxCommand.ADD, publicVlanTag, publicIp);       
-        
+
         int offset = 0;
         for (int srcPort = srcPortStart; srcPort <= srcPortEnd; srcPort++) {
             int destPort = destPortStart + offset;
@@ -1220,7 +1220,6 @@ public class JuniperSrxResource implements ServerResource {
     private void removeDestinationNatRule(Long publicVlanTag, String publicIp, String privateIp, int srcPort, int destPort) throws ExecutionException {               
         manageDestinationNatRule(SrxCommand.DELETE, publicIp, privateIp, srcPort, destPort);
         manageDestinationNatPool(SrxCommand.DELETE, privateIp, destPort);   
-        manageProxyArp(SrxCommand.DELETE, publicVlanTag, publicIp);    
 
         removeSecurityPolicyAndApplications(SecurityPolicyType.DESTINATION_NAT, privateIp);
 

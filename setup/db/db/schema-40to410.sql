@@ -184,6 +184,7 @@ UPDATE `cloud`.`alert` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`async_job` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`cluster` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`data_center` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`dc_storage_network_ip_range` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`disk_offering` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`domain` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`event` set uuid=id WHERE uuid is NULL;
@@ -217,6 +218,7 @@ UPDATE `cloud`.`security_group` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`security_group_rule` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`snapshot_schedule` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`snapshots` set uuid=id WHERE uuid is NULL;
+UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`static_routes` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`storage_pool` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`swift` set uuid=id WHERE uuid is NULL;
@@ -1651,3 +1653,7 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'eip.use.multiple.netscalers' , 'false', 'Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone');
+
+UPDATE `cloud`.`configuration` set category='Advanced' where category='Advanced ';
+UPDATE `cloud`.`configuration` set category='Hidden' where category='Hidden ';
+

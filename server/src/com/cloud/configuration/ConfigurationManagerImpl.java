@@ -3071,9 +3071,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
 
+            } else {
+                // when there is no dhcp support in the network.
+                if (!deletePublicIPRange(vlanDbId)) {
+                    return false;
+                }
+                _vlanDao.expunge(vlanDbId);
+                return  true;
             }
         }
-       throw new InvalidParameterValueException("One of the ips in the range is used to provide Dhcp service to this subnet. cannot delete this range as ");
+        return false;
     }
 
 

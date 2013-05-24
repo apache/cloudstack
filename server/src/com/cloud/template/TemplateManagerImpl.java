@@ -1553,6 +1553,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 accountNames.add(acct.getAccountName());
             }
         }
+
+        // also add the owner if not public
+        if (!template.isPublicTemplate()) {
+            Account templateOwner = _accountDao.findById(template.getAccountId());
+            accountNames.add(templateOwner.getAccountName());
+        }
+
         return accountNames;
     }
     

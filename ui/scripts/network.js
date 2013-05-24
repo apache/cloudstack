@@ -321,7 +321,7 @@
         listView: {
           actions: {
             add: { //add Isolated guest network (can't add Shared guest network here)
-              label: 'label.add.guest.network',
+              label: 'Add Isolated Guest Network',
 
               preFilter: function(args) { //Isolated networks is only supported in Advanced (SG-disabled) zone 
                 if(args.context.zoneType != 'Basic') 
@@ -331,8 +331,8 @@
               },
 
               createForm: {
-                title: 'label.add.guest.network',
-                desc: 'message.add.guest.network',
+                title: 'Add Isolated Guest Network',
+                desc: 'Add Isolated Guest Network with SourceNat',
                 fields: {
                   name: { label: 'label.name', validation: { required: true }, docID: 'helpGuestNetworkName' },
                   displayText: { label: 'label.display.text', validation: { required: true }, docID: 'helpGuestNetworkDisplayText'},
@@ -497,7 +497,7 @@
                 });
               },
               messages: {
-                notification: function() { return 'label.add.guest.network'; }
+                notification: function() { return 'Add Isolated Guest Network'; }
               }
             }
           },

@@ -76,6 +76,7 @@ public class Upgrade410to420 implements DbUpgrade {
         addHostDetailsIndex(conn);
         updateNetworksForPrivateGateways(conn);
         removeFirewallServiceFromSharedNetworkOfferingWithSGService(conn);
+        fix22xKVMSnapshots(conn);
     }
 
     private void updateSystemVmTemplates(Connection conn) {
@@ -759,7 +760,7 @@ public class Upgrade410to420 implements DbUpgrade {
             while (rs.next()) {
                 long id = rs.getLong(1);
                 // remove Firewall service for SG shared network offering
-                pstmt = conn.prepareStatement("DELETE `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");
+                pstmt = conn.prepareStatement("DELETE from `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");
                 pstmt.setLong(1, id);
                 pstmt.executeUpdate();
             }
@@ -779,4 +780,43 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
+    private void fix22xKVMSnapshots(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        s_logger.debug("Updating KVM snapshots");
+        try {
+            pstmt = conn.prepareStatement("select id, backup_snap_id from `cloud`.`snapshots` where hypervisor_type='KVM' and removed is null and backup_snap_id is not null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String backUpPath = rs.getString(2);
+                // Update Backup Path. Remove anything before /snapshots/
+                // e.g 22x Path /mnt/0f14da63-7033-3ca5-bdbe-fa62f4e2f38a/snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
+                // Above path should change to /snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
+                int index = backUpPath.indexOf("snapshots"+File.separator);
+                if (index > 1){
+                    String correctedPath = File.separator + backUpPath.substring(index);
+                    s_logger.debug("Updating Snapshot with id: "+id+" original backup path: "+backUpPath+ " updated backup path: "+correctedPath);
+                    pstmt = conn.prepareStatement("UPDATE `cloud`.`snapshots` set backup_snap_id=? where id = ?");
+                    pstmt.setString(1, correctedPath);
+                    pstmt.setLong(2, id);
+                    pstmt.executeUpdate();
+                }
+            }
+            s_logger.debug("Done updating KVM snapshots");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update backup id for KVM snapshots", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
 }

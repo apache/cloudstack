@@ -1395,7 +1395,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
 
         LoadBalancerVO newRule = new LoadBalancerVO(xId, name, description,
-                sourceIpId, srcPort, srcPort, algorithm,
+                sourceIpId, srcPort, destPort, algorithm,
                 networkId, ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
 
         // verify rule is supported by Lb provider of the network
@@ -1902,6 +1902,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         String name = cmd.getLoadBalancerRuleName();
         String keyword = cmd.getKeyword();
         Long instanceId = cmd.getVirtualMachineId();
+        Long networkId = cmd.getNetworkId();
         Map<String, String> tags = cmd.getTags();
 
         Account caller = UserContext.current().getCaller();
@@ -1922,6 +1923,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
+        sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
 
         if (instanceId != null) {
             SearchBuilder<LoadBalancerVMMapVO> lbVMSearch = _lb2VmMapDao.createSearchBuilder();
@@ -1978,6 +1980,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (zoneId != null) {
             sc.setJoinParameters("ipSearch", "zoneId", zoneId);
+        }
+        
+        if (networkId != null) {
+            sc.setParameters("networkId", networkId);
         }
 
         if (tags != null && !tags.isEmpty()) {

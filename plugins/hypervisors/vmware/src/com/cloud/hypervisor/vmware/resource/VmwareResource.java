@@ -1527,7 +1527,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             snatArgs += "eth" + ethDeviceNum;
 
             Pair<Boolean, String> result_gateway = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
-                    "/opt/cloud/bin/vpc_privateGateway.sh " + args);
+                    "/opt/cloud/bin/vpc_privateGateway.sh " + snatArgs);
 
             if (!result_gateway.first()) {
                 throw new InternalErrorException("Unable to configure source NAT for public IP address.");

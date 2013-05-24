@@ -57,10 +57,14 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     @SerializedName(ApiConstants.ALGORITHM)
     @Param(description = "the load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
+    
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "the id of the guest network the lb rule belongs to")
+    private String networkId;
 
     @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
     private String cidrList;
-
+    
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account of the load balancer rule")
     private String accountName;
@@ -89,6 +93,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with load balancer", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
+    
 
     public void setId(String id) {
         this.id = id;
@@ -159,6 +164,10 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
 
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+    
+    public void setNetworkId(String networkId) {
+        this.networkId = networkId;
     }
 
 }
