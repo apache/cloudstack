@@ -171,7 +171,7 @@
                        var items=[];
                        items.push({id:'',description:''});
                        items.push({id:'Strict', description:'Strict'});
-                       items.push({id:'Preffered', description:'Preffered'});
+                       items.push({id:'Preferred', description:'Preferred'});
                        args.response.success({data:items});
                     }
                   },
