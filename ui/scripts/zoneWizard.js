@@ -1604,7 +1604,7 @@
           if(args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
             array1.push("&domain=" + todb(args.data.zone.networkdomain));
           
-          var dedicatedZoneid = null;
+          var dedicatedZoneId = null;
 
           $.ajax({
             url: createURL("createZone" + array1.join("")),
@@ -1626,10 +1626,10 @@
 
                       if(dedicatedZoneId != null){
                       $.ajax({
-                         url:createURL("dedicateZone&ZoneId=" +ZoneId +"&domain=" +args.data.zone.domain + array2.join("")),
+                         url:createURL("dedicateZone&ZoneId=" +dedicatedZoneId +"&domain=" +args.data.zone.domain + array2.join("")),
                          dataType:"json",
                          success:function(json){
-                             var dedicatedObj = json.dedicatezoneresponse.zone;
+                             var dedicatedObj = json.dedicatezoneresponse.jobid;
                              //args.response.success({ data: $.extend(item, dedicatedObj)});
 
                          },
