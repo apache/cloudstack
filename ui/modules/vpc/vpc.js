@@ -196,34 +196,36 @@
             });            
           };
 
-          before.check({
-            context: context,
-            response: {
-              success: function(result) {
-                // true means content exists
-                if (result) {
-                  load();
-                } else {
-                  cloudStack.dialog.confirm({
-                    message: before.messages.confirm,
-                    action: function() {
-                      $loading.appendTo($dashboardItem.closest('.vpc-network-chart'));
-                      before.action({
-                        context: context,
-                        response: {
-                          success: function() {
-                            $loading.remove();
-                            $dashboardItem.closest('.vpc-network-chart').trigger('reload');
-                            load();
+          if (before) {
+            before.check({
+              context: context,
+              response: {
+                success: function(result) {
+                  // true means content exists
+                  if (result) {
+                    load();
+                  } else {
+                    cloudStack.dialog.confirm({
+                      message: before.messages.confirm,
+                      action: function() {
+                        $loading.appendTo($dashboardItem.closest('.vpc-network-chart'));
+                        before.action({
+                          context: context,
+                          response: {
+                            success: function() {
+                              $loading.remove();
+                              $dashboardItem.closest('.vpc-network-chart').trigger('reload');
+                              load();
+                            }
                           }
-                        }
-                      });
-                    }
-                  })
+                        });
+                      }
+                    })
+                  }
                 }
               }
-            }
-          });
+            });
+          }
         });
       });
 
