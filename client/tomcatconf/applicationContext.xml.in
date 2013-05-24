@@ -770,8 +770,7 @@
   <bean id="usageEventUtils" class="com.cloud.event.UsageEventUtils" />
   <bean id="userContextInitializer" class="com.cloud.user.UserContextInitializer" />
   <bean id="VHD" class="org.apache.cloudstack.storage.image.format.VHD" />
-  <bean id="vMEntityManagerImpl" class="org.apache.cloudstack.engine.cloud.entity.api.VMEntityManagerImpl" />
-  <bean id="virtualMachineEntityFactory" class="org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityFactory" />
+  <bean id="vMEntityManagerImpl" class="org.apache.cloudstack.engine.vm.VMEntityManagerImpl" />
   <bean id="virtualMachineEntityImpl" class="org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl" />
   <bean id="virtualMachineRestService" class="org.apache.cloudstack.engine.rest.service.api.VirtualMachineRestService" />
   <bean id="volumeDataFactoryImpl" class="org.apache.cloudstack.storage.volume.VolumeDataFactoryImpl" />
@@ -828,7 +827,7 @@
     <property name="name" value="VmWorkJobWakeupDispatcher" />
   </bean>
 
-  <bean id="vmWorkJobDaoImpl" class="com.cloud.vm.VmWorkJobDaoImpl" />  
+  <bean id="vmWorkJobDaoImpl" class="org.apache.cloudstack.vm.jobs.VmWorkJobDaoImpl" />  
 
   <!--
     Baremetal components
