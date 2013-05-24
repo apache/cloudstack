@@ -92,7 +92,7 @@ public interface TemplateManager extends TemplateApiService{
 
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
 
-    boolean templateIsDeleteable(TemplateDataStoreVO templateStoreRef);
+    boolean templateIsDeleteable(long templateId);
 
     Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId);
 

@@ -87,6 +87,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateProp;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
@@ -138,6 +139,8 @@ public class TemplateServiceImpl implements TemplateService {
     EndPointSelector _epSelector;
     @Inject
     ImageDataManager imageMgr;
+    @Inject
+    TemplateManager _tmpltMgr;
 
 
     class TemplateOpContext<T> extends AsyncRpcConext<T> {
@@ -430,9 +433,7 @@ public class TemplateServiceImpl implements TemplateService {
 
        for (String uniqueName : templateInfos.keySet()) {
             TemplateProp tInfo = templateInfos.get(uniqueName);
-            List<UserVmJoinVO> userVmUsingIso = _userVmJoinDao.listActiveByIsoId(tInfo.getId());
-            //check if there is any Vm using this ISO.
-            if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
+            if (_tmpltMgr.templateIsDeleteable(tInfo.getId())) {
                 //TODO: we cannot directly call deleteTemplateSync here to reuse delete logic since in this case, our db does not have this template at all.
                 VMTemplateVO template = _templateDao.findById(tInfo.getId());
                 DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), tInfo.getInstallPath(), null, null);

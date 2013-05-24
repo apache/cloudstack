@@ -1133,7 +1133,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     s_logger.debug("Secondary storage garbage collector found " + destroyedTemplateStoreVOs.size()
                             + " templates to cleanup on secondary storage host: " + store.getName());
                     for (TemplateDataStoreVO destroyedTemplateStoreVO : destroyedTemplateStoreVOs) {
-                        if (!_tmpltMgr.templateIsDeleteable(destroyedTemplateStoreVO)) {
+                        if (!_tmpltMgr.templateIsDeleteable(destroyedTemplateStoreVO.getTemplateId())) {
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Not deleting template at: " + destroyedTemplateStoreVO);
                             }
