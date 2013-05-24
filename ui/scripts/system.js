@@ -10929,7 +10929,8 @@
               createForm: {
                 title: 'label.add.secondary.storage',
                                
-                fields: {                  
+                fields: {   
+                  name: { label: 'label.name' },
                   provider: {
                     label: 'Provider',
                     select: function(args){                  
@@ -10970,6 +10971,8 @@
                               $form.find('.form-item[rel=connectiontimeout]').hide();
                               $form.find('.form-item[rel=maxerrorretry]').hide();
                               $form.find('.form-item[rel=sockettimeout]').hide();
+                              
+                              $form.find('.form-item[rel=createNfsCache]').find('input').removeAttr('checked');
                               $form.find('.form-item[rel=createNfsCache]').hide();
                               $form.find('.form-item[rel=nfsCacheZoneid]').hide();
                               $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
@@ -11025,6 +11028,8 @@
                               $form.find('.form-item[rel=connectiontimeout]').hide();
                               $form.find('.form-item[rel=maxerrorretry]').hide();
                               $form.find('.form-item[rel=sockettimeout]').hide();
+                              
+                              $form.find('.form-item[rel=createNfsCache]').find('input').removeAttr('checked');
                               $form.find('.form-item[rel=createNfsCache]').hide();
                               $form.find('.form-item[rel=nfsCacheZoneid]').hide();
                               $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
@@ -11163,17 +11168,24 @@
               },
 
               action: function(args) {
+                var data = {};
+                if(args.data.name != null && args.data.name.length > 0) {
+                  $.extend(data, {
+                    name: args.data.name
+                  });
+                }
+                
                 if(args.data.provider == 'NFS') {
                   var zoneid = args.data.zoneid;
                   var nfs_server = args.data.nfsServer;
                   var path = args.data.path;
                   var url = nfsURL(nfs_server, path);
                   
-                  var data = {
+                  $.extend(data, {
                     provider: args.data.provider,
                     zoneid: zoneid,
                     url: url                    
-                  };
+                  });                                    
                     
                   $.ajax({
                     url: createURL('addImageStore'),
@@ -11191,7 +11203,7 @@
                   });
                 }
                 else if(args.data.provider == 'S3') {                  
-                  var data = {
+                  $.extend(data, {
                     provider: args.data.provider,                                           
                     'details[0].key': 'accesskey',
                     'details[0].value': args.data.accesskey,                                            
@@ -11201,7 +11213,8 @@
                     'details[2].value': args.data.bucket,
                     'details[3].key': 'usehttps',
                     'details[3].value': (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false')
-                  };                  
+                  });
+                                              
                   var index = 4;
                   if(args.data.endpoint != null && args.data.endpoint.length > 0){
                     data['details[' + index.toString() + '].key'] = 'endpoint';
@@ -11264,10 +11277,11 @@
                   }   
                 }
                 else if(args.data.provider == 'Swift') {
-                  var data = {
+                  $.extend(data, {
                     provider: args.data.provider,
                     url: args.data.url
-                  };                 
+                  });
+                                               
                   var index = 0;
                   if(args.data.account != null && args.data.account.length > 0){
                     data['details[' + index.toString() + '].key'] = 'account';
