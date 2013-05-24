@@ -1064,17 +1064,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return false;
         }
         if (tmplt.getDataStore() != null && !(tmplt.getDataStore().getTO() instanceof NfsTO)) {
-            String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-            int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
             // if it is s3, need to download into cache storage first
             Scope destScope = new ZoneScope(vm.getDataCenterId());
             TemplateInfo cacheData = (TemplateInfo) cacheMgr.createCacheObject(tmplt, destScope);
-            CopyCommand cmd = new CopyCommand(tmplt.getTO(), cacheData.getTO(), _primaryStorageDownloadWait);
-            EndPoint ep = selector.select(tmplt, cacheData);
-            Answer answer = ep.sendMessage(cmd);
-            if (answer != null && answer.getResult()) {
-                tmplt = cacheData;
-            } else {
+            if (cacheData == null){
                 s_logger.error("Failed in copy iso from S3 to cache storage");
                 return false;
             }
