@@ -323,7 +323,8 @@ public class TemplateServiceImpl implements TemplateService {
                         tmpltStore.setErrorString(msg);
                         s_logger.info("msg");
                         if (tmplt.getUrl() == null) {
-                            msg = "Private Template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath() + "is corrupted, please check in image store: " + tmpltStore.getDataStoreId();
+                            msg = "Private Template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath()
+                                    + "is corrupted, please check in image store: " + tmpltStore.getDataStoreId();
                             s_logger.warn(msg);
                         } else {
                             toBeDownloaded.add(tmplt);
@@ -340,6 +341,16 @@ public class TemplateServiceImpl implements TemplateService {
                         VMTemplateVO tmlpt = _templateDao.findById(tmplt.getId());
                         tmlpt.setSize(tmpltInfo.getSize());
                         _templateDao.update(tmplt.getId(), tmlpt);
+                        // set template to ready state
+                        if (tmplt.getState() != TemplateState.Ready) {
+                            try {
+                                imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null, _templateDao);
+                                imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null, _templateDao);
+                            } catch (NoTransitionException e) {
+                                // non fatal though
+                                s_logger.debug("failed to update template " + tmplt.getUniqueName() + " state to Ready", e);
+                            }
+                        }
 
                         if (tmpltInfo.getSize() > 0 && tmplt.getUrl() != null) {
                             long accountId = tmplt.getAccountId();
@@ -349,8 +360,7 @@ public class TemplateServiceImpl implements TemplateService {
                                         tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
                             } catch (ResourceAllocationException e) {
                                 s_logger.warn(e.getMessage());
-                                _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId,
-                                        null, e.getMessage(), e.getMessage());
+                                _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null, e.getMessage(), e.getMessage());
                             } finally {
                                 _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId).getDomainId(),
                                         com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
@@ -359,7 +369,8 @@ public class TemplateServiceImpl implements TemplateService {
                     }
                     _vmTemplateStoreDao.update(tmpltStore.getId(), tmpltStore);
                 } else {
-                    tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
+                    tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null,
+                            tmpltInfo.getInstallPath(), tmplt.getUrl());
                     tmpltStore.setSize(tmpltInfo.getSize());
                     tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
                     tmpltStore.setDataStoreRole(store.getRole());
@@ -370,24 +381,27 @@ public class TemplateServiceImpl implements TemplateService {
                     tmlpt.setSize(tmpltInfo.getSize());
                     _templateDao.update(tmplt.getId(), tmlpt);
                     associateTemplateToZone(tmplt.getId(), zoneId);
+
+                    // set template to ready state
+                    if (tmplt.getState() != TemplateState.Ready) {
+                        try {
+                            imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null, _templateDao);
+                            imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null, _templateDao);
+                        } catch (NoTransitionException e) {
+                            // non fatal though
+                            s_logger.debug("failed to update template " + tmplt.getUniqueName() + " state to Ready", e);
+                        }
+                    }
                 }
-
-                continue;
+            } else {
+                if (tmpltStore != null) {
+                    s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId
+                            + ", may request download based on available hypervisor types");
+                    s_logger.info("Removing leftover template " + uniqueName + " entry from template store table");
+                    // remove those leftover entries
+                    _vmTemplateStoreDao.remove(tmpltStore.getId());
+                }
             }
-            if (tmpltStore != null && tmpltStore.getDownloadState() != Status.DOWNLOADED) {
-                s_logger.info("Template Sync did not find " + uniqueName + " ready on image store " + storeId + ", will request download to start/resume shortly");
-                s_logger.info("Removing template " + uniqueName + " from template store table");
-                // remove those leftover entries
-                _vmTemplateStoreDao.remove(tmpltStore.getId());
-
-            } else if (tmpltStore == null) {
-                s_logger.info("Template Sync did not find " + uniqueName + " on the image store " + storeId + ", will request download shortly");
-                // persist template_zone_ref table
-                // TODO: we may have some bugs in removing these entries in case of failure, maybe we should pass another callback below in invoking createTemplateAsync
-                // to just clear those entries.
-                associateTemplateToZone(tmplt.getId(), zoneId);
-            }
-
         }
 
         if (toBeDownloaded.size() > 0) {
@@ -409,22 +423,14 @@ public class TemplateServiceImpl implements TemplateService {
                                               // initiate the download
                     continue;
                 }
-                // check if there is a record for this template in this store
-                TemplateDataStoreVO tmpltStoreVO = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
 
-                // if this is private template, and there is no record for this
-                // template in this store, skip
-                // TODO: don't understand this logic. What happens if we have a record for this template, still download?
+                // if this is private template, skip
                 if (!tmplt.isPublicTemplate() && !tmplt.isFeatured()) {
-                    if (tmpltStoreVO == null) {
-                        continue;
-                    }
+                    continue;
                 }
                 if (availHypers.contains(tmplt.getHypervisorType())) {
-                     if (tmpltStoreVO != null && tmpltStoreVO.getDownloadState() == Status.DOWNLOADED) {
-                        continue;
-                    }
                     s_logger.info("Downloading template " + tmplt.getUniqueName() + " to image store " + store.getName());
+                    associateTemplateToZone(tmplt.getId(), zoneId);
                     TemplateInfo tmpl = _templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
                     createTemplateAsync(tmpl, store, null);
                 }

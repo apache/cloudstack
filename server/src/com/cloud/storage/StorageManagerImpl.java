@@ -1751,10 +1751,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (((ImageStoreProvider) storeProvider).needDownloadSysTemplate()) {
             // trigger system vm template download
             this._imageSrv.downloadBootstrapSysTemplate(store);
-        } else {
+        }
+        // for NFS, template store association will be populated in template sync phase
+        /*
+        else {
             // populate template_store_ref table
             this._imageSrv.addSystemVMTemplatesToSecondary(store);
         }
+        */
 
         // associate builtin template with zones associated with this image
         // store
