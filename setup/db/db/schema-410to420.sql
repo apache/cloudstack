@@ -1040,8 +1040,10 @@ CREATE VIEW `cloud`.`service_offering_view` AS
 
 -- Add "default" field to account/user tables
 ALTER TABLE `cloud`.`account` ADD COLUMN `default` int(1) unsigned NOT NULL DEFAULT '0' COMMENT '1 if account is default';
+ALTER TABLE `cloud_usage`.`account` ADD COLUMN `default` int(1) unsigned NOT NULL DEFAULT '0' COMMENT '1 if account is default';
 ALTER TABLE `cloud`.`user` ADD COLUMN `default` int(1) unsigned NOT NULL DEFAULT '0' COMMENT '1 if user is default';
 UPDATE `cloud`.`account` SET `cloud`.`account`.`default`=1 WHERE id IN (1,2);
+UPDATE `cloud_usage`.`account` SET `default`=1 WHERE id IN (1,2);
 UPDATE `cloud`.`user` SET `cloud`.`user`.`default`=1 WHERE id IN (1,2);
 
 ALTER VIEW `cloud`.`user_view` AS
