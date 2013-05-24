@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackException import cloudstackAPIException
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin import remoteSSHClient
@@ -447,16 +448,14 @@ class TestPortForwarding(cloudstackTestCase):
 
         nat_rule.delete(self.apiclient)
 
-        list_nat_rule_response = list_nat_rules(
+        try:
+            list_nat_rule_response = list_nat_rules(
                                                 self.apiclient,
                                                 id=nat_rule.id
                                                 )
+        except cloudstackAPIException:
+            self.debug("Nat Rule is deleted")
 
-        self.assertEqual(
-                            list_nat_rule_response,
-                            None,
-                            "Check Port Forwarding Rule is deleted"
-                            )
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):
             self.debug(
@@ -565,15 +564,14 @@ class TestPortForwarding(cloudstackTestCase):
 
         nat_rule.delete(self.apiclient)
 
-        list_nat_rule_response = list_nat_rules(
+        try:
+            list_nat_rule_response = list_nat_rules(
                                                 self.apiclient,
                                                 id=nat_rule.id
                                                 )
-        self.assertEqual(
-                            list_nat_rule_response,
-                            None,
-                            "Check Port Forwarding Rule is deleted"
-                            )
+        except cloudstackAPIException:
+            self.debug("Nat Rule is deleted")
+
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):
             self.debug(
@@ -785,7 +783,6 @@ class TestLoadBalancingRule(cloudstackTestCase):
                 "SSH into VM (IPaddress: %s) & NAT Rule (Public IP: %s)" %
                 (self.vm_1.ipaddress, src_nat_ip_addr.ipaddress)
                 )
-
             ssh_1 = remoteSSHClient(
                                         src_nat_ip_addr.ipaddress,
                                         self.services['lbrule']["publicport"],
@@ -1582,32 +1579,28 @@ class TestReleaseIP(cloudstackTestCase):
                     "Check if disassociated IP Address is no longer available"
                    )
 
+        self.debug("List NAT Rule response" + str(list_nat_rule))
         # ListPortForwardingRules should not list
         # associated rules with Public IP address
-        list_nat_rule = list_nat_rules(
+        try:
+            list_nat_rule = list_nat_rules(
                                         self.apiclient,
                                         id=self.nat_rule.id
                                         )
-        self.debug("List NAT Rule response" + str(list_nat_rule))
-        self.assertEqual(
-                list_nat_rule,
-                None,
-                "Check if PF rules are no longer available for IP address"
-            )
+        except cloudstackAPIException:
+            self.debug("Port Forwarding Rule is deleted")
 
         # listLoadBalancerRules should not list
         # associated rules with Public IP address
-        list_lb_rule = list_lb_rules(
+        self.debug("List LB Rule response" + str(list_lb_rule))
+        try:
+            list_lb_rule = list_lb_rules(
                                      self.apiclient,
                                      id=self.lb_rule.id
                                      )
-        self.debug("List LB Rule response" + str(list_lb_rule))
 
-        self.assertEqual(
-                list_lb_rule,
-                None,
-                "Check if LB rules for IP Address are no longer available"
-            )
+        except cloudstackAPIException:
+            self.debug("Port Forwarding Rule is deleted")
 
         # SSH Attempt though public IP should fail
         with self.assertRaises(Exception):
@@ -1720,16 +1713,9 @@ class TestDeleteAccount(cloudstackTestCase):
                                     account=self.account.name,
                                     domainid=self.account.domainid
                                     )
-            self.assertEqual(
-                     list_lb_reponse,
-                     None,
-                    "Check load balancing rule is properly deleted."
-                   )
-        except Exception as e:
+        except cloudstackAPIException:
+            self.debug("Port Forwarding Rule is deleted")
 
-            raise Exception(
-                "Exception raised while fetching LB rules for account: %s" %
-                                                    self.account.name)
         # ListPortForwardingRules should not
         # list associated rules with deleted account
         try:
@@ -1738,16 +1724,9 @@ class TestDeleteAccount(cloudstackTestCase):
                                     account=self.account.name,
                                     domainid=self.account.domainid
                         )
-            self.assertEqual(
-                             list_nat_reponse,
-                             None,
-                             "Check load balancing rule is properly deleted."
-                   )
-        except Exception as e:
+        except cloudstackAPIException:
+            self.debug("NATRule is deleted")
 
-            raise Exception(
-                "Exception raised while fetching NAT rules for account: %s" %
-                                                    self.account.name)
         #Retrieve router for the user account
         try:
             routers = list_routers(

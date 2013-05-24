@@ -237,7 +237,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
                          account=cls.account.name,
-                         domainid=cls.account.account.domainid
+                         domainid=cls.account.domainid
                          )
 
         cls.nw_off = NetworkOffering.create(
@@ -253,7 +253,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.1.1',
@@ -272,7 +272,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off_no_lb.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.2.1',
@@ -283,7 +283,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -292,7 +292,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -300,7 +300,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_2.id)]
                                   )
@@ -309,7 +309,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -320,7 +320,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                     accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
-                                    domainid=cls.account.account.domainid
+                                    domainid=cls.account.domainid
                                 )
         cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
 
@@ -328,7 +328,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -516,7 +516,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -966,7 +966,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
                          account=cls.account.name,
-                         domainid=cls.account.account.domainid
+                         domainid=cls.account.domainid
                          )
 
         cls.nw_off = NetworkOffering.create(
@@ -982,7 +982,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.1.1',
@@ -1006,7 +1006,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.shared_nw_off.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.2.1',
@@ -1017,7 +1017,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id),
                                               str(cls.network_2.id)]
@@ -1027,7 +1027,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id),
                                               str(cls.network_2.id)]
@@ -1036,7 +1036,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id),
                                               str(cls.network_2.id)]
@@ -1045,7 +1045,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -1056,7 +1056,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                     accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
-                                    domainid=cls.account.account.domainid
+                                    domainid=cls.account.domainid
                                 )
         cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2, cls.vm_3])
 
@@ -1064,7 +1064,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -1242,7 +1242,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -1368,7 +1368,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -1773,7 +1773,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
                          account=cls.account.name,
-                         domainid=cls.account.account.domainid
+                         domainid=cls.account.domainid
                          )
 
         cls.nw_off = NetworkOffering.create(
@@ -1789,7 +1789,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.1.1',
@@ -1809,7 +1809,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off_no_lb.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.2.1',
@@ -1965,7 +1965,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_1.id),
                                               str(self.network_2.id)]
@@ -1990,7 +1990,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
         routers = Router.list(
                               self.apiclient,
                               account=self.account.name,
-                              domainid=self.account.account.domainid,
+                              domainid=self.account.domainid,
                               networkid=self.network_1.id,
                               listall=True
                               )
@@ -2033,7 +2033,7 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_1.id)]
                                   )
@@ -2111,7 +2111,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
                          account=cls.account.name,
-                         domainid=cls.account.account.domainid
+                         domainid=cls.account.domainid
                          )
 
         cls.nw_off = NetworkOffering.create(
@@ -2127,7 +2127,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.1.1',
@@ -2146,7 +2146,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off_no_lb.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.2.1',
@@ -2157,7 +2157,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -2166,7 +2166,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -2174,7 +2174,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_2.id)]
                                   )
@@ -2183,7 +2183,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -2194,7 +2194,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                     accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
-                                    domainid=cls.account.account.domainid
+                                    domainid=cls.account.domainid
                                 )
         cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
 
@@ -2202,7 +2202,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -2405,7 +2405,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(
@@ -2868,7 +2868,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                          vpcofferingid=cls.vpc_off.id,
                          zoneid=cls.zone.id,
                          account=cls.account.name,
-                         domainid=cls.account.account.domainid
+                         domainid=cls.account.domainid
                          )
 
         cls.nw_off = NetworkOffering.create(
@@ -2884,7 +2884,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.1.1',
@@ -2903,7 +2903,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["network"],
                                 accountid=cls.account.name,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkofferingid=cls.nw_off_no_lb.id,
                                 zoneid=cls.zone.id,
                                 gateway='10.1.2.1',
@@ -2914,7 +2914,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering_1.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -2923,7 +2923,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering_1.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
@@ -2931,7 +2931,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.name,
-                                  domainid=cls.account.account.domainid,
+                                  domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering_2.id,
                                   networkids=[str(cls.network_2.id)]
                                   )
@@ -2940,7 +2940,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -2951,7 +2951,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                     accountid=cls.account.name,
                                     networkid=cls.network_1.id,
                                     vpcid=cls.vpc.id,
-                                    domainid=cls.account.account.domainid
+                                    domainid=cls.account.domainid
                                 )
         cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
 
@@ -2959,7 +2959,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                                 cls.api_client,
                                 accountid=cls.account.name,
                                 zoneid=cls.zone.id,
-                                domainid=cls.account.account.domainid,
+                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
                                 vpcid=cls.vpc.id
                                 )
@@ -3057,7 +3057,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   networkid=self.network_1.id,
                                   listall=True
                                   )
@@ -3072,7 +3072,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   networkid=self.network_2.id,
                                   listall=True
                                   )
@@ -3204,7 +3204,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
         self.assertEqual(

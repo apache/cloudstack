@@ -51,6 +51,7 @@ public interface AsyncJob extends Identity, InternalIdentity {
         Host,
         StoragePool,
         IpAddress,
+        PortableIpAddress,
         SecurityGroup,
         PhysicalNetwork,
         TrafficType,

@@ -4586,7 +4586,7 @@ under the License.
       versions of Citrix CloudStack (last version prior to Apache is 3.0.2) and from the releases
       made while CloudStack was in the Apache Incubator.</para>
     <para>If you run into any issues during upgrades, please feel free to ask questions on
-      users@apache.cloudstack.org or dev@apache.cloudstack.org.</para>
+      users@cloudstack.apache.org or dev@cloudstack.apache.org.</para>
     <section id="upgrade-from-4.0-to-4.1">
       <title>Upgrade from 4.0.x to 4.1.0</title>
       <para>This section will guide you from &PRODUCT; 4.0.x versions to &PRODUCT; 4.1.0.</para>
@@ -4646,6 +4646,23 @@ under the License.
               <filename>/etc/cloudstack/management/componentContext.xml</filename>. This is not done
             automatically. (If you're unsure, we recommend making a backup of the original
               <filename>components.xml</filename> to be on the safe side.</para>
+        </listitem>
+        <listitem>
+            <para>After upgrading to 4.1, API clients are expected to send plain text passwords for login and user creation, instead of MD5 hash. Incase, api client changes are not acceptable, following changes are to be made for backward compatibility:</para>
+            <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default authenticator (1st entry in the userAuthenticators adapter list is default)</para>
+            <programlisting language="XML">
+&lt;!-- Security adapters --&gt;
+&lt;bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList"&gt;
+  &lt;property name="Adapters"&gt;
+    &lt;list&gt;
+      &lt;ref bean="PlainTextUserAuthenticator"/&gt;
+      &lt;ref bean="MD5UserAuthenticator"/&gt;
+      &lt;ref bean="LDAPUserAuthenticator"/&gt;
+    &lt;/list&gt;
+  &lt;/property&gt;
+&lt;/bean&gt;
+            </programlisting>
+            <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to 4.1.</para>
         </listitem>
         <listitem id="upgrade-deb-packages">
           <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not,
@@ -5109,6 +5126,23 @@ service cloudstack-agent start
             <para>If you have more than one management server node, repeat the upgrade steps on each
               node.</para>
           </note>
+        </listitem>
+        <listitem>
+            <para>After upgrading to 4.1, API clients are expected to send plain text passwords for login and user creation, instead of MD5 hash. Incase, api client changes are not acceptable, following changes are to be made for backward compatibility:</para>
+            <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default authenticator (1st entry in the userAuthenticators adapter list is default)</para>
+            <programlisting language="XML">
+&lt;!-- Security adapters --&gt;
+&lt;bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList"&gt;
+  &lt;property name="Adapters"&gt;
+    &lt;list&gt;
+      &lt;ref bean="PlainTextUserAuthenticator"/&gt;
+      &lt;ref bean="MD5UserAuthenticator"/&gt;
+      &lt;ref bean="LDAPUserAuthenticator"/&gt;
+    &lt;/list&gt;
+  &lt;/property&gt;
+&lt;/bean&gt;
+            </programlisting>
+            <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to 4.1.</para>
         </listitem>
         <listitem>
           <para>Start the first Management Server. Do not start any other Management Server nodes
@@ -5687,6 +5721,23 @@ service cloudstack-agent start
                             </programlisting>
             </listitem>
           </orderedlist>
+        </listitem>
+        <listitem>
+            <para>After upgrading to 4.1, API clients are expected to send plain text passwords for login and user creation, instead of MD5 hash. Incase, api client changes are not acceptable, following changes are to be made for backward compatibility:</para>
+            <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default authenticator (1st entry in the userAuthenticators adapter list is default)</para>
+            <programlisting language="XML">
+&lt;!-- Security adapters --&gt;
+&lt;bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList"&gt;
+  &lt;property name="Adapters"&gt;
+    &lt;list&gt;
+      &lt;ref bean="PlainTextUserAuthenticator"/&gt;
+      &lt;ref bean="MD5UserAuthenticator"/&gt;
+      &lt;ref bean="LDAPUserAuthenticator"/&gt;
+    &lt;/list&gt;
+  &lt;/property&gt;
+&lt;/bean&gt;
+            </programlisting>
+            <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to 4.1.</para>
         </listitem>
         <listitem>
           <para>If you have made changes to your existing copy of the

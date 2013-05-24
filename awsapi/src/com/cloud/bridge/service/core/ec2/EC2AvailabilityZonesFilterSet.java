@@ -26,6 +26,7 @@ import java.util.Map;
 
 
 import com.cloud.bridge.service.exception.EC2ServiceException;
+import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 
 
 public class EC2AvailabilityZonesFilterSet {
@@ -43,11 +44,9 @@ public class EC2AvailabilityZonesFilterSet {
         String filterName = param.getName();
         String value = (String) filterTypes.get( filterName );
 
-        if (null == value) 
-            throw new EC2ServiceException( "Unsupported filter [" + filterName + "]", 501 );
-
-        if (null != value && value.equalsIgnoreCase( "null" ))
-            throw new EC2ServiceException( "Unsupported filter [" + filterName + "]", 501 );
+        if ( value == null || value.equalsIgnoreCase("null") ) {
+            throw new EC2ServiceException( ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
+        }
 
         filterSet.add( param );
     }

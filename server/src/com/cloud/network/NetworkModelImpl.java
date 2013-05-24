@@ -320,8 +320,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                         } else {
                             if (rulesRevoked) {
                                 // no active rules/revoked rules are associated with this public IP, so remove the
-    // association with the provider
-                                ip.setState(State.Releasing);
+                                // association with the provider
+                                if (ip.isSourceNat()) {
+                                    s_logger.debug("Not releasing ip " + ip.getAddress().addr() + " as it is in use for SourceNat");
+                                } else {
+                                    ip.setState(State.Releasing);
+                                }
                             } else {
                                 if (ip.getState() == State.Releasing) {
                                     // rules are not revoked yet, so don't let the network service provider revoke the IP

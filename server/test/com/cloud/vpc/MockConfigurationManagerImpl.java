@@ -39,6 +39,9 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
@@ -47,6 +50,8 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpRange;
 
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ConfigurationManager;
@@ -379,6 +384,26 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public boolean isOfferingForVpc(NetworkOffering offering) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public PortableIpRange createPortableIpRange(CreatePortableIpRangeCmd cmd) throws ConcurrentOperationException {
+        return null;// TODO Auto-generated method stub
+    }
+
+    @Override
+    public boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd) {
+        return false;// TODO Auto-generated method stub
+    }
+
+    @Override
+    public List<? extends PortableIpRange> listPortableIpRanges(ListPortableIpRangesCmd cmd) {
+        return null;// TODO Auto-generated method stub
+    }
+
+    @Override
+    public List<? extends PortableIp> listPortableIps(long id) {
+        return null;// TODO Auto-generated method stub
     }
 
     /* (non-Javadoc)

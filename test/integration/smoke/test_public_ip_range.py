@@ -52,11 +52,11 @@ class Services:
                         "vlan": "4444",
                     }
 
-class TesDedicatePublicIPRange(cloudstackTestCase):
+class TestDedicatePublicIPRange(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TesDedicatePublicIPRange, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(TestDedicatePublicIPRange, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain
         cls.domain = get_domain(cls.api_client, cls.services)
@@ -96,7 +96,7 @@ class TesDedicatePublicIPRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["simulator", "publiciprange", "dedicate", "release"])
+    @attr(tags = ["simulator", "advanced", "publiciprange", "dedicate", "release"])
     def test_dedicatePublicIpRange(self):
         """Test public IP range dedication
         """

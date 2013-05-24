@@ -48,5 +48,6 @@ public enum ApiCommandJobType {
     LoadBalancerRule,
     AffinityGroup,
     InternalLbVm,
-    DedicatedGuestVlanRange
+    DedicatedGuestVlanRange,
+    PortableIpAddress
 }

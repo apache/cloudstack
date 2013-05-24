@@ -35,7 +35,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -68,10 +70,12 @@ import com.amazon.ec2.CreateImageResponse;
 import com.amazon.ec2.CreateKeyPairResponse;
 import com.amazon.ec2.CreateSecurityGroupResponse;
 import com.amazon.ec2.CreateSnapshotResponse;
+import com.amazon.ec2.CreateTagsResponse;
 import com.amazon.ec2.CreateVolumeResponse;
 import com.amazon.ec2.DeleteKeyPairResponse;
 import com.amazon.ec2.DeleteSecurityGroupResponse;
 import com.amazon.ec2.DeleteSnapshotResponse;
+import com.amazon.ec2.DeleteTagsResponse;
 import com.amazon.ec2.DeleteVolumeResponse;
 import com.amazon.ec2.DeregisterImageResponse;
 import com.amazon.ec2.DescribeAvailabilityZonesResponse;
@@ -82,14 +86,14 @@ import com.amazon.ec2.DescribeInstancesResponse;
 import com.amazon.ec2.DescribeKeyPairsResponse;
 import com.amazon.ec2.DescribeSecurityGroupsResponse;
 import com.amazon.ec2.DescribeSnapshotsResponse;
+import com.amazon.ec2.DescribeTagsResponse;
 import com.amazon.ec2.DescribeVolumesResponse;
 import com.amazon.ec2.DetachVolumeResponse;
 import com.amazon.ec2.DisassociateAddressResponse;
 import com.amazon.ec2.GetPasswordDataResponse;
-import com.amazon.ec2.GroupItemType;
 import com.amazon.ec2.ImportKeyPairResponse;
-import com.amazon.ec2.LaunchPermissionItemType;
 import com.amazon.ec2.ModifyImageAttributeResponse;
+import com.amazon.ec2.ModifyInstanceAttributeResponse;
 import com.amazon.ec2.RebootInstancesResponse;
 import com.amazon.ec2.RegisterImageResponse;
 import com.amazon.ec2.ReleaseAddressResponse;
@@ -99,9 +103,7 @@ import com.amazon.ec2.RunInstancesResponse;
 import com.amazon.ec2.StartInstancesResponse;
 import com.amazon.ec2.StopInstancesResponse;
 import com.amazon.ec2.TerminateInstancesResponse;
-import com.cloud.bridge.model.CloudStackUserVO;
 import com.cloud.bridge.model.UserCredentialsVO;
-import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
 import com.cloud.bridge.persist.dao.CloudStackUserDaoImpl;
 import com.cloud.bridge.persist.dao.OfferingDaoImpl;
 import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
@@ -122,12 +124,14 @@ import com.cloud.bridge.service.core.ec2.EC2DescribeInstances;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairs;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroups;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSnapshots;
+import com.cloud.bridge.service.core.ec2.EC2DescribeTags;
 import com.cloud.bridge.service.core.ec2.EC2DescribeVolumes;
 import com.cloud.bridge.service.core.ec2.EC2DisassociateAddress;
 import com.cloud.bridge.service.core.ec2.EC2Engine;
 import com.cloud.bridge.service.core.ec2.EC2Filter;
 import com.cloud.bridge.service.core.ec2.EC2GroupFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2Image;
+import com.cloud.bridge.service.core.ec2.EC2ImageFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2ImageAttributes.ImageAttribute;
 import com.cloud.bridge.service.core.ec2.EC2ImageLaunchPermission;
 import com.cloud.bridge.service.core.ec2.EC2ImportKeyPair;
@@ -135,6 +139,7 @@ import com.cloud.bridge.service.core.ec2.EC2InstanceFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2IpPermission;
 import com.cloud.bridge.service.core.ec2.EC2KeyPairFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2ModifyImageAttribute;
+import com.cloud.bridge.service.core.ec2.EC2ModifyInstanceAttribute;
 import com.cloud.bridge.service.core.ec2.EC2RebootInstances;
 import com.cloud.bridge.service.core.ec2.EC2RegisterImage;
 import com.cloud.bridge.service.core.ec2.EC2ReleaseAddress;
@@ -143,6 +148,8 @@ import com.cloud.bridge.service.core.ec2.EC2SecurityGroup;
 import com.cloud.bridge.service.core.ec2.EC2SnapshotFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2StartInstances;
 import com.cloud.bridge.service.core.ec2.EC2StopInstances;
+import com.cloud.bridge.service.core.ec2.EC2Tags;
+import com.cloud.bridge.service.core.ec2.EC2TagsFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2Volume;
 import com.cloud.bridge.service.core.ec2.EC2VolumeFilterSet;
 import com.cloud.bridge.service.exception.EC2ServiceException;
@@ -277,6 +284,7 @@ public class EC2RestServlet extends HttpServlet {
             else if (action.equalsIgnoreCase( "DetachVolume"              )) detachVolume(request, response);  
             else if (action.equalsIgnoreCase( "DisassociateAddress"       )) disassociateAddress(request, response);
             else if (action.equalsIgnoreCase( "ModifyImageAttribute"      )) modifyImageAttribute(request, response);  
+            else if (action.equalsIgnoreCase( "ModifyInstanceAttribute"   )) modifyInstanceAttribute(request, response);
             else if (action.equalsIgnoreCase( "RebootInstances"           )) rebootInstances(request, response);  
             else if (action.equalsIgnoreCase( "RegisterImage"             )) registerImage(request, response);  
             else if (action.equalsIgnoreCase( "ReleaseAddress"            )) releaseAddress(request, response);
@@ -294,6 +302,9 @@ public class EC2RestServlet extends HttpServlet {
             else if (action.equalsIgnoreCase( "ImportKeyPair"             )) importKeyPair(request, response);
             else if (action.equalsIgnoreCase( "DeleteKeyPair"             )) deleteKeyPair(request, response);
             else if (action.equalsIgnoreCase( "DescribeKeyPairs"          )) describeKeyPairs(request, response);
+            else if (action.equalsIgnoreCase( "CreateTags"                )) createTags(request, response);
+            else if (action.equalsIgnoreCase( "DeleteTags"                )) deleteTags(request, response);
+            else if (action.equalsIgnoreCase( "DescribeTags"              )) describeTags(request, response);
             else if (action.equalsIgnoreCase( "GetPasswordData"           )) getPasswordData(request, response);
             else {
                 logger.error("Unsupported action " + action);
@@ -303,8 +314,14 @@ public class EC2RestServlet extends HttpServlet {
         } catch( EC2ServiceException e ) {
             response.setStatus(e.getErrorCode());
 
-            if (e.getCause() != null && e.getCause() instanceof AxisFault)
-                faultResponse(response, ((AxisFault)e.getCause()).getFaultCode().getLocalPart(), e.getMessage());
+            if (e.getCause() != null && e.getCause() instanceof AxisFault) {
+                String errorCode = ((AxisFault)e.getCause()).getFaultCode().getLocalPart();
+                if (errorCode.startsWith("Client.")) // only in a SOAP API client error code is prefixed with Client.
+                    errorCode = errorCode.split("Client.")[1];
+                else if (errorCode.startsWith("Server.")) // only in a SOAP API server error code is prefixed with Server.
+                    errorCode = errorCode.split("Server.")[1];
+                faultResponse(response, errorCode, e.getMessage());
+            }
             else {
                 logger.error("EC2ServiceException: " + e.getMessage(), e);
                 endResponse(response, e.toString());
@@ -380,11 +397,6 @@ public class EC2RestServlet extends HttpServlet {
             endResponse(response, "SetUserKeys exception " + e.getMessage());
             return;
         }
-
-        // prime UserContext here
-//    	logger.debug("initializing context");
-        UserContext context = UserContext.current();
-
         try {
             txn = Transaction.open(Transaction.AWSAPI_DB);
             // -> use the keys to see if the account actually exists
@@ -666,17 +678,23 @@ public class EC2RestServlet extends HttpServlet {
         String[] volumeId = request.getParameterValues( "VolumeId" );
         if ( null != volumeId && 0 < volumeId.length ) 
             EC2request.setId( volumeId[0] );
-        else { response.sendError(530, "Missing VolumeId parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - VolumeId");
+        }
 
         String[] instanceId = request.getParameterValues( "InstanceId" );
         if ( null != instanceId && 0 < instanceId.length ) 
             EC2request.setInstanceId( instanceId[0] );
-        else { response.sendError(530, "Missing InstanceId parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
+        }
 
         String[] device = request.getParameterValues( "Device" );
         if ( null != device && 0 < device.length ) 
             EC2request.setDevice( device[0] );
-        else { response.sendError(530, "Missing Device parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - Device");
+        }
 
         // -> execute the request
         AttachVolumeResponse EC2response = EC2SoapServiceImpl.toAttachVolumeResponse( ServiceProvider.getInstance().getEC2Engine().attachVolume( EC2request ));
@@ -694,7 +712,9 @@ public class EC2RestServlet extends HttpServlet {
         String[] groupName = request.getParameterValues( "GroupName" );
         if ( null != groupName && 0 < groupName.length ) 
             EC2request.setName( groupName[0] );
-        else { response.sendError(530, "Missing GroupName parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - GroupName");
+        }
 
         // -> not clear how many parameters there are until we fail to get IpPermissions.n.IpProtocol
         int nCount = 1, mCount;
@@ -757,8 +777,7 @@ public class EC2RestServlet extends HttpServlet {
         } while( true );
 
         if (1 == nCount) {
-            response.sendError(530, "At least one IpPermissions required" );
-            return; 		
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - IpPermissions");
         }
 
         // -> execute the request
@@ -775,7 +794,9 @@ public class EC2RestServlet extends HttpServlet {
         String[] groupName = request.getParameterValues( "GroupName" );
         if ( null != groupName && 0 < groupName.length ) 
             EC2request.setName( groupName[0] );
-        else { response.sendError(530, "Missing GroupName parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter 'Groupname'");
+        }
 
         // -> not clear how many parameters there are until we fail to get IpPermissions.n.IpProtocol
         int nCount = 1;
@@ -837,8 +858,9 @@ public class EC2RestServlet extends HttpServlet {
 
         } while( true );
 
-        if (1 == nCount) { response.sendError(530, "At least one IpPermissions required" ); return; }
-
+        if (1 == nCount) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - IpPermissions");
+        }
 
         // -> execute the request
         AuthorizeSecurityGroupIngressResponse EC2response = EC2SoapServiceImpl.toAuthorizeSecurityGroupIngressResponse( 
@@ -853,7 +875,9 @@ public class EC2RestServlet extends HttpServlet {
         String[] volumeId = request.getParameterValues( "VolumeId" );
         if ( null != volumeId && 0 < volumeId.length ) 
             EC2request.setId(volumeId[0]);
-        else { response.sendError(530, "Missing VolumeId parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter 'VolumeId'");
+        }
 
         String[] instanceId = request.getParameterValues( "InstanceId" );
         if ( null != instanceId && 0 < instanceId.length ) 
@@ -875,7 +899,9 @@ public class EC2RestServlet extends HttpServlet {
         String[] volumeId = request.getParameterValues( "VolumeId" );
         if ( null != volumeId && 0 < volumeId.length ) 
             EC2request.setId(volumeId[0]);
-        else { response.sendError(530, "Missing VolumeId parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - VolumeId");
+        }
 
         // -> execute the request
         DeleteVolumeResponse EC2response = EC2SoapServiceImpl.toDeleteVolumeResponse( ServiceProvider.getInstance().getEC2Engine().deleteVolume( EC2request ));
@@ -889,7 +915,9 @@ public class EC2RestServlet extends HttpServlet {
         String[] zoneName = request.getParameterValues( "AvailabilityZone" );
         if ( null != zoneName && 0 < zoneName.length ) 
             EC2request.setZoneName( zoneName[0] );
-        else { response.sendError(530, "Missing AvailabilityZone parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing parameter - AvailabilityZone");
+        }
 
         String[] size = request.getParameterValues( "Size" );
         String[] snapshotId = request.getParameterValues("SnapshotId");
@@ -907,9 +935,9 @@ public class EC2RestServlet extends HttpServlet {
         } else if (useSnapshot && !useSize) {
             EC2request.setSnapshotId(snapshotId[0]);
         } else if (useSize && useSnapshot) {
-            response.sendError(530, "Size and SnapshotId parameters are mutually exclusive" ); return;
+            throw new EC2ServiceException( ClientError.InvalidParameterCombination, "Parameters 'Size' and 'SnapshotId' are mutually exclusive");
         } else {
-            response.sendError(530, "Size or SnapshotId has to be specified" ); return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Parameter 'Size' or 'SnapshotId' has to be specified");
         }
 
 
@@ -926,12 +954,15 @@ public class EC2RestServlet extends HttpServlet {
         String[] name = request.getParameterValues( "GroupName" );
         if ( null != name && 0 < name.length ) 
             groupName = name[0];
-        else { response.sendError(530, "Missing GroupName parameter" ); return; }
-
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - GroupName");
+        }
         String[] desc = request.getParameterValues( "GroupDescription" );
         if ( null != desc && 0 < desc.length ) 
             groupDescription = desc[0];
-        else { response.sendError(530, "Missing GroupDescription parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - GroupDescription");
+        }
 
         // -> execute the request
         CreateSecurityGroupResponse EC2response = EC2SoapServiceImpl.toCreateSecurityGroupResponse( ServiceProvider.getInstance().getEC2Engine().createSecurityGroup( groupName, groupDescription ));
@@ -945,7 +976,9 @@ public class EC2RestServlet extends HttpServlet {
         String[] name = request.getParameterValues( "GroupName" );
         if ( null != name && 0 < name.length ) 
             groupName = name[0];
-        else { response.sendError(530, "Missing GroupName parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - GroupName");
+        }
 
         // -> execute the request
         DeleteSecurityGroupResponse EC2response = EC2SoapServiceImpl.toDeleteSecurityGroupResponse( ServiceProvider.getInstance().getEC2Engine().deleteSecurityGroup( groupName ));
@@ -959,7 +992,9 @@ public class EC2RestServlet extends HttpServlet {
         String[] snapSet = request.getParameterValues( "SnapshotId" );
         if ( null != snapSet && 0 < snapSet.length ) 
             snapshotId = snapSet[0];
-        else { response.sendError(530, "Missing SnapshotId parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - SnapshotId");
+        }
 
         // -> execute the request
         DeleteSnapshotResponse EC2response = EC2SoapServiceImpl.toDeleteSnapshotResponse( ServiceProvider.getInstance().getEC2Engine().deleteSnapshot( snapshotId ));
@@ -973,7 +1008,9 @@ public class EC2RestServlet extends HttpServlet {
         String[] volSet = request.getParameterValues( "VolumeId" );
         if ( null != volSet && 0 < volSet.length ) 
             volumeId = volSet[0];
-        else { response.sendError(530, "Missing VolumeId parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - VolumeId");
+        }
 
         // -> execute the request
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
@@ -988,7 +1025,9 @@ public class EC2RestServlet extends HttpServlet {
         String[] imageId = request.getParameterValues( "ImageId" );
         if ( null != imageId && 0 < imageId.length ) 
             image.setId( imageId[0] );
-        else { response.sendError(530, "Missing ImageId parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - ImageId");
+        }
 
         // -> execute the request
         DeregisterImageResponse EC2response = EC2SoapServiceImpl.toDeregisterImageResponse( ServiceProvider.getInstance().getEC2Engine().deregisterImage( image ));
@@ -1002,16 +1041,25 @@ public class EC2RestServlet extends HttpServlet {
         String[] instanceId = request.getParameterValues( "InstanceId" );
         if ( null != instanceId && 0 < instanceId.length ) 
             EC2request.setInstanceId( instanceId[0] );
-        else { response.sendError(530, "Missing InstanceId parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
+        }
 
         String[] name = request.getParameterValues( "Name" );
         if ( null != name && 0 < name.length ) 
             EC2request.setName( name[0] );
-        else { response.sendError(530, "Missing Name parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - Name");
+        }
 
         String[] description = request.getParameterValues( "Description" );
-        if ( null != description && 0 < description.length ) 
+        if ( null != description && 0 < description.length ) {
+            if (description[0].length() > 255)
+                throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                        "Length of the value of parameter Description should be less than 255");
             EC2request.setDescription( description[0] );
+        }
+
 
         // -> execute the request
         CreateImageResponse EC2response = EC2SoapServiceImpl.toCreateImageResponse( ServiceProvider.getInstance().getEC2Engine().createImage( EC2request ));
@@ -1025,16 +1073,23 @@ public class EC2RestServlet extends HttpServlet {
         String[] location = request.getParameterValues( "ImageLocation" );
         if ( null != location && 0 < location.length ) 
             EC2request.setLocation( location[0] );
-        else { response.sendError(530, "Missing ImageLocation parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing parameter - ImageLocation");
+        }
 
         String[] cloudRedfined = request.getParameterValues( "Architecture" );
         if ( null != cloudRedfined && 0 < cloudRedfined.length ) 
             EC2request.setArchitecture( cloudRedfined[0] );
-        else { response.sendError(530, "Missing Architecture parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - Architecture");
+        }
 
         String[] name = request.getParameterValues( "Name" );
         if ( null != name && 0 < name.length ) 
             EC2request.setName( name[0] );
+        else {
+               throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - Name");
+        }
 
         String[] description = request.getParameterValues( "Description" );
         if ( null != description && 0 < description.length ) 
@@ -1053,9 +1108,8 @@ public class EC2RestServlet extends HttpServlet {
        if ( imageId != null && imageId.length > 0 )
             ec2request.setImageId( imageId[0]);
        else {
-            response.sendError(530, "Missing ImageId parameter" );
-            return;
-        }
+           throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - ImageId");
+       }
 
         String[] description = request.getParameterValues( "Description.Value" );
         if ( description != null && description.length > 0 ) {
@@ -1067,8 +1121,8 @@ public class EC2RestServlet extends HttpServlet {
             if (ec2request.getLaunchPermissionSet().length > 0)
                 ec2request.setAttribute(ImageAttribute.launchPermission);
             else {
-                response.sendError(530, "Missing Attribute parameter - Description/LaunchPermission should be provided" );
-                return;
+                throw new EC2ServiceException( ClientError.MissingParamter,
+                        "Missing required parameter - Description/LaunchPermission should be provided");
             }
         }
 
@@ -1120,8 +1174,7 @@ public class EC2RestServlet extends HttpServlet {
         if ( imageId != null && imageId.length > 0)
             ec2request.setImageId(imageId[0]);
         else {
-            response.sendError(530, "Missing ImageId parameter" );
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - ImageId");
         }
 
         String[] attribute = request.getParameterValues( "Attribute" );
@@ -1129,12 +1182,11 @@ public class EC2RestServlet extends HttpServlet {
             if (attribute[0].equalsIgnoreCase("launchPermission"))
                 ec2request.setAttribute(ImageAttribute.launchPermission);
             else {
-                response.sendError(501, "Unsupported Attribute - only launchPermission supported" );
-                return;
+                throw new EC2ServiceException( ClientError.MissingParamter,
+                        "Missing required parameter - Description/LaunchPermission should be provided");
             }
         } else {
-            response.sendError(530, "Missing Attribute parameter" );
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - Attribute");
         }
 
         EC2ImageLaunchPermission launchPermission = new EC2ImageLaunchPermission();
@@ -1155,12 +1207,13 @@ public class EC2RestServlet extends HttpServlet {
         String[] imageId = request.getParameterValues( "ImageId" );
         if ( null != imageId && 0 < imageId.length ) 
             EC2request.setTemplateId( imageId[0] );
-        else { response.sendError(530, "Missing ImageId parameter" ); return; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - ImageId");
+        }
 
         String[] minCount = request.getParameterValues( "MinCount" );
         if ( minCount == null || minCount.length < 1) {
-            response.sendError(530, "Missing MinCount parameter" );
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - MinCount");
         } else if ( Integer.parseInt(minCount[0]) < 1) {
             throw new EC2ServiceException(ClientError.InvalidParameterValue,
                     "Value of parameter MinCount should be greater than 0");
@@ -1170,8 +1223,7 @@ public class EC2RestServlet extends HttpServlet {
 
         String[] maxCount = request.getParameterValues( "MaxCount" );
         if ( maxCount == null || maxCount.length < 1) {
-            response.sendError(530, "Missing MaxCount parameter" );
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - MaxCount");
         } else if ( Integer.parseInt(maxCount[0]) < 1) {
             throw new EC2ServiceException(ClientError.InvalidParameterValue,
                     "Value of parameter MaxCount should be greater than 0");
@@ -1235,7 +1287,9 @@ public class EC2RestServlet extends HttpServlet {
                 }
             }
         }	
-        if (0 == count) { response.sendError(530, "Missing InstanceId parameter" ); return; }
+        if (0 == count) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
+        }
 
         // -> execute the request
         RebootInstancesResponse EC2response = EC2SoapServiceImpl.toRebootInstancesResponse( ServiceProvider.getInstance().getEC2Engine().rebootInstances(EC2request));
@@ -1259,7 +1313,9 @@ public class EC2RestServlet extends HttpServlet {
                 }
             }
         }	
-        if (0 == count) { response.sendError(530, "Missing InstanceId parameter" ); return; }
+        if (0 == count) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
+        }
 
         // -> execute the request
         StartInstancesResponse EC2response = EC2SoapServiceImpl.toStartInstancesResponse( ServiceProvider.getInstance().getEC2Engine().startInstances(EC2request));
@@ -1283,7 +1339,9 @@ public class EC2RestServlet extends HttpServlet {
                 }
             }
         }	
-        if (0 == count) { response.sendError(530, "Missing InstanceId parameter" ); return; }
+        if (0 == count) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
+        }
 
         String[] force = request.getParameterValues("Force");
         if ( force != null) {
@@ -1312,7 +1370,9 @@ public class EC2RestServlet extends HttpServlet {
                 }
             }
         }		
-        if (0 == count) { response.sendError(530, "Missing InstanceId parameter" ); return; }
+        if (0 == count) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
+        }
 
         // -> execute the request
         EC2request.setDestroyInstances( true );
@@ -1349,7 +1409,8 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        DescribeAvailabilityZonesResponse EC2response = EC2SoapServiceImpl.toDescribeAvailabilityZonesResponse( ServiceProvider.getInstance().getEC2Engine().handleRequest( EC2request ));
+        DescribeAvailabilityZonesResponse EC2response = EC2SoapServiceImpl.toDescribeAvailabilityZonesResponse(
+                ServiceProvider.getInstance().getEC2Engine().describeAvailabilityZones( EC2request ));
         serializeResponse(response, EC2response);
     }
 
@@ -1366,6 +1427,15 @@ public class EC2RestServlet extends HttpServlet {
                 if (null != value && 0 < value.length) EC2request.addImageSet( value[0] );
             }
         }		
+        // add filters
+        EC2Filter[] filterSet = extractFilters( request );
+        if ( filterSet != null ) {
+            EC2ImageFilterSet ifs = new EC2ImageFilterSet();
+            for( int i=0; i < filterSet.length; i++ ) {
+                ifs.addFilter(filterSet[i]);
+            }
+            EC2request.setFilterSet( ifs );
+        }
         // -> execute the request
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
         DescribeImagesResponse EC2response = EC2SoapServiceImpl.toDescribeImagesResponse( engine.describeImages( EC2request ));
@@ -1380,8 +1450,7 @@ public class EC2RestServlet extends HttpServlet {
         if (imageId != null && imageId.length > 0)
             ec2request.setImageId(imageId[0]);
         else {
-            response.sendError(530, "Missing ImageId parameter");
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - ImageId");
         }
 
         String[] attribute = request.getParameterValues( "Attribute" );
@@ -1391,12 +1460,11 @@ public class EC2RestServlet extends HttpServlet {
             else if (attribute[0].equalsIgnoreCase("launchPermission"))
                 ec2request.setAttribute(ImageAttribute.launchPermission);
             else {
-                response.sendError(501, "Unsupported Attribute - description and launchPermission supported" );
-                return;
+            	throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                        "Only values supported for paramter Attribute are - Description/LaunchPermission");
             }
         } else {
-            response.sendError(530, "Missing Attribute parameter");
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - Attribute");
         }
 
         DescribeImageAttributeResponse EC2response = EC2SoapServiceImpl.toDescribeImageAttributeResponse( ServiceProvider.getInstance().getEC2Engine().describeImageAttribute( ec2request ));
@@ -1477,9 +1545,8 @@ public class EC2RestServlet extends HttpServlet {
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
 
         String publicIp = request.getParameter( "PublicIp" );
-        if (publicIp == null) { 
-            response.sendError(530, "Missing PublicIp parameter");
-            return;
+        if (publicIp == null) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - PublicIp");
         }
 
         EC2ReleaseAddress ec2Request = new EC2ReleaseAddress();
@@ -1498,13 +1565,11 @@ public class EC2RestServlet extends HttpServlet {
 
         String publicIp = request.getParameter( "PublicIp" );
         if (null == publicIp) {
-            response.sendError(530, "Missing PublicIp parameter" );
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - PublicIp");
         }
         String instanceId = request.getParameter( "InstanceId" );
         if (null == instanceId) {
-            response.sendError(530, "Missing InstanceId parameter" );
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
         }
 
         EC2AssociateAddress ec2Request = new EC2AssociateAddress();
@@ -1524,8 +1589,7 @@ public class EC2RestServlet extends HttpServlet {
 
         String publicIp = request.getParameter( "PublicIp" );
         if (null == publicIp) {
-            response.sendError(530, "Missing PublicIp parameter" );
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - PublicIp");
         }
 
         EC2DisassociateAddress ec2Request = new EC2DisassociateAddress();
@@ -1573,27 +1637,20 @@ public class EC2RestServlet extends HttpServlet {
     private void describeInstanceAttribute( HttpServletRequest request, HttpServletResponse response ) 
             throws ADBException, XMLStreamException, IOException {
         EC2DescribeInstances EC2request = new EC2DescribeInstances();
-        String instanceType = null;
+        String[] instanceId = request.getParameterValues( "InstanceId" );
+        if ( instanceId != null && instanceId.length > 0)
+            EC2request.addInstanceId( instanceId[0] );
+        else
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
 
-        // -> we are only handling queries about the "Attribute=instanceType"
-        Enumeration<?> names = request.getParameterNames();
-        while( names.hasMoreElements()) {
-            String key = (String)names.nextElement();
-            if (key.startsWith("Attribute")) {
-                String[] value = request.getParameterValues( key );
-                if (null != value && 0 < value.length && value[0].equalsIgnoreCase( "instanceType" )) { 
-                    instanceType = value[0];
-                    break;
-                }
+        String[] attribute = request.getParameterValues( "Attribute" );
+        if (attribute != null && attribute.length > 0) {
+               if ( !attribute[0].equalsIgnoreCase("instanceType") ) {
+                throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                        "Only value supported for paramter Attribute is 'instanceType'");
             }
-        }		
-        if ( null != instanceType ) {
-            String[] value = request.getParameterValues( "InstanceId" );
-            EC2request.addInstanceId( value[0] );
-        }
-        else {
-            response.sendError(501, "Unsupported - only instanceType supported" ); 
-            return;
+        } else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - Attribute");
         }
 
         // -> execute the request
@@ -1601,6 +1658,38 @@ public class EC2RestServlet extends HttpServlet {
         serializeResponse(response, EC2response);
     }
 
+    private void modifyInstanceAttribute(HttpServletRequest request, HttpServletResponse response)
+            throws ADBException, XMLStreamException, IOException {
+        EC2ModifyInstanceAttribute ec2Request = new EC2ModifyInstanceAttribute();
+
+        String[] instanceId = request.getParameterValues( "InstanceId" );
+        if ( instanceId != null && instanceId.length > 0 )
+             ec2Request.setInstanceId(instanceId[0]);
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
+        }
+
+        String[] instanceType = request.getParameterValues( "InstanceType.Value" );
+        String[] userData  = request.getParameterValues( "UserData.Value" );
+
+        if ( instanceType != null && userData != null ) {
+            throw new EC2ServiceException( ClientError.InvalidParameterCombination, "Only one attribute can be" +
+                    " specified at a time");
+        }
+        if ( instanceType != null && instanceType.length > 0 ) {
+            ec2Request.setInstanceType(instanceType[0]);
+        } else if ( userData != null && userData.length > 0 ) {
+            ec2Request.setUserData(userData[0]);
+        } else {
+            throw new EC2ServiceException( ClientError.MissingParamter,
+                    "Missing parameter - InstanceType/UserData should be provided");
+        }
+
+        // -> execute the request
+        ModifyInstanceAttributeResponse EC2response = EC2SoapServiceImpl.toModifyInstanceAttributeResponse(
+                ServiceProvider.getInstance().getEC2Engine().modifyInstanceAttribute( ec2Request ));
+        serializeResponse(response, EC2response);
+    }
 
     private void describeSnapshots( HttpServletRequest request, HttpServletResponse response ) 
             throws ADBException, XMLStreamException, IOException 
@@ -1629,7 +1718,8 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
-        DescribeSnapshotsResponse EC2response = EC2SoapServiceImpl.toDescribeSnapshotsResponse( engine.handleRequest( EC2request ));
+        DescribeSnapshotsResponse EC2response = EC2SoapServiceImpl.toDescribeSnapshotsResponse(
+                engine.describeSnapshots( EC2request ));
         serializeResponse(response, EC2response);
             }
 
@@ -1661,7 +1751,9 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        DescribeVolumesResponse EC2response = EC2SoapServiceImpl.toDescribeVolumesResponse( ServiceProvider.getInstance().getEC2Engine().handleRequest( EC2request ));
+        EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
+        DescribeVolumesResponse EC2response = EC2SoapServiceImpl.toDescribeVolumesResponse(
+                ServiceProvider.getInstance().getEC2Engine().describeVolumes( EC2request ), engine);
         serializeResponse(response, EC2response);
             }
 
@@ -1755,10 +1847,13 @@ public class EC2RestServlet extends HttpServlet {
             throws ADBException, XMLStreamException, IOException {
 
         String keyName = request.getParameter("KeyName");
+        if ( keyName == null ) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - KeyName");
+        }
+
         String publicKeyMaterial = request.getParameter("PublicKeyMaterial");
-        if (keyName==null && publicKeyMaterial==null) {
-            response.sendError(530, "Missing parameter");
-            return;
+        if ( publicKeyMaterial == null ) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - PublicKeyMaterial");
         }
 
         if (!publicKeyMaterial.contains(" "))
@@ -1780,9 +1875,8 @@ public class EC2RestServlet extends HttpServlet {
     private void createKeyPair(HttpServletRequest request, HttpServletResponse response)
             throws ADBException, XMLStreamException, IOException { 
         String keyName = request.getParameter("KeyName");
-        if (keyName==null) { 
-            response.sendError(530, "Missing KeyName parameter");
-            return;
+        if (keyName==null) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - KeyName");
         }
 
         EC2CreateKeyPair ec2Request = new EC2CreateKeyPair();
@@ -1799,8 +1893,7 @@ public class EC2RestServlet extends HttpServlet {
             throws ADBException, XMLStreamException, IOException {
         String keyName = request.getParameter("KeyName");
         if (keyName==null) {
-            response.sendError(530, "Missing KeyName parameter");
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - KeyName");
         }
 
         EC2DeleteKeyPair ec2Request = new EC2DeleteKeyPair();
@@ -1815,14 +1908,88 @@ public class EC2RestServlet extends HttpServlet {
             throws ADBException, XMLStreamException, IOException {
         String instanceId = request.getParameter("InstanceId");
         if (instanceId==null) {
-            response.sendError(530, "Missing InstanceId parameter");
-            return;
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - InstanceId");
         }
 
         GetPasswordDataResponse EC2Response = EC2SoapServiceImpl.toGetPasswordData(
                 ServiceProvider.getInstance().getEC2Engine().getPasswordData(instanceId));
         serializeResponse(response, EC2Response);
     }
+
+    private void createTags(HttpServletRequest request, HttpServletResponse response)
+            throws ADBException, XMLStreamException, IOException {
+        EC2Tags ec2Request = createTagsRequest(request, response);
+        if (ec2Request == null) return;
+        CreateTagsResponse EC2Response = EC2SoapServiceImpl.toCreateTagsResponse(
+                ServiceProvider.getInstance().getEC2Engine().modifyTags( ec2Request, "create"));
+        serializeResponse(response, EC2Response);
+    }
+
+    private void deleteTags(HttpServletRequest request, HttpServletResponse response)
+            throws ADBException, XMLStreamException, IOException {
+        EC2Tags ec2Request = createTagsRequest(request, response);
+        if (ec2Request == null) return;
+        DeleteTagsResponse EC2Response = EC2SoapServiceImpl.toDeleteTagsResponse(
+                ServiceProvider.getInstance().getEC2Engine().modifyTags( ec2Request, "delete"));
+        serializeResponse(response, EC2Response);
+    }
+
+    private EC2Tags createTagsRequest(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        EC2Tags ec2Request = new EC2Tags();
+        ArrayList<String> resourceIdList = new ArrayList<String>();
+        Map<String, String> resourceTagList = new HashMap<String, String>();
+
+        int nCount = 1;
+        do {
+            String[] resourceIds = request.getParameterValues( "ResourceId." + nCount );
+            if (resourceIds != null && resourceIds.length > 0)
+                resourceIdList.add(resourceIds[0]);
+            else break;
+            nCount++;
+        } while (true);
+        if ( resourceIdList.isEmpty() ) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - ResourceId");
+        }
+        ec2Request = EC2SoapServiceImpl.toResourceTypeAndIds(ec2Request, resourceIdList);
+
+        nCount = 1;
+        do {
+            String[] tagKey = request.getParameterValues( "Tag." + nCount + ".Key" );
+            if ( tagKey != null && tagKey.length > 0 ) {
+               String[] tagValue = request.getParameterValues( "Tag." + nCount + ".Value" );
+            if ( tagValue != null && tagValue.length > 0 ) {
+                resourceTagList.put(tagKey[0], tagValue[0]);
+            } else
+                resourceTagList.put(tagKey[0], null);
+            } else break;
+            nCount++;
+        } while (true);
+        if ( resourceTagList.isEmpty() ) {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - ResourceTag");
+        }
+        ec2Request = EC2SoapServiceImpl.toResourceTag(ec2Request, resourceTagList);
+
+        return ec2Request;
+    }
+
+    private void describeTags(HttpServletRequest request, HttpServletResponse response)
+            throws ADBException, XMLStreamException, IOException {
+        EC2DescribeTags ec2Request = new EC2DescribeTags();
+
+        EC2Filter[] filterSet = extractFilters( request );
+        if (null != filterSet) {
+            EC2TagsFilterSet tfs = new EC2TagsFilterSet();
+            for( int i=0; i < filterSet.length; i++ )
+                tfs.addFilter( filterSet[i] );
+            ec2Request.setFilterSet( tfs );
+        }
+        DescribeTagsResponse EC2Response = EC2SoapServiceImpl.toDescribeTagsResponse(
+                ServiceProvider.getInstance().getEC2Engine().describeTags( ec2Request));
+        serializeResponse(response, EC2Response);
+    }
+
+    
 
     /**
      * This function implements the EC2 REST authentication algorithm.   It uses the given
@@ -1843,69 +2010,76 @@ public class EC2RestServlet extends HttpServlet {
         String[] awsAccess = request.getParameterValues( "AWSAccessKeyId" );
         if ( null != awsAccess && 0 < awsAccess.length ) 
             cloudAccessKey = awsAccess[0];
-        else { response.sendError(530, "Missing AWSAccessKeyId parameter" ); return false; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - AWSAccessKeyId");
+        }
 
         String[] clientSig = request.getParameterValues( "Signature" );
         if ( null != clientSig && 0 < clientSig.length ) 
             signature = clientSig[0];
-        else { response.sendError(530, "Missing Signature parameter" ); return false; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - Signature");
+        }
 
         String[] method = request.getParameterValues( "SignatureMethod" );
         if ( null != method && 0 < method.length ) 
         {
             sigMethod = method[0];
             if (!sigMethod.equals( "HmacSHA256" ) && !sigMethod.equals( "HmacSHA1" )) {
-                response.sendError(531, "Unsupported SignatureMethod value: " + sigMethod + " expecting: HmacSHA256 or HmacSHA1" ); 
-                return false;
+            	throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                         "Unsupported SignatureMethod value: " + sigMethod + " expecting: HmacSHA256 or HmacSHA1");
             }
+        } else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - SignatureMethod");
         }
-        else { response.sendError(530, "Missing SignatureMethod parameter" ); return false; }
 
         String[] version = request.getParameterValues( "Version" );
         if ( null != version && 0 < version.length ) 
         {
             if (!version[0].equals( wsdlVersion )) {
-                response.sendError(531, "Unsupported Version value: " + version[0] + " expecting: " + wsdlVersion ); 
-                return false;
+                throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                        "Unsupported Version value: " + version[0] + " expecting: " + wsdlVersion);
             }
+        } else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - Version");
         }
-        else { response.sendError(530, "Missing Version parameter" ); return false; }
 
         String[] sigVersion = request.getParameterValues( "SignatureVersion" );
         if ( null != sigVersion && 0 < sigVersion.length ) 
         {
             if (!sigVersion[0].equals( "2" )) {
-                response.sendError(531, "Unsupported SignatureVersion value: " + sigVersion[0] + " expecting: 2" ); 
-                return false;
+                throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                     "Unsupported SignatureVersion value: " + sigVersion[0] + " expecting: 2");
             }
         }
-        else { response.sendError(530, "Missing SignatureVersion parameter" ); return false; }
+        else {
+            throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter - SignatureVersion");
+        }
 
         // -> can have only one but not both { Expires | Timestamp } headers
         String[] expires = request.getParameterValues( "Expires" );
         if ( null != expires && 0 < expires.length ) 
         {
             // -> contains the date and time at which the signature included in the request EXPIRES
-            if (hasSignatureExpired( expires[0] )) {
-                response.sendError(531, "Expires parameter indicates signature has expired: " + expires[0] ); 
-                return false;
+            if (hasSignatureExpired( expires[0] )) { //InvalidSecurity.RequestHasExpired
+                 throw new EC2ServiceException( ClientError.InvalidSecurity_RequestHasExpired,
+                        "Expires parameter indicates signature has expired: " + expires[0]);
             }
         }
         else 
         {    // -> contains the date and time at which the request is SIGNED
             String[] time = request.getParameterValues( "Timestamp" );
             if ( null == time || 0 == time.length ) {
-                response.sendError(530, "Missing Timestamp and Expires parameter, one is required" ); 
-                return false; 
+                throw new EC2ServiceException( ClientError.MissingParamter, "Missing required parameter -" +
+                          " Timestamp/Expires");
             }
         } 
 
         // [B] Use the access key to get the users secret key from the cloud DB
         cloudSecretKey = userDao.getSecretKeyByAccessKey( cloudAccessKey );
         if ( cloudSecretKey == null ) {
-            logger.debug("No Secret key found for Access key '" + cloudAccessKey + "' in the the EC2 service");
-            throw new EC2ServiceException( ClientError.AuthFailure, "No Secret key found for Access key '" + cloudAccessKey +
-                    "' in the the EC2 service" );
+            logger.debug( "Access key '" + cloudAccessKey + "' not found in the the EC2 service ");
+            throw new EC2ServiceException( ClientError.AuthFailure, "Access key '" + cloudAccessKey + "' not found in the the EC2 service ");
         }
 
         // [C] Verify the signature
@@ -1949,8 +2123,9 @@ public class EC2RestServlet extends HttpServlet {
             UserContext.current().initContext( cloudAccessKey, cloudSecretKey, cloudAccessKey, "REST request", null );
             return true;
         }
-        else throw new PermissionDeniedException("Invalid signature");
-            }
+        else throw new EC2ServiceException( ClientError.SignatureDoesNotMatch,
+                "The request signature calculated does not match the signature provided by the user.");
+    }
 
     /**
      * We check this to reduce replay attacks.
@@ -2043,8 +2218,9 @@ public class EC2RestServlet extends HttpServlet {
             throws ADBException, XMLStreamException, IOException {
         OutputStream os = response.getOutputStream();
         response.setStatus(200);	
-        response.setContentType("text/xml; charset=UTF-8");
+        response.setContentType("text/xml");
         XMLStreamWriter xmlWriter = xmlOutFactory.createXMLStreamWriter( os );
+        xmlWriter.writeStartDocument("UTF-8","1.0");
         MTOMAwareXMLSerializer MTOMWriter = new MTOMAwareXMLSerializer( xmlWriter );
         MTOMWriter.setDefaultNamespace("http://ec2.amazonaws.com/doc/" + wsdlVersion + "/");
         EC2Response.serialize( null, factory, MTOMWriter );

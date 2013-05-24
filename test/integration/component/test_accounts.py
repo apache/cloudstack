@@ -561,7 +561,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
                             self.apiclient,
                             self.services["account"]
                             )
-        self.debug("Created account: %s" % account_1.account.name)
+        self.debug("Created account: %s" % account_1.name)
         self.cleanup.append(account_1)
         account_2 = Account.create(
                             self.apiclient,

@@ -94,4 +94,5 @@ public interface UserVmManager extends UserVmService {
 
     boolean upgradeVirtualMachine(Long id, Long serviceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
+    boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
 }

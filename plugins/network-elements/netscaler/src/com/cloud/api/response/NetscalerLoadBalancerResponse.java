@@ -60,6 +60,15 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the management IP address of the external load balancer")
     private String ipAddress;
 
+    @SerializedName(ApiConstants.GSLB_PROVIDER) @Param(description="true if NetScaler device is provisioned to be a GSLB service provider")
+    private Boolean isGslbProvider;
+
+    @SerializedName(ApiConstants.GSLB_PROVIDER_PUBLIC_IP) @Param(description="public IP of the NetScaler representing GSLB site")
+    private String gslbSitePublicIp;
+
+    @SerializedName(ApiConstants.GSLB_PROVIDER_PRIVATE_IP) @Param(description="private IP of the NetScaler representing GSLB site")
+    private String gslbSitePrivateIp;
+
     @SerializedName(ApiConstants.POD_IDS) @Param(description="Used when NetScaler device is provider of EIP service." +
             " This parameter represents the list of pod's, for which there exists a policy based route on datacenter L3 router to " +
             "route pod's subnet IP to a NetScaler device.")
@@ -107,5 +116,17 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
 
     public void setAssociatedPods(List<Long> pods) {
         this.podIds = pods;
+    }
+
+    public void setGslbProvider(boolean isGslbProvider) {
+        this.isGslbProvider = isGslbProvider;
+    }
+
+    public void setGslbSitePublicIp(String publicIP) {
+        this.gslbSitePublicIp = publicIP;
+    }
+
+    public void setGslbSitePrivateIp(String privateIp) {
+        this.gslbSitePrivateIp = privateIp;
     }
 }

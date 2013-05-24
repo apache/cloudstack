@@ -67,12 +67,12 @@ fi
 
 # check to see if we have the NFS volume mounted
 echo ================================================
-mount|grep -v sunrpc|grep nfs 1> /dev/null 2>&1
+mount|grep -v sunrpc|grep -v rpc_pipefs|grep nfs 1> /dev/null 2>&1
 if [ $? -eq 0 ]
 then
     echo "NFS is currently mounted"
     # check for write access
-    for MOUNTPT in `mount|grep -v sunrpc|grep nfs| awk '{print $3}'`
+    for MOUNTPT in `mount|grep -v sunrpc|grep -v rpc_pipefs|grep nfs| awk '{print $3}'`
     do
         if [ $MOUNTPT != "/proc/xen" ] # mounted by xen
         then

@@ -18,25 +18,39 @@
  */
 package com.cloud.network.element;
 
-import com.cloud.network.element.MidoNetElement;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.UUID;
+
 import junit.framework.TestCase;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+
 import com.midokura.midonet.client.MidonetApi;
-import com.midokura.midonet.client.resource.*;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
-import com.cloud.network.*;
-import com.cloud.vm.*;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.element.MidoNetElement;
+import com.midokura.midonet.client.resource.Bridge;
+import com.midokura.midonet.client.resource.BridgePort;
+import com.midokura.midonet.client.resource.DhcpHost;
+import com.midokura.midonet.client.resource.DhcpSubnet;
+import com.midokura.midonet.client.resource.Port;
+import com.midokura.midonet.client.resource.ResourceCollection;
+import com.midokura.midonet.client.resource.Router;
+import com.midokura.midonet.client.resource.RouterPort;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import sun.security.util.Resources_es;
-
-import java.util.*;
+import com.cloud.network.Network;
+import com.cloud.network.Networks;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 
 public class MidoNetElementTest extends TestCase {
@@ -98,7 +112,7 @@ public class MidoNetElementTest extends TestCase {
         //mockVm
         @SuppressWarnings("unchecked")
         VirtualMachineProfile mockVm =
-                (VirtualMachineProfile)mock(VirtualMachineProfile.class);
+                mock(VirtualMachineProfile.class);
         when(mockVm.getType()).thenReturn(VirtualMachine.Type.User);
 
         MidoNetElement elem = new MidoNetElement();

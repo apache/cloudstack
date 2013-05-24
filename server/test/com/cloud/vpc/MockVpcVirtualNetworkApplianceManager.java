@@ -422,4 +422,10 @@ VpcVirtualNetworkApplianceService {
         return null;
     }
 
+    @Override
+    public boolean setupDhcpForPvlan(boolean add, DomainRouterVO router, Long hostId,
+            NicProfile nic) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

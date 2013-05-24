@@ -661,6 +661,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Connection conn = getConnection();
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             Host host = Host.getByUuid(conn, _host.uuid);
+
+            // If DMC is not enable then don't execute this command.
+            if (!isDmcEnabled(conn, host)) {
+                String msg = "Unable to scale the vm: " + vmName + " as DMC - Dynamic memory control is not enabled for the XenServer:" + _host.uuid + " ,check your license and hypervisor version.";
+                s_logger.info(msg);
+                return new ScaleVmAnswer(cmd, false, msg);
+            }
             // stop vm which is running on this host or is in halted state
             Iterator<VM> iter = vms.iterator();
             while ( iter.hasNext() ) {
@@ -3522,6 +3529,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      */
     protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
         vm.setMemoryLimits(conn, mem_128m, maxMemsize, minMemsize, maxMemsize);
+    }
+
+    /**
+     * When Dynamic Memory Control (DMC) is enabled -
+     * xen allows scaling the guest memory while the guest is running
+     *
+     * By default this is disallowed, override the specific xen resource
+     * if this is enabled
+     */
+    protected boolean isDmcEnabled(Connection conn, Host host) throws XenAPIException, XmlRpcException {
+        return false;
     }
 
     protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {

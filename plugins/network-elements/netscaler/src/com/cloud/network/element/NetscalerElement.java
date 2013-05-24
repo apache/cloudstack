@@ -589,6 +589,10 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         response.setDeviceState(lbDeviceVO.getState().name());
         response.setObjectName("netscalerloadbalancer");
 
+        response.setGslbProvider(lbDeviceVO.getGslbProvider());
+        response.setGslbSitePublicIp(lbDeviceVO.getGslbSitePublicIP());
+        response.setGslbSitePrivateIp(lbDeviceVO.getGslbSitePrivateIP());
+
         List<Long> associatedPods = new ArrayList<Long>();
         List<NetScalerPodVO> currentPodVOs = _netscalerPodDao.listByNetScalerDeviceId(lbDeviceVO.getId());
         if (currentPodVOs != null && currentPodVOs.size() > 0) {

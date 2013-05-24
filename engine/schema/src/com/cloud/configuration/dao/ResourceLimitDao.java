@@ -32,4 +32,6 @@ public interface ResourceLimitDao extends GenericDao<ResourceLimitVO, Long> {
     ResourceCount.ResourceType getLimitType(String type);
 
     ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type);
+
+    long removeEntriesByOwner(Long ownerId, ResourceOwnerType ownerType);
 }
