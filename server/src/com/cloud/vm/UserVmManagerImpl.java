@@ -819,6 +819,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     }
 
+
     @Override
     public UserVm addNicToVirtualMachine(AddNicToVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, CloudRuntimeException {
         Long vmId = cmd.getVmId();
@@ -1112,21 +1113,47 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         //Check if its a scale "up"
         ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceOfferingId);
-        ServiceOffering oldServiceOffering = _configMgr.getServiceOffering(vmInstance.getServiceOfferingId());
-        if(newServiceOffering.getSpeed() <= oldServiceOffering.getSpeed()
-                && newServiceOffering.getRamSize() <= oldServiceOffering.getRamSize()){
+        ServiceOffering currentServiceOffering = _configMgr.getServiceOffering(vmInstance.getServiceOfferingId());
+        int newCpu = newServiceOffering.getCpu();
+        int newMemory = newServiceOffering.getRamSize();
+        int newSpeed = newServiceOffering.getSpeed();
+        int currentCpu = currentServiceOffering.getCpu();
+        int currentMemory = currentServiceOffering.getRamSize();
+        int currentSpeed = currentServiceOffering.getSpeed();
+
+        if(newSpeed     <= currentSpeed
+           && newMemory <= currentMemory
+           && newCpu    <= currentCpu){
             throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering should have both cpu and memory greater than the old values");
+        }
+
+        // Check resource limits
+        if (newCpu > currentCpu) {
+            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.cpu,
+                    newCpu - currentCpu);
+        }
+        if (newMemory > currentMemory) {
+            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.memory,
+                    newMemory - currentMemory);
         }
 
         // Dynamically upgrade the running vms
         boolean success = false;
         if(vmInstance.getState().equals(State.Running)){
             int retry = _scaleRetry;
+            // Increment CPU and Memory count accordingly.
+            if (newCpu > currentCpu) {
+                _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
+            }
+            if (newMemory > currentMemory) {
+                _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
+            }
+
             while (retry-- != 0) { // It's != so that it can match -1.
                 try{
                     // #1 Check existing host has capacity
-                    boolean existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - oldServiceOffering.getSpeed(),
-                            (newServiceOffering.getRamSize() - oldServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f,  false); // TO DO fill it with mem.
+                    boolean existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - currentServiceOffering.getSpeed(),
+                            (newServiceOffering.getRamSize() - currentServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f, false); // TO DO fill it with mem.
 
                     // #2 migrate the vm if host doesn't have capacity
                     if (!existingHostHasCapacity){
@@ -1136,7 +1163,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     // #3 scale the vm now
                     _itMgr.upgradeVmDb(vmId, newServiceOfferingId);
                     vmInstance = _vmInstanceDao.findById(vmId);
-                    vmInstance = _itMgr.reConfigureVm(vmInstance, oldServiceOffering, existingHostHasCapacity);
+                    vmInstance = _itMgr.reConfigureVm(vmInstance, currentServiceOffering, existingHostHasCapacity);
                     success = true;
                     return success;
                 }catch(InsufficientCapacityException e ){
@@ -1151,8 +1178,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     s_logger.warn("Received exception while scaling ",e);
                 }finally{
                     if(!success){
-                        _itMgr.upgradeVmDb(vmId, oldServiceOffering.getId()); // rollback
+                        _itMgr.upgradeVmDb(vmId, currentServiceOffering.getId()); // rollback
+                        // Decrement CPU and Memory count accordingly.
+                        if (newCpu > currentCpu) {
+                            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
+                        }
+                        if (newMemory > currentMemory) {
+                            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
+                        }
                     }
+
+
                 }
             }
         }
