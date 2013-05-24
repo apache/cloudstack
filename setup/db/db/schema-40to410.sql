@@ -1653,3 +1653,7 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'eip.use.multiple.netscalers' , 'false', 'Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone');
+
+UPDATE `cloud`.`configuration` set category='Advanced' where category='Advanced ';
+UPDATE `cloud`.`configuration` set category='Hidden' where category='Hidden ';
+
