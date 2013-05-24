@@ -1253,6 +1253,13 @@ ServerResource {
     }
 
     private CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
+       /**
+            This method is only used for copying files from Primary Storage TO Secondary Storage
+
+            It COULD also do it the other way around, but the code in the ManagementServerImpl shows
+            that it always sets copyToSecondary to true
+
+         */
         boolean copyToSecondary = cmd.toSecondaryStorage();
         String volumePath = cmd.getVolumePath();
         StorageFilerTO pool = cmd.getPool();

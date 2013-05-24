@@ -83,6 +83,7 @@
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.4.9</cs.libvirt-java.version>
+    <cs.rados-java.version>0.1.1</cs.rados-java.version>
     <cs.target.dir>target</cs.target.dir>
     <cs.daemon.version>1.0.10</cs.daemon.version>
   </properties>
