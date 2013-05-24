@@ -45,7 +45,7 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
-            required=false, description="find hosts to which this VM can be migrated and flag the hosts with enough " +
+            required=true, description="find hosts to which this VM can be migrated and flag the hosts with enough " +
                 "CPU/RAM to host the VM")
     private Long virtualMachineId;
 

@@ -22,21 +22,15 @@
 -->
 <section id="Enabling-the-service-provider">
     <title>Enabling the service provider</title>
-    <para>To allow CloudStack to use the Nicira NVP Plugin the network service provider needs to be enabled on the physical network. The following sequence of API calls will enable the network service provider</para>
-    <itemizedlist>
-        <listitem><para>addNetworkServiceProvider</para></listitem>
-        <listitem>
-            <itemizedlist>
-                <listitem><para>name = "NiciraNvp"</para></listitem>
-                <listitem><para>physicalnetworkid = &lt;the uuid of the physical network&gt;</para></listitem>
-            </itemizedlist>
-        </listitem>
-        <listitem><para>updateNetworkServiceProvider</para></listitem>
-        <listitem>
-            <itemizedlist>
-                <listitem><para>id = &lt;the provider uuid returned by the previous call&gt;</para></listitem>
-                <listitem><para>state = "Enabled"</para></listitem>
-            </itemizedlist>
-        </listitem>
-    </itemizedlist>    
+    <para>The Nicira NVP provider is disabled by default. Navigate to the "Network Service Providers" configuration of the physical network with the STT isolation type. Navigate to the Nicira NVP provider and press the "Enable Provider" button.</para>
+    <note><para>CloudStack 4.0 does not have the UI interface to configure the Nicira NVP plugin. Configuration needs to be done using the API directly.</para></note>
+    <mediaobject>
+        <imageobject>
+            <imagedata fileref="./images/nvp-enable-provider.png" />
+        </imageobject>
+        <textobject>
+            <phrase>nvp-physical-network-stt.png: a screenshot of an enabled Nicira NVP provider</phrase>
+        </textobject>
+    </mediaobject>
+    
 </section>

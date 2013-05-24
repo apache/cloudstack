@@ -342,9 +342,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         //Check ofr valid action Allow/Deny
         if(action != null){
-            try {
-                NetworkACLItem.Action.valueOf(action);
-            } catch (IllegalArgumentException ex) {
+            if(!("Allow".equalsIgnoreCase(action) || "Deny".equalsIgnoreCase(action))){
                 throw new InvalidParameterValueException("Invalid action. Allowed actions are Allow and Deny");
             }
         }

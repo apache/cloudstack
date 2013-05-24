@@ -17,13 +17,11 @@
 
 package org.apache.cloudstack.api.command.admin.cluster;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
-
+import com.cloud.exception.ResourceInUseException;
+import com.cloud.org.Cluster;
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -36,10 +34,8 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.ResourceInUseException;
-import com.cloud.org.Cluster;
-import com.cloud.user.Account;
+import java.util.ArrayList;
+import java.util.List;
 
 @APICommand(name = "addCluster", description="Adds a new cluster", responseObject=ClusterResponse.class)
 public class AddClusterCmd extends BaseCmd {
@@ -86,10 +82,10 @@ public class AddClusterCmd extends BaseCmd {
     private String vsmipaddress;
 
     @Parameter (name=ApiConstants.CPU_OVERCOMMIT_RATIO, type = CommandType.STRING, required = false , description = "value of the cpu overcommit ratio, defaults to 1")
-    private String  cpuovercommitRatio;
+    private String cpuOvercommitRatio;
 
-    @Parameter(name = ApiConstants.MEMORY_OVERCOMMIT_RATIO, type = CommandType.STRING, required = false ,description = "value of the default ram overcommit ratio, defaults to 1")
-    private String  memoryovercommitratio;
+    @Parameter(name = ApiConstants.MEMORY_OVERCOMMIT_RATIO, type = CommandType.STRING, required = false, description = "value of the default memory overcommit ratio, defaults to 1")
+    private String memoryOvercommitRatio;
 
     @Parameter(name = ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, type = CommandType.STRING, required = false, description = "Type of virtual switch used for guest traffic in the cluster. Allowed values are, vmwaresvs (for VMware standard vSwitch) and vmwaredvs (for VMware distributed vSwitch)")
     private String vSwitchTypeGuestTraffic;
@@ -186,15 +182,15 @@ public class AddClusterCmd extends BaseCmd {
     }
 
     public Float getCpuOvercommitRatio (){
-        if(cpuovercommitRatio != null){
-           return Float.parseFloat(cpuovercommitRatio);
+        if(cpuOvercommitRatio != null){
+           return Float.parseFloat(cpuOvercommitRatio);
         }
         return 1.0f;
     }
 
-    public Float getMemoryOvercommitRaito (){
-        if (memoryovercommitratio != null){
-            return Float.parseFloat(memoryovercommitratio);
+    public Float getMemoryOvercommitRatio(){
+        if (memoryOvercommitRatio != null){
+            return Float.parseFloat(memoryOvercommitRatio);
         }
         return 1.0f;
     }
@@ -202,8 +198,8 @@ public class AddClusterCmd extends BaseCmd {
     @Override
     public void execute(){
         try {
-            if ((getMemoryOvercommitRaito().compareTo(1f) < 0) | (getCpuOvercommitRatio().compareTo(1f) < 0)) {
-                throw new InvalidParameterValueException("Cpu and ram overcommit ratios  should not be less than 1");
+            if (getMemoryOvercommitRatio().compareTo(1f) < 0 || getCpuOvercommitRatio().compareTo(1f) < 0) {
+                throw new InvalidParameterValueException("cpu and memory overcommit ratios should be greater than or equal to one");
             }
             List<? extends Cluster> result = _resourceService.discoverCluster(this);
             ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();

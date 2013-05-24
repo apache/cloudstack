@@ -80,10 +80,11 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param id
      * @param useVirtualNetwork
      * @param deploymentPlanner
+     * @param details
      * @return ID
      */
     ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner);
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details);
 
     /**
      * Creates a new disk offering

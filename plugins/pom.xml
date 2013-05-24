@@ -38,6 +38,7 @@
 	<module>affinity-group-processors/host-anti-affinity</module>
     <module>deployment-planners/user-concentrated-pod</module>
     <module>deployment-planners/user-dispersing</module>
+    <module>deployment-planners/implicit-dedication</module>
     <module>host-allocators/random</module>
     <module>hypervisors/ovm</module>
     <module>hypervisors/xen</module>

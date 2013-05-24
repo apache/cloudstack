@@ -220,7 +220,7 @@ class TestHighAvailability(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         vms = VirtualMachine.list(
@@ -248,7 +248,7 @@ class TestHighAvailability(cloudstackTestCase):
         networks = Network.list(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 listall=True
                                 )
         self.assertEqual(
@@ -264,7 +264,7 @@ class TestHighAvailability(cloudstackTestCase):
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=network.id
                                     )
 
@@ -372,7 +372,7 @@ class TestHighAvailability(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         vms = VirtualMachine.list(
@@ -424,7 +424,7 @@ class TestHighAvailability(cloudstackTestCase):
             vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
             self.assertEqual(
@@ -464,7 +464,7 @@ class TestHighAvailability(cloudstackTestCase):
             vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
             self.assertEqual(
@@ -513,7 +513,7 @@ class TestHighAvailability(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         vms = VirtualMachine.list(
@@ -615,7 +615,7 @@ class TestHighAvailability(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         vms = VirtualMachine.list(
@@ -643,7 +643,7 @@ class TestHighAvailability(cloudstackTestCase):
         networks = Network.list(
                                 self.apiclient,
                                 account=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 listall=True
                                 )
         self.assertEqual(
@@ -659,7 +659,7 @@ class TestHighAvailability(cloudstackTestCase):
                                     self.apiclient,
                                     accountid=self.account.name,
                                     zoneid=self.zone.id,
-                                    domainid=self.account.account.domainid,
+                                    domainid=self.account.domainid,
                                     networkid=network.id
                                     )
 
@@ -833,7 +833,7 @@ class TestHighAvailability(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         vms = VirtualMachine.list(
@@ -952,7 +952,7 @@ class TestHighAvailability(cloudstackTestCase):
             vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
             self.assertEqual(
@@ -990,7 +990,7 @@ class TestHighAvailability(cloudstackTestCase):
             vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   listall=True
                                   )
             self.assertEqual(
@@ -1037,7 +1037,7 @@ class TestHighAvailability(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id
                                   )
         vms = VirtualMachine.list(

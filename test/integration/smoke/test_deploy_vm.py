@@ -31,6 +31,8 @@ from marvin.integration.lib.utils import cleanup_resources
 #common - commonly used methods for all tests are listed here
 from marvin.integration.lib.common import get_zone, get_domain, get_template
 
+from nose.plugins.attrib import attr
+
 class TestData(object):
     """Test data object that is required to create resources
     """
@@ -94,6 +96,7 @@ class TestDeployVM(cloudstackTestCase):
             self.account
         ]
 
+    @attr(tags = ['advanced', 'simulator', 'basic', 'sg'])
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
 

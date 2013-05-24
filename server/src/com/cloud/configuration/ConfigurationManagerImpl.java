@@ -39,11 +39,8 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
-
-import com.cloud.dc.*;
-import com.cloud.dc.dao.*;
-import com.cloud.user.*;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.utils.db.*;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -60,6 +57,9 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
@@ -70,6 +70,8 @@ import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.region.*;
+import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -113,7 +115,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -165,6 +166,7 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -186,10 +188,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
@@ -199,58 +197,6 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import edu.emory.mathcs.backport.java.util.Arrays;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.ApiConstants.LDAPParams;
-import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
-import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
-import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.naming.Context;
-import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import java.net.URI;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 @Component
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
@@ -275,6 +221,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     S3Dao _s3Dao;
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     DiskOfferingDao _diskOfferingDao;
     @Inject
@@ -329,6 +277,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     FirewallRulesDao _firewallDao;
     @Inject
     VpcManager _vpcMgr;
+    @Inject
+    PortableIpRangeDao _portableIpRangeDao;
+    @Inject
+    RegionDao _regionDao;
+    @Inject
+    PortableIpDao _portableIpDao;
     @Inject
     ConfigurationServer _configServer;
     @Inject
@@ -1901,7 +1855,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, false, 
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, false,
                         Domain.ROOT_DOMAIN, null, null, null, true);
             }
         }
@@ -2049,19 +2003,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
-                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner());
+        return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(),
+                cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
+                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(),
+                cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
-    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText,
-            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner) {
+    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type,
+            String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag,
+            Integer networkRate, String deploymentPlanner, Map<String, String> details) {
         tags = cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag, deploymentPlanner);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
+            if (details != null) {
+                _serviceOfferingDetailsDao.persist(offering.getId(), details);
+            }
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
@@ -2543,7 +2504,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, 
+        Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP,
                 endIP, newVlanGateway, newVlanNetmask, vlanId, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
         //create an entry in the nic_secondary table. This will be the new gateway that will be configured on the corresponding routervm.
         if (sameSubnet == false) {
@@ -2918,7 +2879,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId +
                                     " as ip " + ip + " belonging to the range is used for static nat purposes. Cleanup the rules first");
                         }
-                        
+
                         if (ip.isSourceNat()) {
                             throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId +
                                     " as ip " + ip + " belonging to the range is a source nat ip for the network id=" + ip.getSourceNetworkId() +
@@ -2937,7 +2898,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 } finally {
                     _vlanDao.releaseFromLockTable(vlanDbId);
-                } 
+                }
             }
         }
 
@@ -3765,7 +3726,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             firewallProviderSet.add(firewallProvider);
             serviceProviderMap.put(Service.Firewall, firewallProviderSet);
         }
-        
+
         Map<NetworkOffering.Detail, String> details = new HashMap<NetworkOffering.Detail, String>();
         if (detailsStr != null) {
             for (String detailStr : detailsStr.keySet()) {
@@ -3820,7 +3781,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.LbSchemes.getName());
                     }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + 
+                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() +
                             ", " + Capability.ElasticLb.getName() + ", " + Capability.InlineMode.getName()
                             + ", " + Capability.LbSchemes.getName() + " capabilities can be sepcified for LB service");
                 }
@@ -3974,7 +3935,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 } else {
                     inline = false;
                 }
-                
+
                 String publicLbStr = lbServiceCapabilityMap.get(Capability.LbSchemes);
                 if (serviceProviderMap.containsKey(Service.Lb)) {
                     if (publicLbStr != null) {
@@ -3987,7 +3948,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
             }
-            
+
             //in the current version of the code, publicLb and specificLb can't both be set to true for the same network offering
             if (publicLb && internalLb) {
                 throw new InvalidParameterValueException("Public lb and internal lb can't be enabled at the same time on the offering");
@@ -4030,7 +3991,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);
         }
-        
+
         //validate the details
         if (details != null) {
             validateNtwkOffDetails(details, serviceProviderMap);
@@ -4077,7 +4038,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     protected void validateNtwkOffDetails(Map<Detail, String> details, Map<Service, Set<Provider>> serviceProviderMap) {
         for (Detail detail : details.keySet()) {
-            
+
             Provider lbProvider = null;
             if (detail == NetworkOffering.Detail.InternalLbProvider || detail == NetworkOffering.Detail.PublicLbProvider) {
                 //1) Vaidate the detail values - have to match the lb provider name
@@ -4092,13 +4053,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             break;
                         }
                     }
-                } 
-                
+                }
+
                 if (lbProvider == null) {
                     throw new InvalidParameterValueException("Invalid value " + details.get(detail)
                             + " for the detail " + detail + ". The provider is not supported by the network offering");
                 }
-                
+
                 //2) validate if the provider supports the scheme
                 Set<Provider> lbProviders = new HashSet<Provider>();
                 lbProviders.add(lbProvider);
@@ -4707,5 +4668,154 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return null;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RANGE_CREATE, eventDescription = "creating portable ip range", async = false)
+    public PortableIpRange createPortableIpRange(CreatePortableIpRangeCmd cmd) throws ConcurrentOperationException {
+        Integer regionId = cmd.getRegionId();
+        String startIP = cmd.getStartIp();
+        String endIP = cmd.getEndIp();
+        String gateway = cmd.getGateway();
+        String netmask = cmd.getNetmask();
+        Long userId = UserContext.current().getCallerUserId();
+        String vlanId = cmd.getVlan();
+
+        Region region = _regionDao.findById(regionId);
+        if (region == null) {
+            throw new InvalidParameterValueException("Invalid region ID: " + regionId);
+        }
+
+        if (!NetUtils.isValidIp(startIP) || !NetUtils.isValidIp(endIP) || !NetUtils.validIpRange(startIP, endIP)) {
+            throw new InvalidParameterValueException("Invalid portable ip  range: " + startIP + "-" + endIP);
+        }
+
+        if (!NetUtils.sameSubnet(startIP, gateway, netmask)) {
+            throw new InvalidParameterValueException("Please ensure that your start IP is in the same subnet as " +
+                    "your portable IP range's gateway and as per the IP range's netmask.");
+        }
+
+        if (!NetUtils.sameSubnet(endIP, gateway, netmask)) {
+            throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as " +
+                    "your portable IP range's gateway and as per the IP range's netmask.");
+        }
+
+        if (checkOverlapPortableIpRange(regionId, startIP, endIP)) {
+            throw new InvalidParameterValueException("Ip  range: " + startIP + "-" + endIP + " overlaps with a portable" +
+                    " IP range already configured in the region " + regionId);
+        }
+
+        if (vlanId == null) {
+            vlanId = Vlan.UNTAGGED;
+        } else {
+            if (!NetUtils.isValidVlan(vlanId)) {
+                throw new InvalidParameterValueException("Invalid vlan id " + vlanId);
+            }
+        }
+        GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
+        portableIpLock.lock(5);
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        PortableIpRangeVO portableIpRange = new PortableIpRangeVO(regionId, vlanId, gateway, netmask, startIP, endIP);
+        portableIpRange = _portableIpRangeDao.persist(portableIpRange);
+
+        long startIpLong =  NetUtils.ip2Long(startIP);
+        long endIpLong = NetUtils.ip2Long(endIP);
+        while(startIpLong <= endIpLong) {
+            PortableIpVO portableIP = new PortableIpVO(regionId, portableIpRange.getId(), vlanId,
+                    gateway, netmask,NetUtils.long2Ip(startIpLong));
+            _portableIpDao.persist(portableIP);
+            startIpLong++;
+        }
+
+        txn.commit();
+        portableIpLock.unlock();
+        return portableIpRange;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RANGE_DELETE, eventDescription = "deleting portable ip range", async = false)
+    public boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd) {
+        long rangeId = cmd.getId();
+        PortableIpRangeVO portableIpRange = _portableIpRangeDao.findById(rangeId);
+        if (portableIpRange == null) {
+            throw new InvalidParameterValueException("Please specify a valid portable IP range id.");
+        }
+
+        List<PortableIpVO> fullIpRange = _portableIpDao.listByRangeId(portableIpRange.getId());
+        List<PortableIpVO> freeIpRange = _portableIpDao.listByRangeIdAndState(portableIpRange.getId(), PortableIp.State.Free);
+
+        if (fullIpRange != null && freeIpRange != null) {
+            if (fullIpRange.size() == freeIpRange.size()) {
+                _portableIpRangeDao.expunge(portableIpRange.getId());
+                return true;
+            } else {
+                throw new InvalidParameterValueException("Can't delete portable IP range as there are IP's assigned.");
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public List<? extends PortableIpRange> listPortableIpRanges(ListPortableIpRangesCmd cmd) {
+        Integer regionId = cmd.getRegionIdId();
+        Long rangeId = cmd.getPortableIpRangeId();
+
+        List <PortableIpRangeVO> ranges = new ArrayList<PortableIpRangeVO>();
+        if (regionId != null) {
+            Region region = _regionDao.findById(regionId);
+            if (region == null) {
+                throw new InvalidParameterValueException("Invalid region ID: " + regionId);
+            }
+            return  _portableIpRangeDao.listByRegionId(regionId);
+        }
+
+        if (rangeId != null) {
+            PortableIpRangeVO range =  _portableIpRangeDao.findById(rangeId);
+            if (range == null) {
+                throw new InvalidParameterValueException("Invalid portable IP range ID: " + regionId);
+            }
+            ranges.add(range);
+            return ranges;
+        }
+
+        return _portableIpRangeDao.listAll();
+    }
+
+    @Override
+    public List<? extends PortableIp> listPortableIps(long id) {
+
+        PortableIpRangeVO portableIpRange = _portableIpRangeDao.findById(id);
+        if (portableIpRange == null) {
+            throw new InvalidParameterValueException("Please specify a valid portable IP range id.");
+        }
+
+        return _portableIpDao.listByRangeId(portableIpRange.getId());
+    }
+
+    private boolean checkOverlapPortableIpRange(int regionId, String newStartIpStr, String newEndIpStr) {
+        long newStartIp = NetUtils.ip2Long(newStartIpStr);
+        long newEndIp = NetUtils.ip2Long(newEndIpStr);
+
+        List<PortableIpRangeVO> existingPortableIPRanges = _portableIpRangeDao.listByRegionId(regionId);
+        for (PortableIpRangeVO portableIpRange : existingPortableIPRanges) {
+            String ipRangeStr = portableIpRange.getIpRange();
+            String[] range = ipRangeStr.split("-");
+            long startip = NetUtils.ip2Long(range[0]);
+            long endIp = NetUtils.ip2Long(range[1]);
+
+            if ((newStartIp >= startip && newStartIp <= endIp) || (newEndIp >= startip && newEndIp <= endIp)) {
+                return true;
+            }
+
+            if ((startip >= newStartIp && startip <= newEndIp) || (endIp >= newStartIp && endIp <= newEndIp)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

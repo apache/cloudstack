@@ -205,6 +205,7 @@ destroySystemVm=1
 listSystemVms=3
 migrateSystemVm=1
 changeServiceForSystemVm=1
+scaleSystemVm=1
 
 #### configuration commands
 updateConfiguration=1
@@ -633,6 +634,11 @@ addCiscoAsa1000vResource=1
 deleteCiscoAsa1000vResource=1
 listCiscoAsa1000vResources=1
 
+#### portable public IP commands
+createPortableIpRange=1
+deletePortableIpRange=1
+listPortableIpRanges=1
+
 #### Internal LB VM commands
 stopInternalLoadBalancerVM=1
 startInternalLoadBalancerVM=1
@@ -640,3 +646,4 @@ listInternalLoadBalancerVMs=1
 
 ### Network Isolation methods listing
 listNetworkIsolationMethods=1
+

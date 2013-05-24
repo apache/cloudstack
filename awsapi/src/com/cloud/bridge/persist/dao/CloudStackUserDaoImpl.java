@@ -19,15 +19,14 @@ package com.cloud.bridge.persist.dao;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.stereotype.Component;
 
 import com.cloud.bridge.model.CloudStackUserVO;
-import com.cloud.bridge.util.EncryptionSecretKeyCheckerUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 
 @Component
 @Local(value={CloudStackUserDao.class})
@@ -51,13 +50,8 @@ public class CloudStackUserDaoImpl extends GenericDaoBase<CloudStackUserVO, Stri
             sc.setParameters("apiKey", accessKey);
             user =  findOneBy(sc);
             if ( user != null && user.getSecretKey() != null) {
-                // if the cloud db is encrypted, decrypt the secret_key returned by cloud db before signature generation
-                if( EncryptionSecretKeyCheckerUtil.useEncryption() ) {
-                    StandardPBEStringEncryptor encryptor = EncryptionSecretKeyCheckerUtil.getEncryptor();
-                    cloudSecretKey = encryptor.decrypt( user.getSecretKey() );
-                } else {
-                    cloudSecretKey = user.getSecretKey();
-                }
+                // User secret key could be encrypted
+                cloudSecretKey = DBEncryptionUtil.decrypt(user.getSecretKey());
             }
             return cloudSecretKey;
         } finally {

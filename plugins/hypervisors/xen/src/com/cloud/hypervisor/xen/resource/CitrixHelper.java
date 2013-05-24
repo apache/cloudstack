@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
+import org.apache.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import org.apache.log4j.Logger;
 
 /**
  * Reduce bloat inside CitrixResourceBase

@@ -34,7 +34,7 @@ build: build-indep
 build-indep: build-indep-stamp
 
 build-indep-stamp: configure
-	mvn package -Pawsapi -DskipTests -Dsystemvm \
+	mvn clean package -Pawsapi -DskipTests -Dsystemvm \
         -Dcs.replace.properties=replace.properties.tmp \
 		${ACS_BUILD_OPTS}
 	touch $@
@@ -80,6 +80,7 @@ install:
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps7080
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management
@@ -153,6 +154,7 @@ install:
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-bridge
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-bridge/setup
+	ln -s /usr/share/$(PACKAGE)-bridge/webapps/awsapi $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps7080/awsapi
 	cp -r awsapi/target/cloud-awsapi-$(VERSION)-SNAPSHOT/* $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi
 	install -D awsapi-setup/setup/cloud-setup-bridge $(DESTDIR)/usr/bin/cloudstack-setup-bridge
 	install -D awsapi-setup/setup/cloudstack-aws-api-register $(DESTDIR)/usr/bin/cloudstack-aws-api-register

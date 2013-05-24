@@ -2224,8 +2224,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return dhcpRange;
     }
 
-    private boolean setupDhcpForPvlan(boolean add, DomainRouterVO router, Nic nic) {
-    	if (!nic.getBroadcastUri().getScheme().equals("pvlan")) {
+    @Override
+    public boolean setupDhcpForPvlan(boolean add, DomainRouterVO router, Long hostId, NicProfile nic) {
+    	if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
     		return false;
     	}
     	String op = "add";
@@ -2234,15 +2235,22 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     	}
     	Network network = _networkDao.findById(nic.getNetworkId());
     	String networkTag = _networkModel.getNetworkTag(router.getHypervisorType(), network);
-    	PvlanSetupCommand cmd = PvlanSetupCommand.createDhcpSetup(op, nic.getBroadcastUri(), networkTag, router.getInstanceName(), nic.getMacAddress(), nic.getIp4Address());
-    	Commands cmds = new Commands(cmd);
+    	PvlanSetupCommand cmd = PvlanSetupCommand.createDhcpSetup(op, nic.getBroadCastUri(), networkTag, router.getInstanceName(), nic.getMacAddress(), nic.getIp4Address());
     	// In fact we send command to the host of router, we're not programming router but the host
+        Answer answer = null;
     	try {
-			sendCommandsToRouter(router, cmds);
+            answer = _agentMgr.send(hostId, cmd);
+        } catch (OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+            return false;
 		} catch (AgentUnavailableException e) {
             s_logger.warn("Agent Unavailable ", e);
 			return false;
 		}
+
+        if (answer == null || !answer.getResult()) {
+        	return false;
+        }
     	return true;
     }
     
@@ -2564,7 +2572,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             if (network.getTrafficType() == TrafficType.Guest) {
                 guestNetworks.add(network);
                 if (nic.getBroadcastUri().getScheme().equals("pvlan")) {
-                	result = setupDhcpForPvlan(true, router, nic);
+                	NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
+                	result = setupDhcpForPvlan(true, router, router.getHostId(), nicProfile);
                 }
             }
         }
@@ -2601,8 +2610,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
             for (Nic nic : routerNics) {
             	Network network = _networkModel.getNetwork(nic.getNetworkId());
-            	if (network.getTrafficType() == TrafficType.Guest && nic.getBroadcastUri().getScheme().equals("pvlan")) {
-            		setupDhcpForPvlan(false, domR, nic);
+            	if (network.getTrafficType() == TrafficType.Guest && nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
+                	NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
+            		setupDhcpForPvlan(false, domR, domR.getHostId(), nicProfile);
             	}
             }
 

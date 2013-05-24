@@ -27,11 +27,22 @@ public class InsufficientServerCapacityException extends InsufficientCapacityExc
 
     private static final long serialVersionUID = SerialVersionUID.InsufficientServerCapacityException;
 
+    private boolean affinityGroupsApplied = false;
+
     public InsufficientServerCapacityException(String msg, Long clusterId) {
         this(msg, Cluster.class, clusterId);
     }
 
     public InsufficientServerCapacityException(String msg, Class<?> scope, Long id) {
         super(msg, scope, id);
+    }
+
+    public InsufficientServerCapacityException(String msg, Class<?> scope, Long id, boolean affinityGroupsApplied) {
+        super(msg, scope, id);
+        this.affinityGroupsApplied = affinityGroupsApplied;
+    }
+
+    public boolean isAffinityApplied() {
+        return affinityGroupsApplied;
     }
 }

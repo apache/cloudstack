@@ -110,7 +110,7 @@ import java.util.List;
              dnsServers = dnsServers+dnsMasqconfigcmd.getDns2()+",";
          }
          dnsServers = dnsServers +"*";
-         dnsServers = dnsServers.replace(";*", "");
+         dnsServers = dnsServers.replace(",*", "");
          dnsMasqconf.set(24,"dhcp-option=6,"+dnsServers);
          return dnsMasqconf.toArray( new  String[dnsMasqconf.size()]);
      }

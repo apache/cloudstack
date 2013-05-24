@@ -54,19 +54,17 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,    # in MHz
-                                    "memory": 128,       # In MBs
-                                    "storagetype": "local"
+                                    "memory": 260       # In MBs
+
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
                                     "name": "Small",
-                                    "storagetype": "local",
                                     "disksize": 1
                         },
                         'resized_disk_offering': {
                                     "displaytext": "Resized",
                                     "name": "Resized",
-                                    "storagetype": "local",
                                     "disksize": 3
                         },
                         "volume_offerings": {
@@ -153,7 +151,7 @@ class TestCreateVolume(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_01_create_volume(self):
         """Test Volume creation for all Disk Offerings (incl. custom)
         """
@@ -347,6 +345,7 @@ class TestVolumes(cloudstackTestCase):
                         cls.custom_resized_disk_offering,
                         cls.service_offering,
                         cls.disk_offering,
+                        cls.volume,
                         cls.account
                         ]
 
@@ -360,14 +359,17 @@ class TestVolumes(cloudstackTestCase):
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.attached = False
         self.cleanup = []
 
     def tearDown(self):
         #Clean up, terminate the created volumes
+        if self.attached:
+            self.virtual_machine.detach_volume(self.apiClient, self.volume)
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_02_attach_volume(self):
         """Attach a created Volume to a Running VM
         """
@@ -382,7 +384,7 @@ class TestVolumes(cloudstackTestCase):
                                                     self.virtual_machine.id
                                                     ))
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
-
+        self.attached = True
         list_volume_response = list_volumes(
                                                 self.apiClient,
                                                 id=self.volume.id
@@ -413,7 +415,7 @@ class TestVolumes(cloudstackTestCase):
                                     (self.virtual_machine.ipaddress, e))
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_03_download_attached_volume(self):
         """Download a Volume attached to a VM
         """
@@ -424,6 +426,8 @@ class TestVolumes(cloudstackTestCase):
 
         self.debug("Extract attached Volume ID: %s" % self.volume.id)
 
+        self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        self.attached = True
         cmd = extractVolume.extractVolumeCmd()
         cmd.id = self.volume.id
         cmd.mode = "HTTP_DOWNLOAD"
@@ -433,7 +437,7 @@ class TestVolumes(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.apiClient.extractVolume(cmd)
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_04_delete_attached_volume(self):
         """Delete a Volume attached to a VM
         """
@@ -445,15 +449,16 @@ class TestVolumes(cloudstackTestCase):
 
         self.debug("Trying to delete attached Volume ID: %s" %
                                                         self.volume.id)
-
+        self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        self.attached = True
         cmd = deleteVolume.deleteVolumeCmd()
         cmd.id = self.volume.id
         #Proper exception should be raised; deleting attach VM is not allowed
         #with self.assertRaises(Exception):
-        with self.assertRaises(cloudstackAPIException):
+        with self.assertRaises(Exception):
             self.apiClient.deleteVolume(cmd)
         
-    @attr(tags = ["advanced", "advancedns", "smoke"])    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_05_detach_volume(self):
         """Detach a Volume attached to a VM
         """
@@ -467,8 +472,9 @@ class TestVolumes(cloudstackTestCase):
                                                     self.volume.id,
                                                     self.virtual_machine.id
                                                     ))
-
+        self.virtual_machine.attach_volume(self.apiClient, self.volume)
         self.virtual_machine.detach_volume(self.apiClient, self.volume)
+        self.attached = False
         #Sleep to ensure the current state will reflected in other calls
         time.sleep(self.services["sleep"])
         list_volume_response = list_volumes(
@@ -494,7 +500,7 @@ class TestVolumes(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_06_download_detached_volume(self):
         """Download a Volume unattached to an VM
         """
@@ -502,6 +508,10 @@ class TestVolumes(cloudstackTestCase):
         # 1. able to download the volume when its not attached to instance
 
         self.debug("Extract detached Volume ID: %s" % self.volume.id)
+
+        self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        self.virtual_machine.detach_volume(self.apiClient, self.volume)
+        self.attached = False
 
         cmd = extractVolume.extractVolumeCmd()
         cmd.id = self.volume.id
@@ -525,7 +535,7 @@ class TestVolumes(cloudstackTestCase):
                 % (extract_vol.url, self.volume.id)
             )
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_07_resize_fail(self):
         """Verify invalid options fail to Resize a volume"""
         # Verify the size is the new size is what we wanted it to be.
@@ -540,7 +550,7 @@ class TestVolumes(cloudstackTestCase):
             response = self.apiClient.resizeVolume(cmd)
         except Exception as ex:
             #print str(ex)
-            if "HTTP Error 431:" in str(ex):
+            if "invalid" in str(ex):
                 success = True
         self.assertEqual(
                 success,
@@ -554,7 +564,7 @@ class TestVolumes(cloudstackTestCase):
         try:
             response = self.apiClient.resizeVolume(cmd)
         except Exception as ex:
-            if "HTTP Error 431:" in str(ex):
+            if "invalid" in str(ex):
                 success = True
         self.assertEqual(
                 success,
@@ -573,6 +583,7 @@ class TestVolumes(cloudstackTestCase):
                  )
         #attach the volume
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        self.attached = True
         #stop the vm if it is on xenserver
         if self.services['hypervisor'].lower() == "xenserver":
             self.virtual_machine.stop(self.apiClient)
@@ -600,10 +611,11 @@ class TestVolumes(cloudstackTestCase):
                          True,
                          "Verify the volume did not resize"
                          )
-        self.virtual_machine.detach_volume(self.apiClient, self.volume)
-        self.cleanup.append(self.volume)
+        if self.services['hypervisor'].lower() == "xenserver":
+            self.virtual_machine.start(self.apiClient)
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_08_resize_volume(self):
         """Resize a volume"""
         # Verify the size is the new size is what we wanted it to be.
@@ -613,6 +625,8 @@ class TestVolumes(cloudstackTestCase):
                                                     self.virtual_machine.id
                                                     ))
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        self.attached = True
+
         if self.services['hypervisor'].lower() == "xenserver":
             self.virtual_machine.stop(self.apiClient)
         self.debug("Resize Volume ID: %s" % self.volume.id)
@@ -632,7 +646,7 @@ class TestVolumes(cloudstackTestCase):
                                                 type='DATADISK'
                                                 )
             for vol in list_volume_response:
-                if vol.id == self.volume.id and vol.size == 3221225472L:
+                if vol.id == self.volume.id and vol.size == 3221225472L and vol.state == 'Ready':
                     success = True
             if success:
                 break
@@ -646,10 +660,10 @@ class TestVolumes(cloudstackTestCase):
                          "Check if the volume resized appropriately"
                          )
 
-        self.virtual_machine.detach_volume(self.apiClient, self.volume)
-        self.cleanup.append(self.volume)
+        if self.services['hypervisor'].lower() == "xenserver":
+            self.virtual_machine.start(self.apiClient)
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke","basic"])
     def test_09_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
         """
@@ -662,13 +676,23 @@ class TestVolumes(cloudstackTestCase):
 
         self.debug("Delete Volume ID: %s" % self.volume.id)
 
+        self.volume_1 = Volume.create(
+                                   self.api_client,
+                                   self.services,
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
+        )
+
+        self.virtual_machine.attach_volume(self.apiClient, self.volume_1)
+        self.virtual_machine.detach_volume(self.apiClient, self.volume_1)
+
         cmd = deleteVolume.deleteVolumeCmd()
-        cmd.id = self.volume.id
+        cmd.id = self.volume_1.id
         self.apiClient.deleteVolume(cmd)
 
         list_volume_response = list_volumes(
                                             self.apiClient,
-                                            id=self.volume.id,
+                                            id=self.volume_1.id,
                                             type='DATADISK'
                                             )
         self.assertEqual(

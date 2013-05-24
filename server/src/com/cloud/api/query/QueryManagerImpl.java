@@ -1134,7 +1134,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (networkId != null) {
-            sc.setJoinParameters("nicSearch", "networkId", networkId);
+            sc.setParameters("networkId", networkId);
         }
 
         if (vpcId != null) {

@@ -43,10 +43,8 @@ class cloudConnection(object):
         self.securityKey = securityKey
         self.mgtSvr = mgtSvr
         self.port = port
-        if user:
-            self.user = user
-        if passwd:
-            self.passwd = passwd
+        self.user = user
+        self.passwd = passwd
         self.logging = logging
         self.path = path
         self.retries = 5

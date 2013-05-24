@@ -315,7 +315,7 @@ class TestVPCOffering(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -340,7 +340,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway=gateway,
@@ -352,7 +352,7 @@ class TestVPCOffering(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -363,7 +363,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id,
                                 vpcid=vpc.id
                                 )
@@ -382,7 +382,7 @@ class TestVPCOffering(cloudstackTestCase):
                                     accountid=self.account.name,
                                     networkid=network.id,
                                     vpcid=vpc.id,
-                                    domainid=self.account.account.domainid
+                                    domainid=self.account.domainid
                                 )
 
         self.debug("Associating public IP for network: %s" % vpc.name)
@@ -390,7 +390,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id,
                                 vpcid=vpc.id
                                 )
@@ -438,7 +438,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id,
                                 vpcid=vpc.id
                                 )
@@ -467,7 +467,7 @@ class TestVPCOffering(cloudstackTestCase):
                                           listall=True,
                                           isstaticnat=True,
                                           account=self.account.name,
-                                          domainid=self.account.account.domainid
+                                          domainid=self.account.domainid
                                           )
         self.assertEqual(
                          isinstance(public_ips, list),
@@ -485,7 +485,7 @@ class TestVPCOffering(cloudstackTestCase):
 #                                self.apiclient,
 #                                accountid=self.account.name,
 #                                zoneid=self.zone.id,
-#                                domainid=self.account.account.domainid,
+#                                domainid=self.account.domainid,
 #                                networkid=network.id,
 #                                vpcid=vpc.id
 #                                )
@@ -502,7 +502,7 @@ class TestVPCOffering(cloudstackTestCase):
 #                         self.apiclient,
 #                         publicipid=public_ip_4.ipaddress.id,
 #                         account=self.account.name,
-#                         domainid=self.account.account.domainid,
+#                         domainid=self.account.domainid,
 #                         networkid=network.id,
 #                         vpcid=vpc.id
 #                         )
@@ -516,7 +516,7 @@ class TestVPCOffering(cloudstackTestCase):
 #                                 username="root",
 #                                 password="password",
 #                                 account=self.account.name,
-#                                 domainid=self.account.account.domainid
+#                                 domainid=self.account.domainid
 #                                 )
 #        except Exception as e:
 #            self.fail("Failed to create VPN user: %s" % e)
@@ -525,7 +525,7 @@ class TestVPCOffering(cloudstackTestCase):
 #        remote_vpns = Vpn.list(
 #                               self.apiclient,
 #                               account=self.account.name,
-#                               domainid=self.account.account.domainid,
+#                               domainid=self.account.domainid,
 #                               publicipid=public_ip_4.ipaddress.id,
 #                               listall=True
 #                               )
@@ -596,7 +596,7 @@ class TestVPCOffering(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -612,7 +612,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway=gateway,
@@ -626,7 +626,7 @@ class TestVPCOffering(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -637,7 +637,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id,
                                 vpcid=vpc.id
                                 )
@@ -715,7 +715,7 @@ class TestVPCOffering(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -731,7 +731,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway=gateway,
@@ -745,7 +745,7 @@ class TestVPCOffering(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -756,7 +756,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id,
                                 vpcid=vpc.id
                                 )
@@ -836,7 +836,7 @@ class TestVPCOffering(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 
@@ -852,7 +852,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["network"],
                                 accountid=self.account.name,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkofferingid=self.network_offering.id,
                                 zoneid=self.zone.id,
                                 gateway=gateway,
@@ -864,7 +864,7 @@ class TestVPCOffering(cloudstackTestCase):
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.name,
-                                  domainid=self.account.account.domainid,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(network.id)]
                                   )
@@ -875,7 +875,7 @@ class TestVPCOffering(cloudstackTestCase):
                                 self.apiclient,
                                 accountid=self.account.name,
                                 zoneid=self.zone.id,
-                                domainid=self.account.account.domainid,
+                                domainid=self.account.domainid,
                                 networkid=network.id,
                                 vpcid=vpc.id
                                 )
@@ -975,7 +975,7 @@ class TestVPCOffering(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.debug("VPC network creation failed! (Test succeeded)")
         self.debug("Enabling the VPC offering created")
@@ -989,7 +989,7 @@ class TestVPCOffering(cloudstackTestCase):
                          vpcofferingid=vpc_off.id,
                          zoneid=self.zone.id,
                          account=self.account.name,
-                         domainid=self.account.account.domainid
+                         domainid=self.account.domainid
                          )
         self.validate_vpc_network(vpc)
 

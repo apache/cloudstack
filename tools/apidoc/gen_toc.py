@@ -147,6 +147,7 @@ known_categories = {
     'createCacheStore': 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
+    'PortableIp': 'Portable IP'
     }
 
 

@@ -105,13 +105,13 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         vms = list_virtual_machines(
             self.apiClient,
             account=self.account.name,
-            domainid=self.account.domainid
+            domainid=self.account.domainid,
+            id=deployVmResponse.id
         )
         self.assert_(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
         vm = vms[0]
         self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
         self.assert_(vm.state == "Running", "VM is not in Running state")
-        self.cleanup.append(deployVmResponse)
 
     @attr(tags=["simulator", "devcloud", "basic", "advanced"])
     def test_deployvm_userdata(self):
@@ -129,13 +129,13 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         vms = list_virtual_machines(
             self.apiClient,
             account=self.account.name,
-            domainid=self.account.domainid
+            domainid=self.account.domainid,
+            id=deployVmResponse.id
         )
         self.assert_(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
         vm = vms[0]
         self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
         self.assert_(vm.state == "Running", "VM is not in Running state")
-        self.cleanup.append(deployVmResponse)
 
     @classmethod
     def tearDownClass(cls):

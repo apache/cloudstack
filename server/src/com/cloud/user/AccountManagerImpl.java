@@ -54,9 +54,12 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
+import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
@@ -229,6 +232,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private AccountGuestVlanMapDao _accountGuestVlanMapDao;
     @Inject
     private DataCenterVnetDao _dataCenterVnetDao;
+    @Inject
+    private ResourceLimitService _resourceLimitMgr;
+    @Inject
+    private ResourceLimitDao _resourceLimitDao;
 
     private List<UserAuthenticator> _userAuthenticators;
     List<UserAuthenticator> _userPasswordEncoders;
@@ -621,7 +628,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             try {
                 for (RemoteAccessVpnVO vpn : remoteAccessVpns) {
-                    _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId(), caller);
+                    _remoteAccessVpnMgr.destroyRemoteAccessVpnForIp(vpn.getServerAddressId(), caller);
                 }
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
@@ -713,6 +720,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             int vlansReleased = _accountGuestVlanMapDao.removeByAccountId(accountId);
             s_logger.info("deleteAccount: Released " + vlansReleased + " dedicated guest vlan ranges from account " + accountId);
+
+            // Update resource count for this account and for parent domains.
+            List<ResourceCountVO> resourceCounts = _resourceCountDao.listByOwnerId(accountId, ResourceOwnerType.Account);
+            for (ResourceCountVO resourceCount : resourceCounts) {
+                _resourceLimitMgr.decrementResourceCount(accountId, resourceCount.getType(), resourceCount.getCount());
+            }
+
+            // Delete resource count and resource limits entries set for this account (if there are any).
+            _resourceCountDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
+            _resourceLimitDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
 
             return true;
         } catch (Exception ex) {

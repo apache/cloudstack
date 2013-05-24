@@ -21,10 +21,6 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 public abstract class AbstractScope implements Scope {
     @Override
     public boolean isSameScope(Scope scope) {
-        if (this.getScopeType() == scope.getScopeType() && this.getScopeId() == scope.getScopeId()) {
-            return true;
-        } else {
-            return false;
-        }
+        return this.getScopeType() == scope.getScopeType() && this.getScopeId().equals(scope.getScopeId());
     }
 }

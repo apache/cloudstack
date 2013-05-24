@@ -11,10 +11,11 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.xen.resource;
+
 
 
 import java.io.File;
@@ -35,38 +36,37 @@ import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Console;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
-import com.xensource.xenapi.Types.XenAPIException;
 
 @Local(value=ServerResource.class)
 public class XenServer56FP1Resource extends XenServer56Resource {
+    private static final long mem_128m = 134217728L;
     private static final Logger s_logger = Logger.getLogger(XenServer56FP1Resource.class);
-    
+
     public XenServer56FP1Resource() {
         super();
     }
-    
+
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
     	return CitrixHelper.getXenServer56FP1GuestOsType(stdType, bootFromCD);
     }
-   
+
     @Override
-    protected List<File> getPatchFiles() {      
+    protected List<File> getPatchFiles() {
         List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver56fp1/patch";    
+        String patch = "scripts/vm/hypervisor/xenserver/xenserver56fp1/patch";
         String patchfilePath = Script.findScript("" , patch);
         if ( patchfilePath == null ) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);
@@ -131,41 +131,46 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
 
-        VM.Record record = template.getRecord(conn);
-        record.affinity = host;
-        record.otherConfig.remove("disks");
-        record.otherConfig.remove("default_template");
-        record.otherConfig.remove("mac_seed");
-        record.isATemplate = false;
-        record.nameLabel = vmSpec.getName();
-        record.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
-        record.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
-        record.memoryDynamicMax = vmSpec.getMaxRam();
-        record.memoryDynamicMin = vmSpec.getMinRam();
-        Map<String, String> hostParams = new HashMap<String, String>();
-        hostParams = host.getLicenseParams(conn);
-        if (hostParams.get("restrict_dmc").equalsIgnoreCase("false")) {
-            record.memoryStaticMax = 8589934592L; //8GB
-            record.memoryStaticMin = 134217728L; //128MB
+        VM.Record vmr = template.getRecord(conn);
+        vmr.affinity = host;
+        vmr.otherConfig.remove("disks");
+        vmr.otherConfig.remove("default_template");
+        vmr.otherConfig.remove("mac_seed");
+        vmr.isATemplate = false;
+        vmr.nameLabel = vmSpec.getName();
+        vmr.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
+        vmr.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
+
+        if (isDmcEnabled(conn, host)) {
+            //scaling is allowed
+            vmr.memoryStaticMin = mem_128m; //128MB
+            //TODO: Remove hardcoded 8GB and assign proportionate to ServiceOffering and mem overcommit ratio
+            vmr.memoryStaticMax = 8589934592L; //8GB
+            vmr.memoryDynamicMin = vmSpec.getMinRam();
+            vmr.memoryDynamicMax = vmSpec.getMaxRam();
         } else {
-            s_logger.warn("Host "+ _host.uuid + " does not support Dynamic Memory Control, so we cannot scale up the vm");
-            record.memoryStaticMax = vmSpec.getMaxRam();
-            record.memoryStaticMin = vmSpec.getMinRam();
+            //scaling disallowed, set static memory target
+            if (s_logger.isDebugEnabled()) {
+                s_logger.warn("Host "+ host.getHostname(conn) +" does not support dynamic scaling");
+            }
+            vmr.memoryStaticMin = vmSpec.getMinRam();
+            vmr.memoryStaticMax = vmSpec.getMaxRam();
+            vmr.memoryDynamicMin = vmSpec.getMinRam();
+            vmr.memoryDynamicMax = vmSpec.getMaxRam();
         }
 
         if (guestOsTypeName.toLowerCase().contains("windows")) {
-            record.VCPUsMax = (long) vmSpec.getCpus();
+            vmr.VCPUsMax = (long) vmSpec.getCpus();
         } else {
-            record.VCPUsMax = 32L;
+            vmr.VCPUsMax = 32L;
         }
 
-        record.VCPUsAtStartup = (long) vmSpec.getCpus();
-        record.consoles.clear();
+        vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
+        vmr.consoles.clear();
 
-        VM vm = VM.create(conn, record);
-        VM.Record vmr = vm.getRecord(conn);
+        VM vm = VM.create(conn, vmr);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Created VM " + vmr.uuid + " for " + vmSpec.getName());
+            s_logger.debug("Created VM " + vm.getUuid(conn) + " for " + vmSpec.getName());
         }
 
         Map<String, String> vcpuParams = new HashMap<String, String>();
@@ -236,4 +241,20 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         return vm;
     }
 
+    /**
+     * When Dynamic Memory Control (DMC) is enabled -
+     * xen allows scaling the guest memory while the guest is running
+     *
+     * This is determined by the 'restrict_dmc' option on the host.
+     * When false, scaling is allowed hence DMC is enabled
+     */
+    @Override
+    protected boolean isDmcEnabled(Connection conn, Host host) throws XenAPIException, XmlRpcException {
+        Map<String, String> hostParams = new HashMap<String, String>();
+        hostParams = host.getLicenseParams(conn);
+
+        Boolean isDmcEnabled = hostParams.get("restrict_dmc").equalsIgnoreCase("false");
+
+        return isDmcEnabled;
+    }
 }

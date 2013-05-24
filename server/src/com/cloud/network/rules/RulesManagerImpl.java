@@ -491,6 +491,49 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                             return false;
                         }
                         performedIpAssoc = true;
+                    }  else if (ipAddress.isPortable()) {
+                        s_logger.info("Portable IP " + ipAddress.getUuid() + " is not associated with the network, so" +
+                                "associate IP with the network " + networkId);
+                        try {
+                            // check if StaticNat service is enabled in the network
+                            _networkModel.checkIpForService(ipAddress, Service.StaticNat, networkId);
+
+                            // associate portable IP to vpc, if network is part of VPC
+                            if (network.getVpcId() != null) {
+                                _vpcMgr.associateIPToVpc(ipId, network.getVpcId());
+                            }
+
+                            // associate portable IP with guest network
+                            _networkMgr.associatePortableIPToGuestNetwork(ipId, networkId, false);
+                        } catch (Exception e) {
+                            s_logger.warn("Failed to associate portable id=" + ipId + " to network id=" + networkId + " as " +
+                                    "a part of enable static nat");
+                            return false;
+                        }
+                        performedIpAssoc = true;
+                    }
+                } else  if (ipAddress.getAssociatedWithNetworkId() != networkId) {
+                    if (ipAddress.isPortable()) {
+                        // check if destination network has StaticNat service enabled
+                        _networkModel.checkIpForService(ipAddress, Service.StaticNat, networkId);
+
+                        // check if portable IP can be transferred across the networks
+                        if (_networkMgr.isPortableIpTransferableFromNetwork(ipId, ipAddress.getAssociatedWithNetworkId() )) {
+                            try {
+                                _networkMgr.transferPortableIP(ipId, ipAddress.getAssociatedWithNetworkId(), networkId);
+                            } catch (Exception e) {
+                                s_logger.warn("Failed to associate portable id=" + ipId + " to network id=" + networkId + " as " +
+                                        "a part of enable static nat");
+                                return false;
+                            }
+                        } else {
+                            throw new InvalidParameterValueException("Portable IP: " + ipId + " has associated services" +
+                                    "in network " + ipAddress.getAssociatedWithNetworkId() + " so can not be transferred to " +
+                                    " network " + networkId);
+                        }
+                    } else {
+                        throw new InvalidParameterValueException("Invalid network Id=" + networkId + ". IP is associated with"
+                            + " a different network than passed network id");
                     }
                 } else {
                     _networkModel.checkIpForService(ipAddress, Service.StaticNat, null);

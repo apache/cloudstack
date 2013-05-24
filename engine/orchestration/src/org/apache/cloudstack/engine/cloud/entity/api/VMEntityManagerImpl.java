@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMEntityDao;
@@ -60,6 +61,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
@@ -111,6 +113,9 @@ public class VMEntityManagerImpl implements VMEntityManager {
     @Inject
     DeploymentPlanningManager _dpMgr;
 
+    @Inject
+    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+
 	@Override
 	public VMEntityVO loadVirtualMachine(String vmId) {
 		// TODO Auto-generated method stub
@@ -122,6 +127,16 @@ public class VMEntityManagerImpl implements VMEntityManager {
 	    _vmEntityDao.persist(entity);
 
 	}
+
+    protected boolean areAffinityGroupsAssociated(VirtualMachineProfile<? extends VirtualMachine> vmProfile) {
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+
+        if (vmGroupCount > 0) {
+            return true;
+        }
+        return false;
+    }
 
     @Override
     public String reserveVirtualMachine(VMEntityVO vmEntityVO, String plannerToUse, DeploymentPlan planToDeploy, ExcludeList exclude)
@@ -194,7 +209,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
             // call retry it.
             return UUID.randomUUID().toString();
         }else{
-            throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
+            throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile,
+                    DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(vmProfile));
         }
 
     }

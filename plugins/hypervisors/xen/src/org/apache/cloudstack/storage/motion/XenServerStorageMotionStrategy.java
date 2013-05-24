@@ -53,6 +53,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -76,7 +77,12 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
 
     @Override
     public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        return true;
+        boolean canHandle = false;
+        if (srcHost.getHypervisorType() == HypervisorType.XenServer &&
+                destHost.getHypervisorType() == HypervisorType.XenServer) {
+            canHandle = true;
+        }
+        return canHandle;
     }
 
     @Override

@@ -91,6 +91,12 @@ public class EnableStaticNatCmd extends BaseCmd{
         } else {
             ntwkId = networkId;
         }
+
+        // in case of portable public IP, network ID passed takes precedence
+        if (ip.isPortable() && networkId != null ) {
+            ntwkId = networkId;
+        }
+
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to enable static nat for the ipAddress id=" + ipAddressId +
                     " as ip is not associated with any network and no networkId is passed in");

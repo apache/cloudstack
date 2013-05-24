@@ -75,6 +75,7 @@ public class Upgrade410to420 implements DbUpgrade {
         updateNetworkACLs(conn);
         addHostDetailsIndex(conn);
         updateNetworksForPrivateGateways(conn);
+        removeFirewallServiceFromSharedNetworkOfferingWithSGService(conn);
     }
 
 	private void updateSystemVmTemplates(Connection conn) {
@@ -749,4 +750,35 @@ public class Upgrade410to420 implements DbUpgrade {
             throw new CloudRuntimeException("Failed to update private networks with VPC id.", e);
         }
     }
+
+    private void removeFirewallServiceFromSharedNetworkOfferingWithSGService(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("select id from `cloud`.`network_offerings` where unique_name='DefaultSharedNetworkOfferingWithSGService'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                // remove Firewall service for SG shared network offering
+                pstmt = conn.prepareStatement("DELETE `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");
+                pstmt.setLong(1, id);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to remove Firewall service for SG shared network offering.", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
 }

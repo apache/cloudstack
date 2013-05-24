@@ -409,8 +409,8 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     }
 
     @Override
-    public boolean upgradeVirtualMachine(ScaleVMCmd scaleVMCmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    public UserVm upgradeVirtualMachine(ScaleVMCmd scaleVMCmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
 
@@ -418,6 +418,11 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean upgradeVirtualMachine(Long id, Long serviceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -450,4 +455,10 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

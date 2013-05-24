@@ -219,4 +219,20 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 
         return super.persist(resourceCountVO);
     }
+
+
+    @Override
+    public long removeEntriesByOwner(long ownerId, ResourceOwnerType ownerType) {
+        SearchCriteria<ResourceCountVO> sc = TypeSearch.create();
+
+        if (ownerType == ResourceOwnerType.Account) {
+            sc.setParameters("accountId", ownerId);
+            return remove(sc);
+        } else if (ownerType == ResourceOwnerType.Domain) {
+            sc.setParameters("domainId", ownerId);
+            return remove(sc);
+        }
+        return 0;
+    }
+
 }

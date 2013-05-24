@@ -43,6 +43,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         AlertSearchByIdsAndType.and("type", AlertSearchByIdsAndType.entity().getType(), Op.EQ);
         AlertSearchByIdsAndType.and("createdDateL", AlertSearchByIdsAndType.entity().getCreatedDate(), Op.LT);
         AlertSearchByIdsAndType.and("data_center_id", AlertSearchByIdsAndType.entity().getDataCenterId(), Op.EQ);
+        AlertSearchByIdsAndType.and("archived", AlertSearchByIdsAndType.entity().getArchived(), Op.EQ);
         AlertSearchByIdsAndType.done();
     }
 
@@ -53,6 +54,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
 
         sc.addAnd("type", SearchCriteria.Op.EQ, Short.valueOf(type));
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, Long.valueOf(dataCenterId));
+        sc.addAnd("archived", SearchCriteria.Op.EQ, false);
         if (podId != null) {
             sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         }
@@ -74,6 +76,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
 
         sc.addAnd("type", SearchCriteria.Op.EQ, Short.valueOf(type));
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, Long.valueOf(dataCenterId));
+        sc.addAnd("archived", SearchCriteria.Op.EQ, false);
         if (podId != null) {
             sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         }        
@@ -101,6 +104,8 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         if(olderThan != null) {
             sc.setParameters("createdDateL", olderThan);
         }
+        sc.setParameters("archived", false);
+
         boolean result = true;;
         List<AlertVO> alerts = listBy(sc);
         if (Ids != null && alerts.size() < Ids.size()) {
@@ -135,6 +140,8 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         if(olderThan != null) {
             sc.setParameters("createdDateL", olderThan);
         }
+        sc.setParameters("archived", false);
+
         boolean result = true;
         List<AlertVO> alerts = listBy(sc);
         if (ids != null && alerts.size() < ids.size()) {
@@ -150,6 +157,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         if (oldTime == null) return null;
         SearchCriteria<AlertVO> sc = createSearchCriteria();
         sc.addAnd("createDate", SearchCriteria.Op.LT, oldTime);
+        sc.addAnd("archived", SearchCriteria.Op.EQ, false);
         return listIncludingRemovedBy(sc, null);
     }
 
