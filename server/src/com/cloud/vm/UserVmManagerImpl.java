@@ -4237,6 +4237,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         long vmId = cmd.getVmId();
         Long newTemplateId = cmd.getTemplateId();
+
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find VM with ID " + vmId);
@@ -4292,21 +4293,35 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VolumeVO root = rootVols.get(0);
         Long templateId = root.getTemplateId();
+        boolean isISO = false;
         if(templateId == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Currently there is no support to reset a vm that is deployed using ISO " + vm.getUuid());
-            ex.addProxyObject(vm, vmId, "vmId");
-            throw ex;
+        // Assuming that for a vm deployed using ISO, template ID is set to NULL
+            isISO = true;
+            templateId = vm.getIsoId();
         }
 
         VMTemplateVO template = null;
+        //newTemplateId can be either template or ISO id. In the following snippet based on the vm deployment (from template or ISO) it is handled accordingly
         if(newTemplateId != null) {
             template = _templateDao.findById(newTemplateId);
             _accountMgr.checkAccess(caller, null, true, template);
+            if (isISO) {
+                if (!template.getFormat().equals(ImageFormat.ISO)) {
+                    throw new InvalidParameterValueException("Invalid ISO id provided to restore the VM ");
+                }
+            } else {
+                if (template.getFormat().equals(ImageFormat.ISO)) {
+                    throw new InvalidParameterValueException("Invalid template id provided to restore the VM ");
+                }
+            }
         } else {
+            if (isISO && templateId == null) {
+                throw new CloudRuntimeException("Cannot restore the VM since there is no ISO attached to VM");
+            }
             template = _templateDao.findById(templateId);
             if (template == null) {
                 InvalidParameterValueException ex = new InvalidParameterValueException(
-                        "Cannot find template for specified volumeid and vmId");
+                        "Cannot find template/ISO for specified volumeid and vmId");
                 ex.addProxyObject(vm, vmId, "vmId");
                 ex.addProxyObject(root, root.getId(), "volumeId");
                 throw ex;
@@ -4325,13 +4340,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        /* If new template is provided allocate a new volume from new template otherwise allocate new volume from original template */
+        /* If new template/ISO is provided allocate a new volume from new template/ISO otherwise allocate new volume from original template/ISO */
         VolumeVO newVol = null;
-        if (newTemplateId != null){
-            newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
-            vm.setGuestOSId(template.getGuestOSId());
-            vm.setTemplateId(newTemplateId);
-            _vmDao.update(vmId, vm);
+        if (newTemplateId != null) {
+            if (isISO) {
+                newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                vm.setIsoId(newTemplateId);
+                vm.setGuestOSId(template.getGuestOSId());
+                vm.setTemplateId(newTemplateId);
+                _vmDao.update(vmId, vm);
+            } else {
+                newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
+                vm.setGuestOSId(template.getGuestOSId());
+                vm.setTemplateId(newTemplateId);
+                _vmDao.update(vmId, vm);
+            }
         } else {
             newVol = volumeMgr.allocateDuplicateVolume(root, null);
         }
