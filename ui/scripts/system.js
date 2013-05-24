@@ -2199,6 +2199,73 @@
                         }
                       }  
                     }
+                  },
+                  
+                  //???
+                  detailView: {
+                    name: 'VLAN Range details',
+                    actions: {
+                      remove: {
+                        label: 'Delete VLAN Range',
+                        messages: {
+                          confirm: function(args) {
+                            return 'Please confirm you want to delete VLAN Range';
+                          },
+                          notification: function(args) {
+                            return 'Delete VLAN Range';
+                          }
+                        },
+                        action: function(args) {
+                          var data = {
+                            id: args.context.dedicatedGuestVlanRanges[0].id
+                          };                
+                          $.ajax({
+                            url: createURL('releaseDedicatedGuestVlanRange'),
+                            data: data,
+                            async: true,
+                            success: function(json) {                             
+                              var jid = json.releasededicatedguestvlanrangeresponse.jobid;
+                              args.response.success(
+                                {
+                                  _custom: { jobId: jid }
+                                }
+                              );                              
+                            }
+                          });
+                        },
+                        notification: {
+                          poll: pollAsyncJobResult
+                        }
+                      }
+                    },
+
+                    tabs: {
+                      details: {
+                        title: 'label.details',
+                        fields: [
+                          {
+                            guestvlanrange: { label: 'VLAN Range(s)' },
+                          },
+                          {
+                            domain: { label: 'label.domain' },
+                            account: { label: 'label.account' },                              
+                            id: { label: 'label.id' }
+                          }
+                        ],
+                        dataProvider: function(args) {   
+                          $.ajax({
+                            url: createURL('listDedicatedGuestVlanRanges'),
+                            data: {
+                              id: args.context.dedicatedGuestVlanRanges[0].id
+                            },
+                            success: function(json) {
+                              var item = json.listdedicatedguestvlanrangesresponse.dedicatedguestvlanrange[0];
+                              args.response.success({ data: item })
+                            }
+                          });   
+                        }
+                      }
+                    }
                   }
                 }
               }            
