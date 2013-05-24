@@ -18,6 +18,7 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -72,6 +73,7 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         fixForeignKeys(conn);
         setupExternalNetworkDevices(conn);
         fixZoneUsingExternalDevices(conn);
+        encryptConfig(conn);
     }
 
     @Override
@@ -1078,5 +1080,44 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
             }
             s_logger.info("Successfully upgraded networks using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
         }
+    }
+
+    private void encryptConfig(Connection conn){
+        //Encrypt config params and change category to Hidden
+        s_logger.debug("Encrypting Config values");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("select name, value from `cloud`.`configuration` where name in ('router.ram.size', 'secondary.storage.vm', 'security.hash.key') and category <> 'Hidden'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String name = rs.getString(1);
+                String value = rs.getString(2);
+                if (value == null) {
+                    continue;
+                }
+                String encryptedValue = DBEncryptionUtil.encrypt(value);
+                pstmt = conn.prepareStatement("update `cloud`.`configuration` set value=?, category = 'Hidden' where name=?");
+                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                pstmt.setString(2, name);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable encrypt configuration values ", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable encrypt configuration values ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done encrypting Config values");
     }
 }
