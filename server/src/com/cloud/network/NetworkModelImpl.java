@@ -32,6 +32,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -1488,24 +1489,25 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public void checkNetworkPermissions(Account owner, Network network) {
         // Perform account permission check
-        if (network.getGuestType() != Network.GuestType.Shared) {
+        if (network.getGuestType() != Network.GuestType.Shared
+                || (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Account)) {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
             if(networkOwner == null)
-                throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", network does not have an owner");
+                throw new PermissionDeniedException("Unable to use network with id= " + ((network != null)? ((NetworkVO)network).getUuid() : "") + ", network does not have an owner");
             if(owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT){
                 if(!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())){
-                    throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null)? ((NetworkVO)network).getUuid() : "") + ", permission denied");
                 }
             }else{
                 List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
                 if (networkMap == null || networkMap.isEmpty()) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null)? ((NetworkVO)network).getUuid() : "") + ", permission denied");
                 }
             }
 
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                throw new PermissionDeniedException("Shared network id=" + network.getUuid() + " is not available in domain id=" + owner.getDomainId());
+                throw new PermissionDeniedException("Shared network id=" + ((network != null)? ((NetworkVO)network).getUuid() : "") + " is not available in domain id=" + owner.getDomainId());
             }
         }
     }
