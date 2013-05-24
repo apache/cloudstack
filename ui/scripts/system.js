@@ -12706,7 +12706,7 @@
 		  nspHardcodingArray.push(
         {
           id: 'InternalLbVm',
-          name: 'InternalLbVm',
+          name: 'Internal LB VM',
           state: nspMap.InternalLbVm ? nspMap.InternalLbVm.state : 'Disabled'
         }
       );    
