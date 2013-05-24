@@ -707,45 +707,19 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // and copy template there, not propagate to all image stores
         // for that zone
         for (DataStore dstSecStore : dstSecStores) {
-            TemplateDataStoreVO dstTmpltStore = null;
-            try {
-                dstTmpltStore = this._tmplStoreDao.findByStoreTemplate(dstSecStore.getId(), tmpltId, true);
-                if (dstTmpltStore != null) {
-                    dstTmpltStore = _tmplStoreDao.lockRow(dstTmpltStore.getId(), true);
-                    if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
-                        if (dstTmpltStore.getDestroyed() == false) {
-                            return true; // already downloaded on this image
-                                         // store
-                        } else {
-                            dstTmpltStore.setDestroyed(false);
-                            _tmplStoreDao.update(dstTmpltStore.getId(), dstTmpltStore);
-                            return true;
-                        }
-                    } else if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOAD_ERROR) {
-                        if (dstTmpltStore.getDestroyed() == true) {
-                            dstTmpltStore.setDestroyed(false);
-                            dstTmpltStore.setDownloadState(Status.NOT_DOWNLOADED);
-                            dstTmpltStore.setDownloadPercent(0);
-                            dstTmpltStore.setCopy(true);
-                            dstTmpltStore.setErrorString("");
-                            dstTmpltStore.setJobId(null);
-                            _tmplStoreDao.update(dstTmpltStore.getId(), dstTmpltStore);
-                        }
-                    }
-                }
-            } finally {
-                txn.commit();
+            TemplateDataStoreVO dstTmpltStore = this._tmplStoreDao.findByStoreTemplate(dstSecStore.getId(), tmpltId);
+            if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
+                return true; // already downloaded on this image store
             }
 
             AsyncCallFuture<TemplateApiResult> future = this._tmpltSvr.copyTemplate(srcTemplate, dstSecStore);
             try {
                 TemplateApiResult result = future.get();
                 if (result.isFailed()) {
-                    s_logger.debug("copy template failed:" + result.getResult());
-                    return false;
+                    s_logger.debug("copy template failed for image store " + dstSecStore.getName() + ":" + result.getResult());
+                    continue; // try next image store
                 }
-                // if(_downloadMonitor.copyTemplate(template, srcSecStore,
-                // dstSecStore) ) {
+
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
 
                 if (account.getId() != Account.ACCOUNT_ID_SYSTEM) {
