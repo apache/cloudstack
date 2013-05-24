@@ -116,7 +116,10 @@
           },
           detailView: {
             name: 'Region details',
-            viewAll: { path: 'regions.GSLB', label: 'GSLB' },
+            viewAll: [
+              { path: 'regions.GSLB', label: 'GSLB' },
+              { path: 'regions.portableIpRanges', label: 'Portable IP' }
+            ],
             actions: {
               edit: {
                 label: 'label.edit.region',
@@ -451,8 +454,40 @@
 					}					
         }
       },
-						
-     lbUnderGSLB: {
+					      
+      portableIpRanges: {
+        id: 'portableIpRanges',
+        type: 'select',
+        title: 'Portable IP Ranges',
+        listView: {
+          id: 'portableIpRanges',
+          label: 'Portable IP Ranges',
+          fields: {
+            name: { label: 'label.name' },
+            gslbdomainname: { label: 'GSLB Domain Name' },
+            gslblbmethod: { label: 'Algorithm' }
+          },
+          dataProvider: function(args) {            
+            $.ajax({
+              url: createURL('listPortableIpRanges'),
+              data: {
+                regionid: args.context.regions[0].id
+              },
+              success: function(json) {                
+                var items = json.listportableipresponse.portableip;
+                args.response.success({                
+                  data: items
+                });
+              },
+              error: function(json) {
+                args.response.error(parseXMLHttpResponse(json));
+              }
+            });
+          }
+        }
+      },      
+            
+      lbUnderGSLB: {
         id: 'lbUnderGSLB',
         type: 'select',
         title: 'assigned load balancing',
