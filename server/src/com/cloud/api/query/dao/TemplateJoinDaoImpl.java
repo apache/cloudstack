@@ -25,10 +25,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.TemplateZoneResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -36,20 +35,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
-import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenter;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.storage.GuestOS;
-import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -91,7 +80,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         tmpltZoneSearch = createSearchBuilder();
         tmpltZoneSearch.and("id", tmpltZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
         tmpltZoneSearch.and("dataCenterId", tmpltZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        tmpltZoneSearch.and("downloadState", tmpltZoneSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
+        tmpltZoneSearch.and("state", tmpltZoneSearch.entity().getState(), SearchCriteria.Op.EQ);
         tmpltZoneSearch.done();
 
         activeTmpltSearch = createSearchBuilder();
@@ -114,7 +103,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         templateResponse.setDisplayText(template.getDisplayText());
         templateResponse.setPublic(template.isPublicTemplate());
         templateResponse.setCreated(template.getCreatedOnStore());
-        templateResponse.setReady(template.getDownloadState() == Status.DOWNLOADED);
+        templateResponse.setReady(template.getState() == TemplateState.Ready);
         templateResponse.setFeatured(template.isFeatured());
         templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM));
         templateResponse.setPasswordEnabled(template.isEnablePassword());
@@ -304,7 +293,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
         isoResponse.setCreated(iso.getCreatedOnStore());
-        isoResponse.setReady(iso.getDownloadState() == Status.DOWNLOADED);
+        isoResponse.setReady(iso.getState() == TemplateState.Ready);
         isoResponse.setBootable(iso.isBootable());
         isoResponse.setFeatured(iso.isFeatured());
         isoResponse.setCrossZones(iso.isCrossZones());
@@ -392,7 +381,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         sc.setParameters("id", template.getId());
         sc.setParameters("dataCenterId", zoneId);
         if ( readyOnly ){
-            sc.setParameters("downloadState", VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+            sc.setParameters("state", TemplateState.Ready);
         }
         return searchIncludingRemoved(sc, null, null, false);
     }
