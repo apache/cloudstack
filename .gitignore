@@ -81,3 +81,4 @@ debian/*.debhelper
 replace.properties.tmp
 build-indep-stamp
 configure-stamp
+*_flymake.js
