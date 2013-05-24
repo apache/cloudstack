@@ -1395,7 +1395,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
 
         LoadBalancerVO newRule = new LoadBalancerVO(xId, name, description,
-                sourceIpId, srcPort, srcPort, algorithm,
+                sourceIpId, srcPort, destPort, algorithm,
                 networkId, ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
 
         // verify rule is supported by Lb provider of the network
