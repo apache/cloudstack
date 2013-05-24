@@ -28,7 +28,6 @@ import org.apache.cloudstack.engine.vm.VMEntityManager;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
@@ -220,7 +219,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	}
 
 	@Override
-	public boolean destroy(String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    public boolean destroy(String caller) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
 		return manager.destroy(vmEntityVO, caller);
 	}
 

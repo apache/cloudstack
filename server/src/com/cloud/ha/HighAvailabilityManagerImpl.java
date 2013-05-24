@@ -43,7 +43,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -530,9 +529,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             if (_haTag != null) {
                 params.put(VirtualMachineProfile.Param.HaTag, _haTag);
             }
-            VirtualMachine started = _itMgr.advanceStart(vm.getUuid(), params, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            _itMgr.advanceStart(vm.getUuid(), params, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            
+            VMInstanceVO started = _instanceDao.findById(vm.getId());
 
-            if (started != null) {
+            if (started.getState() == State.Running) {
                 s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
                 return null;
             }
@@ -547,7 +548,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         } catch (final ResourceUnavailableException e) {
             s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
-                    "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+                    "Resource is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
         } catch (ConcurrentOperationException e) {
             s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
@@ -555,7 +556,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         } catch (OperationTimedoutException e) {
             s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
+                    "Operations on the resource timed out for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+        } catch (Exception e) {
+            s_logger.warn("Unable to restart " + vm, e);
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
                     "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            return null;
         }
         vm = _instanceDao.findById(vm.getId());
         work.setUpdateTime(vm.getUpdated());
@@ -612,23 +618,16 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
 
             if (vm.getHostId() != null) {
-                if (_itMgr.destroy(vm.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
-                    s_logger.info("Successfully destroy " + vm);
-                    return null;
-                }
-                s_logger.debug("Stop for " + vm + " was unsuccessful.");
-            } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(vm + " has already been stopped");
-                }
+                _itMgr.destroy(vm.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                s_logger.info("Successfully destroy " + vm);
                 return null;
             }
-        } catch (final AgentUnavailableException e) {
-            s_logger.	debug("Agnet is not available" + e.getMessage());
         } catch (OperationTimedoutException e) {
             s_logger.debug("operation timed out: " + e.getMessage());
         } catch (ConcurrentOperationException e) {
             s_logger.debug("concurrent operation: " + e.getMessage());
+        } catch (ResourceUnavailableException e) {
+            s_logger.debug("resource unavailablec: " + e.getMessage());
         }
 
         work.setTimesTried(work.getTimesTried() + 1);
@@ -645,28 +644,25 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         s_logger.info("Stopping " + vm);
         try {
             if (work.getWorkType() == WorkType.Stop) {
-                if (_itMgr.advanceStop(vm.getUuid(), false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
-                    s_logger.info("Successfully stopped " + vm);
-                    return null;
-                }
+                _itMgr.advanceStop(vm.getUuid(), false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                s_logger.info("Successfully stopped " + vm);
+                return null;
             } else if (work.getWorkType() == WorkType.CheckStop) {
                 if ((vm.getState() != work.getPreviousState()) || vm.getUpdated() != work.getUpdateTime() || vm.getHostId() == null || vm.getHostId().longValue() != work.getHostId()) {
                     s_logger.info(vm + " is different now.  Scheduled Host: " + work.getHostId() + " Current Host: " + (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
                     return null;
                 }
-                if (_itMgr.advanceStop(vm.getUuid(), false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
-                    s_logger.info("Stop for " + vm + " was successful");
-                    return null;
-                }
+                _itMgr.advanceStop(vm.getUuid(), false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                s_logger.info("Stop for " + vm + " was successful");
+                return null;
             } else if (work.getWorkType() == WorkType.ForceStop) {
                 if ((vm.getState() != work.getPreviousState()) || vm.getUpdated() != work.getUpdateTime() || vm.getHostId() == null || vm.getHostId().longValue() != work.getHostId()) {
                     s_logger.info(vm + " is different now.  Scheduled Host: " + work.getHostId() + " Current Host: " + (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
                     return null;
                 }
-                if (_itMgr.advanceStop(vm.getUuid(), true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
-                    s_logger.info("Stop for " + vm + " was successful");
-                    return null;
-                }
+                _itMgr.advanceStop(vm.getUuid(), true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                s_logger.info("Stop for " + vm + " was successful");
+                return null;
             } else {
                 assert false : "Who decided there's other steps but didn't modify the guy who does the work?";
             }

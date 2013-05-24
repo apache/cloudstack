@@ -24,6 +24,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
 import org.apache.cloudstack.engine.cloud.entity.VMReservationVO;
@@ -41,7 +43,6 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.exception.AffinityConflictException;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -68,6 +69,8 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VMEntityManagerImpl implements VMEntityManager {
+
+    private final static Logger s_logger = Logger.getLogger(VMEntityManagerImpl.class);
 
     @Inject
     protected EntityManager _eneityMgr;
@@ -239,9 +242,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
             DataCenterDeployment reservedPlan = new DataCenterDeployment(vm.getDataCenterId(),
                     vmReservation.getPodId(), vmReservation.getClusterId(), vmReservation.getHostId(), null, null);
             try {
-                VirtualMachine vmDeployed = _itMgr.start(vm.getUuid(), params, _userDao.findById(new Long(caller)),
-                        _accountDao.findById(vm.getAccountId()), reservedPlan);
-            } catch (Exception ex) {
+                _itMgr.start(vm.getUuid(), params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()), reservedPlan);
+            } catch (CloudRuntimeException ex) {
                 // Retry the deployment without using the reservation plan
                 _itMgr.start(vm.getUuid(), params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()),
                         null);
@@ -254,18 +256,27 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public boolean stop(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException {
-
-        VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
-        return _itMgr.stop(vm.getUuid(), _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
+    public boolean stop(VMEntityVO vm, String caller) throws ResourceUnavailableException {
+        try {
+            _itMgr.stop(vm.getUuid(), _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
+            return true;
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to stop " + vm, e);
+            return false;
+        }
 
     }
 
     @Override
-    public boolean destroy(VMEntityVO vmEntityVO, String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException{
+    public boolean destroy(VMEntityVO vm, String caller) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
 
-         VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
-        return _itMgr.destroy(vm.getUuid(), _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
+        try {
+            _itMgr.destroy(vm.getUuid(), _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()));
+            return true;
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to destroy " + vm, e);
+            return false;
+        }
 
 
     }

@@ -2354,17 +2354,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 									+ " as a part of deleteHost id="
 									+ host.getId());
                             try {
-                                if (!_vmMgr.advanceStop(vm.getUuid(), true, caller,
-										_accountMgr.getAccount(vm
-												.getAccountId()))) {
-									String errorMsg = "There was an error stopping the vm: "
-											+ vm
-											+ " as a part of hostDelete id="
-											+ host.getId();
-                                    s_logger.warn(errorMsg);
-									throw new UnableDeleteHostException(
-											errorMsg);
-                                }
+                                _vmMgr.stop(vm.getUuid(), caller, _accountMgr.getAccount(vm.getAccountId()));
                             } catch (Exception e) {
 								String errorMsg = "There was an error stopping the vm: "
 										+ vm

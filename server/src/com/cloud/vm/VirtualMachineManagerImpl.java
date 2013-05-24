@@ -344,7 +344,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     @DB
-    public VirtualMachine allocate(String vmInstanceName, VMTemplateVO template, ServiceOfferingVO serviceOffering, Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
+    public boolean allocate(String vmInstanceName, VMTemplateVO template, ServiceOfferingVO serviceOffering, Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, List<Pair<NetworkVO, NicProfile>> networks, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan plan,
             HypervisorType hyperType, Account owner) {
         assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
@@ -402,19 +402,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Allocation completed for VM: " + vm);
         }
 
-        return vm;
+        return true;
     }
 
     @Override
-    public VirtualMachine allocate(String vmInstanceName, VMTemplateVO template, ServiceOfferingVO serviceOffering, List<Pair<NetworkVO, NicProfile>> networks,
+    public boolean allocate(String vmInstanceName, VMTemplateVO template, ServiceOfferingVO serviceOffering, List<Pair<NetworkVO, NicProfile>> networks,
             DeploymentPlan plan, HypervisorType hyperType, Account owner) {
         return allocate(vmInstanceName, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, null, plan, hyperType, owner);
     }
 
     @Override
-    public boolean expunge(String vmUuid, User caller, Account account) {
+    public void expunge(String vmUuid, User caller, Account account) {
         try {
-            return advanceExpunge(vmUuid, caller, account);
+            advanceExpunge(vmUuid, caller, account);
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation timed out", e);
         } catch (ConcurrentOperationException e) {
@@ -425,31 +425,25 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean advanceExpunge(String vmUuid, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException,
+    public void advanceExpunge(String vmUuid, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException,
             ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
             }
-            return true;
+            return;
         }
 
-        if (!advanceStop(vmUuid, false, caller, account)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to stop the VM so we can't expunge it.");
-            }
-        }
+        advanceStop(vmUuid, false, caller, account);
 
         vm = _vmDao.findByUuid(vmUuid);
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
-                s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-                return false;
+                throw new CloudRuntimeException("Unable to detroy the VM because it is not in the correct state: " + vm);
             }
         } catch (NoTransitionException e) {
-            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-            return false;
+            throw new CloudRuntimeException("Unable to destroy the vm because it is not in the correct state: " + vm);
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -485,7 +479,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             break;
                         }
                     }
-                    return false;
+                    throw new CloudRuntimeException("Failed the expunge the vm on the hypervisor");
                 }
             }
         }
@@ -495,8 +489,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         
         _vmDao.remove(vm.getId());
-
-        return true;
     }
 
     @Override
@@ -541,19 +533,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public VirtualMachine start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
-            ResourceUnavailableException {
-        return start(vmUuid, params, caller, account, null);
+    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) {
+        start(vmUuid, params, caller, account, null);
     }
 
     @Override
-    public VirtualMachine start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
-            throws InsufficientCapacityException,
-    	ResourceUnavailableException {
+    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) {
         try {
-            return advanceStart(vmUuid, params, caller, account, planToDeploy);
+            advanceStart(vmUuid, params, caller, account, planToDeploy);
         } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e);
+            throw new CloudRuntimeException(e).add(VirtualMachine.class, vmUuid);
+        } catch (InsufficientCapacityException e) {
+            throw new CloudRuntimeException(e).add(VirtualMachine.class, vmUuid);
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException(e).add(VirtualMachine.class, vmUuid);
         }
     }
 
@@ -720,14 +713,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public VirtualMachine advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
+    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
     	ConcurrentOperationException, ResourceUnavailableException {
-        return advanceStart(vmUuid, params, caller, account, null);
+        advanceStart(vmUuid, params, caller, account, null);
     }
     
     @Override
     @DB
-    public VirtualMachine advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
     	
@@ -804,7 +797,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     		});
     	AsyncJobExecutionContext.getCurrentExecutionContext().disjoinJob(jobId);
     	
-    	return vm;
+        return;
     }
 
     @Override
@@ -1081,15 +1074,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
     
     @Override
-    public boolean stop(String vmUuid, User user, Account account) {
+    public void stop(String vmUuid, User user, Account account) {
         try {
-            return advanceStop(vmUuid, false, user, account);
+            advanceStop(vmUuid, false, user, account);
         } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Unable to stop vm because the operation to stop timed out", e);
+            throw new CloudRuntimeException(e).add(VirtualMachine.class, vmUuid);
         } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException("Unable to stop vm because of a concurrent operation", e);
-        } catch (AgentUnavailableException e) {
-            throw new CloudRuntimeException("Unable to reach host to stop vm", e);
+            throw new CloudRuntimeException(e).add(VirtualMachine.class, vmUuid);
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException(e).add(VirtualMachine.class, vmUuid);
         }
     }
 
@@ -1182,7 +1175,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
     
     @Override
-    public boolean advanceStop(final String vmUuid, boolean forced, User user, Account account) throws AgentUnavailableException,
+    public void advanceStop(final String vmUuid, boolean forced, User user, Account account) throws ResourceUnavailableException,
             OperationTimedoutException, ConcurrentOperationException {
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
     	VmWorkJobVO workJob = null;
@@ -1255,13 +1248,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 				}
     		});
     	
-    	try {
-    		AsyncJobExecutionContext.getCurrentExecutionContext().disjoinJob(jobId);
-    	} catch(Exception e) {
-    		s_logger.error("Unexpected exception", e);
-    		return false;
-    	}
-    	return true;
+        try {
+            AsyncJobExecutionContext.getCurrentExecutionContext().disjoinJob(jobId);
+        } catch (InsufficientCapacityException e) {
+            throw new CloudRuntimeException("Should never ever happen on a stop.  Who threw this?", e);
+        }
     }
 
     @Override
@@ -1604,7 +1595,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean destroy(String vmUuid, User user, Account caller) throws AgentUnavailableException, OperationTimedoutException,
+    public boolean destroy(String vmUuid, User user, Account caller) throws ResourceUnavailableException, OperationTimedoutException,
             ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (s_logger.isDebugEnabled()) {
@@ -1617,10 +1608,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return true;
         }
 
-        if (!advanceStop(vmUuid, _forceStop, user, caller)) {
-            s_logger.debug("Unable to stop " + vm);
-            return false;
-        }
+        advanceStop(vmUuid, _forceStop, user, caller);
         
         vm = _vmDao.findById(vm.getId());
 
@@ -2166,8 +2154,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return true;
             }
             try {
-                boolean result = advanceStop(vm.getUuid(), true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-                return result;
+                advanceStop(vm.getUuid(), true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                return true;
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Unable to stop VM due to " + e.getMessage());
             } catch (ConcurrentOperationException e) {
@@ -2216,43 +2204,39 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean reboot(String vmUuid, User caller, Account account) {
+    public void reboot(String vmUuid, User caller, Account account) {
         try {
-            return advanceReboot(vmUuid, caller, account);
+            advanceReboot(vmUuid, caller, account);
         } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException("Unable to reboot a VM due to concurrent operation", e);
+            throw new CloudRuntimeException("Unable to reboot a VM due to concurrent operation", e).add(VirtualMachine.class, vmUuid);
         } catch (InsufficientCapacityException e) {
-            throw new CloudRuntimeException("Unable to reboot a VM due to insufficient capacity", e);
+            throw new CloudRuntimeException("Unable to reboot a VM due to insufficient capacity", e).add(VirtualMachine.class, vmUuid);
         } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Unable to reboot a VM due to resource unavailable", e);
+            throw new CloudRuntimeException("Unable to reboot a VM due to resource unavailable", e).add(VirtualMachine.class, vmUuid);
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Unable to reboot a VM due to reboot operation timed out", e).add(VirtualMachine.class, vmUuid);
         }
     }
 
     @Override
-    public boolean advanceReboot(String vmUuid, User caller, Account account) throws InsufficientCapacityException,
-    ConcurrentOperationException, ResourceUnavailableException {
+    public void advanceReboot(String vmUuid, User caller, Account account) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException, OperationTimedoutException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm.getHostId() == null) {
             s_logger.debug("No need to reboot " + vm + " when it doesn't have a host id");
-            return false;
+            return;
         }
 
         Host host = _hostDao.findById(vm.getHostId());
 
-        try {
 
-            Commands cmds = new Commands(OnError.Stop);
-            cmds.addCommand(new RebootCommand(vm.getInstanceName()));
-            _agentMgr.send(host.getId(), cmds);
+        Commands cmds = new Commands(OnError.Stop);
+        cmds.addCommand(new RebootCommand(vm.getInstanceName()));
+        _agentMgr.send(host.getId(), cmds);
 
-            Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
-            if (rebootAnswer == null || !rebootAnswer.getResult()) {
-                s_logger.debug("Unable to reboot VM " + vm + " on " + host + " due to " + (rebootAnswer == null ? " no reboot answer" : rebootAnswer.getDetails()));
-            }
-            return true;
-        } catch (OperationTimedoutException e) {
-            s_logger.warn("Unable to send the reboot command to host " + host + " for the vm " + vm + " due to operation timeout", e);
-            return false;
+        Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
+        if (!rebootAnswer.getResult()) {
+            throw new CloudRuntimeException("Unable to reboot " + vm + " on " + host + " due to " + rebootAnswer.getDetails()).add(VirtualMachine.class, vmUuid);
         }
     }
 
@@ -3399,7 +3383,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public VirtualMachine findHostAndMigrate(String vmUuid, Long newSvcOfferingId)
+    public boolean findHostAndMigrate(String vmUuid, Long newSvcOfferingId)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, VirtualMachineMigrationException, ManagementServerException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
@@ -3441,9 +3425,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         excludes.addHost(dest.getHost().getId());
-        VirtualMachine vmInstance = null;
         try {
-            vmInstance = migrateForScale(vm.getUuid(), srcHostId, dest, oldSvcOfferingId);
+            return migrateForScale(vm.getUuid(), srcHostId, dest, oldSvcOfferingId);
         } catch (ResourceUnavailableException e) {
             s_logger.debug("Unable to migrate to unavailable " + dest);
             throw e;
@@ -3460,21 +3443,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw e;
             } else {
                 s_logger.debug("Unable to migrate VM, VM is not in Running or even Starting state, current state: " + vm.getState().toString());
+                return false;
             }
-        }
-        if (vmInstance != null) {
-            return vmInstance;
-        }else{
-            return null;
         }
     }
 
         @Override
-    public VirtualMachine migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long oldSvcOfferingId) throws ResourceUnavailableException,
+    public boolean migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long oldSvcOfferingId) throws ResourceUnavailableException,
             ConcurrentOperationException, ManagementServerException,
                 VirtualMachineMigrationException {
 //            s_logger.info("Migrating " + vm + " to " + dest);
-        return null;
+        return false;
         /*
                     Long newSvcOfferingId = vm.getServiceOfferingId();
                     long dstHostId = dest.getHost().getId();
@@ -3627,7 +3606,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         */
         }
     @Override
-    public VirtualMachine reConfigureVm(VirtualMachine vm, ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException,
+    public boolean reConfigureVm(VirtualMachine vm, ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException,
             ConcurrentOperationException {
         /*
                 long newServiceofferingId = vm.getServiceOfferingId();
@@ -3671,7 +3650,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
         */
-        return vm;
+        return false;
 
     }
 }

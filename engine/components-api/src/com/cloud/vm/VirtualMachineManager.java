@@ -51,11 +51,27 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
 
 /**
- * Manages allocating resources to vms.
+ * VirtualMachineManager orchestrates the life cycle of a virtual machine.
+ * It does not care what is the type of the virtual machine.  As long as
+ * it can find the virtual machine in the database via the vm instance name,
+ * it starts to orchestrates the life cycle.
+ * 
+ * There's a set of easy to use methods to start/stop a virtual machine.  These
+ * methods rethrows any exceptions as CloudRuntimeException so the caller's
+ * code can be less complicated.
+ * 
+ * There is also a set of advance methods.  The advance methods throw
+ * exceptions that describes the problem that actually happen.  For callers,
+ * that can adjust to the exceptions, it should call the advance methods.
+ * 
+ * All of the methods expect the UserContext to be set.  It retrieves information
+ * wrt the user and account of the caller from the UserContext.  The current
+ * caller and account input parameters will be deprecated.
+ * 
  */
 public interface VirtualMachineManager extends Manager {
 
-    VirtualMachine allocate(String vmInstanceName,
+    boolean allocate(String vmInstanceName,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
@@ -66,7 +82,7 @@ public interface VirtualMachineManager extends Manager {
             HypervisorType hyperType,
             Account owner);
 
-    VirtualMachine allocate(String vmInstanceName,
+    boolean allocate(String vmInstanceName,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkVO, NicProfile>> networkProfiles,
@@ -74,15 +90,13 @@ public interface VirtualMachineManager extends Manager {
             HypervisorType hyperType,
             Account owner);
 
-    VirtualMachine start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
-            ResourceUnavailableException;
+    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, @Deprecated User caller, @Deprecated Account account);
 
-    VirtualMachine start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
-            throws InsufficientCapacityException, ResourceUnavailableException;
+    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, @Deprecated User caller, @Deprecated Account account, DeploymentPlan planToDeploy);
 
-    boolean stop(String vmUuid, User caller, Account account);
+    void stop(String vmUuid, @Deprecated User caller, @Deprecated Account account);
 
-    boolean expunge(String vmUuid, User caller, Account account) throws ResourceUnavailableException;
+    void expunge(String vmUuid, @Deprecated User caller, @Deprecated Account account);
 
     void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
     
@@ -94,17 +108,20 @@ public interface VirtualMachineManager extends Manager {
     
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
-    VirtualMachine advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
+    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, @Deprecated User caller, @Deprecated Account account) throws InsufficientCapacityException,
             ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
-    VirtualMachine advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, @Deprecated User caller, @Deprecated Account account, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
-    boolean advanceStop(String vmUuid, boolean forced, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    void advanceStop(String vmUuid, boolean cleanup, @Deprecated User caller, @Deprecated Account account) throws ResourceUnavailableException, OperationTimedoutException,
+            ConcurrentOperationException;
 
-    boolean advanceExpunge(String vmUuid, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    void advanceExpunge(String vmUuid, @Deprecated User caller, @Deprecated Account account) throws ResourceUnavailableException, OperationTimedoutException,
+            ConcurrentOperationException;
 
-    boolean destroy(String vmUuid, User caller, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    boolean destroy(String vmUuid, @Deprecated User caller, @Deprecated Account account) throws ResourceUnavailableException, OperationTimedoutException,
+            ConcurrentOperationException;
 
     boolean migrateAway(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException;
 
@@ -114,9 +131,9 @@ public interface VirtualMachineManager extends Manager {
     VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException,
             ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
-    boolean reboot(String vmUuid, User caller, Account account);
+    void reboot(String vmUuid, User caller, Account account);
 
-    boolean advanceReboot(String vmUuid, User caller, Account account) throws InsufficientCapacityException,
+    void advanceReboot(String vmUuid, User caller, Account account) throws InsufficientCapacityException,
             ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
     VirtualMachine storageMigration(String vmUuid, StoragePool storagePoolId);
@@ -173,14 +190,14 @@ public interface VirtualMachineManager extends Manager {
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
 
-    VirtualMachine reConfigureVm(VirtualMachine vm, ServiceOffering newServiceOffering, boolean sameHost)
+    boolean reConfigureVm(VirtualMachine vm, ServiceOffering newServiceOffering, boolean sameHost)
             throws ResourceUnavailableException, ConcurrentOperationException;
 
-    VirtualMachine findHostAndMigrate(String vmUuid, Long newSvcOfferingId) throws InsufficientCapacityException,
+    boolean findHostAndMigrate(String vmUuid, Long newSvcOfferingId) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException,
             VirtualMachineMigrationException, ManagementServerException;
 
-    VirtualMachine migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId)
+    boolean migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId)
             throws ResourceUnavailableException, ConcurrentOperationException,
             ManagementServerException, VirtualMachineMigrationException;
 

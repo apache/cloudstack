@@ -67,11 +67,9 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
@@ -136,7 +134,6 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -773,20 +770,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean success = true;
         for (VMInstanceVO vm : vms) {
             try {
-                try {
-                    if (vm.getType() == Type.User) {
-                        success = (success && _itMgr.advanceStop(vm.getUuid(), false, getSystemUser(), getSystemAccount()));
-                    } else if (vm.getType() == Type.DomainRouter) {
-                        success = (success && _itMgr.advanceStop(vm.getUuid(), false, getSystemUser(), getSystemAccount()));
-                    } else {
-                        success = (success && _itMgr.advanceStop(vm.getUuid(), false, getSystemUser(), getSystemAccount()));
-                    }
-                } catch (OperationTimedoutException ote) {
-                    s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
-                    success = false;
-                }
-            } catch (AgentUnavailableException aue) {
-                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getHostName(), aue);
+                _itMgr.stop(vm.getUuid(), getSystemUser(), getSystemAccount());
+            } catch (CloudRuntimeException ote) {
+                s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
                 success = false;
             }
         }

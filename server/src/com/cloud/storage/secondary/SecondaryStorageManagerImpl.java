@@ -62,9 +62,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -260,20 +257,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
             Account systemAcct = _accountMgr.getSystemAccount();
             User systemUser = _accountMgr.getSystemUser();
-            if (_itMgr.start(secStorageVm.getUuid(), null, systemUser, systemAcct) != null) {
-                return _secStorageVmDao.findById(secStorageVmId);
-            } else {
-                return null;
-            }
-        } catch (StorageUnavailableException e) {
-            s_logger.warn("Exception while trying to start secondary storage vm", e);
-            return null;
-        } catch (InsufficientCapacityException e) {
-            s_logger.warn("Exception while trying to start secondary storage vm", e);
-            return null;
-        } catch (ResourceUnavailableException e) {
-            s_logger.warn("Exception while trying to start secondary storage vm", e);
-            return null;
+            _itMgr.start(secStorageVm.getUuid(), null, systemUser, systemAcct);
+            return _secStorageVmDao.findById(secStorageVmId);
         } catch (Exception e) {
             s_logger.warn("Exception while trying to start secondary storage vm", e);
             return null;
@@ -583,10 +568,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
                 systemAcct.getDomainId(), systemAcct.getId(), role, _serviceOffering.getOfferHA());
         secStorageVm = _secStorageVmDao.persist(secStorageVm);
-        if (_itMgr.allocate(secStorageVm.getInstanceName(), template, _serviceOffering, networks, plan, null, systemAcct) == null) {
+        try {
+            _itMgr.allocate(secStorageVm.getInstanceName(), template, _serviceOffering, networks, plan, null, systemAcct);
+        } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to allocate");
             _secStorageVmDao.remove(secStorageVm.getId());
-            throw new CloudRuntimeException("Unable to allocate sec storage vm");
+            throw new CloudRuntimeException("Unable to allocate sec storage vm", e);
         }
         
         secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
@@ -925,8 +912,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             try {
                 if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                     try {
-                        boolean result = _itMgr.stop(secStorageVm.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-                        return result;
+                        _itMgr.stop(secStorageVm.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                        return true;
+                    } catch (Exception e) {
+                        s_logger.warn("Unable to stop " + secStorageVm, e);
+                        return false;
                     } finally {
                         secStorageVmLock.unlock();
                     }
@@ -983,18 +973,16 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         SecondaryStorageVmVO ssvm = _secStorageVmDao.findById(vmId);
 
         try {
-            boolean result = _itMgr.expunge(ssvm.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-            if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(),
-                        Host.Type.SecondaryStorageVM);
-                if (host != null) {
-                    s_logger.debug("Removing host entry for ssvm id=" + vmId);
-                    result = result && _hostDao.remove(host.getId());
-                }
+            _itMgr.expunge(ssvm.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(),
+                    Host.Type.SecondaryStorageVM);
+            if (host != null) {
+                s_logger.debug("Removing host entry for ssvm id=" + vmId);
+                return _hostDao.remove(host.getId());
             }
             
-            return result;
-        } catch (ResourceUnavailableException e) {
+            return true;
+        } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to expunge " + ssvm, e);
             return false;
         }

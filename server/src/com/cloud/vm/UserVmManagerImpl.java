@@ -729,10 +729,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             return null;
         }
 
-        if (_itMgr.reboot(vm.getUuid(), caller, owner)) {
+        try {
+            _itMgr.reboot(vm.getUuid(), caller, owner);
+            return _vmDao.findById(vmId);
+        } catch (CloudRuntimeException e) {
+            // FIXME: Not even sure if this should be here but got to conform to how it worked before.
+            s_logger.warn("Unable to reboot virtual machine " + vm);
             return null;
         }
-        return _vmDao.findById(vmId);
     }
 
     @Override
@@ -1122,13 +1126,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
                     // #2 migrate the vm if host doesn't have capacity
                     if (!existingHostHasCapacity){
-                        vmInstance = _itMgr.findHostAndMigrate(vmInstance.getUuid(), newServiceOfferingId);
+                        _itMgr.findHostAndMigrate(vmInstance.getUuid(), newServiceOfferingId);
                     }
 
                     // #3 scale the vm now
                     _itMgr.upgradeVmDb(vmId, newServiceOfferingId);
                     vmInstance = _vmInstanceDao.findById(vmId);
-                    vmInstance = _itMgr.reConfigureVm(vmInstance, oldServiceOffering, existingHostHasCapacity);
+                    _itMgr.reConfigureVm(vmInstance, oldServiceOffering, existingHostHasCapacity);
                     success = true;
                     return success;
                 }catch(InsufficientCapacityException e ){
@@ -1403,10 +1407,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         try {
             List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             // expunge the vm
-            if (!_itMgr.advanceExpunge(vm.getUuid(), _accountMgr.getSystemUser(), caller)) {
-                s_logger.info("Did not expunge " + vm);
-                return false;
-            }
+            _itMgr.advanceExpunge(vm.getUuid(), _accountMgr.getSystemUser(), caller);
 
             // Update Resource count
             if (vm.getAccountId() != Account.ACCOUNT_ID_SYSTEM && !rootVol.isEmpty()) {
@@ -4262,7 +4263,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         if (needRestart) {
-            if (!_itMgr.stop(vm.getUuid(), user, caller)) {
+            try {
+                _itMgr.stop(vm.getUuid(), user, caller);
+            } catch (CloudRuntimeException e) {
                 s_logger.debug("Stop vm " + vm.getUuid() + " failed");
                 CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
                 ex.addProxyObject(vm, vmId, "vmId");

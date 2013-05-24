@@ -22,7 +22,6 @@ import org.apache.cloudstack.engine.cloud.entity.VMEntityVO;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
@@ -41,5 +40,5 @@ public interface VMEntityManager {
 
     boolean stop(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException;
 
-    boolean destroy(VMEntityVO vmEntityVO, String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    boolean destroy(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 }

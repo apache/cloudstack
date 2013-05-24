@@ -525,7 +525,13 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
 
         _accountMgr.checkAccess(caller, null, true, internalLbVm);
 
-        return _itMgr.expunge(internalLbVm.getUuid(), _accountMgr.getActiveUser(callerUserId), caller);
+        try {
+            _itMgr.expunge(internalLbVm.getUuid(), _accountMgr.getActiveUser(callerUserId), caller);
+            return true;
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to expunge internal load balancer", e);
+            return false;
+        }
     }
 
     
@@ -546,11 +552,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     protected VirtualRouter stopInternalLbVm(DomainRouterVO internalLbVm, boolean forced, Account caller, long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
         s_logger.debug("Stopping internal lb vm " + internalLbVm);
         try {
-            if (_itMgr.advanceStop(internalLbVm.getUuid(), forced, _accountMgr.getActiveUser(callerUserId), caller)) {
-                return _internalLbVmDao.findById(internalLbVm.getId());
-            } else {
-                return null;
-            }
+            _itMgr.advanceStop(internalLbVm.getUuid(), forced, _accountMgr.getActiveUser(callerUserId), caller);
+            return _internalLbVmDao.findById(internalLbVm.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + internalLbVm, e);
         }
@@ -780,12 +783,16 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
                     RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
             internalLbVm.setRole(Role.INTERNAL_LB_VM);
             internalLbVm = _internalLbVmDao.persist(internalLbVm);
-            if (_itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null, owner) == null) {
+            try {
+                _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null, owner);
+            } catch (CloudRuntimeException e) {
                 if (allocateRetry < 2 && iter.hasNext()) {
                     allocateRetry++;
                     _internalLbVmDao.remove(internalLbVm.getId());
                     s_logger.debug("Failed to allocate the Internal lb vm with hypervisor type " + hType + ", retrying one more time");
                     continue;
+                } else {
+                    return null;
                 }
             }
 
@@ -822,14 +829,17 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
-        if (_itMgr.start(internalLbVm.getUuid(), params, _accountMgr.getUserIncludingRemoved(callerUserId), caller, null) != null) {
+        try {
+            _itMgr.start(internalLbVm.getUuid(), params, _accountMgr.getUserIncludingRemoved(callerUserId), caller, null);
+            internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
             if (internalLbVm.isStopPending()) {
                 s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");
                 internalLbVm.setStopPending(false);
                 internalLbVm = _internalLbVmDao.persist(internalLbVm);
             }
             return _internalLbVmDao.findById(internalLbVm.getId());
-        } else {
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to start " + internalLbVm, e);
             return null;
         }
     }

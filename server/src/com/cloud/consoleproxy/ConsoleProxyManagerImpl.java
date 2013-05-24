@@ -62,9 +62,6 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
@@ -561,28 +558,15 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (proxy.getState() == VirtualMachine.State.Stopped) {
-                if (_itMgr.start(proxy.getUuid(), null, systemUser, systemAcct) != null) {
-                    return _consoleProxyDao.findById(proxyVmId);
-                } else {
-                    return null;
-                }
+                _itMgr.start(proxy.getUuid(), null, systemUser, systemAcct);
+                return _consoleProxyDao.findById(proxyVmId);
             }
 
             // For VMs that are in Stopping, Starting, Migrating state, let client to wait by returning null
-            // as sooner or later, Starting/Migrating state will be transited to Running and Stopping will be transited
-// to
+            // as sooner or later, Starting/Migrating state will be transited to Running and Stopping will be transited to
             // Stopped to allow
             // Starting of it
             s_logger.warn("Console proxy is not in correct state to be started: " + proxy.getState());
-            return null;
-        } catch (StorageUnavailableException e) {
-            s_logger.warn("Exception while trying to start console proxy", e);
-            return null;
-        } catch (InsufficientCapacityException e) {
-            s_logger.warn("Exception while trying to start console proxy", e);
-            return null;
-        } catch (ResourceUnavailableException e) {
-            s_logger.warn("Exception while trying to start console proxy", e);
             return null;
         } catch (CloudRuntimeException e) {
             s_logger.warn("Runtime Exception while trying to start console proxy", e);
@@ -728,10 +712,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(),
                 systemAcct.getId(), 0, _serviceOffering.getOfferHA());
         proxy = _consoleProxyDao.persist(proxy);
-        VirtualMachine vm = _itMgr.allocate(proxy.getInstanceName(), template, _serviceOffering, networks, plan, null, systemAcct);
-        if (vm == null) {
+        try {
+            _itMgr.allocate(proxy.getInstanceName(), template, _serviceOffering, networks, plan, null, systemAcct);
+        } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to allocate proxy");
-            throw new CloudRuntimeException("Insufficient capacity exception");
+            throw new CloudRuntimeException("Unable to allocate proxy ", e);
         }
         proxy = _consoleProxyDao.findById(proxy.getId());
 
@@ -1038,7 +1023,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return false;
         }
 
-        return _itMgr.stop(proxy.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+        try {
+            _itMgr.stop(proxy.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            return true;
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to stop " + proxy, e);
+            return false;
+        }
     }
 
     @Override
@@ -1157,18 +1148,16 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ConsoleProxyVO proxy = _consoleProxyDao.findById(vmId);
         try {
             //expunge the vm
-            boolean result = _itMgr.expunge(proxy.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-            if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(),
-                        Host.Type.ConsoleProxy);
-                if (host != null) {
-                    s_logger.debug("Removing host entry for proxy id=" + vmId);
-                    result = result && _hostDao.remove(host.getId());
-                }
+            _itMgr.expunge(proxy.getUuid(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(),
+                    Host.Type.ConsoleProxy);
+            if (host != null) {
+                s_logger.debug("Removing host entry for proxy id=" + vmId);
+                return _hostDao.remove(host.getId());
             }
 
-            return result;
-        } catch (ResourceUnavailableException e) {
+            return true;
+        } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to expunge " + proxy, e);
             return false;
         }

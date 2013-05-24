@@ -418,12 +418,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         _accountMgr.checkAccess(caller, null, true, router);
 
-        boolean result = _itMgr.expunge(router.getUuid(), _accountMgr.getActiveUser(callerUserId), _accountMgr.getAccount(router.getAccountId()));
-
-        if (result) {
+        try {
+            _itMgr.expunge(router.getUuid(), _accountMgr.getActiveUser(callerUserId), _accountMgr.getAccount(router.getAccountId()));
             return router;
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to destroy " + router, e);
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -1645,14 +1646,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     RedundantState.UNKNOWN, offerHA, false, vpcId);
             router.setRole(Role.VIRTUAL_ROUTER);
             router = _routerDao.persist(router);
-            if (_itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, plan, null, owner) == null) {
+            try {
+                _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, plan, null, owner);
+            } catch (CloudRuntimeException e) {
                 if (allocateRetry < 2 && iter.hasNext()) {
                     _routerDao.remove(router.getId());
                     allocateRetry++;
-                    s_logger.debug("Failed to allocate the VR with hypervisor type " + hType + ", retrying one more time");
+                    s_logger.debug("Failed to allocate the VR with hypervisor type " + hType + ", retrying one more time: " + e.toString());
                     continue;
-                } else {
-                    throw new CloudRuntimeException("Failed to allocate a VR");
                 }
             }
             router = _routerDao.findById(router.getId());
@@ -2696,7 +2697,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
-        if (_itMgr.start(router.getUuid(), params, user, caller, planToDeploy) != null) {
+        try {
+            _itMgr.start(router.getUuid(), params, user, caller, planToDeploy);
+            router = _routerDao.findById(router.getId());
             if (router.isStopPending()) {
                 s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after start router successfully!");
                 router.setStopPending(false);
@@ -2709,7 +2712,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 _s2sVpnMgr.reconnectDisconnectedVpnByVpc(vpcId);
             }
             return _routerDao.findById(router.getId());
-        } else {
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to start " + router, e);
             return null;
         }
     }
@@ -2718,11 +2722,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public DomainRouterVO stop(VirtualRouter router, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
-            if (_itMgr.advanceStop(router.getUuid(), forced, user, caller)) {
-                return _routerDao.findById(router.getId());
-            } else {
-                return null;
-            }
+            _itMgr.advanceStop(router.getUuid(), forced, user, caller);
+            return _routerDao.findById(router.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + router, e);
         }

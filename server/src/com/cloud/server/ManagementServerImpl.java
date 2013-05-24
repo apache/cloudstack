@@ -2191,10 +2191,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         User caller = _userDao.findById(UserContext.current().getCallerUserId());
 
-        if (_itMgr.advanceStop(systemVm.getUuid(), isForced, caller, UserContext.current().getCaller())) {
-            return _consoleProxyDao.findById(systemVm.getId());
-        }
-        return null;
+        _itMgr.advanceStop(systemVm.getUuid(), isForced, caller, UserContext.current().getCaller());
+        return _consoleProxyDao.findById(systemVm.getId());
     }
 
     @ActionEvent(eventType = EventTypes.EVENT_PROXY_REBOOT, eventDescription = "rebooting console proxy Vm", async = true)
@@ -3072,10 +3070,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         User caller = _userDao.findById(UserContext.current().getCallerUserId());
 
-        if (_itMgr.advanceStop(systemVm.getUuid(), isForced, caller, UserContext.current().getCaller())) {
-            return _secStorageVmDao.findById(systemVm.getId());
-        }
-        return null;
+        _itMgr.advanceStop(systemVm.getUuid(), isForced, caller, UserContext.current().getCaller());
+        return _secStorageVmDao.findById(systemVm.getId());
     }
 
     @ActionEvent(eventType = EventTypes.EVENT_SSVM_REBOOT, eventDescription = "rebooting secondary storage Vm", async = true)

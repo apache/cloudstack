@@ -120,7 +120,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public VirtualMachine allocate(String vmInstanceName, VMTemplateVO template,
+    public boolean allocate(String vmInstanceName, VMTemplateVO template,
 			ServiceOfferingVO serviceOffering,
 			Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
 			List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
@@ -128,47 +128,41 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 			Map<Param, Object> params, DeploymentPlan plan,
             HypervisorType hyperType, Account owner) {
 		// TODO Auto-generated method stub
-		return null;
+        return false;
 	}
 
 
 	@Override
-    public VirtualMachine allocate(String vmInstanceName, VMTemplateVO template,
+    public boolean allocate(String vmInstanceName, VMTemplateVO template,
 			ServiceOfferingVO serviceOffering,
 			List<Pair<NetworkVO, NicProfile>> networkProfiles,
             DeploymentPlan plan, HypervisorType hyperType, Account owner) {
 		// TODO Auto-generated method stub
-		return null;
+        return false;
 	}
 
 	@Override
-    public VirtualMachine start(String vmUuid, Map<Param, Object> params,
-			User caller, Account account) throws InsufficientCapacityException,
-			ResourceUnavailableException {
+    public void start(String vmUuid, Map<Param, Object> params,
+            User caller, Account account) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
-    public VirtualMachine start(String vmUuid, Map<Param, Object> params,
-			User caller, Account account, DeploymentPlan planToDeploy)
-			throws InsufficientCapacityException, ResourceUnavailableException {
+    public void start(String vmUuid, Map<Param, Object> params,
+            User caller, Account account, DeploymentPlan planToDeploy) {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
-    public boolean stop(String vmUuid, User caller,
+    public void stop(String vmUuid, User caller,
             Account account) {
 		// TODO Auto-generated method stub
-		return false;
 	}
 
 	@Override
-    public boolean expunge(String vmUuid, User caller,
-			Account account) throws ResourceUnavailableException {
+    public void expunge(String vmUuid, User caller,
+            Account account) {
 		// TODO Auto-generated method stub
-		return false;
 	}
 
 	@Override
@@ -197,38 +191,34 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public VirtualMachine advanceStart(String vmUuid,
+    public void advanceStart(String vmUuid,
 			Map<Param, Object> params, User caller, Account account)
 			throws InsufficientCapacityException, ResourceUnavailableException,
 			ConcurrentOperationException, OperationTimedoutException {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
-    public VirtualMachine advanceStart(String vmUuid,
+    public void advanceStart(String vmUuid,
 			Map<Param, Object> params, User caller, Account account,
 			DeploymentPlan planToDeploy) throws InsufficientCapacityException,
 			ResourceUnavailableException, ConcurrentOperationException,
 			OperationTimedoutException {
 		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
-    public boolean advanceStop(String vmUuid, boolean forced,
+    public void advanceStop(String vmUuid, boolean forced,
 			User caller, Account account) throws ResourceUnavailableException,
 			OperationTimedoutException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
-		return false;
 	}
 
 	@Override
-    public boolean advanceExpunge(String vmUuid, User caller,
+    public void advanceExpunge(String vmUuid, User caller,
 			Account account) throws ResourceUnavailableException,
 			OperationTimedoutException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
-		return false;
 	}
 
 	@Override
@@ -257,18 +247,16 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public boolean reboot(String vmUuid,
+    public void reboot(String vmUuid,
             User caller, Account account) {
 		// TODO Auto-generated method stub
-        return false;
 	}
 
 	@Override
-    public boolean advanceReboot(String vmUuid, User caller, Account account)
+    public void advanceReboot(String vmUuid, User caller, Account account)
 			throws InsufficientCapacityException, ResourceUnavailableException,
 			ConcurrentOperationException, OperationTimedoutException {
 		// TODO Auto-generated method stub
-        return false;
 	}
 
 	@Override
@@ -328,29 +316,29 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public VMInstanceVO reConfigureVm(VirtualMachine vm,
+    public boolean reConfigureVm(VirtualMachine vm,
 			ServiceOffering newServiceOffering, boolean sameHost)
 			throws ResourceUnavailableException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
-		return null;
+        return false;
 	}
 
 	@Override
-    public VirtualMachine findHostAndMigrate(String vmUUid,
+    public boolean findHostAndMigrate(String vmUUid,
 			Long newSvcOfferingId) throws InsufficientCapacityException,
 			ConcurrentOperationException, ResourceUnavailableException,
 			VirtualMachineMigrationException, ManagementServerException {
 		// TODO Auto-generated method stub
-		return null;
+        return false;
 	}
 
 	@Override
-    public VirtualMachine migrateForScale(String vmUuid, long srcHostId,
+    public boolean migrateForScale(String vmUuid, long srcHostId,
 			DeployDestination dest, Long newSvcOfferingId)
 			throws ResourceUnavailableException, ConcurrentOperationException,
 			ManagementServerException, VirtualMachineMigrationException {
 		// TODO Auto-generated method stub
-		return null;
+        return false;
 	}
 
 	@Override

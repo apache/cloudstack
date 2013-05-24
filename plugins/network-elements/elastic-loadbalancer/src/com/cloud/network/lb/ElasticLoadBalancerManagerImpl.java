@@ -512,14 +512,16 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
                         _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm, null);
                 elbVm.setRole(Role.LB);
                 elbVm = _routerDao.persist(elbVm);
-                if (_itMgr.allocate(elbVm.getInstanceName(), template, _elasticLbVmOffering, networks, plan, null, owner) != null) {
-                    elbVm = _routerDao.findById(elbVm.getId());
-                } else {
-                    error = true;
+                try {
+                    _itMgr.allocate(elbVm.getInstanceName(), template, _elasticLbVmOffering, networks, plan, null, owner);
+                } catch (CloudRuntimeException e) {
+                    s_logger.warn("Unable to create " + elbVm, e);
+                    return null;
                 }
                 //TODO: create usage stats
             }
 
+            elbVm = _routerDao.findById(elbVm.getId());
             State state = elbVm.getState();
             if (state != State.Running) {
                 elbVm = this.start(elbVm, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
@@ -527,9 +529,6 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
 
             return elbVm;
         } finally {
-            if (error && elbVm != null) {
-                _routerDao.remove(elbVm.getId());
-            }
             _networkDao.releaseFromLockTable(guestNetworkId);
         }
     }
@@ -537,9 +536,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     private DomainRouterVO start(DomainRouterVO elbVm, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting ELB VM " + elbVm);
-        if (_itMgr.start(elbVm.getUuid(), params, user, caller) != null) {
+        try {
+            _itMgr.start(elbVm.getUuid(), params, user, caller);
             return _routerDao.findById(elbVm.getId());
-        } else {
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Unable to start " + elbVm, e);
             return null;
         }
     }
@@ -547,11 +548,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping ELB vm " + elbVm);
         try {
-            if (_itMgr.advanceStop(elbVm.getUuid(), forced, user, caller)) {
-                return _routerDao.findById(elbVm.getId());
-            } else {
-                return null;
-            }
+            _itMgr.advanceStop(elbVm.getUuid(), forced, user, caller);
+            return _routerDao.findById(elbVm.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + elbVm, e);
         }
@@ -742,7 +740,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
                 try {
                     s_logger.info("Attempting to destroy ELB VM: " + elbVm);
                     _itMgr.expunge(elbVm.getUuid(), user, _systemAcct);
-                } catch (ResourceUnavailableException e) {
+                } catch (CloudRuntimeException e) {
                     s_logger.warn("Unable to destroy unused ELB vm " + elbVm + " due to ", e);
                     gceed = false;
                 }
