@@ -4026,6 +4026,11 @@ under the License.
                     </thead>
                     <tbody>
                         <row>
+                            <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2492">CLOUDSTACK-2492</ulink></para></entry>
+                            <entry><para>System VM Clock Drift</para>
+                                <para>Testing of the new S3-backed secondary storage feature identified that the system VM templates offered as part of the 3.x releases (which are still the official templates for 4.1.0) did not contain the necessary configuration to enable time synchronization within the system VM guest operating systems.  With 4.1.0, this issue has been corrected for both the VMware vSphere and KVM system VM flavors via post boot configurations.  The XenServer system VM template does not have an official fix for this problem.  If you choose to take advantage of the new S3-backed secondary storage feature while running your system VMs on XenServer, you may be impacted by time synchronization issues.</para></entry>
+                        </row>
+                        <row>
                             <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1747">CLOUDSTACK-1747</ulink></para></entry>
                             <entry><para>mvn deploydb only creates 4.0 DB, not 4.1</para>
                                 <para>Due to tooling changes between 4.1 and 4.2, CloudStack's database is created using the 4.0 schema and updated to the 4.1 schema when the management server starts for the first time. It's OK to see the same schema if the management server has not started yet.</para>
