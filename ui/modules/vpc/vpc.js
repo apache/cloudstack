@@ -15,6 +15,53 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
+  var addTierDialog = function(args) {
+    var $placeholder = args.$placeholder;
+    var context = args.context;
+    var addAction = cloudStack.vpc.tiers.actions.add;
+
+    cloudStack.dialog.createForm({
+      context: context,
+      form: addAction.createForm,
+      after: function(args) {
+        var $loading = $('<div>').addClass('loading-overlay')
+          .prependTo($placeholder);
+
+        addAction.action({
+          context: context,
+          data: args.data,
+          response: {
+            success: function(args) {
+              cloudStack.ui.notifications.add(
+                // Notification
+                {
+                  desc: addAction.label
+                },
+
+                // Success
+                function(args) {
+                  $loading.remove();
+                  $placeholder.closest('.vpc-network-chart').trigger('reload');
+                },
+
+                {},
+
+                // Error
+                function(args) {
+                  $loading.remove();
+                }
+              );
+            },
+            error: function(errorMsg) {
+              cloudStack.dialog.notice({ message: _s(errorMsg) });
+              $loading.remove();
+            }
+          }
+        });
+      }
+    });
+  };
+
   var elems = {
     tier: function(args) {
       var tier = args.tier;
@@ -74,10 +121,10 @@
         },
         dashboardItems: args.dashboardItems
       }).addClass('router');
-      
+
       $router.find('.info, .detail-link').remove();
       $router.find('.header').prepend($('<span></span>').addClass('icon').html('&nbsp;'));
-      
+
       return $router;
     },
 
@@ -87,66 +134,12 @@
 
       $placeholder.append($('<span>').append('Create network'));
       $placeholder.click(function() {
-        var addAction = cloudStack.vpc.tiers.actions.add;
-        var form = cloudStack.dialog.createForm({
+        addTierDialog({
           context: context,
-          form: addAction.createForm,
-          after: function(args) {
-            var $loading = $('<div>').addClass('loading-overlay')
-              .prependTo($placeholder);
-
-            addAction.action({
-              context: context,
-              data: args.data,
-              response: {
-                success: function(args) {
-                  var tier = args.data;
-
-                  cloudStack.ui.notifications.add(
-                    // Notification
-                    {
-                      desc: addAction.label
-                    },
-
-                    // Success
-                    function(args) {
-                      $loading.remove();
-                      $placeholder.closest('.vpc-network-chart').trigger('reload');
-                      
-                      // addNewTier({
-                      //   ipAddresses: ipAddresses,
-                      //   $browser: $browser,
-                      //   tierDetailView: tierDetailView,
-                      //   context: $.extend(true, {}, context, {
-                      //     networks: [tier]
-                      //   }),
-                      //   tier: tier,
-                      //   acl: acl,
-                      //   $tiers: $tiers,
-                      //   actions: actions,
-                      //   actionPreFilter: actionPreFilter,
-                      //   vmListView: vmListView
-                      // });
-                    },
-
-                    {},
-
-                    // Error
-                    function(args) {
-                      $loading.remove();
-                    }
-                  );
-                },
-                error: function(errorMsg) {
-                  cloudStack.dialog.notice({ message: _s(errorMsg) });
-                  $loading.remove();
-                }
-              }
-            });
-          }
+          $placeholder: $placeholder
         });
       });
-      
+
       return $placeholder;
     },
 
@@ -170,7 +163,7 @@
         } else {
           $total.find('span').html(dashboardItem.total ? dashboardItem.total : 0);
         }
-        
+
         $dashboardItem.append($total, $name);
         $dashboardItem.appendTo($dashboard);
 
@@ -214,7 +207,7 @@
     var vpcChart = function(args) {
       var context = args.context;
       var vpcItem = context.vpc[0];
-      
+
       var chart = function(args) {
         args = args ? args : {};
 
@@ -232,6 +225,9 @@
           response: {
             success: function(data) {
               var tiers = data.tiers;
+              var $placeholder = elems.tierPlaceholder({
+                context: context
+              });
 
               $(tiers).map(function(index, tier) {
                 var $tier = elems.tier({
@@ -239,34 +235,37 @@
                   tier: tier,
                   dashboardItems: tier._dashboardItems
                 });
-
                 $tier.appendTo($tiers);
               });
 
               // Add placeholder tier
-              $tiers.append(elems.tierPlaceholder({
-                context: context
-              }));
-
+              $tiers.append($placeholder);
               $loading.remove();
-              
+
+              if (!tiers.length) {
+                addTierDialog({
+                  context: context,
+                  $placeholder: $placeholder
+                });
+              }
+
               if (args.complete) {
                 args.complete($chart);
               }
-              
+
               // Router
-              $router = elems.router({
+              elems.router({
                 context: context,
                 dashboardItems: data.routerDashboard
               }).appendTo($chart);
             }
-          }          
+          }
         });
 
         $chart.bind('reload', function() {
           chart({
             complete: function($newChart) {
-              $chart.replaceWith($newChart);              
+              $chart.replaceWith($newChart);
             }
           });
         });
