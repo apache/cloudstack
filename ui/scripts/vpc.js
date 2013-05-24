@@ -801,7 +801,48 @@
           // 'listView' block
           //
           // -- use this as a flag for VPC chart to render as a list view
-          listView: true
+          listView: true,
+          before: {
+            messages: {
+              confirm: 'Please confirm that you would like to create a site-to-site VPN gateway for this VPC.',
+              notification: 'Create site-to-site VPN gateway'
+            },
+            check: function(args) {
+              var items;
+              
+              $.ajax({
+                url: createURL('listVpnGateways&listAll=true'),
+                data: {
+                  vpcid: args.context.vpc[0].id
+                },
+                success: function(json) {
+                  var items = json.listvpngatewaysresponse.vpngateway;
+
+                  args.response.success(items && items.length);
+                }
+              });
+            },
+            action: function(args) {
+              $.ajax({
+                url: createURL("createVpnGateway"),
+                data: {
+                  vpcid: args.context.vpc[0].id
+                },
+                success: function(json) {
+                  var jid = json.createvpngatewayresponse.jobid;
+                  var pollTimer = setInterval(function() {
+                    pollAsyncJobResult({
+                      _custom: { jobId: jid },
+                      complete: function() {
+                        clearInterval(pollTimer);
+                        args.response.success();
+                      }
+                    });
+                  }, g_queryAsyncJobResultInterval);
+                }
+              });             
+            }
+          }
         });
       }
     },

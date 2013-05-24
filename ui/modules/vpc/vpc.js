@@ -168,27 +168,60 @@
         $dashboardItem.appendTo($dashboard);
 
         $dashboardItem.click(function() {
-          $('#browser .container').cloudBrowser('addPanel', {
-            title: tier.name + ' - ' + dashboardItem.name,
-            maximizeIfSelected: true,
-            complete: function($panel) {
-              var section = cloudStack.vpc.sections[id];
-              var $section = $('<div>');
+          var section = cloudStack.vpc.sections[id];
+          var $section = $('<div>');
+          var $loading = $('<div>').addClass('loading-overlay');
+          
+          if ($.isFunction(section)) {
+            section = cloudStack.vpc.sections[id]();
+          }
 
-              if ($.isFunction(section)) {
-                section = cloudStack.vpc.sections[id]();
+          var before = section.before;
+          var load = function() {
+            $('#browser .container').cloudBrowser('addPanel', {
+              title: tier.name + ' - ' + dashboardItem.name,
+              maximizeIfSelected: true,
+              complete: function($panel) {
+                if (section.listView) {
+                  $section.listView($.extend(true, {}, section, {
+                    onActionComplete: function() {
+                      $dashboardItem.closest('.vpc-network-chart').trigger('reload');
+                    },
+                    context: context
+                  }));
+                }
+
+                $section.appendTo($panel);
               }
+            });            
+          };
 
-              if (section.listView) {
-                $section.listView($.extend(true, {}, section, {
-                  onActionComplete: function() {
-                    $dashboardItem.closest('.vpc-network-chart').trigger('reload');
-                  },
-                  context: context
-                }));
+          before.check({
+            context: context,
+            response: {
+              success: function(result) {
+                // true means content exists
+                if (result) {
+                  load();
+                } else {
+                  cloudStack.dialog.confirm({
+                    message: before.messages.confirm,
+                    action: function() {
+                      $loading.appendTo($dashboardItem.closest('.vpc-network-chart'));
+                      before.action({
+                        context: context,
+                        response: {
+                          success: function() {
+                            $loading.remove();
+                            $dashboardItem.closest('.vpc-network-chart').trigger('reload');
+                            load();
+                          }
+                        }
+                      });
+                    }
+                  })
+                }
               }
-
-              $section.appendTo($panel);
             }
           });
         });
