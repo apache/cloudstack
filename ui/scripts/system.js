@@ -8037,12 +8037,14 @@
                 var endip = args.data.reservedSystemEndIp;      //optional
                 if (endip != null && endip.length > 0)
                   array1.push("&endIp=" + todb(endip));
-
+                var podId = null;
                 $.ajax({
                   url: createURL("createPod" + array1.join("")),
                   dataType: "json",
                   success: function(json) {
                     var item = json.createpodresponse.pod;
+                    podId = json.createpodresponse.pod.id;
+
                    /* args.response.success({
 										  data:item
 										});
@@ -8064,8 +8066,17 @@
                          url:createURL("dedicatePod&podId=" +podId +"&domainId=" +args.data.domainId + array2.join("")),
                          dataType:"json",
                          success:function(json){
-                             var dedicatedObj = json.dedicatepodresponse.pod;
-                             args.response.success({ data: $.extend(item, dedicatedObj)});
+                            var jid = json.dedicatepodresponse.jobid;
+                            args.response.success({
+                               _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+
+                             data:item
+                          });
 
                          },
 
@@ -8919,12 +8930,12 @@
                         array2.push("&accountId=" +todb(args.data.accountId));
                     }
 
-                    if(hostId != null){
+                    if(clusterId != null){
                       $.ajax({
                          url:createURL("dedicateCluster&clusterId=" +clusterId +"&domainId=" +args.data.domainId + array2.join("")),
                          dataType:"json",
                          success:function(json){
-                             var dedicatedObj = json.dedicateclusterresponse.cluster;
+                             var jid = json.dedicateclusterresponse.jobid;
                              args.response.success({  data: $.extend(item, dedicatedObj , {state:'Enabled'}) });
 
                          },
