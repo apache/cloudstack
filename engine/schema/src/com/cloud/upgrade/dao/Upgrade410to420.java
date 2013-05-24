@@ -759,7 +759,7 @@ public class Upgrade410to420 implements DbUpgrade {
             while (rs.next()) {
                 long id = rs.getLong(1);
                 // remove Firewall service for SG shared network offering
-                pstmt = conn.prepareStatement("DELETE `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");
+                pstmt = conn.prepareStatement("DELETE from `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");
                 pstmt.setLong(1, id);
                 pstmt.executeUpdate();
             }
