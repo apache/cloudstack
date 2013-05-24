@@ -2200,19 +2200,18 @@
                       }  
                     }
                   },
-                  
-                  //???
+                                    
                   detailView: {
                     name: 'VLAN Range details',
                     actions: {
                       remove: {
-                        label: 'Delete VLAN Range',
+                        label: 'Release dedicated VLAN range',
                         messages: {
                           confirm: function(args) {
-                            return 'Please confirm you want to delete VLAN Range';
+                            return 'Please confirm you want to release dedicated VLAN range';
                           },
                           notification: function(args) {
-                            return 'Delete VLAN Range';
+                            return 'Release dedicated VLAN range';
                           }
                         },
                         action: function(args) {
