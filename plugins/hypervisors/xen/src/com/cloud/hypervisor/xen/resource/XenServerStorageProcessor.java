@@ -957,7 +957,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
             try {
                 SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
                 String srUuid = primaryStoragePool.getUuid(conn);
-                String volumePath = nfsStore.getUrl() + ":" + srcVolume.getPath();
+                URI uri = new URI(nfsStore.getUrl());
+                String volumePath = uri.getHost() + ":" + uri.getPath() + File.separator + srcVolume.getPath();
                 String uuid = copy_vhd_from_secondarystorage(conn, volumePath, srUuid, wait );
                 VolumeObjectTO newVol = new VolumeObjectTO();
                 newVol.setPath(uuid);

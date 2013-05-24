@@ -154,7 +154,7 @@ public class VolumeVO implements Volume {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.Type vType) {
+    public VolumeVO(String name, Long dcId, Long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;

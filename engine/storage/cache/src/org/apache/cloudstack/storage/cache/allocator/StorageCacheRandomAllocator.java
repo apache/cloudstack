@@ -25,26 +25,30 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.ScopeType;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
 @Component
 public class StorageCacheRandomAllocator implements StorageCacheAllocator {
+	private static final Logger s_logger = Logger
+            .getLogger(StorageCacheRandomAllocator.class);
     @Inject
     DataStoreManager dataStoreMgr;
     @Override
     public DataStore getCacheStore(Scope scope) {
         if (scope.getScopeType() != ScopeType.ZONE) {
-            throw new CloudRuntimeException("Can only support zone wide cache storage");
+            s_logger.debug("Can only support zone wide cache storage");
+            return null;
         }
        
         List<DataStore> cacheStores = dataStoreMgr.getImageCacheStores(scope);
         if (cacheStores.size() <= 0) {
-            throw new CloudRuntimeException("Can't find cache storage in zone: " + scope.getScopeId());
+            s_logger.debug("Can't find cache storage in zone: " + scope.getScopeId());
+            return null;
         }
         
         Collections.shuffle(cacheStores);

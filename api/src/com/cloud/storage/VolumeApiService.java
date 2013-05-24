@@ -58,7 +58,7 @@ public interface VolumeApiService {
      */
     Volume resizeVolume(ResizeVolumeCmd cmd) throws ResourceAllocationException;
 
-    Volume migrateVolume(MigrateVolumeCmd cmd) throws ConcurrentOperationException;
+    Volume migrateVolume(MigrateVolumeCmd cmd);
 
     /**
      * Uploads the volume to secondary storage

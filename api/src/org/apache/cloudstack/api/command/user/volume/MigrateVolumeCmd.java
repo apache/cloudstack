@@ -98,18 +98,15 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        Volume result;
-        try {
-            result = _volumeService.migrateVolume(this);
-             if (result != null) {
-                 VolumeResponse response = _responseGenerator.createVolumeResponse(result);
-                 response.setResponseName(getCommandName());
-                 this.setResponseObject(response);
-             }
-        } catch (ConcurrentOperationException e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume: ");
-        }
-
+    	Volume result;
+    	result = _volumeService.migrateVolume(this);
+    	if (result != null) {
+    		VolumeResponse response = _responseGenerator.createVolumeResponse(result);
+    		response.setResponseName(getCommandName());
+    		this.setResponseObject(response);
+    	} else {
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume");
+    	}
     }
 
 }

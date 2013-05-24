@@ -615,7 +615,7 @@ public class VolumeServiceImpl implements VolumeService {
             .setContext(context);
             motionSrv.copyAsync(srcVolume, destVolume, caller);
         } catch (Exception e) {
-            s_logger.debug("Failed to copy volume", e);
+            s_logger.debug("Failed to copy volume" + e);
             res.setResult(e.toString());
             future.complete(res);
         }

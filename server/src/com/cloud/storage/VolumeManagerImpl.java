@@ -719,7 +719,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1,
+        VolumeVO volume = new VolumeVO(volumeName, zoneId, -1L, -1L, -1,
                 new Long(-1), null, null, 0, Volume.Type.DATADISK);
         Account owner = (caller.getId() == ownerId) ? caller : _accountMgr
                           .getActiveAccountById(ownerId);
@@ -965,7 +965,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1,
+        VolumeVO volume = new VolumeVO(userSpecifiedName, -1L, -1L, -1, -1,
                 new Long(-1), null, null, 0, Volume.Type.DATADISK);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
@@ -2095,7 +2095,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
-                s_logger.debug("migrate volume failed:" + result.getResult());
+                s_logger.error("migrate volume failed:" + result.getResult());
                 return null;
             }
             return result.getVolume();

@@ -193,6 +193,9 @@ public class VolumeObject implements VolumeInfo {
             }
             if (this.dataStore.getRole() == DataStoreRole.Image) {
                 objectInStoreMgr.update(this, event);
+                if (this.volumeVO.getState() == Volume.State.Migrating) {
+                	return;
+                }
                 if (event == ObjectInDataStoreStateMachine.Event.CreateRequested) {
                     volEvent = Volume.Event.UploadRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
