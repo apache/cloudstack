@@ -209,8 +209,8 @@ class TestCreateVolume(cloudstackTestCase):
                                                )
             try:
                 ssh = self.virtual_machine.get_ssh_client()
+                self.debug("Rebooting VM %s" % self.virtual_machine.id)
                 ssh.execute("reboot")
-
             except Exception as e:
                 self.fail("SSH access failed for VM %s - %s" %
                                 (self.virtual_machine.ipaddress, e))

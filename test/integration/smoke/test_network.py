@@ -971,12 +971,12 @@ class TestLoadBalancingRule(cloudstackTestCase):
         try:
             self.debug("SSHing into IP address: %s after adding VMs (ID: %s , %s)" %
                                             (
-                                             self.non_src_nat_ip.ipaddress,
+                                             self.non_src_nat_ip.ipaddress.ipaddress,
                                              self.vm_1.id,
                                              self.vm_2.id
                                              ))
             ssh_1 = remoteSSHClient(
-                                    self.non_src_nat_ip.ipaddress,
+                                    self.non_src_nat_ip.ipaddress.ipaddress,
                                     self.services['lbrule']["publicport"],
                                     self.vm_1.username,
                                     self.vm_1.password
@@ -990,12 +990,12 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
             self.debug("SSHing again into IP address: %s with VMs (ID: %s , %s) added to LB rule" %
                                             (
-                                             self.non_src_nat_ip.ipaddress,
+                                             self.non_src_nat_ip.ipaddress.ipaddress,
                                              self.vm_1.id,
                                              self.vm_2.id
                                              ))
             ssh_2 = remoteSSHClient(
-                                    self.non_src_nat_ip.ipaddress,
+                                    self.non_src_nat_ip.ipaddress.ipaddress,
                                     self.services['lbrule']["publicport"],
                                     self.vm_1.username,
                                     self.vm_1.password
@@ -1019,11 +1019,11 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
             self.debug("SSHing into IP address: %s after removing VM (ID: %s) from LB rule" %
                                             (
-                                             self.non_src_nat_ip.ipaddress,
+                                             self.non_src_nat_ip.ipaddress.ipaddress,
                                              self.vm_2.id
                                              ))
             ssh_1 = remoteSSHClient(
-                                        self.non_src_nat_ip.ipaddress,
+                                        self.non_src_nat_ip.ipaddress.ipaddress,
                                         self.services['lbrule']["publicport"],
                                         self.vm_1.username,
                                         self.vm_1.password
@@ -1033,7 +1033,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             self.debug("Hostnames after removing VM2: %s" % str(hostnames))
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" %
-                                        (e, self.non_src_nat_ip.ipaddress))
+                                        (e, self.non_src_nat_ip.ipaddress.ipaddress))
 
         self.assertIn(
                       self.vm_1.name,
@@ -1045,11 +1045,11 @@ class TestLoadBalancingRule(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.fail("SSHing into IP address: %s after removing VM (ID: %s) from LB rule" %
                                             (
-                                             self.non_src_nat_ip.ipaddress,
+                                             self.non_src_nat_ip.ipaddress.ipaddress,
                                              self.vm_1.id
                                              ))
             ssh_1 = remoteSSHClient(
-                                        self.non_src_nat_ip.ipaddress,
+                                        self.non_src_nat_ip.ipaddress.ipaddress,
                                         self.services['lbrule']["publicport"],
                                         self.vm_1.username,
                                         self.vm_1.password
@@ -1203,7 +1203,7 @@ class TestRebootRouter(cloudstackTestCase):
             self.debug("SSH into VM (ID : %s ) after reboot" % self.vm_1.id)
 
             remoteSSHClient(
-                                    self.nat_rule.ipaddress,
+                                    self.nat_rule.ipaddress.ipaddress,
                                     self.services["natrule"]["publicport"],
                                     self.vm_1.username,
                                     self.vm_1.password
@@ -1211,8 +1211,7 @@ class TestRebootRouter(cloudstackTestCase):
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
-                      (self.vm_1.ipaddress, e)
-                      )
+                      (self.vm_1.ipaddress, e))
         return
 
     def tearDown(self):
@@ -1579,7 +1578,6 @@ class TestReleaseIP(cloudstackTestCase):
                     "Check if disassociated IP Address is no longer available"
                    )
 
-        self.debug("List NAT Rule response" + str(list_nat_rule))
         # ListPortForwardingRules should not list
         # associated rules with Public IP address
         try:
@@ -1587,18 +1585,18 @@ class TestReleaseIP(cloudstackTestCase):
                                         self.apiclient,
                                         id=self.nat_rule.id
                                         )
+            self.debug("List NAT Rule response" + str(list_nat_rule))
         except cloudstackAPIException:
             self.debug("Port Forwarding Rule is deleted")
 
         # listLoadBalancerRules should not list
         # associated rules with Public IP address
-        self.debug("List LB Rule response" + str(list_lb_rule))
         try:
             list_lb_rule = list_lb_rules(
                                      self.apiclient,
                                      id=self.lb_rule.id
                                      )
-
+            self.debug("List LB Rule response" + str(list_lb_rule))
         except cloudstackAPIException:
             self.debug("Port Forwarding Rule is deleted")
 
@@ -1658,7 +1656,6 @@ class TestDeleteAccount(cloudstackTestCase):
 
         try:
             src_nat_ip_addr = src_nat_ip_addrs[0]
-
         except Exception as e:
             self.fail("SSH failed for VM with IP: %s" %
                                     src_nat_ip_addr.ipaddress)
@@ -1740,10 +1737,9 @@ class TestDeleteAccount(cloudstackTestCase):
                              "Check routers are properly deleted."
                    )
         except Exception as e:
-
             raise Exception(
-                "Exception raised while fetching routers for account: %s" %
-                                                    self.account.name)
+                "Encountered %s raised while fetching routers for account: %s" % (e,
+                                                    self.account.name))
         return
 
     def tearDown(self):
