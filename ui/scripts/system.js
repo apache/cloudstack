@@ -1085,10 +1085,13 @@
 
             tabFilter: function(args) {
               var hiddenTabs = [];
-              if (selectedZoneObj.networktype == 'Basic')
+              if (selectedZoneObj.networktype == 'Basic') {
                 hiddenTabs.push("network");
-              else //selectedZoneObj.networktype == 'Advanced'
+                hiddenTabs.push("dedicatedGuestVlanRanges");
+              }
+              else { //selectedZoneObj.networktype == 'Advanced'
                 hiddenTabs.push("ipAddresses");
+              }
               return hiddenTabs;
             },
 
@@ -2115,7 +2118,90 @@
                     }
                   }
                 }
-              }
+              },
+                  
+              dedicatedGuestVlanRanges : {
+                title: 'Dedicated VLAN Ranges',
+                listView: {
+                  section: 'dedicatedGuestVlanRanges',
+                  id: 'dedicatedGuestVlanRanges',
+                  fields: {
+                    guestvlanrange: { label: 'VLAN Range(s)' },
+                    domain: { label: 'label.domain' },
+                    account: { label: 'label.account' }                
+                  },
+                  dataProvider: function(args) {
+                    $.ajax({
+                      url: createURL('listDedicatedGuestVlanRanges'),
+                      data: {
+                        physicalnetworkid: args.context.physicalNetworks[0].id
+                      },
+                      success: function(json) {
+                        var items = json.listdedicatedguestvlanrangesresponse.dedicatedguestvlanrange;
+                        args.response.success({ data: items })
+                      }
+                    });                    
+                  },
+                  actions: {
+                    add: {
+                      label: 'Dedicate VLAN Range',
+                      messages: {                       
+                        notification: function(args) {
+                          return 'Dedicate VLAN Range';
+                        }
+                      },
+                      createForm: {
+                        title: 'Dedicate VLAN Range',
+                        fields: {
+                          vlanrange: { label: 'VLAN Range(s)', validation: { required: true } },                          
+                          account: { label: 'label.account', validation: { required: true } },
+                          domainid: {
+                            label: 'label.domain',     
+                            validation: { required: true },
+                            select: function(args) {
+                              $.ajax({
+                                url: createURL('listDomains'),
+                                data: { listAll: true },
+                                success: function(json) {
+                                  args.response.success({
+                                    data: $.map(json.listdomainsresponse.domain, function(domain) {
+                                      return {
+                                        id: domain.id,
+                                        description: domain.path
+                                      };
+                                    })
+                                  });
+                                }
+                              });
+                            }
+                          }                          
+                        }
+                      },
+                      action: function(args) {                       
+                        var data = {
+                          physicalnetworkid: args.context.physicalNetworks[0].id,
+                          vlanrange: args.data.vlanrange,
+                          domainid: args.data.domainid,
+                          account: args.data.account
+                        };                        
+                        $.ajax({
+                          url: createURL('dedicateGuestVlanRange'),
+                          data: data,                        
+                          success: function(json) {                       
+                            var item = json.dedicateguestvlanrangeresponse.dedicatedguestvlanrange;
+                            args.response.success({ data: item });                            
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: function(args) {
+                          args.complete();
+                        }
+                      }  
+                    }
+                  }
+                }
+              }            
             }
           }
         }
