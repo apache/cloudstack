@@ -69,8 +69,8 @@ install:
 	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION)-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D packaging/debian/init/cloud-agent $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
-	install -D agent/bindir/cloud-setup-agent.in $(DESTDIR)/usr/bin/cloudstack-setup-agent
-	install -D agent/bindir/cloud-ssh.in $(DESTDIR)/usr/bin/cloudstack-ssh
+	install -D agent/target/transformed/cloud-setup-agent $(DESTDIR)/usr/bin/cloudstack-setup-agent
+	install -D agent/target/transformed/cloud-ssh $(DESTDIR)/usr/bin/cloudstack-ssh
 	install -D agent/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/agent
 
 	# cloudstack-management
@@ -102,7 +102,7 @@ install:
 	ln -s tomcat6-nonssl.conf $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
 	ln -s server-nonssl.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/server.xml
 	install -D packaging/debian/init/cloud-management $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-management
-	install -D client/bindir/cloud-update-xenserver-licenses.in $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
+	install -D client/target/utilities/bin/cloud-update-xenserver-licenses $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
 	ln -s /usr/share/tomcat6/bin $(DESTDIR)/usr/share/$(PACKAGE)-management/bin
 	# Remove configuration in /ur/share/cloudstack-management/webapps/client/WEB-INF
 	# This should all be in /etc/cloudstack/management
