@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.image.store;
 
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
@@ -31,10 +32,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
@@ -44,6 +48,7 @@ import com.cloud.utils.storage.encoding.EncodingType;
 
 
 public class ImageStoreImpl implements ImageStoreEntity {
+	private static final Logger s_logger = Logger.getLogger(ImageStoreImpl.class);
     @Inject
     VMTemplateDao imageDao;
     @Inject
@@ -145,8 +150,19 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public boolean delete(DataObject obj) {
-        // TODO Auto-generated method stub
-        return false;
+    	AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
+    	this.driver.deleteAsync(obj, future);
+    	try {
+			future.get();
+		} catch (InterruptedException e) {
+			s_logger.debug("failed delete obj", e);
+			return false;
+		} catch (ExecutionException e) {
+			s_logger.debug("failed delete obj", e);
+			return false;
+		}
+    	objectInStoreMgr.delete(obj);
+        return true;
     }
 
     @Override

@@ -587,9 +587,71 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
     }
+    
+    protected AsyncCallFuture<VolumeApiResult> copyVolumeFromImageToPrimary(VolumeInfo srcVolume, DataStore destStore) {
+    	AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
+    	VolumeApiResult res = new VolumeApiResult(srcVolume);
+    	VolumeInfo destVolume = null;
+    	try {
+    		destVolume = (VolumeInfo)destStore.create(srcVolume);
+    		destVolume.processEvent(Event.CopyingRequested);
+    		srcVolume.processEvent(Event.CopyingRequested);
+
+    		CopyVolumeContext<VolumeApiResult> context = new CopyVolumeContext<VolumeApiResult>(null, future, srcVolume,
+    				destVolume,
+    				destStore);
+    		AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+    		caller.setCallback(caller.getTarget().copyVolumeFromImageToPrimaryCallback(null, null))
+    		.setContext(context);
+
+    		motionSrv.copyAsync(srcVolume, destVolume, caller);
+    		return future;
+    	} catch (Exception e) {
+    		s_logger.error("failed to copy volume from image store", e);
+    		if (destVolume != null) {
+    			destVolume.processEvent(Event.OperationFailed);
+    		}
+    		
+    		srcVolume.processEvent(Event.OperationFailed);
+    		res.setResult(e.toString());
+    		future.complete(res);
+    		return future;
+    	}
+    }
+
+    protected Void copyVolumeFromImageToPrimaryCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
+    	VolumeInfo srcVolume = context.srcVolume;
+    	VolumeInfo destVolume = context.destVolume;
+    	CopyCommandResult result = callback.getResult();
+    	AsyncCallFuture<VolumeApiResult> future = context.future;
+    	VolumeApiResult res = new VolumeApiResult(destVolume);
+    	try {
+    		if (res.isFailed()) {
+    			destVolume.processEvent(Event.OperationFailed);
+    			srcVolume.processEvent(Event.OperationFailed);
+    			res.setResult(result.getResult());
+    			future.complete(res);
+    		}
+
+    		srcVolume.processEvent(Event.OperationSuccessed);
+    		destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
+    		srcVolume.getDataStore().delete(srcVolume);
+    		future.complete(res);
+    	} catch (Exception e) {
+    		res.setResult(e.toString());
+    		future.complete(res);
+    	}
+    	return null;
+    }
+    
     @Override
     public AsyncCallFuture<VolumeApiResult> copyVolume(VolumeInfo srcVolume,
             DataStore destStore) {
+    	
+    	if (srcVolume.getState() == Volume.State.Uploaded) {
+    		return copyVolumeFromImageToPrimary(srcVolume, destStore);
+    	}
+    	
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
         VolumeApiResult res = new VolumeApiResult(srcVolume);
         try {
@@ -825,8 +887,8 @@ public class VolumeServiceImpl implements VolumeService {
 
         CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volumeOnStore, future);
         AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().registerVolumeCallback(null, null))
-        .setContext(context);
+        caller.setCallback(caller.getTarget().registerVolumeCallback(null, null));
+        caller.setContext(context);
 
         store.getDriver().createAsync(volumeOnStore, caller);
         return future;
@@ -834,19 +896,25 @@ public class VolumeServiceImpl implements VolumeService {
 
     protected Void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
+        try {
+        	VolumeObject vo = (VolumeObject)context.volume;
+        	if (result.isFailed()) {
+        		vo.processEvent(Event.OperationFailed);
+        	} else {
+        		vo.processEvent(Event.OperationSuccessed, result.getAnswer());
+        	}
 
-        VolumeObject vo = (VolumeObject)context.volume;
-        if (result.isFailed()) {
-            vo.processEvent(Event.OperationFailed);
-        } else {
-            vo.processEvent(Event.OperationSuccessed, result.getAnswer());
+        	_resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage,
+        			vo.getSize());
+        	VolumeApiResult res = new VolumeApiResult(vo);
+        	context.future.complete(res);
+        	return null;
+        } catch (Exception e) {
+        	s_logger.error("register volume failed: ", e);
+        	VolumeApiResult res = new VolumeApiResult(null);
+        	context.future.complete(res);
+        	return null;
         }
-
-    	_resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage,
-              	vo.getSize());
-        VolumeApiResult res = new VolumeApiResult(vo);
-        context.future.complete(res);
-        return null;
     }
 
 
@@ -961,7 +1029,7 @@ public class VolumeServiceImpl implements VolumeService {
                             String url = _volumeStoreDao.findByVolume(volume.getId()).getDownloadUrl();
                             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()),
                                     com.cloud.configuration.Resource.ResourceType.secondary_storage,
-                                    volInfo.getSize() - UriUtils.getRemoteSize(url));
+                                    volInfo.getSize() - volInfo.getPhysicalSize());
                         } catch (ResourceAllocationException e) {
                             s_logger.warn(e.getMessage());
                             _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, volume.getDataCenterId(),
@@ -995,13 +1063,14 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         //Delete volumes which are not present on DB.
+        /*
         for (Long uniqueName : volumeInfos.keySet()) {
             TemplateProp vInfo = volumeInfos.get(uniqueName);
             expungeVolumeAsync(volFactory.getVolume(vInfo.getId(), store));
 
             String description = "Deleted volume " + vInfo.getTemplateName() + " on image store " + storeId;
             s_logger.info(description);
-        }
+        }*/
 
     }
 

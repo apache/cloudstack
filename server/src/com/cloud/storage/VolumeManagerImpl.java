@@ -737,12 +737,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 .getDomainId());
         volume.setFormat(ImageFormat.valueOf(format));
         volume = _volsDao.persist(volume);
-        try {
-            stateTransitTo(volume, Event.UploadRequested);
-        } catch (NoTransitionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
         // Increment resource count during allocation; if actual creation fails,

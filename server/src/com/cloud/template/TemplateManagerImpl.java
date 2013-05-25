@@ -636,11 +636,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public String getChecksum(DataStore store, String templatePath) {
-
-        String secUrl = store.getUri();
         EndPoint ep = _epSelector.select(store);
         ComputeChecksumCommand cmd = new ComputeChecksumCommand(
-                secUrl, templatePath);
+                store.getTO(), templatePath);
         Answer answer = ep.sendMessage(cmd);
         if (answer != null && answer.getResult()) {
             return answer.getDetails();

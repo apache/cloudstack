@@ -998,7 +998,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private Answer execute(ComputeChecksumCommand cmd) {
 
         String relativeTemplatePath = cmd.getTemplatePath();
-        String parent = getRootDir(cmd);
+        DataStoreTO store = cmd.getStore();
+        if (!(store instanceof NfsTO)) {
+        	return new Answer(cmd, false, "can't handle non nfs data store");
+        }
+        NfsTO nfsStore = (NfsTO)store;
+        String parent = getRootDir(nfsStore.getUrl());
 
         if (relativeTemplatePath.startsWith(File.separator)) {
             relativeTemplatePath = relativeTemplatePath.substring(1);
@@ -1718,12 +1723,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.error(msg, e);
             throw new CloudRuntimeException(msg);
         }
-    }
-
-    @Override
-    public String getRootDir(ssCommand cmd) {
-        return getRootDir(cmd.getSecUrl());
-
     }
 
     protected long getUsedSize(String rootDir) {

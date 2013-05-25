@@ -17,24 +17,32 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.storage.ssCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 
 
 public class ComputeChecksumCommand extends ssCommand {
-
-
+	private DataStoreTO store;
     private String templatePath;
     public ComputeChecksumCommand() {
         super();
     }
 
-    public ComputeChecksumCommand(String secUrl, String templatePath) {
-        super(secUrl);
+    public ComputeChecksumCommand(DataStoreTO store, String templatePath) {
         this.templatePath = templatePath;
+        this.setStore(store);
     }
 
     public String getTemplatePath() {
         return templatePath;
     }
+
+	public DataStoreTO getStore() {
+		return store;
+	}
+
+	public void setStore(DataStoreTO store) {
+		this.store = store;
+	}
 
 
 }

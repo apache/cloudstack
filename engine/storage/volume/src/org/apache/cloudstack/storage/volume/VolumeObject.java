@@ -193,15 +193,13 @@ public class VolumeObject implements VolumeInfo {
             }
             if (this.dataStore.getRole() == DataStoreRole.Image) {
                 objectInStoreMgr.update(this, event);
-                if (this.volumeVO.getState() == Volume.State.Migrating) {
+                if (this.volumeVO.getState() == Volume.State.Migrating || this.volumeVO.getState() == Volume.State.Copying || this.volumeVO.getState() == Volume.State.Uploaded) {
                 	return;
                 }
-                if (event == ObjectInDataStoreStateMachine.Event.CreateRequested) {
+                if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
                     volEvent = Volume.Event.UploadRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
-                    volEvent = Volume.Event.CopySucceeded;
-                } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                    volEvent = Volume.Event.CopyFailed;
+                } else if (event == ObjectInDataStoreStateMachine.Event.MigrationRequested) {
+                	volEvent = Volume.Event.CopyRequested;
                 }
             } else {
                 if (event == ObjectInDataStoreStateMachine.Event.CreateRequested ||
@@ -231,7 +229,8 @@ public class VolumeObject implements VolumeInfo {
             throw new CloudRuntimeException("Failed to update state:" + e.toString());
         } finally{
             // in case of OperationFailed, expunge the entry
-            if ( event == ObjectInDataStoreStateMachine.Event.OperationFailed){
+            if ( event == ObjectInDataStoreStateMachine.Event.OperationFailed && (this.volumeVO.getState() != Volume.State.Copying 
+            		&& this.volumeVO.getState() != Volume.State.Uploaded)){
                 objectInStoreMgr.delete(this);
             }
         }

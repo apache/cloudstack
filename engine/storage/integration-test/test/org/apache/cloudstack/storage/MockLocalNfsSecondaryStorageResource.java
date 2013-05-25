@@ -80,12 +80,6 @@ public class MockLocalNfsSecondaryStorageResource extends
     }
 
     @Override
-    public String getRootDir(ssCommand cmd) {
-        return "/mnt";
-
-    }
-
-    @Override
     public String getRootDir(String secUrl){
         return "/mnt";
     }

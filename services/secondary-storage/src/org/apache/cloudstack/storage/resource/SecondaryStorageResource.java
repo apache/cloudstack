@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.storage.resource;
-import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.resource.ServerResource;
 /**
  *
@@ -23,6 +22,6 @@ import com.cloud.resource.ServerResource;
  */
 public interface SecondaryStorageResource extends ServerResource {
     
-    public String getRootDir(ssCommand cmd);
+    public String getRootDir(String cmd);
 
 }

@@ -21,12 +21,11 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -42,7 +41,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
-import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -74,7 +72,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
 
 
     @Override
-    public String getRootDir(ssCommand cmd){
+    public String getRootDir(String url){
         return getRootDir();
 
     }

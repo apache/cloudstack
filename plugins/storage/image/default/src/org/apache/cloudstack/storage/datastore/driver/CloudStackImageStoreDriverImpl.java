@@ -212,7 +212,7 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     		}
 
 
-    		CreateCmdResult result = new CreateCmdResult(null, null);
+    		CreateCmdResult result = new CreateCmdResult(null, answer);
     		caller.complete(result);
     	}
     	return null;
@@ -247,8 +247,7 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
                 throw new CloudRuntimeException(
                         "Please specify a volume that is not currently being uploaded.");
             }
-            _volumeStoreDao.remove(volumeStore.getId());
-            volumeDao.remove(vol.getId());
+          
             CommandResult result = new CommandResult();
             callback.complete(result);
             return;
