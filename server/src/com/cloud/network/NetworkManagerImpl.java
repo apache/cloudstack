@@ -39,6 +39,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
@@ -1063,6 +1064,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         _ipAddressDao.update(ipAddrId, ip);
         txn.commit();
+        ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, Domain.ROOT_DOMAIN,
+                EventTypes.EVENT_PORTABLE_IP_TRANSFER, "Portable IP associated is transferred from network "
+                    + currentNetworkId + " to " + newNetworkId);
     }
 
     @Override
