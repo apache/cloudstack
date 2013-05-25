@@ -156,7 +156,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         """ Test VM deployments (Create HA enabled Compute Service Offering and VM) """
         
         # Steps,
-        #1. Create a Compute service offering with the “Offer HA” option selected.
+        #1. Create a Compute service offering with the 'Offer HA' option selected.
         #2. Create a Guest VM with the compute service offering created above.
         # Validations,
         #1. Ensure that the offering is created and that in the UI the “Offer HA” field is enabled (Yes)

@@ -216,7 +216,7 @@ class TestResourceTags(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     accountid=cls.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.zone.networktype
                                 )

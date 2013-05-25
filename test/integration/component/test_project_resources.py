@@ -651,9 +651,9 @@ class TestTemplates(cloudstackTestCase):
         """Test use of private template in a project
         """
         # 1. Create a project
-        # 2. Verify that in order to use somebody’s Private template for vm
+        # 2. Verify that in order to use somebody's Private template for vm
         #    creation in the project, permission to use the template has to
-        #    be granted to the Project (use API “updateTemplatePermissions”
+        #    be granted to the Project (use API 'updateTemplatePermissions'
         #    with project id to achieve that).
 
         self.debug("Deploying VM for with public template: %s" %

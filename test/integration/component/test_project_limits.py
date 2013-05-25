@@ -201,8 +201,8 @@ class TestProjectLimits(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.admin.account.name,
-                                 domainid=self.admin.account.domainid
+                                 account=self.admin.name,
+                                 domainid=self.admin.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
@@ -343,8 +343,8 @@ class TestProjectLimits(cloudstackTestCase):
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
-                                 account=self.admin.account.name,
-                                 domainid=self.admin.account.domainid
+                                 account=self.admin.name,
+                                 domainid=self.admin.domainid
                                  )
         # Cleanup created project at end of test
         self.cleanup.append(project)
