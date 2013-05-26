@@ -159,10 +159,10 @@ class TestHostHighAvailability(cloudstackTestCase):
         #1. Create a Compute service offering with the 'Offer HA' option selected.
         #2. Create a Guest VM with the compute service offering created above.
         # Validations,
-        #1. Ensure that the offering is created and that in the UI the “Offer HA” field is enabled (Yes)
-        #The listServiceOffering API should list “offerha” as true.
+        #1. Ensure that the offering is created and that in the UI the 'Offer HA' field is enabled (Yes)
+        #The listServiceOffering API should list 'offerha' as true.
         #2. Select the newly created VM and ensure that the Compute offering field value lists the compute service offering that was selected. 
-        #    Also, check that the HA Enabled field is enabled “Yes”.
+        #    Also, check that the HA Enabled field is enabled 'Yes'.
         
         #list and validate above created service offering with Ha enabled
         list_service_response = list_service_offering(
@@ -346,12 +346,12 @@ class TestHostHighAvailability(cloudstackTestCase):
         """ Verify you can not migrate VMs to hosts with an ha.tag (positive) """
         
         # Steps,
-        #1. Create a Compute service offering with the “Offer HA” option selected.
+        #1. Create a Compute service offering with the 'Offer HA' option selected.
         #2. Create a Guest VM with the compute service offering created above.
-        #3. Select the VM and migrate VM to another host. Choose a “Suitable” host (i.e. host2)
+        #3. Select the VM and migrate VM to another host. Choose a 'Suitable' host (i.e. host2)
         # Validations
-        #The option from the “Migrate instance to another host” dialog box” should list host3 as “Not Suitable” for migration.
-        #Confirm that the VM is migrated to the “Suitable” host you selected (i.e. host2)
+        #The option from the 'Migrate instance to another host' dialog box' should list host3 as 'Not Suitable' for migration.
+        #Confirm that the VM is migrated to the 'Suitable' host you selected (i.e. host2)
         
         #create and verify the virtual machine with HA enabled service offering
         virtual_machine_with_ha = VirtualMachine.create(
@@ -452,11 +452,11 @@ class TestHostHighAvailability(cloudstackTestCase):
         """ Verify you can not migrate VMs to hosts with an ha.tag (negative) """
         
         # Steps,
-        #1. Create a Compute service offering with the “Offer HA” option selected.
+        #1. Create a Compute service offering with the 'Offer HA' option selected.
         #2. Create a Guest VM with the compute service offering created above.
-        #3. Select the VM and migrate VM to another host. Choose a “Not Suitable” host.
+        #3. Select the VM and migrate VM to another host. Choose a 'Not Suitable' host.
         # Validations,
-        #The option from the “Migrate instance to another host” dialog box” should list host3 as “Not Suitable” for migration.
+        #The option from the 'Migrate instance to another host' dialog box should list host3 as 'Not Suitable' for migration.
         #By design, The Guest VM can STILL can be migrated to host3 if the admin chooses to do so.
         
         #create and verify virtual machine with HA enabled service offering
@@ -558,11 +558,11 @@ class TestHostHighAvailability(cloudstackTestCase):
         """ Verify that none of the VMs with HA enabled migrate to an ha tagged host during live migration """
         
         # Steps,
-        #1. Fresh install CS (Bonita) that supports this feature
+        #1. Fresh install CS that supports this feature
         #2. Create Basic zone, pod, cluster, add 3 hosts to cluster (host1, host2, host3), secondary & primary Storage
         #3. When adding host3, assign the HA host tag.
         #4. Create VMs with and without the Compute Service Offering with the HA tag.
-        #5. Note the VMs on host1 and whether any of the VMs have their “HA enabled” flags enabled.
+        #5. Note the VMs on host1 and whether any of the VMs have their 'HA enabled' flags enabled.
         #6. Put host1 into maintenance mode.
         # Validations,
         #1. Make sure the VMs are created on either host1 or host2 and not on host3
@@ -690,11 +690,11 @@ class TestHostHighAvailability(cloudstackTestCase):
         """ Verify that none of the VMs without HA enabled migrate to an ha tagged host during live migration """
         
         # Steps,
-        #1. Fresh install CS (Bonita) that supports this feature
+        #1. Fresh install CS that supports this feature
         #2. Create Basic zone, pod, cluster, add 3 hosts to cluster (host1, host2, host3), secondary & primary Storage
         #3. When adding host3, assign the HA host tag.
         #4. Create VMs with and without the Compute Service Offering with the HA tag.
-        #5. Note the VMs on host1 and whether any of the VMs have their “HA enabled” flags enabled.
+        #5. Note the VMs on host1 and whether any of the VMs have their 'HA enabled' flags enabled.
         #6. Put host1 into maintenance mode.
         # Validations,
         #1. Make sure the VMs are created on either host1 or host2 and not on host3
