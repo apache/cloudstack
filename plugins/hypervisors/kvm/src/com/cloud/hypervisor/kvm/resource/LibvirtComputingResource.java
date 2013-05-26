@@ -3943,18 +3943,22 @@ ServerResource {
         final HashMap<String, State> vmStates = new HashMap<String, State>();
         Connect conn = null;
 
-        try {
-            conn = LibvirtConnection.getConnectionByType(HypervisorType.LXC.toString());
-            vmStates.putAll(getAllVms(conn));
-        } catch (LibvirtException e) {
-            s_logger.debug("Failed to get connection: " + e.getMessage());
+        if (_hypervisorType == HypervisorType.LXC) {
+            try {
+                conn = LibvirtConnection.getConnectionByType(HypervisorType.LXC.toString());
+                vmStates.putAll(getAllVms(conn));
+            } catch (LibvirtException e) {
+                s_logger.debug("Failed to get connection: " + e.getMessage());
+            }
         }
 
-        try {
-            conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
-            vmStates.putAll(getAllVms(conn));
-        } catch (LibvirtException e) {
-            s_logger.debug("Failed to get connection: " + e.getMessage());
+        if (_hypervisorType == HypervisorType.KVM) {
+            try {
+                conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
+                vmStates.putAll(getAllVms(conn));
+            } catch (LibvirtException e) {
+                s_logger.debug("Failed to get connection: " + e.getMessage());
+            }
         }
 
         return vmStates;
