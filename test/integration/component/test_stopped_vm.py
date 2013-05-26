@@ -78,7 +78,7 @@ class Services:
                 {
                     "displaytext": "Test ISO",
                     "name": "testISO",
-                    "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
+                    "url": "http://people.apache.org/~tsp/dummy.iso",
                      # Source URL where ISO is located
                     "ostype": 'CentOS 5.3 (64-bit)',
                     "mode": 'HTTP_DOWNLOAD',    # Downloading existing ISO
@@ -219,10 +219,6 @@ class TestDeployVM(cloudstackTestCase):
                             "Running",
                             "VM should be in Running state after deployment"
                         )
-        try:
-            ssh = self.virtual_machine.get_ssh_client()
-        except Exception as e:
-            self.fail("SSH to VM instance failed!")
         return
 
     @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
@@ -274,10 +270,6 @@ class TestDeployVM(cloudstackTestCase):
                             "Running",
                             "VM should be in Running state after deployment"
                         )
-        try:
-            ssh = self.virtual_machine.get_ssh_client()
-        except Exception as e:
-            self.fail("SSH to VM instance failed!")
         return
 
     @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
