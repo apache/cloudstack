@@ -102,9 +102,9 @@ class Services:
                         },
                         "iso":
                         {
-                            "displaytext": "DSL ISO",
-                            "name": "DSL ISO",
-                            "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
+                            "displaytext": "Dummy ISO",
+                            "name": "Dummy ISO",
+                            "url": "http://people.apache.org/~tsp/dummy.iso",
                             # Source URL where ISO is located
                             "isextractable": True,
                             "isfeatured": True,
