@@ -59,6 +59,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
@@ -86,8 +87,8 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CleanupSnapshotBackupCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
@@ -1174,49 +1175,47 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
 
-            // Cleanup snapshot in secondary storage hosts
+            // CleanUp snapshots on Secondary Storage.
             for (DataStore store : imageStores) {
                 try {
-                    List<Long> vIDs = findAllVolumeIdInSnapshotTable(store.getId());
-                    if (vIDs == null) {
-                        continue;
-                    }
-                    for (Long volumeId : vIDs) {
-                        boolean lock = false;
-                        try {
-                            VolumeVO volume = _volsDao.findByIdIncludingRemoved(volumeId);
-                            if (volume.getRemoved() == null) {
-                                volume = _volsDao.acquireInLockTable(volumeId, 10);
-                                if (volume == null) {
-                                    continue;
-                                }
-                                lock = true;
-                            }
-                            List<String> snapshots = findAllSnapshotForVolume(volumeId);
-                            if (snapshots == null) {
-                                continue;
-                            }
-                            EndPoint ep = _epSelector.select(store);
-                            CleanupSnapshotBackupCommand cmd = new CleanupSnapshotBackupCommand(store.getUri(), store.getScope().getScopeId(),
-                                    volume.getAccountId(), volumeId, snapshots);
+                    List<SnapshotDataStoreVO> destroyedSnapshotStoreVOs = _snapshotStoreDao.listDestroyed(store.getId());
+                    s_logger.debug("Secondary storage garbage collector found " + destroyedSnapshotStoreVOs.size()
+                            + " snapshots to cleanup on secondary storage host: " + store.getName());
+                    for (SnapshotDataStoreVO destroyedSnapshotStoreVO : destroyedSnapshotStoreVOs) {
+                        // check if this snapshot has child
+                        SnapshotInfo snap = snapshotFactory.getSnapshot(destroyedSnapshotStoreVO.getSnapshotId(), store);
+                        if ( snap.getChild() != null ){
+                            s_logger.debug("Skip snapshot on store: " + destroyedSnapshotStoreVO + " , because it has child");
+                            continue;
+                        }
 
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Deleting snapshot on store: " + destroyedSnapshotStoreVO);
+                        }
+
+                        String installPath = destroyedSnapshotStoreVO.getInstallPath();
+
+                        if (installPath != null) {
+                            EndPoint ep = _epSelector.select(store);
+                            DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(store.getTO(), store.getUri(),
+                                    null, null, null, destroyedSnapshotStoreVO.getInstallPath(), false);
                             Answer answer = ep.sendMessage(cmd);
-                            if ((answer == null) || !answer.getResult()) {
-                                String details = "Failed to cleanup snapshots for volume " + volumeId + " due to "
-                                        + (answer == null ? "null" : answer.getDetails());
-                                s_logger.warn(details);
+                            if (answer == null || !answer.getResult()) {
+                                s_logger.debug("Failed to delete " + destroyedSnapshotStoreVO + " due to "
+                                        + ((answer == null) ? "answer is null" : answer.getDetails()));
+                            } else {
+                                _volumeStoreDao.remove(destroyedSnapshotStoreVO.getId());
+                                s_logger.debug("Deleted snapshot at: " + destroyedSnapshotStoreVO.getInstallPath());
                             }
-                        } catch (Exception e1) {
-                            s_logger.warn("problem cleaning up snapshots in secondary storage store " + store.getName(), e1);
-                        } finally {
-                            if (lock) {
-                                _volsDao.releaseFromLockTable(volumeId);
-                            }
+                        } else {
+                            _snapshotStoreDao.remove(destroyedSnapshotStoreVO.getId());
                         }
                     }
+
                 } catch (Exception e2) {
                     s_logger.warn("problem cleaning up snapshots in secondary storage store " + store.getName(), e2);
                 }
+
             }
 
             // CleanUp volumes on Secondary Storage.

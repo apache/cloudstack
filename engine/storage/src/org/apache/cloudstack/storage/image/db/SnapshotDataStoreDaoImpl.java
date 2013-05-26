@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -44,6 +45,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreDaoImpl.class);
     private SearchBuilder<SnapshotDataStoreVO> updateStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSearch;
+    private SearchBuilder<SnapshotDataStoreVO> destroyedSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotSearch;
 
@@ -54,8 +56,13 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSearch = createSearchBuilder();
         storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         storeSearch.and("store_role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
-
         storeSearch.done();
+
+        destroyedSearch = createSearchBuilder();
+        destroyedSearch.and("store_id", destroyedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        destroyedSearch.and("store_role", destroyedSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        destroyedSearch.and("state", destroyedSearch.entity().getState(), SearchCriteria.Op.EQ);
+        destroyedSearch.done();
 
         updateStateSearch = this.createSearchBuilder();
         updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
@@ -150,9 +157,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         return findOneBy(sc);
     }
 
+
+
     @Override
-    public SnapshotDataStoreVO findByStoreSnapshot(long storeId, long snapshotId, boolean lock) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<SnapshotDataStoreVO> listDestroyed(long id) {
+        SearchCriteria<SnapshotDataStoreVO> sc = destroyedSearch.create();
+        sc.setParameters("store_id", id);
+        sc.setParameters("store_role", DataStoreRole.Image);
+        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Destroyed);
+        return listBy(sc);
     }
 }

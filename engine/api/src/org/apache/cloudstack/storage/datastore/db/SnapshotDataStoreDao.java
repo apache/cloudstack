@@ -35,7 +35,7 @@ public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Lo
 
     public SnapshotDataStoreVO findByStoreSnapshot(DataStoreRole role, long storeId, long snapshotId);
 
-    public SnapshotDataStoreVO findByStoreSnapshot(long storeId, long snapshotId, boolean lock);
-
     public SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role);
+
+    public List<SnapshotDataStoreVO> listDestroyed(long storeId);
 }
