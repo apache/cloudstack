@@ -591,8 +591,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RELEASE, eventDescription = "disassociating portable Ip", async = true)
-    public boolean releasePortableIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
-        return releaseIpAddressInternal(ipAddressId);
+    public boolean releasePortableIpAddress(long ipAddressId) {
+        try {
+            return releaseIpAddressInternal(ipAddressId);
+        } catch (Exception e) {
+           return false;
+        }
     }
 
     @Override
@@ -880,7 +884,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         boolean success = _networkMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
 
         if (success) {
-            if (!ipVO.isPortable()) {
+            if (ipVO.isPortable()) {
                 return success;
             }
             Long networkId = ipVO.getAssociatedWithNetworkId();

@@ -731,6 +731,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             _resourceCountDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
             _resourceLimitDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
 
+            // release account specific acquired portable IP's. Since all the portable IP's must have been already
+            // disassociated with VPC/guest network (due to deletion), so just mark portable IP as free.
+            List<? extends IpAddress> portableIpsToRelease = _ipAddressDao.listByAccount(accountId);
+            for (IpAddress ip : portableIpsToRelease) {
+                s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
+                _networkMgr.releasePortableIpAddress(ip.getId());
+            }
+
             return true;
         } catch (Exception ex) {
             s_logger.warn("Failed to cleanup account " + account + " due to ", ex);

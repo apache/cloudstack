@@ -887,7 +887,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
-    public boolean releasePortableIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+    public boolean releasePortableIpAddress(long ipAddressId)  {
         return false;// TODO Auto-generated method stub
     }
 

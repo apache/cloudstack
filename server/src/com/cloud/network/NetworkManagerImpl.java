@@ -1118,7 +1118,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @DB
-    private void releasePortableIpAddress(long addrId) {
+    @Override
+    public boolean releasePortableIpAddress(long addrId) {
         Transaction txn = Transaction.currentTxn();
         GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
 
@@ -1133,12 +1134,13 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
             // removed the provisioned vlan
             VlanVO vlan = _vlanDao.findById(ip.getVlanId());
-            _vlanDao.expunge(vlan.getId());
+            _vlanDao.remove(vlan.getId());
 
             // remove the provisioned public ip address
-            _ipAddressDao.expunge(ip.getId());
+            _ipAddressDao.remove(ip.getId());
 
             txn.commit();
+            return true;
         } finally {
             portableIpLock.releaseRef();
         }
@@ -3537,8 +3539,16 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
         for (IPAddressVO ipToRelease : ipsToRelease) {
             if (ipToRelease.getVpcId() == null) {
-                IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
-                assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
+                if (!ipToRelease.isPortable()) {
+                    IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
+                    assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
+                } else {
+                    // portable IP address are associated with owner, until explicitly requested to be disassociated
+                    // so as part of network clean up just break IP association with guest network
+                    ipToRelease.setAssociatedWithNetworkId(null);
+                    _ipAddressDao.update(ipToRelease.getId(), ipToRelease);
+                    s_logger.debug("Portable IP address " + ipToRelease + " is no longer associated with any network");
+                }
             } else {
                 _vpcMgr.unassignIPFromVpcNetwork(ipToRelease.getId(), network.getId());
             }

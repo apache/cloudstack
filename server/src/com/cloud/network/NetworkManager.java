@@ -268,6 +268,11 @@ public interface NetworkManager  {
     IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException, 
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
+    IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID)
+            throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
+
+    boolean releasePortableIpAddress(long addrId);
+
     IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
             InsufficientAddressCapacityException, ConcurrentOperationException;
 
@@ -361,10 +366,6 @@ public interface NetworkManager  {
 
 	IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId,
 			DataCenter zone) throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
-
-
-    IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID)
-            throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
 
 	Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering,
 			Long physicalNetworkId);

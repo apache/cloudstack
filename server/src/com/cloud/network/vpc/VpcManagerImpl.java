@@ -1217,9 +1217,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedVpc(vpcId, null);
         s_logger.debug("Releasing ips for vpc id=" + vpcId + " as a part of vpc cleanup");
         for (IPAddressVO ipToRelease : ipsToRelease) {
-            success = success && _ntwkMgr.disassociatePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
-            if (!success) {
-                s_logger.warn("Failed to cleanup ip " + ipToRelease + " as a part of vpc id=" + vpcId + " cleanup");
+            if (ipToRelease.isPortable()) {
+                // portable IP address are associated with owner, until explicitly requested to be disassociated.
+                // so as part of VPC clean up just break IP association with VPC
+                ipToRelease.setVpcId(null);
+                ipToRelease.setAssociatedWithNetworkId(null);
+                _ipAddressDao.update(ipToRelease.getId(), ipToRelease);
+                s_logger.debug("Portable IP address " + ipToRelease + " is no longer associated with any VPC");
+            } else {
+                success = success && _ntwkMgr.disassociatePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
+                if (!success) {
+                    s_logger.warn("Failed to cleanup ip " + ipToRelease + " as a part of vpc id=" + vpcId + " cleanup");
+                }
             }
         } 
         
