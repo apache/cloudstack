@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -77,13 +76,11 @@ import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
@@ -448,25 +445,24 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			_instance = "DEFAULT";
 		}
 
-		String workers = configs.get("expunge.workers");
-		int wrks = NumbersUtil.parseInt(workers, 10);
-
-		String time = configs.get("expunge.interval");
-		_expungeInterval = NumbersUtil.parseInt(time, 86400);
-
-		time = configs.get("expunge.delay");
-		_expungeDelay = NumbersUtil.parseInt(time, _expungeInterval);
-
-		_executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
-
 		_itMgr.registerGuru(Type.UserBareMetal, this);
 		VirtualMachine.State.getStateMachine().registerListener(this);
 
-		s_logger.info("User VM Manager is configured.");
+		s_logger.info("Bare Metal VM Manager is configured.");
 
 		return true;
 	}
-	
+
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+
 	@Override
 	public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
         UserVmVO vm = profile.getVirtualMachine();
