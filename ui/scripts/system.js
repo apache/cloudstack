@@ -8966,7 +8966,17 @@
                          dataType:"json",
                          success:function(json){
                              var jid = json.dedicateclusterresponse.jobid;
-                             args.response.success({  data: $.extend(item, dedicatedObj , {state:'Enabled'}) });
+                             //args.response.success({  data: $.extend(item, dedicatedObj , {state:'Enabled'}) });
+                              args.response.success({
+                                 _custom:
+                                   {      jobId: jid
+                                    },
+                                  notification: {
+                                    poll: pollAsyncJobResult
+                                    },
+
+                                  data:$.extend(item, {state:'Enabled'})
+                             });
 
                          },
 
