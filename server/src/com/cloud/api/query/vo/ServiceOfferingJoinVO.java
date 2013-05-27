@@ -75,6 +75,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name="limit_cpu_use")
     private boolean limitCpuUse;
 
+    @Column(name="is_volatile")
+    private boolean volatileVm;
+
     @Column(name="host_tag")
     private String hostTag;
 
@@ -316,6 +319,14 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public void setDeploymentPlanner(String deploymentPlanner) {
         this.deploymentPlanner = deploymentPlanner;
+    }
+
+    public boolean getVolatileVm() {
+        return volatileVm;
+    }
+
+    public void setVolatileVm(boolean volatileVm) {
+        this.volatileVm = volatileVm;
     }
 
 

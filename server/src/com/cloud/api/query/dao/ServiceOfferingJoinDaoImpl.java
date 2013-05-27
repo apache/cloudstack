@@ -68,6 +68,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
                 : ServiceOffering.StorageType.shared.toString());
         offeringResponse.setOfferHa(offering.isOfferHA());
         offeringResponse.setLimitCpuUse(offering.isLimitCpuUse());
+        offeringResponse.setVolatileVm(offering.getVolatileVm());
         offeringResponse.setTags(offering.getTags());
         offeringResponse.setDomain(offering.getDomainName());
         offeringResponse.setDomainId(offering.getDomainUuid());

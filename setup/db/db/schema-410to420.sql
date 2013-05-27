@@ -1026,6 +1026,7 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         service_offering.default_use,
         service_offering.vm_type,
         service_offering.sort_key,
+        service_offering.is_volatile,
         service_offering.deployment_planner,
         domain.id domain_id,
         domain.uuid domain_uuid,
