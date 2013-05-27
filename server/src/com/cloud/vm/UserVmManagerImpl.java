@@ -409,22 +409,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _accountMgr.checkAccess(caller, null, true, userVm);
 
-        boolean result = resetVMPasswordInternal(cmd, password);
+        boolean result = resetVMPasswordInternal(vmId, password);
 
         if (result) {
             userVm.setPassword(password);
-            //update the password in vm_details table too 
-            // Check if an SSH key pair was selected for the instance and if so use it to encrypt & save the vm password
-            String sshPublicKey = userVm.getDetail("SSH.PublicKey");
-            if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
-                String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
-                if (encryptedPasswd == null) {
-                    throw new CloudRuntimeException("Error encrypting password");
-                }
-
-                userVm.setDetail("Encrypted.Password", encryptedPasswd);
-                _vmDao.saveDetails(userVm);
-            }
+            savePasswordToDB(userVm, password);
         } else {
             throw new CloudRuntimeException("Failed to reset password for the virtual machine ");
         }
@@ -432,8 +421,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return userVm;
     }
 
-    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException {
-        Long vmId = cmd.getId();
+    private void savePasswordToDB(UserVmVO vm, String password) {
+        // update the password in vm_details table too
+        // Check if an SSH key pair was selected for the instance and if so use it to encrypt & save the vm password
+        String sshPublicKey = vm.getDetail("SSH.PublicKey");
+        if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
+            String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
+            if (encryptedPasswd == null) {
+                throw new CloudRuntimeException("Error encrypting password");
+            }
+
+            vm.setDetail("Encrypted.Password", encryptedPasswd);
+            _vmDao.saveDetails(vm);
+        }
+    }
+
+    private boolean resetVMPasswordInternal(Long vmId, String password) throws ResourceUnavailableException, InsufficientCapacityException {
         Long userId = UserContext.current().getCallerUserId();
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
@@ -2908,16 +2911,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 
             // Check if an SSH key pair was selected for the instance and if so use it to encrypt & save the vm password
-            String sshPublicKey = vm.getDetail("SSH.PublicKey");
-            if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
-                String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
-                if (encryptedPasswd == null) {
-                    throw new CloudRuntimeException("Error encrypting password");
-                }
-
-                vm.setDetail("Encrypted.Password", encryptedPasswd);
-                _vmDao.saveDetails(vm);
-            }
+            savePasswordToDB(vm, password);
 
             params = new HashMap<VirtualMachineProfile.Param, Object>();
             if (additionalParams != null) {
@@ -3709,7 +3703,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public UserVm restoreVM(RestoreVMCmd cmd) {
+    public UserVm restoreVM(RestoreVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
         // Input validation
         Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
@@ -3779,6 +3773,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _storageMgr.destroyVolume(root);
         } catch (ConcurrentOperationException e) {
             s_logger.debug("Unable to delete old root volume " + root.getId() + ", user may manually delete it", e);
+        }
+
+        if (template.getEnablePassword()) {
+            String password = generateRandomPassword();
+            boolean result = resetVMPasswordInternal(vmId, password);
+
+            if (result) {
+                vm.setPassword(password);
+                _vmDao.loadDetails(vm);
+                savePasswordToDB(vm, password);
+            } else {
+                s_logger.debug("Failed to reset password when restore the virtual machine " + vmId + ", user need to reset the password later");
+            }
         }
 
         if (needRestart) {
