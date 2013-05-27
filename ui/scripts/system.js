@@ -9520,7 +9520,12 @@
                          }
                        });
                    }
-                 }
+                 },
+                 error: function(XMLHttpResponse) {
+                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                    args.response.error(errorMsg);
+                  }
+
 
                 });
               },
@@ -10441,14 +10446,6 @@
                     var item = json.addhostresponse.host[0];
                     hostId = json.addhostresponse.host[0].id;
 
-               /*     args.response.success({
-                      data: item
-                    });
-                  },
-                  error: function(XMLHttpResponse) {
-                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                    args.response.error(errorMsg);
-                  }*/
 
                        //EXPLICIT DEDICATION
                 if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
@@ -10462,8 +10459,19 @@
                          url:createURL("dedicateHost&hostId=" +hostId +"&domainId=" +args.data.domainId + array2.join("")),
                          dataType:"json",
                          success:function(json){
-                             var dedicatedObj = json.dedicatehostresponse.host;
-                             args.response.success({  data: $.extend(item, dedicatedObj) });
+                             var jid = json.dedicatehostresponse.host.jobid;
+                             //args.response.success({  data: $.extend(item, dedicatedObj) });
+                              args.response.success({
+                                 _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+
+                             data:item
+
+                            });
 
                          },
 
@@ -10472,7 +10480,13 @@
                          }
                        });
                    }
-                 }
+                 },
+
+                   error: function(XMLHttpResponse) {
+                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                    args.response.error(errorMsg);
+                  }
+
                 });
               },
 
