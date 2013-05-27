@@ -1709,6 +1709,8 @@ update `cloud`.`vpc_gateways` set network_acl_id = 2;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'VpcManager', 'blacklisted.routes', NULL, 'Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway');
 
+UPDATE `cloud`.`snapshots` set swift_id=null where swift_id=0;
+
 
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			
