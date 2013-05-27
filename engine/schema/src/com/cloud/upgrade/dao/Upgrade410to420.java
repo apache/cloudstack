@@ -28,6 +28,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import com.cloud.network.vpc.NetworkACL;
 
@@ -77,6 +79,34 @@ public class Upgrade410to420 implements DbUpgrade {
         updateNetworksForPrivateGateways(conn);
         removeFirewallServiceFromSharedNetworkOfferingWithSGService(conn);
         fix22xKVMSnapshots(conn);
+        addIndexForAlert(conn);
+    }
+
+    private void addIndexForAlert(Connection conn) {
+
+        //First drop if it exists. (Due to patches shipped to customers some will have the index and some wont.)
+        List<String> indexList = new ArrayList<String>();
+        s_logger.debug("Dropping index i_alert__last_sent if it exists");
+        indexList.add("i_alert__last_sent");
+        DbUpgradeUtils.dropKeysIfExist(conn, "alert", indexList, false);
+
+        //Now add index.
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`alert` ADD INDEX `i_alert__last_sent`(`last_sent`)");
+            pstmt.executeUpdate();
+            s_logger.debug("Added index i_alert__last_sent for table alert");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to add index i_alert__last_sent to alert table for the column last_sent", e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
     }
 
     private void updateSystemVmTemplates(Connection conn) {
