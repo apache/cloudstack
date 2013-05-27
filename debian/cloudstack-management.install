@@ -15,20 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloudstack/management/server-ssl.xml
 /etc/cloudstack/management/catalina.policy
 /etc/cloudstack/management/catalina.properties
 /etc/cloudstack/management/cloudmanagementserver.keystore
 /etc/cloudstack/management/logging.properties
 /etc/cloudstack/management/commands.properties
 /etc/cloudstack/management/ehcache.xml
-/etc/cloudstack/management/tomcat6-nonssl.conf
 /etc/cloudstack/management/componentContext.xml
 /etc/cloudstack/management/applicationContext.xml
+/etc/cloudstack/management/server-ssl.xml
 /etc/cloudstack/management/server-nonssl.xml
+/etc/cloudstack/management/server.xml
 /etc/cloudstack/management/classpath.conf
 /etc/cloudstack/management/db.properties
 /etc/cloudstack/management/tomcat6-ssl.conf
+/etc/cloudstack/management/tomcat6-nonssl.conf
+/etc/cloudstack/management/tomcat6.conf
 /etc/cloudstack/management/web.xml
 /etc/cloudstack/management/environment.properties
 /etc/cloudstack/management/nonossComponentContext.xml
