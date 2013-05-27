@@ -9234,7 +9234,13 @@
                     //allocationstate: { label: 'label.allocation.state' },
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
-                  }
+                  },
+
+                   {
+                    isdedicated:{label:'Dedicated'},
+                    domainid:{label:'Domain ID'}
+                   }
+
                 ],
                 dataProvider: function(args) {
 									$.ajax({
