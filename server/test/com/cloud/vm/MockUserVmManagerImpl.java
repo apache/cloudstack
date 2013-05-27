@@ -431,7 +431,7 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
     }
 
     @Override
-    public UserVm restoreVM(RestoreVMCmd cmd) {
+    public UserVm restoreVM(RestoreVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }

@@ -441,5 +441,5 @@ public interface UserVmService {
 
     VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);
 
-    UserVm restoreVM(RestoreVMCmd cmd);
+    UserVm restoreVM(RestoreVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 }
