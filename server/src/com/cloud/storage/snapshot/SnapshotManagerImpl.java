@@ -53,6 +53,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DownloadSnapshotFromS3Command;
 import com.cloud.agent.api.DownloadSnapshotFromSwiftCommand;
@@ -109,6 +110,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -323,20 +325,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     }
 
 
-    @Override
-    public void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId) {
-        DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(secondaryStoragePoolUrl, dcId, accountId, volumeId);
-        try {
-            DataStore store = this.dataStoreMgr.getImageStore(dcId);
-            EndPoint ep = _epSelector.select(store);
-            Answer ans = ep.sendMessage(cmd);
-            if (ans == null || !ans.getResult()) {
-                s_logger.warn("DeleteSnapshotsDirCommand failed due to " + ans.getDetails() + " volume id: " + volumeId);
-            }
-        } catch (Exception e) {
-            s_logger.warn("DeleteSnapshotsDirCommand failed due to" + e.toString() + " volume id: " + volumeId);
-        }
-    }
 
     @Override
     public Snapshot backupSnapshot(Long snapshotId) {
@@ -689,8 +677,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
             List<DataStore> ssHosts = this.dataStoreMgr.getImageStoresByScope(new ZoneScope(dcId));
             for (DataStore ssHost : ssHosts) {
-                DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(ssHost.getTO(), ssHost.getUri(), dcId, accountId, volumeId, "",
-                        true);
+                String snapshotDir = TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/" + accountId + "/" + volumeId;
+                DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(ssHost.getTO(), snapshotDir);
                 EndPoint ep = _epSelector.select(ssHost);
                 Answer answer = ep.sendMessage(cmd);
                 if ((answer != null) && answer.getResult()) {

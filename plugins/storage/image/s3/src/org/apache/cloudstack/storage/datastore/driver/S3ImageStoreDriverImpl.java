@@ -52,6 +52,7 @@ import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -337,10 +338,6 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
         }
 
         try {
-            String secondaryStoragePoolUrl = secStore.getUri();
-            Long dcId = snapshot.getDataCenterId();
-            Long accountId = snapshot.getAccountId();
-            Long volumeId = snapshot.getVolumeId();
 
             String backupOfSnapshot = snapshotObj.getPath();
             if (backupOfSnapshot == null) {
@@ -348,9 +345,8 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
                 return;
             }
 
-            DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                    secStore.getTO(), secondaryStoragePoolUrl, dcId, accountId, volumeId,
-                    backupOfSnapshot, false);
+            DeleteSnapshotBackupCommand2 cmd = new DeleteSnapshotBackupCommand2(
+                    secStore.getTO(), backupOfSnapshot);
             EndPoint ep = _epSelector.select(secStore);
             Answer answer = ep.sendMessage(cmd);
 

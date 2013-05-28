@@ -22,30 +22,35 @@ import com.cloud.agent.api.to.DataStoreTO;
  * This command encapsulates a primitive operation which enables coalescing the backed up VHD snapshots on the secondary server
  * This currently assumes that the secondary storage are mounted on the XenServer.
  */
-public class DeleteSnapshotsDirCommand extends Command {
-    DataStoreTO store;
-    String directory;
+public class DeleteSnapshotBackupCommand2 extends Command {
+    private DataStoreTO store;
+    private String snapshotPath;
 
-    protected DeleteSnapshotsDirCommand() {
 
+    public DeleteSnapshotBackupCommand2() {
     }
 
-    public DeleteSnapshotsDirCommand(DataStoreTO store, String dir) {
+
+    public DeleteSnapshotBackupCommand2(DataStoreTO store,
+                                       String snapshotPath)
+    {
         this.store = store;
-        this.directory = dir;
+        this.snapshotPath = snapshotPath;
     }
 
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
 
-    public DataStoreTO getDataStore() {
+    public DataStoreTO getDataStore(){
         return store;
     }
 
 
-    public String getDirectory() {
-        return directory;
+    public String getSnapshotPath() {
+        return snapshotPath;
+    }
+
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
     }
 }

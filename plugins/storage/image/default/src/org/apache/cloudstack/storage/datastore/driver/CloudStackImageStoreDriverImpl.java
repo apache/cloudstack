@@ -49,6 +49,7 @@ import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -247,7 +248,7 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
                 throw new CloudRuntimeException(
                         "Please specify a volume that is not currently being uploaded.");
             }
-          
+
             CommandResult result = new CommandResult();
             callback.complete(result);
             return;
@@ -326,11 +327,14 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     	}
 
     	try {
-    		String secondaryStoragePoolUrl = secStore.getUri();
+            String backupOfSnapshot = snapshotObj.getPath();
+            if (backupOfSnapshot == null) {
+                callback.complete(result);
+                return;
+            }
 
-    		DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-    				secStore.getTO(), secondaryStoragePoolUrl, null, null, null,
-    				snapshotObj.getPath(), false);
+    		DeleteSnapshotBackupCommand2 cmd = new DeleteSnapshotBackupCommand2(
+    				secStore.getTO(), backupOfSnapshot);
     		EndPoint ep = _epSelector.select(secStore);
     		Answer answer = ep.sendMessage(cmd);
 

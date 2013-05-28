@@ -68,6 +68,7 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DownloadSnapshotFromS3Command;
 import com.cloud.agent.api.DownloadSnapshotFromSwiftCommand;
@@ -211,6 +212,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((DownloadSnapshotFromS3Command) cmd);
         } else if (cmd instanceof DeleteSnapshotBackupCommand) {
             return execute((DeleteSnapshotBackupCommand) cmd);
+        } else if (cmd instanceof DeleteSnapshotBackupCommand2) {
+            return execute((DeleteSnapshotBackupCommand2) cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand) {
             return execute((DeleteSnapshotsDirCommand) cmd);
         } else if (cmd instanceof DownloadTemplateFromSwiftToSecondaryStorageCommand) {
@@ -838,28 +841,78 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return null;
     }
 
-    // TODO: this DeleteSnapshotsDirCommand should be removed after
-    // SnapshotManager refactor, this is used to delete those snapshot directory
-    // in the cachestorage. This should be able to be done through
-    // DeleteSnapshotBackupCommand with deleteAll flag set to true.
     public Answer execute(DeleteSnapshotsDirCommand cmd) {
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        try {
-            String parent = getRootDir(secondaryStorageUrl);
-            String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId) + "/*";
+        DataStoreTO dstore = cmd.getDataStore();
+        if (dstore instanceof NfsTO) {
+            NfsTO nfs = (NfsTO) dstore;
+            String relativeSnapshotPath = cmd.getDirectory();
+            String parent = getRootDir(nfs.getUrl());
+
+            if (relativeSnapshotPath.startsWith(File.separator)) {
+                relativeSnapshotPath = relativeSnapshotPath.substring(1);
+            }
+
+            if (!parent.endsWith(File.separator)) {
+                parent += File.separator;
+            }
+            String absoluteSnapshotPath = parent + relativeSnapshotPath;
+            File snapshotDir = new File(absoluteSnapshotPath);
+            String details = null;
+            if (!snapshotDir.exists()) {
+                details = "snapshot directory " + snapshotDir.getName() + " doesn't exist";
+                s_logger.debug(details);
+                return new Answer(cmd, true, details);
+            }
+            // delete all files in the directory
+            String lPath = absoluteSnapshotPath + "/*";
             String result = deleteLocalFile(lPath);
             if (result != null) {
                 String errMsg = "failed to delete all snapshots " + lPath + " , err=" + result;
                 s_logger.warn(errMsg);
                 return new Answer(cmd, false, errMsg);
             }
-            return new Answer(cmd, true, "success");
-        } catch (Exception e) {
-            String errMsg = cmd + " Command failed due to " + e.toString();
-            s_logger.warn(errMsg, e);
-            return new Answer(cmd, false, errMsg);
+            // delete the directory
+            if (!snapshotDir.delete()) {
+                details = "Unable to delete directory " + snapshotDir.getName() + " under snapshot path " + relativeSnapshotPath;
+                s_logger.debug(details);
+                return new Answer(cmd, false, details);
+            }
+            return new Answer(cmd, true, null);
+        } else if (dstore instanceof S3TO) {
+            final S3TO s3 = (S3TO) dstore;
+            final String path = cmd.getDirectory();
+            final String bucket = s3.getBucketName();
+            try {
+                S3Utils.deleteDirectory(s3, bucket, path);
+                return new Answer(cmd, true, String.format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
+            } catch (Exception e) {
+                final String errorMessage = String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path,
+                        bucket, e.getMessage());
+                s_logger.error(errorMessage, e);
+                return new Answer(cmd, false, errorMessage);
+            }
+        } else if (dstore instanceof SwiftTO) {
+            String path = cmd.getDirectory();
+            String volumeId = StringUtils.substringAfterLast(path, "/"); // assuming
+                                                                         // that
+                                                                         // the
+                                                                         // filename
+                                                                         // is
+                                                                         // the
+                                                                         // last
+                                                                         // section
+                                                                         // in
+                                                                         // the
+                                                                         // path
+            String result = swiftDelete((SwiftTO) dstore, "V-" + volumeId.toString(), "");
+            if (result != null) {
+                String errMsg = "failed to delete snapshot for volume " + volumeId + " , err=" + result;
+                s_logger.warn(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            return new Answer(cmd, true, "Deleted snapshot " + path + " from swift");
+        } else {
+            return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
     }
 
@@ -1181,6 +1234,74 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private String determineSnapshotLockId(final Long accountId, final Long volumeId) {
         return join("_", "SNAPSHOT", accountId, volumeId);
+    }
+
+    protected Answer execute(final DeleteSnapshotBackupCommand2 cmd) {
+        DataStoreTO dstore = cmd.getDataStore();
+        if (dstore instanceof NfsTO) {
+            NfsTO nfs = (NfsTO) dstore;
+            String relativeSnapshotPath = cmd.getSnapshotPath();
+            String parent = getRootDir(nfs.getUrl());
+
+            if (relativeSnapshotPath.startsWith(File.separator)) {
+                relativeSnapshotPath = relativeSnapshotPath.substring(1);
+            }
+
+            if (!parent.endsWith(File.separator)) {
+                parent += File.separator;
+            }
+            String absoluteSnapshotPath = parent + relativeSnapshotPath;
+            File snapshot = new File(absoluteSnapshotPath);
+            String details = null;
+            if (!snapshot.exists()) {
+                details = "snapshot file " + snapshot.getName() + " doesn't exist";
+                s_logger.debug(details);
+                return new Answer(cmd, true, details);
+            }
+
+            if (!snapshot.delete()) {
+                return new Answer(cmd, false, "Unable to delete file " + snapshot.getName() + " under install path " + relativeSnapshotPath);
+            }
+
+            return new Answer(cmd, true, null);
+        } else if (dstore instanceof S3TO) {
+            final S3TO s3 = (S3TO) dstore;
+            final String path = cmd.getSnapshotPath();
+            final String bucket = s3.getBucketName();
+            try {
+                S3Utils.deleteObject(s3, bucket, path);
+                return new Answer(cmd, true, String.format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
+            } catch (Exception e) {
+                final String errorMessage = String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path,
+                        bucket, e.getMessage());
+                s_logger.error(errorMessage, e);
+                return new Answer(cmd, false, errorMessage);
+            }
+        } else if (dstore instanceof SwiftTO) {
+            String path = cmd.getSnapshotPath();
+            String filename = StringUtils.substringAfterLast(path, "/"); // assuming
+                                                                         // that
+                                                                         // the
+                                                                         // filename
+                                                                         // is
+                                                                         // the
+                                                                         // last
+                                                                         // section
+                                                                         // in
+                                                                         // the
+                                                                         // path
+            String volumeId = StringUtils.substringAfterLast(StringUtils.substringBeforeLast(path, "/"), "/");
+            String result = swiftDelete((SwiftTO) dstore, "V-" + volumeId, filename);
+            if (result != null) {
+                String errMsg = "failed to delete snapshot " + filename + " , err=" + result;
+                s_logger.warn(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            return new Answer(cmd, true, "Deleted snapshot " + path + " from swift");
+        } else {
+            return new Answer(cmd, false, "Unsupported image data store: " + dstore);
+        }
+
     }
 
     protected Answer execute(final DeleteSnapshotBackupCommand cmd) {
@@ -1660,7 +1781,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 s_logger.warn(errMsg);
                 return new Answer(cmd, false, errMsg);
             }
-            return new Answer(cmd, false, "Swift is not currently support DeleteVolumeCommand");
+            return new Answer(cmd, true, "Deleted volume " + path + " from swift");
         } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }

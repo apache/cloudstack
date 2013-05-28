@@ -89,6 +89,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
@@ -1197,8 +1198,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                         if (installPath != null) {
                             EndPoint ep = _epSelector.select(store);
-                            DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(store.getTO(), store.getUri(),
-                                    null, null, null, destroyedSnapshotStoreVO.getInstallPath(), false);
+                            DeleteSnapshotBackupCommand2 cmd = new DeleteSnapshotBackupCommand2(store.getTO(), destroyedSnapshotStoreVO.getInstallPath());
                             Answer answer = ep.sendMessage(cmd);
                             if (answer == null || !answer.getResult()) {
                                 s_logger.debug("Failed to delete " + destroyedSnapshotStoreVO + " due to "
