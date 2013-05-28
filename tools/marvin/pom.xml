@@ -111,6 +111,7 @@
                     <argument>codegenerator.py</argument>
                     <argument>-e</argument>
                     <argument>${endpoint}</argument>
+                    <argument>-y</argument>
                     <echo>Generating ${project.artifactId} API classes}</echo>
                   </arguments>
                 </configuration>
