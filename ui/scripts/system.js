@@ -12799,26 +12799,14 @@
 
   var podActionfilter = function(args) {
     var podObj = args.context.item;
+    var dedicatedPodObj = args.context.podItem;
     var allowedActions = [];
-    var flag = 0;
-     $.ajax({
-       url:createURL("listDedicatedPods&podId=" + args.context.pods[0].id),
-       success:function(json){
-         if(json.listdedicatedpodsresponse.dedicatedpod != undefined){
-         var dedicatedPodObj = json.listdedicatedpodsresponse.dedicatedpod[0];
-           if(dedicatedPodObj.domainid != null)
-              flag =1;
-           }
-           else
-             flag =0;
-       }
-     });
-
-   // if(flag == 0)
+   
+     if(podObj.domainid != null)
+      allowedActions.push("release");
+     else
       allowedActions.push("dedicate");
 
-   // if(flag == 1)
-      allowedActions.push("release");
 
     allowedActions.push("edit");
     if(podObj.allocationstate == "Disabled")
