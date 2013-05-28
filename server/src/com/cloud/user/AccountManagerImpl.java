@@ -50,7 +50,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -105,7 +104,6 @@ import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.auth.UserAuthenticator;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeManager;
@@ -164,8 +162,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private UserAccountDao _userAccountDao;
     @Inject
-    private UserAccountJoinDao _userAccountJoinDao;
-    @Inject
     private VolumeDao _volumeDao;
     @Inject
     private UserVmDao _userVmDao;
@@ -189,8 +185,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private SnapshotManager _snapMgr;
     @Inject
     private UserVmManager _vmMgr;
-    @Inject
-    private StorageManager _storageMgr;
     @Inject
     private TemplateManager _tmpltMgr;
     @Inject
@@ -505,8 +499,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return success;
     }
 
-    @Override
-    public boolean lockAccount(long accountId) {
+    
+    protected boolean lockAccount(long accountId) {
         boolean success = false;
         Account account = _accountDao.findById(accountId);
         if (account != null) {
@@ -544,8 +538,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return cleanupAccount(account, callerUserId, caller);
     }
 
-    @Override
-    public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
+
+    protected boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
 
@@ -1617,21 +1611,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public Account getActiveAccountById(Long accountId) {
-        if (accountId == null) {
-            throw new InvalidParameterValueException("AccountId is required by account search");
-        } else {
-            return _accountDao.findById(accountId);
-        }
+    public Account getActiveAccountById(long accountId) {
+        return _accountDao.findById(accountId);
     }
 
     @Override
-    public Account getAccount(Long accountId) {
-        if (accountId == null) {
-            throw new InvalidParameterValueException("AccountId is required by account search");
-        } else {
-            return _accountDao.findByIdIncludingRemoved(accountId);
-        }
+    public Account getAccount(long accountId) {
+        return _accountDao.findByIdIncludingRemoved(accountId);
     }
 
     @Override
@@ -1669,62 +1655,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return _userDao.findByIdIncludingRemoved(userId);
     }
 
-    @Override
-    public Pair<List<Long>, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId, Long projectId) {
-        List<Long> permittedAccounts = new ArrayList<Long>();
-
-        if (isAdmin(caller.getType())) {
-            if (domainId == null && accountName != null) {
-                throw new InvalidParameterValueException("accountName and domainId might be specified together");
-            } else if (domainId != null) {
-                Domain domain = _domainMgr.getDomain(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
-                }
-
-                checkAccess(caller, domain);
-
-                if (accountName != null) {
-                    Account owner = getActiveAccountByName(accountName, domainId);
-                    if (owner == null) {
-                        throw new InvalidParameterValueException("Unable to find account with name " + accountName + " in domain id=" + domainId);
-                    }
-
-                    permittedAccounts.add(owner.getId());
-                }
-            }
-        } else if (accountName != null && domainId != null) {
-            if (!accountName.equals(caller.getAccountName()) || domainId.longValue() != caller.getDomainId()) {
-                throw new PermissionDeniedException("Can't list port forwarding rules for account " + accountName + " in domain " + domainId + ", permission denied");
-            }
-            permittedAccounts.add(getActiveAccountByName(accountName, domainId).getId());
-        } else {
-            permittedAccounts.add(caller.getAccountId());
-        }
-
-        if (domainId == null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            domainId = caller.getDomainId();
-        }
-
-        // set project information
-        if (projectId != null) {
-            if (projectId.longValue() == -1) {
-                permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-            } else {
-                permittedAccounts.clear();
-                Project project = _projectMgr.getProject(projectId);
-                if (project == null) {
-                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-                }
-                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-                }
-                permittedAccounts.add(project.getProjectAccountId());
-            }
-        }
-
-        return new Pair<List<Long>, Long>(permittedAccounts, domainId);
-    }
 
     @Override
     public User getActiveUserByRegistrationToken(String registrationToken) {
@@ -1806,9 +1736,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return account;
     }
 
-    @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
-    public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID) {
+    protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
@@ -1833,29 +1762,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void logoutUser(Long userId) {
+    public void logoutUser(long userId) {
         UserAccount userAcct = _userAccountDao.findById(userId);
         if (userAcct != null) {
             ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
         } // else log some kind of error event? This likely means the user doesn't exist, or has been deleted...
     }
 
-    @Override
-    public UserAccount getUserAccount(String username, Long domainId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Retrieiving user: " + username + " in domain " + domainId);
-        }
-
-        UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
-        if (userAccount == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find user with name " + username + " in domain " + domainId);
-            }
-            return null;
-        }
-
-        return userAccount;
-    }
 
     @Override
     public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {

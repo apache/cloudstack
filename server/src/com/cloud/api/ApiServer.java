@@ -551,6 +551,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void buildAsyncListResponse(BaseListCmd command, Account account) {
         List<ResponseObject> responses = ((ListResponse) command.getResponseObject()).getResponses();
         if (responses != null && responses.size() > 0) {
@@ -845,7 +846,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public void logoutUser(long userId) {
-        _accountMgr.logoutUser(Long.valueOf(userId));
+        _accountMgr.logoutUser(userId);
         return;
     }
 
