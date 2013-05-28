@@ -4397,6 +4397,12 @@ under the License.
           </thead>
           <tbody>
             <row>
+              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2709"
+                >CLOUDSTACK-2709</ulink></para></entry>
+              <entry><para>Egress rules are are not supported on shared networks.</para>
+                >
+              </entry>
+            <row>
               <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1747"
                     >CLOUDSTACK-1747</ulink></para></entry>
               <entry><para>mvn deploydb only creates 4.0 DB, not 4.1</para>
