@@ -775,6 +775,25 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     "zone id can't be null, if scope is zone");
         }
 
+        String hypervisor = cmd.getHypervisor();
+        HypervisorType hypervisorType;
+        if (hypervisor != null) {
+            try {
+                hypervisorType = HypervisorType.getType(hypervisor);
+            } catch (Exception e) {
+                throw new InvalidParameterValueException("invalid hypervisor type" + hypervisor);
+            }
+        } else {
+            throw new InvalidParameterValueException(
+                    "Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
+        }
+
+        if (scopeType == ScopeType.ZONE &&
+                (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware)) {
+            throw new InvalidParameterValueException(
+                    "zone wide storage pool is not suported for hypervisor type " + hypervisor);
+        }
+
         Map ds = cmd.getDetails();
         Map<String, String> details = new HashMap<String, String>();
         if (ds != null) {
@@ -826,7 +845,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 lifeCycle.attachCluster(store, clusterScope);
             } else if (scopeType == ScopeType.ZONE) {
                 ZoneScope zoneScope = new ZoneScope(zoneId);
-                lifeCycle.attachZone(store, zoneScope);
+                lifeCycle.attachZone(store, zoneScope, hypervisorType);
             }
         } catch (Exception e) {
             s_logger.debug("Failed to add data store", e);

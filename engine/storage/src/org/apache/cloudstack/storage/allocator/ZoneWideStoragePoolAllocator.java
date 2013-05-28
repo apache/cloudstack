@@ -38,34 +38,36 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
-	private static final Logger s_logger = Logger.getLogger(ZoneWideStoragePoolAllocator.class);
-	@Inject PrimaryDataStoreDao _storagePoolDao;
-	@Inject DataStoreManager dataStoreMgr;
+    private static final Logger s_logger = Logger.getLogger(ZoneWideStoragePoolAllocator.class);
+    @Inject PrimaryDataStoreDao _storagePoolDao;
+    @Inject DataStoreManager dataStoreMgr;
 
-	@Override
-	protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh,
-			 DeploymentPlan plan) {
+    @Override
+    protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh,
+            DeploymentPlan plan) {
         Volume volume =  _volumeDao.findById(dskCh.getVolumeId());
         List<Volume> requestVolumes = new ArrayList<Volume>();
         requestVolumes.add(volume);
         return storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
-	}
+    }
 
-	@Override
-	protected List<StoragePool> select(DiskProfile dskCh,
-			VirtualMachineProfile<? extends VirtualMachine> vmProfile,
-			DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-	    s_logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
-		List<StoragePool> suitablePools = new ArrayList<StoragePool>();
-		HypervisorType hypervisor = dskCh.getHypervisorType();
-		if (hypervisor != null) {
-			if (hypervisor != HypervisorType.KVM) {
-				s_logger.debug("Only kvm supports zone wide storage");
-				return suitablePools;
-			}
-		}
+    @Override
+    protected List<StoragePool> select(DiskProfile dskCh,
+            VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+            DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+        s_logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
+        List<StoragePool> suitablePools = new ArrayList<StoragePool>();
+        HypervisorType hypervisor = dskCh.getHypervisorType();
+        if (hypervisor != null) {
+            if (hypervisor != HypervisorType.KVM && hypervisor != HypervisorType.VMware) {
+                s_logger.debug("Only kvm, VMware hypervisors are enabled to support zone wide storage");
+                return suitablePools;
+            }
+        }
 
-		List<StoragePoolVO> storagePools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
+        List<StoragePoolVO> storagePools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
+        List<StoragePoolVO> storagePoolsByHypervisor = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(plan.getDataCenterId(), dskCh.getHypervisorType());
+        storagePools.retainAll(storagePoolsByHypervisor);
 
         // add remaining pools in zone, that did not match tags, to avoid set
         List<StoragePoolVO> allPools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null);
@@ -74,17 +76,17 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             avoid.addPool(pool.getId());
         }
 
-		for (StoragePoolVO storage : storagePools) {
-			if (suitablePools.size() == returnUpTo) {
-        		break;
-        	}
-			StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
-			if (filter(avoid, pol, dskCh, plan)) {
-				suitablePools.add(pol);
+        for (StoragePoolVO storage : storagePools) {
+            if (suitablePools.size() == returnUpTo) {
+                break;
+            }
+            StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
+            if (filter(avoid, pol, dskCh, plan)) {
+                suitablePools.add(pol);
             } else {
                 avoid.addPool(pol.getId());
             }
-		}
-		return suitablePools;
-	}
+        }
+        return suitablePools;
+    }
 }
