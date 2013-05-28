@@ -463,9 +463,11 @@
           id: 'portableIpRanges',
           label: 'Portable IP Ranges',
           fields: {
-            name: { label: 'label.name' },
-            gslbdomainname: { label: 'GSLB Domain Name' },
-            gslblbmethod: { label: 'Algorithm' }
+            startip: { label: 'label.start.IP' },
+            endip: { label: 'label.end.IP' },
+            gateway: { label: 'label.gateway' },
+            netmask: { label: 'label.netmask' },
+            vlan: { label: 'label.vlan' }                    
           },
           dataProvider: function(args) {            
             $.ajax({
@@ -474,7 +476,7 @@
                 regionid: args.context.regions[0].id
               },
               success: function(json) {                
-                var items = json.listportableipresponse.portableip;
+                var items = json.listportableipresponse.portableiprange;
                 args.response.success({                
                   data: items
                 });
@@ -483,7 +485,79 @@
                 args.response.error(parseXMLHttpResponse(json));
               }
             });
-          }
+          },
+          actions: {
+            add: {
+              label: 'Add Portable IP Range',
+
+              messages: {               
+                notification: function(args) {
+                  return 'Add Portable IP Range';
+                }
+              },
+
+              createForm: {
+                title: 'Add Portable IP Range',
+                fields: {
+                  startip: {
+                    label: 'label.start.IP',                    
+                    validation: { required: true }
+                  },
+                  endip: {
+                    label: 'label.end.IP',                    
+                    validation: { required: true }
+                  },
+                  gateway: {
+                    label: 'label.gateway',                    
+                    validation: { required: true }
+                  },
+                  netmask: {
+                    label: 'label.netmask',                    
+                    validation: { required: true }
+                  },
+                  vlan: {
+                    label: 'label.vlan',                    
+                    validation: { required: false }
+                  }
+                }                
+              },     
+              action: function(args) {                
+                var data = {
+                  regionid: args.context.regions[0].id,
+                  startip: args.data.startip,
+                  endip: args.data.endip,
+                  gateway: args.data.gateway,
+                  netmask: args.data.netmask                      
+                };       
+                if(args.data.vlan != null && args.data.vlan.length > 0) {
+                  $.extend(data, {
+                    vlan: args.data.vlan
+                  })
+                }                  
+                $.ajax({
+                  url: createURL('createPortableIpRange'),
+                  data: data,                 
+                  success: function(json) {             
+                    var jid = json.createportableiprangeresponse.jobid;
+                    args.response.success({
+                      _custom: { 
+                        jobId: jid,
+                        getUpdatedItem: function(json) {                          
+                          return json.queryasyncjobresultresponse.jobresult.portableiprange;
+                        }
+                      }
+                    });                    
+                  },
+                  error: function(data) {
+                    args.response.error(parseXMLHttpResponse(data));
+                  }
+                });
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }    
+            }
+          }         
         }
       },      
             
