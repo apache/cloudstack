@@ -96,7 +96,9 @@ if __name__ == '__main__':
     parser.add_option("--guestNic", dest="guestNic", help="Guest traffic interface")
 
     old_config = configFileOps("@AGENTSYSCONFDIR@/agent.properties")
-    glbEnv.bridgeType = old_config.getEntry("network.bridge.type").lower()
+    bridgeType = old_config.getEntry("network.bridge.type").lower()
+    if bridgeType:
+        glbEnv.bridgeType = bridgeType
 
     (options, args) = parser.parse_args()
     if options.auto is None:
