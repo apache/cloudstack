@@ -32,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 import com.cloud.storage.StoragePoolStatus;
 
@@ -426,5 +427,15 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         sc.setParameters("clusterId", clusterId);
         
         return listBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType) {
+        SearchCriteriaService<StoragePoolVO, StoragePoolVO> sc =  SearchCriteria2.create(StoragePoolVO.class);
+        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
+        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+        sc.addAnd(sc.getEntity().getScope(), Op.EQ, ScopeType.ZONE);
+        sc.addAnd(sc.getEntity().getHypervisor(), Op.EQ, hypervisorType);
+        return sc.list();
     }
 }
