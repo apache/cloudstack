@@ -922,38 +922,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    @Override
-    public List<EventVO> getEvents(long userId, long accountId, Long domainId, String type, String level, Date startDate, Date endDate) {
-        SearchCriteria<EventVO> sc = _eventDao.createSearchCriteria();
-        if (userId > 0) {
-            sc.addAnd("userId", SearchCriteria.Op.EQ, userId);
-        }
-        if (accountId > 0) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
-        if (type != null) {
-            sc.addAnd("type", SearchCriteria.Op.EQ, type);
-        }
-        if (level != null) {
-            sc.addAnd("level", SearchCriteria.Op.EQ, level);
-        }
-        if (startDate != null && endDate != null) {
-            startDate = massageDate(startDate, 0, 0, 0);
-            endDate = massageDate(endDate, 23, 59, 59);
-            sc.addAnd("createDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
-        } else if (startDate != null) {
-            startDate = massageDate(startDate, 0, 0, 0);
-            sc.addAnd("createDate", SearchCriteria.Op.GTEQ, startDate);
-        } else if (endDate != null) {
-            endDate = massageDate(endDate, 23, 59, 59);
-            sc.addAnd("createDate", SearchCriteria.Op.LTEQ, endDate);
-        }
-
-        return _eventDao.search(sc, null);
-    }
 
     @Override
     public boolean archiveEvents(ArchiveEventsCmd cmd) {
@@ -2229,8 +2197,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends GuestOsCategory>, Integer>(result.first(), result.second());
     }
 
-    @Override
-    public ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId) {
+
+    protected ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId) {
         return _consoleProxyMgr.assignProxy(dataCenterId, userVmId);
     }
 
@@ -4134,8 +4102,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     }
 
-    @Override
-    public void enableAdminUser(String password) {
+
+    private void enableAdminUser(String password) {
         String encodedPassword = null;
 
         UserVO adminUser = _userDao.getUser(2);
