@@ -35,6 +35,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'manage
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.providerrouter.id', 'd7c5e6a3-e2f4-426b-b728-b7ce6a0448e5', 'Specifies the UUID of the Midonet provider router (if using Midonet)');
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD state VARCHAR(40) NULL COMMENT 'service status updated by LB healthcheck manager';
 
+alter table storage_pool add hypervisor varchar(32);
 alter table storage_pool change storage_provider_id storage_provider_name varchar(255);
 alter table template_host_ref add state varchar(255);
 alter table template_host_ref add update_count bigint unsigned;
@@ -830,6 +831,7 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         storage_pool.removed,
         storage_pool.capacity_bytes,
         storage_pool.scope,
+        storage_pool.hypervisor,
         cluster.id cluster_id,
         cluster.uuid cluster_uuid,
         cluster.name cluster_name,
