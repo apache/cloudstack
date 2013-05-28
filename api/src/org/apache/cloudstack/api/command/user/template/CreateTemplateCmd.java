@@ -16,24 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.log4j.Logger;
-
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -45,8 +27,24 @@ import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.log4j.Logger;
 
-@APICommand(name = "createTemplate", responseObject = StoragePoolResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+@APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
         + "A template created from this command is automatically designated as a private template visible to the account that created it.")
         public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
