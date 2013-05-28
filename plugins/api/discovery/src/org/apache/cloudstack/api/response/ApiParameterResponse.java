@@ -50,6 +50,10 @@ public class ApiParameterResponse extends BaseResponse {
         this.name = name;
     }
 
+    public String getName() {
+        return this.name;
+    }
+
     public void setDescription(String description) {
         this.description = description;
     }

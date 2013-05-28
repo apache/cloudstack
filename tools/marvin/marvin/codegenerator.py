@@ -309,8 +309,6 @@ class codeGenerator(object):
                     getText(param.getElementsByTagName('name'))
                 assert paramProperty.name
 
-
-
                 required = param.getElementsByTagName('required')
                 if required:
                     paramProperty.required = getText(required)
