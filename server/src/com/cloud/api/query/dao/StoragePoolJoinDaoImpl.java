@@ -85,6 +85,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setPodName(pool.getPodName());
         poolResponse.setCreated(pool.getCreated());
         poolResponse.setScope(pool.getScope().toString());
+        if (pool.getHypervisor() != null) {
+            poolResponse.setHypervisor(pool.getHypervisor().toString());
+        }
 
 
         long allocatedSize = pool.getUsedCapacity() +  pool.getReservedCapacity();
@@ -143,6 +146,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setPodName(pool.getPodName());
         poolResponse.setCreated(pool.getCreated());
         poolResponse.setScope(pool.getScope().toString());
+        if (pool.getHypervisor() != null) {
+            poolResponse.setHypervisor(pool.getHypervisor().toString());
+        }
 
 
         long allocatedSize = pool.getUsedCapacity() +  pool.getReservedCapacity();
