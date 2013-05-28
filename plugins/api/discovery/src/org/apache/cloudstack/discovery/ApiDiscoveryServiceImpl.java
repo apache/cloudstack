@@ -101,17 +101,19 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                 s_logger.trace("Found api: " + apiName);
             }
             ApiDiscoveryResponse response = getCmdRequestMap(cmdClass, apiCmdAnnotation);
-
             String responseName = apiCmdAnnotation.responseObject().getName();
             if (!responseName.contains("SuccessResponse")) {
                 if (!responseApiNameListMap.containsKey(responseName)) {
                     responseApiNameListMap.put(responseName, new ArrayList<String>());
                 }
+                //Identify entities for those with a direct response
                 responseApiNameListMap.get(responseName).add(apiName);
+                String entity = apiCmdAnnotation.responseObject().getSimpleName().replace("Response", "");
+                response.setEntity(entity);
+            } else {
+                String entity = deriveRelatedEntity(apiName, response).replace("Response", "");
+                response.setEntity(entity);
             }
-            response.setRelated(responseName);
-            String entity = apiCmdAnnotation.responseObject().getSimpleName();
-            response.setEntity(entity.replaceAll("Response", ""));
 
             Field[] responseFields = apiCmdAnnotation.responseObject().getDeclaredFields();
             for(Field responseField: responseFields) {
@@ -144,9 +146,24 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             } else {
                 response.setRelated(null);
             }
+
             s_apiNameDiscoveryResponseMap.put(apiName, response);
         }
         return responseApiNameListMap;
+    }
+
+    private String deriveRelatedEntity(String currentApi, ApiDiscoveryResponse response) {
+        //Guess the entity from the related APIs
+        String entity = "";
+        for (ApiParameterResponse param : response.getParams()) {
+            if (param.getRelated() != null) {
+                entity = param.getRelated();
+            }
+        }
+        if (entity.isEmpty()) {
+            s_logger.warn("Couldn't find entity for API: " + currentApi + " from related APIs");
+        }
+        return entity;
     }
 
     private ApiResponseResponse getFieldResponseMap(Field responseField) {
@@ -211,7 +228,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                 if (!parameterAnnotation.since().isEmpty()) {
                     paramResponse.setSince(parameterAnnotation.since());
                 }
-                paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
+                paramResponse.setRelated(parameterAnnotation.entityType()[0].getSimpleName());
                 response.addParam(paramResponse);
             }
         }

@@ -27,8 +27,9 @@ public class Command {
 	private String sinceVersion = null;
 	private ArrayList<Argument> request;
 	private ArrayList<Argument> response;
-	
-	public Command(String name, String description) {
+    private String entity;
+
+    public Command(String name, String description) {
 		this.name = name;
 		this.description = description;
 	}
@@ -108,4 +109,12 @@ public class Command {
 	public void setUsage(String usage) {
 		this.usage = usage;
 	}
+
+    public void setEntity(String entity) {
+        this.entity = entity;
+    }
+
+    public String getEntity() {
+        return this.entity;
+    }
 }
