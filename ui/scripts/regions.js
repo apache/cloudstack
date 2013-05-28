@@ -489,13 +489,11 @@
           actions: {
             add: {
               label: 'Add Portable IP Range',
-
               messages: {               
                 notification: function(args) {
                   return 'Add Portable IP Range';
                 }
               },
-
               createForm: {
                 title: 'Add Portable IP Range',
                 fields: {
@@ -557,7 +555,97 @@
                 poll: pollAsyncJobResult
               }    
             }
-          }         
+          },
+          
+          detailView: {
+            name: 'Portable IP Range details',
+            actions: {              
+              remove: {
+                label: 'Delete Portable IP Range',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm you want to delete Portable IP Range';
+                  },
+                  notification: function(args) {
+                    return 'Delete Portable IP Range';
+                  }
+                },
+                action: function(args) {           
+                  var data = {
+                    id: args.context.portableIpRanges[0].id
+                  };                
+                  $.ajax({
+                    url: createURL('deletePortableIpRange'),
+                    data: data,
+                    async: true,
+                    success: function(json) {                
+                      var jid = json.deleteportablepublicipresponse.jobid;
+                      args.response.success({
+                        _custom: { 
+                          jobId: jid
+                        }
+                      });     
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            }, 
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [      
+                  {
+                    id: { label: 'label.id' }
+                  },
+                  {                    
+                    startip: { label: 'label.start.IP' },
+                    endip: { label: 'label.end.IP' },
+                    gateway: { label: 'label.gateway' },
+                    netmask: { label: 'label.netmask' },
+                    vlan: { label: 'label.vlan' },
+                    portableipaddress: { 
+                      label: 'Portable IPs',
+                      converter: function(args) {                       
+                        var text1 = '';
+                        if(args != null) {
+                          for(var i = 0; i < args.length; i++) {
+                            if(i > 0) {
+                              text1 += ', ';
+                            }                            
+                            text1 += args[i].ipaddress;
+                          }
+                        }                        
+                        return text1;
+                      }
+                    }
+                  }
+                ],
+                dataProvider: function(args) {                       
+                  $.ajax({
+                    url: createURL('listPortableIpRanges'),
+                    data: {
+                      id: args.context.portableIpRanges[0].id
+                    },
+                    success: function(json) {                
+                      var item = json.listportableipresponse.portableiprange[0];
+                      args.response.success({                
+                        data: item
+                      });
+                    },
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });  
+                }
+              }
+            }   
+          }
         }
       },      
             
