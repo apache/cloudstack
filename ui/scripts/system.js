@@ -9716,6 +9716,120 @@
                 }
               },
 
+           dedicate:{
+                label: 'Dedicate Cluster',
+                messages: {
+                  confirm: function(args) {
+                    return 'Do you really want to dedicate this cluster to a domain/account? ';
+                  },
+                  notification: function(args) {
+                    return 'Cluster Dedicated';
+                  }
+                },
+                createForm:{
+                   title:'Dedicate Cluster',
+                   fields:{
+                         domainId:{
+                      label:'Domain',
+                      validation:{required:true},
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                       }
+                   },
+
+                   accountId:{
+                     label:'Account',
+                    // docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  }
+
+               }
+             },
+                action: function(args) {
+                     //EXPLICIT DEDICATION
+
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+
+                    $.ajax({
+                    url: createURL("dedicateCluster&clusterId=" + args.context.clusters[0].id + "&domainId=" +args.data.domainId + array2.join("") ),
+                    dataType: "json",
+                    success: function(json) {
+                       var jid = json.dedicateclusterresponse.jobid;
+                            args.response.success({
+                               _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:clusterActionfilter
+
+
+                          });
+                    }
+                  });
+                }
+
+              },
+
+               release:{
+                label:'Release Dedicated Cluster',
+                messages:{
+                   confirm: function(args) {
+                    return 'Do you want to release this dedicated cluster ?';
+                  },
+                  notification: function(args) {
+                    return 'Cluster dedication released';
+                  }
+                },
+               action:function(args){
+                  $.ajax({
+                     url:createURL("releaseDedicatedCluster&clusterid=" + args.context.clusters[0].id),
+                     dataType:"json",
+                     async:true,
+                     success:function(json){
+                       var jid = json.releasededicatedclusterresponse.jobid;
+                       args.response.success({
+                             _custom:
+                           {      jobId: jid
+                             },
+                           notification: {
+                              poll: pollAsyncJobResult
+                              },
+                            actionFilter:clusterActionfilter
+
+                       });
+                     },
+                    error:function(args){
+                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    }
+                  });
+
+               }
+              },
+  
+
               manage: {
                 label: 'label.action.manage.cluster',
                 messages: {
@@ -12846,6 +12960,11 @@
   var clusterActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
+     
+     if(jsonObj.domainid != null)
+      allowedActions.push("release");
+     else
+      allowedActions.push("dedicate");
 
     if(jsonObj.state == "Enabled") {//managed, allocation enabled
 		  allowedActions.push("unmanage");
