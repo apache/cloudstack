@@ -117,8 +117,20 @@
           detailView: {
             name: 'Region details',
             viewAll: [
-              { path: 'regions.GSLB', label: 'GSLB' },
-              { path: 'regions.portableIpRanges', label: 'Portable IP' }
+              { 
+                path: 'regions.GSLB', 
+                label: 'GSLB' 
+              },
+              { 
+                path: 'regions.portableIpRanges', 
+                label: 'Portable IP',
+                preFilter: function(args) {                  
+                  if (isAdmin())
+                    return true;
+
+                  return false;
+                }
+              }
             ],
             actions: {
               edit: {
