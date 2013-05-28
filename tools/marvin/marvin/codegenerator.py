@@ -23,6 +23,7 @@ import urllib2
 from optparse import OptionParser
 from textwrap import dedent
 from os import path
+from cs_entity_generator import write_entity_classes, get_actionable_entities
 
 
 
@@ -30,6 +31,7 @@ class cmdParameterProperty(object):
     def __init__(self):
         self.name = None
         self.required = False
+        self.entity = ""
         self.desc = ""
         self.type = "planObject"
         self.subProperties = []
@@ -40,6 +42,7 @@ class cloudStackCmd(object):
         self.name = ""
         self.desc = ""
         self.async = "false"
+        self.entity = ""
         self.request = []
         self.response = []
 
@@ -129,6 +132,7 @@ class codeGenerator(object):
         self.code += self.space + "def __init__(self):\n"
         self.code += self.space + self.space
         self.code += 'self.isAsync = "%s"\n' % str(self.cmd.async).lower()
+        self.code += self.space*2 + 'self.entity = "%s"\n' % self.cmd.entity
 
         for req in self.cmd.request:
             if req.desc is not None:
@@ -282,6 +286,11 @@ class codeGenerator(object):
             csCmd = cloudStackCmd()
             csCmd.name = getText(cmd.getElementsByTagName('name'))
             assert csCmd.name
+            if csCmd.name in ['login', 'logout']:
+                continue
+
+            csCmd.entity = getText(cmd.getElementsByTagName('entity'))
+            assert csCmd.entity
 
             desc = getText(cmd.getElementsByTagName('description'))
             if desc:
@@ -299,6 +308,8 @@ class codeGenerator(object):
                 paramProperty.name =\
                     getText(param.getElementsByTagName('name'))
                 assert paramProperty.name
+
+
 
                 required = param.getElementsByTagName('required')
                 if required:
@@ -371,6 +382,12 @@ class codeGenerator(object):
             if 'name' in cmd:
                 csCmd.name = cmd['name']
             assert csCmd.name
+            if csCmd.name in ['login', 'logout']:
+                continue
+
+            if cmd.has_key('entity'):
+                csCmd.entity = cmd['entity']
+            assert csCmd.entity
 
             if 'description' in cmd:
                 csCmd.desc = cmd['description']
@@ -465,3 +482,7 @@ if __name__ == "__main__":
         endpointUrl = 'http://%s:8096/client/api?command=listApis&\
 response=json' % options.endpoint
         cg.generateCodeFromJSON(endpointUrl)
+
+    if options.entity:
+        entities = get_actionable_entities(path=apiModule)
+        write_entity_classes(entities, "base2")

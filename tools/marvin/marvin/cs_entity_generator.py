@@ -15,12 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.cloudstackAPI import *
 import os
 import inflect
-
-# Grammar for CloudStack APIs
-grammar = ['create', 'list', 'delete', 'update',
+grammar = ['create', 'list', 'delete', 'update', 'ldap', 'login', 'logout',
            'enable', 'activate', 'disable', 'add', 'remove',
            'attach', 'detach', 'associate', 'generate', 'assign',
            'authorize', 'change', 'register', 'configure',
@@ -29,7 +26,7 @@ grammar = ['create', 'list', 'delete', 'update',
            'copy', 'extract', 'migrate', 'restore', 'suspend',
            'get', 'query', 'prepare', 'deploy', 'upload', 'lock',
            'disassociate', 'scale', 'dedicate', 'archive', 'find',
-           'recover', 'release', 'resize', 'revert']
+           'recover', 'release', 'resize', 'revert', 'replace']
 
 LICENSE = """# Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -49,15 +46,21 @@ LICENSE = """# Licensed to the Apache Software Foundation (ASF) under one
 # under the License.
 """
 
-def get_api_cmds():
-    """@return: instances of all the API commands exposed by CloudStack
+def get_api_cmds(path=None):
+    """ Returns the API cmdlet instances
+    @param path: path where the api modules are found. defaults to pythonpath
+    @return: instances of all the API commands exposed by CloudStack
     """
-    api_classes = __import__('marvin.cloudstackAPI')
+    if path:
+        api_classes = __import__('cloudstackAPI', fromlist=['*'], level=2)
+    else:
+        api_classes = __import__('marvin.cloudstackAPI')
+
     cmdlist = map(
-        lambda f: getattr(api_classes.cloudstackAPI, f),
+        lambda f: getattr(api_classes, f),
         filter(
             lambda t: t.startswith('__') == False,
-            dir(api_classes.cloudstackAPI)
+            dir(api_classes)
         )
     )
     cmdlist = filter(
@@ -88,8 +91,12 @@ def transform_api(api):
     """
     if api == 'ldapConfig':
         return 'configure', 'Ldap'
-    if api == 'ldapRemove':
+    elif api == 'ldapRemove':
         return 'remove', 'Ldap'
+    elif api == 'login':
+        return 'login', 'CloudStack'
+    elif api == 'logout':
+        return 'logout', 'CloudStack'
     return api, None
 
 def post_transform_adjust(entity):
@@ -112,12 +119,12 @@ def prepositon_transformer(preposition=None):
     @param entity: The entity eg: resetPasswordForVirtualMachine, preposition=For
     @return: transformed entity, Y is the entity and doX is the verb, eg: VirtualMachine, resetPassword
     """
-    def transform_api(api):
+    def transform_api_with_preposition(api):
         if api.find(preposition) > 0:
             if api[api.find(preposition) + len(preposition)].isupper():
                 return api[:api.find(preposition)], api[api.find(preposition) + len(preposition):]
         return api, None
-    return transform_api
+    return transform_api_with_preposition
 
 
 def skip_list():
@@ -143,33 +150,36 @@ def get_verb_and_entity(cmd):
     @return: verb, Entity tuple
     """
     api = cmd.__class__.__name__
+    api = api.replace('Cmd', '')
     #apply known list of transformations
-    for transformer in get_transformers():
-        api = api.replace('Cmd', '')
-        if transformer(api)[0] != api:
-            print "%s, %s -> %s" % (transformer.__name__, api, transformer(api))
-            verb, entity = transformer(api)[0], \
-                           singularize(transformer(api)[1]) if singularize(transformer(api)[1]) else transformer(api)[1]
-            return verb, post_transform_adjust(entity)
-
     matching_verbs = filter(lambda v: api.startswith(v), grammar)
     if len(matching_verbs) > 0:
-        verb = matching_verbs[0]
-        entity = api.replace(verb, '').replace('Cmd', '')
-        entity = singularize(entity) if singularize(entity) else entity
+        for transformer in get_transformers():
+            if transformer(api)[1]:
+#                print "%s, %s -> %s" % (transformer.__name__, api, transformer(api))
+                verb = transformer(api)[0]
+                entity = singularize(cmd.entity) if singularize(cmd.entity) else cmd.entity
+                break
+        else:
+            verb = matching_verbs[0]
+            entity = singularize(cmd.entity) if singularize(cmd.entity) else cmd.entity
+        print "%s => (verb, entity) = (%s, %s)" % (api, verb, post_transform_adjust(entity))
         return verb, post_transform_adjust(entity)
     else:
         print "No matching verb, entity breakdown for api %s" % api
 
 
-def get_actionable_entities():
+def get_actionable_entities(path=None):
     """
     Inspect all entities and return a map of the Entity against the actions
     along with the required arguments to satisfy the action
+    @param path: path where the api modules are found. defaults to pythonpath
     @return: Dictionary of Entity { "verb" : [required] }
     """
-    cmdlets = sorted(filter(lambda api: api.__class__.__name__ not in skip_list(), get_api_cmds()),
+    cmdlets = sorted(filter(lambda api: api.__class__.__name__ not in skip_list(), get_api_cmds(path)),
         key=lambda k: get_verb_and_entity(k)[1])
+
+
     entities = {}
     for cmd in cmdlets:
         requireds = getattr(cmd, 'required')
@@ -184,6 +194,9 @@ def get_actionable_entities():
         entities[entity][verb]['args'] = requireds
         entities[entity][verb]['apimodule'] = cmd.__class__.__module__.split('.')[-1]
         entities[entity][verb]['apicmd'] = api
+    print "Transformed %s APIs to %s entities successfully" % (len(cmdlets), len(entities)) \
+            if len(cmdlets) > 0 \
+            else "No transformations occurred"
     return entities
 
 
