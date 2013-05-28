@@ -11725,11 +11725,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: 0px -613px;
 }
 
-.restart .icon {
+.restart .icon,
+.release .icon {
   background-position: 0px -63px;
 }
 
-.restart:hover .icon {
+.restart:hover .icon,
+.release:hover .icon {
   background-position: 0px -645px;
 }
 

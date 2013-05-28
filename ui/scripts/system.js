@@ -8805,6 +8805,43 @@
 
               },
 
+               release:{
+                label:'Release Dedicated Pod',
+                messages:{
+                   confirm: function(args) {
+                    return 'Do you want to release this dedicated pod ?';
+                  },
+                  notification: function(args) {
+                    return 'Pod dedication released';
+                  }
+                },
+               action:function(args){
+                  $.ajax({
+                     url:createURL("releaseDedicatedPod&podid=" + args.context.pods[0].id),
+                     dataType:"json",
+                     async:true,
+                     success:function(json){
+                       var jid = json.releasededicatedpodresponse.jobid;
+                       args.response.success({
+                             _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:podActionfilter
+
+                       });
+                     },
+                    error:function(args){
+                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    }
+                  });
+
+               }
+              },
+
+
               disable: {
                 label: 'label.action.disable.pod',
                 messages: {
@@ -12763,19 +12800,25 @@
   var podActionfilter = function(args) {
     var podObj = args.context.item;
     var allowedActions = [];
-
+    var flag = 0;
      $.ajax({
        url:createURL("listDedicatedPods&podId=" + args.context.pods[0].id),
        success:function(json){
          if(json.listdedicatedpodsresponse.dedicatedpod != undefined){
          var dedicatedPodObj = json.listdedicatedpodsresponse.dedicatedpod[0];
            if(dedicatedPodObj.domainid != null)
-             allowedActions.push("release");
-          }
+              flag =1;
+           }
            else
-            allowedActions.push("dedicate");
+             flag =0;
        }
      });
+
+   // if(flag == 0)
+      allowedActions.push("dedicate");
+
+   // if(flag == 1)
+      allowedActions.push("release");
 
     allowedActions.push("edit");
     if(podObj.allocationstate == "Disabled")
