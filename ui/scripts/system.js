@@ -8775,16 +8775,31 @@
                      }
                 },
                 action: function(args) {
+
+                    //EXPLICIT DEDICATION
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+
                     $.ajax({
-                    url: createURL("dedicatePod&podId=" + args.context.pods[0].id),
+                    url: createURL("dedicatePod&podId=" + args.context.pods[0].id + "&domainId=" +args.data.domainId + array2.join("")),
                     dataType: "json",
                     success: function(json) {
-                      var item = json.dedicatepodresponse.pod;
-                      args.response.success({
-                        actionFilter: podActionfilter,
-                        data:item
-                      });
-                    }
+                          var jid = json.dedicatepodresponse.jobid;
+                            args.response.success({
+                               _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:podActionfilter
+                          });
+                      },
+                   error:function(json){
+                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+
+                   }
                   });
                 }
 
