@@ -29,35 +29,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import javax.inject.Inject;
 
-import com.cloud.network.GuestVlan;
-import com.cloud.network.IpAddress;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.NetworkProfile;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.PhysicalNetworkTrafficType;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.Site2SiteCustomerGateway;
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VpnUser;
-import com.cloud.network.VpnUserVO;
-import com.cloud.network.dao.LoadBalancerVO;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.HealthCheckPolicy;
-import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StickinessPolicy;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -165,7 +140,6 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
@@ -217,11 +191,26 @@ import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
+import com.cloud.network.GuestVlan;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.VirtualRouterProvider;
+import com.cloud.network.VpnUser;
+import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmProfile;
@@ -230,10 +219,19 @@ import com.cloud.network.as.Condition;
 import com.cloud.network.as.ConditionVO;
 import com.cloud.network.as.Counter;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.HealthCheckPolicy;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
@@ -254,7 +252,6 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
-import com.cloud.server.Criteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.service.ServiceOfferingVO;
@@ -265,7 +262,6 @@ import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Swift;
@@ -1875,148 +1871,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ApiDBUtils.newEventResponse(vEvent);
     }
 
-    private List<CapacityVO> sumCapacities(List<? extends Capacity> hostCapacities) {
-        Map<String, Long> totalCapacityMap = new HashMap<String, Long>();
-        Map<String, Long> usedCapacityMap = new HashMap<String, Long>();
-
-        Set<Long> poolIdsToIgnore = new HashSet<Long>();
-        Criteria c = new Criteria();
-        // TODO: implement
-        List<? extends StoragePoolVO> allStoragePools = ApiDBUtils.searchForStoragePools(c);
-        for (StoragePoolVO pool : allStoragePools) {
-            StoragePoolType poolType = pool.getPoolType();
-            if (!(poolType.isShared())) {// All the non shared storages shouldn't show up in the capacity calculation
-                poolIdsToIgnore.add(pool.getId());
-            }
-        }
-
-        float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
-
-        // collect all the capacity types, sum allocated/used and sum total...get one capacity number for each
-        for (Capacity capacity : hostCapacities) {
-
-            // check if zone exist
-            DataCenter zone = ApiDBUtils.findZoneById(capacity.getDataCenterId());
-            if (zone == null) {
-                continue;
-            }
-
-            short capacityType = capacity.getCapacityType();
-
-            // If local storage then ignore
-            if ((capacityType == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED || capacityType == Capacity.CAPACITY_TYPE_STORAGE)
-                    && poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
-                continue;
-            }
-
-            String key = capacity.getCapacityType() + "_" + capacity.getDataCenterId();
-            String keyForPodTotal = key + "_-1";
-
-            boolean sumPodCapacity = false;
-            if (capacity.getPodId() != null) {
-                key += "_" + capacity.getPodId();
-                sumPodCapacity = true;
-            }
-
-            Long totalCapacity = totalCapacityMap.get(key);
-            Long usedCapacity = usedCapacityMap.get(key);
-
-            // reset overprovisioning factor to 1
-            float overprovisioningFactor = 1;
-            if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
-                overprovisioningFactor = cpuOverprovisioningFactor;
-            }
-
-            if (totalCapacity == null) {
-                totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor));
-            } else {
-                totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
-            }
-
-            if (usedCapacity == null) {
-                usedCapacity = new Long(capacity.getUsedCapacity());
-            } else {
-                usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
-            }
-
-            if (capacityType == Capacity.CAPACITY_TYPE_CPU || capacityType == Capacity.CAPACITY_TYPE_MEMORY) { // Reserved
-                // Capacity
-                // accounts
-                // for
-                // stopped
-                // vms
-                // that
-                // have been
-                // stopped
-                // within
-                // an
-                // interval
-                usedCapacity += capacity.getReservedCapacity();
-            }
-
-            totalCapacityMap.put(key, totalCapacity);
-            usedCapacityMap.put(key, usedCapacity);
-
-            if (sumPodCapacity) {
-                totalCapacity = totalCapacityMap.get(keyForPodTotal);
-                usedCapacity = usedCapacityMap.get(keyForPodTotal);
-
-                overprovisioningFactor = 1;
-                if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
-                    overprovisioningFactor = cpuOverprovisioningFactor;
-                }
-
-                if (totalCapacity == null) {
-                    totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor));
-                } else {
-                    totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
-                }
-
-                if (usedCapacity == null) {
-                    usedCapacity = new Long(capacity.getUsedCapacity());
-                } else {
-                    usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
-                }
-
-                if (capacityType == Capacity.CAPACITY_TYPE_CPU || capacityType == Capacity.CAPACITY_TYPE_MEMORY) { // Reserved
-                    // Capacity
-                    // accounts
-                    // for
-                    // stopped
-                    // vms
-                    // that
-                    // have
-                    // been
-                    // stopped
-                    // within
-                    // an
-                    // interval
-                    usedCapacity += capacity.getReservedCapacity();
-                }
-
-                totalCapacityMap.put(keyForPodTotal, totalCapacity);
-                usedCapacityMap.put(keyForPodTotal, usedCapacity);
-            }
-        }
-
-        List<CapacityVO> summedCapacities = new ArrayList<CapacityVO>();
-        for (String key : totalCapacityMap.keySet()) {
-            CapacityVO summedCapacity = new CapacityVO();
-
-            StringTokenizer st = new StringTokenizer(key, "_");
-            summedCapacity.setCapacityType(Short.parseShort(st.nextToken()));
-            summedCapacity.setDataCenterId(Long.parseLong(st.nextToken()));
-            if (st.hasMoreTokens()) {
-                summedCapacity.setPodId(Long.parseLong(st.nextToken()));
-            }
-
-            summedCapacity.setTotalCapacity(totalCapacityMap.get(key));
-            summedCapacity.setUsedCapacity(usedCapacityMap.get(key));
-
-            summedCapacities.add(summedCapacity);
-        }
-        return summedCapacities;
-    }
 
     @Override
     public List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format) {

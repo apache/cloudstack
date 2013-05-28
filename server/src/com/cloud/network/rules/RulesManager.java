@@ -32,15 +32,9 @@ import com.cloud.vm.VirtualMachine;
  */
 public interface RulesManager extends RulesService {
 
-    boolean applyPortForwardingRules(long ipAddressId, boolean continueOnError, Account caller);
-
-    boolean applyStaticNatRulesForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke);
-
     boolean applyPortForwardingRulesForNetwork(long networkId, boolean continueOnError, Account caller);
 
     boolean applyStaticNatRulesForNetwork(long networkId, boolean continueOnError, Account caller);
-
-    void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller);
 
     void checkRuleAndUserVm(FirewallRule rule, UserVm userVm, Account caller);
 
@@ -48,30 +42,9 @@ public interface RulesManager extends RulesService {
 
     boolean revokeAllPFStaticNatRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
 
-    List<? extends FirewallRule> listFirewallRulesByIp(long ipAddressId);
-
-    /**
-     * Returns a list of port forwarding rules that are ready for application
-     * to the network elements for this ip.
-     * 
-     * @param ip
-     * @return List of PortForwardingRule
-     */
-    List<? extends PortForwardingRule> listPortForwardingRulesForApplication(long ipId);
-
-    List<? extends PortForwardingRule> gatherPortForwardingRulesForApplication(List<? extends IpAddress> addrs);
-
     boolean revokePortForwardingRulesForVm(long vmId);
 
-    boolean revokeStaticNatRulesForVm(long vmId);
-
     FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, boolean openFirewall, Account caller, int... ports) throws NetworkRuleConflictException;
-
-    boolean releasePorts(long ipId, String protocol, FirewallRule.Purpose purpose, int... ports);
-
-    List<PortForwardingRuleVO> listByNetworkId(long networkId);
-
-    boolean applyStaticNatForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke);
 
     boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller);
 
