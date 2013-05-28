@@ -911,20 +911,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath);
                     } else {
                         destFile = new QemuImgFile(destPath, destFormat);
+                        try {
+                            qemu.convert(srcFile, destFile);
+                        } catch (QemuImgException e) {
+                            s_logger.error("Failed to convert " + srcFile.getFileName() + " to "
+                                    + destFile.getFileName() + " the error was: " + e.getMessage());
+                            newDisk = null;
+                        }
                     }
                 } catch (QemuImgException e) {
                     s_logger.error("Failed to fetch the information of file "
                             + srcFile.getFileName() + " the error was: " + e.getMessage());
+                    newDisk = null;
                 }
             }
-
-            try {
-                qemu.convert(srcFile, destFile);
-            } catch (QemuImgException e) {
-                s_logger.error("Failed to convert " + srcFile.getFileName() + " to "
-                        + destFile.getFileName() + " the error was: " + e.getMessage());
-            }
-
         } else if ((srcPool.getType() != StoragePoolType.RBD) && (destPool.getType() == StoragePoolType.RBD))  {
             /**
               * Qemu doesn't support writing to RBD format 2 directly, so we have to write to a temporary RAW file first
