@@ -2153,7 +2153,20 @@
                       createForm: {
                         title: 'Dedicate VLAN Range',
                         fields: {
-                          vlanrange: { label: 'VLAN Range(s)', validation: { required: true } },                          
+                          vlanrange: { 
+                            label: 'VLAN Range', 
+                            select: function(args) {
+                              var items = [];                             
+                              if(args.context.physicalNetworks[0].vlan != null && args.context.physicalNetworks[0].vlan.length > 0) {
+                                var vlanranges = args.context.physicalNetworks[0].vlan.split(";");
+                                for(var i = 0; i < vlanranges.length ; i++) {                                  
+                                  items.push({id: vlanranges[i], description: vlanranges[i]});
+                                }                                
+                              }
+                              args.response.success({data: items});
+                            },
+                            validation: { required: true } 
+                          },                          
                           account: { label: 'label.account', validation: { required: true } },
                           domainid: {
                             label: 'label.domain',     
