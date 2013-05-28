@@ -110,6 +110,12 @@ def post_transform_adjust(entity):
         return 'SecurityGroupIngress'
     elif entity == 'SecurityGroupEgres':
         return 'SecurityGroupEgress'
+    #CloudStack denotes VirtualMachine as UserVm
+    elif entity == 'UserVm':
+        return 'VirtualMachine'
+    #CloudStak denotes LoadBalancer as ApplicationLoadBalancer
+    elif entity == 'ApplicationLoadBalancer':
+        return 'LoadBalancer'
     return entity
 
 
