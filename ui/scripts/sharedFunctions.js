@@ -276,7 +276,7 @@ cloudStack.actionFilter = {
   guestNetwork: function(args) {    
     var jsonObj = args.context.item;
 		var allowedActions = [];
-    
+                allowedActions.push('replaceacllist');
 		if(jsonObj.type == 'Isolated') {
 		  allowedActions.push('edit');		//only Isolated network is allowed to upgrade to a different network offering (Shared network is not allowed to)
 			allowedActions.push('restart');   
