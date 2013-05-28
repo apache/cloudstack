@@ -5436,6 +5436,121 @@
                     }
                   },
 
+                   dedicate:{
+                   label: 'Dedicate Zone',
+                messages: {
+                  confirm: function(args) {
+                    return 'Do you really want to dedicate this zone to a domain/account? ';
+                  },
+                  notification: function(args) {
+                    return 'Zone Dedicated';
+                  }
+                },
+                createForm:{
+                   title:'Dedicate Zone',
+                   fields:{
+                         domainId:{
+                      label:'Domain',
+                      validation:{required:true},
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                       }
+                   },
+
+                   accountId:{
+                     label:'Account',
+                    // docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  }
+
+
+                     }
+                },
+            
+               action: function(args) {
+                     //EXPLICIT DEDICATION
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+
+                    $.ajax({
+                    url: createURL("dedicateZone&zoneId=" + args.context.physicalResources[0].id + "&domainId=" +args.data.domainId + array2.join("") ),
+                    dataType: "json",
+                    success: function(json) {
+                       var jid = json.dedicatezoneresponse.jobid;
+                            args.response.success({
+                               _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:zoneActionfilter
+
+
+                          });
+
+                    }
+                  });
+                }
+
+              },
+
+              release:{
+                label:'Release Dedicated Zone',
+                messages:{
+                   confirm: function(args) {
+                    return 'Do you want to release this dedicated zone ?';
+                  },
+                  notification: function(args) {
+                    return 'Zone dedication released';
+                  }
+                },
+               action:function(args){
+                  $.ajax({
+                     url:createURL("releaseDedicatedZone&zoneid=" + args.context.physicalResources[0].id),
+                     dataType:"json",
+                     async:true,
+                      success:function(json){
+                       var jid = json.releasededicatedzoneresponse.jobid;
+                        args.response.success({
+                             _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:zoneActionfilter
+
+                       });
+                     },
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+
+               }
+              },
+
                   'remove': {
                     label: 'label.action.delete.zone',
                     messages: {
@@ -5533,7 +5648,15 @@
 												  isEditable: true,
 												  converter:cloudStack.converters.toBooleanText
                         }
-                      }
+                      },
+
+                       {
+
+                       isdedicated:{label:'Dedicated'},
+                       domainid:{label:'Domain ID'}
+
+                       }
+
                     ],
                     dataProvider: function(args) {
                       $.ajax({
@@ -5542,12 +5665,32 @@
                           id: args.context.physicalResources[0].id
                         },
                         success: function(json) {
-                          selectedZoneObj = json.listzonesresponse.zone[0];
-                          args.response.success({
-                            data: json.listzonesresponse.zone[0],
-                            actionFilter: zoneActionfilter
-                          });
-                        }
+                           selectedZoneObj = json.listzonesresponse.zone[0];
+                             $.ajax({
+                                                    url:createURL("listDedicatedZones&zoneid=" +args.context.physicalResources[0].id),
+                                                    dataType:"json",
+                                                    async:false,
+                                                    success:function(json){
+                                                        if(json.listdedicatedzonesresponse.dedicatedzone != undefined){
+                                                          var zoneItem = json.listdedicatedzonesresponse.dedicatedzone[0];
+                                                            if (zoneItem.domainid != null) {
+                                                            $.extend(selectedZoneObj, zoneItem , { isdedicated: 'Yes' });
+                                                          }
+                                                        }
+                                                        else
+                                                            $.extend(selectedZoneObj,{ isdedicated: 'No' })
+
+                                                    },
+                                                  error:function(json){
+                                                       args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                                                  }
+                                              });
+                                             args.response.success({
+                                                actionFilter: zoneActionfilter,
+                                                data: selectedZoneObj
+                                            });
+
+                           }
                       });
                     }
                   },
@@ -8833,8 +8976,8 @@
 
                        });
                      },
-                    error:function(args){
-                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
                     }
                   });
 
@@ -9821,8 +9964,8 @@
 
                        });
                      },
-                    error:function(args){
-                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
                     }
                   });
 
@@ -10847,8 +10990,8 @@
 
                        });
                      },
-                    error:function(args){
-                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
                     }
                   });
 
@@ -13065,6 +13208,12 @@
   var zoneActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = ['enableSwift'];
+
+     if(jsonObj.domainid != null)
+      allowedActions.push("release");
+    else
+    allowedActions.push("dedicate");
+
     allowedActions.push("edit");
     if(jsonObj.allocationstate == "Disabled")
       allowedActions.push("enable");
