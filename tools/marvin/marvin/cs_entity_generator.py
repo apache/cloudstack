@@ -99,12 +99,23 @@ def transform_api(api):
         return 'logout', 'CloudStack'
     return api, None
 
+def prefix_transformer(api, entity):
+    """
+    Considers the prefix as the verb when no prepositions have been found in the API
+    Only if the entity is contained in the API string
+    """
+    if api.find(entity) > 0:
+        return api[:api.find(entity)], api[api.find(entity):]
+    else:
+        return api, None
+
+
 def post_transform_adjust(entity):
     """Some API entities are incorrectly managed
 
     #BUG: Inflect engine returns IpAddress => IpAddres as singular
     """
-    if entity == 'IpAddres':
+    if entity == 'IpAddres' or entity == 'IPAddres':
         return 'IpAddress'
     elif entity == 'SecurityGroupIngres':
         return 'SecurityGroupIngress'
@@ -116,6 +127,10 @@ def post_transform_adjust(entity):
     #CloudStak denotes LoadBalancer as ApplicationLoadBalancer
     elif entity == 'ApplicationLoadBalancer':
         return 'LoadBalancer'
+    elif entity == 'GuestO':
+        return 'GuestOS'
+    elif entity == 'LBStickines':
+        return 'LBStickiness'
     return entity
 
 
@@ -162,13 +177,19 @@ def get_verb_and_entity(cmd):
     if len(matching_verbs) > 0:
         for transformer in get_transformers():
             if transformer(api)[1]:
-#                print "%s, %s -> %s" % (transformer.__name__, api, transformer(api))
                 verb = transformer(api)[0]
                 entity = singularize(cmd.entity) if singularize(cmd.entity) else cmd.entity
                 break
         else:
             verb = matching_verbs[0]
             entity = singularize(cmd.entity) if singularize(cmd.entity) else cmd.entity
+            # In case the entity is not found/related to anything in the API
+            # use the entire API as the verb.
+            # eg: createPortForwardingRule => (create, FirewallRule)
+            if api.lower().find(entity.lower()) < 0:
+                verb = api
+            else:
+                verb, entity = prefix_transformer(api, entity)
         print "%s => (verb, entity) = (%s, %s)" % (api, verb, post_transform_adjust(entity))
         return verb, post_transform_adjust(entity)
     else:
