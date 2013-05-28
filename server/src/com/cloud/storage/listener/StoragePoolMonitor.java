@@ -77,7 +77,10 @@ public class StoragePoolMonitor implements Listener {
             if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
                     scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() ==  HypervisorType.Simulator || scCmd.getHypervisorType() == HypervisorType.Ovm) {
                 List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER);
-                pools.addAll(_poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null));
+                List<StoragePoolVO> zoneStoragePoolsByTags = _poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null);
+                List<StoragePoolVO> zoneStoragePoolsByHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), scCmd.getHypervisorType());
+                zoneStoragePoolsByTags.retainAll(zoneStoragePoolsByHypervisor);
+                pools.addAll(zoneStoragePoolsByTags);
                 for (StoragePoolVO pool : pools) {
                     if (pool.getStatus() != StoragePoolStatus.Up) {
                         continue;

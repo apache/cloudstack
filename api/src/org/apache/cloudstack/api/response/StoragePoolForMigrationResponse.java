@@ -83,6 +83,9 @@ public class StoragePoolForMigrationResponse extends BaseResponse {
     @SerializedName(ApiConstants.SCOPE) @Param(description="the scope of the storage pool")
     private String scope;
 
+    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor type of the storage pool")
+    private String hypervisor;
+
     @SerializedName("suitableformigration") @Param(description="true if this pool is suitable to migrate a volume," +
             " false otherwise")
     private Boolean suitableForMigration;
@@ -99,6 +102,14 @@ public class StoragePoolForMigrationResponse extends BaseResponse {
      */
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     @Override

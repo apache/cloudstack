@@ -29,25 +29,20 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
-import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.alert.AlertManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -70,7 +65,7 @@ public class PrimaryDataStoreHelper {
         if (dataStoreVO != null) {
             throw new CloudRuntimeException("duplicate uuid: " + params.getUuid());
         }
-        
+
         dataStoreVO = new StoragePoolVO();
         dataStoreVO.setStorageProviderName(params.getProviderName());
         dataStoreVO.setHostAddress(params.getHost());
@@ -84,7 +79,7 @@ public class PrimaryDataStoreHelper {
         dataStoreVO.setClusterId(params.getClusterId());
         dataStoreVO.setStatus(StoragePoolStatus.Initialized);
         dataStoreVO.setUserInfo(params.getUserInfo());
-        
+
         Map<String, String> details = params.getDetails();
         String tags = params.getTags();
         if (tags != null) {
@@ -98,19 +93,19 @@ public class PrimaryDataStoreHelper {
                 details.put(tag, "true");
             }
         }
-        
+
         dataStoreVO = dataStoreDao.persist(dataStoreVO, details);
 
         return dataStoreMgr.getDataStore(dataStoreVO.getId(), DataStoreRole.Primary);
     }
-    
+
     public DataStore attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
         StoragePoolHostVO poolHost = storagePoolHostDao.findByPoolHost(store.getId(), scope.getScopeId());
         if (poolHost == null) {
             poolHost = new StoragePoolHostVO(store.getId(), scope.getScopeId(), existingInfo.getLocalPath());
             storagePoolHostDao.persist(poolHost);
         }
-       
+
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
         pool.setScope(scope.getScopeType());
         pool.setAvailableBytes(existingInfo.getAvailableBytes());
@@ -120,18 +115,18 @@ public class PrimaryDataStoreHelper {
         this.storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, pool.getCapacityBytes() - pool.getAvailableBytes());
         return dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
     }
-    
+
     public DataStore attachCluster(DataStore store) {
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
-        
+
         storageMgr.createCapacityEntry(pool.getId());
-        
+
         pool.setScope(ScopeType.CLUSTER);
         pool.setStatus(StoragePoolStatus.Up);
         this.dataStoreDao.update(pool.getId(), pool);
         return dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
     }
-    
+
     public DataStore attachZone(DataStore store) {
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
         pool.setScope(ScopeType.ZONE);
@@ -139,21 +134,30 @@ public class PrimaryDataStoreHelper {
         this.dataStoreDao.update(pool.getId(), pool);
         return dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
     }
-    
+
+    public DataStore attachZone(DataStore store, HypervisorType hypervisor) {
+        StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
+        pool.setScope(ScopeType.ZONE);
+        pool.setHypervisor(hypervisor);
+        pool.setStatus(StoragePoolStatus.Up);
+        this.dataStoreDao.update(pool.getId(), pool);
+        return dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
+    }
+
     public boolean maintain(DataStore store) {
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
         pool.setStatus(StoragePoolStatus.Maintenance);
         this.dataStoreDao.update(pool.getId(), pool);
         return true;
     }
-    
+
     public boolean cancelMaintain(DataStore store) {
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
         pool.setStatus(StoragePoolStatus.Up);
         dataStoreDao.update(store.getId(), pool);
         return true;
     }
-    
+
 
     protected boolean deletePoolStats(Long poolId) {
         CapacityVO capacity1 = _capacityDao.findByHostIdType(poolId,
@@ -167,10 +171,10 @@ public class PrimaryDataStoreHelper {
         if (capacity2 != null) {
             _capacityDao.remove(capacity2.getId());
         }
-       
+
         return true;
     }
-    
+
     public boolean deletePrimaryDataStore(DataStore store) {
         List<StoragePoolHostVO> hostPoolRecords = this.storagePoolHostDao
                 .listByPoolId(store.getId());
