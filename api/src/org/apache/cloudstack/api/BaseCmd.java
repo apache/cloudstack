@@ -521,7 +521,7 @@ public abstract class BaseCmd {
                     return project.getProjectAccountId();
                 } else {
                     PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
-                    ex.addProxyObject(project, projectId, "projectId");
+                    ex.addProxyObject(project.getUuid(), "projectId");
                     throw ex;
                 }
             } else {

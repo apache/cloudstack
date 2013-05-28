@@ -3288,7 +3288,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         } catch (CloudException e) {
             CloudRuntimeException ex = new CloudRuntimeException(
                     "Unable to destroy with specified vmId", e);
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -3315,7 +3315,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         } else {
             CloudRuntimeException ex = new CloudRuntimeException(
                     "Failed to destroy vm with specified vmId");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
     }
@@ -3508,7 +3508,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (userVm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "unable to find a virtual machine with specified id");
-            ex.addProxyObject(userVm, vmId, "vmId");
+            ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
 
@@ -3550,7 +3550,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (vm.getState() != State.Stopped) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "VM is not Stopped, unable to migrate the vm having the specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -3627,7 +3627,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "VM is not Running, unable to migrate the vm with specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer)
@@ -3719,7 +3719,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
             CloudRuntimeException ex = new CloudRuntimeException("VM is not Running, unable to migrate the vm with" +
                     " specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -3849,7 +3849,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "VM is Running, unable to move the vm with specified vmId");
-            ex.addProxyObject(vm, cmd.getVmId(), "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -3863,7 +3863,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (oldAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Specified Vm id belongs to the project and can't be moved");
-            ex.addProxyObject(vm, cmd.getVmId(), "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
         Account newAccount = _accountService.getActiveAccountByName(
@@ -4116,7 +4116,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                         if (network == null) {
                             InvalidParameterValueException ex = new InvalidParameterValueException(
                                     "Unable to find specified network id");
-                            ex.addProxyObject(network, networkId, "networkId");
+                            ex.addProxyObject(networkId.toString(), "networkId");
                             throw ex;
                         }
 
@@ -4129,7 +4129,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                         if (networkOffering.isSystemOnly()) {
                             InvalidParameterValueException ex = new InvalidParameterValueException(
                                     "Specified Network id is system only and can't be used for vm deployment");
-                            ex.addProxyObject(network, networkId, "networkId");
+                            ex.addProxyObject(network.getUuid(), "networkId");
                             throw ex;
                         }
                         applicableNetworks.add(network);
@@ -4180,7 +4180,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                             " resources as a part of network provision for persistent network due to ", ex);
                                     CloudRuntimeException e = new CloudRuntimeException("Failed to implement network" +
                                             " (with specified id) elements and resources as a part of network provision");
-                                    e.addProxyObject(newNetwork, newNetwork.getId(), "networkId");
+                                    e.addProxyObject(newNetwork.getUuid(), "networkId");
                                     throw e;
                                 }
                             }
@@ -4241,7 +4241,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find VM with ID " + vmId);
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
 
@@ -4287,7 +4287,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (rootVols.isEmpty()) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Can not find root volume for VM " + vm.getUuid());
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -4322,8 +4322,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             if (template == null) {
                 InvalidParameterValueException ex = new InvalidParameterValueException(
                         "Cannot find template/ISO for specified volumeid and vmId");
-                ex.addProxyObject(vm, vmId, "vmId");
-                ex.addProxyObject(root, root.getId(), "volumeId");
+                ex.addProxyObject(vm.getUuid(), "vmId");
+                ex.addProxyObject(root.getUuid(), "volumeId");
                 throw ex;
             }
         }
@@ -4335,7 +4335,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 s_logger.debug("Stop vm " + vm.getUuid() + " failed", e);
                 CloudRuntimeException ex = new CloudRuntimeException(
                         "Stop vm failed for specified vmId");
-                ex.addProxyObject(vm, vmId, "vmId");
+                ex.addProxyObject(vm.getUuid(), "vmId");
                 throw ex;
             }
         }
@@ -4396,7 +4396,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 s_logger.debug("Unable to start VM " + vm.getUuid(), e);
                 CloudRuntimeException ex = new CloudRuntimeException(
                         "Unable to start VM with specified id" + e.getMessage());
-                ex.addProxyObject(vm, vmId, "vmId");
+                ex.addProxyObject(vm.getUuid(), "vmId");
                 throw ex;
             }
         }

@@ -37,9 +37,11 @@ import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -283,7 +285,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                         } else {
                             CloudRuntimeException ex = new CloudRuntimeException("Multiple generic soure NAT IPs provided for network");
                             // see the IPAddressVO.java class.
-                            ex.addProxyObject("user_ip_address", ip.getAssociatedWithNetworkId(), "networkId");
+                            IPAddressVO ipAddr = ApiDBUtils.findIpAddressById(ip.getAssociatedWithNetworkId());
+                            String ipAddrUuid = ip.getAssociatedWithNetworkId().toString();
+                            if ( ipAddr != null){
+                                ipAddrUuid = ipAddr.getUuid();
+                            }
+                            ex.addProxyObject(ipAddrUuid, "networkId");
                             throw ex;
                         }
                     }
@@ -1129,17 +1136,21 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
     
         List<PhysicalNetworkVO> networkList = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
+        DataCenter dc = ApiDBUtils.findZoneById(zoneId);
+        String dcUuid = String.valueOf(zoneId);
+        if ( dc != null ){
+            dcUuid = dc.getUuid();
+        }
     
         if (networkList.isEmpty()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the default physical network with traffic=" + trafficType + " in the specified zone id");
-            // Since we don't have a DataCenterVO object at our disposal, we just set the table name that the zoneId's corresponding uuid is looked up from, manually.
-            ex.addProxyObject("data_center", zoneId, "zoneId");
+            ex.addProxyObject(dcUuid, "zoneId");
             throw ex;
         }
     
         if (networkList.size() > 1) {
             InvalidParameterValueException ex = new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " with traffic type=" + trafficType);
-            ex.addProxyObject("data_center", zoneId, "zoneId");
+            ex.addProxyObject(dcUuid, "zoneId");
             throw ex;
         }
     

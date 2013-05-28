@@ -201,7 +201,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "LB service is not supported in specified network id");
-            ex.addProxyObject(network, network.getId(), "networkId");
+            ex.addProxyObject(network.getUuid(), "networkId");
             throw ex;
         }
         

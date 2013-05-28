@@ -148,6 +148,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService {
@@ -387,9 +388,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage(), ex);
         }
         catch (PermissionDeniedException ex){
-            ArrayList<String> idList = ex.getIdProxyList();
+            ArrayList<ExceptionProxyObject> idList = ex.getIdProxyList();
             if (idList != null) {
-                s_logger.info("PermissionDenied: " + ex.getMessage() + " on uuids: [" + StringUtils.listToCsvTags(idList) + "]");
+                StringBuffer buf = new StringBuffer();
+                for (ExceptionProxyObject obj : idList){
+                    buf.append(obj.getDescription());
+                    buf.append(":");
+                    buf.append(obj.getUuid());
+                    buf.append(" ");
+                }
+                s_logger.info("PermissionDenied: " + ex.getMessage() + " on objs: [" + buf.toString() + "]");
             } else {
                 s_logger.info("PermissionDenied: " + ex.getMessage());
             }
@@ -1067,7 +1075,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             apiResponse.setErrorCode(ex.getErrorCode().getHttpCode());
             apiResponse.setErrorText(ex.getDescription());
             apiResponse.setResponseName(responseName);
-            ArrayList<String> idList = ex.getIdProxyList();
+            ArrayList<ExceptionProxyObject> idList = ex.getIdProxyList();
             if (idList != null) {
                 for (int i=0; i < idList.size(); i++) {
                     apiResponse.addProxyObject(idList.get(i));

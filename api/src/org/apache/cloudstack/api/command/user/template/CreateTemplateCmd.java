@@ -207,7 +207,7 @@ import java.util.Map;
             Project project = _projectService.findByProjectAccountId(accountId);
             if (project.getState() != Project.State.Active) {
                 PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
-                ex.addProxyObject(project, project.getId(), "projectId");
+                ex.addProxyObject(project.getUuid(), "projectId");
             }
         } else if (account.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);

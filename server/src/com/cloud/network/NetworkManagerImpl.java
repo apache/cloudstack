@@ -737,7 +737,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             // zone is of type DataCenter. See DataCenterVO.java.
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, " +
                     "Zone is currently disabled");
-            ex.addProxyObject("data_center", zone.getId(), "zoneId");
+            ex.addProxyObject(zone.getUuid(), "zoneId");
             throw ex;
         }
 
@@ -1483,8 +1483,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
                     if (errorIfAlreadySetup) {
                         InvalidParameterValueException ex = new InvalidParameterValueException("Found existing network configuration (with specified id) for offering (with specified id)");
-                        ex.addProxyObject(offering, offering.getId(), "offeringId");
-                        ex.addProxyObject(configs.get(0), configs.get(0).getId(), "networkConfigId");
+                        ex.addProxyObject(offering.getUuid(), "offeringId");
+                        ex.addProxyObject(configs.get(0).getUuid(), "networkConfigId");
                         throw ex;
                     } else {
                         return configs;
@@ -1500,8 +1500,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
                     if (errorIfAlreadySetup) {
                         InvalidParameterValueException ex = new InvalidParameterValueException("Found existing network configuration (with specified id) for offering (with specified id)");
-                        ex.addProxyObject(offering, offering.getId(), "offeringId");
-                        ex.addProxyObject(configs.get(0), configs.get(0).getId(), "networkConfigId");
+                        ex.addProxyObject(offering.getUuid(), "offeringId");
+                        ex.addProxyObject(configs.get(0).getUuid(), "networkConfigId");
                         throw ex;
                     } else {
                         return configs;
@@ -1553,7 +1553,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if (networks.size() < 1) {
                 // see networkOfferingVO.java
                 CloudRuntimeException ex = new CloudRuntimeException("Unable to convert network offering with specified id to network profile");
-                ex.addProxyObject(offering, offering.getId(), "offeringId");
+                ex.addProxyObject(offering.getUuid(), "offeringId");
                 throw ex;
             }
 
@@ -1932,7 +1932,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
                 if (!element.implement(network, offering, dest, context)) {
                     CloudRuntimeException ex = new CloudRuntimeException("Failed to implement provider " + element.getProvider().getName() + " for network with specified id");
-                    ex.addProxyObject(network, network.getId(), "networkId");
+                    ex.addProxyObject(network.getUuid(), "networkId");
                     throw ex;
                 }
             }
@@ -2330,7 +2330,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (ntwkOff.getState() != NetworkOffering.State.Enabled) {
             // see NetworkOfferingVO
             InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its stat is not " + NetworkOffering.State.Enabled);
-            ex.addProxyObject(ntwkOff, ntwkOff.getId(), "networkOfferingId");
+            ex.addProxyObject(ntwkOff.getUuid(), "networkOfferingId");
             throw ex;
         }
 
@@ -2339,7 +2339,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             // see PhysicalNetworkVO.java
             InvalidParameterValueException ex = new InvalidParameterValueException("Specified physical network id is" +
                     " in incorrect state:" + pNtwk.getState());
-            ex.addProxyObject("physical_network", pNtwk.getId(), "physicalNetworkId");
+            ex.addProxyObject(pNtwk.getUuid(), "physicalNetworkId");
             throw ex;
         }
 
@@ -2992,7 +2992,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Network with specified id doesn't exist");
-            ex.addProxyObject(network, networkId, "networkId");
+            ex.addProxyObject(String.valueOf(networkId), "networkId");
             throw ex;
         }
 
@@ -3241,7 +3241,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         " network provision due to ", ex);
                 CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id)" +
                         " elements and resources as a part of network provision for persistent network");
-                e.addProxyObject(guestNetwork, guestNetwork.getId(), "networkId");
+                e.addProxyObject(guestNetwork.getUuid(), "networkId");
                 throw e;
             }
         }

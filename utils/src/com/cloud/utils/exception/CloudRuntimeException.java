@@ -18,7 +18,6 @@ package com.cloud.utils.exception;
 
 import java.util.ArrayList;
 
-import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.SerialVersionUID;
 
 /**
@@ -28,8 +27,8 @@ public class CloudRuntimeException extends RuntimeException {
 
     private static final long serialVersionUID = SerialVersionUID.CloudRuntimeException;
 
-    // This holds a list of uuids and their names. Add uuid:fieldname pairs
-    protected ArrayList<String> idList = new ArrayList<String>();
+    // This holds a list of uuids and their descriptive names.
+    protected ArrayList<ExceptionProxyObject> idList = new ArrayList<ExceptionProxyObject>();
 
     protected int csErrorCode;
 
@@ -49,21 +48,20 @@ public class CloudRuntimeException extends RuntimeException {
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
+    public void addProxyObject(ExceptionProxyObject obj){
+        idList.add(obj);
+    }
+    
     public void addProxyObject(String uuid) {
-        idList.add(uuid);
-        return;
+        idList.add(new ExceptionProxyObject(uuid, null));
     }
 
-    public void addProxyObject(Object voObj, Long id, String idFieldName) {
-        // Get the VO object's table name.
-        String tablename = AnnotationHelper.getTableName(voObj);
-        if (tablename != null) {
-            addProxyObject(tablename, id, idFieldName);
-        }
-        return;
+    public void addProxyObject(String voObjUuid, String description) {
+        ExceptionProxyObject proxy = new ExceptionProxyObject(voObjUuid, description);
+        idList.add(proxy);
     }
 
-    public ArrayList<String> getIdProxyList() {
+    public ArrayList<ExceptionProxyObject> getIdProxyList() {
         return idList;
     }
 

@@ -43,6 +43,7 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
@@ -50,6 +51,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -508,14 +510,14 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         if (project == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-            ex.addProxyObject(project, projectId, "projectId");            
+            ex.addProxyObject(String.valueOf(projectId), "projectId");            
             throw ex;
         }
 
         //User can be added to Active project only
         if (project.getState() != Project.State.Active) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Can't add account to the specified project id in state=" + project.getState() + " as it's no longer active");
-            ex.addProxyObject(project, projectId, "projectId");
+            ex.addProxyObject(project.getUuid(),"projectId");
             throw ex;
         }
 
@@ -525,8 +527,12 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             account = _accountMgr.getActiveAccountByName(accountName, project.getDomainId());
             if (account == null) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account name=" + accountName + " in specified domain id");
-                // We don't have a DomainVO object with us, so just pass the tablename "domain" manually.                
-                ex.addProxyObject("domain", project.getDomainId(), "domainId");
+                DomainVO domain = ApiDBUtils.findDomainById(project.getDomainId());
+                String domainUuid = String.valueOf(project.getDomainId());
+                if ( domain != null ){
+                    domainUuid = domain.getUuid();
+                }
+                ex.addProxyObject(domainUuid, "domainId");
                 throw ex;
             }
 
@@ -590,7 +596,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         if (project == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-            ex.addProxyObject(project, projectId, "projectId");            
+            ex.addProxyObject(String.valueOf(projectId), "projectId");            
             throw ex;
         }
 
@@ -598,8 +604,12 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         Account account = _accountMgr.getActiveAccountByName(accountName, project.getDomainId());
         if (account == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account name=" + accountName + " in domain id=" + project.getDomainId());
-            // Since we don't have a domainVO object, pass the table name manually.
-            ex.addProxyObject("domain", project.getDomainId(), "domainId");           
+            DomainVO domain = ApiDBUtils.findDomainById(project.getDomainId());
+            String domainUuid = String.valueOf(project.getDomainId());
+            if ( domain != null ){
+                domainUuid = domain.getUuid();
+            }
+            ex.addProxyObject(domainUuid, "domainId");           
         }
 
         //verify permissions
@@ -610,14 +620,14 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         if (projectAccount == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Account " + accountName + " is not assigned to the project with specified id");
             // Use the projectVO object and not the projectAccount object to inject the projectId.
-            ex.addProxyObject(project, projectId, "projectId");
+            ex.addProxyObject(project.getUuid(), "projectId");
             throw ex;
         }
 
         //can't remove the owner of the project
         if (projectAccount.getAccountRole() == Role.Admin) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to delete account " + accountName + " from the project with specified id as the account is the owner of the project");
-            ex.addProxyObject(project, projectId, "projectId");
+            ex.addProxyObject(project.getUuid(), "projectId");
             throw ex;
         }
 
@@ -791,7 +801,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         if (project == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-            ex.addProxyObject(project, projectId, "projectId");
+            ex.addProxyObject(String.valueOf(projectId), "projectId");
             throw ex;
         }
 
@@ -833,7 +843,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         //verify input parameters
         if (project == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-            ex.addProxyObject(project, projectId, "projectId");
+            ex.addProxyObject(String.valueOf(projectId), "projectId");
             throw ex;
         }
 
@@ -844,7 +854,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             return _projectDao.findById(projectId);
         } else {
             CloudRuntimeException ex = new CloudRuntimeException("Failed to suspend project with specified id");
-            ex.addProxyObject(project, projectId, "projectId");
+            ex.addProxyObject(project.getUuid(), "projectId");
             throw ex;
         }
 

@@ -587,7 +587,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (vpcOff == null || vpcOff.getState() != State.Enabled) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find vpc offering in " + State.Enabled +
                     " state by specified id");
-            ex.addProxyObject("vpc_offerings", vpcOffId, "vpcOfferingId");
+            if (vpcOff == null) {
+                ex.addProxyObject(String.valueOf(vpcOffId), "vpcOfferingId");
+            } else {
+                ex.addProxyObject(vpcOff.getUuid(), "vpcOfferingId");
+            }
             throw ex;
         }
        
@@ -596,7 +600,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             // See DataCenterVO.java
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
-            ex.addProxyObject("data_center", zone.getId(), "zoneId");
+            ex.addProxyObject(zone.getUuid(), "zoneId");
             throw ex;
         }
         
@@ -943,7 +947,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC by id specified");
-            ex.addProxyObject("vpc", vpcId, "VPC");
+            ex.addProxyObject(String.valueOf(vpcId), "VPC");
             throw ex;
         }
         
@@ -1275,7 +1279,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC by id specified");
-            ex.addProxyObject("vpc", vpcId, "VPC");
+            ex.addProxyObject(String.valueOf(vpcId), "VPC");
             throw ex;
         }
         
@@ -1354,7 +1358,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC by id specified");
-            ex.addProxyObject("vpc", vpcId, "VPC");
+            ex.addProxyObject(String.valueOf(vpcId), "VPC");
             throw ex;
         }
 
@@ -2016,7 +2020,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         if (vpc == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC ");
-            ex.addProxyObject("vpc", vpcId, "VPC");
+            ex.addProxyObject(String.valueOf(vpcId), "VPC");
             throw ex;
         }
         _accountMgr.checkAccess(caller, null, false, vpc);

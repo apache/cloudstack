@@ -226,7 +226,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             if ((cleanup != null) && cleanup.booleanValue()) {
                 if (!cleanupDomain(domain.getId(), ownerId)) {
                     CloudRuntimeException e = new CloudRuntimeException("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domain.getId() + ").");
-                    e.addProxyObject(domain, domain.getId(), "domainId");
+                    e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
                 }
             } else {
@@ -235,13 +235,13 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     if (!_domainDao.remove(domain.getId())) {
                         rollBackState = true;
                         CloudRuntimeException e = new CloudRuntimeException("Delete failed on domain " + domain.getName() + " (id: " + domain.getId() + "); Please make sure all users and sub domains have been removed from the domain before deleting");
-                        e.addProxyObject(domain, domain.getId(), "domainId");
+                        e.addProxyObject(domain.getUuid(), "domainId");
                         throw e;
                     }
                 } else {
                     rollBackState = true;
                     CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
-                    e.addProxyObject(domain, domain.getId(), "domainId");
+                    e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
                 }
             }
@@ -480,7 +480,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
-            ex.addProxyObject(domain, domainId, "domainId");
+            ex.addProxyObject(domainId.toString(), "domainId");
             throw ex;
         } else if (domain.getParent() == null && domainName != null) {
             // check if domain is ROOT domain - and deny to edit it with the new name
@@ -501,7 +501,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
             if (!domains.isEmpty() && !sameDomain) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
-                ex.addProxyObject(domain, domainId, "domainId");
+                ex.addProxyObject(domain.getUuid(), "domainId");
                 throw ex;
             }
         }
