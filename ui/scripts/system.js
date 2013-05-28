@@ -8892,14 +8892,17 @@
                                                     dataType:"json",
                                                     async:false,
                                                     success:function(json){
-                                                        var podItem = json.listdedicatedpodsresponse ? json.listdedicatedpodsresponse.dedicatedpod[0]:[];
+                                                         if(json.listdedicatedpodsresponse.dedicatedpod != undefined){
+                                                            var podItem = json.listdedicatedpodsresponse.dedicatedpod[0];
                                                         if (podItem.domainid != null) {
                                                             $.extend(item, podItem , { isdedicated: 'Yes' });
-                                                   }
+                                                        }
+                                                    }
+                                                      else
+                                                         $.extend(item ,{ isdedicated: 'No' })
                                                  },
                                                  error:function(json){
-                                                        $.extend(item ,{ isdedicated: 'No' })
-
+                                                     args.response.error(parseXMLHttpResponse(XMLHttpResponse));
 
                                                  }
                                            });
