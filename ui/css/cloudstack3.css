@@ -11887,14 +11887,16 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .create .icon,
 .createTemplate .icon,
 .enableSwift .icon,
-.addVM .icon {
+.addVM .icon,
+.dedicate .icon {
   background-position: -69px -63px;
 }
 
 .create:hover .icon,
 .createTemplate:hover .icon,
 .enableSwift:hover .icon,
-.addVM:hover .icon {
+.addVM:hover .icon,
+.dedicate:hover .icon {
   background-position: -69px -645px;
 }
 
