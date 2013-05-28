@@ -36,18 +36,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import java.util.StringTokenizer;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.configuration.*;
-import com.cloud.dc.*;
-import com.cloud.dc.dao.DcDetailsDao;
-import com.cloud.user.*;
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -56,13 +50,25 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationVO;
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DcDetailsDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
@@ -95,6 +101,11 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
+import com.cloud.user.Account;
+import com.cloud.user.AccountDetailVO;
+import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
@@ -106,7 +117,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
-import com.cloud.uuididentity.dao.IdentityDao;
 
 
 @Component
@@ -124,12 +134,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Inject private DataCenterDao _dataCenterDao;
     @Inject private NetworkDao _networkDao;
     @Inject private VlanDao _vlanDao;
-    private String _domainSuffix;
     @Inject private DomainDao _domainDao;
     @Inject private AccountDao _accountDao;
     @Inject private ResourceCountDao _resourceCountDao;
     @Inject private NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
-    @Inject private IdentityDao _identityDao;
     @Inject private DcDetailsDao _dcDetailsDao;
     @Inject private ClusterDetailsDao _clusterDetailsDao;
     @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
@@ -161,9 +169,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         // Get init
         String init = _configDao.getValue("init");
-
-        // Get domain suffix - needed for network creation
-        _domainSuffix = _configDao.getValue("guest.domain.suffix");
 
         if (init == null || init.equals("false")) {
             s_logger.debug("ConfigurationServer is saving default values to the database.");

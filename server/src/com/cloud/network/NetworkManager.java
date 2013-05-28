@@ -19,7 +19,6 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.network.element.DhcpServiceProvider;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 
 import com.cloud.dc.DataCenter;
@@ -39,6 +38,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -59,7 +59,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.region.PortableIp;
 
 /**
  * NetworkManager manages the network for the different end users.
@@ -319,9 +318,6 @@ public interface NetworkManager  {
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 
 
-    PublicIp assignVpnGatewayIpAddress(long dcId, Account owner, long vpcId) throws InsufficientAddressCapacityException, ConcurrentOperationException;
-
-
     /**
      * @param addr
      */
@@ -346,10 +342,7 @@ public interface NetworkManager  {
      * @return
      */
     int getNetworkLockTimeout();
-
-
-    boolean cleanupIpResources(long addrId, long userId, Account caller);
-
+    
 
     boolean restartNetwork(Long networkId, Account callerAccount,
             User callerUser, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
@@ -370,26 +363,23 @@ public interface NetworkManager  {
 	Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering,
 			Long physicalNetworkId);
 
-
     List<Provider> getProvidersForServiceInNetwork(Network network, Service service);
 
     StaticNatServiceProvider getStaticNatProviderForNetwork(Network network);
+    
     boolean isNetworkInlineMode(Network network);
 
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 
     LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network, Scheme lbScheme);
 
-
     boolean isSecondaryIpSetForNic(long nicId);
 
-     public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp)
-     throws InsufficientAddressCapacityException;
-
+    public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException;
 
     List<? extends Nic> listVmNics(Long vmId, Long nicId);
+    
     String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod, Account caller, String requestedIp) throws InsufficientAddressCapacityException;
-    boolean removeVmSecondaryIpsOfNic(long nicId);
 
     NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType);
 

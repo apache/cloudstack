@@ -39,11 +39,6 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
-import com.cloud.dc.*;
-import com.cloud.dc.dao.*;
-import com.cloud.user.*;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.utils.db.*;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -71,7 +66,13 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.region.*;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpDao;
+import org.apache.cloudstack.region.PortableIpRange;
+import org.apache.cloudstack.region.PortableIpRangeDao;
+import org.apache.cloudstack.region.PortableIpRangeVO;
+import org.apache.cloudstack.region.PortableIpVO;
+import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -149,8 +150,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
@@ -192,6 +193,11 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
@@ -200,59 +206,8 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-import edu.emory.mathcs.backport.java.util.Arrays;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.ApiConstants.LDAPParams;
-import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
-import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
-import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.naming.Context;
-import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import java.net.URI;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 @Component
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
@@ -938,10 +893,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
              */
         }
 
-        Grouping.AllocationState allocationState = null;
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             try {
-                allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+                Grouping.AllocationState.valueOf(allocationStateStr);
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("Unable to resolve Allocation State '" + allocationStateStr + "' to a supported state");
             }
@@ -1363,10 +1317,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS2");
         }
 
-        Grouping.AllocationState allocationState = null;
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             try {
-                allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+                Grouping.AllocationState.valueOf(allocationStateStr);
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("Unable to resolve Allocation State '" + allocationStateStr + "' to a supported state");
             }
@@ -2346,7 +2299,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIP = cmd.getEndIp();
         String newVlanGateway = cmd.getGateway();
         String newVlanNetmask = cmd.getNetmask();
-        Long userId = UserContext.current().getCallerUserId();
         String vlanId = cmd.getVlan();
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
@@ -3351,43 +3303,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as your IP range's gateway, as per the IP range's netmask.");
         }
     }
-
-    private void checkPrivateIpRangeErrors(Long podId, String startIP, String endIP) {
-        HostPodVO pod = _podDao.findById(podId);
-        if (pod == null) {
-            throw new InvalidParameterValueException("Please specify a valid pod.");
-        }
-
-        // Check that the start and end IPs are valid
-        if (!NetUtils.isValidIp(startIP)) {
-            throw new InvalidParameterValueException("Please specify a valid start IP");
-        }
-
-        if (endIP != null && !NetUtils.isValidIp(endIP)) {
-            throw new InvalidParameterValueException("Please specify a valid end IP");
-        }
-
-        if (endIP != null && !NetUtils.validIpRange(startIP, endIP)) {
-            throw new InvalidParameterValueException("Please specify a valid IP range.");
-        }
-
-        // Check that the IPs that are being added are compatible with the pod's
-        // CIDR
-        String cidrAddress = getCidrAddress(podId);
-        long cidrSize = getCidrSize(podId);
-
-        if (endIP != null && !NetUtils.sameSubnetCIDR(startIP, endIP, cidrSize)) {
-            throw new InvalidParameterValueException("Please ensure that your start IP and end IP are in the same subnet, as per the pod's CIDR size.");
-        }
-
-        if (!NetUtils.sameSubnetCIDR(startIP, cidrAddress, cidrSize)) {
-            throw new InvalidParameterValueException("Please ensure that your start IP is in the same subnet as the pod's CIDR address.");
-        }
-
-        if (endIP != null && !NetUtils.sameSubnetCIDR(endIP, cidrAddress, cidrSize)) {
-            throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as the pod's CIDR address.");
-        }
-    }
+    
 
     private String getCidrAddress(String cidr) {
         String[] cidrPair = cidr.split("\\/");
@@ -3399,15 +3315,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return Integer.parseInt(cidrPair[1]);
     }
 
-    private String getCidrAddress(long podId) {
-        HostPodVO pod = _podDao.findById(podId);
-        return pod.getCidrAddress();
-    }
-
-    private long getCidrSize(long podId) {
-        HostPodVO pod = _podDao.findById(podId);
-        return pod.getCidrSize();
-    }
 
     @Override
     public void checkPodCidrSubnets(long dcId, Long podIdToBeSkipped, String cidr) {
@@ -4359,7 +4266,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean isOfferingForVpc(NetworkOffering offering) {
         boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(),
                 Provider.VPCVirtualRouter);
-        boolean internalLb = offering.getInternalLb();
         return vpcProvider;
     }
 
@@ -4516,6 +4422,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     // Note: This method will be used for entity name validations in the coming
     // releases (place holder for now)
+    @SuppressWarnings("unused")
     private void validateEntityName(String str) {
         String forbidden = "~!@#$%^&*()+=";
         char[] searchChars = forbidden.toCharArray();
@@ -4741,7 +4648,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIP = cmd.getEndIp();
         String gateway = cmd.getGateway();
         String netmask = cmd.getNetmask();
-        Long userId = UserContext.current().getCallerUserId();
         String vlanId = cmd.getVlan();
 
         Region region = _regionDao.findById(regionId);

@@ -2549,7 +2549,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (removeVlan != null){
             List<Integer> tokens = processVlanRange(network,removeVlan);
             boolean result = removeVlanRange(network, tokens.get(0), tokens.get(1));
-
         }
 
         if (tags != null && tags.size() > 1) {
@@ -2795,9 +2794,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         return  true;
     }
 
-    private boolean physicalNetworkHasAllocatedVnets(long zoneId, long physicalNetworkId) {
-        return !_dcDao.listAllocatedVnets(physicalNetworkId).isEmpty();
-    }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_DELETE, eventDescription = "deleting physical network", async = true)
@@ -3758,14 +3754,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
     }
 
-
-
+    
     private boolean getAllowSubdomainAccessGlobal() {
         return _allowSubdomainNetworkAccess;
     }
 
-
-
+    
     @Override
     public List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd) {
         String type = cmd.getTrafficType();
