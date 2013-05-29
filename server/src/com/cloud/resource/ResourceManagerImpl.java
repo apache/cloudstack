@@ -445,7 +445,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (zone.isSecurityGroupEnabled()) {
-            if( hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer ) {
+            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer
+                    && hypervisorType != HypervisorType.Simulator) {
                 throw new InvalidParameterValueException("Don't support hypervisor type " + hypervisorType + " in advanced security enabled zone");
             }
         }
