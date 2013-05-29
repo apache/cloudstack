@@ -3370,20 +3370,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         Nic defaultNic = findGatewayIp(vm.getId());
         String gatewayIp = defaultNic.getGateway();
-        boolean needGateway = true;
         if (gatewayIp != null && !gatewayIp.equals(nic.getGateway())) {
-            needGateway = false;
-            GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
-            // Do set dhcp:router option for non-default nic on certain OS(including Windows), and leave other OS unset.
-            // Because some OS(e.g. CentOS) would set routing on wrong interface
-            for (String name : _guestOSNeedGatewayOnNonDefaultNetwork) {
-                if (guestOS.getDisplayName().startsWith(name)) {
-                    needGateway = true;
-                    break;
-                }
-            }
-        }
-        if (!needGateway) {
             gatewayIp = "0.0.0.0";
         }
         dhcpCommand.setDefaultRouter(gatewayIp);
