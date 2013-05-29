@@ -126,7 +126,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             throw new InvalidParameterValueException("Invalid region ID: " + regionId);
         }
 
-        if (!region.checkIfServiceEnabled(Region.Service.Gslb)) {
+        String providerDnsName = _globalConfigDao.getValue(Config.CloudDnsName.key());
+        if (!region.checkIfServiceEnabled(Region.Service.Gslb) || (providerDnsName == null)) {
             throw new CloudRuntimeException("GSLB service is not enabled in region : " + region.getName());
         }
 
