@@ -2614,7 +2614,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     public boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
         boolean result = false;
         Transaction txn = Transaction.currentTxn();
-
+        txn.start();
         NetworkVO network = _networksDao.lockRow(networkId, true);
         if (network == null) {
             s_logger.debug("Unable to find network with id: " + networkId);
@@ -2625,7 +2625,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             return false;
         }
 
-        txn.start();
         if (isSharedNetworkWithServices(network)) {
             network.setState(Network.State.Shutdown);
             _networksDao.update(network.getId(), network);
