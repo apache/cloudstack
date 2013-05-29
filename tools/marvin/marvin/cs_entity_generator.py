@@ -99,19 +99,22 @@ def transform_api(api):
         return 'logout', 'CloudStack'
     return api, None
 
-def prefix_transformer(api, entity):
+def verb_adjust(api, entity):
     """
-    Considers the prefix as the verb when no prepositions have been found in the API
+    Considers the prefix as the verb when no preposition transformers have been found in the API
     Only if the entity is contained in the API string
     """
-    if api.find(entity) > 0:
-        return api[:api.find(entity)], api[api.find(entity):]
+    index = api.lower().find(entity.lower())
+    if index > 0:
+        return api[:index]
     else:
-        return api, None
+        return api
 
 
-def post_transform_adjust(entity):
-    """Some API entities are incorrectly managed
+def entity_adjust(entity):
+    """
+    Some entities are managed within CloudStack where they don't bear any resemblance to the API.
+    Adjust such entities to a more sensible client side entity
 
     #BUG: Inflect engine returns IpAddress => IpAddres as singular
     """
@@ -121,16 +124,33 @@ def post_transform_adjust(entity):
         return 'SecurityGroupIngress'
     elif entity == 'SecurityGroupEgres':
         return 'SecurityGroupEgress'
-    #CloudStack denotes VirtualMachine as UserVm
-    elif entity == 'UserVm':
-        return 'VirtualMachine'
-    #CloudStak denotes LoadBalancer as ApplicationLoadBalancer
-    elif entity == 'ApplicationLoadBalancer':
-        return 'LoadBalancer'
     elif entity == 'GuestO':
         return 'GuestOS'
     elif entity == 'LBStickines':
         return 'LBStickiness'
+    #CloudStack denotes VirtualRouter as DomainRouter
+    elif entity == 'DomainRouter':
+        return 'VirtualRouter'
+    #CloudStack denotes VirtualMachine as UserVm
+    elif entity == 'UserVm':
+        return 'VirtualMachine'
+    #CloudStack denotes LoadBalancer as ApplicationLoadBalancer
+    elif entity == 'ApplicationLoadBalancer':
+        return 'LoadBalancer'
+    #CloudStack denotes aliased NIC (with IP) as NicSecondaryIp
+    elif entity == 'NicSecondaryIp':
+        return 'Nic'
+    elif entity == 'Site2SiteVpnConnection':
+        return 'VpnConnection'
+    elif entity == 'Site2SiteVpnGateway':
+        return 'VpnGateway'
+    elif entity == 'Site2SiteCustomerGateway':
+        return 'VpnCustomerGateway'
+    #Cloudstack maintains Template/ISO/Volume as single Image type
+    elif entity == 'Extract':
+        return 'Image'
+    elif entity == 'Template':
+        return 'Image'
     return entity
 
 
@@ -178,20 +198,24 @@ def get_verb_and_entity(cmd):
         for transformer in get_transformers():
             if transformer(api)[1]:
                 verb = transformer(api)[0]
-                entity = singularize(cmd.entity) if singularize(cmd.entity) else cmd.entity
+                if cmd.entity:
+                    entity = singularize(cmd.entity) if singularize(cmd.entity) else cmd.entity
+                else:
+                    entity = verb, \
+                                singularize(transformer(api)[1]) if singularize(transformer(api)[1]) else transformer(api)[1]
+                entity = entity_adjust(entity)
                 break
         else:
             verb = matching_verbs[0]
-            entity = singularize(cmd.entity) if singularize(cmd.entity) else cmd.entity
-            # In case the entity is not found/related to anything in the API
-            # use the entire API as the verb.
-            # eg: createPortForwardingRule => (create, FirewallRule)
-            if api.lower().find(entity.lower()) < 0:
-                verb = api
+            entity = api.replace(verb, '')
+            if cmd.entity:
+                entity = singularize(cmd.entity) if singularize(cmd.entity) else cmd.entity
             else:
-                verb, entity = prefix_transformer(api, entity)
-        print "%s => (verb, entity) = (%s, %s)" % (api, verb, post_transform_adjust(entity))
-        return verb, post_transform_adjust(entity)
+                entity = singularize(entity) if singularize(entity) else entity
+            entity = entity_adjust(entity)
+            verb = verb_adjust(api, entity)
+        print "%s => (verb, entity) = (%s, %s)" % (api, verb, entity)
+        return verb, entity
     else:
         print "No matching verb, entity breakdown for api %s" % api
 

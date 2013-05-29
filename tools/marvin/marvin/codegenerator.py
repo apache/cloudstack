@@ -385,7 +385,8 @@ class codeGenerator(object):
 
             if cmd.has_key('entity'):
                 csCmd.entity = cmd['entity']
-            assert csCmd.entity
+            else:
+                print csCmd.name + " has no entity"
 
             if 'description' in cmd:
                 csCmd.desc = cmd['description']
