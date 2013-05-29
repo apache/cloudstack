@@ -39,7 +39,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.privateGwId = None
 
 
-    @attr(tags=["simulator", "advanced"])
+    @attr(tags=["advanced"])
     def test_privategw_acl(self):
 
         # 1) Create VPC

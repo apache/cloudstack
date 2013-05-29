@@ -98,7 +98,7 @@ class TestInternalLb(cloudstackTestCase):
 
 
     
-    @attr(tags=["simulator", "advanced"])
+    @attr(tags=["advanced"])
     def test_internallb(self):
 
         #1) Create and enable network offering with Internal Lb vm service
