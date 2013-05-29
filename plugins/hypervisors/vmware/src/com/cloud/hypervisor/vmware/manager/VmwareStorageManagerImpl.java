@@ -491,6 +491,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 						hyperHost, volumeId,
 						new DatastoreMO(context, morDatastore),
 						secondaryStorageURL, volumePath);
+                                deleteVolumeDirOnSecondaryStorage(volumeId, secondaryStorageURL);
 			}
 			return new CopyVolumeAnswer(cmd, true, null, result.first(), result.second());
 		} catch (Throwable e) {
@@ -1437,5 +1438,23 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         hyperHost.createVm(vmConfig);
         workingVM = hyperHost.findVmOnHyperHost(uniqueName);
         return workingVM;
+    }
+
+
+
+    private String deleteVolumeDirOnSecondaryStorage(long volumeId, String secStorageUrl) throws Exception {
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
+        String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStroage(volumeId);
+
+        return deleteDir(volumeMountRoot);
+    }
+
+    private String deleteDir(String dir) {
+        synchronized(dir.intern()) {
+            Script command = new Script(false, "rm", _timeout, s_logger);
+            command.add("-rf");
+            command.add(dir);
+            return command.execute();
+        }
     }
 }

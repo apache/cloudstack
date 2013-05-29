@@ -50,7 +50,7 @@
         nicId: nic.id
       },
       success: function(json) {
-        var nic = json.listnics.nic[0];
+        var nic = json.listnicsresponse.nic[0];
         var ips = nic.secondaryip ? nic.secondaryip : [];
         var ipSelection = [];
 
@@ -321,7 +321,7 @@
         listView: {
           actions: {
             add: { //add Isolated guest network (can't add Shared guest network here)
-              label: 'label.add.guest.network',
+              label: 'Add Isolated Guest Network',
 
               preFilter: function(args) { //Isolated networks is only supported in Advanced (SG-disabled) zone 
                 if(args.context.zoneType != 'Basic') 
@@ -331,8 +331,8 @@
               },
 
               createForm: {
-                title: 'label.add.guest.network',
-                desc: 'message.add.guest.network',
+                title: 'Add Isolated Guest Network',
+                desc: 'Add Isolated Guest Network with SourceNat',
                 fields: {
                   name: { label: 'label.name', validation: { required: true }, docID: 'helpGuestNetworkName' },
                   displayText: { label: 'label.display.text', validation: { required: true }, docID: 'helpGuestNetworkDisplayText'},
@@ -497,7 +497,7 @@
                 });
               },
               messages: {
-                notification: function() { return 'label.add.guest.network'; }
+                notification: function() { return 'Add Isolated Guest Network'; }
               }
             }
           },
@@ -1755,18 +1755,36 @@
                 }
               },
               messages: {
+                /*
                 confirm: function(args) {
                   if(args.context.vpc)
                     return 'message.acquire.new.ip.vpc';
                    else
                      return 'message.acquire.new.ip';
                 },
+                */
                 notification: function(args) {
                   return 'label.acquire.new.ip';
                 }
-              },	
+              },	              
+              createForm: {
+                title: 'label.acquire.new.ip',
+                fields: {
+                  isportable: {
+                    label: 'label.cross.zones',             
+                    select: function(args) {
+                      var items = [];
+                      items.push({ id: "false", description: _l('label.no') });
+                      items.push({ id: "true", description: _l('label.yes') });
+                      args.response.success({data: items});
+                    }
+                  }
+                }
+              },              
               action: function(args) {                
-								var dataObj = {};											
+								var dataObj = {
+								  isportable: args.data.isportable
+								};											
 								if('vpc' in args.context) { //from VPC section
 								  $.extend(dataObj, {
 									  vpcid: args.context.vpc[0].id
@@ -2299,6 +2317,12 @@
                     ipaddress: { label: 'label.ip' }
                   },
                   {
+                    isportable: { 
+                      label: 'label.cross.zones',
+                      converter: function(data) {                        
+                        return data ? _l('label.yes') : _l('label.no');
+                      }
+                    },
                     id: { label: 'label.id' },    
                     associatednetworkid: { label: 'label.associated.network.id' },
 										networkname: { label: 'label.associated.network' },

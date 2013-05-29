@@ -550,7 +550,9 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
                 ruleTO = new FirewallRuleTO(rule, guestVlanTag, rule.getTrafficType());
             } else {
                 IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-                ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
+                Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());
+
+                ruleTO = new FirewallRuleTO(rule, vlan.getVlanTag(), sourceIp.getAddress().addr());
             }
             rulesTO.add(ruleTO);
         }

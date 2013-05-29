@@ -18,6 +18,7 @@ package com.cloud.usage;
 
 import java.net.InetAddress;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -119,6 +120,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     int m_pid = 0;
     TimeZone m_usageTimezone = TimeZone.getTimeZone("GMT");;
     private final GlobalLock m_heartbeatLock = GlobalLock.getInternLock("usage.job.heartbeat.check");
+    private List<UsageNetworkVO> usageNetworks = new ArrayList<UsageNetworkVO>();
 
     private final ScheduledExecutorService m_executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
     private final ScheduledExecutorService m_heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
@@ -547,16 +549,18 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
                 // loop over the user stats, create delta entries in the usage_network helper table
                 int numAcctsProcessed = 0;
+                usageNetworks.clear();
                 for (String key : aggregatedStats.keySet()) {
                     UsageNetworkVO currentNetworkStats = null;
                     if (networkStats != null) {
                         currentNetworkStats = networkStats.get(key);
                     }
-                    
+
                     createNetworkHelperEntry(aggregatedStats.get(key), currentNetworkStats, endDateMillis);
                     numAcctsProcessed++;
-                }                                
-                                                                            
+                }
+                m_usageNetworkDao.saveUsageNetworks(usageNetworks);
+
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("created network stats helper entries for " + numAcctsProcessed + " accts");
                 }
@@ -999,7 +1003,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.debug("creating networkHelperEntry... accountId: " + userStat.getAccountId() + " in zone: " + userStat.getDataCenterId() + "; abr: " + userStat.getAggBytesReceived() + "; abs: " + userStat.getAggBytesSent() +
                     "; curABS: " + currentAccountedBytesSent + "; curABR: " + currentAccountedBytesReceived + "; ubs: " + bytesSent + "; ubr: " + bytesReceived);
         }
-        m_usageNetworkDao.persist(usageNetworkVO);
+        usageNetworks.add(usageNetworkVO);
     }
 
     private void createIPHelperEvent(UsageEventVO event) {

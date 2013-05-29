@@ -505,7 +505,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return nwacl_internet_1
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_01_VPC_LBRulesListing(self):
         """ Test case no 210 and 227: List Load Balancing Rules belonging to a VPC
         """
@@ -551,7 +550,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_02_VPC_LBRulesAndVMListing(self):
         """ Test case no 211 and 228: List only VMs suitable for the Virtual Network on VPC for LB Rule
         """
@@ -595,7 +593,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_03_VPC_CreateLBRuleInMultipleNetworks(self):
         """ Test case no 212 : Create LB rules for 1 network which is part of a two/multiple virtual networks of a
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
@@ -623,7 +620,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_04_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
         """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a 
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Stopped State
@@ -651,7 +647,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return    
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_05_VPC_CreateAndDeleteLBRule(self):
         """ Test case no 214 : Delete few(not all) LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -683,7 +678,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_06_VPC_CreateAndDeleteLBRuleVRStopppedState(self):
         """ Test case no 224 : Delete few(not all) LB rules for a single virtual network of 
             a VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
@@ -715,7 +709,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return    
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_07_VPC_CreateAndDeleteAllLBRule(self):
         """ Test case no 215 : Delete all LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -749,7 +742,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_08_VPC_CreateAndDeleteAllLBRuleVRStoppedState(self):
         """ Test case no 225 and 226 : Delete all LB rules for a single virtual network of a 
             VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
@@ -783,7 +775,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
     
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_09_VPC_LBRuleCreateFailMultipleVPC(self):
         """ Test case no 234 : User should not be allowed to create a LB rule for a VM that belongs to a different VPC.
         """
@@ -822,7 +813,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_10_VPC_FailedToCreateLBRuleNonVPCNetwork(self):
         """ Test case no 216 and 235: User should not be allowed to create a LB rule for a VM that does not belong to any VPC.
         """
@@ -860,7 +850,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_11_VPC_LBRuleCreateNotAllowed(self):
         """ Test case no 217 and 236: User should not be allowed to create a LB rule for a
             VM that does not belong to the same network but belongs to the same VPC.
@@ -899,7 +888,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_12_VPC_LBRuleCreateFailForRouterIP(self):
         """ Test case no 218 and 237: User should not be allowed to create a LB rule on an Ipaddress that Source Nat enabled.
         """
@@ -928,7 +916,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_13_VPC_LBRuleCreateFailForPFSourceNATIP(self):
         """ Test case no 219 : User should not be allowed to create a LB rule on an Ipaddress that already has a PF rule.
         """
@@ -959,7 +946,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_14_VPC_LBRuleCreateFailForStaticNatRule(self):
         """ Test case no 220 : User should not be allowed to create a LB rule on an Ipaddress that already has a Static Nat rule.
         """
@@ -990,7 +976,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_15_VPC_RleaseIPForLBRuleCreated(self):
         """ Test case no 221 : Release Ip address that has a LB rule assigned to it.
         """

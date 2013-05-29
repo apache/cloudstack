@@ -378,7 +378,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
                 if (planner instanceof DeploymentClusterPlanner) {
 
-                    ExcludeList PlannerAvoidInput = new ExcludeList(avoids.getDataCentersToAvoid(),
+                    ExcludeList plannerAvoidInput = new ExcludeList(avoids.getDataCentersToAvoid(),
                             avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
                             avoids.getPoolsToAvoid());
 
@@ -386,19 +386,19 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
                     if (clusterList != null && !clusterList.isEmpty()) {
                         // planner refactoring. call allocators to list hosts
-                        ExcludeList PlannerAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(),
+                        ExcludeList plannerAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(),
                                 avoids.getPodsToAvoid(), avoids.getClustersToAvoid(), avoids.getHostsToAvoid(),
                                 avoids.getPoolsToAvoid());
 
-                        resetAvoidSet(PlannerAvoidOutput, PlannerAvoidInput);
+                        resetAvoidSet(plannerAvoidOutput, plannerAvoidInput);
 
                         dest = checkClustersforDestination(clusterList, vmProfile, plan, avoids, dc,
-                                getPlannerUsage(planner), PlannerAvoidOutput);
+                                getPlannerUsage(planner), plannerAvoidOutput);
                         if (dest != null) {
                             return dest;
                         }
                         // reset the avoid input to the planners
-                        resetAvoidSet(avoids, PlannerAvoidOutput);
+                        resetAvoidSet(avoids, plannerAvoidOutput);
 
             } else {
                         return null;
@@ -813,12 +813,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         // remove any hosts/pools that the planners might have added
         // to get the list of hosts/pools that Allocators flagged as 'avoid'
-        if (allocatorAvoidOutput.getHostsToAvoid() != null && plannerAvoidOutput.getHostsToAvoid() != null) {
-            allocatorAvoidOutput.getHostsToAvoid().removeAll(plannerAvoidOutput.getHostsToAvoid());
-        }
-        if (allocatorAvoidOutput.getPoolsToAvoid() != null && plannerAvoidOutput.getPoolsToAvoid() != null) {
-            allocatorAvoidOutput.getPoolsToAvoid().removeAll(plannerAvoidOutput.getPoolsToAvoid());
-        }
+
+        resetAvoidSet(allocatorAvoidOutput, plannerAvoidOutput);
 
         // if all hosts or all pools in the cluster are in avoid set after this
         // pass, then put the cluster in avoid set.
@@ -827,8 +823,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterVO.getId(),
                 clusterVO.getPodId(), clusterVO.getDataCenterId(), null);
         for (HostVO host : allhostsInCluster) {
-            if (allocatorAvoidOutput.getHostsToAvoid() == null
-                    || !allocatorAvoidOutput.getHostsToAvoid().contains(host.getId())) {
+            if (!allocatorAvoidOutput.shouldAvoid(host)) {
                 // there's some host in the cluster that is not yet in avoid set
                 avoidAllHosts = false;
             }
@@ -837,8 +832,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(),
                 clusterVO.getPodId(), clusterVO.getId(), null);
         for (StoragePoolVO pool : allPoolsInCluster) {
-            if (allocatorAvoidOutput.getPoolsToAvoid() == null
-                    || !allocatorAvoidOutput.getPoolsToAvoid().contains(pool.getId())) {
+            if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                 // there's some pool in the cluster that is not yet in avoid set
                 avoidAllPools = false;
             }

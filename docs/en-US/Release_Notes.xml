@@ -36,8 +36,8 @@ under the License.
       will find instruction in the <ulink
         url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html"
         >&PRODUCT; API Developer's Guide</ulink></para>
-    <para>If you find any errors or problems in this guide, please see <xref linkend="feedback"/>. We hope you enjoy
-      working with &PRODUCT;!</para>
+    <para>If you find any errors or problems in this guide, please see <xref linkend="feedback"/>.
+      We hope you enjoy working with &PRODUCT;!</para>
   </chapter>
   <chapter id="version-4.1">
     <title>Version 4.1.0</title>
@@ -4397,6 +4397,13 @@ under the License.
           </thead>
           <tbody>
             <row>
+              <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-2709"
+                >CLOUDSTACK-2709</ulink></para></entry>
+              <entry>
+                <para>Egress rules are are not supported on shared networks. </para>
+              </entry>
+            </row>
+            <row>
               <entry><para><ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK-1747"
                     >CLOUDSTACK-1747</ulink></para></entry>
               <entry><para>mvn deploydb only creates 4.0 DB, not 4.1</para>
@@ -4648,9 +4655,12 @@ under the License.
               <filename>components.xml</filename> to be on the safe side.</para>
         </listitem>
         <listitem>
-            <para>After upgrading to 4.1, API clients are expected to send plain text passwords for login and user creation, instead of MD5 hash. Incase, api client changes are not acceptable, following changes are to be made for backward compatibility:</para>
-            <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default authenticator (1st entry in the userAuthenticators adapter list is default)</para>
-            <programlisting language="XML">
+          <para>After upgrading to 4.1, API clients are expected to send plain text passwords for
+            login and user creation, instead of MD5 hash. Incase, api client changes are not
+            acceptable, following changes are to be made for backward compatibility:</para>
+          <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default
+            authenticator (1st entry in the userAuthenticators adapter list is default)</para>
+          <programlisting language="XML">
 &lt;!-- Security adapters --&gt;
 &lt;bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList"&gt;
   &lt;property name="Adapters"&gt;
@@ -4662,7 +4672,8 @@ under the License.
   &lt;/property&gt;
 &lt;/bean&gt;
             </programlisting>
-            <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to 4.1.</para>
+          <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to
+            4.1.</para>
         </listitem>
         <listitem id="upgrade-deb-packages">
           <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not,
@@ -5128,9 +5139,12 @@ service cloudstack-agent start
           </note>
         </listitem>
         <listitem>
-            <para>After upgrading to 4.1, API clients are expected to send plain text passwords for login and user creation, instead of MD5 hash. Incase, api client changes are not acceptable, following changes are to be made for backward compatibility:</para>
-            <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default authenticator (1st entry in the userAuthenticators adapter list is default)</para>
-            <programlisting language="XML">
+          <para>After upgrading to 4.1, API clients are expected to send plain text passwords for
+            login and user creation, instead of MD5 hash. Incase, api client changes are not
+            acceptable, following changes are to be made for backward compatibility:</para>
+          <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default
+            authenticator (1st entry in the userAuthenticators adapter list is default)</para>
+          <programlisting language="XML">
 &lt;!-- Security adapters --&gt;
 &lt;bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList"&gt;
   &lt;property name="Adapters"&gt;
@@ -5142,7 +5156,8 @@ service cloudstack-agent start
   &lt;/property&gt;
 &lt;/bean&gt;
             </programlisting>
-            <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to 4.1.</para>
+          <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to
+            4.1.</para>
         </listitem>
         <listitem>
           <para>Start the first Management Server. Do not start any other Management Server nodes
@@ -5723,9 +5738,12 @@ service cloudstack-agent start
           </orderedlist>
         </listitem>
         <listitem>
-            <para>After upgrading to 4.1, API clients are expected to send plain text passwords for login and user creation, instead of MD5 hash. Incase, api client changes are not acceptable, following changes are to be made for backward compatibility:</para>
-            <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default authenticator (1st entry in the userAuthenticators adapter list is default)</para>
-            <programlisting language="XML">
+          <para>After upgrading to 4.1, API clients are expected to send plain text passwords for
+            login and user creation, instead of MD5 hash. Incase, api client changes are not
+            acceptable, following changes are to be made for backward compatibility:</para>
+          <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default
+            authenticator (1st entry in the userAuthenticators adapter list is default)</para>
+          <programlisting language="XML">
 &lt;!-- Security adapters --&gt;
 &lt;bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList"&gt;
   &lt;property name="Adapters"&gt;
@@ -5737,7 +5755,8 @@ service cloudstack-agent start
   &lt;/property&gt;
 &lt;/bean&gt;
             </programlisting>
-            <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to 4.1.</para>
+          <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to
+            4.1.</para>
         </listitem>
         <listitem>
           <para>If you have made changes to your existing copy of the

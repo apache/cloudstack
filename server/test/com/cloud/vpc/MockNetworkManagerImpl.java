@@ -210,7 +210,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
     @Override
-    public boolean releasePortableIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+    public boolean releasePortableIpAddress(long ipAddressId) {
         return false;// TODO Auto-generated method stub
     }
 
@@ -1143,9 +1143,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
 
-
-
-
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#releaseNic(com.cloud.vm.VirtualMachineProfile, com.cloud.vm.Nic)
      */
@@ -1155,10 +1152,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         // TODO Auto-generated method stub
         
     }
-
-
-
-
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#createNicForVm(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.ReservationContext, com.cloud.vm.VirtualMachineProfileImpl, boolean, boolean)
@@ -1173,23 +1166,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     }
 
 
-
-
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#assignVpnGatewayIpAddress(long, com.cloud.user.Account, long)
-     */
-    @Override
-    public PublicIp assignVpnGatewayIpAddress(long dcId, Account owner, long vpcId)
-            throws InsufficientAddressCapacityException, ConcurrentOperationException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-
-
-
-
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#markPublicIpAsAllocated(com.cloud.network.IPAddressVO)
      */
@@ -1198,9 +1174,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         // TODO Auto-generated method stub
         
     }
-
-
-
 
 
     /* (non-Javadoc)
@@ -1238,22 +1211,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         // TODO Auto-generated method stub
         return 0;
     }
-
-
-
-
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#cleanupIpResources(long, long, com.cloud.user.Account)
-     */
-    @Override
-    public boolean cleanupIpResources(long addrId, long userId, Account caller) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-
-
 
 
     /* (non-Javadoc)
@@ -1432,13 +1389,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
             throws InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         return null;
-    }
-
-
-    @Override
-    public boolean removeVmSecondaryIpsOfNic(long nicId) {
-        // TODO Auto-generated method stub
-        return false;
     }
 
 

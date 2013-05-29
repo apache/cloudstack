@@ -93,7 +93,6 @@ class Services:
                                 "templatefilter": 'self',
                         },
                         "templatefilter": 'self',
-                        "destzoneid": 2,    # For Copy template (Destination zone)
                         "ostype": 'CentOS 5.3 (64-bit)',
                         "sleep": 60,
                         "timeout": 10,
@@ -421,94 +420,6 @@ class TestTemplates(cloudstackTestCase):
                             'Running',
                             "Check the state of VM created from Template"
                         )
-        return
-
-    @attr(tags = ["advanced", "advancedns", "multizone"])
-    def test_02_copy_template(self):
-        """Test for copy template from one zone to another"""
-
-        # Validate the following
-        # 1. copy template should be successful and
-        #    secondary storage should contain new copied template.
-
-        self.debug(
-            "Copying template from zone: %s to %s" % (
-                                                self.template.id,
-                                                self.services["destzoneid"]
-                                                ))
-        cmd = copyTemplate.copyTemplateCmd()
-        cmd.id = self.template.id
-        cmd.destzoneid = self.services["destzoneid"]
-        cmd.sourcezoneid = self.zone.id
-        self.apiclient.copyTemplate(cmd)
-
-        # Verify template is copied to another zone using ListTemplates
-        list_template_response = list_templates(
-                                    self.apiclient,
-                                    templatefilter=\
-                                    self.services["templatefilter"],
-                                    id=self.template.id,
-                                    zoneid=self.services["destzoneid"]
-                                    )
-        self.assertEqual(
-                        isinstance(list_template_response, list),
-                        True,
-                        "Check for list template response return valid list"
-                        )
-
-        self.assertNotEqual(
-                            len(list_template_response),
-                            0,
-                            "Check template extracted in List Templates"
-                        )
-
-        template_response = list_template_response[0]
-        self.assertEqual(
-                            template_response.id,
-                            self.template.id,
-                            "Check ID of the downloaded template"
-                        )
-        self.assertEqual(
-                            template_response.zoneid,
-                            self.services["destzoneid"],
-                            "Check zone ID of the copied template"
-                        )
-
-        # Cleanup- Delete the copied template
-        timeout = self.services["timeout"]
-        while True:
-            time.sleep(self.services["sleep"])
-            list_template_response = list_templates(
-                                        self.apiclient,
-                                        templatefilter=\
-                                        self.services["templatefilter"],
-                                        id=self.template_2.id,
-                                        zoneid=self.services["destzoneid"]
-                                        )
-            self.assertEqual(
-                                isinstance(list_template_response, list),
-                                True,
-                                "Check list response returns a valid list"
-                            )
-            self.assertNotEqual(
-                                len(list_template_response),
-                                0,
-                                "Check template extracted in List Templates"
-                            )
-    
-            template_response = list_template_response[0]
-            if template_response.isready == True:
-                break
-
-            if timeout == 0:
-                raise Exception(
-                        "Failed to download copied template(ID: %s)" % template_response.id)
-
-            timeout = timeout - 1
-        cmd = deleteTemplate.deleteTemplateCmd()
-        cmd.id = self.template.id
-        cmd.zoneid = self.services["destzoneid"]
-        self.apiclient.deleteTemplate(cmd)
         return
 
     @attr(tags = ["advanced", "advancedns"])

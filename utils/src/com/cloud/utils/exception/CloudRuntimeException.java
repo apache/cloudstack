@@ -19,7 +19,6 @@ package com.cloud.utils.exception;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.SerialVersionUID;
 
@@ -30,8 +29,8 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     private static final long serialVersionUID = SerialVersionUID.CloudRuntimeException;
 
-    // This holds a list of uuids and their names. Add uuid:fieldname pairs
-    protected ArrayList<String> idList = new ArrayList<String>();
+    // This holds a list of uuids and their descriptive names.
+    protected ArrayList<ExceptionProxyObject> idList = new ArrayList<ExceptionProxyObject>();
 
     protected ArrayList<Pair<Class<?>, String>> uuidList = new ArrayList<Pair<Class<?>, String>>();
 
@@ -53,18 +52,17 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
     
-    public void addProxyObject(String uuid) {
-        idList.add(uuid);
-        return;
+    public void addProxyObject(ExceptionProxyObject obj){
+        idList.add(obj);
     }
 
-    public void addProxyObject(Object voObj, Long id, String idFieldName) {
-        // Get the VO object's table name.
-        String tablename = AnnotationHelper.getTableName(voObj);
-        if (tablename != null) {
-            addProxyObject(tablename, id, idFieldName);
+    public void addProxyObject(String uuid) {
+        idList.add(new ExceptionProxyObject(uuid, null));
         }
-        return;
+
+    public void addProxyObject(String voObjUuid, String description) {
+        ExceptionProxyObject proxy = new ExceptionProxyObject(voObjUuid, description);
+        idList.add(proxy);
     }
 
     @Override
@@ -73,7 +71,7 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
         return this;
     }
 
-    public ArrayList<String> getIdProxyList() {
+    public ArrayList<ExceptionProxyObject> getIdProxyList() {
         return idList;
     }
 

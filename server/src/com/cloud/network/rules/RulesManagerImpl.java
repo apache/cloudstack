@@ -490,10 +490,9 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                                     "a part of enable static nat");
                             return false;
                         }
-                        performedIpAssoc = true;
                     }  else if (ipAddress.isPortable()) {
-                        s_logger.info("Portable IP " + ipAddress.getUuid() + " is not associated with the network, so" +
-                                "associate IP with the network " + networkId);
+                        s_logger.info("Portable IP " + ipAddress.getUuid() + " is not associated with the network yet "
+                                + " so associate IP with the network " + networkId);
                         try {
                             // check if StaticNat service is enabled in the network
                             _networkModel.checkIpForService(ipAddress, Service.StaticNat, networkId);
@@ -504,13 +503,12 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                             }
 
                             // associate portable IP with guest network
-                            _networkMgr.associatePortableIPToGuestNetwork(ipId, networkId, false);
+                            ipAddress = _networkMgr.associatePortableIPToGuestNetwork(ipId, networkId, false);
                         } catch (Exception e) {
                             s_logger.warn("Failed to associate portable id=" + ipId + " to network id=" + networkId + " as " +
                                     "a part of enable static nat");
                             return false;
                         }
-                        performedIpAssoc = true;
                     }
                 } else  if (ipAddress.getAssociatedWithNetworkId() != networkId) {
                     if (ipAddress.isPortable()) {
@@ -520,14 +518,16 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                         // check if portable IP can be transferred across the networks
                         if (_networkMgr.isPortableIpTransferableFromNetwork(ipId, ipAddress.getAssociatedWithNetworkId() )) {
                             try {
+                                // transfer the portable IP and refresh IP details
                                 _networkMgr.transferPortableIP(ipId, ipAddress.getAssociatedWithNetworkId(), networkId);
+                                ipAddress = _ipAddressDao.findById(ipId);
                             } catch (Exception e) {
                                 s_logger.warn("Failed to associate portable id=" + ipId + " to network id=" + networkId + " as " +
                                         "a part of enable static nat");
                                 return false;
                             }
                         } else {
-                            throw new InvalidParameterValueException("Portable IP: " + ipId + " has associated services" +
+                            throw new InvalidParameterValueException("Portable IP: " + ipId + " has associated services " +
                                     "in network " + ipAddress.getAssociatedWithNetworkId() + " so can not be transferred to " +
                                     " network " + networkId);
                         }
@@ -1257,14 +1257,14 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (ipAddress.getSystem()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Can't disable static nat for system IP address with specified id");
-            ex.addProxyObject(ipAddress, ipId, "ipId");            
+            ex.addProxyObject(ipAddress.getUuid(), "ipId");            
             throw ex;
         }
 
         Long vmId = ipAddress.getAssociatedWithVmId();
         if (vmId == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Specified IP address id is not associated with any vm Id");
-            ex.addProxyObject(ipAddress, ipId, "ipId");            
+            ex.addProxyObject(ipAddress.getUuid(), "ipId");            
             throw ex;
         }
 
@@ -1292,7 +1292,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (!ipAddress.isOneToOneNat()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("One to one nat is not enabled for the specified ip id");
-            ex.addProxyObject(ipAddress, ipId, "ipId");            
+            ex.addProxyObject(ipAddress.getUuid(), "ipId");            
             throw ex;
         }
 
@@ -1353,14 +1353,14 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (ip == null || !ip.isOneToOneNat() || ip.getAssociatedWithVmId() == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Source ip address of the specified firewall rule id is not static nat enabled");
-            ex.addProxyObject(ruleVO, rule.getId(), "ruleId");
+            ex.addProxyObject(ruleVO.getUuid(), "ruleId");
             throw ex;
         }
 
         String dstIp = ip.getVmIp();
         if (dstIp == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("VM ip address of the specified public ip is not set ");
-            ex.addProxyObject(ruleVO, rule.getId(), "ruleId");
+            ex.addProxyObject(ruleVO.getUuid(), "ruleId");
             throw ex;
         }
 
@@ -1432,7 +1432,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         Network network = _networkModel.getNetwork(networkId);
         if (network == null) {
             CloudRuntimeException ex = new CloudRuntimeException("Unable to find an ip address to map to specified vm id");
-            ex.addProxyObject(vm, vm.getId(), "vmId");            
+            ex.addProxyObject(vm.getUuid(), "vmId");            
             throw ex;
         }
 

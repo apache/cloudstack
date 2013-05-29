@@ -39,11 +39,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -57,10 +57,6 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -68,6 +64,11 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
+
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -167,8 +168,8 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -195,8 +196,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.hostNicType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -218,9 +219,9 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.storage.template.TemplateLocation;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.FileUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -985,7 +986,7 @@ ServerResource {
 
         if (! f.isDirectory()){
             s_logger.debug("failing to get physical interface from bridge"
-                           + bridgeName + ", does " + f.getAbsolutePath() 
+                           + bridgeName + ", does " + f.getAbsolutePath()
                            + "exist?");
             return "";
         }
@@ -1055,7 +1056,7 @@ ServerResource {
         return vnetId;
     }
 
-    private void passCmdLine(String vmName, String cmdLine) 
+    private void passCmdLine(String vmName, String cmdLine)
             throws InternalErrorException {
         final Script command = new Script(_patchViaSocketPath, _timeout, s_logger);
         String result;
@@ -1254,6 +1255,13 @@ ServerResource {
     }
 
     private CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
+       /**
+            This method is only used for copying files from Primary Storage TO Secondary Storage
+
+            It COULD also do it the other way around, but the code in the ManagementServerImpl shows
+            that it always sets copyToSecondary to true
+
+         */
         boolean copyToSecondary = cmd.toSecondaryStorage();
         String volumePath = cmd.getVolumePath();
         StorageFilerTO pool = cmd.getPool();
@@ -1363,7 +1371,7 @@ ServerResource {
             disksize = dskch.getSize();
 
             if (cmd.getTemplateUrl() != null) {
-                if(primaryPool.getType() == StoragePoolType.CLVM) { 
+                if(primaryPool.getType() == StoragePoolType.CLVM) {
                     vol = templateToPrimaryDownload(cmd.getTemplateUrl(),primaryPool);
                 } else {
                     BaseVol = primaryPool.getPhysicalDisk(cmd.getTemplateUrl());
@@ -1452,7 +1460,7 @@ ServerResource {
         return null;
     }
 
-    /* uses a local script now, eventually support for virStorageVolResize() will maybe work on 
+    /* uses a local script now, eventually support for virStorageVolResize() will maybe work on
        qcow2 and lvm and we can do this in libvirt calls */
     public Answer execute(ResizeVolumeCommand cmd) {
         String volid = cmd.getPath();
@@ -1469,16 +1477,16 @@ ServerResource {
             String type = getResizeScriptType(pool, vol);
 
             if (type == null) {
-                return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" 
+                return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '"
                                 + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
             } else if (type.equals("QCOW2") && shrinkOk) {
                 return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
             }
 
-            s_logger.debug("got to the stage where we execute the volume resize, params:" 
+            s_logger.debug("got to the stage where we execute the volume resize, params:"
                            + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
             final Script resizecmd = new Script(_resizeVolumePath,
-                        _cmdsTimeout, s_logger); 
+                        _cmdsTimeout, s_logger);
             resizecmd.add("-s",String.valueOf(newSize));
             resizecmd.add("-c",String.valueOf(currentSize));
             resizecmd.add("-p",path);
@@ -1503,7 +1511,7 @@ ServerResource {
             return new ResizeVolumeAnswer(cmd, false, error);
         }
         
-    } 
+    }
 
     public Answer execute(DestroyCommand cmd) {
         VolumeTO vol = cmd.getVolume();
@@ -1529,7 +1537,7 @@ ServerResource {
         if(pifparts.length == 2) {
             return pifparts[1];
         } else {
-            s_logger.debug("failed to get vlan id from bridge " + brName 
+            s_logger.debug("failed to get vlan id from bridge " + brName
                            + "attached to physical interface" + pif);
             return "";
         }
@@ -1771,7 +1779,7 @@ ServerResource {
             for (InterfaceDef pluggedNic : pluggedNics) {
                 String pluggedVlanBr = pluggedNic.getBrName();
                 String pluggedVlanId = getVlanIdFromBridge(pluggedVlanBr);
-                if (pubVlan.equalsIgnoreCase(Vlan.UNTAGGED) 
+                if (pubVlan.equalsIgnoreCase(Vlan.UNTAGGED)
                         && pluggedVlanBr.equalsIgnoreCase(_publicBridgeName)) {
                     break;
                 } else if (pluggedVlanBr.equalsIgnoreCase(_linkLocalBridgeName)){
@@ -1818,7 +1826,7 @@ ServerResource {
             for (InterfaceDef pluggedNic : pluggedNics) {
                 String pluggedVlan = pluggedNic.getBrName();
                 if (pluggedVlan.equalsIgnoreCase(_linkLocalBridgeName)) {
-                    vlanToNicNum.put("LinkLocal",devNum); 
+                    vlanToNicNum.put("LinkLocal",devNum);
                 } else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName)
                         || pluggedVlan.equalsIgnoreCase(_privBridgeName)
                         || pluggedVlan.equalsIgnoreCase(_guestBridgeName)) {
@@ -1864,8 +1872,8 @@ ServerResource {
                 if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
                     vlanAllocatedToVM.put("LinkLocal", nicPos);
                 } else {
-                    if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) 
-                            || nic.getBrName().equalsIgnoreCase(_privBridgeName) 
+                    if (nic.getBrName().equalsIgnoreCase(_publicBridgeName)
+                            || nic.getBrName().equalsIgnoreCase(_privBridgeName)
                             || nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
                         vlanAllocatedToVM.put(Vlan.UNTAGGED, nicPos);
                     } else {
@@ -2623,6 +2631,8 @@ ServerResource {
                 vms = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
                         .getBytes()));
                 PowerState s = convertToState(vms.getInfo().state);
+//                vms = conn.domainLookupByName(vmName);
+//                State s = convertToState(vms.getInfo().state);
                 return s;
             } catch (final LibvirtException e) {
                 s_logger.warn("Can't get vm state " + vmName + e.getMessage()
@@ -2713,8 +2723,7 @@ ServerResource {
         try {
             conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             ifaces = getInterfaces(conn, vmName);
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp()
                     + "/system");
             /*
@@ -2729,6 +2738,9 @@ ServerResource {
         } finally {
             try {
                 if (dm != null) {
+                    if (dm.isPersistent() == 1) {
+                        dm.undefine();
+                    }
                     dm.free();
                 }
                 if (dconn != null) {
@@ -3160,8 +3172,7 @@ ServerResource {
     protected LibvirtVMDef createVMFromSpec(VirtualMachineTO vmTO) {
         LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
-        vm.setDomUUID(UUID.nameUUIDFromBytes(vmTO.getName().getBytes())
-                .toString());
+        vm.setDomUUID(vmTO.getUuid());
         vm.setDomDescription(vmTO.getOs());
 
         GuestDef guest = new GuestDef();
@@ -3186,8 +3197,8 @@ ServerResource {
 
         if (vmTO.getMinRam() != vmTO.getMaxRam()){
             grd.setMemBalloning(true);
-            grd.setCurrentMem((long)vmTO.getMinRam()/1024);
-            grd.setMemorySize((long)vmTO.getMaxRam()/1024);
+            grd.setCurrentMem(vmTO.getMinRam()/1024);
+            grd.setMemorySize(vmTO.getMaxRam()/1024);
         }
         else{
             grd.setMemorySize(vmTO.getMaxRam() / 1024);
@@ -3585,8 +3596,7 @@ ServerResource {
         KVMStoragePool attachingPool = attachingDisk.getPool();
         try {
             if (!attach) {
-                dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                        .getBytes()));
+                dm = conn.domainLookupByName(vmName);
                 LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
                 String xml = dm.getXMLDesc(0);
                 parser.parseDomainXML(xml);
@@ -3635,9 +3645,7 @@ ServerResource {
             InternalErrorException {
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes((vmName
-                    .getBytes())));
-
+            dm = conn.domainLookupByName(vmName);
             if (attach) {
                 s_logger.debug("Attaching device: " + xml);
                 dm.attachDevice(xml);
@@ -3877,8 +3885,7 @@ ServerResource {
         for (; i < 5; i++) {
             try {
                 Connect conn = LibvirtConnection.getConnectionByVmName(vm);
-                dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vm
-                        .getBytes()));
+                dm = conn.domainLookupByName(vm);
                 DomainInfo.DomainState vps = dm.getInfo().state;
                 if (vps != null
                         && vps != DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF
@@ -3950,18 +3957,22 @@ ServerResource {
         final HashMap<String, PowerState> vmStates = new HashMap<String, PowerState>();
         Connect conn = null;
 
+        if (_hypervisorType == HypervisorType.LXC) {
         try {
             conn = LibvirtConnection.getConnectionByType(HypervisorType.LXC.toString());
             vmStates.putAll(getAllVms(conn));
         } catch (LibvirtException e) {
             s_logger.debug("Failed to get connection: " + e.getMessage());
         }
+        }
 
+        if (_hypervisorType == HypervisorType.KVM) {
         try {
             conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
             vmStates.putAll(getAllVms(conn));
         } catch (LibvirtException e) {
             s_logger.debug("Failed to get connection: " + e.getMessage());
+        }
         }
 
         return vmStates;
@@ -4015,8 +4026,7 @@ ServerResource {
         for (int i = 0; i < vms.length; i++) {
             try {
 
-                dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vms[i]
-                        .getBytes()));
+                dm = conn.domainLookupByName(vms[i]);
 
                 DomainInfo.DomainState ps = dm.getInfo().state;
                 final PowerState state = convertToState(ps);
@@ -4121,8 +4131,7 @@ ServerResource {
         Domain dm = null;
         String msg = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             String vmDef = dm.getXMLDesc(0);
             s_logger.debug(vmDef);
             msg = stopVM(conn, vmName);
@@ -4164,8 +4173,7 @@ ServerResource {
             /* Retry 3 times, to make sure we can get the vm's status */
             for (int i = 0; i < 3; i++) {
                 try {
-                    dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                            .getBytes()));
+                    dm = conn.domainLookupByName(vmName);
                     state = dm.getInfo().state;
                     break;
                 } catch (LibvirtException e) {
@@ -4201,8 +4209,7 @@ ServerResource {
     protected String stopVM(Connect conn, String vmName, boolean force) {
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             int persist = dm.isPersistent();
             if (force) {
                 if (dm.isActive() == 1) {
@@ -4289,8 +4296,7 @@ ServerResource {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             String xmlDesc = dm.getXMLDesc(0);
             parser.parseDomainXML(xmlDesc);
             return parser.getVncPort();
@@ -4335,8 +4341,7 @@ ServerResource {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             String xmlDesc = dm.getXMLDesc(0);
             parser.parseDomainXML(xmlDesc);
             return parser.getDescription();
@@ -4434,15 +4439,14 @@ ServerResource {
     private Domain getDomain(Connect conn, String vmName)
             throws LibvirtException {
         return conn
-                .domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
+                .domainLookupByName(vmName);
     }
 
     protected List<InterfaceDef> getInterfaces(Connect conn, String vmName) {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             parser.parseDomainXML(dm.getXMLDesc(0));
             return parser.getInterfaces();
 
@@ -4464,8 +4468,7 @@ ServerResource {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             parser.parseDomainXML(dm.getXMLDesc(0));
             return parser.getDisks();
 

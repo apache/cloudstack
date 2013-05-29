@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -47,7 +46,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "createTemplate", responseObject = StoragePoolResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
+@APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
         + "A template created from this command is automatically designated as a private template visible to the account that created it.")
         public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
@@ -210,7 +209,7 @@ import com.cloud.user.UserContext;
             Project project = _projectService.findByProjectAccountId(accountId);
             if (project.getState() != Project.State.Active) {
                 PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
-                ex.addProxyObject(project, project.getId(), "projectId");
+                ex.addProxyObject(project.getUuid(), "projectId");
             }
         } else if (account.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
@@ -235,16 +234,16 @@ import com.cloud.user.UserContext;
     }
 
     private boolean isBareMetal() {
-        return (this.getVmId() != null && this.getUrl() != null);
+        return (getVmId() != null && getUrl() != null);
     }
 
     @Override
     public void create() throws ResourceAllocationException {
         VirtualMachineTemplate template = null;
-        template = this._templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
+        template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
         if (template != null) {
-            this.setEntityId(template.getId());
-            this.setEntityUuid(template.getUuid());
+            setEntityId(template.getId());
+            setEntityUuid(template.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
             "Failed to create a template");
@@ -256,7 +255,7 @@ import com.cloud.user.UserContext;
     public void execute() {
         UserContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
         VirtualMachineTemplate template = null;
-        template = this._templateService.createPrivateTemplate(this);
+        template = _templateService.createPrivateTemplate(this);
 
         if (template != null){
             List<TemplateResponse> templateResponses;
@@ -270,7 +269,7 @@ import com.cloud.user.UserContext;
                 response = templateResponses.get(0);
             }
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private template");
         }

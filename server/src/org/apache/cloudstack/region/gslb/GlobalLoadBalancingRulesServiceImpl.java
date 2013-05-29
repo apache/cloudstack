@@ -126,7 +126,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             throw new InvalidParameterValueException("Invalid region ID: " + regionId);
         }
 
-        if (!region.checkIfServiceEnabled(Region.Service.Gslb)) {
+        String providerDnsName = _globalConfigDao.getValue(Config.CloudDnsName.key());
+        if (!region.checkIfServiceEnabled(Region.Service.Gslb) || (providerDnsName == null)) {
             throw new CloudRuntimeException("GSLB service is not enabled in region : " + region.getName());
         }
 
@@ -202,6 +203,10 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
 
             _accountMgr.checkAccess(caller, null, true, loadBalancer);
+
+            if (gslbRule.getAccountId() != loadBalancer.getAccountId()) {
+                throw new InvalidParameterValueException("GSLB rule and load balancer rule does not belong to same account");
+            }
 
             if (loadBalancer.getState() == LoadBalancer.State.Revoke) {
                 throw new InvalidParameterValueException("Load balancer ID " + loadBalancer.getUuid()  + " is in revoke state");

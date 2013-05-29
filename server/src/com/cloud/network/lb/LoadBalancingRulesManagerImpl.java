@@ -949,7 +949,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             UserVm vm = _vmDao.findById(instanceId);
             if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Invalid instance id specified");
-                ex.addProxyObject(vm, instanceId, "instanceId");
+                if (vm == null) {
+                    ex.addProxyObject(instanceId.toString(), "instanceId");
+                } else {
+                    ex.addProxyObject(vm.getUuid(), "instanceId");
+                }
                 throw ex;
             }
 
@@ -973,7 +977,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             if (nicInSameNetwork == null) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("VM " + instanceId
                         + " cannot be added because it doesn't belong in the same network.");
-                ex.addProxyObject(vm, instanceId, "instanceId");
+                ex.addProxyObject(vm.getUuid(), "instanceId");
                 throw ex;
             }
 
@@ -1026,7 +1030,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (!success) {
             CloudRuntimeException ex = new CloudRuntimeException("Failed to add specified loadbalancerruleid for vms "
                     + instanceIds);
-            ex.addProxyObject(loadBalancer, loadBalancerId, "loadBalancerId");
+            ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
             // TBD: Also pack in the instanceIds in the exception using the
             // right VO object or table name.
             throw ex;
@@ -1077,7 +1081,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 s_logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
                 CloudRuntimeException ex = new CloudRuntimeException(
                         "Failed to remove specified load balancer rule id for vms " + instanceIds);
-                ex.addProxyObject(loadBalancer, loadBalancerId, "loadBalancerId");
+                ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
                 throw ex;
             }
             success = true;
@@ -1100,7 +1104,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (!success) {
             CloudRuntimeException ex = new CloudRuntimeException(
                     "Failed to remove specified load balancer rule id for vms " + instanceIds);
-            ex.addProxyObject(loadBalancer, loadBalancerId, "loadBalancerId");
+            ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
             throw ex;
         }
         return success;
@@ -1370,12 +1374,17 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (ipAddr == null || !ipAddr.readyToUse()) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Unable to create load balancer rule, invalid IP address id specified");
-            ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");
+            if (ipAddr == null){
+                ex.addProxyObject(String.valueOf(sourceIpId), "sourceIpId");
+            }
+            else{
+                ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");                
+            }
             throw ex;
         } else if (ipAddr.isOneToOneNat()) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Unable to create load balancer rule; specified sourceip id has static nat enabled");
-            ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");
+            ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
             throw ex;
         }
         
@@ -1386,7 +1395,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (networkId == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Unable to create load balancer rule ; specified sourceip id is not associated with any network");
-            ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");
+            ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
             throw ex;
         }
         
@@ -1397,7 +1406,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
 
         LoadBalancerVO newRule = new LoadBalancerVO(xId, name, description,
-                sourceIpId, srcPort, srcPort, algorithm,
+                sourceIpId, srcPort, destPort, algorithm,
                 networkId, ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
 
         // verify rule is supported by Lb provider of the network
@@ -1903,6 +1912,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         String name = cmd.getLoadBalancerRuleName();
         String keyword = cmd.getKeyword();
         Long instanceId = cmd.getVirtualMachineId();
+        Long networkId = cmd.getNetworkId();
         Map<String, String> tags = cmd.getTags();
 
         Account caller = UserContext.current().getCaller();
@@ -1923,6 +1933,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
+        sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
 
         if (instanceId != null) {
             SearchBuilder<LoadBalancerVMMapVO> lbVMSearch = _lb2VmMapDao.createSearchBuilder();
@@ -1979,6 +1990,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (zoneId != null) {
             sc.setJoinParameters("ipSearch", "zoneId", zoneId);
+        }
+
+        if (networkId != null) {
+            sc.setParameters("networkId", networkId);
         }
 
         if (tags != null && !tags.isEmpty()) {
@@ -2078,7 +2093,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "LB service is not supported in specified network id");
-            ex.addProxyObject(network, network.getId(), "networkId");
+            ex.addProxyObject(network.getUuid(), "networkId");
             throw ex;
         }
         

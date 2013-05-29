@@ -22,7 +22,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-
+from nose.plugins.attrib import attr
 
 class TestNetworkACL(cloudstackTestCase):
     networkOfferingId = 11
@@ -40,6 +40,7 @@ class TestNetworkACL(cloudstackTestCase):
 
 
     
+    @attr(tags=["advanced"])
     def test_networkAcl(self):
 
         # 1) Create VPC

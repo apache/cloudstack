@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -93,7 +94,15 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
 
     public String getProtocol() {
-        return protocol.trim();
+    	String p = protocol.trim();
+    	// Deal with ICMP(protocol number 1) specially because it need to be paired with icmp type and code
+        if(StringUtils.isNumeric(p)){
+            int protoNumber = Integer.parseInt(p);
+            if (protoNumber == 1) {
+            	p = "icmp";
+            }
+    	}
+    	return p;
     }
 
     public List<String> getSourceCidrList() {

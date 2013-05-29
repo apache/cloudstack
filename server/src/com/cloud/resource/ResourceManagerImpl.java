@@ -163,6 +163,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.dc.DataCenter.NetworkType;
 
 @Component
 @Local({ ResourceManager.class, ResourceService.class })
@@ -395,7 +396,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (zone == null) {
 			InvalidParameterValueException ex = new InvalidParameterValueException(
 					"Can't find zone by the id specified");
-            ex.addProxyObject(zone, dcId, "dcId");
+            ex.addProxyObject(String.valueOf(dcId), "dcId");
             throw ex;
         }
 
@@ -404,7 +405,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 				&& !_accountMgr.isRootAdmin(account.getType())) {
 			PermissionDeniedException ex = new PermissionDeniedException(
 					"Cannot perform this operation, Zone with specified id is currently disabled");
-            ex.addProxyObject(zone, dcId, "dcId");
+            ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
 
@@ -423,8 +424,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
 			InvalidParameterValueException ex = new InvalidParameterValueException(
 					"Pod with specified id doesn't belong to the zone " + dcId);
-            ex.addProxyObject(pod, podId, "podId");
-            ex.addProxyObject(zone, dcId, "dcId");
+            ex.addProxyObject(pod.getUuid(), "podId");
+            ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
 
@@ -446,6 +447,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					+ " to a valid supported hypervisor type");
 			throw new InvalidParameterValueException("Unable to resolve "
 					+ cmd.getHypervisor() + " to a supported ");
+        }
+
+        if (zone.isSecurityGroupEnabled() && zone.getNetworkType().equals(NetworkType.Advanced)) {
+            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer
+                    && hypervisorType != HypervisorType.Simulator) {
+                throw new InvalidParameterValueException("Don't support hypervisor type " + hypervisorType + " in advanced security enabled zone");
+            }
         }
 
         Cluster.ClusterType clusterType = null;
@@ -502,8 +510,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					"Unable to create cluster " + clusterName
 							+ " in pod and data center with specified ids", e);
             // Get the pod VO object's table name.
-            ex.addProxyObject(pod, podId, "podId");
-            ex.addProxyObject(zone, dcId, "dcId");
+            ex.addProxyObject(pod.getUuid(), "podId");
+            ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
         clusterId = cluster.getId();
@@ -637,7 +645,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             if (cluster == null) {
 				InvalidParameterValueException ex = new InvalidParameterValueException(
 						"can not find cluster for specified clusterId");
-                ex.addProxyObject(cluster, clusterId, "clusterId");
+                ex.addProxyObject(clusterId.toString(), "clusterId");
                 throw ex;
             } else {
                 if (cluster.getGuid() == null) {
@@ -645,7 +653,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     if (!hosts.isEmpty()) {
 						CloudRuntimeException ex = new CloudRuntimeException(
 								"Guid is not updated for cluster with specified cluster id; need to wait for hosts in this cluster to come up");
-                        ex.addProxyObject(cluster, clusterId, "clusterId");
+                        ex.addProxyObject(cluster.getUuid(), "clusterId");
                         throw ex;
                     }
                 }
@@ -701,7 +709,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 				&& !_accountMgr.isRootAdmin(account.getType())) {
 			PermissionDeniedException ex = new PermissionDeniedException(
 					"Cannot perform this operation, Zone with specified id is currently disabled");
-            ex.addProxyObject(zone, dcId, "dcId");
+            ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
 
@@ -719,8 +727,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 								+ podId
 								+ " doesn't belong to the zone with specified zoneId"
 								+ dcId);
-                ex.addProxyObject(pod, podId, "podId");
-                ex.addProxyObject(zone, dcId, "dcId");
+                ex.addProxyObject(pod.getUuid(), "podId");
+                ex.addProxyObject(zone.getUuid(), "dcId");
                 throw ex;
             }
         }
@@ -790,8 +798,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 									+ clusterName
 									+ " in pod with specified podId and data center with specified dcID",
 							e);
-                    ex.addProxyObject(pod, podId, "podId");
-                    ex.addProxyObject(zone, dcId, "dcId");
+                    ex.addProxyObject(pod.getUuid(), "podId");
+                    ex.addProxyObject(zone.getUuid(), "dcId");
                     throw ex;
                 }
             }

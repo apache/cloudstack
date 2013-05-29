@@ -1033,12 +1033,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         // Snapshot Name: VMInstancename + volumeName + timeString
         String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);
 
-        VMInstanceVO vmInstance = _vmDao.findById(volume.getInstanceId());
-        String vmDisplayName = "detached";
-        if (vmInstance != null) {
-            vmDisplayName = vmInstance.getHostName();
-        }
-        String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
+        String snapshotName = volume.getUuid() + "_" + timeString;
 
         // Create the Snapshot object and save it so we can return it to the
         // user        

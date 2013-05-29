@@ -28,6 +28,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import com.cloud.network.vpc.NetworkACL;
 
@@ -75,6 +77,36 @@ public class Upgrade410to420 implements DbUpgrade {
         updateNetworkACLs(conn);
         addHostDetailsIndex(conn);
         updateNetworksForPrivateGateways(conn);
+        removeFirewallServiceFromSharedNetworkOfferingWithSGService(conn);
+        fix22xKVMSnapshots(conn);
+        addIndexForAlert(conn);
+    }
+
+    private void addIndexForAlert(Connection conn) {
+
+        //First drop if it exists. (Due to patches shipped to customers some will have the index and some wont.)
+        List<String> indexList = new ArrayList<String>();
+        s_logger.debug("Dropping index i_alert__last_sent if it exists");
+        indexList.add("i_alert__last_sent");
+        DbUpgradeUtils.dropKeysIfExist(conn, "alert", indexList, false);
+
+        //Now add index.
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`alert` ADD INDEX `i_alert__last_sent`(`last_sent`)");
+            pstmt.executeUpdate();
+            s_logger.debug("Added index i_alert__last_sent for table alert");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to add index i_alert__last_sent to alert table for the column last_sent", e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
     }
 
     private void updateSystemVmTemplates(Connection conn) {
@@ -745,6 +777,76 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to update private networks with VPC id.", e);
+        }
+    }
+
+    private void removeFirewallServiceFromSharedNetworkOfferingWithSGService(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = conn.prepareStatement("select id from `cloud`.`network_offerings` where unique_name='DefaultSharedNetworkOfferingWithSGService'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                // remove Firewall service for SG shared network offering
+                pstmt = conn.prepareStatement("DELETE from `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");
+                pstmt.setLong(1, id);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to remove Firewall service for SG shared network offering.", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void fix22xKVMSnapshots(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        s_logger.debug("Updating KVM snapshots");
+        try {
+            pstmt = conn.prepareStatement("select id, backup_snap_id from `cloud`.`snapshots` where hypervisor_type='KVM' and removed is null and backup_snap_id is not null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String backUpPath = rs.getString(2);
+                // Update Backup Path. Remove anything before /snapshots/
+                // e.g 22x Path /mnt/0f14da63-7033-3ca5-bdbe-fa62f4e2f38a/snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
+                // Above path should change to /snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
+                int index = backUpPath.indexOf("snapshots"+File.separator);
+                if (index > 1){
+                    String correctedPath = File.separator + backUpPath.substring(index);
+                    s_logger.debug("Updating Snapshot with id: "+id+" original backup path: "+backUpPath+ " updated backup path: "+correctedPath);
+                    pstmt = conn.prepareStatement("UPDATE `cloud`.`snapshots` set backup_snap_id=? where id = ?");
+                    pstmt.setString(1, correctedPath);
+                    pstmt.setLong(2, id);
+                    pstmt.executeUpdate();
+                }
+            }
+            s_logger.debug("Done updating KVM snapshots");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update backup id for KVM snapshots", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
         }
     }
 }

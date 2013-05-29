@@ -17,17 +17,6 @@
 
 package com.cloud.hypervisor.xen.resource;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ejb.Local;
-
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -46,14 +35,24 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
-import com.xensource.xenapi.Types.XenAPIException;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import javax.ejb.Local;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Local(value=ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {
-	 private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
+    private final static Logger s_logger = Logger.getLogger(XcpOssResource.class);
+    private static final long mem_32m = 33554432L;
+
     @Override
     protected List<File> getPatchFiles() {
         List<File> files = new ArrayList<File>();
@@ -166,5 +165,10 @@ public class XcpOssResource extends CitrixResourceBase {
     		callHostPlugin(conn, "vmops", "setDNATRule", "add", "false");
     	}
     	return answer;
+    }
+
+    @Override
+    protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
+        vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }
 }

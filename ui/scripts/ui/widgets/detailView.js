@@ -70,7 +70,8 @@
             action.notification : {};
       var messages = action.messages;
       var id = args.id;
-      var context = args.context ? args.context : $detailView.data('view-args').context;
+      var context = $.extend(true, {},
+                             args.context ? args.context : $detailView.data('view-args').context);
       var _custom = $detailView.data('_custom');
       var customAction = action.action.custom;
       var noAdd = action.noAdd;
@@ -273,7 +274,7 @@
         notification.desc = messages.notification(messageArgs);
         notification.section = 'instances';
 
-        if (!action.createForm) {
+        if (!action.createForm && !action.listView) {
           if (messages && messages.confirm) {
             cloudStack.dialog.confirm({
               message: messages.confirm(messageArgs),
@@ -286,7 +287,7 @@
           } else {
             performAction({ id: id });
           }
-        } else {
+        } else if (action.createForm) {
           cloudStack.dialog.createForm({
             form: action.createForm,
             after: function(args) {
@@ -300,6 +301,15 @@
               id: id
             },
             context: context
+          });
+        } else if (action.listView) {
+          cloudStack.dialog.listView({
+            context: context,
+            listView: action.listView,
+            after: function(args) {
+              context = args.context;
+              performAction();
+            }
           });
         }
       }

@@ -211,7 +211,11 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventType() {
+        if (isPortable()) {
+            return EventTypes.EVENT_PORTABLE_IP_ASSIGN;
+        } else {
         return EventTypes.EVENT_NET_IP_ASSIGN;
+    }
     }
 
     @Override

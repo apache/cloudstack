@@ -167,12 +167,6 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             return false;
         }
         
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(dskCh.getDiskOfferingId());
-        if (diskOffering.getSystemUse() && pool.getPoolType() == StoragePoolType.RBD) {
-            s_logger.debug("Skipping RBD pool " + pool.getName() + " as a suitable pool. RBD is not supported for System VM's");
-            return false;
-        }
-
         
 		Long clusterId = pool.getClusterId();
 		ClusterVO cluster = _clusterDao.findById(clusterId);

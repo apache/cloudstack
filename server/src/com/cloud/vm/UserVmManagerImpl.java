@@ -162,6 +162,7 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -396,6 +397,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     AffinityGroupDao _affinityGroupDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -815,6 +818,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     }
 
+
     @Override
     public UserVm addNicToVirtualMachine(AddNicToVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, CloudRuntimeException {
         Long vmId = cmd.getVmId();
@@ -1108,21 +1112,52 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         //Check if its a scale "up"
         ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceOfferingId);
-        ServiceOffering oldServiceOffering = _configMgr.getServiceOffering(vmInstance.getServiceOfferingId());
-        if(newServiceOffering.getSpeed() <= oldServiceOffering.getSpeed()
-                && newServiceOffering.getRamSize() <= oldServiceOffering.getRamSize()){
+        ServiceOffering currentServiceOffering = _configMgr.getServiceOffering(vmInstance.getServiceOfferingId());
+        int newCpu = newServiceOffering.getCpu();
+        int newMemory = newServiceOffering.getRamSize();
+        int newSpeed = newServiceOffering.getSpeed();
+        int currentCpu = currentServiceOffering.getCpu();
+        int currentMemory = currentServiceOffering.getRamSize();
+        int currentSpeed = currentServiceOffering.getSpeed();
+
+        if(newSpeed     <= currentSpeed
+           && newMemory <= currentMemory
+           && newCpu    <= currentCpu){
             throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering should have both cpu and memory greater than the old values");
+        }
+
+        // Check resource limits
+        if (newCpu > currentCpu) {
+            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.cpu,
+                    newCpu - currentCpu);
+        }
+        if (newMemory > currentMemory) {
+            _resourceLimitMgr.checkResourceLimit(caller, ResourceType.memory,
+                    newMemory - currentMemory);
         }
 
         // Dynamically upgrade the running vms
             boolean success = false;
         if(vmInstance.getState().equals(State.Running)){
             int retry = _scaleRetry;
+            boolean enableDynamicallyScaleVm = Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vmInstance.getDataCenterId()));
+            if(!enableDynamicallyScaleVm){
+               throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
+            }
+
+            // Increment CPU and Memory count accordingly.
+            if (newCpu > currentCpu) {
+                _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
+            }
+            if (newMemory > currentMemory) {
+                _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
+            }
+
             while (retry-- != 0) { // It's != so that it can match -1.
                 try{
                     // #1 Check existing host has capacity
-                    boolean existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - oldServiceOffering.getSpeed(),
-                            (newServiceOffering.getRamSize() - oldServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f,  false); // TO DO fill it with mem.
+                    boolean existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - currentServiceOffering.getSpeed(),
+                            (newServiceOffering.getRamSize() - currentServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f, false); // TO DO fill it with mem.
 
                     // #2 migrate the vm if host doesn't have capacity
                     if (!existingHostHasCapacity){
@@ -1132,9 +1167,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     // #3 scale the vm now
                     _itMgr.upgradeVmDb(vmId, newServiceOfferingId);
                     vmInstance = _vmInstanceDao.findById(vmId);
-                    _itMgr.reConfigureVm(vmInstance, oldServiceOffering, existingHostHasCapacity);
-                    success = true;
-                    return success;
+                    return _itMgr.reConfigureVm(vmInstance, currentServiceOffering, existingHostHasCapacity);
                 }catch(InsufficientCapacityException e ){
                     s_logger.warn("Received exception while scaling ",e);
                 } catch (ResourceUnavailableException e) {
@@ -1147,8 +1180,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     s_logger.warn("Received exception while scaling ",e);
                 }finally{
                     if(!success){
-                        _itMgr.upgradeVmDb(vmId, oldServiceOffering.getId()); // rollback
+                        _itMgr.upgradeVmDb(vmId, currentServiceOffering.getId()); // rollback
+                        // Decrement CPU and Memory count accordingly.
+                        if (newCpu > currentCpu) {
+                            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
                     }
+                        if (newMemory > currentMemory) {
+                            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
+                        }
+                    }
+
+
                 }
             }
         }
@@ -3245,7 +3287,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         } catch (CloudException e) {
             CloudRuntimeException ex = new CloudRuntimeException(
                     "Unable to destroy with specified vmId", e);
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -3272,7 +3314,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         } else {
             CloudRuntimeException ex = new CloudRuntimeException(
                     "Failed to destroy vm with specified vmId");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
     }
@@ -3465,7 +3507,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (userVm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "unable to find a virtual machine with specified id");
-            ex.addProxyObject(userVm, vmId, "vmId");
+            ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
 
@@ -3507,7 +3549,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (vm.getState() != State.Stopped) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "VM is not Stopped, unable to migrate the vm having the specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -3584,7 +3626,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "VM is not Running, unable to migrate the vm with specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer)
@@ -3675,7 +3717,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
             CloudRuntimeException ex = new CloudRuntimeException("VM is not Running, unable to migrate the vm with" +
                     " specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -3804,7 +3846,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "VM is Running, unable to move the vm with specified vmId");
-            ex.addProxyObject(vm, cmd.getVmId(), "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -3818,7 +3860,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (oldAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Specified Vm id belongs to the project and can't be moved");
-            ex.addProxyObject(vm, cmd.getVmId(), "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
         Account newAccount = _accountService.getActiveAccountByName(
@@ -4069,7 +4111,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                         if (network == null) {
                             InvalidParameterValueException ex = new InvalidParameterValueException(
                                     "Unable to find specified network id");
-                            ex.addProxyObject(network, networkId, "networkId");
+                            ex.addProxyObject(networkId.toString(), "networkId");
                             throw ex;
                         }
 
@@ -4082,7 +4124,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                         if (networkOffering.isSystemOnly()) {
                             InvalidParameterValueException ex = new InvalidParameterValueException(
                                     "Specified Network id is system only and can't be used for vm deployment");
-                            ex.addProxyObject(network, networkId, "networkId");
+                            ex.addProxyObject(network.getUuid(), "networkId");
                             throw ex;
                         }
                         applicableNetworks.add(network);
@@ -4133,7 +4175,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                             " resources as a part of network provision for persistent network due to ", ex);
                                     CloudRuntimeException e = new CloudRuntimeException("Failed to implement network" +
                                             " (with specified id) elements and resources as a part of network provision");
-                                    e.addProxyObject(newNetwork, newNetwork.getId(), "networkId");
+                                    e.addProxyObject(newNetwork.getUuid(), "networkId");
                                     throw e;
                                 }
                             }
@@ -4188,10 +4230,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         long vmId = cmd.getVmId();
         Long newTemplateId = cmd.getTemplateId();
+
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find VM with ID " + vmId);
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
 
@@ -4237,29 +4280,43 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (rootVols.isEmpty()) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Can not find root volume for VM " + vm.getUuid());
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
         VolumeVO root = rootVols.get(0);
         Long templateId = root.getTemplateId();
+        boolean isISO = false;
         if(templateId == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Currently there is no support to reset a vm that is deployed using ISO " + vm.getUuid());
-            ex.addProxyObject(vm, vmId, "vmId");
-            throw ex;
+        // Assuming that for a vm deployed using ISO, template ID is set to NULL
+            isISO = true;
+            templateId = vm.getIsoId();
         }
 
         VMTemplateVO template = null;
+        //newTemplateId can be either template or ISO id. In the following snippet based on the vm deployment (from template or ISO) it is handled accordingly
         if(newTemplateId != null) {
             template = _templateDao.findById(newTemplateId);
             _accountMgr.checkAccess(caller, null, true, template);
+            if (isISO) {
+                if (!template.getFormat().equals(ImageFormat.ISO)) {
+                    throw new InvalidParameterValueException("Invalid ISO id provided to restore the VM ");
+                }
+            } else {
+                if (template.getFormat().equals(ImageFormat.ISO)) {
+                    throw new InvalidParameterValueException("Invalid template id provided to restore the VM ");
+                }
+            }
         } else {
+            if (isISO && templateId == null) {
+                throw new CloudRuntimeException("Cannot restore the VM since there is no ISO attached to VM");
+            }
             template = _templateDao.findById(templateId);
             if (template == null) {
                 InvalidParameterValueException ex = new InvalidParameterValueException(
-                        "Cannot find template for specified volumeid and vmId");
-                ex.addProxyObject(vm, vmId, "vmId");
-                ex.addProxyObject(root, root.getId(), "volumeId");
+                        "Cannot find template/ISO for specified volumeid and vmId");
+                ex.addProxyObject(vm.getUuid(), "vmId");
+                ex.addProxyObject(root.getUuid(), "volumeId");
                 throw ex;
             }
         }
@@ -4270,18 +4327,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             } catch (CloudRuntimeException e) {
                 s_logger.debug("Stop vm " + vm.getUuid() + " failed");
                 CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
-                ex.addProxyObject(vm, vmId, "vmId");
+                ex.addProxyObject(vm.getUuid(), "vmId");
                 throw ex;
             }
         }
 
-        /* If new template is provided allocate a new volume from new template otherwise allocate new volume from original template */
+        /* If new template/ISO is provided allocate a new volume from new template/ISO otherwise allocate new volume from original template/ISO */
         VolumeVO newVol = null;
-        if (newTemplateId != null){
+        if (newTemplateId != null) {
+            if (isISO) {
+                newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                vm.setIsoId(newTemplateId);
+                vm.setGuestOSId(template.getGuestOSId());
+                vm.setTemplateId(newTemplateId);
+                _vmDao.update(vmId, vm);
+            } else {
             newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
             vm.setGuestOSId(template.getGuestOSId());
             vm.setTemplateId(newTemplateId);
             _vmDao.update(vmId, vm);
+            }
         } else {
             newVol = volumeMgr.allocateDuplicateVolume(root, null);
         }
@@ -4323,7 +4388,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 s_logger.debug("Unable to start VM " + vm.getUuid(), e);
                 CloudRuntimeException ex = new CloudRuntimeException(
                         "Unable to start VM with specified id" + e.getMessage());
-                ex.addProxyObject(vm, vmId, "vmId");
+                ex.addProxyObject(vm.getUuid(), "vmId");
                 throw ex;
             }
         }

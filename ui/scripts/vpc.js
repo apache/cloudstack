@@ -26,9 +26,49 @@
       }
 
       return hiddenFields; // Returns fields to be hidden
+    },     
+    reorder: {
+      moveDrag: {
+        action: function(args) {
+          $(args.context.multiRule.toArray().reverse()).map(function(index, rule) {
+            $.ajax({
+              url: createURL('updateNetworkACLItem'),
+              data: {
+                id: rule.id,
+                number: index + 1
+              },
+              success: function(json) {
+                var pollTimer = setInterval(function() {
+                  pollAsyncJobResult({
+                    _custom: { jobId: json.createnetworkaclresponse.jobid },
+                    complete: function() {
+                      clearInterval(pollTimer);
+                    },
+                    error: function(errorMsg) {
+                      clearInterval(pollTimer);                      
+                      cloudStack.dialog.notice(errorMsg);
+                    }
+                  });
+                }, 1000);               
+              }
+            });
+          });
+        }
+      }
     },
     fields: {
       'cidrlist': { edit: true, label: 'label.cidr' },
+      action: {
+        label: 'Action',
+        select: function(args) {
+          args.response.success({
+            data: [
+              { name: 'Allow', description: 'Allow' },
+              { name: 'Deny', description: 'Deny' }
+            ]
+          });
+        }
+      },
       'protocol': {
         label: 'label.protocol',
         select: function(args) {
@@ -45,28 +85,27 @@
             var $otherFields = $inputs.filter(function() {
               var name = $(this).attr('name');
 
-              return name != 'icmptype' && name != 'icmpcode' && name != 'cidrlist';
+              return name != 'protocolnumber' &&
+                     name != 'icmptype' &&
+                     name != 'icmpcode' &&
+                     name != 'cidrlist';
             });
 
-            var $protocolinput = args.$form.find('th,td');
+            var $protocolinput = args.$form.find('td input');
             var $protocolFields = $protocolinput.filter(function(){
-             var name = $(this).attr('rel');
+             var name = $(this).attr('name');
 
              return  $.inArray(name,['protocolnumber']) > -1;
             });
 
-           if($(this).val() == 'protocolnumber' ){
-
-             $protocolFields.show();
-            }
-            else{
-             $protocolFields.hide();
-            }
-
-
-            if ($(this).val() == 'icmp') {
+            if ($(this).val() == 'protocolnumber' ){
+              $icmpFields.hide();
+              $otherFields.hide();
+              $protocolFields.show().addClass('required');
+            } else if ($(this).val() == 'icmp') {
               $icmpFields.show();
               $icmpFields.attr('disabled', false);
+              $protocolFields.hide().removeClass('required');
               $otherFields.attr('disabled', 'disabled');
               $otherFields.hide();
               $otherFields.parent().find('label.error').hide();
@@ -77,6 +116,7 @@
               $icmpFields.attr('disabled', 'disabled');
               $icmpFields.hide();
               $icmpFields.parent().find('label.error').hide();
+              $protocolFields.hide().removeClass('required');
             }
           });
 
@@ -90,12 +130,14 @@
 
             ]
           });
+
+          setTimeout(function() { args.$select.trigger('change'); }, 100);
         }
       },
 
-      'protocolnumber': {label:'Protocol Number',isDisabled:true,isHidden:true,edit:true},
-      'startport': { edit: true, label: 'label.start.port' , isOptional:true },
-      'endport': { edit: true, label: 'label.end.port' , isOptional:true},
+      'protocolnumber': {label:'Protocol Number',edit:true},
+      'startport': { edit: true, label: 'label.start.port', isOptional: true },
+      'endport': { edit: true, label: 'label.end.port', isOptional: true },
       'networkid': {
         label: 'Select Tier',
         select: function(args) {
@@ -180,8 +222,7 @@
         $.ajax({
           url: createURL('createNetworkACL'),
           data: $.extend(args.data, {
-            networkid: args.context.networks ?
-              args.context.networks[0].id : args.data.networkid
+            aclid: args.context.aclLists[0].id
           }),
           dataType: 'json',
           success: function(data) {
@@ -189,14 +230,6 @@
               _custom: {
                 jobId: data.createnetworkaclresponse.jobid,
                 getUpdatedItem: function(json) {
-                  var networkName = $multi.find('select[name=networkid] option[value=' + args.data.networkid + ']').html();
-                  var data = $.extend(json.queryasyncjobresultresponse.jobresult.networkacl, {
-                    networkid: networkName
-                  });
-                  var aclRules = $multi.data('acl-rules');
-                  
-                  aclRules.push(data);
-                  $multi.data('acl-rules', aclRules);
                   $(window).trigger('cloudStack.fullRefresh');
 
                   return data;
@@ -231,7 +264,7 @@
               args.response.success({
                 _custom: {
                   jobId: jobID,
-                  getUpdatedItem: function() {
+                  getUpdateIdtem: function() {
                     $(window).trigger('cloudStack.fullRefresh');
                   }
                 },
@@ -289,6 +322,531 @@
   };
 
   cloudStack.vpc = {
+    // nTier sections
+    sections: {
+      tierVMs: function() {
+        var list = $.extend(true, {}, cloudStack.sections.instances);
+
+        list.listView.actions.add.action.custom = cloudStack.uiCustom.instanceWizard(
+          $.extend(true, {}, cloudStack.instanceWizard, {
+            pluginForm: { name: 'vpcTierInstanceWizard' }
+          })
+        );
+        
+        return list;
+      },
+
+      tierPortForwarders: function() {
+        return cloudStack.vpc.ipAddresses.listView();
+      },
+
+      tierStaticNATs: function() {
+        return cloudStack.vpc.staticNatIpAddresses.listView();
+      },
+      
+      // Internal load balancers
+      internalLoadBalancers: {
+        title: 'Internal LB',
+        listView: {
+          id: 'internalLoadBalancers',
+          fields: {
+            name: { label: 'label.name' },
+            sourceipaddress: { label: 'Source IP Address' }                
+          },
+          dataProvider: function(args) {                
+            $.ajax({
+              url: createURL('listLoadBalancers'),
+              data: {
+                networkid: args.context.networks[0].id
+              },
+              success: function(json) {                    
+                var items = json.listloadbalancerssresponse.loadbalancer;
+                args.response.success({ data: items });
+                
+              }
+            });                
+          },
+          actions: {
+            add: {
+              label: 'Add Internal LB',
+              createForm: {
+                title: 'Add Internal LB',                
+                fields: {                                   
+                  name: { label: 'label.name', validation: { required: true } },
+                  description: { label: 'label.description', validation: { required: false } },
+                  sourceipaddress: { label: 'Source IP Address', validation: { required: false } },
+                  sourceport: { label: 'sourceport', validation: { required: true } },
+                  instanceport: { label: 'instanceport', validation: { required: true } },
+                  algorithm: { 
+                    label: 'label.algorithm',
+                    validation: { required: true },
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'source', description: 'source' },
+                          { id: 'roundrobin', description: 'roundrobin' },
+                          { id: 'leastconn', description: 'leastconn' }
+                        ]
+                      });
+                    }
+                  }                  
+                }
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Add Internal LB';
+                }
+              },
+              action: function(args) {               
+                var data = {
+                  name: args.data.name,
+                  sourceport: args.data.sourceport,
+                  instanceport: args.data.instanceport,
+                  algorithm: args.data.algorithm,
+                  networkid: args.context.networks[0].id,
+                  sourceipaddressnetworkid: args.context.networks[0].id,
+                  scheme: 'Internal'
+                };
+                if(args.data.description != null && args.data.description.length > 0){
+                  $.extend(data, {
+                    description: args.data.description
+                  });                  
+                }
+                if(args.data.sourceipaddress != null && args.data.sourceipaddress.length > 0){
+                  $.extend(data, {
+                    sourceipaddress: args.data.sourceipaddress
+                  });                  
+                }                
+                $.ajax({
+                  url: createURL('createLoadBalancer'),
+                  data: data,
+                  success: function(json){                    
+                    var jid = json.createloadbalancerresponse.jobid;   
+                    args.response.success(
+                      {_custom:
+                       {jobId: jid,
+                        getUpdatedItem: function(json) {    
+                          return json.queryasyncjobresultresponse.jobresult.loadbalancer;
+                        }
+                       }
+                      }
+                    );    
+                  }
+                });
+                
+                args.response.success();
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
+          },
+          
+          detailView: {
+            name: 'Internal Lb details',
+            actions: {
+              assignVm: { 
+                label: 'Assign VMs to LB',
+                messages: {
+                  notification: function(args) { return 'Assign VM to internal LB rule'; }
+                },
+                listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
+                  type: 'checkbox',
+                  filters: false,
+                  dataProvider: function(args) {
+                    $.ajax({
+                      url: createURL('listVirtualMachines'),
+                      data: {
+                        networkid: args.context.networks[0].id,
+                        listAll: true
+                      },
+                      success: function(json) {
+                        var instances = json.listvirtualmachinesresponse.virtualmachine;
+
+                        // Pre-select existing instances in LB rule
+                        $(instances).map(function(index, instance) {
+                          instance._isSelected = $.grep(
+                            args.context.internalLoadBalancers[0].loadbalancerinstance,
+                            
+                            function(lbInstance) {
+                              return lbInstance.id == instance.id;
+                            }
+                          ).length ? true : false;
+                        });
+                        
+                        args.response.success({
+                          data: instances
+                        });
+                      }
+                    });
+                  }
+                }),
+                action: function(args) {                      
+                  var vms = args.context.instances;
+                  var array1 = [];
+                  for(var i = 0; i < vms.length; i++) {
+                    array1.push(vms[i].id);
+                  }
+                  var virtualmachineids = array1.join(',');
+                  
+                  $.ajax({
+                    url: createURL('assignToLoadBalancerRule'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id,
+                      virtualmachineids: virtualmachineids
+                    },
+                    dataType: 'json',
+                    async: true,
+                    success: function(data) {                          
+                      var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
+                      args.response.success({
+                        _custom: { jobId: jid }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            },                
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {
+                    id: { label: 'label.id' }
+                  }
+                ],                    
+                dataProvider: function(args) {      
+                  $.ajax({
+                    url: createURL('listLoadBalancers'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id
+                    },
+                    success: function(json) {     
+                      var item = json.listloadbalancerssresponse.loadbalancer[0];
+                      args.response.success({ data: item });                          
+                    }
+                  });                        
+                }
+              },                                              
+              rules: {
+                title: 'label.rules',
+                multiple: true,
+                fields: [
+                  {
+                    sourceport: { label: 'Source Port' },
+                    instanceport: { label: 'Instance Port' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL('listLoadBalancers'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id
+                    },
+                    success: function(json) {     
+                      var item = json.listloadbalancerssresponse.loadbalancer[0];
+                      args.response.success({ data: item.loadbalancerrule });                          
+                    }
+                  }); 
+                }
+              } ,              
+              assignedVms: {
+                title: 'Assigned VMs',
+                multiple: true,
+                fields: [
+                  {
+                    name: { label: 'label.name' },
+                    ipaddress: { label: 'label.ip.address' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL('listLoadBalancers'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id
+                    },
+                    success: function(json) {     
+                      var item = json.listloadbalancerssresponse.loadbalancer[0];
+                      args.response.success({ data: item.loadbalancerinstance });                          
+                    }
+                  }); 
+                }
+              }               
+            }                
+          }              
+        }
+      },
+      publicLbIps: {
+        title: 'Public LB',
+        listView: {
+          id: 'publicLbIps',
+          fields: {
+            ipaddress: {
+              label: 'label.ips',
+              converter: function(text, item) {
+                if (item.issourcenat) {
+                  return text + ' [' + _l('label.source.nat') + ']';
+                }
+
+                return text;
+              }
+            },
+            zonename: { label: 'label.zone' },            
+            virtualmachinedisplayname: { label: 'label.vm.name' },
+            state: {
+              converter: function(str) {
+                // For localization
+                return str;
+              },
+              label: 'label.state', indicator: { 'Allocated': 'on', 'Released': 'off' }
+            }
+          },
+          dataProvider: function(args) {            
+            $.ajax({
+              url: createURL('listPublicIpAddresses'),
+              async: false,
+              data: { networkid: args.context.networks[0].id, forloadbalancing: true },
+              success: function(json) {
+                var items = json.listpublicipaddressesresponse;
+                args.response.success({ data: items });
+              }
+            });     
+          }          
+        }
+      },
+      
+      // Private gateways
+      privateGateways: function() {
+        return cloudStack.vpc.gateways.listView()
+      },
+
+      // Public IP Addresses
+      publicIPs: function() {
+        return cloudStack.vpc.ipAddresses.listView()
+      },
+
+      // Network ACL lists
+      networkACLLists: {
+        listView: {
+          id: 'aclLists',
+          fields: {
+            name: { label: 'label.name' },
+            description: {label:'Description'},
+            id: { label: 'id' }
+          },
+          dataProvider: function(args) {
+            $.ajax({
+              url:createURL('listNetworkACLLists&vpc_id=' + args.context.vpc[0].id),
+              success:function(json){  
+                var items = json.listnetworkacllistsresponse.networkacllist;
+                
+                args.response.success({
+                  data:items
+                });
+              }
+            });
+          },
+          
+          actions:{
+            add:{
+              label:'Add ACL List',
+              createForm:{
+                label: 'Add ACL List',
+                fields:{
+                  name:{label:'ACL List Name',validation:{required:true}},
+                  description:{label:'Description',validation:{required:true}}
+                }
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Add Network ACL List';
+                }
+              },
+              action:function(args){
+                var data = {
+                  name:args.data.name,
+                  description:args.data.description
+
+                };
+
+                $.ajax({
+                  url:createURL('createNetworkACLList&vpcid='+ args.context.vpc[0].id),
+                  data:data,
+                  success:function(json){
+                    var items = json.createnetworkacllistresponse;
+                    args.response.success({
+                      data:items
+                    });
+                  }
+                });
+              }
+            }
+          },
+ 
+          detailView: {
+            isMaximized: true,
+            actions:{
+              remove: {
+                label:'Delete ACL List',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to delete this ACL list ?';
+                  },
+                  notification: function(args) {
+                    return 'Delete ACL list';
+                  }
+                },
+                action:function(args){
+                  $.ajax({
+                    url:createURL('deleteNetworkACLList&id=' + args.context.aclLists[0].id),
+                    success:function(json){
+                      var jid = json.deletenetworkacllistresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {   jobId: jid
+                         }
+                        }
+                      );
+                    },
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            },
+
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name', isEditable: true },
+                    description: {label:'Description'},
+                    id:{label:'id'}
+                  }
+                ],
+                dataProvider: function(args) {
+                  var items = args.context.aclLists[0];
+                  setTimeout(function() {
+                    args.response.success({
+                      data: items,
+                      actionFilter: function(args) {
+                        var allowedActions = [];
+                        if(isAdmin()) {
+                          allowedActions.push("remove");
+
+                        }
+                        return allowedActions;
+                      }
+                    });
+                  });
+                }
+              },
+              
+              aclRules: {
+                title: 'ACL List Rules',
+                custom: function(args) {
+                  return $('<div>').multiEdit($.extend(true, {}, aclMultiEdit, {
+                    context: args.context,
+                    fields: {
+                      networkid: false
+                    },
+                    dataProvider: function(args) {
+                      $.ajax({
+                        url:createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
+                        success:function(json){
+                          var items = json.listnetworkaclsresponse.networkacl;
+
+                          args.response.success({
+                            data:items
+                            /* {
+                               cidrlist: '10.1.1.0/24',
+                               protocol: 'TCP',
+                               startport: 22, endport: 22,
+                               networkid: 0,
+                               traffictype: 'Egress'
+                               },
+                               {
+                               cidrlist: '10.2.1.0/24',
+                               protocol: 'UDP',
+                               startport: 56, endport: 72,
+                               networkid: 0,
+                               trafficType: 'Ingress'
+                               }
+                               ]*/ 
+                          });
+                        }
+                      });
+                    } 
+                  }));
+                }
+              }
+            }
+          }
+        }
+      },
+      siteToSiteVPNs: function() {
+        return $.extend(true, {}, cloudStack.vpc.siteToSiteVPN, {
+          // siteToSiteVPN is multi-section so doesn't have an explicit
+          // 'listView' block
+          //
+          // -- use this as a flag for VPC chart to render as a list view
+          listView: true,
+          before: {
+            messages: {
+              confirm: 'Please confirm that you would like to create a site-to-site VPN gateway for this VPC.',
+              notification: 'Create site-to-site VPN gateway'
+            },
+            check: function(args) {
+              var items;
+              
+              $.ajax({
+                url: createURL('listVpnGateways&listAll=true'),
+                data: {
+                  vpcid: args.context.vpc[0].id
+                },
+                success: function(json) {
+                  var items = json.listvpngatewaysresponse.vpngateway;
+
+                  args.response.success(items && items.length);
+                }
+              });
+            },
+            action: function(args) {
+              $.ajax({
+                url: createURL("createVpnGateway"),
+                data: {
+                  vpcid: args.context.vpc[0].id
+                },
+                success: function(json) {
+                  var jid = json.createvpngatewayresponse.jobid;
+                  var pollTimer = setInterval(function() {
+                    pollAsyncJobResult({
+                      _custom: { jobId: jid },
+                      complete: function() {
+                        clearInterval(pollTimer);
+                        args.response.success();
+                      }
+                    });
+                  }, g_queryAsyncJobResultInterval);
+                }
+              });             
+            }
+          }
+        });
+      }
+    },
+    
     routerDetailView: function() {
       return {
         title: 'VPC router details',
@@ -594,12 +1152,41 @@
     ipAddresses: {
       listView: function() {
         var listView = $.extend(true, {}, cloudStack.sections.network.sections.ipAddresses);
-        
+
         listView.listView.fields = {
           ipaddress: listView.listView.fields.ipaddress,
           zonename: listView.listView.fields.zonename,
           associatednetworkname: { label: 'label.network.name' },
           state: listView.listView.fields.state
+        };
+
+        return listView;
+      }
+    },
+    staticNatIpAddresses: {
+      listView: function() {
+        var listView = $.extend(true, {}, cloudStack.sections.network.sections.ipAddresses);
+
+        listView.listView.fields = {
+          ipaddress: listView.listView.fields.ipaddress,
+          zonename: listView.listView.fields.zonename,
+          associatednetworkname: { label: 'label.network.name' },
+          state: listView.listView.fields.state
+        };
+
+        listView.listView.dataProvider = function(args) {
+          $.ajax({
+            url: createURL('listPublicIpAddresses'),
+            data: { networkid: args.context.networks[0].id, isstaticnat: true },
+            success: function(json) {
+              args.response.success({
+                data: json.listpublicipaddressesresponse.publicipaddress
+              });
+            },
+            error: function(json) {
+              args.response.error(parseXMLHttpResponse(json));
+            }
+          });                
         };
 
         return listView;
@@ -1451,7 +2038,7 @@
 														listAll: true
 													},
 													success: function(json) {
-														var items = json.listvpncustomergatewaysresponse.vpncustomergateway;
+														var items = json.listvpncustomergatewaysresponse.vpncustomergateway ? json.listvpncustomergatewaysresponse.vpncustomergateway: [];
 														args.response.success({
 														  data: $.map(items, function(item) {
                                 return {
@@ -1651,6 +2238,9 @@
           path: 'network.ipAddresses',
           label: 'label.menu.ipaddresses',
           preFilter: function(args) {
+            return false;
+
+            /// Disabled
             if (args.context.networks[0].state == 'Destroyed')
               return false;
 
@@ -1895,7 +2485,76 @@
             notification: {
               poll: pollAsyncJobResult
             }
-          }
+          },
+
+          replaceacllist:{
+
+             label:'Replace ACL List',
+              createForm:{
+                    title:'Replace ACL List',
+                    label:'Replace ACL List',
+                   fields:{
+                    aclid:{
+                 label:'ACL',
+                 select:function(args){
+                 $.ajax({
+                 url: createURL('listNetworkACLLists'),
+                 dataType: 'json',
+                 async: true,
+                 success: function(json) {
+                      var objs = json.listnetworkacllistsresponse.networkacllist;
+                      var items = [];
+                      $(objs).each(function() {
+
+                          items.push({id: this.id, description: this.name});
+                           });
+                     args.response.success({data: items});
+                       }
+                     });
+                    }
+                }
+              }
+             },
+              action: function(args) {
+                    $.ajax({
+                      url: createURL("replaceNetworkACLList&networkid=" + args.context.networks[0].id + "&aclid=" + args.data.aclid ),
+                      dataType: "json",
+                      success: function(json) {
+                        var jid = json.replacenetworkacllistresponse.jobid;
+                        args.response.success(
+
+                          {_custom:
+                           {
+                             jobId: jid,
+                             getUpdatedItem: function(json) {
+                               var item = json.queryasyncjobresultresponse.jobresult.aclid;
+                               return {data:item};
+                             }
+                           }
+                          }
+
+                       )
+                      },
+
+                      error:function(json){
+
+                         args.response.error(parseXMLHttpResponse(json));
+                     }
+                    });
+                  },
+                  notification: {
+                  poll: pollAsyncJobResult
+                },
+
+                    messages: {
+                    confirm: function(args) {
+                      return 'Do you want to replace the ACL with a new one ?';
+                    },
+                    notification: function(args) {
+                      return 'ACL replaced';
+                    }
+                  }
+             } 
         },
 
         tabFilter: function(args) {
@@ -1921,7 +2580,7 @@
             }
           });
 
-          var hiddenTabs = ['ipAddresses']; // Disable IP address tab; it is redundant with 'view all' button
+          var hiddenTabs = ['ipAddresses', 'acl']; // Disable IP address tab; it is redundant with 'view all' button
           
           if(networkOfferingHavingELB == false)
             hiddenTabs.push("addloadBalancer");
@@ -2056,6 +2715,8 @@
                   label: 'label.network.domain',
                   isEditable: true
                 },
+
+                aclid:{label:'ACL id'},
 
                 domain: { label: 'label.domain' },
                 account: { label: 'label.account' }
@@ -2506,23 +3167,169 @@
           async: true,
           success: function(json) {
             var networks = json.listnetworksresponse.network;
-            if(networks != null && networks.length > 0) {
-              for(var i = 0; i < networks.length; i++) {
+            var networkACLLists, publicIpAddresses, privateGateways, vpnGateways;
+            var error = false;
+
+            // Get network ACL lists
+            $.ajax({
+              url: createURL('listNetworkACLLists'),
+              data: { 'vpc_id': args.context.vpc[0].id },
+              async: false,
+              success: function(json) {
+                networkACLLists = json.listnetworkacllistsresponse;
+              },
+              error: function(json) {
+                error = true;
+              }
+            });
+
+            // Get public IPs
+            $.ajax({
+              url: createURL('listPublicIpAddresses'),
+              async: false,
+              data: { 'vpcid': args.context.vpc[0].id },
+              success: function(json) {
+                publicIpAddresses = json.listpublicipaddressesresponse;
+              },
+              error: function(json) {
+                error = true;
+              }
+            });
+
+            // Get private gateways
+            $.ajax({
+              url: createURL('listPrivateGateways'),
+              async: false,
+              data: { 'vpcid': args.context.vpc[0].id },
+              success: function(json) {
+                privateGateways = json.listprivategatewaysresponse;
+              },
+              error: function(json) {
+                error = true;
+              }
+            });
+
+            // Get VPN gateways
+            $.ajax({
+              url: createURL('listVpnGateways'),
+              async: false,
+              data: { 'vpcid': args.context.vpc[0].id },
+              success: function(json) {
+                vpnGateways = json.listvpngatewaysresponse;
+              },
+              error: function(json) {
+                error = true;
+              }
+            });
+
+            args.response.success({
+              routerDashboard: [
+                {
+                  id: 'privateGateways',
+                  name: 'Private gateways',
+                  total: privateGateways.count
+                },
+                {
+                  id: 'publicIPs',
+                  name: 'Public IP addresses',
+                  total: publicIpAddresses.count
+                },
+                {
+                  id: 'siteToSiteVPNs',
+                  name: 'Site-to-site VPNs',
+                  total: vpnGateways.count
+                },
+                {
+                  id: 'networkACLLists',
+                  name: 'Network ACL lists',
+                  total: networkACLLists.count
+                }
+              ],
+              tiers: $(networks).map(function(index, tier) {
+                var internalLoadBalancers, publicLbIps, virtualMachines, staticNatIps;
+
+                // Get internal load balancers
                 $.ajax({
-                  url: createURL("listVirtualMachines"),
-                  dataType: "json",
-                  data: {
-                    networkid: networks[i].id,
-                    listAll: true
-                  },
+                  url: createURL('listLoadBalancers'),
                   async: false,
+                  data: { networkid: tier.id },
                   success: function(json) {
-                    networks[i].virtualMachines = json.listvirtualmachinesresponse.virtualmachine;
+                    internalLoadBalancers = json.listloadbalancerssresponse;
+                  },
+                  error: function(json) {
+                    error = true;
                   }
                 });
-              }
+
+                // Get Public LB IPs
+                $.ajax({
+                  url: createURL('listPublicIpAddresses'),
+                  async: false,
+                  data: { networkid: tier.id, forloadbalancing: true },
+                  success: function(json) {
+                    publicLbIps = json.listpublicipaddressesresponse;
+                  },
+                  error: function(json) {
+                    error = true;
+                  }
+                });            
+                
+                // Get static NAT IPs
+                $.ajax({
+                  url: createURL('listPublicIpAddresses'),
+                  async: false,
+                  data: { networkid: tier.id, isstaticnat: true },
+                  success: function(json) {
+                    staticNatIps = json.listpublicipaddressesresponse;
+                  },
+                  error: function(json) {
+                    error = true;
+                  }
+                });                
+                
+                // Get VMs
+                $.ajax({
+                  url: createURL('listVirtualMachines'),
+                  async: false,
+                  data: { networkid: tier.id },
+                  success: function(json) {
+                    virtualMachines = json.listvirtualmachinesresponse;
+                  },
+                  error: function(json) {
+                    error = true;
+                  }
+                });
+                
+                return $.extend(tier, {
+                  _dashboardItems: [
+                    {
+                      id: 'internalLoadBalancers',
+                      name: 'Internal LB',
+                      total: internalLoadBalancers.count
+                    },
+                    {
+                      id: 'publicLbIps',
+                      name: 'Public LB IP',
+                      total: publicLbIps.count
+                    },
+                    {
+                      id: 'tierStaticNATs',
+                      name: 'Static NATs',
+                      total: staticNatIps.count
+                    },
+                    {
+                      id: 'tierVMs',
+                      name: 'Virtual Machines',
+                      total: virtualMachines.count
+                    }
+                  ]
+                });
+              })
+            });
+            
+            if (error) {
+              cloudStack.dialog.notice({ message: 'Error loading dashboard data.' });
             }
-            args.response.success({ tiers: networks });
           }
         });
       }

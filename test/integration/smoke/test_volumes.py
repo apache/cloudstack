@@ -209,8 +209,8 @@ class TestCreateVolume(cloudstackTestCase):
                                                )
             try:
                 ssh = self.virtual_machine.get_ssh_client()
+                self.debug("Rebooting VM %s" % self.virtual_machine.id)
                 ssh.execute("reboot")
-
             except Exception as e:
                 self.fail("SSH access failed for VM %s - %s" %
                                 (self.virtual_machine.ipaddress, e))
@@ -536,7 +536,7 @@ class TestVolumes(cloudstackTestCase):
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_07_resize_fail(self):
-        """Verify invalid options fail to Resize a volume"""
+        """Test resize (negative) non-existent volume"""
         # Verify the size is the new size is what we wanted it to be.
         self.debug("Fail Resize Volume ID: %s" % self.volume.id)
 
@@ -584,7 +584,12 @@ class TestVolumes(cloudstackTestCase):
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
         self.attached = True
         #stop the vm if it is on xenserver
-        if self.services['hypervisor'].lower() == "xenserver":
+        hosts = Host.list(self.apiClient, id=self.virtual_machine.hostid)
+        self.assertTrue(isinstance(hosts, list))
+        self.assertTrue(len(hosts) > 0)
+        self.debug("Found %s host" % hosts[0].hypervisor)
+
+        if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.stop(self.apiClient)
 
         self.apiClient.resizeVolume(cmd)
@@ -610,23 +615,28 @@ class TestVolumes(cloudstackTestCase):
                          True,
                          "Verify the volume did not resize"
                          )
-        if self.services['hypervisor'].lower() == "xenserver":
+        if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.start(self.apiClient)
 
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
     def test_08_resize_volume(self):
-        """Resize a volume"""
+        """Test resize a volume"""
         # Verify the size is the new size is what we wanted it to be.
         self.debug(
                 "Attaching volume (ID: %s) to VM (ID: %s)" % (
                                                     self.volume.id,
                                                     self.virtual_machine.id
                                                     ))
+
         self.virtual_machine.attach_volume(self.apiClient, self.volume)
         self.attached = True
+        hosts = Host.list(self.apiClient, id=self.virtual_machine.hostid)
+        self.assertTrue(isinstance(hosts, list))
+        self.assertTrue(len(hosts) > 0)
+        self.debug("Found %s host" % hosts[0].hypervisor)
 
-        if self.services['hypervisor'].lower() == "xenserver":
+        if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.stop(self.apiClient)
         self.debug("Resize Volume ID: %s" % self.volume.id)
 
@@ -659,7 +669,9 @@ class TestVolumes(cloudstackTestCase):
                          "Check if the volume resized appropriately"
                          )
 
-        if self.services['hypervisor'].lower() == "xenserver":
+        #start the vm if it is on xenserver
+
+        if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.start(self.apiClient)
 
     @attr(tags = ["advanced", "advancedns", "smoke","basic"])

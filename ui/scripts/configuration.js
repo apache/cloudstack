@@ -171,7 +171,7 @@
                        var items=[];
                        items.push({id:'',description:''});
                        items.push({id:'Strict', description:'Strict'});
-                       items.push({id:'Preffered', description:'Preffered'});
+                       items.push({id:'Preferred', description:'Preferred'});
                        args.response.success({data:items});
                     }
                   },
@@ -1919,26 +1919,22 @@
                                                                         inputData['isPersistent'] = false;
 								}
 								else if (inputData['guestIpType'] == "Isolated") { //specifyVlan checkbox is shown
-									if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
+								  inputData['specifyIpRanges'] = false;
+								  
+								  if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
 										inputData['specifyVlan'] = true;	
-                                                                                inputData['specifyIpRanges'] = true;							
-
-                    
-
-			
 									}
 									else { //specifyVlan checkbox is unchecked
 										inputData['specifyVlan'] = false;
-										inputData['specifyIpRanges'] = false;
+										
 									}	
                                                                         
-                                                                        if(inputData['isPersistent'] == 'on') {  //It is a persistent network
-                                                                               inputData['isPersistent'] = true;
-                                                                        }
-                                                                        else {    //Isolated Network with Non-persistent network
-                                                                               inputData['isPersistent'] = false;
-                                                                                              }
-				
+                  if(inputData['isPersistent'] == 'on') {  //It is a persistent network
+                    inputData['isPersistent'] = true;
+                  }
+                  else {    //Isolated Network with Non-persistent network
+                    inputData['isPersistent'] = false;
+                  }				
 								}			
 								
 																

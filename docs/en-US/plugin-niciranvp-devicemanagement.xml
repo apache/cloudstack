@@ -21,27 +21,15 @@
  under the License.
 -->
 <section id="Device-management">
-    <title>Device-management</title>
-    <para>In &PRODUCT; 4.0.x each Nicira NVP setup is considered a "device" that can be added and removed from a physical network. To complete the configuration of the Nicira NVP plugin a device needs to be added to the physical network using the "addNiciraNVPDevice" API call. The plugin is now enabled on the physical network and any guest networks created on that network will be provisioned using the Nicira NVP Controller.</para>
-    <para>The plugin introduces a set of new API calls to manage the devices, see below or refer to the API reference.</para>
-    <itemizedlist>
-        <listitem><para>addNiciraNvpDevice</para></listitem>
-        <listitem>
-            <itemizedlist>
-                <listitem><para>physicalnetworkid: the UUID of the physical network on which the device is configured</para></listitem>
-                <listitem><para>hostname: the IP address of the NVP controller</para></listitem>
-                <listitem><para>username: the username for access to the NVP API</para></listitem>
-                <listitem><para>password: the password for access to the NVP API</para></listitem>
-                <listitem><para>transportzoneuuid: the UUID of the transportzone</para></listitem>
-            </itemizedlist>
-        </listitem>
-        <listitem><para>deleteNiciraNVPDevice</para></listitem>
-        <listitem>
-            <itemizedlist>
-                <listitem><para>nvpdeviceid: the UUID of the device</para></listitem>
-            </itemizedlist>
-        </listitem>
-        <listitem><para>listNiciraNVPDevices</para></listitem>
-    </itemizedlist>    
+    <title>Device Management</title>
+    <para>In &PRODUCT; a Nicira NVP setup is considered a "device" that can be added and removed from a physical network. To complete the configuration of the Nicira NVP plugin a device needs to be added to the physical network. Press the "Add NVP Controller" button on the provider panel and enter the configuration details.</para>
+    <mediaobject>
+        <imageobject>
+            <imagedata fileref="./images/nvp-add-controller.png" />
+        </imageobject>
+        <textobject>
+            <phrase>nvp-physical-network-stt.png: a screenshot of the device configuration popup.</phrase>
+        </textobject>
+    </mediaobject>
     
 </section>

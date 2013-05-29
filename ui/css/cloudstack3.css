@@ -7925,6 +7925,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   width: 87px !important;
   min-width: 87px !important;
   max-width: 87px !important;
+  font-size: 10px;
 }
 
 /** Header fields*/
@@ -7973,6 +7974,15 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 
 .multi-edit .header-fields input[type=submit] {
 }
+
+/* Sortable */
+.multi-edit table tbody tr td.reorder,
+.multi-edit table thead tr th.reorder {
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+}
+
 
 /*Security Rules*/
 .security-rules .multi-edit input {
@@ -11726,13 +11736,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .destroy .icon,
 .remove .icon,
 .delete .icon,
-.decline .icon {
+.decline .icon,
+.deleteacllist .icon {
   background-position: 1px -92px;
 }
 
 .destroy:hover .icon,
 .remove:hover .icon,
-.delete:hover .icon {
+.delete:hover .icon,
+.deleteacllist:hover .icon {
   background-position: 1px -674px;
 }
 
@@ -11818,13 +11830,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .downloadVolume .icon,
 .downloadTemplate .icon,
-.downloadISO .icon {
+.downloadISO .icon,
+.replaceacllist .icon {
   background-position: -35px -125px;
 }
 
 .downloadVolume:hover .icon,
 .downloadTemplate:hover .icon,
-.downloadISO:hover .icon {
+.downloadISO:hover .icon,
+.replaceacllist:hover .icon {
   background-position: -35px -707px;
 }
 
@@ -11857,12 +11871,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .add .icon,
-.addNew .icon {
+.addNew .icon,
+.assignVm .icon {
   background-position: -37px -61px;
 }
 
 .add:hover .icon,
-.addNew:hover .icon {
+.addNew:hover .icon,
+.assignVm:hover .icon {
   background-position: -37px -643px;
 }
 

@@ -895,10 +895,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
              */
         }
 
-        Grouping.AllocationState allocationState = null;
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             try {
-                allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+                Grouping.AllocationState.valueOf(allocationStateStr);
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("Unable to resolve Allocation State '" + allocationStateStr + "' to a supported state");
             }
@@ -1320,10 +1319,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS2");
         }
 
-        Grouping.AllocationState allocationState = null;
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             try {
-                allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+                Grouping.AllocationState.valueOf(allocationStateStr);
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("Unable to resolve Allocation State '" + allocationStateStr + "' to a supported state");
             }
@@ -1744,13 +1742,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // check if zone has necessary trafficTypes before enabling
                 try {
                     PhysicalNetwork mgmtPhyNetwork;
-                    if (NetworkType.Advanced == zone.getNetworkType()) {
-                        // zone should have a physical network with public and management traffiType
-                        _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
-                        mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
-                    } else {
                         // zone should have a physical network with management traffiType
                         mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
+                    if (NetworkType.Advanced == zone.getNetworkType() && ! zone.isSecurityGroupEnabled() ) {
+                        // advanced zone without SG should have a physical network with public Thpe
+                        _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
                     }
 
                     try {
@@ -2305,7 +2301,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIP = cmd.getEndIp();
         String newVlanGateway = cmd.getGateway();
         String newVlanNetmask = cmd.getNetmask();
-        Long userId = UserContext.current().getCallerUserId();
         String vlanId = cmd.getVlan();
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
@@ -3028,9 +3023,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
                 }
 
+            } else {
+                // when there is no dhcp support in the network.
+                if (!deletePublicIPRange(vlanDbId)) {
+                    return false;
+                }
+                _vlanDao.expunge(vlanDbId);
+                return  true;
             }
         }
-       throw new InvalidParameterValueException("One of the ips in the range is used to provide Dhcp service to this subnet. cannot delete this range as ");
+        return false;
     }
 
 
@@ -3304,42 +3306,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private void checkPrivateIpRangeErrors(Long podId, String startIP, String endIP) {
-        HostPodVO pod = _podDao.findById(podId);
-        if (pod == null) {
-            throw new InvalidParameterValueException("Please specify a valid pod.");
-        }
-
-        // Check that the start and end IPs are valid
-        if (!NetUtils.isValidIp(startIP)) {
-            throw new InvalidParameterValueException("Please specify a valid start IP");
-        }
-
-        if (endIP != null && !NetUtils.isValidIp(endIP)) {
-            throw new InvalidParameterValueException("Please specify a valid end IP");
-        }
-
-        if (endIP != null && !NetUtils.validIpRange(startIP, endIP)) {
-            throw new InvalidParameterValueException("Please specify a valid IP range.");
-        }
-
-        // Check that the IPs that are being added are compatible with the pod's
-        // CIDR
-        String cidrAddress = getCidrAddress(podId);
-        long cidrSize = getCidrSize(podId);
-
-        if (endIP != null && !NetUtils.sameSubnetCIDR(startIP, endIP, cidrSize)) {
-            throw new InvalidParameterValueException("Please ensure that your start IP and end IP are in the same subnet, as per the pod's CIDR size.");
-        }
-
-        if (!NetUtils.sameSubnetCIDR(startIP, cidrAddress, cidrSize)) {
-            throw new InvalidParameterValueException("Please ensure that your start IP is in the same subnet as the pod's CIDR address.");
-        }
-
-        if (endIP != null && !NetUtils.sameSubnetCIDR(endIP, cidrAddress, cidrSize)) {
-            throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as the pod's CIDR address.");
-        }
-    }
 
     private String getCidrAddress(String cidr) {
         String[] cidrPair = cidr.split("\\/");
@@ -3351,15 +3317,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return Integer.parseInt(cidrPair[1]);
     }
 
-    private String getCidrAddress(long podId) {
-        HostPodVO pod = _podDao.findById(podId);
-        return pod.getCidrAddress();
-    }
-
-    private long getCidrSize(long podId) {
-        HostPodVO pod = _podDao.findById(podId);
-        return pod.getCidrSize();
-    }
 
     @Override
     public void checkPodCidrSubnets(long dcId, Long podIdToBeSkipped, String cidr) {
@@ -4311,7 +4268,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean isOfferingForVpc(NetworkOffering offering) {
         boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(),
                 Provider.VPCVirtualRouter);
-        boolean internalLb = offering.getInternalLb();
         return vpcProvider;
     }
 
@@ -4468,6 +4424,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     
     // Note: This method will be used for entity name validations in the coming
     // releases (place holder for now)
+    @SuppressWarnings("unused")
     private void validateEntityName(String str) {
         String forbidden = "~!@#$%^&*()+=";
         char[] searchChars = forbidden.toCharArray();
@@ -4698,7 +4655,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIP = cmd.getEndIp();
         String gateway = cmd.getGateway();
         String netmask = cmd.getNetmask();
-        Long userId = UserContext.current().getCallerUserId();
         String vlanId = cmd.getVlan();
 
         Region region = _regionDao.findById(regionId);

@@ -1179,7 +1179,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
             InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, cannot " +
                     "migrate the vm with specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -1200,8 +1200,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
             InvalidParameterValueException ex = new InvalidParameterValueException(
                     "Unable to find the host (with specified id) of VM with specified id");
-            ex.addProxyObject(srcHost, srcHostId, "hostId");
-            ex.addProxyObject(vm, vmId, "vmId");
+            ex.addProxyObject(String.valueOf(srcHostId), "hostId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -1357,7 +1357,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (volume == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with" +
                     " specified id.");
-            ex.addProxyObject(volume, volumeId, "volumeId");
+            ex.addProxyObject(volumeId.toString(), "volumeId");
             throw ex;
         }
 
@@ -1611,8 +1611,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                         + " in specified domain");
                 // Since we don't have a DomainVO object here, we directly set
                 // tablename to "domain".
-                String tablename = "domain";
-                ex.addProxyObject(tablename, domainId, "domainId");
+                DomainVO domain = ApiDBUtils.findDomainById(domainId);
+                String domainUuid = domainId.toString();
+                if ( domain != null ){
+                    domainUuid = domain.getUuid();
+                }
+                ex.addProxyObject(domainUuid, "domainId");
                 throw ex;
             } else {
                 accountId = account.getId();
@@ -1632,7 +1636,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project by id " + projectId);
-                ex.addProxyObject(project, projectId, "projectId");
+                ex.addProxyObject(projectId.toString(), "projectId");
                 throw ex;
             }
             accountId = project.getProjectAccountId();
@@ -1866,14 +1870,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (isIso && template.getFormat() != ImageFormat.ISO) {
                 s_logger.error("Template Id " + templateId + " is not an ISO");
                 InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
-                ex.addProxyObject(template, templateId, "templateId");
+                ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }// If ISO not requested then it shouldn't be an ISO.
             if (!isIso && template.getFormat() == ImageFormat.ISO) {
                 s_logger.error("Incorrect format of the template id " + templateId);
                 InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat()
                         + " of the specified template id");
-                ex.addProxyObject(template, templateId, "templateId");
+                ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }
         }
@@ -1977,14 +1981,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         VMTemplateVO template = _templateDao.findById(id);
         if (template == null || template.getRemoved() != null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("unable to find template/iso with specified id");
-            ex.addProxyObject(template, id, "templateId");
+            ex.addProxyObject(id.toString(), "templateId");
             throw ex;
         }
 
         // Don't allow to modify system template
         if (id.equals(Long.valueOf(1))) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
-            ex.addProxyObject(template, id, "templateId");
+            ex.addProxyObject(template.getUuid(), "templateId");
             throw ex;
         }
 
@@ -2330,7 +2334,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
-            ex.addProxyObject(domain, domainId, "domainId");
+            ex.addProxyObject(domainId.toString(), "domainId");
             throw ex;
         } else if (domain.getParent() == null && domainName != null) {
             // check if domain is ROOT domain - and deny to edit it with the new
@@ -2354,7 +2358,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (!domains.isEmpty() && !sameDomain) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '"
                         + domainName + "' since it already exists in the system");
-                ex.addProxyObject(domain, domainId, "domainId");
+                ex.addProxyObject(domain.getUuid(), "domainId");
                 throw ex;
             }
         }
@@ -3258,7 +3262,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a system vm of specified instanceId");
-            ex.addProxyObject(systemVm, instanceId, "instanceId");
+            ex.addProxyObject(String.valueOf(instanceId), "instanceId");
             throw ex;
         }
         return systemVm.getType();
@@ -3270,7 +3274,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
-            ex.addProxyObject(systemVm, vmId, "vmId");
+            ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
 
@@ -3280,7 +3284,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return startSecondaryStorageVm(vmId);
         } else {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a system vm with specified vmId");
-            ex.addProxyObject(systemVm, vmId, "vmId");
+            ex.addProxyObject(systemVm.getUuid(), "vmId");
             throw ex;
         }
     }
@@ -3293,7 +3297,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
-            ex.addProxyObject(systemVm, id, "vmId");
+            ex.addProxyObject(id.toString(), "vmId");
             throw ex;
         }
 
@@ -3315,7 +3319,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (systemVm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
-            ex.addProxyObject(systemVm, cmd.getId(), "vmId");
+            ex.addProxyObject(cmd.getId().toString(), "vmId");
             throw ex;
         }
 
@@ -3332,7 +3336,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (systemVm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
-            ex.addProxyObject(systemVm, cmd.getId(), "vmId");
+            ex.addProxyObject(cmd.getId().toString(), "vmId");
             throw ex;
         }
 
@@ -3370,7 +3374,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         User user = _accountMgr.getUserIncludingRemoved(userId);
         if ((user == null) || (user.getRemoved() != null)) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find active user of specified id");
-            ex.addProxyObject(user, userId, "userId");
+            ex.addProxyObject(String.valueOf(userId), "userId");
             throw ex;
         }
 
@@ -3466,7 +3470,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with specified volumeId");
-            ex.addProxyObject(volume, volumeId, "volumeId");
+            ex.addProxyObject(volumeId.toString(), "volumeId");
             throw ex;
         }
 
@@ -3486,7 +3490,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     + ". It should be either detached or the VM should be in stopped state.");
             PermissionDeniedException ex = new PermissionDeniedException(
                     "Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
-            ex.addProxyObject(volume, volumeId, "volumeId");
+            ex.addProxyObject(volume.getUuid(), "volumeId");
             throw ex;
         }
 
@@ -3503,7 +3507,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global
                     // admins are always allowed to extract
                     PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
-                    ex.addProxyObject(volume, volumeId, "volumeId");
+                    ex.addProxyObject(volume.getUuid(), "volumeId");
                     throw ex;
                 }
             }
@@ -3661,7 +3665,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         InstanceGroupVO group = _vmGroupDao.findById(groupId.longValue());
         if (group == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a vm group with specified groupId");
-            ex.addProxyObject(group, groupId, "groupId");
+            ex.addProxyObject(groupId.toString(), "groupId");
             throw ex;
         }
 
@@ -3867,7 +3871,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (s == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("A key pair with name '" + cmd.getName()
                     + "' does not exist for account " + owner.getAccountName() + " in specified domain id");
-            ex.addProxyObject(owner, owner.getDomainId(), "domainId");
+            DomainVO domain = ApiDBUtils.findDomainById(owner.getDomainId());
+            String domainUuid = String.valueOf(owner.getDomainId());
+            if (domain != null){
+                domainUuid = domain.getUuid();
+            }
+            ex.addProxyObject(domainUuid, "domainId");
             throw ex;
         }
 
@@ -3954,7 +3963,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         UserVmVO vm = _userVmDao.findById(cmd.getId());
         if (vm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("No VM with specified id found.");
-            ex.addProxyObject(vm, cmd.getId(), "vmId");
+            ex.addProxyObject(cmd.getId().toString(), "vmId");
             throw ex;
         }
 
@@ -3965,7 +3974,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String password = vm.getDetail("Encrypted.Password");
         if (password == null || password.equals("")) {
             InvalidParameterValueException ex = new InvalidParameterValueException("No password for VM with specified id found.");
-            ex.addProxyObject(vm, cmd.getId(), "vmId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
 
@@ -4075,7 +4084,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (hpvCapabilities == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("unable to find the hypervisor capabilities for specified id");
-            ex.addProxyObject(hpvCapabilities, id, "Id");
+            ex.addProxyObject(id.toString(), "Id");
             throw ex;
         }
 

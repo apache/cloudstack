@@ -35,32 +35,17 @@ class Services:
 
     def __init__(self):
         self.services = {
-                        "nfs": {
-                            0: {
-                                "url": "nfs://192.168.100.131/testprimary",
+                        "nfs":
+                             {
+                                "url": "nfs://10.147.28.7/export/home/talluri/testprimary",
                                 # Format: File_System_Type/Location/Path
-                                "name": "Primary XEN",
-                                "hypervisor": 'XEN',
+                                "name": "Primary XEN"
                             },
-                            1: {
-                                "url": "nfs://192.168.100.131/Primary",
-                                "name": "Primary KVM",
-                                "hypervisor": 'KVM',
-                            },
-                            2: {
-                                "url": "nfs://192.168.100.131/Primary",
-                                "name": "Primary VMWare",
-                                "hypervisor": 'VMWare',
-                            },
-                        },
                         "iscsi": {
-                            0: {
                                 "url": "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",
                                 # Format : iscsi://IP Address/IQN number/LUN#
-                                "name": "Primary iSCSI",
-                                "hypervisor": 'XEN',
-                            },
-                        },
+                                "name": "Primary iSCSI"
+                            }
                  }
 
 class TestPrimaryStorageServices(cloudstackTestCase):
@@ -85,31 +70,27 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @unittest.skip("skipped - will not be adding storage in our environments")
-    def test_01_primary_storage(self):
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    def test_01_primary_storage_nfs(self):
         """Test primary storage pools - XEN, KVM, VMWare
         """
 
         # Validate the following:
-        # 1. verify hypervisortype returned by api is Xen/KVM/VMWare
+        # 1. List Clusters
         # 2. verify that the cluster is in 'Enabled' allocation state
         # 3. verify that the host is added successfully and
         #    in Up state with listHosts api response
 
         #Create NFS storage pools with on XEN/KVM/VMWare clusters
-        for k, v in self.services["nfs"].items():
 
-            clusters = list_clusters(
-                                     self.apiclient,
-                                     zoneid=self.zone.id,
-                                     hypervisortype=v["hypervisor"]
-                                     )
-            self.assertEqual(
-                            isinstance(clusters, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-            cluster = clusters[0]
+
+        clusters = list_clusters(
+            self.apiclient,
+            zoneid=self.zone.id
+        )
+        assert isinstance(clusters,list) and len(clusters)>0
+        for cluster in clusters:
+
             #Host should be present before adding primary storage
             list_hosts_response = list_hosts(
                                              self.apiclient,
@@ -124,11 +105,11 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             self.assertNotEqual(
                         len(list_hosts_response),
                         0,
-                        "Check list Hosts for hypervisor: " + v["hypervisor"]
+                        "Check list Hosts in the cluster: " + cluster.name
                         )
 
             storage = StoragePool.create(self.apiclient,
-                                         v,
+                                         self.services["nfs"],
                                          clusterid=cluster.id,
                                          zoneid=self.zone.id,
                                          podid=self.pod.id
@@ -140,13 +121,13 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             self.assertEqual(
                 storage.state,
                 'Up',
-                "Check primary storage state for hypervisor: " + v["hypervisor"]
+                "Check primary storage state "
                 )
 
             self.assertEqual(
                 storage.type,
                 'NetworkFilesystem',
-                "Check storage pool type for hypervisor : " + v["hypervisor"]
+                "Check storage pool type "
                 )
 
             #Verify List Storage pool Response has newly added storage pool
@@ -169,45 +150,76 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             self.assertEqual(
                     storage_response.id,
                     storage.id,
-                    "Check storage pool ID for hypervisor: " + v["hypervisor"]
+                    "Check storage pool ID"
                     )
             self.assertEqual(
                     storage.type,
                     storage_response.type,
-                    "Check storage pool type for hypervisor: " + v["hypervisor"]
+                    "Check storage pool type "
                 )
             # Call cleanup for reusing primary storage
             cleanup_resources(self.apiclient, self.cleanup)
             self.cleanup = []
+            return
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    def test_01_primary_storage_iscsi(self):
+        """Test primary storage pools - XEN, KVM, VMWare
+        """
+
+        # Validate the following:
+        # 1. List Clusters
+        # 2. verify that the cluster is in 'Enabled' allocation state
+        # 3. verify that the host is added successfully and
+        #    in Up state with listHosts api response
 
         # Create iSCSI storage pools with on XEN/KVM clusters
-        for k, v in self.services["iscsi"].items():
-            clusters = list_clusters(
-                                     self.apiclient,
-                                     zoneid=self.zone.id,
-                                     hypervisortype=v["hypervisor"]
-                                     )
+        clusters = list_clusters(
+            self.apiclient,
+            zoneid=self.zone.id
+        )
+        assert isinstance(clusters,list) and len(clusters)>0
+        for cluster in clusters:
+
+            #Host should be present before adding primary storage
+            list_hosts_response = list_hosts(
+                                             self.apiclient,
+                                             clusterid=cluster.id
+                                             )
             self.assertEqual(
-                            isinstance(clusters, list),
+                            isinstance(list_hosts_response, list),
                             True,
                             "Check list response returns a valid list"
                         )
-            cluster = clusters[0]
+
+            self.assertNotEqual(
+                        len(list_hosts_response),
+                        0,
+                        "Check list Hosts in the cluster: " + cluster
+                        )
+
 
             storage = StoragePool.create(self.apiclient,
-                                         v,
+                                         self.services["iscsi"],
                                          clusterid=cluster.id,
                                          zoneid=self.zone.id,
                                          podid=self.pod.id
                                          )
             self.cleanup.append(storage)
 
-            self.debug("Created iSCSI storage pool in cluster: %s" % cluster.id)
-            
+            self.debug("Created storage pool in cluster: %s" % cluster.id)
+
             self.assertEqual(
                 storage.state,
                 'Up',
-                "Check primary storage state for hypervisor: " + v["hypervisor"]
+                "Check primary storage state "
+                )
+
+            self.assertEqual(
+                storage.type,
+                'NetworkFilesystem',
+                "Check storage pool type "
                 )
 
             #Verify List Storage pool Response has newly added storage pool
@@ -221,24 +233,24 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
             self.assertNotEqual(
-                len(storage_pools_response),
-                0,
-                "Check Hosts response for hypervisor: " + v["hypervisor"]
+                            len(storage_pools_response),
+                            0,
+                            "Check list Hosts response"
                         )
 
             storage_response = storage_pools_response[0]
             self.assertEqual(
                     storage_response.id,
                     storage.id,
-                    "Check storage pool ID for hypervisor: " + v["hypervisor"]
-                )
+                    "Check storage pool ID"
+                    )
             self.assertEqual(
                     storage.type,
                     storage_response.type,
-                    "Check storage pool type hypervisor: " + v["hypervisor"]
+                    "Check storage pool type "
                 )
-
             # Call cleanup for reusing primary storage
             cleanup_resources(self.apiclient, self.cleanup)
             self.cleanup = []
+
         return

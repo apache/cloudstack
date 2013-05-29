@@ -552,7 +552,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_03_VPC_StopCreateMultipleStaticNatRuleStopppedState(self):
         """ Test case no extra : Create Static Nat Rule rules for a two/multiple virtual networks of a VPC using
                 a new Public IP Address available with the VPC when Virtual Router is in Stopped State
@@ -586,7 +585,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_04_VPC_CreateMultipleStaticNatRule(self):
         """ Test case no 230 : Create Static NAT Rules for a two/multiple virtual networks of 
             a VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
@@ -619,7 +617,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_05_network_services_VPC_DeleteAllPF(self):
         """ Test case no 232: Delete all Static NAT Rules for a single virtual network of 
             a VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -651,7 +648,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Implemented but not executed: VPC with multiple network fails to set PF rule.")
     def test_06_network_services_VPC_DeleteAllMultiplePF(self):
         """ Test case no 233: Delete all Static NAT rules for two/multiple virtual networks of a VPC. 
             Observe the status of the Public IP Addresses of the rules when the Virtual Router is in Running State.

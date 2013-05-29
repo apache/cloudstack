@@ -626,7 +626,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             try {
                 for (RemoteAccessVpnVO vpn : remoteAccessVpns) {
-                    _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId(), caller);
+                    _remoteAccessVpnMgr.destroyRemoteAccessVpnForIp(vpn.getServerAddressId(), caller);
                 }
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
@@ -728,6 +728,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Delete resource count and resource limits entries set for this account (if there are any).
             _resourceCountDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
             _resourceLimitDao.removeEntriesByOwner(accountId, ResourceOwnerType.Account);
+
+            // release account specific acquired portable IP's. Since all the portable IP's must have been already
+            // disassociated with VPC/guest network (due to deletion), so just mark portable IP as free.
+            List<? extends IpAddress> portableIpsToRelease = _ipAddressDao.listByAccount(accountId);
+            for (IpAddress ip : portableIpsToRelease) {
+                s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
+                _networkMgr.releasePortableIpAddress(ip.getId());
+            }
 
             return true;
         } catch (Exception ex) {
