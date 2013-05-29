@@ -125,12 +125,28 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         for (String apiName : s_apiNameDiscoveryResponseMap.keySet()) {
             ApiDiscoveryResponse response = s_apiNameDiscoveryResponseMap.get(apiName);
             Set<ApiParameterResponse> processedParams = new HashSet<ApiParameterResponse>();
-            for (ApiParameterResponse param: response.getParams()) {
+            for (ApiParameterResponse param : response.getParams()) {
+                if (response.getEntity() == null) {
+                    //For APIs that have id field, the entity is annotated entityType
+                    String entity = "";
+                    assert param.getName() != null : "API " + apiName + " has no name??";
+                    if (param.getName().equals(ApiConstants.ID)) {
+                        entity = param.getRelated();
+                    }
+                    if (!entity.isEmpty()) {
+                        response.setEntity(entity.replace("Response", ""));
+                    }
+                }
+            }
+            for (ApiParameterResponse param : response.getParams()) {
                 //Derive entity for unmapped apis
                 if (response.getEntity() == null) {
-                    String entity = deriveRelatedEntity(apiName, param);
-                    if (entity != null && !entity.isEmpty()) {
-                        response.setEntity(entity);
+                    String entity = "";
+                    if (param.getRelated() != null && !param.getRelated().equals("Object")) {
+                        entity = param.getRelated();
+                    }
+                    if (!entity.isEmpty()) {
+                        response.setEntity(entity.replace("Response", ""));
                     }
                 }
 
@@ -151,29 +167,12 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             } else {
                 response.setRelated(null);
             }
+            if(response.getEntity() == null) {
+                s_logger.warn("Could not derive entity for " + apiName);
+            }
             s_apiNameDiscoveryResponseMap.put(apiName, response);
         }
         return responseApiNameListMap;
-    }
-
-    private String deriveRelatedEntity(String api, ApiParameterResponse param) {
-        //Guess the entity from the related APIs
-        //For APIs that are deleteXxx, the right entityType is in the `id` field of the Cmd
-        String entity = "";
-        if (param.getName() != null && param.getName().equals(ApiConstants.ID)) {
-            if (api.startsWith("delete")) {
-                entity = param.getRelated();
-            }
-        } else {
-            if (param.getRelated() != null && !param.getRelated().equals("Object")) {
-                entity = param.getRelated();
-            }
-        }
-        if (entity.isEmpty()) {
-            s_logger.warn("Couldn't find entity for API: " + api + " from related APIs");
-            return null;
-        }
-        return entity.replace("Response", "");
     }
 
     private ApiResponseResponse getFieldResponseMap(Field responseField) {
