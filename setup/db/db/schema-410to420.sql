@@ -263,6 +263,10 @@ ALTER TABLE `cloud`.`nics` ADD COLUMN `display_nic` tinyint(1) NOT NULL DEFAULT 
 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `display_offering` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should disk offering be displayed to the end user';
 
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_rate` bigint(20) unsigned DEFAULT 0;
+
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `iops_rate` bigint(20) unsigned DEFAULT 0;
+
 CREATE TABLE `cloud`.`volume_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `volume_id` bigint unsigned NOT NULL COMMENT 'volume id',
@@ -1795,11 +1799,8 @@ CREATE TABLE `cloud_usage`.`usage_vm_disk` (
 ) ENGINE=InnoDB CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.stats.interval', 0, 'Interval (in seconds) to report vm disk statistics.');
-
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.iops_rate', 0, 'Default disk I/O rate in requests per second allowed in User vm\'s disk. ');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.bytes_rate', 0, 'Default disk I/O rate in bytes per second allowed in User vm\'s disk. ');
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_rate` bigint(20) unsigned DEFAULT 0;
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `iops_rate` bigint(20) unsigned DEFAULT 0;
 
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			
