@@ -2770,24 +2770,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         vm.setDetails(details);
 
         if (vm.getIsoId() != null) {
-            TemplateInfo template = templateFactory.getTemplate(vm.getIsoId(), DataStoreRole.Image, vm.getDataCenterId());
-           
-            if (template == null || template.getFormat() != ImageFormat.ISO) {
-                throw new CloudRuntimeException(
-                        "Can not find ISO in vm_template table for id "
-                                + vm.getIsoId());
+            TemplateInfo template = this.templateMgr.prepareIso(vm.getIsoId(), vm.getDataCenterId());
+            if (template == null){
+                s_logger.error("Failed to prepare ISO on secondary or cache storage");
+                throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
             }
-       
             if (template.isBootable()) {
                 profile.setBootLoaderType(BootloaderType.CD);
             }
-            
+
             GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
             String displayName = null;
             if (guestOS != null) {
                 displayName = guestOS.getDisplayName();
             }
-            
+
             TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
             iso.setGuestOsType(displayName);
             DiskTO disk = new DiskTO(iso, 3L, Volume.Type.ISO);
