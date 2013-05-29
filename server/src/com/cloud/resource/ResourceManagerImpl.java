@@ -161,6 +161,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.dc.DataCenter.NetworkType;
 
 @Component
 @Local({ ResourceManager.class, ResourceService.class })
@@ -444,7 +445,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					+ cmd.getHypervisor() + " to a supported ");
         }
 
-        if (zone.isSecurityGroupEnabled()) {
+        if (zone.isSecurityGroupEnabled() && zone.getNetworkType().equals(NetworkType.Advanced)) {
             if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer
                     && hypervisorType != HypervisorType.Simulator) {
                 throw new InvalidParameterValueException("Don't support hypervisor type " + hypervisorType + " in advanced security enabled zone");
