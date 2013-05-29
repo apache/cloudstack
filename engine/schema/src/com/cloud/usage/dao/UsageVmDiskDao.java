@@ -14,22 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package com.cloud.usage.dao;
 
-public interface VmStats {
-    // vm related stats
-    public double getCPUUtilization();
+import java.util.List;
+import java.util.Map;
 
-    public double getNetworkReadKBs();
+import com.cloud.usage.UsageVmDiskVO;
+import com.cloud.utils.db.GenericDao;
 
-    public double getNetworkWriteKBs();
-    
-    public double getDiskReadIOs();
-
-    public double getDiskWriteIOs();
-    
-    public double getDiskReadKBs();
-
-    public double getDiskWriteKBs();
-
+public interface UsageVmDiskDao extends GenericDao<UsageVmDiskVO, Long> {
+    Map<String, UsageVmDiskVO> getRecentVmDiskStats();
+    void deleteOldStats(long maxEventTime);
+    void saveUsageVmDisks(List<UsageVmDiskVO> usageVmDisks);
 }

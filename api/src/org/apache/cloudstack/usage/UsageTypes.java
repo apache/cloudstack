@@ -36,6 +36,10 @@ public class UsageTypes {
     public static final int PORT_FORWARDING_RULE = 12;
     public static final int NETWORK_OFFERING = 13;
     public static final int VPN_USERS = 14;
+    public static final int VM_DISK_IO_READ = 21;
+    public static final int VM_DISK_IO_WRITE = 22;
+    public static final int VM_DISK_BYTES_READ = 23;
+    public static final int VM_DISK_BYTES_WRITE = 24;
     
     public static List<UsageTypeResponse> listUsageTypes(){
     	List<UsageTypeResponse> responseList = new ArrayList<UsageTypeResponse>();
@@ -53,6 +57,10 @@ public class UsageTypes {
     	responseList.add(new UsageTypeResponse(PORT_FORWARDING_RULE, "Port Forwarding Usage"));
     	responseList.add(new UsageTypeResponse(NETWORK_OFFERING, "Network Offering Usage"));
     	responseList.add(new UsageTypeResponse(VPN_USERS, "VPN users usage"));
+        responseList.add(new UsageTypeResponse(VM_DISK_IO_READ, "VM Disk usage(I/O Read)"));
+        responseList.add(new UsageTypeResponse(VM_DISK_IO_WRITE, "VM Disk usage(I/O Write)"));
+        responseList.add(new UsageTypeResponse(VM_DISK_BYTES_READ, "VM Disk usage(Bytes Read)"));
+        responseList.add(new UsageTypeResponse(VM_DISK_BYTES_WRITE, "VM Disk usage(Bytes Write)"));
     	return responseList;
     }
 }

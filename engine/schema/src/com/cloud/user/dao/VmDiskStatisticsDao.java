@@ -14,30 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.usage.dao;
+package com.cloud.user.dao;
 
+import java.util.Date;
 import java.util.List;
 
-import com.cloud.usage.UsageVO;
-import com.cloud.user.AccountVO;
-import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.VmDiskStatisticsVO;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.SearchCriteria;
 
-public interface UsageDao extends GenericDao<UsageVO, Long> {
-    void deleteRecordsForAccount(Long accountId);
-    List<UsageVO> searchAllRecords(SearchCriteria<UsageVO> sc, Filter filter);
+public interface VmDiskStatisticsDao extends GenericDao<VmDiskStatisticsVO, Long> {
+    VmDiskStatisticsVO findBy(long accountId, long dcId, long vmId, long volumeId);
 
-    void saveAccounts(List<AccountVO> accounts);
-    void updateAccounts(List<AccountVO> accounts);
-    void saveUserStats(List<UserStatisticsVO> userStats);
-    void updateUserStats(List<UserStatisticsVO> userStats);
-    Long getLastAccountId();
-    Long getLastUserStatsId();
-    List<Long> listPublicTemplatesByAccount(long accountId);
-    Long getLastVmDiskStatsId();
-    void updateVmDiskStats(List<VmDiskStatisticsVO> vmNetStats);
-    void saveVmDiskStats(List<VmDiskStatisticsVO> vmNetStats);
+    VmDiskStatisticsVO lock(long accountId, long dcId, long vmId, long volumeId);
+
+    List<VmDiskStatisticsVO> listBy(long accountId);
+
+    List<VmDiskStatisticsVO> listActiveAndRecentlyDeleted(Date minRemovedDate, int startIndex, int limit);
+
+	List<VmDiskStatisticsVO> listUpdatedStats();
 }

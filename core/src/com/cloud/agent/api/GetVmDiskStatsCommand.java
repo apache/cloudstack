@@ -14,22 +14,41 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package com.cloud.agent.api;
 
-public interface VmStats {
-    // vm related stats
-    public double getCPUUtilization();
+import java.util.List;
 
-    public double getNetworkReadKBs();
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 
-    public double getNetworkWriteKBs();
-    
-    public double getDiskReadIOs();
+@LogLevel(Log4jLevel.Trace)
+public class GetVmDiskStatsCommand extends Command {
+    List<String> vmNames;
+    String hostGuid;
+    String hostName;
 
-    public double getDiskWriteIOs();
-    
-    public double getDiskReadKBs();
+    protected GetVmDiskStatsCommand() {
+    }
 
-    public double getDiskWriteKBs();
+    public GetVmDiskStatsCommand(List<String> vmNames, String hostGuid, String hostName) {
+        this.vmNames = vmNames;
+        this.hostGuid = hostGuid;
+        this.hostName = hostName;
+    }
 
+    public List<String> getVmNames() {
+        return vmNames;
+    }
+
+    public String getHostGuid(){
+        return this.hostGuid;
+    }
+
+    public String getHostName(){
+        return this.hostName;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }
