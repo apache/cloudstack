@@ -1544,6 +1544,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 
                 if (domainId != null && aclType == ACLType.Domain) {
+    		    if (subdomainAccess == null ) {
+                        subdomainAccess = true;
+         	    }
                     _networksDao.addDomainToNetwork(id, domainId, subdomainAccess);
                 }
 
