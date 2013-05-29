@@ -204,6 +204,10 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
             _accountMgr.checkAccess(caller, null, true, loadBalancer);
 
+            if (gslbRule.getAccountId() != loadBalancer.getAccountId()) {
+                throw new InvalidParameterValueException("GSLB rule and load balancer rule does not belong to same account");
+            }
+
             if (loadBalancer.getState() == LoadBalancer.State.Revoke) {
                 throw new InvalidParameterValueException("Load balancer ID " + loadBalancer.getUuid()  + " is in revoke state");
             }
