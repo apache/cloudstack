@@ -358,6 +358,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             throws ResourceAllocationException {
         Account caller = UserContext.current().getCaller();
         long ownerId = cmd.getEntityOwnerId();
+        Account owner = _accountDao.findById(ownerId);
         Long zoneId = cmd.getZoneId();
         String volumeName = cmd.getVolumeName();
         String url = cmd.getUrl();
@@ -367,7 +368,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format);
         
-        VolumeVO volume = persistVolume(caller, ownerId, zoneId, volumeName,
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName,
                 url, cmd.getFormat());
         
         VolumeInfo vol = this.volFactory.getVolume(volume.getId());
@@ -700,7 +701,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         return UUID.randomUUID().toString();
     }
     
-    private VolumeVO persistVolume(Account caller, long ownerId, Long zoneId,
+    private VolumeVO persistVolume(Account owner, Long zoneId,
             String volumeName, String url, String format) {
 
         Transaction txn = Transaction.currentTxn();
@@ -708,20 +709,17 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1,
                 new Long(-1), null, null, 0, Volume.Type.DATADISK);
-        Account owner = (caller.getId() == ownerId) ? caller : _accountMgr
-                          .getActiveAccountById(ownerId);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
         volume.setPodId(null);
-        volume.setAccountId(ownerId);
+        volume.setAccountId(owner.getAccountId());
+        volume.setDomainId(owner.getDomainId());
         long diskOfferingId = _diskOfferingDao.findByUniqueName(
                 "Cloud.com-Custom").getId();
         volume.setDiskOfferingId(diskOfferingId);
         // volume.setSize(size);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
-        volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner
-                .getDomainId());
 
         volume = _volsDao.persist(volume);
         try {
