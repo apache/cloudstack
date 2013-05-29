@@ -541,6 +541,7 @@ def default_ebtables_rules():
         util.pread2(['ebtables', '-N',  'DEFAULT_EBTABLES'])
         util.pread2(['ebtables', '-A', 'FORWARD', '-j'  'DEFAULT_EBTABLES'])
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '255.255.255.255', '--ip-proto', 'udp', '--ip-dport', '67', '-j', 'ACCEPT'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '255.255.255.255', '--ip-proto', 'udp', '--ip-dport', '68', '-j', 'ACCEPT'])
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])
         # deny mac broadcast and multicast
