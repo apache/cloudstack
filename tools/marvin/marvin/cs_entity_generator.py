@@ -134,9 +134,6 @@ def entity_adjust(entity):
     #CloudStack denotes VirtualMachine as UserVm
     elif entity == 'UserVm':
         return 'VirtualMachine'
-    #CloudStack denotes LoadBalancer as ApplicationLoadBalancer
-    elif entity == 'ApplicationLoadBalancer':
-        return 'LoadBalancer'
     #CloudStack denotes aliased NIC (with IP) as NicSecondaryIp
     elif entity == 'NicSecondaryIp':
         return 'Nic'
