@@ -105,6 +105,21 @@ public class LibvirtDomainXMLParser {
                                 DiskDef.diskBus.valueOf(bus.toUpperCase()));
                     }
                 }
+                
+                NodeList iotune = disk.getElementsByTagName("iotune");
+                if ((iotune != null) && (iotune.getLength() !=0)) {
+                    String bytesRateStr = getTagValue("total_bytes_sec", (Element)iotune.item(0));
+                    if (bytesRateStr != null) {
+                        Long bytesRate = Long.parseLong(bytesRateStr);
+                        def.setBytesRate(bytesRate);
+                    }
+                    String iopsRateStr = getTagValue("total_iops_sec", (Element)iotune.item(0));
+                    if (iopsRateStr != null) {
+                        Long iopsRate = Long.parseLong(iopsRateStr);
+                        def.setIopsRate(iopsRate);
+                    }
+                }
+
                 diskDefs.add(def);
             }
 

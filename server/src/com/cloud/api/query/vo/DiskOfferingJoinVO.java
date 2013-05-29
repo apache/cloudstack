@@ -64,6 +64,12 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name="sort_key")
     int sortKey;
 
+    @Column(name="bytes_rate")
+    long bytesRate;
+
+    @Column(name="iops_rate")
+    long iopsRate;
+
     @Column(name="type")
     Type type;
 
@@ -239,6 +245,21 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         this.type = type;
     }
 
+    public void setBytesRate(long bytesRate) {
+       this.bytesRate = bytesRate;
+    }
+
+    public long getBytesRate() {
+       return bytesRate;
+    }
+
+    public void setIopsRate(long iopsRate) {
+        this.iopsRate = iopsRate;
+    }
+
+    public long getIopsRate() {
+        return iopsRate;
+    }
 
 
 }

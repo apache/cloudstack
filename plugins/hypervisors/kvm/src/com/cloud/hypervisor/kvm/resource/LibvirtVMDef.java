@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.utils.script.Script;
+
 public class LibvirtVMDef {
     private String _hvsType;
     private String _domName;
@@ -439,6 +441,8 @@ public class LibvirtVMDef {
         private boolean _readonly = false;
         private boolean _shareable = false;
         private boolean _deferAttach = false;
+        private Long _bytesRate;
+        private Long _iopsRate;
 
         public void setDeviceType(deviceType deviceType) {
             _deviceType = deviceType;
@@ -583,6 +587,14 @@ public class LibvirtVMDef {
             char suffix = this._diskLabel.charAt(this._diskLabel.length() - 1);
             return suffix - 'a';
         }
+        
+        public void setBytesRate(Long bytesRate) {
+            _bytesRate = bytesRate;
+        }
+        
+        public void setIopsRate(Long iopsRate) {
+            _iopsRate = iopsRate;
+        }
 
         @Override
         public String toString() {
@@ -627,6 +639,28 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
+            
+            String libvirtVersion = Script.runSimpleBashScript("virsh version |grep API | awk '{print $4}'");
+            String qemuVersion = Script.runSimpleBashScript("virsh version |grep hypervisor | awk '{print $4}'");
+            if ((_deviceType != deviceType.CDROM) && (libvirtVersion != null) && (qemuVersion != null) 
+                    && (((_bytesRate != null) && (_bytesRate > 0)) || ((_iopsRate != null) && (_iopsRate > 0)))) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
+                String[] libvirtVersions = libvirtVersion.split("\\.");
+                String[] qemuVersions = qemuVersion.split("\\.");
+                if (((libvirtVersions != null) && (libvirtVersions.length == 3) && ((Integer.valueOf(libvirtVersions[0]) > 0)
+                        || ((Integer.valueOf(libvirtVersions[0]) == 0) && (Integer.valueOf(libvirtVersions[1]) > 9))
+                        || ((Integer.valueOf(libvirtVersions[0]) == 0) && (Integer.valueOf(libvirtVersions[1]) == 9) && (Integer.valueOf(libvirtVersions[1]) >= 8))))
+                        && ((qemuVersions != null) && (qemuVersions.length == 3) && ((Integer.valueOf(qemuVersions[0]) > 1)
+                        || ((Integer.valueOf(qemuVersions[0]) == 1) && (Integer.valueOf(qemuVersions[1]) > 1))
+                        || ((Integer.valueOf(qemuVersions[0]) == 1) && (Integer.valueOf(qemuVersions[1]) == 1) && (Integer.valueOf(qemuVersions[1]) >= 0))))) {
+                    diskBuilder.append("<iotune>\n");
+                    if ((_bytesRate != null) && (_bytesRate > 0))
+                        diskBuilder.append("<total_bytes_sec>" + _bytesRate + "</total_bytes_sec>\n");
+                    if ((_iopsRate != null) && (_iopsRate > 0))
+                        diskBuilder.append("<total_iops_sec>" + _iopsRate + "</total_iops_sec>\n");
+                    diskBuilder.append("</iotune>\n");
+                }
+            }
+            
             diskBuilder.append("</disk>\n");
             return diskBuilder.toString();
         }

@@ -61,6 +61,12 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
+    
+    @Parameter(name="bytesRate", type=CommandType.LONG, required=false, description="bytes rate of the disk offering")
+    private Long bytesRate;
+
+    @Parameter(name="iopsRate", type=CommandType.LONG, required=false, description="io requests rate of the disk offering")
+    private Long iopsRate;
 
     @Parameter(name=ApiConstants.DISPLAY_OFFERING, type=CommandType.BOOLEAN, description="an optional field, whether to display the offering to the end user or not.")
     private Boolean displayOffering;
@@ -92,6 +98,14 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     public Long getDomainId(){
         return domainId;
     }
+    
+    public Long getBytesRate() {
+        return bytesRate;
+    }
+    
+    public Long getIopsRate() {
+        return iopsRate;
+    }
 
     public String getStorageType() {
         return storageType;
@@ -114,7 +128,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-
+    
     @Override
     public void execute(){
         DiskOffering offering = _configService.createDiskOffering(this);

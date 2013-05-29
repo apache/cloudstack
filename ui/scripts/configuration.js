@@ -109,6 +109,20 @@
                       number: true
                     }
                   },
+                  diskBytesRate: {
+                	  label: 'label.disk.bytes.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIORate: {
+                	  label: 'label.disk.iops.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
                   offerHA: {
                     label: 'label.offer.ha',
                     docID: 'helpComputeOfferingHA',
@@ -222,6 +236,16 @@
 									  networkrate: args.data.networkRate
 									});
 								}
+                if(args.data.diskBytesRate != null && args.data.diskBytesRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          bytesRate: args.data.diskBytesRate
+                                                                        });
+                                                                }
+                if(args.data.diskIORate != null && args.data.diskIORate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopsRate: args.data.diskIORate
+                                                                        });
+                                                                }
 
                 $.extend(data, {
                   offerha: (args.data.offerHA == "on")
@@ -391,6 +415,8 @@
                       }
                     },
                     networkrate: { label: 'label.network.rate' },
+                    diskBytesRate: { label: 'label.disk.bytes.rate' },
+                    diskIORate: { label: 'label.disk.iops.rate' },
                     offerha: {
                       label: 'label.offer.ha',
                       converter: cloudStack.converters.toBooleanText
@@ -529,6 +555,20 @@
                       number: true
                     }
                   },
+                  diskBytesRate: {
+                	  label: 'label.disk.bytes.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIORate: {
+                	  label: 'label.disk.iops.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
                   offerHA: {
                     label: 'label.offer.ha',
                     docID: 'helpSystemOfferingHA',
@@ -597,6 +637,16 @@
 									  networkrate: args.data.networkRate
 									});								
 								}
+                if(args.data.diskBytesRate != null && args.data.diskBytesRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          bytesRate: args.data.diskBytesRate
+                                                                        });
+                                                                }
+                if(args.data.diskIORate != null && args.data.diskIORate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopsRate: args.data.diskIORate
+                                                                        });
+                                                                }
 
 								$.extend(data, {
 								  offerha: (args.data.offerHA == "on")
@@ -776,6 +826,8 @@
                       }
                     },
                     networkrate: { label: 'label.network.rate' },
+                    diskBytesRate: { label: 'label.disk.bytes.rate' },
+                    diskIORate: { label: 'label.disk.iops.rate' },
                     offerha: {
                       label: 'label.offer.ha',
                       converter: cloudStack.converters.toBooleanText
@@ -835,6 +887,20 @@
                 else
                   return "N/A";
               }
+            },
+            diskBytesRate: {
+          	  label: 'label.disk.bytes.rate',
+                validation: {
+                  required: false, //optional
+                  number: true
+                }
+            },
+            diskIORate: {
+          	  label: 'label.disk.iops.rate',
+                validation: {
+                  required: false, //optional
+                  number: true
+                }
             }
           },
 
@@ -905,6 +971,20 @@
                     docID: 'helpDiskOfferingDiskSize',
                     dependsOn: 'isCustomized',
                     validation: { required: true, number: true }
+                  },
+                  diskBytesRate: {
+                	  label: 'label.disk.bytes.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIORate: {
+                	  label: 'label.disk.iops.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
                   },
                   tags: {
                     label: 'label.storage.tags',
@@ -1079,6 +1159,8 @@
                           return "N/A";
                       }
                     },
+                    diskBytesRate: { label: 'label.disk.bytes.rate' },
+                    diskIORate: { label: 'label.disk.iops.rate' },
                     tags: { label: 'label.storage.tags' },
                     domain: { label: 'label.domain' },
                     storagetype: { label: 'label.storage.type' }

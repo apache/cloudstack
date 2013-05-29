@@ -2013,7 +2013,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(),
                 cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
                 localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(),
-                cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails());
+                cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(),
+                cmd.getBytesRate(), cmd.getIopsRate());
     }
 
     @Override
@@ -2021,10 +2022,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type,
             String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
             boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag,
-            Integer networkRate, String deploymentPlanner, Map<String, String> details) {
+            Integer networkRate, String deploymentPlanner, Map<String, String> details, Long bytesRate, Long iopsRate) {
         tags = cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag, deploymentPlanner);
+
+        if ((bytesRate != null) && (bytesRate > 0))
+            offering.setBytesRate(bytesRate);
+        if ((iopsRate != null) && (iopsRate > 0))
+            offering.setIopsRate(iopsRate);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             if (details != null) {
@@ -2111,7 +2117,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_CREATE, eventDescription = "creating disk offering")
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled) {
+    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled, Long bytesRate, Long iopsRate) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && (numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2131,6 +2137,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized);
         newDiskOffering.setUseLocalStorage(localStorageRequired);
         newDiskOffering.setDisplayOffering(isDisplayOfferingEnabled);
+        if (bytesRate != null && (bytesRate > 0))
+            newDiskOffering.setBytesRate(bytesRate);
+        if (iopsRate != null && (iopsRate > 0))
+            newDiskOffering.setIopsRate(iopsRate);
         UserContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
         if (offering != null) {
@@ -2171,7 +2181,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized, localStorageRequired, isDisplayOfferingEnabled);
+        Long bytesRate = cmd.getBytesRate();
+        Long iopsRate = cmd.getIopsRate();
+        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized, localStorageRequired, isDisplayOfferingEnabled, bytesRate, iopsRate);
     }
 
     @Override
