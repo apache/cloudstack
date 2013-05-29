@@ -49,16 +49,16 @@ import com.cloud.utils.mgmt.ManagementBean;
 public class ComponentContext implements ApplicationContextAware {
     private static final Logger s_logger = Logger.getLogger(ComponentContext.class);
 
-    private static ApplicationContext s_appContext;  
+    private static ApplicationContext s_appContext;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
     	s_logger.info("Setup Spring Application context");
-        s_appContext = applicationContext;  
-    }  
+        s_appContext = applicationContext;
+    }
 
-    public static ApplicationContext getApplicationContext() {  
-        return s_appContext;  
+    public static ApplicationContext getApplicationContext() {
+        return s_appContext;
     }
     
     public static void initComponentsLifeCycle() {
@@ -89,7 +89,7 @@ public class ComponentContext implements ApplicationContextAware {
             try {
             	entry.getValue().check();
             } catch(Throwable e) {
-            	s_logger.error("System integrity check failed. Refuse to startup");
+                s_logger.error("System integrity check failed. Refuse to startup", e);
             	System.exit(1);
             }
         }
@@ -211,7 +211,7 @@ public class ComponentContext implements ApplicationContextAware {
             } catch (Exception e) {
                 return (T)instance;
             }
-        } 
+        }
 
         return (T)instance;
     }

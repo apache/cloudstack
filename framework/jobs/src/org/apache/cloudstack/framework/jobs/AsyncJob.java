@@ -18,97 +18,81 @@ package org.apache.cloudstack.framework.jobs;
 
 import java.util.Date;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.jobs.Job;
 
+public interface AsyncJob extends Job {
 
-public interface AsyncJob extends Identity, InternalIdentity {
+    public enum JournalType {
+        SUCCESS, FAILURE
+    };
 
     public static interface Topics {
         public static final String JOB_HEARTBEAT = "job.heartbeat";
         public static final String JOB_STATE = "job.state";
     }
 	
-	public enum JournalType {
-		SUCCESS, FAILURE
-	};
-	
+    @Override
     String getType();
     
+    @Override
     String getDispatcher();
 
+    @Override
     int getPendingSignals();
-    public enum Type {
-        None,
-        VirtualMachine,
-        DomainRouter,
-        Volume,
-        ConsoleProxy,
-        Snapshot,
-        Template,
-        Iso,
-        SystemVm,
-        Host,
-        StoragePool,
-        IpAddress,
-        PortableIpAddress,
-        SecurityGroup,
-        PhysicalNetwork,
-        TrafficType,
-        PhysicalNetworkServiceProvider,
-        FirewallRule,
-        Account,
-        User,
-        PrivateGateway,
-        StaticRoute,
-        Counter,
-        Condition,
-        AutoScalePolicy,
-        AutoScaleVmProfile,
-        AutoScaleVmGroup,
-        GlobalLoadBalancerRule,
-        LoadBalancerRule,
-        AffinityGroup,
-        InternalLbVm,
-        DedicatedGuestVlanRange
-    }
     
+    @Override
     long getUserId();
 
+    @Override
     long getAccountId();
 
+    @Override
     String getCmd();
 
+    @Override
     int getCmdVersion();
 
+    @Override
     String getCmdInfo();
     
+    @Override
     int getStatus();
 
+    @Override
     int getProcessStatus();
 
+    @Override
     int getResultCode();
 
+    @Override
     String getResult();
 
+    @Override
     Long getInitMsid();
     void setInitMsid(Long msid);
 
+    @Override
     Long getExecutingMsid();
     
+    @Override
     Long getCompleteMsid();
     void setCompleteMsid(Long msid);
 
+    @Override
     Date getCreated();
 
+    @Override
     Date getLastUpdated();
 
+    @Override
     Date getLastPolled();
 
     Date getRemoved();
 
+    @Override
     String getInstanceType();
 
+    @Override
     Long getInstanceId();
 
     SyncQueueItem getSyncSource();

@@ -24,13 +24,13 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.datacenter.entity.EngineClusterVO;
 import org.apache.cloudstack.engine.datacenter.entity.EngineHostPodVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
@@ -45,7 +45,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component(value="EngineClusterDao")
 @Local(value=EngineClusterDao.class)
 public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> implements EngineClusterDao {
     private static final Logger s_logger = Logger.getLogger(EngineClusterDaoImpl.class);
@@ -97,7 +96,7 @@ public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> 
 
         StateChangeSearch = createSearchBuilder();
         StateChangeSearch.and("id", StateChangeSearch.entity().getId(), SearchCriteria.Op.EQ);
-        StateChangeSearch.and("state", StateChangeSearch.entity().getState(), SearchCriteria.Op.EQ);
+        StateChangeSearch.and("state", StateChangeSearch.entity().getEngineState(), SearchCriteria.Op.EQ);
         StateChangeSearch.done();	    
     }
 
@@ -273,7 +272,7 @@ public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> 
             EngineClusterVO dbCluster = findByIdIncludingRemoved(vo.getId());
             if (dbCluster != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={id=").append(dbCluster.getId()).append("; state=").append(dbCluster.getState()).append(";updatedTime=")
+                str.append(": DB Data={id=").append(dbCluster.getId()).append("; state=").append(dbCluster.getEngineState()).append(";updatedTime=")
                 .append(dbCluster.getLastUpdated());
                 str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatedTime=").append(vo.getLastUpdated());
                 str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatedTime=").append(oldUpdatedTime);

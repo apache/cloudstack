@@ -33,13 +33,15 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.jobs.Job;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="async_job")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="job_type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class AsyncJobVO implements AsyncJob {
+public class AsyncJobVO implements AsyncJob, Job {
 	
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -112,13 +114,13 @@ public class AsyncJobVO implements AsyncJob {
     private Date removed;
     
     @Column(name="uuid")
-    private String uuid;    
+    private String uuid;
 
     @Transient
     private SyncQueueItem syncSource = null;
 
     public AsyncJobVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, String instanceType) {
@@ -126,15 +128,9 @@ public class AsyncJobVO implements AsyncJob {
 		this.accountId = accountId;
 		this.cmd = cmd;
 		this.cmdInfo = cmdInfo;
-	    this.uuid = UUID.randomUUID().toString();
+	    uuid = UUID.randomUUID().toString();
 	    this.instanceId = instanceId;
 	    this.instanceType = instanceType;
-    }
-
-    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo,
-	int callbackType, String callbackAddress, Long instanceId, Type instanceType) {
-	    
-	    this.type ="AsyncJobVO";
     }
 
     @Override
@@ -148,7 +144,7 @@ public class AsyncJobVO implements AsyncJob {
 	
 	@Override
 	public String getType() {
-		return this.type;
+		return type;
 	}
 	
 	public void setType(String type) {
@@ -157,7 +153,7 @@ public class AsyncJobVO implements AsyncJob {
 	
 	@Override
 	public String getDispatcher() {
-		return this.dispatcher;
+		return dispatcher;
 	}
 	
 	public void setDispatcher(String dispatcher) {
@@ -166,11 +162,11 @@ public class AsyncJobVO implements AsyncJob {
 	
 	@Override
 	public int getPendingSignals() {
-		return this.pendingSignals;
+		return pendingSignals;
 	}
 	
 	public void setPendingSignals(int signals) {
-		this.pendingSignals = signals;
+		pendingSignals = signals;
 	}
 
 	@Override
@@ -266,7 +262,7 @@ public class AsyncJobVO implements AsyncJob {
 	
 	@Override
 	public Long getExecutingMsid() {
-		return this.executingMsid;
+		return executingMsid;
 	}
 	
 	public void setExecutingMsid(Long executingMsid) {
@@ -349,7 +345,7 @@ public class AsyncJobVO implements AsyncJob {
     
     @Override
     public String getUuid() {
-    	return this.uuid;
+    	return uuid;
     }
     
     public void setUuid(String uuid) {

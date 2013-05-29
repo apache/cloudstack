@@ -28,6 +28,7 @@ import com.google.gson.reflect.TypeToken;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -61,7 +62,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             cmdObj = ComponentContext.inject(cmdObj);
             cmdObj.configure();
             cmdObj.setJob(job);
-
+            
             Type mapType = new TypeToken<Map<String, String>>() {}.getType();
             Gson gson = ApiGsonHelper.getBuilder().create();
             Map<String, String> params = gson.fromJson(job.getCmdInfo(), mapType);
@@ -71,6 +72,12 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             String acctIdStr = params.get("ctxAccountId");
             Long userId = null;
             Account accountObject = null;
+
+            if (cmdObj instanceof BaseAsyncCreateCmd) {
+                BaseAsyncCreateCmd create = (BaseAsyncCreateCmd)cmdObj;
+                create.setEntityId(Long.parseLong(params.get("id")));
+                create.setEntityUuid(params.get("uuid"));
+            }
 
             if (userIdStr != null) {
                 userId = Long.parseLong(userIdStr);

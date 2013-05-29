@@ -89,7 +89,7 @@ public class ClusterEntityImpl implements ClusterEntity {
 
 	@Override
 	public State getState() {
-		return clusterVO.getState();
+		return clusterVO.getEngineState();
 	}
 
 	@Override

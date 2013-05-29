@@ -237,7 +237,7 @@ public class EngineClusterVO implements EngineCluster, Identity {
         return lastUpdated;
     }
 
-    public State getState() {
+    public State getEngineState() {
         return engineState;
     }    
 }

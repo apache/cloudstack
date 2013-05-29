@@ -92,7 +92,7 @@ public class EngineHostPodVO implements EnginePod, Identity {
     @Enumerated(value=EnumType.STRING)
     @StateMachine(state=State.class, event=Event.class)
     @Column(name="engine_state", updatable=true, nullable=false, length=32)
-    protected State engineState = null;
+    protected State state = null;
 
     public EngineHostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
         this.name = name;
@@ -104,7 +104,7 @@ public class EngineHostPodVO implements EnginePod, Identity {
         this.allocationState = Grouping.AllocationState.Enabled;
         this.externalDhcp = false;
         this.uuid = UUID.randomUUID().toString();
-        this.engineState = State.Disabled;
+        this.state = State.Disabled;
     }
 
     /*
@@ -240,6 +240,6 @@ public class EngineHostPodVO implements EnginePod, Identity {
     }
 
     public State getState() {
-        return engineState;
+        return state;
     }
 }

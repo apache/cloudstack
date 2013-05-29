@@ -18,18 +18,17 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import com.amazonaws.services.importexport.model.Job;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.jobs.Job;
 
 import com.cloud.serializer.Param;
 
-@EntityReference(value=Job.class)
-@SuppressWarnings("unused")
+@EntityReference(value = Job.class)
 public class AsyncJobResponse extends BaseResponse {
 
     @SerializedName("accountid") @Param(description="the account that executed the async command")

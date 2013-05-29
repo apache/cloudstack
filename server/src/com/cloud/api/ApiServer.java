@@ -588,12 +588,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (job.getInstanceId() == null) {
                     continue;
                 }
-                String instanceUuid = job.getUuid();
-                if (instanceUuid != null) {
-                    objectJobMap.put(instanceUuid, job);
-                }
+                String instanceUuid = ApiDBUtils.findJobInstanceUuid(job);
+                objectJobMap.put(instanceUuid, job);
             }
-
+                
             for (ResponseObject response : responses) {
                 if (response.getObjectId() != null && objectJobMap.containsKey(response.getObjectId())) {
                     AsyncJob job = objectJobMap.get(response.getObjectId());
