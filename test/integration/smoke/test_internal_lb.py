@@ -22,6 +22,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
+from nose.plugins.attrib import attr
 
 
 class TestInternalLb(cloudstackTestCase):
@@ -97,6 +98,7 @@ class TestInternalLb(cloudstackTestCase):
 
 
     
+    @attr(tags=["simulator", "advanced"])
     def test_internallb(self):
 
         #1) Create and enable network offering with Internal Lb vm service
