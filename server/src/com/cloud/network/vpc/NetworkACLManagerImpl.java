@@ -376,15 +376,21 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     public boolean applyACLItemsToNetwork(long networkId, List<NetworkACLItemVO> rules) throws ResourceUnavailableException {
         Network network = _networkDao.findById(networkId);
         boolean handled = false;
+        boolean foundProvider = false;
         for (NetworkACLServiceProvider element: _networkAclElements) {
             Network.Provider provider = element.getProvider();
             boolean  isAclProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
             if (!isAclProvider) {
                 continue;
             }
+            foundProvider = true;
+            s_logger.debug("Applying NetworkACL for network: "+network.getId()+" with Network ACL service provider");
             handled = element.applyNetworkACLs(network, rules);
             if (handled)
                 break;
+        }
+        if(!foundProvider){
+            s_logger.debug("Unable to find NetworkACL service provider for network: "+network.getId());
         }
         return handled;
     }

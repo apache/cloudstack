@@ -2489,6 +2489,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setTags(tagResponses);
 
+        if(network.getNetworkACLId() != null){
+            NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
+            if(acl != null){
+                response.setAclId(acl.getUuid());
+            }
+        }
+
         response.setObjectName("network");
         return response;
     }
