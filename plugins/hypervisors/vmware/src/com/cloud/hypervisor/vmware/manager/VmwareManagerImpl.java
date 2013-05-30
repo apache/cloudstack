@@ -159,9 +159,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject VmwareDatacenterDao _vmwareDcDao;
     @Inject VmwareDatacenterZoneMapDao _vmwareDcZoneMapDao;
     @Inject LegacyZoneDao _legacyZoneDao;
-    @Inject VMInstanceDao _vmDao;
-    @Inject VolumeDao _volDao;
-    @Inject DataStoreManager dataStoreMgr;
 
     String _mountParent;
     StorageLayer _storage;
