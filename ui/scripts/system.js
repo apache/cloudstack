@@ -4231,7 +4231,11 @@
                       label: 'label.password',
                       isPassword: true,
                       validation: { required: true }
-                    }           
+                    },
+                    tftpdir: {
+                      label: 'Tftp root directory',
+                      validation: { required: true }
+                    } 
                   }
                 },
                 action: function(args) {
