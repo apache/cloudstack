@@ -126,6 +126,7 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.getId();
     }
 
+    @Override
     public boolean stateTransit(Volume.Event event) {
         boolean result = false;
         try {
@@ -235,6 +236,22 @@ public class VolumeObject implements VolumeInfo {
         }
 
     }
+
+    @Override
+    public void processEventOnly(ObjectInDataStoreStateMachine.Event event) {
+        try {
+            objectInStoreMgr.update(this, event);
+        } catch (Exception e) {
+            s_logger.debug("Failed to update state", e);
+            throw new CloudRuntimeException("Failed to update state:" + e.toString());
+        } finally {
+            // in case of OperationFailed, expunge the entry
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+                objectInStoreMgr.delete(this);
+            }
+        }
+    }
+
 
     @Override
     public String getName() {
@@ -431,6 +448,56 @@ public class VolumeObject implements VolumeInfo {
             throw ex;
         }
         this.processEvent(event);
+
+    }
+
+    @Override
+    public void processEventOnly(ObjectInDataStoreStateMachine.Event event, Answer answer) {
+        try {
+            if (this.dataStore.getRole() == DataStoreRole.Primary) {
+                if (answer instanceof CopyCmdAnswer) {
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
+                    VolumeVO vol = this.volumeDao.findById(this.getId());
+                    VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
+                    vol.setPath(newVol.getPath());
+                    vol.setSize(newVol.getSize());
+                    vol.setPoolId(this.getDataStore().getId());
+                    volumeDao.update(vol.getId(), vol);
+                } else if (answer instanceof CreateObjectAnswer) {
+                    CreateObjectAnswer createAnswer = (CreateObjectAnswer) answer;
+                    VolumeObjectTO newVol = (VolumeObjectTO) createAnswer.getData();
+                    VolumeVO vol = this.volumeDao.findById(this.getId());
+                    vol.setPath(newVol.getPath());
+                    vol.setSize(newVol.getSize());
+                    vol.setPoolId(this.getDataStore().getId());
+                    volumeDao.update(vol.getId(), vol);
+                }
+            } else {
+                // image store or imageCache store
+                if (answer instanceof DownloadAnswer) {
+                    DownloadAnswer dwdAnswer = (DownloadAnswer) answer;
+                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(),
+                            this.getId());
+                    volStore.setInstallPath(dwdAnswer.getInstallPath());
+                    volStore.setChecksum(dwdAnswer.getCheckSum());
+                    this.volumeStoreDao.update(volStore.getId(), volStore);
+                } else if (answer instanceof CopyCmdAnswer) {
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
+                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(),
+                            this.getId());
+                    VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
+                    volStore.setInstallPath(newVol.getPath());
+                    volStore.setSize(newVol.getSize());
+                    this.volumeStoreDao.update(volStore.getId(), volStore);
+                }
+            }
+        } catch (RuntimeException ex) {
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+                objectInStoreMgr.delete(this);
+            }
+            throw ex;
+        }
+        this.processEventOnly(event);
 
     }
 

@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 
@@ -33,4 +34,10 @@ public interface VolumeInfo extends DataObject, Volume {
     public Long getLastPoolId();
 
     public String getAttachedVmName();
+
+    public void processEventOnly(ObjectInDataStoreStateMachine.Event event);
+
+    public void processEventOnly(ObjectInDataStoreStateMachine.Event event, Answer answer);
+
+    public boolean stateTransit(Volume.Event event);
 }

@@ -623,6 +623,7 @@ public class VolumeServiceImpl implements VolumeService {
                 srcVolume.processEvent(Event.OperationFailed);
                 res.setResult(result.getResult());
                 future.complete(res);
+                return null;
             }
 
             srcVolume.processEvent(Event.OperationSuccessed);
@@ -643,8 +644,8 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeInfo destVolume = null;
         try {
             destVolume = (VolumeInfo)destStore.create(srcVolume);
-            destVolume.processEvent(Event.CreateOnlyRequested);
-            srcVolume.processEvent(Event.CopyingRequested);    // this is just used for locking that src volume record in DB to avoid using lock
+            srcVolume.processEvent(Event.MigrationRequested);    // this is just used for locking that src volume record in DB to avoid using lock
+            destVolume.processEventOnly(Event.CreateOnlyRequested);
 
             CopyVolumeContext<VolumeApiResult> context = new CopyVolumeContext<VolumeApiResult>(null, future, srcVolume,
                     destVolume,
@@ -658,7 +659,7 @@ public class VolumeServiceImpl implements VolumeService {
         } catch (Exception e) {
             s_logger.error("failed to copy volume to image store", e);
             if (destVolume != null) {
-                destVolume.processEvent(Event.OperationFailed);
+                destVolume.getDataStore().delete(destVolume);
             }
             srcVolume.processEvent(Event.OperationFailed); // unlock source volume record
             res.setResult(e.toString());
@@ -675,13 +676,13 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeApiResult res = new VolumeApiResult(destVolume);
         try {
             if (res.isFailed()) {
-                destVolume.processEvent(Event.OperationFailed);
-                srcVolume.processEvent(Event.OperationFailed);
+                srcVolume.processEvent(Event.OperationFailed); // back to Ready state in Volume table
+                destVolume.processEventOnly(Event.OperationFailed);
                 res.setResult(result.getResult());
                 future.complete(res);
             }else{
-                srcVolume.processEvent(Event.OperationSuccessed);
-                destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
+                srcVolume.processEvent(Event.OperationSuccessed); // back to Ready state in Volume table
+                destVolume.processEventOnly(Event.OperationSuccessed, result.getAnswer());
                 future.complete(res);
             }
         } catch (Exception e) {
