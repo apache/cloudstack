@@ -165,10 +165,12 @@ echo PACKAGE=%{name} >> build/replace.properties
 
 if [ "%{_ossnoss}" == "NONOSS" -o "%{_ossnoss}" == "nonoss" ] ; then
     echo "Executing mvn packaging for NONOSS ..."
-	mvn -P awsapi,systemvm -Dnonoss package
+   mvn clean
+   mvn -Pawsapi,systemvm -Dnonoss package
 else
     echo "Executing mvn packaging for OSS ..."
-	mvn -P awsapi package -Dsystemvm
+   mvn clean
+   mvn -Pawsapi package -Dsystemvm
 fi
 
 %install
