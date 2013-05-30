@@ -16,14 +16,6 @@
 // under the License.
 cloudStack.docs = {
 
-  //Implicit Planner
-
-  helpImplicitPlannerKey:{
-
-    desc:'Please provide a Planner key for the Implicit Planner you are going to use and then select its mode below .Eg - Planner Key :ImplicitDedicationMode',
-    externalLink:''
-
-  },
 
  //Delete/archive events
   helpEventsDeleteType:{
