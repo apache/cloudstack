@@ -195,7 +195,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public void init() {
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
-        sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
+        sc.addAnd("name", SearchCriteria.Op.EQ, Config.IntegrationAPIPort.key());
         List<ConfigurationVO> values = _configDao.search(sc, null);
         if ((values != null) && (values.size() > 0)) {
             ConfigurationVO apiPortConfig = values.get(0);
