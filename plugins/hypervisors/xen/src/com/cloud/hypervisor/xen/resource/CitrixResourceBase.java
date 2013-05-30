@@ -627,6 +627,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected void scaleVM(Connection conn, VM vm, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
 
+        Long staticMemoryMax = vm.getMemoryStaticMax(conn);
+        Long staticMemoryMin = vm.getMemoryStaticMin(conn);
+        Long newDynamicMemoryMin = vmSpec.getMinRam() * 1024 * 1024;
+        Long newDynamicMemoryMax = vmSpec.getMaxRam() * 1024 * 1024;
+        if (staticMemoryMin > newDynamicMemoryMin || newDynamicMemoryMax > staticMemoryMax) {
+            throw new CloudRuntimeException("Cannot scale up the vm because of memory constraint violation: 0 <= memory-static-min <= memory-dynamic-min <= memory-dynamic-max <= memory-static-max ");
+        }
+
         vm.setMemoryDynamicRange(conn, vmSpec.getMinRam() * 1024 * 1024, vmSpec.getMaxRam() * 1024 * 1024);
         vm.setVCPUsNumberLive(conn, (long)vmSpec.getCpus());
 
@@ -663,10 +671,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // If DMC is not enable then don't execute this command.
             if (!isDmcEnabled(conn, host)) {
-                String msg = "Unable to scale the vm: " + vmName + " as DMC - Dynamic memory control is not enabled for the XenServer:" + _host.uuid + " ,check your license and hypervisor version.";
-                s_logger.info(msg);
-                return new ScaleVmAnswer(cmd, false, msg);
+                throw new CloudRuntimeException("Unable to scale the vm: " + vmName + " as DMC - Dynamic memory control is not enabled for the XenServer:" + _host.uuid + " ,check your license and hypervisor version.");
             }
+
             // stop vm which is running on this host or is in halted state
             Iterator<VM> iter = vms.iterator();
             while ( iter.hasNext() ) {
@@ -686,13 +693,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (VM vm : vms) {
                 VM.Record vmr = vm.getRecord(conn);
                 try {
-                    Map<String, String> hostParams = new HashMap<String, String>();
-                    hostParams = host.getLicenseParams(conn);
-                    if (hostParams.get("restrict_dmc").equalsIgnoreCase("true")) {
-                        throw new CloudRuntimeException("Host "+ _host.uuid + " does not support Dynamic Memory Control, so we cannot scale up the vm");
-                    }
                     scaleVM(conn, vm, vmSpec, host);
-
                 } catch (Exception e) {
                     String msg = "Catch exception " + e.getClass().getName() + " when scaling VM:" + vmName + " due to " + e.toString();
                     s_logger.debug(msg);
