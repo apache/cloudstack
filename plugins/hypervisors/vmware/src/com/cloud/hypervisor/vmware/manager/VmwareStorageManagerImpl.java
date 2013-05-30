@@ -1457,4 +1457,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             return command.execute();
         }
     }
+
+    private static String getVolumeRelativeDirInSecStroage(long volumeId) {
+        return "volumes/" + volumeId;
+    }
 }
