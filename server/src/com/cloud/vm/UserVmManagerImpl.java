@@ -93,9 +93,11 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -401,6 +403,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     AffinityGroupDao _affinityGroupDao;
+    @Inject
+    DedicatedResourceDao _dedicatedDao;
     @Inject
     ConfigurationServer _configServer;
 
@@ -2362,8 +2366,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + zone.getId());
         }
 
-        if (zone.getDomainId() != null) {
-            DomainVO domain = _domainDao.findById(zone.getDomainId());
+        boolean isExplicit = false;
+        // check affinity group type Explicit dedication
+        if (affinityGroupIdList != null) {
+            for (Long affinityGroupId : affinityGroupIdList) {
+                AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
+                String agType = ag.getType();
+                if (agType.equals("ExplicitDedication")) {
+                    isExplicit = true;
+                }
+            }
+        }
+        // check if zone is dedicated
+        DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(zone.getId());
+        if (isExplicit && dedicatedZone != null) {
+            DomainVO domain = _domainDao.findById(dedicatedZone.getDomainId());
             if (domain == null) {
                 throw new CloudRuntimeException("Unable to find the domain "
                         + zone.getDomainId() + " for the zone: " + zone);
@@ -3676,6 +3693,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + destinationHost.getResourceState());
         }
 
+        HostVO srcHost = _hostDao.findById(srcHostId);
+        HostVO destHost = _hostDao.findById(destinationHost.getId());
+        //if srcHost is dedicated and destination Host is not
+        if (checkIfHostIsDedicated(srcHost) && !checkIfHostIsDedicated(destHost)) {
+            //raise an alert
+            String msg = "VM is migrated on a non-dedicated host " + destinationHost.getName();
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+        }
+        //if srcHost is non dedicated but destination Host is.
+        if (!checkIfHostIsDedicated(srcHost) && checkIfHostIsDedicated(destHost)) {
+            //raise an alert
+            String msg = "VM is migrated on a dedicated host " + destinationHost.getName();
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+        }
+
         // call to core process
         DataCenterVO dcVO = _dcDao.findById(destinationHost.getDataCenterId());
         HostPodVO pod = _podDao.findById(destinationHost.getPodId());
@@ -3701,6 +3733,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VMInstanceVO migratedVm = _itMgr.migrate(vm, srcHostId, dest);
         return migratedVm;
+    }
+
+    private boolean checkIfHostIsDedicated(HostVO host) {
+        long hostId = host.getId();
+        DedicatedResourceVO dedicatedHost = _dedicatedDao.findByHostId(hostId);
+        DedicatedResourceVO dedicatedClusterOfHost = _dedicatedDao.findByClusterId(host.getClusterId());
+        DedicatedResourceVO dedicatedPodOfHost = _dedicatedDao.findByPodId(host.getPodId());
+        if(dedicatedHost != null || dedicatedClusterOfHost != null || dedicatedPodOfHost != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -3822,7 +3866,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VMInstanceVO migratedVm = _itMgr.migrateWithStorage(vm, srcHostId, destinationHost.getId(), volToPoolObjectMap);
         return migratedVm;
-    }
+}
 
     @DB
     @Override

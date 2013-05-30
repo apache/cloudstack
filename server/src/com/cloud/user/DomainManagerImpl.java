@@ -35,6 +35,8 @@ import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -87,6 +89,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private RegionManager _regionMgr;
     @Inject
     private ResourceLimitDao _resourceLimitDao;
+    @Inject
+    private DedicatedResourceDao _dedicatedDao;
 
     @Override
     public Domain getDomain(long domainId) {
@@ -237,6 +241,17 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                         CloudRuntimeException e = new CloudRuntimeException("Delete failed on domain " + domain.getName() + " (id: " + domain.getId() + "); Please make sure all users and sub domains have been removed from the domain before deleting");
                         e.addProxyObject(domain.getUuid(), "domainId");
                         throw e;
+                    } else {
+                        //release dedication if any, before deleting the domain
+                        List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByDomainId(domain.getId());
+                        if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
+                            s_logger.debug("Releasing dedicated resources for domain" + domain.getId());
+                            for (DedicatedResourceVO dr : dedicatedResources){
+                                if (!_dedicatedDao.remove(dr.getId())) {
+                                    s_logger.warn("Fail to release dedicated resources for domain " + domain.getId());
+                                }
+                            }
+                        }
                     }
                 } else {
                     rollBackState = true;
@@ -333,6 +348,17 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         boolean deleteDomainSuccess = true;
         List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domainId);
         if (accountsForCleanup.isEmpty()) {
+            //release dedication if any, before deleting the domain
+            List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByDomainId(domainId);
+            if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
+                s_logger.debug("Releasing dedicated resources for domain" + domainId);
+                for (DedicatedResourceVO dr : dedicatedResources){
+                    if (!_dedicatedDao.remove(dr.getId())) {
+                        s_logger.warn("Fail to release dedicated resources for domain " + domainId);
+                    }
+                }
+            }
+            //delete domain
             deleteDomainSuccess = _domainDao.remove(domainId);
 
             // Delete resource count and resource limits entries set for this domain (if there are any).

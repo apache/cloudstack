@@ -93,7 +93,7 @@
         <entry key="cache.size" value="50" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
 
   <bean id="diskOfferingDaoImpl" class="com.cloud.storage.dao.DiskOfferingDaoImpl">
@@ -156,9 +156,17 @@
         <entry key="cache.size" value="100" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
-  
+  <bean id="dedicatedResourceDaoImpl" class="com.cloud.dc.dao.DedicatedResourceDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="30" />
+        <entry key="cache.time.to.live" value="3600" />
+      </map>
+    </property>
+  </bean>
+
   <!--
     DAOs with default configuration
   -->

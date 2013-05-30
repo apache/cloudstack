@@ -2453,7 +2453,6 @@ CREATE TABLE `cloud`.`resource_tags` (
   CONSTRAINT `uc_resource_tags__uuid` UNIQUE (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
 CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,

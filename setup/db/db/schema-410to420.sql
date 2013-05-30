@@ -178,6 +178,27 @@ CREATE TABLE `cloud`.`affinity_group_vm_map` (
 
 
 
+CREATE TABLE `cloud`.`dedicated_resources` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `data_center_id` bigint unsigned COMMENT 'data center id',
+  `pod_id` bigint unsigned COMMENT 'pod id',
+  `cluster_id` bigint unsigned COMMENT 'cluster id',
+  `host_id` bigint unsigned COMMENT 'host id',
+  `domain_id` bigint unsigned COMMENT 'domain id of the domain to which resource is dedicated',
+  `account_id` bigint unsigned COMMENT 'account id of the account to which resource is dedicated',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_dedicated_resources__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_dedicated_resources__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
+  CONSTRAINT `fk_dedicated_resources__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`),
+  CONSTRAINT `fk_dedicated_resources__host_id` FOREIGN KEY (`host_id`) REFERENCES `cloud`.`host`(`id`),
+  CONSTRAINT `fk_dedicated_resources__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
+  CONSTRAINT `fk_dedicated_resources__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
+  INDEX `i_dedicated_resources_domain_id`(`domain_id`),
+  INDEX `i_dedicated_resources_account_id`(`account_id`),
+  CONSTRAINT `uc_dedicated_resources__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE nic_secondary_ips (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `uuid` varchar(40),
@@ -202,6 +223,9 @@ ALTER TABLE `cloud`.`alert` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL D
 ALTER TABLE `cloud`.`event` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL DEFAULT 0;
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'alert.purge.interval', '86400', 'The interval (in seconds) to wait before running the alert purge thread');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'alert.purge.delay', '0', 'Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts');
+
+INSERT INTO `cloud`.`dedicated_resources` (`data_center_id`, `domain_id`) SELECT `id`, `domain_id` FROM `cloud`.`data_center` WHERE `domain_id` IS NOT NULL;
+UPDATE `cloud`.`data_center` SET `domain_id` = NULL WHERE `domain_id` IS NOT NULL;
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
 CREATE VIEW `cloud`.`event_view` AS
@@ -1720,7 +1744,8 @@ UPDATE `cloud`.`snapshots` set swift_id=null where swift_id=0;
 
 
 -- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;			
+SET foreign_key_checks = 1;
+
 UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;
 #update shared sg enabled network with not null name in Advance Security Group enabled network
 UPDATE `cloud`.`networks` set name='Shared SG enabled network', display_text='Shared SG enabled network' WHERE name IS null AND traffic_type='Guest' AND data_center_id IN (select id from data_center where networktype='Advanced' and is_security_group_enabled=1) AND acl_type='Domain';

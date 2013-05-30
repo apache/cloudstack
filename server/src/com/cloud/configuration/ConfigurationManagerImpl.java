@@ -96,6 +96,7 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -310,9 +311,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     NicSecondaryIpDao _nicSecondaryIpDao;
     @Inject
     NicIpAliasDao _nicIpAliasDao;
-
     @Inject
     public ManagementService _mgr;
+    @Inject
+    DedicatedResourceDao _dedicatedDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao;
@@ -952,6 +954,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new CloudRuntimeException("Failed to delete pod " + podId);
         }
 
+        // remove from dedicated resources
+        DedicatedResourceVO dr = _dedicatedDao.findByPodId(podId);
+        if (dr != null) {
+            _dedicatedDao.remove(dr.getId());
+        }
         txn.commit();
 
         return true;
@@ -1412,6 +1419,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (success) {
             // delete all capacity records for the zone
             _capacityDao.removeBy(null, zoneId, null, null, null);
+            // remove from dedicated resources
+            DedicatedResourceVO dr = _dedicatedDao.findByZoneId(zoneId);
+            if (dr != null) {
+                _dedicatedDao.remove(dr.getId());
+            }
         }
 
         txn.commit();
@@ -1804,15 +1816,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, null, null, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
             } else {
-                // Zone will be disabled since 3.0. Admin shoul enable it after physical network and providers setup.
+                // Zone will be disabled since 3.0. Admin should enable it after physical network and providers setup.
                 zone.setAllocationState(Grouping.AllocationState.Disabled);
             }
             zone = _zoneDao.persist(zone);
+            if (domainId != null) {
+                //zone is explicitly dedicated to this domain
+                DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zone.getId(), null, null, null, domainId, null);
+                _dedicatedDao.persist(dedicatedResource);
+            }
 
             // Create default system networks
             createDefaultSystemNetworks(zone.getId());
