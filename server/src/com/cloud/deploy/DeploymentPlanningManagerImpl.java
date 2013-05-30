@@ -210,7 +210,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             }
         }
 
-        checkForNonDedicatedResources(vm, dc, avoids);
+        checkForNonDedicatedResources(vmProfile, dc, avoids);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: "
                     + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
@@ -438,8 +438,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return dest;
     }
 
-    private void checkForNonDedicatedResources(VirtualMachine vm, DataCenter dc, ExcludeList avoids) {
+    private void checkForNonDedicatedResources(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DataCenter dc, ExcludeList avoids) {
         boolean isExplicit = false;
+        VirtualMachine vm = vmProfile.getVirtualMachine();
         // check affinity group of type Explicit dedication exists
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), "ExplicitDedication");
 
@@ -451,7 +452,10 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             //add explicitly dedicated resources in avoidList
             DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
             if (dedicatedZone != null) {
-                throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated.");
+                long accountDomainId = vmProfile.getOwner().getDomainId();
+                if (dedicatedZone.getDomainId() != null && !dedicatedZone.getDomainId().equals(accountDomainId)) {
+                    throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated.");
+                }
             }
 
             List<HostPodVO> podsInDc = _podDao.listByDataCenterId(dc.getId());
