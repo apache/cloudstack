@@ -50,9 +50,6 @@
         <para>Click the Configure button of the VPC, for which you want to configure load balancing
           rules.</para>
         <para>The VPC page is displayed where all the tiers you created listed in a diagram.</para>
-      </listitem>
-      <listitem>
-        <para>Click the Settings icon.</para>
         <para>For each tier, the following options are displayed:</para>
         <itemizedlist>
           <listitem>
