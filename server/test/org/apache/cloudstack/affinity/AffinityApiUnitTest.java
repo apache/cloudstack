@@ -17,6 +17,7 @@
 package org.apache.cloudstack.affinity;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
@@ -64,6 +65,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
@@ -170,20 +173,6 @@ public class AffinityApiUnitTest {
     @Test(expected = InvalidParameterValueException.class)
     public void deleteAffinityGroupNullIdName() throws ResourceInUseException {
         _affinityService.deleteAffinityGroup(null, "user", domainId, null);
-    }
-
-    @Test(expected = ResourceInUseException.class)
-    public void deleteAffinityGroupInUse() throws ResourceInUseException {
-        List<AffinityGroupVMMapVO> affinityGroupVmMap = new ArrayList<AffinityGroupVMMapVO>();
-        AffinityGroupVMMapVO mapVO = new AffinityGroupVMMapVO(20L, 10L);
-        affinityGroupVmMap.add(mapVO);
-        when(_affinityGroupVMMapDao.listByAffinityGroup(20L)).thenReturn(affinityGroupVmMap);
-
-        AffinityGroupVO groupVO = new AffinityGroupVO();
-        when(_groupDao.findById(20L)).thenReturn(groupVO);
-        when(_groupDao.lockRow(20L, true)).thenReturn(groupVO);
-
-        _affinityService.deleteAffinityGroup(20L, "user", domainId, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)

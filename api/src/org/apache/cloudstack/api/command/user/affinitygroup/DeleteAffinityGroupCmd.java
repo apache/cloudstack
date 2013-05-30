@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceInUseException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -123,17 +122,12 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        try{
-            boolean result = _affinityGroupService.deleteAffinityGroup(id, accountName, domainId, name);
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete affinity group");
-            }
-        } catch (ResourceInUseException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex.getMessage());
+        boolean result = _affinityGroupService.deleteAffinityGroup(id, accountName, domainId, name);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete affinity group");
         }
     }
 
