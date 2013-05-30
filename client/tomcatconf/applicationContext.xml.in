@@ -752,7 +752,6 @@
   <bean id="primaryDataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreProviderManagerImpl" />
   <bean id="imageStoreProviderManagerImpl" class="org.apache.cloudstack.storage.image.manager.ImageStoreProviderManagerImpl" />  
   <bean id="eventUtils" class="com.cloud.event.EventUtils" />
-  <bean id="hypervisorHostEndPointRpcServer" class="org.apache.cloudstack.storage.HypervisorHostEndPointRpcServer" />
   <bean id="iSCSI" class="org.apache.cloudstack.storage.datastore.type.ISCSI" />
   <bean id="ISO" class="org.apache.cloudstack.storage.image.format.ISO" />
   <bean id="templateDataFactoryImpl" class="org.apache.cloudstack.storage.image.TemplateDataFactoryImpl" />
@@ -776,7 +775,6 @@
   <bean id="snapshotStateMachineManagerImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotStateMachineManagerImpl" />
   <bean id="statsCollector" class="com.cloud.server.StatsCollector" />
   <bean id="storagePoolAutomationImpl" class="com.cloud.storage.StoragePoolAutomationImpl" />
-  <bean id="templateInstallStrategyImpl" class="org.apache.cloudstack.storage.volume.TemplateInstallStrategyImpl" />
   <bean id="unknown" class="org.apache.cloudstack.storage.image.format.Unknown" />
   <bean id="usageEventUtils" class="com.cloud.event.UsageEventUtils" />
   <bean id="userContextInitializer" class="com.cloud.user.UserContextInitializer" />
