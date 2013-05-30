@@ -113,6 +113,42 @@
       return $tier;
     },
 
+    connectorLine: function(args) {
+      var $connector = $('<div></div>').addClass('connector-line');
+      var $router = args.$router;
+      var $tier = args.$tier;
+      var $connectorStart = $('<div></div>').addClass('connector-start');
+      var $connectorMid = $('<div></div>').addClass('connector-mid');
+      var $connectorEnd = $('<div></div>').addClass('connector-end');
+
+      $connector.append($connectorStart, $connectorMid, $connectorEnd);
+
+      // Start line (next to router)
+      $connectorStart.css({
+        top: $router.position().top + ($router.outerHeight() / 2 + ($tier.index() * 30)),
+        left: $router.position().left + $router.outerWidth()
+      });
+      $connectorStart.width(50 + ($tier.index() * 10));
+
+      // End line (next to tier)
+      $connectorEnd.width(50);
+      $connectorEnd.css({
+        top: $tier.position().top + ($tier.outerHeight() / 2),
+        left: $tier.position().left - $connectorEnd.width()
+      });
+
+      // Mid line (connect start->end)
+      $connectorMid.css({
+        left: $connectorEnd.position().left,
+        top: $connectorEnd.position().top
+      });
+      $connectorMid.height(
+        $connectorStart.position().top - $connectorEnd.position().top
+      );
+
+      return $connector;
+    },
+
     router: function(args) {
       var $router = elems.tier({
         context: args.context,
@@ -262,9 +298,16 @@
           response: {
             success: function(data) {
               var tiers = data.tiers;
+              var $router;
               var $placeholder = elems.tierPlaceholder({
                 context: context
               });
+
+              // Router
+              $router = elems.router({
+                context: context,
+                dashboardItems: data.routerDashboard
+              }).appendTo($chart);
 
               $(tiers).map(function(index, tier) {
                 var $tier = elems.tier({
@@ -273,6 +316,9 @@
                   dashboardItems: tier._dashboardItems
                 });
                 $tier.appendTo($tiers);
+
+                // Connect tier to router via line
+                elems.connectorLine({ $tier: $tier, $router: $router }).appendTo($chart);
               });
 
               // Add placeholder tier
@@ -289,12 +335,6 @@
               if (args.complete) {
                 args.complete($chart);
               }
-
-              // Router
-              elems.router({
-                context: context,
-                dashboardItems: data.routerDashboard
-              }).appendTo($chart);
             }
           }
         });
