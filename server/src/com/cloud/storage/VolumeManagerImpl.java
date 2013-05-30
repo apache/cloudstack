@@ -1725,6 +1725,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
         }
 
+        // reload the volume from db
+        volumeOnPrimaryStorage = volFactory.getVolume(volumeOnPrimaryStorage.getId());
         boolean moveVolumeNeeded = needMoveVolume(rootVolumeOfVm, volumeOnPrimaryStorage);
 
         if (moveVolumeNeeded) {
