@@ -37,7 +37,8 @@ import com.cloud.utils.db.GenericDao;
 @Table(name = "image_store")
 public class ImageStoreVO implements ImageStore {
     @Id
-    @TableGenerator(name = "image_store_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "image_store_seq", allocationSize = 1)
+    @TableGenerator(name = "image_store_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value",
+            pkColumnValue = "image_store_seq", allocationSize = 1)
     @Column(name = "id", nullable = false)
     private long id;
 
@@ -76,7 +77,7 @@ public class ImageStoreVO implements ImageStore {
     @Column(name = "parent")
     private String parent;
 
-    @Column(name="total_size")
+    @Column(name = "total_size")
     private Long totalSize;
 
     public DataStoreRole getRole() {
@@ -178,6 +179,5 @@ public class ImageStoreVO implements ImageStore {
     public void setTotalSize(Long totalSize) {
         this.totalSize = totalSize;
     }
-
 
 }

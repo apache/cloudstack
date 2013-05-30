@@ -26,20 +26,20 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="image_store_details")
+@Table(name = "image_store_details")
 public class ImageStoreDetailVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-    @Column(name="store_id")
+    @Column(name = "store_id")
     long storeId;
 
-    @Column(name="name")
+    @Column(name = "name")
     String name;
 
-    @Column(name="value")
+    @Column(name = "value")
     String value;
 
     public ImageStoreDetailVO() {
@@ -78,6 +78,5 @@ public class ImageStoreDetailVO implements InternalIdentity {
     public void setValue(String value) {
         this.value = value;
     }
-
 
 }

@@ -40,49 +40,48 @@ import com.cloud.utils.fsm.StateObject;
 
 /**
  * Join table for image_data_store and snapshots
- *
+ * 
  */
 @Entity
-@Table(name="snapshot_store_ref")
+@Table(name = "snapshot_store_ref")
 public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
-	@Column(name="store_id")
-	private long dataStoreId;
+    @Column(name = "store_id")
+    private long dataStoreId;
 
-	@Column(name="store_role")
-	@Enumerated(EnumType.STRING)
-	private DataStoreRole role;
+    @Column(name = "store_role")
+    @Enumerated(EnumType.STRING)
+    private DataStoreRole role;
 
-	@Column(name="snapshot_id")
-	private long snapshotId;
+    @Column(name = "snapshot_id")
+    private long snapshotId;
 
-	@Column(name=GenericDaoBase.CREATED_COLUMN)
-	private Date created = null;
+    @Column(name = GenericDaoBase.CREATED_COLUMN)
+    private Date created = null;
 
-	@Column(name="last_updated")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date lastUpdated = null;
+    @Column(name = "last_updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastUpdated = null;
 
-	@Column (name="size")
-	private long size;
+    @Column(name = "size")
+    private long size;
 
-	@Column (name="physical_size")
-	private long physicalSize;
+    @Column(name = "physical_size")
+    private long physicalSize;
 
-	@Column(name="parent_snapshot_id")
-	private long parentSnapshotId;
+    @Column(name = "parent_snapshot_id")
+    private long parentSnapshotId;
 
-	@Column (name="job_id")
-	private String jobId;
+    @Column(name = "job_id")
+    private String jobId;
 
-	@Column (name="install_path")
+    @Column(name = "install_path")
     private String installPath;
 
-
-    @Column(name="update_count", updatable = true, nullable=false)
+    @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
 
     @Column(name = "updated")
@@ -94,97 +93,78 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     ObjectInDataStoreStateMachine.State state;
 
     public String getInstallPath() {
-		return installPath;
-	}
+        return installPath;
+    }
 
     @Override
-	public long getDataStoreId() {
-		return dataStoreId;
-	}
+    public long getDataStoreId() {
+        return dataStoreId;
+    }
 
-	public void setDataStoreId(long storeId) {
-		this.dataStoreId = storeId;
-	}
-
+    public void setDataStoreId(long storeId) {
+        this.dataStoreId = storeId;
+    }
 
     public long getSnapshotId() {
-		return snapshotId;
-	}
-
+        return snapshotId;
+    }
 
     public void setSnapshotId(long snapshotId) {
-		this.snapshotId = snapshotId;
-	}
-
-
-
+        this.snapshotId = snapshotId;
+    }
 
     public long getId() {
-		return id;
-	}
-
+        return id;
+    }
 
     public Date getCreated() {
-		return created;
-	}
-
+        return created;
+    }
 
     public Date getLastUpdated() {
-		return lastUpdated;
-	}
-
+        return lastUpdated;
+    }
 
     public void setLastUpdated(Date date) {
-	    lastUpdated = date;
-	}
-
+        lastUpdated = date;
+    }
 
     public void setInstallPath(String installPath) {
-	    this.installPath = installPath;
-	}
+        this.installPath = installPath;
+    }
 
+    public SnapshotDataStoreVO(long hostId, long snapshotId) {
+        super();
+        this.dataStoreId = hostId;
+        this.snapshotId = snapshotId;
+        this.state = ObjectInDataStoreStateMachine.State.Allocated;
+    }
 
+    public SnapshotDataStoreVO() {
 
-	public SnapshotDataStoreVO(long hostId, long snapshotId) {
-		super();
-		this.dataStoreId = hostId;
-		this.snapshotId = snapshotId;
-		this.state = ObjectInDataStoreStateMachine.State.Allocated;
-	}
-
-
-
-	public SnapshotDataStoreVO() {
-
-	}
-
-
-
+    }
 
     public void setJobId(String jobId) {
-		this.jobId = jobId;
-	}
-
+        this.jobId = jobId;
+    }
 
     public String getJobId() {
-		return jobId;
-	}
+        return jobId;
+    }
 
+    public boolean equals(Object obj) {
+        if (obj instanceof SnapshotDataStoreVO) {
+            SnapshotDataStoreVO other = (SnapshotDataStoreVO) obj;
+            return (this.snapshotId == other.getSnapshotId() && this.dataStoreId == other.getDataStoreId());
+        }
+        return false;
+    }
 
-	public boolean equals(Object obj) {
-		if (obj instanceof SnapshotDataStoreVO) {
-			SnapshotDataStoreVO other = (SnapshotDataStoreVO)obj;
-			return (this.snapshotId==other.getSnapshotId() && this.dataStoreId==other.getDataStoreId());
-		}
-		return false;
-	}
-
-
-	public int hashCode() {
-		Long tid = new Long(snapshotId);
-		Long hid = new Long(dataStoreId);
-		return tid.hashCode()+hid.hashCode();
-	}
+    public int hashCode() {
+        Long tid = new Long(snapshotId);
+        Long hid = new Long(dataStoreId);
+        return tid.hashCode() + hid.hashCode();
+    }
 
     public void setSize(long size) {
         this.size = size;
@@ -194,7 +174,6 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return size;
     }
 
-
     public void setPhysicalSize(long physicalSize) {
         this.physicalSize = physicalSize;
     }
@@ -203,14 +182,14 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return physicalSize;
     }
 
-	public long getVolumeSize() {
-	    return -1;
-	}
-
+    public long getVolumeSize() {
+        return -1;
+    }
 
     public String toString() {
-	    return new StringBuilder("VolumeHost[").append(id).append("-").append(snapshotId).append("-").append(dataStoreId).append(installPath).append("]").toString();
-	}
+        return new StringBuilder("VolumeHost[").append(id).append("-").append(snapshotId).append("-")
+                .append(dataStoreId).append(installPath).append("]").toString();
+    }
 
     public long getUpdatedCount() {
         return this.updatedCount;
@@ -234,7 +213,6 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return this.state;
     }
 
-
     public void setState(ObjectInDataStoreStateMachine.State state) {
         this.state = state;
     }
@@ -254,14 +232,14 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Override
     public State getObjectInStoreState() {
-       return this.state;
+        return this.state;
     }
 
-	public long getParentSnapshotId() {
-		return parentSnapshotId;
-	}
+    public long getParentSnapshotId() {
+        return parentSnapshotId;
+    }
 
-	public void setParentSnapshotId(long parentSnapshotId) {
-		this.parentSnapshotId = parentSnapshotId;
-	}
+    public void setParentSnapshotId(long parentSnapshotId) {
+        this.parentSnapshotId = parentSnapshotId;
+    }
 }

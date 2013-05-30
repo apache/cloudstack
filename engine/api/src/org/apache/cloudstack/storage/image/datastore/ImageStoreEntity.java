@@ -30,9 +30,14 @@ import com.cloud.storage.ImageStore;
 
 public interface ImageStoreEntity extends DataStore, ImageStore {
     TemplateInfo getTemplate(long templateId);
+
     VolumeInfo getVolume(long volumeId);
+
     SnapshotInfo getSnapshot(long snapshotId);
+
     boolean exists(DataObject object);
+
     Set<TemplateInfo> listTemplates();
+
     String getMountPoint(); // get the mount point on ssvm.
 }

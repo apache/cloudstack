@@ -24,8 +24,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -45,10 +43,10 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.snapshot.SnapshotObject;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
@@ -57,8 +55,6 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
-import com.cloud.api.query.dao.UserVmJoinDao;
-import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.host.dao.HostDao;
@@ -74,43 +70,42 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.swift.SwiftManager;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.UserVmDao;
 
 public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
-    private static final Logger s_logger = Logger
-            .getLogger(CloudStackImageStoreDriverImpl.class);
+    private static final Logger s_logger = Logger.getLogger(CloudStackImageStoreDriverImpl.class);
     @Inject
     VMTemplateZoneDao templateZoneDao;
     @Inject
     VMTemplateDao templateDao;
-    @Inject DownloadMonitor _downloadMonitor;
-    @Inject VolumeDao volumeDao;
-    @Inject VolumeDataStoreDao _volumeStoreDao;
-    @Inject HostDao hostDao;
-    @Inject SnapshotDao snapshotDao;
-    @Inject AgentManager agentMgr;
-    @Inject SnapshotManager snapshotMgr;
-	@Inject
-    private SwiftManager _swiftMgr;
     @Inject
-    private S3Manager _s3Mgr;
-    @Inject AccountDao _accountDao;
+    DownloadMonitor _downloadMonitor;
+    @Inject
+    VolumeDao volumeDao;
+    @Inject
+    VolumeDataStoreDao _volumeStoreDao;
+    @Inject
+    HostDao hostDao;
+    @Inject
+    SnapshotDao snapshotDao;
+    @Inject
+    AgentManager agentMgr;
+    @Inject
+    SnapshotManager snapshotMgr;
+    @Inject
+    AccountDao _accountDao;
     @Inject
     SecondaryStorageVmManager _ssvmMgr;
     @Inject
-    private AgentManager _agentMgr;
-    @Inject TemplateDataStoreDao _templateStoreDao;
-    @Inject EndPointSelector _epSelector;
-    @Inject DataStoreManager _dataStoreMgr;
-
+    TemplateDataStoreDao _templateStoreDao;
+    @Inject
+    EndPointSelector _epSelector;
+    @Inject
+    DataStoreManager _dataStoreMgr;
 
     @Override
     public String grantAccess(DataObject data, EndPoint ep) {
@@ -123,10 +118,9 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        ImageStoreImpl nfsStore = (ImageStoreImpl)store;
+        ImageStoreImpl nfsStore = (ImageStoreImpl) store;
         NfsTO nfsTO = new NfsTO();
         nfsTO.setRole(store.getRole());
         nfsTO.setUrl(nfsStore.getUri());
@@ -147,22 +141,20 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
 
     class CreateContext<T> extends AsyncRpcConext<T> {
         final DataObject data;
+
         public CreateContext(AsyncCompletionCallback<T> callback, DataObject data) {
             super(callback);
             this.data = data;
         }
     }
 
-
     @Override
-    public void createAsync(DataObject data,
-            AsyncCompletionCallback<CreateCmdResult> callback) {
-    	CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);
-        AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> caller =
-        		AsyncCallbackDispatcher.create(this);
+    public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+        CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);
+        AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher
+                .create(this);
         caller.setContext(context);
         caller.setCallback(caller.getTarget().createAsyncCallback(null, null));
-
 
         if (data.getType() == DataObjectType.TEMPLATE) {
             _downloadMonitor.downloadTemplateToStorage(data, caller);
@@ -171,13 +163,14 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         }
     }
 
-    protected Void createAsyncCallback(AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> callback,
-    		CreateContext<CreateCmdResult> context) {
-    	DownloadAnswer answer = callback.getResult();
-    	DataObject obj = context.data;
-    	DataStore store = obj.getDataStore();
+    protected Void createAsyncCallback(
+            AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> callback,
+            CreateContext<CreateCmdResult> context) {
+        DownloadAnswer answer = callback.getResult();
+        DataObject obj = context.data;
+        DataStore store = obj.getDataStore();
 
-    	TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(),obj.getId());
+        TemplateDataStoreVO tmpltStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), obj.getId());
         if (tmpltStoreVO != null) {
             TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
             updateBuilder.setDownloadPercent(answer.getDownloadPct());
@@ -196,27 +189,26 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
             templateDao.update(obj.getId(), tmlptUpdater);
         }
 
-    	AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
+        AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
 
-    	if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR ||
-    			answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED ||
-    			answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
-    		CreateCmdResult result = new CreateCmdResult(null, null);
+        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR
+                || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED
+                || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+            CreateCmdResult result = new CreateCmdResult(null, null);
             result.setSuccess(false);
-    		result.setResult(answer.getErrorString());
-    		caller.complete(result);
-    	} else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-    		if (answer.getCheckSum() != null) {
-    			VMTemplateVO templateDaoBuilder = templateDao.createForUpdate();
-    			templateDaoBuilder.setChecksum(answer.getCheckSum());
-    			templateDao.update(obj.getId(), templateDaoBuilder);
-    		}
+            result.setResult(answer.getErrorString());
+            caller.complete(result);
+        } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+            if (answer.getCheckSum() != null) {
+                VMTemplateVO templateDaoBuilder = templateDao.createForUpdate();
+                templateDaoBuilder.setChecksum(answer.getCheckSum());
+                templateDao.update(obj.getId(), templateDaoBuilder);
+            }
 
-
-    		CreateCmdResult result = new CreateCmdResult(null, answer);
-    		caller.complete(result);
-    	}
-    	return null;
+            CreateCmdResult result = new CreateCmdResult(null, answer);
+            caller.complete(result);
+        }
+        return null;
     }
 
     private void deleteVolume(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
@@ -231,22 +223,17 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
             if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                 DataStore store = _dataStoreMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
                 EndPoint ep = _epSelector.select(store);
-                DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(
-                        store.getTO(), volumeStore.getVolumeId(), volumeStore.getInstallPath());
+                DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(store.getTO(), volumeStore.getVolumeId(),
+                        volumeStore.getInstallPath());
                 Answer answer = ep.sendMessage(dtCommand);
                 if (answer == null || !answer.getResult()) {
-                    s_logger.debug("Failed to delete "
-                            + volumeStore
-                            + " due to "
-                            + ((answer == null) ? "answer is null" : answer
-                                    .getDetails()));
+                    s_logger.debug("Failed to delete " + volumeStore + " due to "
+                            + ((answer == null) ? "answer is null" : answer.getDetails()));
                     return;
                 }
             } else if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
-                s_logger.debug("Volume: " + vol.getName()
-                        + " is currently being uploaded; cant' delete it.");
-                throw new CloudRuntimeException(
-                        "Please specify a volume that is not currently being uploaded.");
+                s_logger.debug("Volume: " + vol.getName() + " is currently being uploaded; cant' delete it.");
+                throw new CloudRuntimeException("Please specify a volume that is not currently being uploaded.");
             }
 
             CommandResult result = new CommandResult();
@@ -275,8 +262,9 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
 
         // TODO: need to understand why we need to mark destroyed in
         // template_store_ref table here instead of in callback.
-        // Currently I did that in callback, so I removed previous code to mark template_host_ref
-        if ( sZoneId != null ){
+        // Currently I did that in callback, so I removed previous code to mark
+        // template_host_ref
+        if (sZoneId != null) {
             UsageEventUtils.publishUsageEvent(eventType, account.getId(), sZoneId, templateId, null, null, null);
         }
 
@@ -284,85 +272,83 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         TemplateDataStoreVO tmplStore = _templateStoreDao.findByStoreTemplate(storeId, templateId);
         String installPath = tmplStore.getInstallPath();
         if (installPath != null) {
-        	DeleteTemplateCommand cmd = new DeleteTemplateCommand(store.getTO(), installPath, template.getId(), template.getAccountId());
-        	EndPoint ep = _epSelector.select(templateObj);
-        	Answer answer = ep.sendMessage(cmd);
+            DeleteTemplateCommand cmd = new DeleteTemplateCommand(store.getTO(), installPath, template.getId(),
+                    template.getAccountId());
+            EndPoint ep = _epSelector.select(templateObj);
+            Answer answer = ep.sendMessage(cmd);
 
-        	if (answer == null || !answer.getResult()) {
-        		s_logger.debug("Failed to deleted template at store: " + store.getName());
-        		CommandResult result = new CommandResult();
-        		result.setSuccess(false);
-        		result.setResult("Delete template failed");
-        		callback.complete(result);
+            if (answer == null || !answer.getResult()) {
+                s_logger.debug("Failed to deleted template at store: " + store.getName());
+                CommandResult result = new CommandResult();
+                result.setSuccess(false);
+                result.setResult("Delete template failed");
+                callback.complete(result);
 
-        	} else {
-        		s_logger.debug("Deleted template at: " + installPath);
-        		CommandResult result = new CommandResult();
-        		result.setSuccess(true);
-        		callback.complete(result);
-        	}
+            } else {
+                s_logger.debug("Deleted template at: " + installPath);
+                CommandResult result = new CommandResult();
+                result.setSuccess(true);
+                callback.complete(result);
+            }
 
-        	List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, templateId);
-        	if (templateZones != null) {
-        		for (VMTemplateZoneVO templateZone : templateZones) {
-        			templateZoneDao.remove(templateZone.getId());
-        		}
-        	}
+            List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, templateId);
+            if (templateZones != null) {
+                for (VMTemplateZoneVO templateZone : templateZones) {
+                    templateZoneDao.remove(templateZone.getId());
+                }
+            }
         }
-
 
     }
 
     private void deleteSnapshot(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
-        SnapshotObject snapshotObj = (SnapshotObject)data;
+        SnapshotObject snapshotObj = (SnapshotObject) data;
         DataStore secStore = snapshotObj.getDataStore();
         CommandResult result = new CommandResult();
-     	SnapshotVO snapshot = snapshotObj.getSnapshotVO();
+        SnapshotVO snapshot = snapshotObj.getSnapshotVO();
 
-    	if (snapshot == null) {
-    		s_logger.debug("Destroying snapshot " + snapshotObj.getId() + " backup failed due to unable to find snapshot ");
-    		result.setResult("Unable to find snapshot: " + snapshotObj.getId());
-    		callback.complete(result);
-    		return;
-    	}
+        if (snapshot == null) {
+            s_logger.debug("Destroying snapshot " + snapshotObj.getId()
+                    + " backup failed due to unable to find snapshot ");
+            result.setResult("Unable to find snapshot: " + snapshotObj.getId());
+            callback.complete(result);
+            return;
+        }
 
-    	try {
+        try {
             String backupOfSnapshot = snapshotObj.getPath();
             if (backupOfSnapshot == null) {
                 callback.complete(result);
                 return;
             }
 
-    		DeleteSnapshotBackupCommand2 cmd = new DeleteSnapshotBackupCommand2(
-    				secStore.getTO(), backupOfSnapshot);
-    		EndPoint ep = _epSelector.select(secStore);
-    		Answer answer = ep.sendMessage(cmd);
+            DeleteSnapshotBackupCommand2 cmd = new DeleteSnapshotBackupCommand2(secStore.getTO(), backupOfSnapshot);
+            EndPoint ep = _epSelector.select(secStore);
+            Answer answer = ep.sendMessage(cmd);
 
-    		if (answer != null && !answer.getResult()) {
-    			result.setResult(answer.getDetails());
-    		}
-    	} catch (Exception e) {
-    		s_logger.debug("failed to delete snapshot: " + snapshotObj.getId() + ": " + e.toString());
-    		result.setResult(e.toString());
-    	}
-    	callback.complete(result);
+            if (answer != null && !answer.getResult()) {
+                result.setResult(answer.getDetails());
+            }
+        } catch (Exception e) {
+            s_logger.debug("failed to delete snapshot: " + snapshotObj.getId() + ": " + e.toString());
+            result.setResult(e.toString());
+        }
+        callback.complete(result);
     }
 
     @Override
-    public void deleteAsync(DataObject data,
-            AsyncCompletionCallback<CommandResult> callback) {
+    public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
         if (data.getType() == DataObjectType.VOLUME) {
             deleteVolume(data, callback);
         } else if (data.getType() == DataObjectType.TEMPLATE) {
             deleteTemplate(data, callback);
         } else if (data.getType() == DataObjectType.SNAPSHOT) {
-        	deleteSnapshot(data, callback);
+            deleteSnapshot(data, callback);
         }
     }
 
     @Override
-    public void copyAsync(DataObject srcdata, DataObject destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         // TODO Auto-generated method stub
 
     }
@@ -373,11 +359,10 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         return false;
     }
 
-	@Override
-	public void resize(DataObject data,
-			AsyncCompletionCallback<CreateCmdResult> callback) {
-		// TODO Auto-generated method stub
+    @Override
+    public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
 }

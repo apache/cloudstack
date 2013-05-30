@@ -27,9 +27,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="storage_pool_work")
+@Table(name = "storage_pool_work")
 public class StoragePoolWorkVO implements InternalIdentity {
-    
+
     public long getId() {
         return id;
     }
@@ -42,21 +42,17 @@ public class StoragePoolWorkVO implements InternalIdentity {
         return poolId;
     }
 
-
     public void setPoolId(Long poolId) {
         this.poolId = poolId;
     }
-
 
     public boolean isStoppedForMaintenance() {
         return stoppedForMaintenance;
     }
 
-
     public void setStoppedForMaintenance(boolean stoppedForMaintenance) {
         this.stoppedForMaintenance = stoppedForMaintenance;
     }
-
 
     public boolean isStartedAfterMaintenance() {
         return startedAfterMaintenance;
@@ -73,7 +69,7 @@ public class StoragePoolWorkVO implements InternalIdentity {
     public void setVmId(Long vmId) {
         this.vmId = vmId;
     }
-    
+
     public Long getManagementServerId() {
         return managementServerId;
     }
@@ -83,27 +79,27 @@ public class StoragePoolWorkVO implements InternalIdentity {
     }
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
-    
-    @Column(name="pool_id")
+
+    @Column(name = "pool_id")
     private Long poolId;
 
-    @Column(name="vm_id")
+    @Column(name = "vm_id")
     private Long vmId;
-    
-    @Column(name="stopped_for_maintenance")
+
+    @Column(name = "stopped_for_maintenance")
     private boolean stoppedForMaintenance;
-    
-    @Column(name="started_after_maintenance")
+
+    @Column(name = "started_after_maintenance")
     private boolean startedAfterMaintenance;
 
-    @Column(name="mgmt_server_id")
+    @Column(name = "mgmt_server_id")
     private Long managementServerId;
-    
 
-    public StoragePoolWorkVO(long vmId, long poolId, boolean stoppedForMaintenance, boolean startedAfterMaintenance, long mgmtServerId) {
+    public StoragePoolWorkVO(long vmId, long poolId, boolean stoppedForMaintenance, boolean startedAfterMaintenance,
+            long mgmtServerId) {
         super();
         this.vmId = vmId;
         this.poolId = poolId;
@@ -111,8 +107,8 @@ public class StoragePoolWorkVO implements InternalIdentity {
         this.startedAfterMaintenance = startedAfterMaintenance;
         this.managementServerId = mgmtServerId;
     }
-    
+
     public StoragePoolWorkVO() {
-        
+
     }
 }

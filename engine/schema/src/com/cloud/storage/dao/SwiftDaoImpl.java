@@ -33,7 +33,7 @@ import com.cloud.utils.db.GenericDaoBase;
  * 
  */
 @Component
-@Local (value={SwiftDao.class})
+@Local(value = { SwiftDao.class })
 public class SwiftDaoImpl extends GenericDaoBase<SwiftVO, Long> implements SwiftDao {
     public static final Logger s_logger = Logger.getLogger(SwiftDaoImpl.class.getName());
 

@@ -30,36 +30,49 @@ import com.cloud.utils.fsm.StateDao;
 /*
  * Data Access Object for vm_templates table
  */
-public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<TemplateState, TemplateEvent, VMTemplateVO> {
+public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>,
+        StateDao<TemplateState, TemplateEvent, VMTemplateVO> {
 
+    public List<VMTemplateVO> listByPublic();
 
-	public List<VMTemplateVO> listByPublic();
-	public VMTemplateVO findByName(String templateName);
-	public VMTemplateVO findByTemplateName(String templateName);
+    public VMTemplateVO findByName(String templateName);
 
-	//public void update(VMTemplateVO template);
+    public VMTemplateVO findByTemplateName(String templateName);
 
+    // public void update(VMTemplateVO template);
 
-	public List<VMTemplateVO> listAllSystemVMTemplates();
+    public List<VMTemplateVO> listAllSystemVMTemplates();
 
-	public List<VMTemplateVO> listDefaultBuiltinTemplates();
-	public String getRoutingTemplateUniqueName();
-	public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path);
-	public List<VMTemplateVO> listReadyTemplates();
-	public List<VMTemplateVO> listByAccountId(long accountId);
+    public List<VMTemplateVO> listDefaultBuiltinTemplates();
 
-	public long addTemplateToZone(VMTemplateVO tmplt, long zoneId);
-	public List<VMTemplateVO> listAllInZone(long dataCenterId);
-	public List<VMTemplateVO> listAllActive();
+    public String getRoutingTemplateUniqueName();
+
+    public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path);
+
+    public List<VMTemplateVO> listReadyTemplates();
+
+    public List<VMTemplateVO> listByAccountId(long accountId);
+
+    public long addTemplateToZone(VMTemplateVO tmplt, long zoneId);
+
+    public List<VMTemplateVO> listAllInZone(long dataCenterId);
+
+    public List<VMTemplateVO> listAllActive();
 
     public List<VMTemplateVO> listByHypervisorType(List<HypervisorType> hyperTypes);
-	public List<VMTemplateVO> publicIsoSearch(Boolean bootable, boolean listRemoved, Map<String, String> tags);
-	public List<VMTemplateVO> userIsoSearch(boolean listRemoved);
+
+    public List<VMTemplateVO> publicIsoSearch(Boolean bootable, boolean listRemoved, Map<String, String> tags);
+
+    public List<VMTemplateVO> userIsoSearch(boolean listRemoved);
+
     VMTemplateVO findSystemVMTemplate(long zoneId);
+
     VMTemplateVO findSystemVMTemplate(long zoneId, HypervisorType hType);
 
     VMTemplateVO findRoutingTemplate(HypervisorType type, String templateName);
+
     List<Long> listPrivateTemplatesByHost(Long hostId);
+
     public Long countTemplatesForAccount(long accountId);
 
     List<VMTemplateVO> findTemplatesToSyncToS3();

@@ -38,11 +38,11 @@ public class VolumeEntityImpl implements VolumeEntity {
     private VolumeInfo volumeInfo;
     private final VolumeService vs;
     private VolumeApiResult result;
-    
+
     public VolumeEntityImpl() {
         this.vs = null;
     }
-    
+
     public VolumeEntityImpl(VolumeInfo volumeObject, VolumeService vs) {
         this.volumeInfo = volumeObject;
         this.vs = vs;
@@ -52,7 +52,7 @@ public class VolumeEntityImpl implements VolumeEntity {
         return volumeInfo;
     }
 
-    @Override 
+    @Override
     public String getUuid() {
         return volumeInfo.getUuid();
     }
@@ -92,7 +92,6 @@ public class VolumeEntityImpl implements VolumeEntity {
         return null;
     }
 
-  
     @Override
     public List<Method> getApplicableActions() {
         // TODO Auto-generated method stub
@@ -141,7 +140,6 @@ public class VolumeEntityImpl implements VolumeEntity {
 
     }
 
-
     @Override
     public long getSize() {
         return volumeInfo.getSize();
@@ -149,7 +147,7 @@ public class VolumeEntityImpl implements VolumeEntity {
 
     @Override
     public DiskFormat getDiskType() {
-         return null;
+        return null;
     }
 
     @Override
@@ -164,41 +162,40 @@ public class VolumeEntityImpl implements VolumeEntity {
 
     @Override
     public void destroy() {
-        /*AsyncCallFuture<VolumeApiResult> future = vs.deleteVolumeAsync(volumeInfo);
-        try {
-            result = future.get();
-            if (!result.isSuccess()) {
-                throw new CloudRuntimeException("Failed to create volume:" + result.getResult());
-            }
-        } catch (InterruptedException e) {
-           throw new CloudRuntimeException("wait to delete volume info failed", e);
-        } catch (ExecutionException e) {
-            throw new CloudRuntimeException("wait to delete volume failed", e);
-        }*/
+        /*
+         * AsyncCallFuture<VolumeApiResult> future =
+         * vs.deleteVolumeAsync(volumeInfo); try { result = future.get(); if
+         * (!result.isSuccess()) { throw new
+         * CloudRuntimeException("Failed to create volume:" +
+         * result.getResult()); } } catch (InterruptedException e) { throw new
+         * CloudRuntimeException("wait to delete volume info failed", e); }
+         * catch (ExecutionException e) { throw new
+         * CloudRuntimeException("wait to delete volume failed", e); }
+         */
     }
 
-	@Override
-	public Map<String, String> getDetails() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Map<String, String> getDetails() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void addDetail(String name, String value) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void addDetail(String name, String value) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public void delDetail(String name, String value) {
-		// TODO Auto-generated method stub
-		
-	}
+    }
 
-	@Override
-	public void updateDetail(String name, String value) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void delDetail(String name, String value) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void updateDetail(String name, String value) {
+        // TODO Auto-generated method stub
+
+    }
 
 }

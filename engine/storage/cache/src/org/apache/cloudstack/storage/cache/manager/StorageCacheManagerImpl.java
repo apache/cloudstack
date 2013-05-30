@@ -39,16 +39,14 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
-    private static final Logger s_logger = Logger
-            .getLogger(StorageCacheManagerImpl.class);
+    private static final Logger s_logger = Logger.getLogger(StorageCacheManagerImpl.class);
     @Inject
     List<StorageCacheAllocator> storageCacheAllocator;
     @Inject
@@ -120,10 +118,9 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         return true;
     }
 
-
-
     private class CreateCacheObjectContext<T> extends AsyncRpcConext<T> {
         final AsyncCallFuture<CopyCommandResult> future;
+
         /**
          * @param callback
          */
@@ -134,48 +131,47 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 
     }
 
-	@Override
-	public DataObject createCacheObject(DataObject data, Scope scope) {
-		DataStore cacheStore = this.getCacheStorage(scope);
-		DataObjectInStore obj = objectInStoreMgr.findObject(data, cacheStore);
-		if (obj != null && obj.getState() == ObjectInDataStoreStateMachine.State.Ready) {
-			s_logger.debug("there is already one in the cache store");
-			return objectInStoreMgr.get(data, cacheStore);
-		}
+    @Override
+    public DataObject createCacheObject(DataObject data, Scope scope) {
+        DataStore cacheStore = this.getCacheStorage(scope);
+        DataObjectInStore obj = objectInStoreMgr.findObject(data, cacheStore);
+        if (obj != null && obj.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+            s_logger.debug("there is already one in the cache store");
+            return objectInStoreMgr.get(data, cacheStore);
+        }
 
-		//TODO: consider multiple thread to create
-		DataObject objOnCacheStore = cacheStore.create(data);
+        DataObject objOnCacheStore = cacheStore.create(data);
 
-		AsyncCallFuture<CopyCommandResult> future = new AsyncCallFuture<CopyCommandResult>();
-		CopyCommandResult result = null;
-		try {
-		    objOnCacheStore.processEvent(Event.CreateOnlyRequested);
+        AsyncCallFuture<CopyCommandResult> future = new AsyncCallFuture<CopyCommandResult>();
+        CopyCommandResult result = null;
+        try {
+            objOnCacheStore.processEvent(Event.CreateOnlyRequested);
 
-		    dataMotionSvr.copyAsync(data, objOnCacheStore, future);
-		    result = future.get();
+            dataMotionSvr.copyAsync(data, objOnCacheStore, future);
+            result = future.get();
 
-		    if (result.isFailed()) {
-		        objOnCacheStore.processEvent(Event.OperationFailed);
-		    } else {
-		        objOnCacheStore.processEvent(Event.OperationSuccessed, result.getAnswer());
-		        return objOnCacheStore;
-		    }
+            if (result.isFailed()) {
+                objOnCacheStore.processEvent(Event.OperationFailed);
+            } else {
+                objOnCacheStore.processEvent(Event.OperationSuccessed, result.getAnswer());
+                return objOnCacheStore;
+            }
         } catch (InterruptedException e) {
             s_logger.debug("create cache storage failed: " + e.toString());
+            throw new CloudRuntimeException(e);
         } catch (ExecutionException e) {
             s_logger.debug("create cache storage failed: " + e.toString());
-        } catch (Exception e) {
-            s_logger.debug("create cache storage failed: " + e.toString());
+            throw new CloudRuntimeException(e);
         } finally {
             if (result == null) {
                 objOnCacheStore.processEvent(Event.OperationFailed);
             }
         }
 
-		return null;
-	}
+        return null;
+    }
 
-	@Override
+    @Override
     public DataObject getCacheObject(DataObject data, Scope scope) {
         DataStore cacheStore = this.getCacheStorage(scope);
         DataObject objOnCacheStore = cacheStore.create(data);
@@ -183,12 +179,13 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         return objOnCacheStore;
     }
 
-	protected Void createCacheObjectCallBack(AsyncCallbackDispatcher<StorageCacheManagerImpl, CopyCommandResult> callback,
-	        CreateCacheObjectContext<CopyCommandResult> context) {
-	    AsyncCallFuture<CopyCommandResult> future = context.future;
-	    future.complete(callback.getResult());
-	    return null;
-	}
+    protected Void createCacheObjectCallBack(
+            AsyncCallbackDispatcher<StorageCacheManagerImpl, CopyCommandResult> callback,
+            CreateCacheObjectContext<CopyCommandResult> context) {
+        AsyncCallFuture<CopyCommandResult> future = context.future;
+        future.complete(callback.getResult());
+        return null;
+    }
 
     @Override
     public boolean deleteCacheObject(DataObject data) {

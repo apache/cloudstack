@@ -26,12 +26,13 @@ import com.cloud.host.dao.HostDaoImpl;
 
 @Configuration
 public class TestConfiguration {
-	@Bean
-	public HostDao hostDao() {
-		return new HostDaoImpl();
-	}
-	@Bean
-	public PrimaryDataStoreDao primaryDataStoreDao() {
-		return new PrimaryDataStoreDaoImpl();
-	}
+    @Bean
+    public HostDao hostDao() {
+        return new HostDaoImpl();
+    }
+
+    @Bean
+    public PrimaryDataStoreDao primaryDataStoreDao() {
+        return new PrimaryDataStoreDaoImpl();
+    }
 }

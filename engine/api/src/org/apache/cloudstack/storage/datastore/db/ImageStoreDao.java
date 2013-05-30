@@ -20,16 +20,18 @@ package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.List;
 
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-
 
 import com.cloud.utils.db.GenericDao;
 
 public interface ImageStoreDao extends GenericDao<ImageStoreVO, Long> {
     public ImageStoreVO findByName(String name);
+
     public List<ImageStoreVO> findByProvider(String provider);
+
     public List<ImageStoreVO> findByScope(ZoneScope scope);
+
     public List<ImageStoreVO> findImageCacheByScope(ZoneScope scope);
+
     public List<ImageStoreVO> listImageStores();
 }

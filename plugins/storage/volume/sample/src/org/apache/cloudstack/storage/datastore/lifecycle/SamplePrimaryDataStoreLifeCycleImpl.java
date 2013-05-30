@@ -54,18 +54,20 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
     PrimaryDataStoreHelper primaryStoreHelper;
     @Inject
     PrimaryDataStoreProviderManager providerMgr;
+
     public SamplePrimaryDataStoreLifeCycleImpl() {
     }
-    
+
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
-        
-        DataStore store = primaryStoreHelper.createPrimaryDataStore(null); 
+
+        DataStore store = primaryStoreHelper.createPrimaryDataStore(null);
         return providerMgr.getPrimaryDataStore(store.getId());
     }
 
     protected void attachCluster(DataStore store) {
-        //send down AttachPrimaryDataStoreCmd command to all the hosts in the cluster
+        // send down AttachPrimaryDataStoreCmd command to all the hosts in the
+        // cluster
         List<EndPoint> endPoints = selector.selectAll(store);
         CreatePrimaryDataStoreCmd createCmd = new CreatePrimaryDataStoreCmd(store.getUri());
         EndPoint ep = endPoints.get(0);
@@ -73,14 +75,14 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
         if (host.getHypervisorType() == HypervisorType.XenServer) {
             ep.sendMessage(createCmd);
         }
-        
+
         endPoints.get(0).sendMessage(createCmd);
         AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(store.getUri());
         for (EndPoint endp : endPoints) {
             endp.sendMessage(cmd);
         }
     }
-    
+
     @Override
     public boolean attachCluster(DataStore dataStore, ClusterScope scope) {
         StoragePoolVO dataStoreVO = dataStoreDao.findById(dataStore.getId());
@@ -90,14 +92,13 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
         dataStoreVO.setStatus(StoragePoolStatus.Attaching);
         dataStoreVO.setScope(scope.getScopeType());
         dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
-        
-        
+
         attachCluster(dataStore);
-        
+
         dataStoreVO = dataStoreDao.findById(dataStore.getId());
         dataStoreVO.setStatus(StoragePoolStatus.Up);
         dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
-        
+
         return true;
     }
 
@@ -120,8 +121,7 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
     }
 
     @Override
-    public boolean attachHost(DataStore store, HostScope scope,
-            StoragePoolInfo existingInfo) {
+    public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
         // TODO Auto-generated method stub
         return false;
     }

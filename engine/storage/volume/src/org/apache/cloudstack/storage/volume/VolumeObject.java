@@ -104,7 +104,7 @@ public class VolumeObject implements VolumeInfo {
     }
 
     public void setSize(Long size) {
-    	volumeVO.setSize(size);
+        volumeVO.setSize(size);
     }
 
     @Override
@@ -122,10 +122,10 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.getSize();
     }
 
-
     public long getVolumeId() {
         return volumeVO.getId();
     }
+
     public boolean stateTransit(Volume.Event event) {
         boolean result = false;
         try {
@@ -160,16 +160,15 @@ public class VolumeObject implements VolumeInfo {
         if (this.dataStore == null) {
             throw new CloudRuntimeException("datastore must be set before using this object");
         }
-        DataObjectInStore obj = objectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
+        DataObjectInStore obj = objectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME,
+                this.dataStore.getId(), this.dataStore.getRole());
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-            return this.dataStore.getUri() +
-                    "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME +
-                    "&" + EncodingType.SIZE + "=" + this.volumeVO.getSize() +
-                    "&" + EncodingType.NAME + "=" + this.volumeVO.getName();
+            return this.dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&"
+                    + EncodingType.SIZE + "=" + this.volumeVO.getSize() + "&" + EncodingType.NAME + "="
+                    + this.volumeVO.getName();
         } else {
-            return this.dataStore.getUri() +
-                    "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME +
-                    "&" + EncodingType.PATH + "=" + obj.getInstallPath();
+            return this.dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&"
+                    + EncodingType.PATH + "=" + obj.getInstallPath();
         }
     }
 
@@ -178,32 +177,32 @@ public class VolumeObject implements VolumeInfo {
         return DataObjectType.VOLUME;
     }
 
-
     @Override
-    public void processEvent(
-            ObjectInDataStoreStateMachine.Event event) {
+    public void processEvent(ObjectInDataStoreStateMachine.Event event) {
         if (this.dataStore == null) {
             return;
         }
         try {
             Volume.Event volEvent = null;
-            if ( this.dataStore.getRole() == DataStoreRole.ImageCache){
+            if (this.dataStore.getRole() == DataStoreRole.ImageCache) {
                 objectInStoreMgr.update(this, event);
                 return;
             }
             if (this.dataStore.getRole() == DataStoreRole.Image) {
                 objectInStoreMgr.update(this, event);
-                if (this.volumeVO.getState() == Volume.State.Migrating || this.volumeVO.getState() == Volume.State.Copying || this.volumeVO.getState() == Volume.State.Uploaded) {
-                	return;
+                if (this.volumeVO.getState() == Volume.State.Migrating
+                        || this.volumeVO.getState() == Volume.State.Copying
+                        || this.volumeVO.getState() == Volume.State.Uploaded) {
+                    return;
                 }
                 if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
                     volEvent = Volume.Event.UploadRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.MigrationRequested) {
-                	volEvent = Volume.Event.CopyRequested;
+                    volEvent = Volume.Event.CopyRequested;
                 }
             } else {
-                if (event == ObjectInDataStoreStateMachine.Event.CreateRequested ||
-                        event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
+                if (event == ObjectInDataStoreStateMachine.Event.CreateRequested
+                        || event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
                     volEvent = Volume.Event.CreateRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.CopyingRequested) {
                     volEvent = Volume.Event.CopyRequested;
@@ -221,16 +220,16 @@ public class VolumeObject implements VolumeInfo {
             } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
                 volEvent = Volume.Event.OperationFailed;
             } else if (event == ObjectInDataStoreStateMachine.Event.ResizeRequested) {
-            	volEvent = Volume.Event.ResizeRequested;
+                volEvent = Volume.Event.ResizeRequested;
             }
             this.stateTransit(volEvent);
         } catch (Exception e) {
             s_logger.debug("Failed to update state", e);
             throw new CloudRuntimeException("Failed to update state:" + e.toString());
-        } finally{
+        } finally {
             // in case of OperationFailed, expunge the entry
-            if ( event == ObjectInDataStoreStateMachine.Event.OperationFailed && (this.volumeVO.getState() != Volume.State.Copying 
-            		&& this.volumeVO.getState() != Volume.State.Uploaded)){
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed
+                    && (this.volumeVO.getState() != Volume.State.Copying && this.volumeVO.getState() != Volume.State.Uploaded)) {
                 objectInStoreMgr.delete(this);
             }
         }
@@ -359,22 +358,22 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public Object getpayload() {
-       return this.payload;
+        return this.payload;
     }
 
-    public VolumeVO getVolume(){
+    public VolumeVO getVolume() {
         return this.volumeVO;
     }
 
-	@Override
-	public HypervisorType getHypervisorType() {
-		return this.volumeDao.getHypervisorType(this.volumeVO.getId());
-	}
+    @Override
+    public HypervisorType getHypervisorType() {
+        return this.volumeDao.getHypervisorType(this.volumeVO.getId());
+    }
 
-	@Override
-	public Long getLastPoolId() {
-		return this.volumeVO.getLastPoolId();
-	}
+    @Override
+    public Long getLastPoolId() {
+        return this.volumeVO.getLastPoolId();
+    }
 
     @Override
     public DataTO getTO() {
@@ -410,13 +409,15 @@ public class VolumeObject implements VolumeInfo {
                 // image store or imageCache store
                 if (answer instanceof DownloadAnswer) {
                     DownloadAnswer dwdAnswer = (DownloadAnswer) answer;
-                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
+                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(),
+                            this.getId());
                     volStore.setInstallPath(dwdAnswer.getInstallPath());
                     volStore.setChecksum(dwdAnswer.getCheckSum());
                     this.volumeStoreDao.update(volStore.getId(), volStore);
-                } else if (answer instanceof CopyCmdAnswer ){
+                } else if (answer instanceof CopyCmdAnswer) {
                     CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
-                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
+                    VolumeDataStoreVO volStore = this.volumeStoreDao.findByStoreVolume(this.dataStore.getId(),
+                            this.getId());
                     VolumeObjectTO newVol = (VolumeObjectTO) cpyAnswer.getNewData();
                     volStore.setInstallPath(newVol.getPath());
                     volStore.setSize(newVol.getSize());
@@ -433,8 +434,8 @@ public class VolumeObject implements VolumeInfo {
 
     }
 
-	@Override
-	public ImageFormat getFormat() {
-		return this.volumeVO.getFormat();
-	}
+    @Override
+    public ImageFormat getFormat() {
+        return this.volumeVO.getFormat();
+    }
 }

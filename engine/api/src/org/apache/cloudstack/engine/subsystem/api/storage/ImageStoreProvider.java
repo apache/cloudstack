@@ -20,7 +20,6 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.storage.ScopeType;
 
-
 public interface ImageStoreProvider extends DataStoreProvider {
 
     public boolean isScopeSupported(ScopeType scope);

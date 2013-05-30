@@ -44,7 +44,8 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
     @Inject
     PrimaryDataStoreDao dataStoreDao;
     Map<String, PrimaryDataStoreDriver> driverMaps;
-    @Inject StorageManager storageMgr;
+    @Inject
+    StorageManager storageMgr;
 
     @PostConstruct
     public void config() {
@@ -56,7 +57,8 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
         StoragePoolVO dataStoreVO = dataStoreDao.findById(dataStoreId);
         String providerName = dataStoreVO.getStorageProviderName();
         DataStoreProvider provider = providerManager.getDataStoreProvider(providerName);
-        PrimaryDataStoreImpl dataStore = PrimaryDataStoreImpl.createDataStore(dataStoreVO, driverMaps.get(provider.getName()), provider);
+        PrimaryDataStoreImpl dataStore = PrimaryDataStoreImpl.createDataStore(dataStoreVO,
+                driverMaps.get(provider.getName()), provider);
         return dataStore;
     }
 

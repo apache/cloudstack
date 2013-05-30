@@ -23,17 +23,14 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.driver.SamplePrimaryDataStoreDriverImpl;
 import org.apache.cloudstack.storage.datastore.lifecycle.SamplePrimaryDataStoreLifeCycleImpl;
 
 import com.cloud.utils.component.ComponentContext;
-
 
 public class SamplePrimaryDatastoreProviderImpl implements PrimaryDataStoreProvider {
     private final String providerName = "sample primary data store provider";
@@ -45,6 +42,7 @@ public class SamplePrimaryDatastoreProviderImpl implements PrimaryDataStoreProvi
     protected DataStoreLifeCycle lifecycle;
     protected String uuid;
     protected long id;
+
     @Override
     public String getName() {
         return providerName;
@@ -75,7 +73,7 @@ public class SamplePrimaryDatastoreProviderImpl implements PrimaryDataStoreProvi
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
         types.add(DataStoreProviderType.PRIMARY);
         return types;
     }

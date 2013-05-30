@@ -82,22 +82,21 @@ public class SwiftImageStoreProviderImpl implements ImageStoreProvider {
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
         types.add(DataStoreProviderType.IMAGE);
         return types;
     }
 
     @Override
     public boolean isScopeSupported(ScopeType scope) {
-        if ( scope == ScopeType.REGION )
+        if (scope == ScopeType.REGION)
             return true;
         return false;
     }
 
     @Override
     public boolean needDownloadSysTemplate() {
-         return true;
+        return true;
     }
-
 
 }

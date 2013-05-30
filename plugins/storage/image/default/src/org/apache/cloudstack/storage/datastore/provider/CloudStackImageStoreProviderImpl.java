@@ -82,7 +82,7 @@ public class CloudStackImageStoreProviderImpl implements ImageStoreProvider {
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
         types.add(DataStoreProviderType.IMAGE);
         types.add(DataStoreProviderType.ImageCache);
         return types;
@@ -90,15 +90,14 @@ public class CloudStackImageStoreProviderImpl implements ImageStoreProvider {
 
     @Override
     public boolean isScopeSupported(ScopeType scope) {
-        if ( scope == ScopeType.ZONE)
+        if (scope == ScopeType.ZONE)
             return true;
         return false;
     }
 
     @Override
     public boolean needDownloadSysTemplate() {
-         return false;
+        return false;
     }
-
 
 }

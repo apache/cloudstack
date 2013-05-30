@@ -20,19 +20,18 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.storage.ScopeType;
 
-
 public class ClusterScope extends AbstractScope {
     private ScopeType type = ScopeType.CLUSTER;
     private Long clusterId;
     private Long podId;
     private Long zoneId;
-    
+
     public ClusterScope(Long clusterId, Long podId, Long zoneId) {
         this.clusterId = clusterId;
         this.podId = podId;
         this.zoneId = zoneId;
     }
-    
+
     @Override
     public ScopeType getScopeType() {
         return this.type;
@@ -42,11 +41,11 @@ public class ClusterScope extends AbstractScope {
     public Long getScopeId() {
         return this.clusterId;
     }
-    
+
     public Long getPodId() {
         return this.podId;
     }
-    
+
     public Long getZoneId() {
         return this.zoneId;
     }

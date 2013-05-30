@@ -18,12 +18,12 @@
  */
 package org.apache.cloudstack.storage.command;
 
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataTO;
 
-public class CreateObjectAnswer extends Answer {
+public final class CreateObjectAnswer extends Answer {
     private DataTO data;
+
     protected CreateObjectAnswer() {
         super();
     }
@@ -32,12 +32,12 @@ public class CreateObjectAnswer extends Answer {
         super();
         this.data = data;
     }
-    
+
     public DataTO getData() {
         return this.data;
     }
-    
+
     public CreateObjectAnswer(String errMsg) {
         super(null, false, errMsg);
-    } 
+    }
 }

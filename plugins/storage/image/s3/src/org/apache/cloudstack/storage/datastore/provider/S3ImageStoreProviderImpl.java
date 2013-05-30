@@ -18,12 +18,9 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
-
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
@@ -83,22 +80,21 @@ public class S3ImageStoreProviderImpl implements ImageStoreProvider {
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
         types.add(DataStoreProviderType.IMAGE);
         return types;
     }
 
     @Override
     public boolean isScopeSupported(ScopeType scope) {
-        if ( scope == ScopeType.REGION )
+        if (scope == ScopeType.REGION)
             return true;
         return false;
     }
 
     @Override
     public boolean needDownloadSysTemplate() {
-         return true;
+        return true;
     }
-
 
 }

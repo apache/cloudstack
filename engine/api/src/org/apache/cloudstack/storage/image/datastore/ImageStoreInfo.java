@@ -22,5 +22,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
 public interface ImageStoreInfo extends DataStore {
     public long getImageStoreId();
+
     public String getType();
 }

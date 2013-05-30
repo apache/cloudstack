@@ -20,10 +20,12 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.storage.DataStoreRole;
 
-
 public interface TemplateDataFactory {
     TemplateInfo getTemplate(long templateId, DataStore store);
+
     TemplateInfo getTemplate(DataObject obj, DataStore store);
+
     TemplateInfo getTemplate(long templateId, DataStoreRole storeRole);
+
     TemplateInfo getTemplate(long templateId, DataStoreRole storeRole, Long zoneId);
 }

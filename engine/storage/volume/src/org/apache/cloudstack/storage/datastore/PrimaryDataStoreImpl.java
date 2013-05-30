@@ -63,8 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.EncodingType;
 
 public class PrimaryDataStoreImpl implements PrimaryDataStore {
-    private static final Logger s_logger = Logger
-            .getLogger(PrimaryDataStoreImpl.class);
+    private static final Logger s_logger = Logger.getLogger(PrimaryDataStoreImpl.class);
     protected PrimaryDataStoreDriver driver;
     protected StoragePoolVO pdsv;
     @Inject
@@ -85,21 +84,19 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     @Inject
     private VolumeDao volumeDao;
 
-    public	 PrimaryDataStoreImpl() {
+    public PrimaryDataStoreImpl() {
 
     }
 
-    public void configure(StoragePoolVO pdsv,
-            PrimaryDataStoreDriver driver, DataStoreProvider provider) {
+    public void configure(StoragePoolVO pdsv, PrimaryDataStoreDriver driver, DataStoreProvider provider) {
         this.pdsv = pdsv;
         this.driver = driver;
         this.provider = provider;
     }
 
-    public static PrimaryDataStoreImpl createDataStore(
-            StoragePoolVO pdsv, PrimaryDataStoreDriver driver,
+    public static PrimaryDataStoreImpl createDataStore(StoragePoolVO pdsv, PrimaryDataStoreDriver driver,
             DataStoreProvider provider) {
-        PrimaryDataStoreImpl dataStore = (PrimaryDataStoreImpl)ComponentContext.inject(PrimaryDataStoreImpl.class);
+        PrimaryDataStoreImpl dataStore = ComponentContext.inject(PrimaryDataStoreImpl.class);
         dataStore.configure(pdsv, driver, provider);
         return dataStore;
     }
@@ -156,8 +153,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     public Scope getScope() {
         StoragePoolVO vo = dataStoreDao.findById(this.pdsv.getId());
         if (vo.getScope() == ScopeType.CLUSTER) {
-            return new ClusterScope(vo.getClusterId(), vo.getPodId(),
-                    vo.getDataCenterId());
+            return new ClusterScope(vo.getClusterId(), vo.getPodId(), vo.getDataCenterId());
         } else if (vo.getScope() == ScopeType.ZONE) {
             return new ZoneScope(vo.getDataCenterId());
         } else if (vo.getScope() == ScopeType.HOST) {
@@ -187,7 +183,6 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public String getUuid() {
@@ -233,13 +228,14 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public DataObject create(DataObject obj) {
-        //create template on primary storage
+        // create template on primary storage
         if (obj.getType() == DataObjectType.TEMPLATE) {
-            VMTemplateStoragePoolVO templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(), obj.getId());
+            VMTemplateStoragePoolVO templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(),
+                    obj.getId());
             if (templateStoragePoolRef == null) {
                 try {
-                templateStoragePoolRef = new VMTemplateStoragePoolVO(this.getId(), obj.getId());
-                templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
+                    templateStoragePoolRef = new VMTemplateStoragePoolVO(this.getId(), obj.getId());
+                    templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
                 } catch (Throwable t) {
                     templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(), obj.getId());
                     if (templateStoragePoolRef == null) {
@@ -272,22 +268,22 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public StoragePoolType getPoolType() {
-       return this.pdsv.getPoolType();
+        return this.pdsv.getPoolType();
     }
 
     @Override
     public Date getCreated() {
-       return this.pdsv.getCreated();
+        return this.pdsv.getCreated();
     }
 
     @Override
     public Date getUpdateTime() {
-       return this.pdsv.getUpdateTime();
+        return this.pdsv.getUpdateTime();
     }
 
     @Override
     public long getCapacityBytes() {
-       return this.pdsv.getCapacityBytes();
+        return this.pdsv.getCapacityBytes();
     }
 
     @Override
@@ -312,7 +308,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public boolean isShared() {
-       return this.pdsv.getScope() == ScopeType.HOST ? false : true;
+        return this.pdsv.getScope() == ScopeType.HOST ? false : true;
     }
 
     @Override
@@ -347,7 +343,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public DataStoreTO getTO() {
-        DataStoreTO to =  getDriver().getStoreTO(this);
+        DataStoreTO to = getDriver().getStoreTO(this);
         if (to == null) {
             PrimaryDataStoreTO primaryTO = new PrimaryDataStoreTO(this);
             return primaryTO;

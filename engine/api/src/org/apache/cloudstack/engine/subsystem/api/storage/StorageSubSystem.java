@@ -22,8 +22,10 @@ import com.cloud.org.Grouping;
 
 public interface StorageSubSystem {
     String getType();
+
     Class<? extends Grouping> getScope();
 
     URI grantAccess(String vol, String reservationId);
+
     URI RemoveAccess(String vol, String reservationId);
 }

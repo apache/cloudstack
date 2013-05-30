@@ -42,17 +42,13 @@ public class DataMotionServiceImpl implements DataMotionService {
     List<DataMotionStrategy> strategies;
 
     @Override
-    public void copyAsync(DataObject srcData, DataObject destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
 
         if (srcData.getDataStore().getDriver().canCopy(srcData, destData)) {
-            srcData.getDataStore().getDriver()
-                    .copyAsync(srcData, destData, callback);
+            srcData.getDataStore().getDriver().copyAsync(srcData, destData, callback);
             return;
-        } else if (destData.getDataStore().getDriver()
-                .canCopy(srcData, destData)) {
-            destData.getDataStore().getDriver()
-                    .copyAsync(srcData, destData, callback);
+        } else if (destData.getDataStore().getDriver().canCopy(srcData, destData)) {
+            destData.getDataStore().getDriver().copyAsync(srcData, destData, callback);
             return;
         }
 
@@ -66,8 +62,8 @@ public class DataMotionServiceImpl implements DataMotionService {
     }
 
     @Override
-    public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo,
-            Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
+            AsyncCompletionCallback<CopyCommandResult> callback) {
         for (DataMotionStrategy strategy : strategies) {
             if (strategy.canHandle(volumeMap, srcHost, destHost)) {
                 strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);

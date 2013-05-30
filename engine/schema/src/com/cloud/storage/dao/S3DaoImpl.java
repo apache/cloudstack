@@ -42,7 +42,8 @@ public class S3DaoImpl extends GenericDaoBase<S3VO, Long> implements S3Dao {
 
         }
 
-        // NOTE: Excluded listAll / shuffle operation implemented in SwiftDaoImpl ...
+        // NOTE: Excluded listAll / shuffle operation implemented in
+        // SwiftDaoImpl ...
 
         return null;
 

@@ -22,7 +22,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.persistence.EntityExistsException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DiskOfferingVO;
@@ -35,10 +34,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value={DiskOfferingDao.class})
+@Local(value = { DiskOfferingDao.class })
 public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> implements DiskOfferingDao {
-    private static final Logger s_logger = Logger.getLogger(DiskOfferingDaoImpl.class);
-
     private final SearchBuilder<DiskOfferingVO> DomainIdSearch;
     private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
     private final SearchBuilder<DiskOfferingVO> PublicDiskOfferingSearch;
@@ -46,25 +43,27 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     private final Attribute _typeAttr;
 
     protected DiskOfferingDaoImpl() {
-        DomainIdSearch  = createSearchBuilder();
+        DomainIdSearch = createSearchBuilder();
         DomainIdSearch.and("domainId", DomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         DomainIdSearch.and("removed", DomainIdSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         DomainIdSearch.done();
-        
-        PrivateDiskOfferingSearch  = createSearchBuilder();
-        PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(), SearchCriteria.Op.EQ);
+
+        PrivateDiskOfferingSearch = createSearchBuilder();
+        PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(),
+                SearchCriteria.Op.EQ);
         PrivateDiskOfferingSearch.done();
-        
+
         PublicDiskOfferingSearch = createSearchBuilder();
-        PublicDiskOfferingSearch.and("domainId", PublicDiskOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
+        PublicDiskOfferingSearch.and("domainId", PublicDiskOfferingSearch.entity().getDomainId(),
+                SearchCriteria.Op.NULL);
         PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
         PublicDiskOfferingSearch.and("removed", PublicDiskOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         PublicDiskOfferingSearch.done();
-        
+
         UniqueNameSearch = createSearchBuilder();
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
-        
+
         _typeAttr = _allAttributes.get("type");
     }
 
@@ -72,29 +71,31 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     public List<DiskOfferingVO> listByDomainId(long domainId) {
         SearchCriteria<DiskOfferingVO> sc = DomainIdSearch.create();
         sc.setParameters("domainId", domainId);
-        // FIXME:  this should not be exact match, but instead should find all available disk offerings from parent domains
+        // FIXME: this should not be exact match, but instead should find all
+        // available disk offerings from parent domains
         return listBy(sc);
     }
-    
+
     @Override
     public List<DiskOfferingVO> findPrivateDiskOffering() {
         SearchCriteria<DiskOfferingVO> sc = PrivateDiskOfferingSearch.create();
         sc.setParameters("diskSize", 0);
         return listBy(sc);
     }
-    
+
     @Override
-    public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
+    public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter,
+            final Boolean lock, final boolean cache) {
         sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
         return super.searchIncludingRemoved(sc, filter, lock, cache);
     }
-    
+
     @Override
     public <K> List<K> customSearchIncludingRemoved(SearchCriteria<K> sc, final Filter filter) {
         sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
         return super.customSearchIncludingRemoved(sc, filter);
     }
-    
+
     @Override
     protected List<DiskOfferingVO> executeList(final String sql, final Object... params) {
         StringBuilder builder = new StringBuilder(sql);
@@ -104,17 +105,17 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         } else {
             builder.insert(index + 6, "type=? ");
         }
-        
+
         return super.executeList(sql, Type.Disk, params);
     }
-    
+
     @Override
-    public List<DiskOfferingVO> findPublicDiskOfferings(){
-    	SearchCriteria<DiskOfferingVO> sc = PublicDiskOfferingSearch.create();
-    	sc.setParameters("system", false);
-        return listBy(sc);    	
+    public List<DiskOfferingVO> findPublicDiskOfferings() {
+        SearchCriteria<DiskOfferingVO> sc = PublicDiskOfferingSearch.create();
+        sc.setParameters("system", false);
+        return listBy(sc);
     }
-    
+
     @Override
     public DiskOfferingVO findByUniqueName(String uniqueName) {
         SearchCriteria<DiskOfferingVO> sc = UniqueNameSearch.create();
@@ -123,10 +124,10 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         if (vos.size() == 0) {
             return null;
         }
-        
+
         return vos.get(0);
     }
-    
+
     @Override
     public DiskOfferingVO persistDeafultDiskOffering(DiskOfferingVO offering) {
         assert offering.getUniqueName() != null : "unique name shouldn't be null for the disk offering";
@@ -141,7 +142,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
             return findByUniqueName(offering.getUniqueName());
         }
     }
-    
+
     @Override
     public boolean remove(Long id) {
         DiskOfferingVO diskOffering = createForUpdate();

@@ -44,7 +44,6 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return null;
     }
 
-
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
         // TODO Auto-generated method stub
@@ -93,19 +92,16 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     }
 
-	@Override
-	public void resize(DataObject data,
-			AsyncCompletionCallback<CreateCmdResult> callback) {
-		// TODO Auto-generated method stub
+    @Override
+    public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void takeSnapshot(SnapshotInfo snapshot,
-			AsyncCompletionCallback<CreateCmdResult> callback) {
-		// TODO Auto-generated method stub
+    @Override
+    public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
+        // TODO Auto-generated method stub
 
-	}
-
+    }
 
 }

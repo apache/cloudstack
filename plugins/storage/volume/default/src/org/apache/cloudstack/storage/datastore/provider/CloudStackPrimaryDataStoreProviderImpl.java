@@ -32,8 +32,7 @@ import org.apache.cloudstack.storage.datastore.lifecycle.CloudStackPrimaryDataSt
 
 import com.cloud.utils.component.ComponentContext;
 
-public class CloudStackPrimaryDataStoreProviderImpl implements
-        PrimaryDataStoreProvider {
+public class CloudStackPrimaryDataStoreProviderImpl implements PrimaryDataStoreProvider {
 
     private final String providerName = DataStoreProvider.DEFAULT_PRIMARY;
     protected PrimaryDataStoreDriver driver;
@@ -74,7 +73,7 @@ public class CloudStackPrimaryDataStoreProviderImpl implements
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
         types.add(DataStoreProviderType.PRIMARY);
         return types;
     }

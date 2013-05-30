@@ -41,67 +41,67 @@ import com.cloud.utils.fsm.StateObject;
 
 /**
  * Join table for image_data_store and templates
- *
+ * 
  */
 @Entity
-@Table(name="template_store_ref")
+@Table(name = "template_store_ref")
 public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
-	@Column(name="store_id")
-	private Long dataStoreId; // this can be null for baremetal templates
+    @Column(name = "store_id")
+    private Long dataStoreId; // this can be null for baremetal templates
 
-	@Column(name="template_id")
-	private long templateId;
+    @Column(name = "template_id")
+    private long templateId;
 
-    @Column(name="store_role")
+    @Column(name = "store_role")
     @Enumerated(EnumType.STRING)
     private DataStoreRole dataStoreRole;
 
-	@Column(name=GenericDaoBase.CREATED_COLUMN)
-	private Date created = null;
+    @Column(name = GenericDaoBase.CREATED_COLUMN)
+    private Date created = null;
 
-	@Column(name="last_updated")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date lastUpdated = null;
+    @Column(name = "last_updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastUpdated = null;
 
-	@Column (name="download_pct")
-	private int downloadPercent;
+    @Column(name = "download_pct")
+    private int downloadPercent;
 
-	@Column (name="size")
-	private long size;
+    @Column(name = "size")
+    private long size;
 
-	@Column (name="physical_size")
-	private long physicalSize;
+    @Column(name = "physical_size")
+    private long physicalSize;
 
-	@Column (name="download_state")
-	@Enumerated(EnumType.STRING)
-	private Status downloadState;
+    @Column(name = "download_state")
+    @Enumerated(EnumType.STRING)
+    private Status downloadState;
 
-	@Column (name="local_path")
-	private String localDownloadPath;
+    @Column(name = "local_path")
+    private String localDownloadPath;
 
-	@Column (name="error_str")
-	private String errorString;
+    @Column(name = "error_str")
+    private String errorString;
 
-	@Column (name="job_id")
-	private String jobId;
+    @Column(name = "job_id")
+    private String jobId;
 
-	@Column (name="install_path")
+    @Column(name = "install_path")
     private String installPath;
 
-	@Column (name="url")
-	private String downloadUrl;
+    @Column(name = "url")
+    private String downloadUrl;
 
-	@Column(name="is_copy")
-	private boolean isCopy = false;
+    @Column(name = "is_copy")
+    private boolean isCopy = false;
 
-    @Column(name="destroyed")
+    @Column(name = "destroyed")
     boolean destroyed = false;
 
-    @Column(name="update_count", updatable = true, nullable=false)
+    @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
 
     @Column(name = "updated")
@@ -112,31 +112,27 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
+    public TemplateDataStoreVO(Long hostId, long templateId) {
+        super();
+        this.dataStoreId = hostId;
+        this.templateId = templateId;
+        this.state = ObjectInDataStoreStateMachine.State.Allocated;
+    }
 
-
-
-	public TemplateDataStoreVO(Long hostId, long templateId) {
-		super();
-		this.dataStoreId = hostId;
-		this.templateId = templateId;
-		this.state = ObjectInDataStoreStateMachine.State.Allocated;
-	}
-
-	public TemplateDataStoreVO(Long hostId, long templateId, Date lastUpdated,
-			int downloadPercent, Status downloadState,
-			String localDownloadPath, String errorString, String jobId,
-			String installPath, String downloadUrl) {
-		super();
-		this.dataStoreId = hostId;
-		this.templateId = templateId;
-		this.lastUpdated = lastUpdated;
-		this.downloadPercent = downloadPercent;
-		this.downloadState = downloadState;
-		this.localDownloadPath = localDownloadPath;
-		this.errorString = errorString;
-		this.jobId = jobId;
-		this.installPath = installPath;
-		this.setDownloadUrl(downloadUrl);
+    public TemplateDataStoreVO(Long hostId, long templateId, Date lastUpdated, int downloadPercent,
+            Status downloadState, String localDownloadPath, String errorString, String jobId, String installPath,
+            String downloadUrl) {
+        super();
+        this.dataStoreId = hostId;
+        this.templateId = templateId;
+        this.lastUpdated = lastUpdated;
+        this.downloadPercent = downloadPercent;
+        this.downloadState = downloadState;
+        this.localDownloadPath = localDownloadPath;
+        this.errorString = errorString;
+        this.jobId = jobId;
+        this.installPath = installPath;
+        this.setDownloadUrl(downloadUrl);
         switch (downloadState) {
         case DOWNLOADED:
             this.state = ObjectInDataStoreStateMachine.State.Ready;
@@ -157,17 +153,16 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
             this.state = ObjectInDataStoreStateMachine.State.Allocated;
             break;
         }
-	}
+    }
 
-	public TemplateDataStoreVO() {
+    public TemplateDataStoreVO() {
 
-	}
+    }
 
     @Override
     public String getInstallPath() {
         return installPath;
     }
-
 
     @Override
     public long getDataStoreId() {
@@ -224,44 +219,44 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public void setLocalDownloadPath(String localPath) {
-		this.localDownloadPath = localPath;
-	}
+        this.localDownloadPath = localPath;
+    }
 
     public String getLocalDownloadPath() {
-		return localDownloadPath;
-	}
+        return localDownloadPath;
+    }
 
     public void setErrorString(String errorString) {
-		this.errorString = errorString;
-	}
+        this.errorString = errorString;
+    }
 
     public String getErrorString() {
-		return errorString;
-	}
+        return errorString;
+    }
 
     public void setJobId(String jobId) {
-		this.jobId = jobId;
-	}
+        this.jobId = jobId;
+    }
 
     public String getJobId() {
-		return jobId;
-	}
+        return jobId;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof TemplateDataStoreVO) {
-			TemplateDataStoreVO other = (TemplateDataStoreVO)obj;
-			return (this.templateId==other.getTemplateId() && this.dataStoreId==other.getDataStoreId());
-		}
-		return false;
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TemplateDataStoreVO) {
+            TemplateDataStoreVO other = (TemplateDataStoreVO) obj;
+            return (this.templateId == other.getTemplateId() && this.dataStoreId == other.getDataStoreId());
+        }
+        return false;
+    }
 
-	@Override
-	public int hashCode() {
-		Long tid = new Long(templateId);
-		Long hid = new Long(dataStoreId);
-		return tid.hashCode()+hid.hashCode();
-	}
+    @Override
+    public int hashCode() {
+        Long tid = new Long(templateId);
+        Long hid = new Long(dataStoreId);
+        return tid.hashCode() + hid.hashCode();
+    }
 
     public void setSize(Long size) {
         this.size = size;
@@ -270,7 +265,6 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public long getSize() {
         return size;
     }
-
 
     public void setPhysicalSize(long physicalSize) {
         this.physicalSize = physicalSize;
@@ -281,37 +275,38 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public void setDestroyed(boolean destroyed) {
-    	this.destroyed = destroyed;
+        this.destroyed = destroyed;
     }
 
     public boolean getDestroyed() {
-    	return destroyed;
+        return destroyed;
     }
 
-	public void setDownloadUrl(String downloadUrl) {
-		this.downloadUrl = downloadUrl;
-	}
+    public void setDownloadUrl(String downloadUrl) {
+        this.downloadUrl = downloadUrl;
+    }
 
-	public String getDownloadUrl() {
-		return downloadUrl;
-	}
+    public String getDownloadUrl() {
+        return downloadUrl;
+    }
 
-	public void setCopy(boolean isCopy) {
-		this.isCopy = isCopy;
-	}
+    public void setCopy(boolean isCopy) {
+        this.isCopy = isCopy;
+    }
 
-	public boolean isCopy() {
-		return isCopy;
-	}
+    public boolean isCopy() {
+        return isCopy;
+    }
 
     public long getTemplateSize() {
-	    return -1;
-	}
+        return -1;
+    }
 
-	@Override
+    @Override
     public String toString() {
-	    return new StringBuilder("TmplHost[").append(id).append("-").append(templateId).append("-").append(dataStoreId).append(installPath).append("]").toString();
-	}
+        return new StringBuilder("TmplHost[").append(id).append("-").append(templateId).append("-").append(dataStoreId)
+                .append(installPath).append("]").toString();
+    }
 
     @Override
     public ObjectInDataStoreStateMachine.State getState() {
@@ -319,11 +314,9 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return this.state;
     }
 
-
     public void setState(ObjectInDataStoreStateMachine.State state) {
         this.state = state;
     }
-
 
     public long getUpdatedCount() {
         return this.updatedCount;
@@ -341,7 +334,6 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return updated;
     }
 
-
     @Override
     public long getObjectId() {
         return this.getTemplateId();
@@ -349,7 +341,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Override
     public State getObjectInStoreState() {
-       return this.state;
+        return this.state;
     }
 
     public DataStoreRole getDataStoreRole() {
@@ -359,7 +351,5 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public void setDataStoreRole(DataStoreRole dataStoreRole) {
         this.dataStoreRole = dataStoreRole;
     }
-
-
 
 }

@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.storage.image.db;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -24,14 +25,11 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.VolumeHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -49,8 +47,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	super.configure(name, params);
-
+        super.configure(name, params);
 
         storeSearch = createSearchBuilder();
         storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
@@ -75,13 +72,12 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         updateStateSearch.done();
         return true;
     }
+
     @Override
-    public boolean updateState(State currentState, Event event,
-            State nextState, DataObjectInStore vo, Object data) {
-        VolumeDataStoreVO dataObj = (VolumeDataStoreVO)vo;
+    public boolean updateState(State currentState, Event event, State nextState, DataObjectInStore vo, Object data) {
+        VolumeDataStoreVO dataObj = (VolumeDataStoreVO) vo;
         Long oldUpdated = dataObj.getUpdatedCount();
         Date oldUpdatedTime = dataObj.getUpdated();
-
 
         SearchCriteria<VolumeDataStoreVO> sc = updateStateSearch.create();
         sc.setParameters("id", dataObj.getId());
@@ -93,7 +89,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         UpdateBuilder builder = getUpdateBuilder(dataObj);
         builder.set(dataObj, "state", nextState);
         builder.set(dataObj, "updated", new Date());
-        if (nextState == State.Destroyed){
+        if (nextState == State.Destroyed) {
             builder.set(dataObj, "destroyed", true);
         }
 
@@ -102,19 +98,22 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
             VolumeDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
-                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
+                        .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
                         .append(dbVol.getUpdated());
-                str.append(": New Data={id=").append(dataObj.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(dataObj.getUpdatedCount())
+                str.append(": New Data={id=").append(dataObj.getId()).append("; state=").append(nextState)
+                        .append("; event=").append(event).append("; updatecount=").append(dataObj.getUpdatedCount())
                         .append("; updatedTime=").append(dataObj.getUpdated());
-                str.append(": stale Data={id=").append(dataObj.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                str.append(": stale Data={id=").append(dataObj.getId()).append("; state=").append(currentState)
+                        .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
                         .append("; updatedTime=").append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId()
+                        + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;
     }
-
 
     @Override
     public List<VolumeDataStoreVO> listByStoreId(long id) {
@@ -133,7 +132,6 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         remove(sc);
         txn.commit();
     }
-
 
     @Override
     public VolumeDataStoreVO findByVolume(long volumeId) {

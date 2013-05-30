@@ -41,66 +41,66 @@ import com.cloud.utils.fsm.StateObject;
 
 /**
  * Join table for image_data_store and volumes
- *
+ * 
  */
 @Entity
-@Table(name="volume_store_ref")
+@Table(name = "volume_store_ref")
 public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
-	@Column(name="store_id")
-	private long dataStoreId;
+    @Column(name = "store_id")
+    private long dataStoreId;
 
-	@Column(name="volume_id")
-	private long volumeId;
+    @Column(name = "volume_id")
+    private long volumeId;
 
-	@Column(name="zone_id")
-	private long zoneId;
+    @Column(name = "zone_id")
+    private long zoneId;
 
-	@Column(name=GenericDaoBase.CREATED_COLUMN)
-	private Date created = null;
+    @Column(name = GenericDaoBase.CREATED_COLUMN)
+    private Date created = null;
 
-	@Column(name="last_updated")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date lastUpdated = null;
+    @Column(name = "last_updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastUpdated = null;
 
-	@Column (name="download_pct")
-	private int downloadPercent;
+    @Column(name = "download_pct")
+    private int downloadPercent;
 
-	@Column (name="size")
-	private long size;
+    @Column(name = "size")
+    private long size;
 
-	@Column (name="physical_size")
-	private long physicalSize;
+    @Column(name = "physical_size")
+    private long physicalSize;
 
-	@Column (name="download_state")
-	@Enumerated(EnumType.STRING)
-	private Status downloadState;
+    @Column(name = "download_state")
+    @Enumerated(EnumType.STRING)
+    private Status downloadState;
 
-    @Column(name="checksum")
+    @Column(name = "checksum")
     private String checksum;
 
-	@Column (name="local_path")
-	private String localDownloadPath;
+    @Column(name = "local_path")
+    private String localDownloadPath;
 
-	@Column (name="error_str")
-	private String errorString;
+    @Column(name = "error_str")
+    private String errorString;
 
-	@Column (name="job_id")
-	private String jobId;
+    @Column(name = "job_id")
+    private String jobId;
 
-	@Column (name="install_path")
+    @Column(name = "install_path")
     private String installPath;
 
-	@Column (name="url")
-	private String downloadUrl;
+    @Column(name = "url")
+    private String downloadUrl;
 
-    @Column(name="destroyed")
+    @Column(name = "destroyed")
     boolean destroyed = false;
 
-    @Column(name="update_count", updatable = true, nullable=false)
+    @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
 
     @Column(name = "updated")
@@ -112,164 +112,144 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     ObjectInDataStoreStateMachine.State state;
 
     public String getInstallPath() {
-		return installPath;
-	}
+        return installPath;
+    }
 
     @Override
-	public long getDataStoreId() {
-		return dataStoreId;
-	}
+    public long getDataStoreId() {
+        return dataStoreId;
+    }
 
-	public void setDataStoreId(long storeId) {
-		this.dataStoreId = storeId;
-	}
-
+    public void setDataStoreId(long storeId) {
+        this.dataStoreId = storeId;
+    }
 
     public long getVolumeId() {
-		return volumeId;
-	}
-
+        return volumeId;
+    }
 
     public void setVolumeId(long volumeId) {
-		this.volumeId = volumeId;
-	}
-
+        this.volumeId = volumeId;
+    }
 
     public long getZoneId() {
-		return zoneId;
-	}
+        return zoneId;
+    }
 
-	public void setZoneId(long zoneId) {
-		this.zoneId = zoneId;
-	}
+    public void setZoneId(long zoneId) {
+        this.zoneId = zoneId;
+    }
 
-	public int getDownloadPercent() {
-		return downloadPercent;
-	}
-
+    public int getDownloadPercent() {
+        return downloadPercent;
+    }
 
     public void setDownloadPercent(int downloadPercent) {
-		this.downloadPercent = downloadPercent;
-	}
-
+        this.downloadPercent = downloadPercent;
+    }
 
     public void setDownloadState(Status downloadState) {
-		this.downloadState = downloadState;
-	}
-
+        this.downloadState = downloadState;
+    }
 
     public long getId() {
-		return id;
-	}
-
+        return id;
+    }
 
     public Date getCreated() {
-		return created;
-	}
-
+        return created;
+    }
 
     public Date getLastUpdated() {
-		return lastUpdated;
-	}
-
+        return lastUpdated;
+    }
 
     public void setLastUpdated(Date date) {
-	    lastUpdated = date;
-	}
-
+        lastUpdated = date;
+    }
 
     public void setInstallPath(String installPath) {
-	    this.installPath = installPath;
-	}
-
+        this.installPath = installPath;
+    }
 
     public Status getDownloadState() {
-		return downloadState;
-	}
+        return downloadState;
+    }
 
-	public String getChecksum() {
-		return checksum;
-	}
+    public String getChecksum() {
+        return checksum;
+    }
 
-	public void setChecksum(String checksum) {
-		this.checksum = checksum;
-	}
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
+    }
 
-	public VolumeDataStoreVO(long hostId, long volumeId) {
-		super();
-		this.dataStoreId = hostId;
-		this.volumeId = volumeId;
-		this.state = ObjectInDataStoreStateMachine.State.Allocated;
-	}
+    public VolumeDataStoreVO(long hostId, long volumeId) {
+        super();
+        this.dataStoreId = hostId;
+        this.volumeId = volumeId;
+        this.state = ObjectInDataStoreStateMachine.State.Allocated;
+    }
 
-	public VolumeDataStoreVO(long hostId, long volumeId, Date lastUpdated,
-			int downloadPercent, Status downloadState,
-			String localDownloadPath, String errorString, String jobId,
-			String installPath, String downloadUrl, String checksum) {
-		//super();
-		this.dataStoreId = hostId;
-		this.volumeId = volumeId;
-		//this.zoneId = zoneId;
-		this.lastUpdated = lastUpdated;
-		this.downloadPercent = downloadPercent;
-		this.downloadState = downloadState;
-		this.localDownloadPath = localDownloadPath;
-		this.errorString = errorString;
-		this.jobId = jobId;
-		this.installPath = installPath;
-		this.setDownloadUrl(downloadUrl);
-		this.checksum = checksum;
-	}
+    public VolumeDataStoreVO(long hostId, long volumeId, Date lastUpdated, int downloadPercent, Status downloadState,
+            String localDownloadPath, String errorString, String jobId, String installPath, String downloadUrl,
+            String checksum) {
+        // super();
+        this.dataStoreId = hostId;
+        this.volumeId = volumeId;
+        // this.zoneId = zoneId;
+        this.lastUpdated = lastUpdated;
+        this.downloadPercent = downloadPercent;
+        this.downloadState = downloadState;
+        this.localDownloadPath = localDownloadPath;
+        this.errorString = errorString;
+        this.jobId = jobId;
+        this.installPath = installPath;
+        this.setDownloadUrl(downloadUrl);
+        this.checksum = checksum;
+    }
 
-	public VolumeDataStoreVO() {
+    public VolumeDataStoreVO() {
 
-	}
-
+    }
 
     public void setLocalDownloadPath(String localPath) {
-		this.localDownloadPath = localPath;
-	}
-
+        this.localDownloadPath = localPath;
+    }
 
     public String getLocalDownloadPath() {
-		return localDownloadPath;
-	}
-
+        return localDownloadPath;
+    }
 
     public void setErrorString(String errorString) {
-		this.errorString = errorString;
-	}
-
+        this.errorString = errorString;
+    }
 
     public String getErrorString() {
-		return errorString;
-	}
-
+        return errorString;
+    }
 
     public void setJobId(String jobId) {
-		this.jobId = jobId;
-	}
-
+        this.jobId = jobId;
+    }
 
     public String getJobId() {
-		return jobId;
-	}
+        return jobId;
+    }
 
+    public boolean equals(Object obj) {
+        if (obj instanceof VolumeDataStoreVO) {
+            VolumeDataStoreVO other = (VolumeDataStoreVO) obj;
+            return (this.volumeId == other.getVolumeId() && this.dataStoreId == other.getDataStoreId());
+        }
+        return false;
+    }
 
-	public boolean equals(Object obj) {
-		if (obj instanceof VolumeDataStoreVO) {
-			VolumeDataStoreVO other = (VolumeDataStoreVO)obj;
-			return (this.volumeId==other.getVolumeId() && this.dataStoreId==other.getDataStoreId());
-		}
-		return false;
-	}
-
-
-	public int hashCode() {
-		Long tid = new Long(volumeId);
-		Long hid = new Long(dataStoreId);
-		return tid.hashCode()+hid.hashCode();
-	}
+    public int hashCode() {
+        Long tid = new Long(volumeId);
+        Long hid = new Long(dataStoreId);
+        return tid.hashCode() + hid.hashCode();
+    }
 
     public void setSize(long size) {
         this.size = size;
@@ -278,7 +258,6 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     public long getSize() {
         return size;
     }
-
 
     public void setPhysicalSize(long physicalSize) {
         this.physicalSize = physicalSize;
@@ -289,29 +268,29 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     }
 
     public void setDestroyed(boolean destroyed) {
-    	this.destroyed = destroyed;
+        this.destroyed = destroyed;
     }
 
     public boolean getDestroyed() {
-    	return destroyed;
+        return destroyed;
     }
 
-	public void setDownloadUrl(String downloadUrl) {
-		this.downloadUrl = downloadUrl;
-	}
+    public void setDownloadUrl(String downloadUrl) {
+        this.downloadUrl = downloadUrl;
+    }
 
-	public String getDownloadUrl() {
-		return downloadUrl;
-	}
+    public String getDownloadUrl() {
+        return downloadUrl;
+    }
 
-	public long getVolumeSize() {
-	    return -1;
-	}
-
+    public long getVolumeSize() {
+        return -1;
+    }
 
     public String toString() {
-	    return new StringBuilder("VolumeHost[").append(id).append("-").append(volumeId).append("-").append(dataStoreId).append(installPath).append("]").toString();
-	}
+        return new StringBuilder("VolumeHost[").append(id).append("-").append(volumeId).append("-").append(dataStoreId)
+                .append(installPath).append("]").toString();
+    }
 
     public long getUpdatedCount() {
         return this.updatedCount;
@@ -335,7 +314,6 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
         return this.state;
     }
 
-
     public void setState(ObjectInDataStoreStateMachine.State state) {
         this.state = state;
     }
@@ -349,6 +327,5 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     public State getObjectInStoreState() {
         return this.state;
     }
-
 
 }

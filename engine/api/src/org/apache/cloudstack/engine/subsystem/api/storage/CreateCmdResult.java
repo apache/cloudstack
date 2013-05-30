@@ -25,12 +25,13 @@ import com.cloud.agent.api.Answer;
 public class CreateCmdResult extends CommandResult {
     private String path;
     private Answer answer;
+
     public CreateCmdResult(String path, Answer answer) {
         super();
         this.path = path;
         this.answer = answer;
     }
-    
+
     public String getPath() {
         return this.path;
     }

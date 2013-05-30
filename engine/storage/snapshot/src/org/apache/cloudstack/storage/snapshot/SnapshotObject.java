@@ -91,7 +91,8 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getParent() {
-        SnapshotDataStoreVO snapStoreVO = this.snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(), this.snapshot.getId());
+        SnapshotDataStoreVO snapStoreVO = this.snapshotStoreDao.findByStoreSnapshot(this.store.getRole(),
+                this.store.getId(), this.snapshot.getId());
         if (snapStoreVO == null) {
             return null;
         }
@@ -106,7 +107,8 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getChild() {
-        SearchCriteriaService<SnapshotDataStoreVO, SnapshotDataStoreVO> sc = SearchCriteria2.create(SnapshotDataStoreVO.class);
+        SearchCriteriaService<SnapshotDataStoreVO, SnapshotDataStoreVO> sc = SearchCriteria2
+                .create(SnapshotDataStoreVO.class);
         sc.addAnd(sc.getEntity().getDataStoreId(), Op.EQ, this.store.getId());
         sc.addAnd(sc.getEntity().getRole(), Op.EQ, this.store.getRole());
         sc.addAnd(sc.getEntity().getParentSnapshotId(), Op.EQ, this.getId());
@@ -246,8 +248,8 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
-            SnapshotDataStoreVO snapshotStore = this.snapshotStoreDao.findByStoreSnapshot(this.getDataStore().getRole(), this.getDataStore().getId(),
-                    this.getId());
+            SnapshotDataStoreVO snapshotStore = this.snapshotStoreDao.findByStoreSnapshot(
+                    this.getDataStore().getRole(), this.getDataStore().getId(), this.getId());
             if (answer instanceof CreateObjectAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO) ((CreateObjectAnswer) answer).getData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());

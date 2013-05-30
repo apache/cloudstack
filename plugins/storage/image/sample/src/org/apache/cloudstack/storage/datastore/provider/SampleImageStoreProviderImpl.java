@@ -46,6 +46,7 @@ public class SampleImageStoreProviderImpl implements ImageStoreProvider {
     ImageStoreProviderManager storeMgr;
     long id;
     String uuid;
+
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {
         return lifeCycle;
@@ -67,7 +68,7 @@ public class SampleImageStoreProviderImpl implements ImageStoreProvider {
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
         types.add(DataStoreProviderType.IMAGE);
         return types;
     }
@@ -84,7 +85,7 @@ public class SampleImageStoreProviderImpl implements ImageStoreProvider {
 
     @Override
     public boolean isScopeSupported(ScopeType scope) {
-        if ( scope == ScopeType.ZONE)
+        if (scope == ScopeType.ZONE)
             return true;
         return false;
     }
@@ -93,6 +94,5 @@ public class SampleImageStoreProviderImpl implements ImageStoreProvider {
     public boolean needDownloadSysTemplate() {
         return false;
     }
-
 
 }

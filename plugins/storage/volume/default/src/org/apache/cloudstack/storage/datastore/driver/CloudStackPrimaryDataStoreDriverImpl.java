@@ -60,185 +60,186 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
-	private static final Logger s_logger = Logger
-			.getLogger(CloudStackPrimaryDataStoreDriverImpl.class);
-	@Inject DiskOfferingDao diskOfferingDao;
-	@Inject VMTemplateDao templateDao;
-	@Inject VolumeDao volumeDao;
-	@Inject HostDao hostDao;
-	@Inject StorageManager storageMgr;
-	@Inject VolumeManager volumeMgr;
-	@Inject VMInstanceDao vmDao;
-	@Inject SnapshotDao snapshotDao;
-	@Inject PrimaryDataStoreDao primaryStoreDao;
-	@Inject SnapshotManager snapshotMgr;
-	@Inject EndPointSelector epSelector;
-	@Override
-	public String grantAccess(DataObject data, EndPoint ep) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    private static final Logger s_logger = Logger.getLogger(CloudStackPrimaryDataStoreDriverImpl.class);
+    @Inject
+    DiskOfferingDao diskOfferingDao;
+    @Inject
+    VMTemplateDao templateDao;
+    @Inject
+    VolumeDao volumeDao;
+    @Inject
+    HostDao hostDao;
+    @Inject
+    StorageManager storageMgr;
+    @Inject
+    VolumeManager volumeMgr;
+    @Inject
+    VMInstanceDao vmDao;
+    @Inject
+    SnapshotDao snapshotDao;
+    @Inject
+    PrimaryDataStoreDao primaryStoreDao;
+    @Inject
+    SnapshotManager snapshotMgr;
+    @Inject
+    EndPointSelector epSelector;
 
-	@Override
+    @Override
+    public String grantAccess(DataObject data, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public DataTO getTO(DataObject data) {
         return null;
     }
 
-
-	@Override
+    @Override
     public DataStoreTO getStoreTO(DataStore store) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-	public boolean revokeAccess(DataObject data, EndPoint ep) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean revokeAccess(DataObject data, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public Set<DataObject> listObjects(DataStore store) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Set<DataObject> listObjects(DataStore store) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public Answer createVolume(
-			VolumeInfo volume) throws StorageUnavailableException {
-		if (s_logger.isDebugEnabled()) {
-			s_logger.debug("Creating volume: " + volume);
-		}
+    public Answer createVolume(VolumeInfo volume) throws StorageUnavailableException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating volume: " + volume);
+        }
 
-		CreateObjectCommand cmd = new CreateObjectCommand(volume.getTO());
-		EndPoint ep = epSelector.select(volume);
-		Answer answer = ep.sendMessage(cmd);
-		return answer;
-	}
+        CreateObjectCommand cmd = new CreateObjectCommand(volume.getTO());
+        EndPoint ep = epSelector.select(volume);
+        Answer answer = ep.sendMessage(cmd);
+        return answer;
+    }
 
-	@Override
-	public void createAsync(DataObject data,
-			AsyncCompletionCallback<CreateCmdResult> callback) {
-		// TODO Auto-generated method stub
-		String errMsg = null;
-		Answer answer = null;
-		if (data.getType() == DataObjectType.VOLUME) {
-			try {
-				answer = createVolume((VolumeInfo)data);
-			} catch (StorageUnavailableException e) {
-				s_logger.debug("failed to create volume", e);
-				errMsg = e.toString();
-			} catch (Exception e) {
-				s_logger.debug("failed to create volume", e);
-				errMsg = e.toString();
-			}
-		}
-		CreateCmdResult result = new CreateCmdResult(null, answer);
-		if (errMsg != null) {
-			result.setResult(errMsg);
-		}
+    @Override
+    public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+        // TODO Auto-generated method stub
+        String errMsg = null;
+        Answer answer = null;
+        if (data.getType() == DataObjectType.VOLUME) {
+            try {
+                answer = createVolume((VolumeInfo) data);
+            } catch (StorageUnavailableException e) {
+                s_logger.debug("failed to create volume", e);
+                errMsg = e.toString();
+            } catch (Exception e) {
+                s_logger.debug("failed to create volume", e);
+                errMsg = e.toString();
+            }
+        }
+        CreateCmdResult result = new CreateCmdResult(null, answer);
+        if (errMsg != null) {
+            result.setResult(errMsg);
+        }
 
-		callback.complete(result);
-	}
-
-	@Override
-	public void deleteAsync(DataObject data,
-			AsyncCompletionCallback<CommandResult> callback) {
-		DeleteCommand cmd = new DeleteCommand(data.getTO());
-
-		CommandResult result = new CommandResult();
-		try {
-		    EndPoint ep = epSelector.select(data);
-			Answer answer = ep.sendMessage(cmd);
-			if (answer != null && !answer.getResult()) {
-				result.setResult(answer.getDetails());
-			}
-		} catch (Exception ex) {
-			s_logger.debug("Unable to destoy volume" + data.getId(), ex);
-			result.setResult(ex.toString());
-		}
-		callback.complete(result);
-	}
-
-	@Override
-	public void copyAsync(DataObject srcdata, DataObject destData,
-			AsyncCompletionCallback<CopyCommandResult> callback) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public boolean canCopy(DataObject srcData, DataObject destData) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void takeSnapshot(SnapshotInfo snapshot,
-			AsyncCompletionCallback<CreateCmdResult> callback) {
-	    CreateCmdResult result = null;
-	    try {
-	        DataTO snapshotTO = snapshot.getTO();
-
-	        CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
-	        EndPoint ep = this.epSelector.select(snapshot);
-	        Answer answer = ep.sendMessage(cmd);
-
-	        result = new CreateCmdResult(null, answer);
-	        if (answer != null && !answer.getResult()) {
-	            result.setResult(answer.getDetails());
-	        }
-
-	        callback.complete(result);
-	        return;
-	    } catch (Exception e) {
-	        s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
-	        result = new CreateCmdResult(null, null);
-	        result.setResult(e.toString());
-	    }
         callback.complete(result);
-	}
+    }
 
-	@Override
-	public void revertSnapshot(SnapshotInfo snapshot,
-			AsyncCompletionCallback<CommandResult> callback) {
-		// TODO Auto-generated method stub
+    @Override
+    public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
+        DeleteCommand cmd = new DeleteCommand(data.getTO());
 
-	}
+        CommandResult result = new CommandResult();
+        try {
+            EndPoint ep = epSelector.select(data);
+            Answer answer = ep.sendMessage(cmd);
+            if (answer != null && !answer.getResult()) {
+                result.setResult(answer.getDetails());
+            }
+        } catch (Exception ex) {
+            s_logger.debug("Unable to destoy volume" + data.getId(), ex);
+            result.setResult(ex.toString());
+        }
+        callback.complete(result);
+    }
 
-	@Override
-	public void resize(DataObject data,
-			AsyncCompletionCallback<CreateCmdResult> callback) {
-		VolumeObject vol = (VolumeObject)data;
-		StoragePool pool = (StoragePool)data.getDataStore();
-		ResizeVolumePayload resizeParameter = (ResizeVolumePayload)vol.getpayload();
+    @Override
+    public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        // TODO Auto-generated method stub
 
-		ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(
-				vol.getPath(), new StorageFilerTO(pool), vol.getSize(),
-				resizeParameter.newSize, resizeParameter.shrinkOk, resizeParameter.instanceName);
-		CreateCmdResult result = new CreateCmdResult(null, null);
-		try {
-			ResizeVolumeAnswer answer = (ResizeVolumeAnswer) this.storageMgr.sendToPool(pool,
-					resizeParameter.hosts, resizeCmd);
-			if (answer != null && answer.getResult()) {
-				long finalSize = answer.getNewSize();
-				s_logger.debug("Resize: volume started at size " + vol.getSize()
-						+ " and ended at size " + finalSize);
+    }
 
-				vol.setSize(finalSize);
-				vol.update();
-			} else if (answer != null) {
-				result.setResult(answer.getDetails());
-			} else {
-				s_logger.debug("return a null answer, mark it as failed for unknown reason");
-				result.setResult("return a null answer, mark it as failed for unknown reason");
-			}
+    @Override
+    public boolean canCopy(DataObject srcData, DataObject destData) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-		} catch (Exception e) {
-			s_logger.debug("sending resize command failed", e);
-			result.setResult(e.toString());
-		}
+    @Override
+    public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
+        CreateCmdResult result = null;
+        try {
+            DataTO snapshotTO = snapshot.getTO();
 
-		callback.complete(result);
-	}
+            CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
+            EndPoint ep = this.epSelector.select(snapshot);
+            Answer answer = ep.sendMessage(cmd);
+
+            result = new CreateCmdResult(null, answer);
+            if (answer != null && !answer.getResult()) {
+                result.setResult(answer.getDetails());
+            }
+
+            callback.complete(result);
+            return;
+        } catch (Exception e) {
+            s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
+            result = new CreateCmdResult(null, null);
+            result.setResult(e.toString());
+        }
+        callback.complete(result);
+    }
+
+    @Override
+    public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+        VolumeObject vol = (VolumeObject) data;
+        StoragePool pool = (StoragePool) data.getDataStore();
+        ResizeVolumePayload resizeParameter = (ResizeVolumePayload) vol.getpayload();
+
+        ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(),
+                resizeParameter.newSize, resizeParameter.shrinkOk, resizeParameter.instanceName);
+        CreateCmdResult result = new CreateCmdResult(null, null);
+        try {
+            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) this.storageMgr.sendToPool(pool, resizeParameter.hosts,
+                    resizeCmd);
+            if (answer != null && answer.getResult()) {
+                long finalSize = answer.getNewSize();
+                s_logger.debug("Resize: volume started at size " + vol.getSize() + " and ended at size " + finalSize);
+
+                vol.setSize(finalSize);
+                vol.update();
+            } else if (answer != null) {
+                result.setResult(answer.getDetails());
+            } else {
+                s_logger.debug("return a null answer, mark it as failed for unknown reason");
+                result.setResult("return a null answer, mark it as failed for unknown reason");
+            }
+
+        } catch (Exception e) {
+            s_logger.debug("sending resize command failed", e);
+            result.setResult(e.toString());
+        }
+
+        callback.complete(result);
+    }
 
 }

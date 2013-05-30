@@ -39,7 +39,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -49,6 +48,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.testng.AssertJUnit;
@@ -87,7 +87,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 
-@ContextConfiguration(locations={"classpath:/storageContext.xml"})
+@ContextConfiguration(locations = { "classpath:/storageContext.xml" })
 public class VolumeTestVmware extends CloudStackTestNGBase {
     @Inject
     ImageStoreDao imageStoreDao;
@@ -139,6 +139,7 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
     long primaryStoreId;
     VMTemplateVO image;
     String imageStoreName = "testImageStore";
+
     @Test(priority = -1)
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
@@ -150,17 +151,18 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
             podId = host.getPodId();
             imageStore = this.imageStoreDao.findByName(imageStoreName);
         } else {
-            //create data center
-            DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
-                    null, null, NetworkType.Basic, null, null, true,  true, null, null);
+            // create data center
+            DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
+                    "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true, true, null, null);
             dc = dcDao.persist(dc);
             dcId = dc.getId();
-            //create pod
+            // create pod
 
-            HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(), this.getHostCidr(), 8, "test");
+            HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(),
+                    this.getHostCidr(), 8, "test");
             pod = podDao.persist(pod);
             podId = pod.getId();
-            //create xen cluster
+            // create xen cluster
             ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
             cluster.setHypervisorType(HypervisorType.VMware.toString());
             cluster.setClusterType(ClusterType.ExternalManaged);
@@ -168,14 +170,14 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
             cluster = clusterDao.persist(cluster);
             clusterId = cluster.getId();
 
-            //setup vcenter
+            // setup vcenter
             ClusterDetailsVO clusterDetailVO = new ClusterDetailsVO(cluster.getId(), "url", null);
             this.clusterDetailsDao.persist(clusterDetailVO);
             clusterDetailVO = new ClusterDetailsVO(cluster.getId(), "username", null);
             this.clusterDetailsDao.persist(clusterDetailVO);
             clusterDetailVO = new ClusterDetailsVO(cluster.getId(), "password", null);
             this.clusterDetailsDao.persist(clusterDetailVO);
-            //create xen host
+            // create xen host
 
             host = new HostVO(this.getHostGuid());
             host.setName("devcloud vmware host");
@@ -224,16 +226,17 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
 
         image = imageDataDao.persist(image);
 
-        /*TemplateDataStoreVO templateStore = new TemplateDataStoreVO();
-
-        templateStore.setDataStoreId(imageStore.getId());
-        templateStore.setDownloadPercent(100);
-        templateStore.setDownloadState(Status.DOWNLOADED);
-        templateStore.setDownloadUrl(imageStore.getUrl());
-        templateStore.setInstallPath(this.getImageInstallPath());
-        templateStore.setTemplateId(image.getId());
-        templateStoreDao.persist(templateStore);*/
-
+        /*
+         * TemplateDataStoreVO templateStore = new TemplateDataStoreVO();
+         * 
+         * templateStore.setDataStoreId(imageStore.getId());
+         * templateStore.setDownloadPercent(100);
+         * templateStore.setDownloadState(Status.DOWNLOADED);
+         * templateStore.setDownloadUrl(imageStore.getUrl());
+         * templateStore.setInstallPath(this.getImageInstallPath());
+         * templateStore.setTemplateId(image.getId());
+         * templateStoreDao.persist(templateStore);
+         */
 
         DataStore store = this.dataStoreMgr.getDataStore(imageStore.getId(), DataStoreRole.Image);
         TemplateInfo template = templateFactory.getTemplate(image.getId(), DataStoreRole.Image);
@@ -244,19 +247,21 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
         templateOnStore.processEvent(Event.CreateOnlyRequested);
         templateOnStore.processEvent(Event.OperationSuccessed, answer);
 
-
     }
 
     @Override
     protected void injectMockito() {
         List<HostVO> hosts = new ArrayList<HostVO>();
         hosts.add(this.host);
-        Mockito.when(resourceMgr.listAllUpAndEnabledHosts((Type) Mockito.any(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(hosts);
+        Mockito.when(
+                resourceMgr.listAllUpAndEnabledHosts((Type) Matchers.any(), Matchers.anyLong(), Matchers.anyLong(),
+                        Matchers.anyLong())).thenReturn(hosts);
 
-        RemoteHostEndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress(), this.host.getPublicIpAddress());
-        Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(ep);
-        Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(ep);
-        Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
+        RemoteHostEndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(),
+                this.host.getPrivateIpAddress(), this.host.getPublicIpAddress());
+        Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(ep);
+        Mockito.when(epSelector.select(Matchers.any(DataObject.class))).thenReturn(ep);
+        Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(ep);
     }
 
     public DataStore createPrimaryDataStore() {
@@ -267,26 +272,27 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
                 return this.dataStoreMgr.getPrimaryDataStore(pools.get(0).getId());
             }
 
-            /*DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("cloudstack primary data store provider");
-            Map<String, Object> params = new HashMap<String, Object>();
-            URI uri = new URI(this.getPrimaryStorageUrl());
-            params.put("url", this.getPrimaryStorageUrl());
-            params.put("server", uri.getHost());
-            params.put("path", uri.getPath());
-            params.put("protocol", Storage.StoragePoolType.NetworkFilesystem);
-            params.put("zoneId", dcId);
-            params.put("clusterId", clusterId);
-            params.put("name", this.primaryName);
-            params.put("port", 1);
-            params.put("podId", this.podId);
-            params.put("roles", DataStoreRole.Primary.toString());
-            params.put("uuid", uuid);
-            params.put("providerName", String.valueOf(provider.getName()));
-
-            DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
-            DataStore store = lifeCycle.initialize(params);
-            ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
-            lifeCycle.attachCluster(store, scope);*/
+            /*
+             * DataStoreProvider provider =
+             * dataStoreProviderMgr.getDataStoreProvider
+             * ("cloudstack primary data store provider"); Map<String, Object>
+             * params = new HashMap<String, Object>(); URI uri = new
+             * URI(this.getPrimaryStorageUrl()); params.put("url",
+             * this.getPrimaryStorageUrl()); params.put("server",
+             * uri.getHost()); params.put("path", uri.getPath());
+             * params.put("protocol",
+             * Storage.StoragePoolType.NetworkFilesystem); params.put("zoneId",
+             * dcId); params.put("clusterId", clusterId); params.put("name",
+             * this.primaryName); params.put("port", 1); params.put("podId",
+             * this.podId); params.put("roles",
+             * DataStoreRole.Primary.toString()); params.put("uuid", uuid);
+             * params.put("providerName", String.valueOf(provider.getName()));
+             * 
+             * DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
+             * DataStore store = lifeCycle.initialize(params); ClusterScope
+             * scope = new ClusterScope(clusterId, podId, dcId);
+             * lifeCycle.attachCluster(store, scope);
+             */
 
             StoragePoolVO pool = new StoragePoolVO();
             pool.setClusterId(clusterId);
@@ -311,20 +317,22 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
     }
 
     private VolumeVO createVolume(Long templateId, long dataStoreId) {
-        VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, UUID.randomUUID().toString(), this.dcId, 1L, 1L, 1L, 1000);;
+        VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, UUID.randomUUID().toString(), this.dcId, 1L, 1L, 1L, 1000);
+        ;
         volume.setPoolId(dataStoreId);
         volume = volumeDao.persist(volume);
         return volume;
     }
 
-    //@Test
+    // @Test
     public void testCopyBaseImage() {
         DataStore primaryStore = createPrimaryDataStore();
         primaryStoreId = primaryStore.getId();
         primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
         VolumeVO volume = createVolume(image.getId(), primaryStore.getId());
         VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
-        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
+        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo,
+                this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
         try {
             VolumeApiResult result = future.get();
 
@@ -431,7 +439,6 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
 
     }
 }

@@ -53,11 +53,12 @@ public class DataStoreManagerImpl implements DataStoreManager {
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
+
     @Override
-    public DataStore registerDataStore(Map<String, String> params,
-            String providerUuid) {
+    public DataStore registerDataStore(Map<String, String> params, String providerUuid) {
         return null;
     }
+
     @Override
     public DataStore getDataStore(String uuid, DataStoreRole role) {
         if (role == DataStoreRole.Primary) {
@@ -68,14 +69,10 @@ public class DataStoreManagerImpl implements DataStoreManager {
         throw new CloudRuntimeException("un recognized type" + role);
     }
 
-
-
     @Override
     public List<DataStore> getImageStoresByScope(ZoneScope scope) {
         return imageDataStoreMgr.listImageStoresByScope(scope);
     }
-
-
 
     @Override
     public DataStore getImageStore(long zoneId) {
@@ -96,14 +93,15 @@ public class DataStoreManagerImpl implements DataStoreManager {
     public DataStore getPrimaryDataStore(long storeId) {
         return primaryStorMgr.getPrimaryDataStore(storeId);
     }
+
     @Override
     public List<DataStore> getImageCacheStores(Scope scope) {
-    	return imageDataStoreMgr.listImageCacheStores(scope);
+        return imageDataStoreMgr.listImageCacheStores(scope);
     }
+
     @Override
     public List<DataStore> listImageStores() {
         return imageDataStoreMgr.listImageStores();
     }
-
 
 }

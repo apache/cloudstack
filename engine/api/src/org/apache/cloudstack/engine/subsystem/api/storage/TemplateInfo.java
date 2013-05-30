@@ -22,5 +22,6 @@ import com.cloud.template.VirtualMachineTemplate;
 
 public interface TemplateInfo extends DataObject, VirtualMachineTemplate {
     public String getUniqueName();
+
     public String getInstallPath();
 }

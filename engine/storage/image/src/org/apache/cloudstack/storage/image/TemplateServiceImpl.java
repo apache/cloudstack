@@ -28,9 +28,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -40,10 +37,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
@@ -61,6 +58,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.manager.ImageDataManager;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
@@ -68,11 +67,9 @@ import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
-import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
@@ -92,7 +89,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 @Component
@@ -134,7 +130,8 @@ public class TemplateServiceImpl implements TemplateService {
     VolumeDao _volumeDao;
     @Inject
     TemplateDataFactory _templateFactory;
-    @Inject VMTemplatePoolDao _tmpltPoolDao;
+    @Inject
+    VMTemplatePoolDao _tmpltPoolDao;
     @Inject
     EndPointSelector _epSelector;
     @Inject
@@ -142,12 +139,12 @@ public class TemplateServiceImpl implements TemplateService {
     @Inject
     TemplateManager _tmpltMgr;
 
-
     class TemplateOpContext<T> extends AsyncRpcConext<T> {
         final TemplateObject template;
         final AsyncCallFuture<TemplateApiResult> future;
+
         public TemplateOpContext(AsyncCompletionCallback<T> callback, TemplateObject template,
-        		AsyncCallFuture<TemplateApiResult> future) {
+                AsyncCallFuture<TemplateApiResult> future) {
             super(callback);
             this.template = template;
             this.future = future;
@@ -161,22 +158,21 @@ public class TemplateServiceImpl implements TemplateService {
             return future;
         }
 
-
     }
 
     @Override
-    public void createTemplateAsync(
-            TemplateInfo template, DataStore store, AsyncCompletionCallback<TemplateApiResult> callback) {
+    public void createTemplateAsync(TemplateInfo template, DataStore store,
+            AsyncCompletionCallback<TemplateApiResult> callback) {
         // persist template_store_ref entry
-        TemplateObject templateOnStore = (TemplateObject)store.create(template);
+        TemplateObject templateOnStore = (TemplateObject) store.create(template);
         // update template_store_ref and template state
-        try{
+        try {
             templateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
         } catch (Exception e) {
             TemplateApiResult result = new TemplateApiResult(templateOnStore);
             result.setResult(e.toString());
             result.setSuccess(false);
-            if ( callback != null ){
+            if (callback != null) {
                 callback.complete(result);
             }
             return;
@@ -203,8 +199,8 @@ public class TemplateServiceImpl implements TemplateService {
         List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(store.getScope().getScopeId());
         if (availHypers.isEmpty()) {
             /*
-             * This is for cloudzone, local secondary storage resource
-             * started before cluster created
+             * This is for cloudzone, local secondary storage resource started
+             * before cluster created
              */
             availHypers.add(HypervisorType.KVM);
         }
@@ -216,7 +212,8 @@ public class TemplateServiceImpl implements TemplateService {
         for (VMTemplateVO template : toBeDownloaded) {
             if (availHypers.contains(template.getHypervisorType())) {
                 // only download sys template applicable for current hypervisor
-                TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
+                TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao
+                        .findByStoreTemplate(store.getId(), template.getId());
                 if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
                     TemplateInfo tmplt = _templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
                     createTemplateAsync(tmplt, store, null);
@@ -229,15 +226,14 @@ public class TemplateServiceImpl implements TemplateService {
     public void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId) {
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
         List<DataStore> stores = _storeMgr.getImageStoresByScope(new ZoneScope(dcId));
-        if (stores == null || stores.isEmpty()){
+        if (stores == null || stores.isEmpty()) {
             return;
         }
 
-        /*Download all the templates in zone with the same hypervisortype*/
-        for ( DataStore store : stores) {
+        /* Download all the templates in zone with the same hypervisortype */
+        for (DataStore store : stores) {
             List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
             List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
-
 
             for (VMTemplateVO rtngTmplt : rtngTmplts) {
                 if (rtngTmplt.getHypervisorType() == hostHyper) {
@@ -251,8 +247,9 @@ public class TemplateServiceImpl implements TemplateService {
                 }
             }
 
-            for (VMTemplateVO template: toBeDownloaded) {
-                TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
+            for (VMTemplateVO template : toBeDownloaded) {
+                TemplateDataStoreVO tmpltHost = _vmTemplateStoreDao
+                        .findByStoreTemplate(store.getId(), template.getId());
                 if (tmpltHost == null || tmpltHost.getState() != ObjectInDataStoreStateMachine.State.Ready) {
                     TemplateInfo tmplt = _templateFactory.getTemplate(template.getId(), DataStoreRole.Image);
                     createTemplateAsync(tmplt, store, null);
@@ -277,11 +274,10 @@ public class TemplateServiceImpl implements TemplateService {
 
         Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
         List<VMTemplateVO> allTemplates = null;
-        if (zoneId == null){
+        if (zoneId == null) {
             // region wide store
             allTemplates = _templateDao.listAllActive();
-        }
-        else{
+        } else {
             // zone wide store
             allTemplates = _templateDao.listAllInZone(zoneId);
         }
@@ -319,7 +315,8 @@ public class TemplateServiceImpl implements TemplateService {
                     }
                     if (tmpltInfo.isCorrupted()) {
                         tmpltStore.setDownloadState(Status.DOWNLOAD_ERROR);
-                        String msg = "Template " + tmplt.getName() + ":" + tmplt.getId() + " is corrupted on secondary storage " + tmpltStore.getId();
+                        String msg = "Template " + tmplt.getName() + ":" + tmplt.getId()
+                                + " is corrupted on secondary storage " + tmpltStore.getId();
                         tmpltStore.setErrorString(msg);
                         s_logger.info("msg");
                         if (tmplt.getUrl() == null) {
@@ -344,11 +341,14 @@ public class TemplateServiceImpl implements TemplateService {
                         // set template to ready state
                         if (tmplt.getState() != TemplateState.Ready) {
                             try {
-                                imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null, _templateDao);
-                                imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null, _templateDao);
+                                imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null,
+                                        _templateDao);
+                                imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null,
+                                        _templateDao);
                             } catch (NoTransitionException e) {
                                 // non fatal though
-                                s_logger.debug("failed to update template " + tmplt.getUniqueName() + " state to Ready", e);
+                                s_logger.debug(
+                                        "failed to update template " + tmplt.getUniqueName() + " state to Ready", e);
                             }
                         }
 
@@ -360,17 +360,19 @@ public class TemplateServiceImpl implements TemplateService {
                                         tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
                             } catch (ResourceAllocationException e) {
                                 s_logger.warn(e.getMessage());
-                                _alertMgr.sendAlert(_alertMgr.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null, e.getMessage(), e.getMessage());
+                                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null,
+                                        e.getMessage(), e.getMessage());
                             } finally {
-                                _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId).getDomainId(),
-                                        com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
+                                _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId)
+                                        .getDomainId(), com.cloud.configuration.Resource.ResourceType.secondary_storage
+                                        .getOrdinal());
                             }
                         }
                     }
                     _vmTemplateStoreDao.update(tmpltStore.getId(), tmpltStore);
                 } else {
-                    tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null,
-                            tmpltInfo.getInstallPath(), tmplt.getUrl());
+                    tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED,
+                            null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
                     tmpltStore.setSize(tmpltInfo.getSize());
                     tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
                     tmpltStore.setDataStoreRole(store.getRole());
@@ -385,8 +387,10 @@ public class TemplateServiceImpl implements TemplateService {
                     // set template to ready state
                     if (tmplt.getState() != TemplateState.Ready) {
                         try {
-                            imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null, _templateDao);
-                            imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null, _templateDao);
+                            imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null,
+                                    _templateDao);
+                            imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null,
+                                    _templateDao);
                         } catch (NoTransitionException e) {
                             // non fatal though
                             s_logger.debug("failed to update template " + tmplt.getUniqueName() + " state to Ready", e);
@@ -429,7 +433,8 @@ public class TemplateServiceImpl implements TemplateService {
                     continue;
                 }
                 if (availHypers.contains(tmplt.getHypervisorType())) {
-                    s_logger.info("Downloading template " + tmplt.getUniqueName() + " to image store " + store.getName());
+                    s_logger.info("Downloading template " + tmplt.getUniqueName() + " to image store "
+                            + store.getName());
                     associateTemplateToZone(tmplt.getId(), zoneId);
                     TemplateInfo tmpl = _templateFactory.getTemplate(tmplt.getId(), DataStoreRole.Image);
                     createTemplateAsync(tmpl, store, null);
@@ -437,19 +442,22 @@ public class TemplateServiceImpl implements TemplateService {
             }
         }
 
-       for (String uniqueName : templateInfos.keySet()) {
+        for (String uniqueName : templateInfos.keySet()) {
             TemplateProp tInfo = templateInfos.get(uniqueName);
             if (_tmpltMgr.templateIsDeleteable(tInfo.getId())) {
-                //TODO: we cannot directly call deleteTemplateSync here to reuse delete logic since in this case, our db does not have this template at all.
-                VMTemplateVO template = _templateDao.findById(tInfo.getId());
-                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), tInfo.getInstallPath(), null, null);
+                // TODO: we cannot directly call deleteTemplateSync here to
+                // reuse delete logic since in this case, our db does not have
+                // this template at all.
+                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), tInfo.getInstallPath(),
+                        null, null);
                 EndPoint ep = _epSelector.select(store);
                 Answer answer = ep.sendMessage(dtCommand);
                 if (answer == null || !answer.getResult()) {
                     s_logger.info("Failed to deleted template at store: " + store.getName());
 
                 } else {
-                    String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + storeId;
+                    String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage "
+                            + storeId;
                     s_logger.info(description);
                 }
 
@@ -458,17 +466,16 @@ public class TemplateServiceImpl implements TemplateService {
 
     }
 
-
-    // persist entry in template_zone_ref table. zoneId can be empty for region-wide image store, in that case,
+    // persist entry in template_zone_ref table. zoneId can be empty for
+    // region-wide image store, in that case,
     // we will associate the template to all the zones.
-    private void associateTemplateToZone(long templateId, Long zoneId){
+    private void associateTemplateToZone(long templateId, Long zoneId) {
         List<Long> dcs = new ArrayList<Long>();
-        if (zoneId != null ){
+        if (zoneId != null) {
             dcs.add(zoneId);
-        }
-        else{
+        } else {
             List<DataCenterVO> zones = _dcDao.listAll();
-            for (DataCenterVO zone : zones){
+            for (DataCenterVO zone : zones) {
                 dcs.add(zone.getId());
             }
         }
@@ -484,13 +491,12 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
-
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
         ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO());
         EndPoint ep = _epSelector.select(ssStore);
         Answer answer = ep.sendMessage(cmd);
         if (answer != null && answer.getResult()) {
-            ListTemplateAnswer tanswer = (ListTemplateAnswer)answer;
+            ListTemplateAnswer tanswer = (ListTemplateAnswer) answer;
             return tanswer.getTemplateInfo();
         } else {
             if (s_logger.isDebugEnabled()) {
@@ -501,7 +507,6 @@ public class TemplateServiceImpl implements TemplateService {
         return null;
     }
 
-
     protected Void createTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback,
             TemplateOpContext<TemplateApiResult> context) {
         TemplateObject template = context.getTemplate();
@@ -511,7 +516,7 @@ public class TemplateServiceImpl implements TemplateService {
         if (callbackResult.isFailed()) {
             template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
             result.setResult(callbackResult.getResult());
-            if ( parentCallback != null ){
+            if (parentCallback != null) {
                 parentCallback.complete(result);
             }
             return null;
@@ -521,21 +526,20 @@ public class TemplateServiceImpl implements TemplateService {
             template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (Exception e) {
             result.setResult(e.toString());
-            if ( parentCallback != null ){
+            if (parentCallback != null) {
                 parentCallback.complete(result);
             }
             return null;
         }
 
-        if (parentCallback != null){
+        if (parentCallback != null) {
             parentCallback.complete(result);
         }
         return null;
     }
 
     @Override
-    public AsyncCallFuture<TemplateApiResult> deleteTemplateAsync(
-            TemplateInfo template) {
+    public AsyncCallFuture<TemplateApiResult> deleteTemplateAsync(TemplateInfo template) {
         TemplateObject to = (TemplateObject) template;
         // update template_store_ref status
         to.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
@@ -549,14 +553,15 @@ public class TemplateServiceImpl implements TemplateService {
         return future;
     }
 
-    public Void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> callback, TemplateOpContext<TemplateApiResult> context) {
+    public Void deleteTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> callback,
+            TemplateOpContext<TemplateApiResult> context) {
         CommandResult result = callback.getResult();
         TemplateObject vo = context.getTemplate();
-         if (result.isSuccess()) {
+        if (result.isSuccess()) {
             vo.processEvent(Event.OperationSuccessed);
         } else {
             vo.processEvent(Event.OperationFailed);
-         }
+        }
         TemplateApiResult apiResult = new TemplateApiResult(vo);
         apiResult.setResult(result.getResult());
         apiResult.setSuccess(result.isSuccess());
@@ -564,12 +569,13 @@ public class TemplateServiceImpl implements TemplateService {
         return null;
     }
 
-    private AsyncCallFuture<TemplateApiResult> copyAsync(DataObject source, TemplateInfo template, DataStore store){
+    private AsyncCallFuture<TemplateApiResult> copyAsync(DataObject source, TemplateInfo template, DataStore store) {
         AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
         DataObject templateOnStore = store.create(template);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
 
-        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null, (TemplateObject) templateOnStore, future);
+        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
+                (TemplateObject) templateOnStore, future);
         AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().copyTemplateCallBack(null, null)).setContext(context);
         _motionSrv.copyAsync(source, templateOnStore, caller);
@@ -577,14 +583,14 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(
-            SnapshotInfo snapshot, TemplateInfo template, DataStore store) {
+    public AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(SnapshotInfo snapshot,
+            TemplateInfo template, DataStore store) {
         return copyAsync(snapshot, template, store);
     }
 
     @Override
-    public AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(
-            VolumeInfo volume, TemplateInfo template, DataStore store) {
+    public AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template,
+            DataStore store) {
         return copyAsync(volume, template, store);
     }
 
@@ -595,7 +601,7 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Override
     public AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool) {
-        return copyAsync(srcTemplate, srcTemplate, (DataStore)pool);
+        return copyAsync(srcTemplate, srcTemplate, (DataStore) pool);
     }
 
     protected Void copyTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback,
@@ -623,29 +629,29 @@ public class TemplateServiceImpl implements TemplateService {
         return null;
     }
 
-
     @Override
-    public void addSystemVMTemplatesToSecondary(DataStore store){
+    public void addSystemVMTemplatesToSecondary(DataStore store) {
         long storeId = store.getId();
         List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
-        for ( VMTemplateVO tmplt : rtngTmplts ) {
+        for (VMTemplateVO tmplt : rtngTmplts) {
             // set template ready state
-            if ( tmplt.getState() != TemplateState.Ready ){
+            if (tmplt.getState() != TemplateState.Ready) {
                 try {
-                    imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null,
-                            _templateDao);
-                    imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null,
-                            _templateDao);
+                    imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null, _templateDao);
+                    imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null, _templateDao);
                 } catch (NoTransitionException e) {
                     // non fatal though
                     s_logger.debug("failed to update system vm template state to Ready", e);
                 }
             }
             TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
-            if ( tmpltStore == null ) {
-                tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, tmplt.getUrl());
+            if (tmpltStore == null) {
+                tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null,
+                        null, null, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator,
+                        tmplt.getUrl());
                 tmpltStore.setSize(0L);
-                tmpltStore.setPhysicalSize(0); // no size information for pre-seeded system vm templates
+                tmpltStore.setPhysicalSize(0); // no size information for
+                                               // pre-seeded system vm templates
                 tmpltStore.setDataStoreRole(store.getRole());
                 _vmTemplateStoreDao.persist(tmpltStore);
             }

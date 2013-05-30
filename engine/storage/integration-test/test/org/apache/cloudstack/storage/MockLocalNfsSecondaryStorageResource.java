@@ -21,26 +21,21 @@ import static java.util.Arrays.asList;
 
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-
 import org.apache.cloudstack.storage.command.DownloadSystemTemplateCommand;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.springframework.stereotype.Component;
 
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
@@ -54,10 +49,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @Component
-public class MockLocalNfsSecondaryStorageResource extends
-		NfsSecondaryStorageResource {
+public class MockLocalNfsSecondaryStorageResource extends NfsSecondaryStorageResource {
 
-    public MockLocalNfsSecondaryStorageResource(){
+    public MockLocalNfsSecondaryStorageResource() {
         _dlMgr = new DownloadManagerImpl();
         _storage = new JavaStorageLayer();
         HashMap<String, Object> params = new HashMap<String, Object>();
@@ -68,37 +62,32 @@ public class MockLocalNfsSecondaryStorageResource extends
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
-        createTemplateFromSnapshotXenScript = Script.findScript(getDefaultScriptsDir(), "create_privatetemplate_from_snapshot_xen.sh");
 
-        /*
-        _storage = new JavaStorageLayer();
-        ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
-        ((DownloadManagerImpl)_dlMgr).setStorageLayer(_storage);
-        */
+        createTemplateFromSnapshotXenScript = Script.findScript(getDefaultScriptsDir(),
+                "create_privatetemplate_from_snapshot_xen.sh");
 
     }
 
     @Override
-    public String getRootDir(String secUrl){
+    public String getRootDir(String secUrl) {
         return "/mnt";
     }
 
     @Override
     public Answer executeRequest(Command cmd) {
-        if (cmd instanceof DownloadSystemTemplateCommand){
-            return execute((DownloadSystemTemplateCommand)cmd);
+        if (cmd instanceof DownloadSystemTemplateCommand) {
+            return execute((DownloadSystemTemplateCommand) cmd);
         } else {
-            //return Answer.createUnsupportedCommandAnswer(cmd);
+            // return Answer.createUnsupportedCommandAnswer(cmd);
             return super.executeRequest(cmd);
         }
     }
 
-    private Answer execute(DownloadSystemTemplateCommand cmd){
+    private Answer execute(DownloadSystemTemplateCommand cmd) {
         DataStoreTO dstore = cmd.getDataStore();
-        if ( dstore instanceof S3TO ){
-            //TODO: how to handle download progress for S3
-            S3TO s3 = (S3TO)cmd.getDataStore();
+        if (dstore instanceof S3TO) {
+            // TODO: how to handle download progress for S3
+            S3TO s3 = (S3TO) cmd.getDataStore();
             String url = cmd.getUrl();
             String user = null;
             String password = null;
@@ -108,19 +97,16 @@ public class MockLocalNfsSecondaryStorageResource extends
             }
             // get input stream from the given url
             InputStream in = UriUtils.getInputStreamFromUrl(url, user, password);
-            URI uri;
             URL urlObj;
             try {
-                uri = new URI(url);
                 urlObj = new URL(url);
-            } catch (URISyntaxException e) {
-                throw new CloudRuntimeException("URI is incorrect: " + url);
             } catch (MalformedURLException e) {
                 throw new CloudRuntimeException("URL is incorrect: " + url);
             }
 
             final String bucket = s3.getBucketName();
-            // convention is no / in the end for install path based on S3Utils implementation.
+            // convention is no / in the end for install path based on S3Utils
+            // implementation.
             String path = determineS3TemplateDirectory(cmd.getAccountId(), cmd.getResourceId(), cmd.getName());
             // template key is
             // TEMPLATE_ROOT_DIR/account_id/template_id/template_name
@@ -130,19 +116,19 @@ public class MockLocalNfsSecondaryStorageResource extends
             if (s3Obj == null || s3Obj.size() == 0) {
                 return new Answer(cmd, false, "Failed to download to S3 bucket: " + bucket + " with key: " + key);
             } else {
-                return new DownloadAnswer(null, 100, null, Status.DOWNLOADED, path, path, s3Obj.get(0).getSize(), s3Obj.get(0).getSize(), s3Obj.get(0)
-                        .getETag());
+                return new DownloadAnswer(null, 100, null, Status.DOWNLOADED, path, path, s3Obj.get(0).getSize(), s3Obj
+                        .get(0).getSize(), s3Obj.get(0).getETag());
             }
-        }
-        else if ( dstore instanceof NfsTO ){
+        } else if (dstore instanceof NfsTO) {
             return new Answer(cmd, false, "Nfs needs to be pre-installed with system vm templates");
-        }
-        else if ( dstore instanceof SwiftTO ){
-            //TODO: need to move code from execute(uploadTemplateToSwiftFromSecondaryStorageCommand) here, but we need to handle
-            // source is url, most likely we need to modify our existing swiftUpload python script.
+        } else if (dstore instanceof SwiftTO) {
+            // TODO: need to move code from
+            // execute(uploadTemplateToSwiftFromSecondaryStorageCommand) here,
+            // but we need to handle
+            // source is url, most likely we need to modify our existing
+            // swiftUpload python script.
             return new Answer(cmd, false, "Swift is not currently support DownloadCommand");
-        }
-        else{
+        } else {
             return new Answer(cmd, false, "Unsupported image data store: " + dstore);
         }
     }

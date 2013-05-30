@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,69 +35,58 @@ import org.apache.cloudstack.storage.image.store.lifecycle.ImageStoreLifeCycle;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.resource.Discoverer;
-import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
-import com.cloud.resource.ServerResource;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.s3.S3Manager;
-import com.cloud.utils.UriUtils;
 
 public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
-    private static final Logger s_logger = Logger
-            .getLogger(S3ImageStoreLifeCycleImpl.class);
+    private static final Logger s_logger = Logger.getLogger(S3ImageStoreLifeCycleImpl.class);
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
-	protected ImageStoreDao imageStoreDao;
-	@Inject
-	ImageStoreHelper imageStoreHelper;
-	@Inject
-	ImageStoreProviderManager imageStoreMgr;
+    protected ImageStoreDao imageStoreDao;
     @Inject
-    S3Manager                      _s3Mgr;
+    ImageStoreHelper imageStoreHelper;
+    @Inject
+    ImageStoreProviderManager imageStoreMgr;
+    @Inject
+    S3Manager _s3Mgr;
 
     protected List<? extends Discoverer> _discoverers;
+
     public List<? extends Discoverer> getDiscoverers() {
         return _discoverers;
     }
+
     public void setDiscoverers(List<? extends Discoverer> _discoverers) {
         this._discoverers = _discoverers;
     }
 
-	public S3ImageStoreLifeCycleImpl() {
-	}
+    public S3ImageStoreLifeCycleImpl() {
+    }
 
-
+    @SuppressWarnings("unchecked")
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
 
         Long dcId = (Long) dsInfos.get("zoneId");
         String url = (String) dsInfos.get("url");
-        String name = (String)dsInfos.get("name");
-        String providerName = (String)dsInfos.get("providerName");
-        ScopeType scope = (ScopeType)dsInfos.get("scope");
-        DataStoreRole role =(DataStoreRole) dsInfos.get("role");
-        Map<String, String> details = (Map<String, String>)dsInfos.get("details");
+        String name = (String) dsInfos.get("name");
+        String providerName = (String) dsInfos.get("providerName");
+        ScopeType scope = (ScopeType) dsInfos.get("scope");
+        DataStoreRole role = (DataStoreRole) dsInfos.get("role");
+        Map<String, String> details = (Map<String, String>) dsInfos.get("details");
 
         s_logger.info("Trying to add a S3 store in data center " + dcId);
 
         /*
-        try{
-        // verify S3 parameters
-        _s3Mgr.verifyS3Fields(details);
-        }
-        catch (DiscoveryException ex){
-            throw new InvalidParameterValueException("failed to verify S3 parameters!");
-        }
-        */
+         * try{ // verify S3 parameters _s3Mgr.verifyS3Fields(details); } catch
+         * (DiscoveryException ex){ throw new
+         * InvalidParameterValueException("failed to verify S3 parameters!"); }
+         */
 
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();
         imageStoreParameters.put("name", name);
@@ -108,7 +94,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         imageStoreParameters.put("url", url);
         String protocol = "http";
         String useHttps = details.get(ApiConstants.S3_HTTPS_FLAG);
-        if (useHttps != null && Boolean.parseBoolean(useHttps)){
+        if (useHttps != null && Boolean.parseBoolean(useHttps)) {
             protocol = "https";
         }
         imageStoreParameters.put("protocol", protocol);
@@ -124,21 +110,17 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return imageStoreMgr.getImageStore(ids.getId());
     }
 
-
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
         // TODO Auto-generated method stub
         return false;
     }
 
-
     @Override
-    public boolean attachHost(DataStore store, HostScope scope,
-            StoragePoolInfo existingInfo) {
+    public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope) {
@@ -146,13 +128,11 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return false;
     }
 
-
     @Override
     public boolean dettach() {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public boolean unmanaged() {
@@ -160,20 +140,17 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return false;
     }
 
-
     @Override
     public boolean maintain(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }
 
-
     @Override
     public boolean cancelMaintain(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public boolean deleteDataStore(DataStore store) {

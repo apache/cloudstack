@@ -38,16 +38,21 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DefaultHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger
-            .getLogger(DefaultHostListener.class);
-    @Inject AgentManager agentMgr;
-    @Inject DataStoreManager dataStoreMgr;
-    @Inject AlertManager alertMgr;
-    @Inject StoragePoolHostDao storagePoolHostDao;
-    @Inject PrimaryDataStoreDao primaryStoreDao;
+    private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
+    @Inject
+    AgentManager agentMgr;
+    @Inject
+    DataStoreManager dataStoreMgr;
+    @Inject
+    AlertManager alertMgr;
+    @Inject
+    StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    PrimaryDataStoreDao primaryStoreDao;
+
     @Override
     public boolean hostConnect(long hostId, long poolId) {
-        StoragePool pool = (StoragePool)this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
@@ -58,20 +63,23 @@ public class DefaultHostListener implements HypervisorHostListener {
         if (!answer.getResult()) {
             String msg = "Unable to attach storage pool" + poolId + " to the host" + hostId;
             alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
-            throw new CloudRuntimeException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails() + pool.getId());
+            throw new CloudRuntimeException("Unable establish connection from storage head to storage pool "
+                    + pool.getId() + " due to " + answer.getDetails() + pool.getId());
         }
 
-        assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" + pool.getId() + "Host=" + hostId;
+        assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool="
+                + pool.getId() + "Host=" + hostId;
         ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
 
         StoragePoolHostVO poolHost = storagePoolHostDao.findByPoolHost(pool.getId(), hostId);
         if (poolHost == null) {
-            poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
+            poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath()
+                    .replaceAll("//", "/"));
             storagePoolHostDao.persist(poolHost);
         } else {
             poolHost.setLocalPath(mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
         }
-        
+
         StoragePoolVO poolVO = this.primaryStoreDao.findById(poolId);
         poolVO.setAvailableBytes(mspAnswer.getPoolInfo().getAvailableBytes());
         poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());

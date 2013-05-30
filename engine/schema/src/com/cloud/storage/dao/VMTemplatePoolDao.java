@@ -25,25 +25,29 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
-public interface VMTemplatePoolDao extends GenericDao<VMTemplateStoragePoolVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
-	public List<VMTemplateStoragePoolVO> listByPoolId(long id);
-	
-	public List<VMTemplateStoragePoolVO> listByTemplateId(long templateId);
-	
-	public VMTemplateStoragePoolVO findByPoolTemplate(long poolId, long templateId);
+public interface VMTemplatePoolDao extends GenericDao<VMTemplateStoragePoolVO, Long>,
+        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+    public List<VMTemplateStoragePoolVO> listByPoolId(long id);
 
-	public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, VMTemplateStoragePoolVO.Status downloadState);
-	
-    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId,  VMTemplateStoragePoolVO.Status downloadState, long poolId);
+    public List<VMTemplateStoragePoolVO> listByTemplateId(long templateId);
 
-	public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId, VMTemplateStoragePoolVO.Status downloadState);
-	
-	public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId, long podId, VMTemplateStoragePoolVO.Status downloadState);
+    public VMTemplateStoragePoolVO findByPoolTemplate(long poolId, long templateId);
 
-	public List<VMTemplateStoragePoolVO> listByTemplateStates(long templateId, VMTemplateStoragePoolVO.Status ... states);
+    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId,
+            VMTemplateStoragePoolVO.Status downloadState);
 
-	
-	boolean templateAvailable(long templateId, long poolId);
+    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId,
+            VMTemplateStoragePoolVO.Status downloadState, long poolId);
 
-	public VMTemplateStoragePoolVO findByHostTemplate(Long hostId, Long templateId);
+    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId,
+            VMTemplateStoragePoolVO.Status downloadState);
+
+    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId, long podId,
+            VMTemplateStoragePoolVO.Status downloadState);
+
+    public List<VMTemplateStoragePoolVO> listByTemplateStates(long templateId, VMTemplateStoragePoolVO.Status... states);
+
+    boolean templateAvailable(long templateId, long poolId);
+
+    public VMTemplateStoragePoolVO findByHostTemplate(Long hostId, Long templateId);
 }

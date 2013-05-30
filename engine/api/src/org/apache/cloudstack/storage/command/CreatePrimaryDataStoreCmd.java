@@ -16,22 +16,22 @@
 // under the License.
 package org.apache.cloudstack.storage.command;
 
-
 import com.cloud.agent.api.Command;
 
-public class CreatePrimaryDataStoreCmd extends Command implements StorageSubSystemCommand {
+public final class CreatePrimaryDataStoreCmd extends Command implements StorageSubSystemCommand {
     private final String dataStore;
+
     public CreatePrimaryDataStoreCmd(String uri) {
+        super();
         this.dataStore = uri;
     }
-    
+
     public String getDataStore() {
         return this.dataStore;
     }
-    
+
     @Override
     public boolean executeInSequence() {
-        // TODO Auto-generated method stub
         return false;
     }
 

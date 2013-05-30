@@ -23,15 +23,22 @@ import java.util.Map;
 
 import com.cloud.storage.DataStoreRole;
 
-
 public interface DataStoreManager {
     public DataStore getDataStore(long storeId, DataStoreRole role);
+
     public DataStore getPrimaryDataStore(long storeId);
+
     public DataStore getDataStore(String uuid, DataStoreRole role);
+
     public List<DataStore> getImageStoresByScope(ZoneScope scope);
+
     public DataStore getImageStore(long zoneId);
+
     public List<DataStore> getImageStoresByProvider(String provider);
+
     public List<DataStore> getImageCacheStores(Scope scope);
+
     public DataStore registerDataStore(Map<String, String> params, String providerUuid);
+
     public List<DataStore> listImageStores();
 }

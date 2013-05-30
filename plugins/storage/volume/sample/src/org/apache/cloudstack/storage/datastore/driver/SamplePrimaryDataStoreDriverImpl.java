@@ -35,7 +35,6 @@ import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.log4j.Logger;
 
@@ -47,7 +46,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.Decoder;
 
-
 public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(SamplePrimaryDataStoreDriverImpl.class);
     @Inject
@@ -56,6 +54,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     StoragePoolHostDao storeHostDao;
     @Inject
     DataObjectManager dataObjMgr;
+
     public SamplePrimaryDataStoreDriverImpl() {
 
     }
@@ -65,16 +64,15 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
         return null;
     }
 
-
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
         // TODO Auto-generated method stub
         return null;
     }
 
-
     private class CreateVolumeContext<T> extends AsyncRpcConext<T> {
         private final DataObject volume;
+
         /**
          * @param callback
          */
@@ -89,33 +87,36 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
 
     }
 
-    public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
-        /*CreateCmdResult result = null;
-        CreateObjectAnswer volAnswer = (CreateObjectAnswer) callback.getResult();
-        if (volAnswer.getResult()) {
-            result = new CreateCmdResult(volAnswer.getPath(), volAnswer);
-        } else {
-            result = new CreateCmdResult("", null);
-            result.setResult(volAnswer.getDetails());
-        }
-
-        context.getParentCallback().complete(result);*/
+    public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback,
+            CreateVolumeContext<CreateCmdResult> context) {
+        /*
+         * CreateCmdResult result = null; CreateObjectAnswer volAnswer =
+         * (CreateObjectAnswer) callback.getResult(); if (volAnswer.getResult())
+         * { result = new CreateCmdResult(volAnswer.getPath(), volAnswer); }
+         * else { result = new CreateCmdResult("", null);
+         * result.setResult(volAnswer.getDetails()); }
+         * 
+         * context.getParentCallback().complete(result);
+         */
         return null;
     }
 
     @Override
     public void deleteAsync(DataObject vo, AsyncCompletionCallback<CommandResult> callback) {
-        /*DeleteCommand cmd = new DeleteCommand(vo.getUri());
-
-        EndPoint ep = selector.select(vo);
-        AsyncRpcConext<CommandResult> context = new AsyncRpcConext<CommandResult>(callback);
-        AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().deleteCallback(null, null))
-            .setContext(context);
-        ep.sendMessageAsync(cmd, caller);*/
+        /*
+         * DeleteCommand cmd = new DeleteCommand(vo.getUri());
+         * 
+         * EndPoint ep = selector.select(vo); AsyncRpcConext<CommandResult>
+         * context = new AsyncRpcConext<CommandResult>(callback);
+         * AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer>
+         * caller = AsyncCallbackDispatcher.create(this);
+         * caller.setCallback(caller.getTarget().deleteCallback(null, null))
+         * .setContext(context); ep.sendMessageAsync(cmd, caller);
+         */
     }
 
-    public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcConext<CommandResult> context) {
+    public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback,
+            AsyncRpcConext<CommandResult> context) {
         CommandResult result = new CommandResult();
         Answer answer = callback.getResult();
         if (!answer.getResult()) {
@@ -124,83 +125,80 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
         context.getParentCallback().complete(result);
         return null;
     }
+
     /*
-    private class CreateVolumeFromBaseImageContext<T> extends AsyncRpcConext<T> {
-        private final VolumeObject volume;
-
-        public CreateVolumeFromBaseImageContext(AsyncCompletionCallback<T> callback, VolumeObject volume) {
-            super(callback);
-            this.volume = volume;
-        }
-
-        public VolumeObject getVolume() {
-            return this.volume;
-        }
-
-    }
+     * private class CreateVolumeFromBaseImageContext<T> extends
+     * AsyncRpcConext<T> { private final VolumeObject volume;
+     * 
+     * public CreateVolumeFromBaseImageContext(AsyncCompletionCallback<T>
+     * callback, VolumeObject volume) { super(callback); this.volume = volume; }
+     * 
+     * public VolumeObject getVolume() { return this.volume; }
+     * 
+     * }
+     * 
+     * @Override public void createVolumeFromBaseImageAsync(VolumeObject volume,
+     * TemplateInfo template, AsyncCompletionCallback<CommandResult> callback) {
+     * VolumeTO vol = this.dataStore.getVolumeTO(volume); List<EndPoint>
+     * endPoints = this.dataStore.getEndPoints(); EndPoint ep =
+     * endPoints.get(0); String templateUri =
+     * template.getDataStore().grantAccess(template, ep);
+     * CreateVolumeFromBaseImageCommand cmd = new
+     * CreateVolumeFromBaseImageCommand(vol, templateUri);
+     * 
+     * CreateVolumeFromBaseImageContext<CommandResult> context = new
+     * CreateVolumeFromBaseImageContext<CommandResult>(callback, volume);
+     * AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller
+     * = AsyncCallbackDispatcher.create(this); caller.setContext(context)
+     * .setCallback
+     * (caller.getTarget().createVolumeFromBaseImageAsyncCallback(null, null));
+     * 
+     * ep.sendMessageAsync(cmd, caller); }
+     */
+    /*
+     * public Object
+     * createVolumeFromBaseImageAsyncCallback(AsyncCallbackDispatcher
+     * <DefaultPrimaryDataStoreDriverImpl, Answer> callback,
+     * CreateVolumeFromBaseImageContext<CommandResult> context) {
+     * CreateVolumeAnswer answer = (CreateVolumeAnswer)callback.getResult();
+     * CommandResult result = new CommandResult(); if (answer == null ||
+     * answer.getDetails() != null) { result.setSuccess(false); if (answer !=
+     * null) { result.setResult(answer.getDetails()); } } else {
+     * result.setSuccess(true); VolumeObject volume = context.getVolume();
+     * volume.setPath(answer.getVolumeUuid()); }
+     * AsyncCompletionCallback<CommandResult> parentCall =
+     * context.getParentCallback(); parentCall.complete(result); return null; }
+     */
 
     @Override
-    public void createVolumeFromBaseImageAsync(VolumeObject volume, TemplateInfo template, AsyncCompletionCallback<CommandResult> callback) {
-        VolumeTO vol = this.dataStore.getVolumeTO(volume);
-        List<EndPoint> endPoints = this.dataStore.getEndPoints();
-        EndPoint ep = endPoints.get(0);
-        String templateUri = template.getDataStore().grantAccess(template, ep);
-        CreateVolumeFromBaseImageCommand cmd = new CreateVolumeFromBaseImageCommand(vol, templateUri);
-
-        CreateVolumeFromBaseImageContext<CommandResult> context = new CreateVolumeFromBaseImageContext<CommandResult>(callback, volume);
-        AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
-        caller.setContext(context)
-            .setCallback(caller.getTarget().createVolumeFromBaseImageAsyncCallback(null, null));
-
-        ep.sendMessageAsync(cmd, caller);
-    }*/
-    /*
-    public Object createVolumeFromBaseImageAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeFromBaseImageContext<CommandResult> context) {
-        CreateVolumeAnswer answer = (CreateVolumeAnswer)callback.getResult();
-        CommandResult result = new CommandResult();
-        if (answer == null || answer.getDetails() != null) {
-            result.setSuccess(false);
-            if (answer != null) {
-                result.setResult(answer.getDetails());
-            }
-        } else {
-            result.setSuccess(true);
-            VolumeObject volume = context.getVolume();
-            volume.setPath(answer.getVolumeUuid());
-        }
-        AsyncCompletionCallback<CommandResult> parentCall = context.getParentCallback();
-        parentCall.complete(result);
-        return null;
-    }*/
-
-    @Override
-    public void createAsync(DataObject vol,
-            AsyncCompletionCallback<CreateCmdResult> callback) {
+    public void createAsync(DataObject vol, AsyncCompletionCallback<CreateCmdResult> callback) {
         EndPoint ep = selector.select(vol);
         CreateObjectCommand createCmd = new CreateObjectCommand(null);
 
         CreateVolumeContext<CreateCmdResult> context = new CreateVolumeContext<CreateCmdResult>(callback, vol);
         AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
-        caller.setContext(context)
-            .setCallback(caller.getTarget().createAsyncCallback(null, null));
+        caller.setContext(context).setCallback(caller.getTarget().createAsyncCallback(null, null));
 
         ep.sendMessageAsync(createCmd, caller);
     }
 
     @Override
     public String grantAccess(DataObject object, EndPoint ep) {
-        //StoragePoolHostVO poolHost = storeHostDao.findByPoolHost(object.getDataStore().getId(), ep.getId());
+        // StoragePoolHostVO poolHost =
+        // storeHostDao.findByPoolHost(object.getDataStore().getId(),
+        // ep.getId());
 
         String uri = object.getUri();
         try {
             DecodedDataObject obj = Decoder.decode(uri);
             if (obj.getPath() == null) {
-                //create an obj
+                // create an obj
                 EndPoint newEp = selector.select(object);
                 CreateObjectCommand createCmd = new CreateObjectCommand(null);
-                CreateObjectAnswer answer = (CreateObjectAnswer)ep.sendMessage(createCmd);
+                CreateObjectAnswer answer = (CreateObjectAnswer) ep.sendMessage(createCmd);
                 if (answer.getResult()) {
-                    //dataObjMgr.update(object, answer.getPath(), answer.getSize());
+                    // dataObjMgr.update(object, answer.getPath(),
+                    // answer.getSize());
                 } else {
                     s_logger.debug("failed to create object" + answer.getDetails());
                     throw new CloudRuntimeException("failed to create object" + answer.getDetails());
@@ -209,7 +207,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
 
             return object.getUri();
         } catch (URISyntaxException e) {
-           throw new CloudRuntimeException("uri parsed error", e);
+            throw new CloudRuntimeException("uri parsed error", e);
         }
     }
 
@@ -226,13 +224,10 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     }
 
     @Override
-    public void revertSnapshot(SnapshotInfo snapshot,
-            AsyncCompletionCallback<CommandResult> callback) {
+    public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
 
     }
-
-
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
@@ -241,24 +236,21 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     }
 
     @Override
-    public void copyAsync(DataObject srcdata, DataObject destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         // TODO Auto-generated method stub
 
     }
 
-	@Override
-	public void resize(DataObject data,
-			AsyncCompletionCallback<CreateCmdResult> callback) {
-		// TODO Auto-generated method stub
+    @Override
+    public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void takeSnapshot(SnapshotInfo snapshot,
-			AsyncCompletionCallback<CreateCmdResult> callback) {
-		// TODO Auto-generated method stub
+    @Override
+    public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
 }

@@ -18,25 +18,26 @@
  */
 package org.apache.cloudstack.storage.command;
 
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
 
-public class DeleteCommand extends Command implements StorageSubSystemCommand {
-    private  DataTO data;
+public final class DeleteCommand extends Command implements StorageSubSystemCommand {
+    private DataTO data;
+
     public DeleteCommand(DataTO data) {
+        super();
         this.data = data;
     }
-    
+
     protected DeleteCommand() {
-        
+        super();
     }
+
     @Override
     public boolean executeInSequence() {
-        // TODO Auto-generated method stub
         return false;
     }
-    
+
     public DataTO getData() {
         return this.data;
     }

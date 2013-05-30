@@ -36,6 +36,7 @@ public class PrimaryDataStoreParameters {
     private String uuid;
     private String name;
     private String userInfo;
+
     /**
      * @return the userInfo
      */
@@ -44,7 +45,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param userInfo the userInfo to set
+     * @param userInfo
+     *            the userInfo to set
      */
     public void setUserInfo(String userInfo) {
         this.userInfo = userInfo;
@@ -58,7 +60,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param name the name to set
+     * @param name
+     *            the name to set
      */
     public void setName(String name) {
         this.name = name;
@@ -72,7 +75,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param uuid the uuid to set
+     * @param uuid
+     *            the uuid to set
      */
     public void setUuid(String uuid) {
         this.uuid = uuid;
@@ -86,7 +90,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param port the port to set
+     * @param port
+     *            the port to set
      */
     public void setPort(int port) {
         this.port = port;
@@ -100,7 +105,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param path the path to set
+     * @param path
+     *            the path to set
      */
     public void setPath(String path) {
         this.path = path;
@@ -114,7 +120,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param host the host to set
+     * @param host
+     *            the host to set
      */
     public void setHost(String host) {
         this.host = host;
@@ -128,7 +135,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param type the type to set
+     * @param type
+     *            the type to set
      */
     public void setType(StoragePoolType type) {
         this.type = type;
@@ -142,7 +150,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param tags the tags to set
+     * @param tags
+     *            the tags to set
      */
     public void setTags(String tags) {
         this.tags = tags;
@@ -156,7 +165,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param details the details to set
+     * @param details
+     *            the details to set
      */
     public void setDetails(Map<String, String> details) {
         this.details = details;
@@ -170,7 +180,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param providerName the providerName to set
+     * @param providerName
+     *            the providerName to set
      */
     public void setProviderName(String providerName) {
         this.providerName = providerName;
@@ -184,7 +195,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param clusterId the clusterId to set
+     * @param clusterId
+     *            the clusterId to set
      */
     public void setClusterId(Long clusterId) {
         this.clusterId = clusterId;
@@ -198,7 +210,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param podId the podId to set
+     * @param podId
+     *            the podId to set
      */
     public void setPodId(Long podId) {
         this.podId = podId;
@@ -212,7 +225,8 @@ public class PrimaryDataStoreParameters {
     }
 
     /**
-     * @param zoneId the zoneId to set
+     * @param zoneId
+     *            the zoneId to set
      */
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;

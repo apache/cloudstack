@@ -43,8 +43,7 @@ import com.cloud.utils.component.ManagerBase;
 
 @Component
 public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager {
-    private static final Logger s_logger = Logger
-            .getLogger(DataStoreProviderManagerImpl.class);
+    private static final Logger s_logger = Logger.getLogger(DataStoreProviderManagerImpl.class);
     @Inject
     List<DataStoreProvider> providers;
     protected Map<String, DataStoreProvider> providerMap = new HashMap<String, DataStoreProvider>();
@@ -52,6 +51,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
     @Inject
     ImageStoreProviderManager imageDataStoreProviderMgr;
+
     @Override
     public DataStoreProvider getDataStoreProvider(String name) {
         return providerMap.get(name);
@@ -103,14 +103,14 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-    		throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         Map<String, Object> copyParams = new HashMap<String, Object>(params);
 
         for (DataStoreProvider provider : providers) {
             String providerName = provider.getName();
             if (providerMap.get(providerName) != null) {
-                s_logger.debug("Failed to register data store provider, provider name: " + providerName + " is not unique");
+                s_logger.debug("Failed to register data store provider, provider name: " + providerName
+                        + " is not unique");
                 return false;
             }
 
@@ -127,13 +127,14 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
                 Set<DataStoreProviderType> types = provider.getTypes();
                 if (types.contains(DataStoreProviderType.PRIMARY)) {
-                    primaryDataStoreProviderMgr.registerDriver(provider.getName(), (PrimaryDataStoreDriver)provider.getDataStoreDriver());
+                    primaryDataStoreProviderMgr.registerDriver(provider.getName(),
+                            (PrimaryDataStoreDriver) provider.getDataStoreDriver());
                     primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
+                } else if (types.contains(DataStoreProviderType.IMAGE)) {
+                    imageDataStoreProviderMgr.registerDriver(provider.getName(),
+                            (ImageStoreDriver) provider.getDataStoreDriver());
                 }
-                else if  (types.contains(DataStoreProviderType.IMAGE)) {
-                    imageDataStoreProviderMgr.registerDriver(provider.getName(), (ImageStoreDriver)provider.getDataStoreDriver());
-                }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 s_logger.debug("configure provider failed", e);
                 providerMap.remove(providerName);
                 return false;
@@ -147,7 +148,6 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     public DataStoreProvider getDefaultPrimaryDataStoreProvider() {
         return this.getDataStoreProvider(DataStoreProvider.DEFAULT_PRIMARY);
     }
-
 
     @Override
     public DataStoreProvider getDefaultImageDataStoreProvider() {
@@ -169,7 +169,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         } else if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.IMAGE.toString())) {
             return this.getImageDataStoreProviders();
         } else if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.ImageCache.toString())) {
-           return this.getCacheDataStoreProviders();
+            return this.getCacheDataStoreProviders();
         } else {
             throw new InvalidParameterValueException("Invalid parameter: " + type);
         }

@@ -28,13 +28,22 @@ import com.cloud.agent.api.to.DataTO;
 
 public interface DataStoreDriver {
     public String grantAccess(DataObject data, EndPoint ep);
+
     public boolean revokeAccess(DataObject data, EndPoint ep);
+
     public Set<DataObject> listObjects(DataStore store);
+
     public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
+
     public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback);
+
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
+
     public boolean canCopy(DataObject srcData, DataObject destData);
+
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
+
     public DataTO getTO(DataObject data);
+
     public DataStoreTO getStoreTO(DataStore store);
 }

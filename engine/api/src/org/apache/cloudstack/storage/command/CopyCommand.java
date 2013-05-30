@@ -16,11 +16,10 @@
 // under the License.
 package org.apache.cloudstack.storage.command;
 
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
 
-public class CopyCommand extends Command implements StorageSubSystemCommand {
+public final class CopyCommand extends Command implements StorageSubSystemCommand {
     private DataTO srcTO;
     private DataTO destTO;
     private DataTO cacheTO;
@@ -31,11 +30,11 @@ public class CopyCommand extends Command implements StorageSubSystemCommand {
         this.destTO = destData;
         this.setWait(timeout);
     }
-    
+
     public DataTO getDestTO() {
         return this.destTO;
     }
-    
+
     public DataTO getSrcTO() {
         return this.srcTO;
     }

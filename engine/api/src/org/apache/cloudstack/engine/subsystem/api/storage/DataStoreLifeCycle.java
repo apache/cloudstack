@@ -22,12 +22,13 @@ import java.util.Map;
 
 import com.cloud.agent.api.StoragePoolInfo;
 
-
 public interface DataStoreLifeCycle {
     public DataStore initialize(Map<String, Object> dsInfos);
 
     public boolean attachCluster(DataStore store, ClusterScope scope);
+
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo);
+
     boolean attachZone(DataStore dataStore, ZoneScope scope);
 
     public boolean dettach();

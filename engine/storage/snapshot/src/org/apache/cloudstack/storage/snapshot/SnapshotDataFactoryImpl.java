@@ -26,18 +26,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -50,10 +45,11 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     DataStoreManager storeMgr;
     @Inject
     VolumeDataFactory volumeFactory;
+
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStore store) {
         SnapshotVO snapshot = snapshotDao.findById(snapshotId);
-        SnapshotObject so =  SnapshotObject.getSnapshotObject(snapshot, store);
+        SnapshotObject so = SnapshotObject.getSnapshotObject(snapshot, store);
         return so;
     }
 
@@ -63,7 +59,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         if (snapshot == null) {
             throw new CloudRuntimeException("Can't find snapshot: " + obj.getId());
         }
-        SnapshotObject so =  SnapshotObject.getSnapshotObject(snapshot, store);
+        SnapshotObject so = SnapshotObject.getSnapshotObject(snapshot, store);
         return so;
     }
 
@@ -75,7 +71,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
             return null;
         }
         DataStore store = this.storeMgr.getDataStore(snapshotStore.getDataStoreId(), role);
-        SnapshotObject so =  SnapshotObject.getSnapshotObject(snapshot, store);
+        SnapshotObject so = SnapshotObject.getSnapshotObject(snapshot, store);
         return so;
     }
 }

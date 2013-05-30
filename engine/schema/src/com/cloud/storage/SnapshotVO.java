@@ -25,69 +25,70 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
-@Table(name="snapshots")
+@Table(name = "snapshots")
 public class SnapshotVO implements Snapshot {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     long dataCenterId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     long accountId;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     long domainId;
 
-    @Column(name="volume_id")
+    @Column(name = "volume_id")
     Long volumeId;
 
-    @Column(name="disk_offering_id")
+    @Column(name = "disk_offering_id")
     Long diskOfferingId;
 
     @Expose
-    @Column(name="name")
+    @Column(name = "name")
     String name;
 
     @Expose
-    @Column(name="status", updatable = true, nullable=false)
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "status", updatable = true, nullable = false)
+    @Enumerated(value = EnumType.STRING)
     private State state;
 
-    @Column(name="snapshot_type")
+    @Column(name = "snapshot_type")
     short snapshotType;
 
-    @Column(name="type_description")
+    @Column(name = "type_description")
     String typeDescription;
 
-    @Column(name="size")
+    @Column(name = "size")
     long size;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    @Column(name="hypervisor_type")
-    @Enumerated(value=EnumType.STRING)
-    HypervisorType  hypervisorType;
+    @Column(name = "hypervisor_type")
+    @Enumerated(value = EnumType.STRING)
+    HypervisorType hypervisorType;
 
     @Expose
-    @Column(name="version")
+    @Column(name = "version")
     String version;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid;
 
     public SnapshotVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String name, short snapshotType, String typeDescription, long size, HypervisorType hypervisorType ) {
+    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String name,
+            short snapshotType, String typeDescription, long size, HypervisorType hypervisorType) {
         this.dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -135,11 +136,11 @@ public class SnapshotVO implements Snapshot {
         this.volumeId = volumeId;
     }
 
-
     @Override
     public String getName() {
         return name;
     }
+
     @Override
     public short getsnapshotType() {
         return snapshotType;
@@ -163,8 +164,8 @@ public class SnapshotVO implements Snapshot {
     }
 
     @Override
-    public boolean isRecursive(){
-        if ( snapshotType >= Type.HOURLY.ordinal() && snapshotType <= Type.MONTHLY.ordinal() ) {
+    public boolean isRecursive() {
+        if (snapshotType >= Type.HOURLY.ordinal() && snapshotType <= Type.MONTHLY.ordinal()) {
             return true;
         }
         return false;
@@ -177,6 +178,7 @@ public class SnapshotVO implements Snapshot {
     public String getTypeDescription() {
         return typeDescription;
     }
+
     public void setTypeDescription(String typeDescription) {
         this.typeDescription = typeDescription;
     }
@@ -203,14 +205,13 @@ public class SnapshotVO implements Snapshot {
         return state;
     }
 
-
-	public void setState(State state) {
+    public void setState(State state) {
         this.state = state;
     }
 
     public static Type getSnapshotType(String snapshotType) {
-        for ( Type type : Type.values()) {
-            if ( type.equals(snapshotType)) {
+        for (Type type : Type.values()) {
+            if (type.equals(snapshotType)) {
                 return type;
             }
         }

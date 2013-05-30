@@ -21,8 +21,9 @@ package org.apache.cloudstack.storage.command;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DiskTO;
 
-public class DettachAnswer extends Answer {
+public final class DettachAnswer extends Answer {
     private DiskTO disk;
+
     public DettachAnswer() {
         super(null);
     }
@@ -31,6 +32,7 @@ public class DettachAnswer extends Answer {
         super(null);
         this.setDisk(disk);
     }
+
     public DettachAnswer(String errMsg) {
         super(null, false, errMsg);
     }

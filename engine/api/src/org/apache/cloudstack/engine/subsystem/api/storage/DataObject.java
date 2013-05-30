@@ -24,13 +24,21 @@ import com.cloud.agent.api.to.DataTO;
 
 public interface DataObject {
     public long getId();
+
     public String getUri();
+
     public DataTO getTO();
+
     public DataStore getDataStore();
+
     public Long getSize();
+
     public DataObjectType getType();
-    //public DiskFormat getFormat();
+
+    // public DiskFormat getFormat();
     public String getUuid();
+
     public void processEvent(ObjectInDataStoreStateMachine.Event event);
+
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer);
 }

@@ -41,6 +41,7 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
     VolumeDataStoreDao volumeStoreDao;
     @Inject
     DataStoreManager storeMgr;
+
     @Override
     public VolumeInfo getVolume(long volumeId, DataStore store) {
         VolumeVO volumeVO = volumeDao.findById(volumeId);
@@ -57,7 +58,7 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
         if (volumeVO.getPoolId() == null) {
             DataStore store = null;
             VolumeDataStoreVO volumeStore = volumeStoreDao.findByVolume(volumeId);
-            if ( volumeStore != null ){
+            if (volumeStore != null) {
                 store = this.storeMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
             }
             vol = VolumeObject.getVolumeObject(store, volumeVO);
@@ -70,8 +71,8 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
 
     @Override
     public VolumeInfo getVolume(DataObject volume, DataStore store) {
-        VolumeInfo vol = (VolumeObject)getVolume(volume.getId(), store);
-        vol.addPayload(((VolumeInfo)volume).getpayload());
+        VolumeInfo vol = getVolume(volume.getId(), store);
+        vol.addPayload(((VolumeInfo) volume).getpayload());
         return vol;
     }
 

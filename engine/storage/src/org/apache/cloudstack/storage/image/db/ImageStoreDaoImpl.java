@@ -23,12 +23,9 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
@@ -39,11 +36,8 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implements ImageStoreDao {
-
-    private static final Logger s_logger = Logger.getLogger(ImageStoreDaoImpl.class);
     private SearchBuilder<ImageStoreVO> nameSearch;
     private SearchBuilder<ImageStoreVO> providerSearch;
-
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -87,7 +81,8 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
             scc.addOr("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
             sc.addAnd("scope", SearchCriteria.Op.SC, scc);
         }
-        // we should return all image stores if cross-zone scope is passed (scopeId = null)
+        // we should return all image stores if cross-zone scope is passed
+        // (scopeId = null)
         return listBy(sc);
     }
 
@@ -108,6 +103,5 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
         return listBy(sc);
     }
-
 
 }

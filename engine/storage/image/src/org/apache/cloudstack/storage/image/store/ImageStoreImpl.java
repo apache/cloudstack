@@ -44,11 +44,9 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.storage.encoding.EncodingType;
-
 
 public class ImageStoreImpl implements ImageStoreEntity {
-	private static final Logger s_logger = Logger.getLogger(ImageStoreImpl.class);
+    private static final Logger s_logger = Logger.getLogger(ImageStoreImpl.class);
     @Inject
     VMTemplateDao imageDao;
     @Inject
@@ -59,7 +57,7 @@ public class ImageStoreImpl implements ImageStoreEntity {
     boolean needDownloadToCacheStorage = false;
 
     public ImageStoreImpl() {
-
+        super();
     }
 
     protected void configure(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver,
@@ -71,7 +69,7 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     public static ImageStoreEntity getDataStore(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver,
             ImageStoreProvider provider) {
-        ImageStoreImpl instance = (ImageStoreImpl)ComponentContext.inject(ImageStoreImpl.class);
+        ImageStoreImpl instance = ComponentContext.inject(ImageStoreImpl.class);
         instance.configure(dataStoreVO, imageDataStoreDriver, provider);
         return instance;
     }
@@ -90,8 +88,9 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public DataStoreRole getRole() {
-         return this.imageDataStoreVO.getRole();
+        return this.imageDataStoreVO.getRole();
     }
+
     @Override
     public long getId() {
         // TODO Auto-generated method stub
@@ -128,8 +127,7 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public boolean exists(DataObject object) {
-        return (objectInStoreMgr.findObject(object,
-                this) != null) ? true : false;
+        return (objectInStoreMgr.findObject(object, this) != null) ? true : false;
     }
 
     @Override
@@ -137,10 +135,9 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return this.imageDataStoreVO.getUuid();
     }
 
-    public Date getCreated(){
+    public Date getCreated() {
         return this.imageDataStoreVO.getCreated();
     }
-
 
     @Override
     public DataObject create(DataObject obj) {
@@ -150,18 +147,18 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public boolean delete(DataObject obj) {
-    	AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
-    	this.driver.deleteAsync(obj, future);
-    	try {
-			future.get();
-		} catch (InterruptedException e) {
-			s_logger.debug("failed delete obj", e);
-			return false;
-		} catch (ExecutionException e) {
-			s_logger.debug("failed delete obj", e);
-			return false;
-		}
-    	objectInStoreMgr.delete(obj);
+        AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
+        this.driver.deleteAsync(obj, future);
+        try {
+            future.get();
+        } catch (InterruptedException e) {
+            s_logger.debug("failed delete obj", e);
+            return false;
+        } catch (ExecutionException e) {
+            s_logger.debug("failed delete obj", e);
+            return false;
+        }
+        objectInStoreMgr.delete(obj);
         return true;
     }
 
@@ -175,7 +172,6 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return imageDataStoreVO.getDataCenterId();
     }
 
-
     @Override
     public String getProviderName() {
         return imageDataStoreVO.getProviderName();
@@ -186,15 +182,13 @@ public class ImageStoreImpl implements ImageStoreEntity {
         return imageDataStoreVO.getProtocol();
     }
 
-
-
     @Override
     public DataStoreTO getTO() {
         return getDriver().getStoreTO(this);
     }
 
     @Override
-    public String getMountPoint(){
+    public String getMountPoint() {
         return this.imageDataStoreVO.getParent();
     }
 

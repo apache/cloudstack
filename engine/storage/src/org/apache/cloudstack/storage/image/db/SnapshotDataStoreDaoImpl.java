@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.storage.image.db;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -27,12 +28,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -51,7 +50,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	super.configure(name, params);
+        super.configure(name, params);
 
         storeSearch = createSearchBuilder();
         storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
@@ -85,12 +84,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public boolean updateState(State currentState, Event event,
-            State nextState, DataObjectInStore vo, Object data) {
-        SnapshotDataStoreVO dataObj = (SnapshotDataStoreVO)vo;
+    public boolean updateState(State currentState, Event event, State nextState, DataObjectInStore vo, Object data) {
+        SnapshotDataStoreVO dataObj = (SnapshotDataStoreVO) vo;
         Long oldUpdated = dataObj.getUpdatedCount();
         Date oldUpdatedTime = dataObj.getUpdated();
-
 
         SearchCriteria<SnapshotDataStoreVO> sc = updateStateSearch.create();
         sc.setParameters("id", dataObj.getId());
@@ -108,19 +105,22 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             SnapshotDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
-                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
+                        .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
                         .append(dbVol.getUpdated());
-                str.append(": New Data={id=").append(dataObj.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(dataObj.getUpdatedCount())
+                str.append(": New Data={id=").append(dataObj.getId()).append("; state=").append(nextState)
+                        .append("; event=").append(event).append("; updatecount=").append(dataObj.getUpdatedCount())
                         .append("; updatedTime=").append(dataObj.getUpdated());
-                str.append(": stale Data={id=").append(dataObj.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                str.append(": stale Data={id=").append(dataObj.getId()).append("; state=").append(currentState)
+                        .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
                         .append("; updatedTime=").append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId()
+                        + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;
     }
-
 
     @Override
     public List<SnapshotDataStoreVO> listByStoreId(long id, DataStoreRole role) {
@@ -156,8 +156,6 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("store_role", role);
         return findOneBy(sc);
     }
-
-
 
     @Override
     public List<SnapshotDataStoreVO> listDestroyed(long id) {

@@ -17,8 +17,6 @@
 package org.apache.cloudstack.storage.to;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
-import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -27,17 +25,17 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
 public class TemplateObjectTO implements DataTO {
-    private  String path;
+    private String path;
     private String origUrl;
-    private  String uuid;
+    private String uuid;
     private long id;
     private ImageFormat format;
     private long accountId;
     private String checksum;
     private boolean hvm;
     private String displayText;
-    private  DataStoreTO imageDataStore;
-    private  String name;
+    private DataStoreTO imageDataStore;
+    private String name;
     private String guestOsType;
     private Long size;
 
@@ -45,7 +43,7 @@ public class TemplateObjectTO implements DataTO {
 
     }
 
-    public TemplateObjectTO(VirtualMachineTemplate template){
+    public TemplateObjectTO(VirtualMachineTemplate template) {
         this.uuid = template.getUuid();
         this.id = template.getId();
         this.origUrl = template.getUrl();
@@ -69,7 +67,7 @@ public class TemplateObjectTO implements DataTO {
         this.name = template.getUniqueName();
         this.format = template.getFormat();
         if (template.getDataStore() != null) {
-        	this.imageDataStore = template.getDataStore().getTO();
+            this.imageDataStore = template.getDataStore().getTO();
         }
     }
 
@@ -85,28 +83,35 @@ public class TemplateObjectTO implements DataTO {
     public long getId() {
         return id;
     }
+
     public ImageFormat getFormat() {
         return format;
     }
+
     public long getAccountId() {
         return accountId;
     }
+
     public String getChecksum() {
         return checksum;
     }
+
     public boolean isRequiresHvm() {
         return hvm;
     }
-    public void setRequiresHvm(boolean hvm){
+
+    public void setRequiresHvm(boolean hvm) {
         this.hvm = hvm;
     }
+
     public String getDescription() {
         return displayText;
     }
 
-    public void setDescription(String desc){
+    public void setDescription(String desc) {
         this.displayText = desc;
     }
+
     public DataStoreTO getImageDataStore() {
         return this.imageDataStore;
     }
@@ -118,7 +123,7 @@ public class TemplateObjectTO implements DataTO {
 
     @Override
     public DataStoreTO getDataStore() {
-        return (DataStoreTO)this.imageDataStore;
+        return (DataStoreTO) this.imageDataStore;
     }
 
     /**
@@ -127,30 +132,39 @@ public class TemplateObjectTO implements DataTO {
     public String getName() {
         return name;
     }
+
     public void setPath(String path) {
         this.path = path;
     }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
     public void setName(String name) {
         this.name = name;
     }
-	public String getOrigUrl() {
-		return origUrl;
-	}
-	public void setOrigUrl(String origUrl) {
-		this.origUrl = origUrl;
-	}
+
+    public String getOrigUrl() {
+        return origUrl;
+    }
+
+    public void setOrigUrl(String origUrl) {
+        this.origUrl = origUrl;
+    }
+
     public void setFormat(ImageFormat format) {
         this.format = format;
     }
+
     public void setAccountId(long accountId) {
         this.accountId = accountId;
     }
+
     public void setChecksum(String checksum) {
         this.checksum = checksum;
     }
+
     public void setImageDataStore(DataStoreTO imageDataStore) {
         this.imageDataStore = imageDataStore;
     }
@@ -163,11 +177,11 @@ public class TemplateObjectTO implements DataTO {
         this.guestOsType = guestOsType;
     }
 
-	public Long getSize() {
-		return size;
-	}
+    public Long getSize() {
+        return size;
+    }
 
-	public void setSize(Long size) {
-		this.size = size;
-	}
+    public void setSize(Long size) {
+        this.size = size;
+    }
 }

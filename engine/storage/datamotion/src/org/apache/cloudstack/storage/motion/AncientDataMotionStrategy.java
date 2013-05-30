@@ -23,30 +23,29 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -56,11 +55,9 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeManager;
@@ -77,8 +74,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class AncientDataMotionStrategy implements DataMotionStrategy {
-    private static final Logger s_logger = Logger
-            .getLogger(AncientDataMotionStrategy.class);
+    private static final Logger s_logger = Logger.getLogger(AncientDataMotionStrategy.class);
     @Inject
     EndPointSelector selector;
     @Inject
@@ -107,8 +103,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     DataStoreManager dataStoreMgr;
     @Inject
     TemplateDataStoreDao templateStoreDao;
-    @Inject DiskOfferingDao diskOfferingDao;
-    @Inject VMTemplatePoolDao templatePoolDao;
+    @Inject
+    DiskOfferingDao diskOfferingDao;
+    @Inject
+    VMTemplatePoolDao templatePoolDao;
     @Inject
     VolumeManager volumeMgr;
     @Inject
@@ -125,7 +123,6 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         return false;
     }
 
-
     protected boolean needCacheStorage(DataObject srcData, DataObject destData) {
         DataTO srcTO = srcData.getTO();
         DataTO destTO = destData.getTO();
@@ -140,9 +137,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
         return true;
     }
-    
+
     private Scope getZoneScope(Scope destScope) {
-    	ZoneScope zoneScope = null;
+        ZoneScope zoneScope = null;
         if (destScope instanceof ClusterScope) {
             ClusterScope clusterScope = (ClusterScope) destScope;
             zoneScope = new ZoneScope(clusterScope.getZoneId());
@@ -150,14 +147,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             HostScope hostScope = (HostScope) destScope;
             zoneScope = new ZoneScope(hostScope.getZoneId());
         } else {
-        	zoneScope = (ZoneScope)destScope;
+            zoneScope = (ZoneScope) destScope;
         }
         return zoneScope;
     }
 
     protected Answer copyObject(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-        int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+        int _primaryStorageDownloadWait = NumbersUtil.parseInt(value,
+                Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
         Answer answer = null;
         DataObject cacheData = null;
         try {
@@ -193,7 +191,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected DataObject cacheSnapshotChain(SnapshotInfo snapshot) {
         DataObject leafData = null;
-        while(snapshot != null) {
+        while (snapshot != null) {
             DataObject cacheData = cacheMgr.createCacheObject(snapshot, snapshot.getDataStore().getScope());
             if (leafData == null) {
                 leafData = cacheData;
@@ -208,11 +206,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer copyVolumeFromSnapshot(DataObject snapObj, DataObject volObj) {
-        SnapshotInfo snapshot = (SnapshotInfo)snapObj;
+        SnapshotInfo snapshot = (SnapshotInfo) snapObj;
         StoragePool pool = (StoragePool) volObj.getDataStore();
 
-        String basicErrMsg = "Failed to create volume from "
-                + snapshot.getName() + " on pool " + pool;
+        String basicErrMsg = "Failed to create volume from " + snapshot.getName() + " on pool " + pool;
         DataStore store = snapObj.getDataStore();
         DataStoreTO storTO = store.getTO();
         DataObject srcData = snapObj;
@@ -221,23 +218,21 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 srcData = cacheSnapshotChain(snapshot);
             }
 
-            String value = configDao
-                    .getValue(Config.CreateVolumeFromSnapshotWait.toString());
+            String value = configDao.getValue(Config.CreateVolumeFromSnapshotWait.toString());
             int _createVolumeFromSnapshotWait = NumbersUtil.parseInt(value,
-                    Integer.parseInt(Config.CreateVolumeFromSnapshotWait
-                            .getDefaultValue()));
+                    Integer.parseInt(Config.CreateVolumeFromSnapshotWait.getDefaultValue()));
 
             CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait);
             EndPoint ep = selector.select(snapObj, volObj);
             Answer answer = ep.sendMessage(cmd);
 
-           return answer;
+            return answer;
         } catch (Exception e) {
             s_logger.error(basicErrMsg, e);
             throw new CloudRuntimeException(basicErrMsg);
         } finally {
             if (!(storTO instanceof NfsTO)) {
-                deleteSnapshotCacheChain((SnapshotInfo)srcData);
+                deleteSnapshotCacheChain((SnapshotInfo) srcData);
             }
         }
     }
@@ -256,86 +251,82 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected Answer copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.CopyVolumeWait.key());
-        int _copyvolumewait = NumbersUtil.parseInt(value,
-                Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+        int _copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
         Scope destScope = getZoneScope(destData.getDataStore().getScope());
         DataStore cacheStore = cacheMgr.getCacheStorage(destScope);
         if (cacheStore == null) {
-        	//need to find a nfs image store, assuming that can't copy volume directly to s3
-        	ImageStoreEntity imageStore = (ImageStoreEntity)this.dataStoreMgr.getImageStore(destScope.getScopeId());
-        	if (!imageStore.getProtocol().equalsIgnoreCase("nfs")) {
-        		s_logger.debug("can't find a nfs image store");
-        		return null;
-        	}
+            // need to find a nfs image store, assuming that can't copy volume
+            // directly to s3
+            ImageStoreEntity imageStore = (ImageStoreEntity) this.dataStoreMgr.getImageStore(destScope.getScopeId());
+            if (!imageStore.getProtocol().equalsIgnoreCase("nfs")) {
+                s_logger.debug("can't find a nfs image store");
+                return null;
+            }
 
-        	DataObject objOnImageStore = imageStore.create(srcData);
-        	objOnImageStore.processEvent(Event.CreateOnlyRequested);
+            DataObject objOnImageStore = imageStore.create(srcData);
+            objOnImageStore.processEvent(Event.CreateOnlyRequested);
 
-        	Answer answer = this.copyObject(srcData, objOnImageStore);
-        	if (answer == null || !answer.getResult()) {
-        		if (answer != null) {
-        			s_logger.debug("copy to image store failed: " + answer.getDetails());
-        		}
-        		objOnImageStore.processEvent(Event.OperationFailed);
-        		imageStore.delete(objOnImageStore);
-        		return answer;
-        	}
+            Answer answer = this.copyObject(srcData, objOnImageStore);
+            if (answer == null || !answer.getResult()) {
+                if (answer != null) {
+                    s_logger.debug("copy to image store failed: " + answer.getDetails());
+                }
+                objOnImageStore.processEvent(Event.OperationFailed);
+                imageStore.delete(objOnImageStore);
+                return answer;
+            }
 
-        	objOnImageStore.processEvent(Event.OperationSuccessed, answer);
+            objOnImageStore.processEvent(Event.OperationSuccessed, answer);
 
-        	objOnImageStore.processEvent(Event.CopyingRequested);
+            objOnImageStore.processEvent(Event.CopyingRequested);
 
-        	CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), destData.getTO(), _copyvolumewait);
-        	EndPoint ep = selector.select(objOnImageStore, destData);
-        	answer = ep.sendMessage(cmd);
-        	
-        	if (answer == null || !answer.getResult()) {
-        		if (answer != null) {
-        			s_logger.debug("copy to primary store failed: " + answer.getDetails());
-        		}
-        		objOnImageStore.processEvent(Event.OperationFailed);
-        		imageStore.delete(objOnImageStore);
-        		return answer;
-        	}
-        	
-        	objOnImageStore.processEvent(Event.OperationSuccessed);
-        	imageStore.delete(objOnImageStore);
-        	return answer;
+            CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), destData.getTO(), _copyvolumewait);
+            EndPoint ep = selector.select(objOnImageStore, destData);
+            answer = ep.sendMessage(cmd);
+
+            if (answer == null || !answer.getResult()) {
+                if (answer != null) {
+                    s_logger.debug("copy to primary store failed: " + answer.getDetails());
+                }
+                objOnImageStore.processEvent(Event.OperationFailed);
+                imageStore.delete(objOnImageStore);
+                return answer;
+            }
+
+            objOnImageStore.processEvent(Event.OperationSuccessed);
+            imageStore.delete(objOnImageStore);
+            return answer;
         } else {
-        	DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
-        	CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait);
-        	EndPoint ep = selector.select(cacheData, destData);
-        	Answer answer = ep.sendMessage(cmd);
-        	return answer;
+            DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
+            CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait);
+            EndPoint ep = selector.select(cacheData, destData);
+            Answer answer = ep.sendMessage(cmd);
+            return answer;
         }
 
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         Answer answer = null;
         String errMsg = null;
         try {
 
-            if (srcData.getType() == DataObjectType.SNAPSHOT
-                    && destData.getType() == DataObjectType.VOLUME) {
-            	answer = copyVolumeFromSnapshot(srcData, destData);
-            } else if (srcData.getType() == DataObjectType.SNAPSHOT
-                    && destData.getType() == DataObjectType.TEMPLATE) {
-            	answer = createTemplateFromSnapshot(srcData, destData);
-            } else if (srcData.getType() == DataObjectType.TEMPLATE
-                    && destData.getType() == DataObjectType.VOLUME) {
-            	answer = cloneVolume(srcData, destData);
-            } else if (destData.getType() == DataObjectType.VOLUME
-                    && srcData.getType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary && destData.getDataStore().getRole() == DataStoreRole.Primary) {
-             	answer = copyVolumeBetweenPools(srcData, destData);
-            } else if (srcData.getType() == DataObjectType.SNAPSHOT &&
-            		destData.getType() == DataObjectType.SNAPSHOT) {
-            	answer = copySnapshot(srcData, destData);
+            if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.VOLUME) {
+                answer = copyVolumeFromSnapshot(srcData, destData);
+            } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.TEMPLATE) {
+                answer = createTemplateFromSnapshot(srcData, destData);
+            } else if (srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.VOLUME) {
+                answer = cloneVolume(srcData, destData);
+            } else if (destData.getType() == DataObjectType.VOLUME && srcData.getType() == DataObjectType.VOLUME
+                    && srcData.getDataStore().getRole() == DataStoreRole.Primary
+                    && destData.getDataStore().getRole() == DataStoreRole.Primary) {
+                answer = copyVolumeBetweenPools(srcData, destData);
+            } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
+                answer = copySnapshot(srcData, destData);
             } else {
-            	answer = copyObject(srcData, destData);
+                answer = copyObject(srcData, destData);
             }
 
             if (answer != null && !answer.getResult()) {
@@ -352,19 +343,14 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     @DB
-    protected Answer createTemplateFromSnapshot(DataObject srcData,
-            DataObject destData) {
+    protected Answer createTemplateFromSnapshot(DataObject srcData, DataObject destData) {
 
-        String value = configDao
-                .getValue(Config.CreatePrivateTemplateFromSnapshotWait
-                        .toString());
-        int _createprivatetemplatefromsnapshotwait = NumbersUtil.parseInt(
-                value, Integer
-                        .parseInt(Config.CreatePrivateTemplateFromSnapshotWait
-                                .getDefaultValue()));
+        String value = configDao.getValue(Config.CreatePrivateTemplateFromSnapshotWait.toString());
+        int _createprivatetemplatefromsnapshotwait = NumbersUtil.parseInt(value,
+                Integer.parseInt(Config.CreatePrivateTemplateFromSnapshotWait.getDefaultValue()));
 
         if (needCacheStorage(srcData, destData)) {
-            SnapshotInfo snapshot = (SnapshotInfo)srcData;
+            SnapshotInfo snapshot = (SnapshotInfo) srcData;
             srcData = cacheSnapshotChain(snapshot);
         }
 
@@ -376,7 +362,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected Answer copySnapshot(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.BackupSnapshotWait.toString());
-        int _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
+        int _backupsnapshotwait = NumbersUtil.parseInt(value,
+                Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
 
         DataObject cacheData = null;
         Answer answer = null;

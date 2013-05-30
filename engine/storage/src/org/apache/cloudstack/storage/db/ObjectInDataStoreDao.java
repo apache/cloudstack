@@ -22,6 +22,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
-public interface ObjectInDataStoreDao extends GenericDao<ObjectInDataStoreVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore>  {
+public interface ObjectInDataStoreDao extends GenericDao<ObjectInDataStoreVO, Long>,
+        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 
 }

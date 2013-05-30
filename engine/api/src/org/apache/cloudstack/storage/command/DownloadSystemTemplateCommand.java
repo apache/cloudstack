@@ -16,138 +16,114 @@
 // under the License.
 package org.apache.cloudstack.storage.command;
 
-
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.PasswordAuth;
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.template.VirtualMachineTemplate;
 
-
 public class DownloadSystemTemplateCommand extends Command {
 
-
-	private PasswordAuth auth;
-	private Proxy _proxy;
-	private DataStoreTO _store;
+    private PasswordAuth auth;
+    private Proxy _proxy;
+    private DataStoreTO _store;
     private Long resourceId;
     private Long accountId;
     private String url;
     private Long maxDownloadSizeInBytes;
     private String name;
 
-	protected DownloadSystemTemplateCommand() {
-	}
+    protected DownloadSystemTemplateCommand() {
+        super();
+    }
 
-
-
-	public DownloadSystemTemplateCommand(DataStoreTO store, String secUrl, VirtualMachineTemplate template, Long maxDownloadSizeInBytes) {
-	    this._store = store;
-	    this.accountId = template.getAccountId();
-	    this.url = secUrl;
-	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
-	    this.resourceId = template.getId();
-	    this.name = template.getUniqueName();
-	}
-
-
-	public DownloadSystemTemplateCommand(DataStoreTO store, String secUrl, String url, VirtualMachineTemplate template, String user, String passwd, Long maxDownloadSizeInBytes) {
+    public DownloadSystemTemplateCommand(DataStoreTO store, String secUrl, VirtualMachineTemplate template,
+            Long maxDownloadSizeInBytes) {
+        super();
         this._store = store;
         this.accountId = template.getAccountId();
         this.url = secUrl;
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
         this.resourceId = template.getId();
-		auth = new PasswordAuth(user, passwd);
-		this.name = template.getUniqueName();
-	}
+        this.name = template.getUniqueName();
+    }
 
+    public DownloadSystemTemplateCommand(DataStoreTO store, String secUrl, String url, VirtualMachineTemplate template,
+            String user, String passwd, Long maxDownloadSizeInBytes) {
+        super();
+        this._store = store;
+        this.accountId = template.getAccountId();
+        this.url = secUrl;
+        this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
+        this.resourceId = template.getId();
+        auth = new PasswordAuth(user, passwd);
+        this.name = template.getUniqueName();
+    }
 
+    public PasswordAuth getAuth() {
+        return auth;
+    }
 
+    public void setCreds(String userName, String passwd) {
+        auth = new PasswordAuth(userName, passwd);
+    }
 
-	public PasswordAuth getAuth() {
-		return auth;
-	}
+    public Proxy getProxy() {
+        return _proxy;
+    }
 
-	public void setCreds(String userName, String passwd) {
-		auth = new PasswordAuth(userName, passwd);
-	}
+    public void setProxy(Proxy proxy) {
+        _proxy = proxy;
+    }
 
-	public Proxy getProxy() {
-		return _proxy;
-	}
-
-	public void setProxy(Proxy proxy) {
-		_proxy = proxy;
-	}
-
-	public Long getMaxDownloadSizeInBytes() {
-		return maxDownloadSizeInBytes;
-	}
-
+    public Long getMaxDownloadSizeInBytes() {
+        return maxDownloadSizeInBytes;
+    }
 
     public DataStoreTO getDataStore() {
         return _store;
     }
 
-
     public void setDataStore(DataStoreTO _store) {
         this._store = _store;
     }
-
 
     public Long getResourceId() {
         return resourceId;
     }
 
-
     public void setResourceId(Long resourceId) {
         this.resourceId = resourceId;
     }
-
-
 
     public Long getAccountId() {
         return accountId;
     }
 
-
-
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
-
-
 
     public String getUrl() {
         return url;
     }
 
-
-
     public void setUrl(String url) {
         this.url = url;
     }
-
-
 
     public String getName() {
         return name;
     }
 
-
-
     public void setName(String name) {
         this.name = name;
     }
-
-
 
     @Override
     public boolean executeInSequence() {
         // TODO Auto-generated method stub
         return false;
     }
-
 
 }

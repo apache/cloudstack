@@ -33,15 +33,13 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 
 @Component
 public class TemplateDataFactoryImpl implements TemplateDataFactory {
-    private static final Logger s_logger = Logger
-            .getLogger(TemplateDataFactoryImpl.class);
+    private static final Logger s_logger = Logger.getLogger(TemplateDataFactoryImpl.class);
     @Inject
     VMTemplateDao imageDataDao;
     @Inject
@@ -50,11 +48,12 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
     VMTemplatePoolDao templatePoolDao;
     @Inject
     TemplateDataStoreDao templateStoreDao;
+
     @Override
     public TemplateInfo getTemplate(long templateId, DataStore store) {
         VMTemplateVO templ = imageDataDao.findById(templateId);
         if (store == null) {
-            TemplateObject tmpl =  TemplateObject.getTemplate(templ, null);
+            TemplateObject tmpl = TemplateObject.getTemplate(templ, null);
             return tmpl;
         }
         // verify if the given input parameters are consistent with our db data.
@@ -75,17 +74,15 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             s_logger.debug("template " + templateId + " is not in store:" + store.getId() + ", type:" + store.getRole());
         }
 
-        TemplateObject tmpl =  TemplateObject.getTemplate(templ, store);
+        TemplateObject tmpl = TemplateObject.getTemplate(templ, store);
         return tmpl;
     }
 
-
     @Override
     public TemplateInfo getTemplate(long templateId, DataStoreRole storeRole) {
-        VMTemplateVO templ = imageDataDao.findById(templateId);
         TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplate(templateId, storeRole);
         DataStore store = null;
-        if ( tmplStore != null ){
+        if (tmplStore != null) {
             store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
         }
         return this.getTemplate(templateId, store);
@@ -93,15 +90,13 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
 
     @Override
     public TemplateInfo getTemplate(long templateId, DataStoreRole storeRole, Long zoneId) {
-        VMTemplateVO templ = imageDataDao.findById(templateId);
         TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplateZone(templateId, zoneId, storeRole);
         DataStore store = null;
-        if ( tmplStore != null ){
+        if (tmplStore != null) {
             store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
         }
         return this.getTemplate(templateId, store);
     }
-
 
     @Override
     public TemplateInfo getTemplate(DataObject obj, DataStore store) {

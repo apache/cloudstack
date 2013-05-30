@@ -22,11 +22,7 @@ import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.rpc.RpcProvider;
-import org.apache.cloudstack.storage.HostEndpointRpcServer;
 import org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.image.db.ImageStoreDaoImpl;
-import org.apache.cloudstack.storage.image.db.ImageStoreDetailsDaoImpl;
 import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
@@ -79,7 +75,6 @@ import com.cloud.storage.dao.VMTemplatePoolDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.dao.VolumeHostDaoImpl;
-import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -98,164 +93,138 @@ import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
-import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
-@Configuration
-@ComponentScan(basePackageClasses={
-        NicDaoImpl.class,
-        VMInstanceDaoImpl.class,
-        VMTemplateHostDaoImpl.class,
-        VolumeHostDaoImpl.class,
-        VolumeDaoImpl.class,
-        VMTemplatePoolDaoImpl.class,
-        ResourceTagsDaoImpl.class,
-        VMTemplateDaoImpl.class,
-        MockStorageMotionStrategy.class,
-        ConfigurationDaoImpl.class,
-        ClusterDaoImpl.class,
-        HostPodDaoImpl.class,
-        VMTemplateZoneDaoImpl.class,
-        VMTemplateDetailsDaoImpl.class,
-        HostDetailsDaoImpl.class,
-        HostTagsDaoImpl.class,
-        HostTransferMapDaoImpl.class,
-        DataCenterIpAddressDaoImpl.class,
-        DataCenterLinkLocalIpAddressDaoImpl.class,
-        DataCenterVnetDaoImpl.class,
-        PodVlanDaoImpl.class,
-        DcDetailsDaoImpl.class,
-        DiskOfferingDaoImpl.class,
-        StoragePoolHostDaoImpl.class,
-        UserVmDaoImpl.class,
-        UserVmDetailsDaoImpl.class,
-        ServiceOfferingDaoImpl.class,
-        CapacityDaoImpl.class,
-        SnapshotDaoImpl.class,
-        VMSnapshotDaoImpl.class,
-        OCFS2ManagerImpl.class,
-        ClusterDetailsDaoImpl.class,
-        SecondaryStorageVmDaoImpl.class,
-        ConsoleProxyDaoImpl.class,
-        StoragePoolWorkDaoImpl.class,
-        StorageCacheManagerImpl.class,
-        UserDaoImpl.class,
-        DataCenterDaoImpl.class,
-        StoragePoolDetailsDaoImpl.class,
-        DomainDaoImpl.class,
-        DownloadMonitorImpl.class,
-        AccountDaoImpl.class
-},
-includeFilters={@Filter(value=Library.class, type=FilterType.CUSTOM)},
-useDefaultFilters=false
-)
-public class ChildTestConfiguration extends TestConfiguration {
-	
-	@Bean
-	public SecondaryStorageVmManager secondaryStoreageMgr() {
-		return Mockito.mock(SecondaryStorageVmManager.class);
-	}
 
-	@Bean
-	public HostDao hostDao() {
-		return Mockito.spy(new HostDaoImpl());
-	}
-	
-	@Bean
-	public EndPointSelector selector() {
-		return Mockito.mock(EndPointSelector.class);
-	}
-	@Bean
-	public AgentManager agentMgr() {
-		return new DirectAgentManagerSimpleImpl();
-	}
-	
+@Configuration
+@ComponentScan(basePackageClasses = { NicDaoImpl.class, VMInstanceDaoImpl.class, VMTemplateHostDaoImpl.class,
+        VolumeHostDaoImpl.class, VolumeDaoImpl.class, VMTemplatePoolDaoImpl.class, ResourceTagsDaoImpl.class,
+        VMTemplateDaoImpl.class, MockStorageMotionStrategy.class, ConfigurationDaoImpl.class, ClusterDaoImpl.class,
+        HostPodDaoImpl.class, VMTemplateZoneDaoImpl.class, VMTemplateDetailsDaoImpl.class, HostDetailsDaoImpl.class,
+        HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, DataCenterIpAddressDaoImpl.class,
+        DataCenterLinkLocalIpAddressDaoImpl.class, DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class,
+        DcDetailsDaoImpl.class, DiskOfferingDaoImpl.class, StoragePoolHostDaoImpl.class, UserVmDaoImpl.class,
+        UserVmDetailsDaoImpl.class, ServiceOfferingDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class,
+        VMSnapshotDaoImpl.class, OCFS2ManagerImpl.class, ClusterDetailsDaoImpl.class, SecondaryStorageVmDaoImpl.class,
+        ConsoleProxyDaoImpl.class, StoragePoolWorkDaoImpl.class, StorageCacheManagerImpl.class, UserDaoImpl.class,
+        DataCenterDaoImpl.class, StoragePoolDetailsDaoImpl.class, DomainDaoImpl.class, DownloadMonitorImpl.class,
+        AccountDaoImpl.class }, includeFilters = { @Filter(value = Library.class, type = FilterType.CUSTOM) },
+        useDefaultFilters = false)
+public class ChildTestConfiguration extends TestConfiguration {
+
     @Bean
-    public HostEndpointRpcServer rpcServer() {
-        return new MockHostEndpointRpcServerDirectCallResource();
+    public SecondaryStorageVmManager secondaryStoreageMgr() {
+        return Mockito.mock(SecondaryStorageVmManager.class);
     }
-    
+
+    @Bean
+    public HostDao hostDao() {
+        return Mockito.spy(new HostDaoImpl());
+    }
+
+    @Bean
+    public EndPointSelector selector() {
+        return Mockito.mock(EndPointSelector.class);
+    }
+
+    @Bean
+    public AgentManager agentMgr() {
+        return new DirectAgentManagerSimpleImpl();
+    }
+
     @Bean
     public ResourceLimitService limtServe() {
         return Mockito.mock(ResourceLimitService.class);
     }
-    
+
     @Bean
     public AccountManager acctMgt() {
         return Mockito.mock(AccountManager.class);
     }
+
     @Bean
     public RpcProvider rpcProvider() {
-    	return Mockito.mock(RpcProvider.class);
+        return Mockito.mock(RpcProvider.class);
     }
+
     @Bean
     public ClusteredAgentRebalanceService _rebalanceService() {
         return Mockito.mock(ClusteredAgentRebalanceService.class);
     }
+
     @Bean
     public UserAuthenticator authenticator() {
         return Mockito.mock(UserAuthenticator.class);
     }
+
     @Bean
     public OrchestrationService orchSrvc() {
         return Mockito.mock(OrchestrationService.class);
     }
+
     @Bean
     public APIChecker apiChecker() {
         return Mockito.mock(APIChecker.class);
     }
+
     @Bean
     public TemplateManager templateMgr() {
-    	return Mockito.mock(TemplateManager.class);
+        return Mockito.mock(TemplateManager.class);
     }
-    
+
     @Bean
     public VolumeManager volumeMgr() {
-    	return Mockito.mock(VolumeManager.class);
+        return Mockito.mock(VolumeManager.class);
     }
+
     @Bean
     public SwiftManager switfMgr() {
-    	return Mockito.mock(SwiftManager.class);
+        return Mockito.mock(SwiftManager.class);
     }
+
     @Bean
     public ManagementServer server() {
-    	return Mockito.mock(ManagementServer.class);
+        return Mockito.mock(ManagementServer.class);
     }
+
     @Bean
     public VirtualMachineManager vmMgr() {
-    	return Mockito.mock(VirtualMachineManager.class);
+        return Mockito.mock(VirtualMachineManager.class);
     }
-    
+
     @Bean
     public S3Manager s3Mgr() {
-    	return Mockito.mock(S3Manager.class);
+        return Mockito.mock(S3Manager.class);
     }
+
     @Bean
     public SnapshotManager snapshotMgr() {
         return Mockito.mock(SnapshotManager.class);
     }
-    
+
     @Bean
     public ResourceManager resourceMgr() {
-    	return Mockito.mock(ResourceManager.class);
+        return Mockito.mock(ResourceManager.class);
     }
+
     @Bean
     public DomainRouterDao domainRouterDao() {
-    	return Mockito.mock(DomainRouterDao.class);
+        return Mockito.mock(DomainRouterDao.class);
     }
+
     @Bean
     public StorageManager storageMgr() {
-    	return Mockito.mock(StorageManager.class);
+        return Mockito.mock(StorageManager.class);
     }
-    
+
     @Bean
     public AlertManager alertMgr() {
         return Mockito.mock(AlertManager.class);
     }
-    
+
     @Bean
     public HypervisorGuruManager hypervisorGuruMgr() {
-    	return Mockito.mock(HypervisorGuruManager.class);
+        return Mockito.mock(HypervisorGuruManager.class);
     }
 
     public static class Library implements TypeFilter {

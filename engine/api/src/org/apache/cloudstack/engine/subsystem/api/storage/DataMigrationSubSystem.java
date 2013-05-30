@@ -25,5 +25,6 @@ import com.cloud.org.Grouping;
 public interface DataMigrationSubSystem {
 
     Class<? extends Grouping> getScopeCoverage();
+
     void migrate(URI source, URI dest, String reservationId);
 }

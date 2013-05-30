@@ -40,16 +40,12 @@ import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 
 @Component
 public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager {
-	private static final Logger s_logger = Logger.getLogger(ImageStoreProviderManagerImpl.class);
+    private static final Logger s_logger = Logger.getLogger(ImageStoreProviderManagerImpl.class);
     @Inject
     ImageStoreDao dataStoreDao;
     @Inject
@@ -67,10 +63,9 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     public ImageStoreEntity getImageStore(long dataStoreId) {
         ImageStoreVO dataStore = dataStoreDao.findById(dataStoreId);
         String providerName = dataStore.getProviderName();
-        ImageStoreProvider provider = (ImageStoreProvider)providerManager.getDataStoreProvider(providerName);
-        ImageStoreEntity imgStore = ImageStoreImpl.getDataStore(dataStore,
-                driverMaps.get(provider.getName()), provider
-                );
+        ImageStoreProvider provider = (ImageStoreProvider) providerManager.getDataStoreProvider(providerName);
+        ImageStoreEntity imgStore = ImageStoreImpl
+                .getDataStore(dataStore, driverMaps.get(provider.getName()), provider);
         // TODO Auto-generated method stub
         return imgStore;
     }
@@ -119,8 +114,6 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
         }
         return imageStores;
     }
-
-
 
     @Override
     public List<DataStore> listImageCacheStores(Scope scope) {

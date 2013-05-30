@@ -34,8 +34,7 @@ import java.util.List;
 
 @Component
 @Local(VMTemplateS3Dao.class)
-public class VMTemplateS3DaoImpl extends GenericDaoBase<VMTemplateS3VO, Long>
-        implements VMTemplateS3Dao {
+public class VMTemplateS3DaoImpl extends GenericDaoBase<VMTemplateS3VO, Long> implements VMTemplateS3Dao {
 
     private final SearchBuilder<VMTemplateS3VO> searchBuilder;
 
@@ -44,19 +43,15 @@ public class VMTemplateS3DaoImpl extends GenericDaoBase<VMTemplateS3VO, Long>
         super();
 
         this.searchBuilder = createSearchBuilder();
-        this.searchBuilder
-                .and(S3_ID_COLUMN_NAME, this.searchBuilder.entity().getS3Id(),
-                        EQ)
-                .and(TEMPLATE_ID_COLUMN_NAME,
-                        this.searchBuilder.entity().getTemplateId(), EQ).done();
+        this.searchBuilder.and(S3_ID_COLUMN_NAME, this.searchBuilder.entity().getS3Id(), EQ)
+                .and(TEMPLATE_ID_COLUMN_NAME, this.searchBuilder.entity().getTemplateId(), EQ).done();
 
     }
 
     @Override
     public List<VMTemplateS3VO> listByS3Id(final long s3id) {
 
-        final SearchCriteria<VMTemplateS3VO> criteria = this.searchBuilder
-                .create();
+        final SearchCriteria<VMTemplateS3VO> criteria = this.searchBuilder.create();
 
         criteria.setParameters(S3_ID_COLUMN_NAME, s3id);
 
@@ -67,8 +62,7 @@ public class VMTemplateS3DaoImpl extends GenericDaoBase<VMTemplateS3VO, Long>
     @Override
     public VMTemplateS3VO findOneByTemplateId(final long templateId) {
 
-        final SearchCriteria<VMTemplateS3VO> criteria = this.searchBuilder
-                .create();
+        final SearchCriteria<VMTemplateS3VO> criteria = this.searchBuilder.create();
 
         criteria.setParameters(TEMPLATE_ID_COLUMN_NAME, templateId);
 
@@ -77,11 +71,9 @@ public class VMTemplateS3DaoImpl extends GenericDaoBase<VMTemplateS3VO, Long>
     }
 
     @Override
-    public VMTemplateS3VO findOneByS3Template(final long s3Id,
-            final long templateId) {
+    public VMTemplateS3VO findOneByS3Template(final long s3Id, final long templateId) {
 
-        final SearchCriteria<VMTemplateS3VO> criteria = this.searchBuilder
-                .create();
+        final SearchCriteria<VMTemplateS3VO> criteria = this.searchBuilder.create();
 
         criteria.setParameters(S3_ID_COLUMN_NAME, s3Id);
         criteria.setParameters(TEMPLATE_ID_COLUMN_NAME, templateId);
@@ -93,8 +85,7 @@ public class VMTemplateS3DaoImpl extends GenericDaoBase<VMTemplateS3VO, Long>
     @Override
     public void expungeAllByTemplateId(long templateId) {
 
-        final SearchCriteria<VMTemplateS3VO> criteria = this.searchBuilder
-                .create();
+        final SearchCriteria<VMTemplateS3VO> criteria = this.searchBuilder.create();
 
         criteria.setParameters(TEMPLATE_ID_COLUMN_NAME, templateId);
 

@@ -32,7 +32,6 @@ import com.cloud.host.Host;
 
 public class MockStorageMotionStrategy implements DataMotionStrategy {
 
-
     @Override
     public boolean canHandle(DataObject srcData, DataObject destData) {
         // TODO Auto-generated method stub
@@ -45,8 +44,7 @@ public class MockStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult("something", null);
         callback.complete(result);
         return null;

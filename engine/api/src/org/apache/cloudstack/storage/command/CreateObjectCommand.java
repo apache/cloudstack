@@ -18,11 +18,10 @@
  */
 package org.apache.cloudstack.storage.command;
 
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
 
-public class CreateObjectCommand extends Command implements StorageSubSystemCommand {
+public final class CreateObjectCommand extends Command implements StorageSubSystemCommand {
     private DataTO data;
 
     public CreateObjectCommand(DataTO obj) {
@@ -39,7 +38,7 @@ public class CreateObjectCommand extends Command implements StorageSubSystemComm
         // TODO Auto-generated method stub
         return false;
     }
-    
+
     public DataTO getData() {
         return this.data;
     }

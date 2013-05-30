@@ -32,7 +32,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.log4j.Logger;
@@ -53,17 +52,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
-    private static final Logger s_logger = Logger
-            .getLogger(DefaultEndPointSelector.class);
+    private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
     HostDao hostDao;
     private String findOneHostInaScope = "select id from host where "
             + " status = 'Up' and type in ('Routing', 'SecondaryStorageVM') ";
-    private String findOneHostOnPrimaryStorage = "select id from host where "
-            +  "status = 'Up' and type = 'Routing' ";
+    private String findOneHostOnPrimaryStorage = "select id from host where " + "status = 'Up' and type = 'Routing' ";
 
-    protected boolean moveBetweenPrimaryImage(DataStore srcStore,
-            DataStore destStore) {
+    protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
         DataStoreRole destRole = destStore.getRole();
         if ((srcRole == DataStoreRole.Primary && destRole.isImageStore())
@@ -75,14 +71,14 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     protected boolean moveBetweenCacheAndImage(DataStore srcStore, DataStore destStore) {
-    	  DataStoreRole srcRole = srcStore.getRole();
-          DataStoreRole destRole = destStore.getRole();
-          if (srcRole == DataStoreRole.Image && destRole == DataStoreRole.ImageCache  ||
-                  srcRole == DataStoreRole.ImageCache && destRole == DataStoreRole.Image) {
-        	  return true;
-          } else {
-        	  return false;
-          }
+        DataStoreRole srcRole = srcStore.getRole();
+        DataStoreRole destRole = destStore.getRole();
+        if (srcRole == DataStoreRole.Image && destRole == DataStoreRole.ImageCache
+                || srcRole == DataStoreRole.ImageCache && destRole == DataStoreRole.Image) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected boolean moveBetweenImages(DataStore srcStore, DataStore destStore) {
@@ -93,7 +89,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         } else {
             return false;
         }
-  }
+    }
 
     @DB
     protected EndPoint findEndPointInScope(Scope scope, String sqlBase) {
@@ -110,7 +106,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             sbuilder.append(" and data_center_id = ");
             sbuilder.append(scope.getScopeId());
         }
-//TODO: order by rand() is slow if there are lot of hosts
+        // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(" ORDER by rand() limit 1");
         String sql = sbuilder.toString();
         PreparedStatement pstmt = null;
@@ -143,12 +139,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return null;
         }
 
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
-                host.getPrivateIpAddress(), host.getPublicIpAddress());
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
+                host.getPublicIpAddress());
     }
 
-    protected EndPoint findEndPointForImageMove(DataStore srcStore,
-            DataStore destStore) {
+    protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
         // find any xen/kvm host in the scope
         Scope srcScope = srcStore.getScope();
         Scope destScope = destStore.getScope();
@@ -173,8 +168,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
         if (moveBetweenPrimaryImage(srcStore, destStore)) {
             return findEndPointForImageMove(srcStore, destStore);
         } else if (moveBetweenCacheAndImage(srcStore, destStore)) {
-        	EndPoint ep = findEndpointForImageStorage(destStore);
-        	return ep;
+            EndPoint ep = findEndpointForImageStorage(destStore);
+            return ep;
         } else if (moveBetweenImages(srcStore, destStore)) {
             EndPoint ep = findEndpointForImageStorage(destStore);
             return ep;
@@ -186,7 +181,6 @@ public class DefaultEndPointSelector implements EndPointSelector {
     protected EndPoint findEndpointForPrimaryStorage(DataStore store) {
         return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage);
     }
-
 
     protected EndPoint findEndpointForImageStorage(DataStore store) {
         Long dcId = null;
@@ -204,7 +198,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
         Collections.shuffle(ssAHosts);
         HostVO host = ssAHosts.get(0);
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress());
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
+                host.getPublicIpAddress());
     }
 
     private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
@@ -223,16 +218,17 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return select(store);
     }
 
-
     @Override
     public EndPoint select(DataStore store) {
         if (store.getRole() == DataStoreRole.Primary) {
             return findEndpointForPrimaryStorage(store);
         } else if (store.getRole() == DataStoreRole.Image) {
-            //in case there is no ssvm, directly send down command hypervisor host
-            // otherwise, send to localhost for bootstrap system vm template download
+            // in case there is no ssvm, directly send down command hypervisor
+            // host
+            // otherwise, send to localhost for bootstrap system vm template
+            // download
             return findEndpointForImageStorage(store);
-        }else {
+        } else {
             throw new CloudRuntimeException("not implemented yet");
         }
     }
@@ -242,16 +238,16 @@ public class DefaultEndPointSelector implements EndPointSelector {
         List<EndPoint> endPoints = new ArrayList<EndPoint>();
         if (store.getScope().getScopeType() == ScopeType.HOST) {
             HostVO host = hostDao.findById(store.getScope().getScopeId());
-            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
-                    host.getPrivateIpAddress(), host.getPublicIpAddress()));
+            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
+                    host.getPublicIpAddress()));
         } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
             SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
             sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, store.getScope().getScopeId());
             sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
             List<HostVO> hosts = sc.find();
             for (HostVO host : hosts) {
-                endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(),
-                        host.getPrivateIpAddress(), host.getPublicIpAddress()));
+                endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
+                        host.getPublicIpAddress()));
             }
 
         } else {

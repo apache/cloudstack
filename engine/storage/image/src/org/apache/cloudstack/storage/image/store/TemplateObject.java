@@ -54,8 +54,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public class TemplateObject implements TemplateInfo {
-    private static final Logger s_logger = Logger
-            .getLogger(TemplateObject.class);
+    private static final Logger s_logger = Logger.getLogger(TemplateObject.class);
     private VMTemplateVO imageVO;
     private DataStore dataStore;
     @Inject
@@ -64,8 +63,10 @@ public class TemplateObject implements TemplateInfo {
     VMTemplateDao imageDao;
     @Inject
     ObjectInDataStoreManager objectInStoreMgr;
-    @Inject VMTemplatePoolDao templatePoolDao;
-    @Inject TemplateDataStoreDao templateStoreDao;
+    @Inject
+    VMTemplatePoolDao templatePoolDao;
+    @Inject
+    TemplateDataStoreDao templateStoreDao;
 
     public TemplateObject() {
     }
@@ -80,7 +81,6 @@ public class TemplateObject implements TemplateInfo {
         to.configure(vo, store);
         return to;
     }
-
 
     public void setSize(Long size) {
         this.imageVO.setSize(size);
@@ -114,7 +114,7 @@ public class TemplateObject implements TemplateInfo {
     public String getUri() {
         VMTemplateVO image = imageDao.findById(this.imageVO.getId());
 
-            return image.getUrl();
+        return image.getUrl();
 
     }
 
@@ -125,28 +125,21 @@ public class TemplateObject implements TemplateInfo {
         }
 
         /*
-
-// If the template that was passed into this allocator is not installed in the storage pool,
-            // add 3 * (template size on secondary storage) to the running total
-            VMTemplateHostVO templateHostVO = _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), null);
-
-            if (templateHostVO == null) {
-                VMTemplateSwiftVO templateSwiftVO = _swiftMgr.findByTmpltId(templateForVmCreation.getId());
-                if (templateSwiftVO != null) {
-                    long templateSize = templateSwiftVO.getPhysicalSize();
-                    if (templateSize == 0) {
-                        templateSize = templateSwiftVO.getSize();
-                    }
-                    totalAllocatedSize += (templateSize + _extraBytesPerVolume);
-                }
-            } else {
-                long templateSize = templateHostVO.getPhysicalSize();
-                if ( templateSize == 0 ){
-                    templateSize = templateHostVO.getSize();
-                }
-                totalAllocatedSize +=  (templateSize + _extraBytesPerVolume);
-            }
-
+         * 
+         * // If the template that was passed into this allocator is not
+         * installed in the storage pool, // add 3 * (template size on secondary
+         * storage) to the running total VMTemplateHostVO templateHostVO =
+         * _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), null);
+         * 
+         * if (templateHostVO == null) { VMTemplateSwiftVO templateSwiftVO =
+         * _swiftMgr.findByTmpltId(templateForVmCreation.getId()); if
+         * (templateSwiftVO != null) { long templateSize =
+         * templateSwiftVO.getPhysicalSize(); if (templateSize == 0) {
+         * templateSize = templateSwiftVO.getSize(); } totalAllocatedSize +=
+         * (templateSize + _extraBytesPerVolume); } } else { long templateSize =
+         * templateHostVO.getPhysicalSize(); if ( templateSize == 0 ){
+         * templateSize = templateHostVO.getSize(); } totalAllocatedSize +=
+         * (templateSize + _extraBytesPerVolume); }
          */
         VMTemplateVO image = imageDao.findById(this.imageVO.getId());
         return image.getSize();
@@ -164,8 +157,7 @@ public class TemplateObject implements TemplateInfo {
 
     public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
         this.imageVO = imageDao.findById(this.imageVO.getId());
-        boolean result= imageMgr.getStateMachine().transitTo(this.imageVO, e, null,
-                imageDao);
+        boolean result = imageMgr.getStateMachine().transitTo(this.imageVO, e, null, imageDao);
         this.imageVO = imageDao.findById(this.imageVO.getId());
         return result;
     }
@@ -173,12 +165,12 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public void processEvent(Event event) {
         try {
-            if (this.getDataStore().getRole() == DataStoreRole.Image ||
-                    this.getDataStore().getRole() == DataStoreRole.ImageCache) {
+            if (this.getDataStore().getRole() == DataStoreRole.Image
+                    || this.getDataStore().getRole() == DataStoreRole.ImageCache) {
                 TemplateEvent templEvent = null;
                 if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
                     templEvent = TemplateEvent.CreateRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested){
+                } else if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested) {
                     templEvent = TemplateEvent.DestroyRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
                     templEvent = TemplateEvent.OperationSucceeded;
@@ -195,9 +187,9 @@ public class TemplateObject implements TemplateInfo {
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
             throw new CloudRuntimeException("Failed to update state" + e.toString());
-        } finally{
+        } finally {
             // in case of OperationFailed, expunge the entry
-            if ( event == ObjectInDataStoreStateMachine.Event.OperationFailed){
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
                 objectInStoreMgr.delete(this);
             }
         }
@@ -206,63 +198,64 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
-        	if (this.getDataStore().getRole() == DataStoreRole.Primary) {
-        		if (answer instanceof CopyCmdAnswer) {
-        			CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
-        			TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
-        			VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(this.getDataStore().getId(), this.getId());
-        			templatePoolRef.setDownloadPercent(100);
-        			templatePoolRef.setDownloadState(Status.DOWNLOADED);
-        			templatePoolRef.setLocalDownloadPath(newTemplate.getPath());
-        			templatePoolRef.setInstallPath(newTemplate.getPath());
-        			templatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
-        		}
-        	} else if (this.getDataStore().getRole() == DataStoreRole.Image ||
-        			this.getDataStore().getRole() == DataStoreRole.ImageCache) {
-        		if (answer instanceof CopyCmdAnswer) {
-        			CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
-        			TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
-        			TemplateDataStoreVO templateStoreRef = this.templateStoreDao.findByStoreTemplate(this.getDataStore().getId(),
-        					this.getId());
-        			templateStoreRef.setInstallPath(newTemplate.getPath());
-        			templateStoreRef.setDownloadPercent(100);
-        			templateStoreRef.setDownloadState(Status.DOWNLOADED);
-        			templateStoreRef.setSize(newTemplate.getSize());
-        			templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
+            if (this.getDataStore().getRole() == DataStoreRole.Primary) {
+                if (answer instanceof CopyCmdAnswer) {
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
+                    TemplateObjectTO newTemplate = (TemplateObjectTO) cpyAnswer.getNewData();
+                    VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(this.getDataStore()
+                            .getId(), this.getId());
+                    templatePoolRef.setDownloadPercent(100);
+                    templatePoolRef.setDownloadState(Status.DOWNLOADED);
+                    templatePoolRef.setLocalDownloadPath(newTemplate.getPath());
+                    templatePoolRef.setInstallPath(newTemplate.getPath());
+                    templatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+                }
+            } else if (this.getDataStore().getRole() == DataStoreRole.Image
+                    || this.getDataStore().getRole() == DataStoreRole.ImageCache) {
+                if (answer instanceof CopyCmdAnswer) {
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
+                    TemplateObjectTO newTemplate = (TemplateObjectTO) cpyAnswer.getNewData();
+                    TemplateDataStoreVO templateStoreRef = this.templateStoreDao.findByStoreTemplate(this
+                            .getDataStore().getId(), this.getId());
+                    templateStoreRef.setInstallPath(newTemplate.getPath());
+                    templateStoreRef.setDownloadPercent(100);
+                    templateStoreRef.setDownloadState(Status.DOWNLOADED);
+                    templateStoreRef.setSize(newTemplate.getSize());
+                    templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
                     if (this.getDataStore().getRole() == DataStoreRole.Image) {
                         VMTemplateVO templateVO = this.imageDao.findById(this.getId());
                         templateVO.setFormat(newTemplate.getFormat());
                         templateVO.setSize(newTemplate.getSize());
                         this.imageDao.update(templateVO.getId(), templateVO);
                     }
-        		}
+                }
 
-        		TemplateEvent templEvent = null;
-        		if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
-        		    templEvent = TemplateEvent.CreateRequested;
-        		} else if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested){
+                TemplateEvent templEvent = null;
+                if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
+                    templEvent = TemplateEvent.CreateRequested;
+                } else if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested) {
                     templEvent = TemplateEvent.DestroyRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
-        		    templEvent = TemplateEvent.OperationSucceeded;
-        		} else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-        		    templEvent = TemplateEvent.OperationFailed;
-        		}
+                    templEvent = TemplateEvent.OperationSucceeded;
+                } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+                    templEvent = TemplateEvent.OperationFailed;
+                }
 
-        		if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
-        		    this.stateTransit(templEvent);
-        		}
-        	}
+                if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
+                    this.stateTransit(templEvent);
+                }
+            }
             objectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
             s_logger.debug("failed to update state", e);
             throw new CloudRuntimeException("Failed to update state" + e.toString());
-        } catch (Exception ex){
+        } catch (Exception ex) {
             s_logger.debug("failed to process event and answer", ex);
             objectInStoreMgr.delete(this);
             throw new CloudRuntimeException("Failed to process event", ex);
-        } finally{
+        } finally {
             // in case of OperationFailed, expunge the entry
-            if ( event == ObjectInDataStoreStateMachine.Event.OperationFailed){
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
                 objectInStoreMgr.delete(this);
             }
         }
@@ -270,26 +263,26 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public DataTO getTO() {
-    	DataTO to = null;
-    	if (this.dataStore == null) {
-    		to = new TemplateObjectTO(this);
-    	} else {
-    		to = this.dataStore.getDriver().getTO(this);
-    		if (to == null) {
-    			to = new TemplateObjectTO(this);
-    		}
-    	}
+        DataTO to = null;
+        if (this.dataStore == null) {
+            to = new TemplateObjectTO(this);
+        } else {
+            to = this.dataStore.getDriver().getTO(this);
+            if (to == null) {
+                to = new TemplateObjectTO(this);
+            }
+        }
 
         return to;
     }
 
     @Override
     public String getInstallPath() {
-    	if (this.dataStore == null) {
-    		return null;
-    	}
-    	DataObjectInStore obj = objectInStoreMgr.findObject(this, this.dataStore);
-    	return obj.getInstallPath();
+        if (this.dataStore == null) {
+            return null;
+        }
+        DataObjectInStore obj = objectInStoreMgr.findObject(this, this.dataStore);
+        return obj.getInstallPath();
     }
 
     @Override

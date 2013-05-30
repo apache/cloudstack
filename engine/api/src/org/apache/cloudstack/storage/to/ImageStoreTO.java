@@ -27,7 +27,7 @@ public class ImageStoreTO implements DataStoreTO {
     private String providerName;
     private DataStoreRole role;
 
-    public ImageStoreTO(){
+    public ImageStoreTO() {
 
     }
 
@@ -52,7 +52,6 @@ public class ImageStoreTO implements DataStoreTO {
     public String getProviderName() {
         return providerName;
     }
-
 
     public void setType(String type) {
         this.type = type;

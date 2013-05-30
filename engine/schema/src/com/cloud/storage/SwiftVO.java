@@ -26,39 +26,40 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.agent.api.to.SwiftTO;
-import org.apache.cloudstack.api.Identity;
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.utils.db.GenericDao;
+
 @Entity
-@Table(name="swift")
+@Table(name = "swift")
 public class SwiftVO implements Swift, InternalIdentity {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="url")
+    @Column(name = "url")
     String url;
 
-    @Column(name="account")
+    @Column(name = "account")
     String account;
 
-    @Column(name="username")
+    @Column(name = "username")
     String userName;
 
-    @Column(name="key")
+    @Column(name = "key")
     String key;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    public SwiftVO() { }
+    public SwiftVO() {
+    }
 
     public SwiftVO(String url, String account, String userName, String key) {
         this.url = url;
@@ -71,18 +72,22 @@ public class SwiftVO implements Swift, InternalIdentity {
     public long getId() {
         return id;
     }
+
     @Override
     public String getUrl() {
         return url;
     }
+
     @Override
     public String getAccount() {
         return account;
     }
+
     @Override
     public String getUserName() {
         return userName;
     }
+
     @Override
     public String getKey() {
         return key;
@@ -99,10 +104,10 @@ public class SwiftVO implements Swift, InternalIdentity {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 }

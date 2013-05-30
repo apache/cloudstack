@@ -35,43 +35,53 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value={StoragePoolWorkDao.class}) @DB(txn=false)
-public class StoragePoolWorkDaoImpl extends GenericDaoBase<StoragePoolWorkVO, Long>  implements StoragePoolWorkDao {
+@Local(value = { StoragePoolWorkDao.class })
+@DB(txn = false)
+public class StoragePoolWorkDaoImpl extends GenericDaoBase<StoragePoolWorkVO, Long> implements StoragePoolWorkDao {
 
     protected final SearchBuilder<StoragePoolWorkVO> PendingWorkForPrepareForMaintenanceSearch;
     protected final SearchBuilder<StoragePoolWorkVO> PendingWorkForCancelMaintenanceSearch;
     protected final SearchBuilder<StoragePoolWorkVO> PoolAndVmIdSearch;
     protected final SearchBuilder<StoragePoolWorkVO> PendingJobsForDeadMs;
-    
+
     private final String FindPoolIds = "SELECT distinct storage_pool_work.pool_id FROM storage_pool_work WHERE mgmt_server_id = ?";
-    
+
     protected StoragePoolWorkDaoImpl() {
         PendingWorkForPrepareForMaintenanceSearch = createSearchBuilder();
-        PendingWorkForPrepareForMaintenanceSearch.and("poolId", PendingWorkForPrepareForMaintenanceSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-        PendingWorkForPrepareForMaintenanceSearch.and("stoppedForMaintenance", PendingWorkForPrepareForMaintenanceSearch.entity().isStoppedForMaintenance(), SearchCriteria.Op.EQ);
-        PendingWorkForPrepareForMaintenanceSearch.and("startedAfterMaintenance", PendingWorkForPrepareForMaintenanceSearch.entity().isStartedAfterMaintenance(), SearchCriteria.Op.EQ);
+        PendingWorkForPrepareForMaintenanceSearch.and("poolId", PendingWorkForPrepareForMaintenanceSearch.entity()
+                .getPoolId(), SearchCriteria.Op.EQ);
+        PendingWorkForPrepareForMaintenanceSearch.and("stoppedForMaintenance",
+                PendingWorkForPrepareForMaintenanceSearch.entity().isStoppedForMaintenance(), SearchCriteria.Op.EQ);
+        PendingWorkForPrepareForMaintenanceSearch.and("startedAfterMaintenance",
+                PendingWorkForPrepareForMaintenanceSearch.entity().isStartedAfterMaintenance(), SearchCriteria.Op.EQ);
         PendingWorkForPrepareForMaintenanceSearch.done();
-        
+
         PendingWorkForCancelMaintenanceSearch = createSearchBuilder();
-        PendingWorkForCancelMaintenanceSearch.and("poolId", PendingWorkForCancelMaintenanceSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-        PendingWorkForCancelMaintenanceSearch.and("stoppedForMaintenance", PendingWorkForCancelMaintenanceSearch.entity().isStoppedForMaintenance(), SearchCriteria.Op.EQ);
-        PendingWorkForCancelMaintenanceSearch.and("startedAfterMaintenance", PendingWorkForCancelMaintenanceSearch.entity().isStartedAfterMaintenance(), SearchCriteria.Op.EQ);
+        PendingWorkForCancelMaintenanceSearch.and("poolId", PendingWorkForCancelMaintenanceSearch.entity().getPoolId(),
+                SearchCriteria.Op.EQ);
+        PendingWorkForCancelMaintenanceSearch.and("stoppedForMaintenance", PendingWorkForCancelMaintenanceSearch
+                .entity().isStoppedForMaintenance(), SearchCriteria.Op.EQ);
+        PendingWorkForCancelMaintenanceSearch.and("startedAfterMaintenance", PendingWorkForCancelMaintenanceSearch
+                .entity().isStartedAfterMaintenance(), SearchCriteria.Op.EQ);
         PendingWorkForCancelMaintenanceSearch.done();
 
         PoolAndVmIdSearch = createSearchBuilder();
         PoolAndVmIdSearch.and("poolId", PoolAndVmIdSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
         PoolAndVmIdSearch.and("vmId", PoolAndVmIdSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         PoolAndVmIdSearch.done();
-        
+
         PendingJobsForDeadMs = createSearchBuilder();
-        PendingJobsForDeadMs.and("managementServerId", PendingJobsForDeadMs.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        PendingJobsForDeadMs.and("managementServerId", PendingJobsForDeadMs.entity().getManagementServerId(),
+                SearchCriteria.Op.EQ);
         PendingJobsForDeadMs.and("poolId", PendingJobsForDeadMs.entity().getPoolId(), SearchCriteria.Op.EQ);
-        PendingJobsForDeadMs.and("stoppedForMaintenance", PendingJobsForDeadMs.entity().isStoppedForMaintenance(), SearchCriteria.Op.EQ);
-        PendingJobsForDeadMs.and("startedAfterMaintenance", PendingJobsForDeadMs.entity().isStartedAfterMaintenance(), SearchCriteria.Op.EQ);
+        PendingJobsForDeadMs.and("stoppedForMaintenance", PendingJobsForDeadMs.entity().isStoppedForMaintenance(),
+                SearchCriteria.Op.EQ);
+        PendingJobsForDeadMs.and("startedAfterMaintenance", PendingJobsForDeadMs.entity().isStartedAfterMaintenance(),
+                SearchCriteria.Op.EQ);
         PendingJobsForDeadMs.done();
-        
+
     }
-    
+
     @Override
     public List<StoragePoolWorkVO> listPendingWorkForPrepareForMaintenanceByPoolId(long poolId) {
         SearchCriteria<StoragePoolWorkVO> sc = PendingWorkForPrepareForMaintenanceSearch.create();
@@ -80,7 +90,7 @@ public class StoragePoolWorkDaoImpl extends GenericDaoBase<StoragePoolWorkVO, Lo
         sc.setParameters("startedAfterMaintenance", false);
         return listBy(sc);
     }
-    
+
     @Override
     public List<StoragePoolWorkVO> listPendingWorkForCancelMaintenanceByPoolId(long poolId) {
         SearchCriteria<StoragePoolWorkVO> sc = PendingWorkForCancelMaintenanceSearch.create();
@@ -89,7 +99,7 @@ public class StoragePoolWorkDaoImpl extends GenericDaoBase<StoragePoolWorkVO, Lo
         sc.setParameters("startedAfterMaintenance", false);
         return listBy(sc);
     }
-    
+
     @Override
     public StoragePoolWorkVO findByPoolIdAndVmId(long poolId, long vmId) {
         SearchCriteria<StoragePoolWorkVO> sc = PoolAndVmIdSearch.create();
@@ -97,22 +107,22 @@ public class StoragePoolWorkDaoImpl extends GenericDaoBase<StoragePoolWorkVO, Lo
         sc.setParameters("vmId", vmId);
         return listBy(sc).get(0);
     }
-    
+
     @Override
     public void removePendingJobsOnMsRestart(long msId, long poolId) {
-        //hung jobs are those which are stopped, but never started
+        // hung jobs are those which are stopped, but never started
         SearchCriteria<StoragePoolWorkVO> sc = PendingJobsForDeadMs.create();
         sc.setParameters("managementServerId", msId);
         sc.setParameters("poolId", poolId);
         sc.setParameters("stoppedForMaintenance", true);
-        sc.setParameters("startedAfterMaintenance", false);        
+        sc.setParameters("startedAfterMaintenance", false);
         remove(sc);
     }
-    
+
     @Override
     @DB
-    public List<Long> searchForPoolIdsForPendingWorkJobs(long msId){
-        
+    public List<Long> searchForPoolIdsForPendingWorkJobs(long msId) {
+
         StringBuilder sql = new StringBuilder(FindPoolIds);
 
         Transaction txn = Transaction.currentTxn();
@@ -126,7 +136,7 @@ public class StoragePoolWorkDaoImpl extends GenericDaoBase<StoragePoolWorkVO, Lo
 
             while (rs.next()) {
                 poolIds.add(rs.getLong("pool_id"));
-            }           
+            }
             return poolIds;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);

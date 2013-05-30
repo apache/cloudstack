@@ -45,6 +45,7 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
     EndPointSelector selector;
     @Inject
     VMTemplateDao imageDataDao;
+
     public SampleImageStoreDriverImpl() {
     }
 
@@ -52,7 +53,6 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
     public DataTO getTO(DataObject data) {
         return null;
     }
-
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
@@ -78,9 +78,8 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     @Override
-    public void createAsync(DataObject data,
-            AsyncCompletionCallback<CreateCmdResult> callback) {
-        //for default http data store, can create http based template/iso
+    public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+        // for default http data store, can create http based template/iso
         CreateCmdResult result = new CreateCmdResult("", null);
         if (!data.getUri().startsWith("http")) {
             result.setResult("can't register an image which is not a http link");
@@ -89,7 +88,8 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
         }
 
         if (data.getSize() == null && data.getType() == DataObjectType.TEMPLATE) {
-            //the template size is unknown during registration, need to find out the size of template
+            // the template size is unknown during registration, need to find
+            // out the size of template
             EndPoint ep = selector.select(data);
             if (ep == null) {
                 result.setResult("can't find storage client for:" + data.getId() + "," + data.getType());
@@ -97,9 +97,9 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
                 return;
             }
             CreateObjectCommand createCmd = new CreateObjectCommand(data.getTO());
-            CreateObjectAnswer answer = (CreateObjectAnswer)ep.sendMessage(createCmd);
+            CreateObjectAnswer answer = (CreateObjectAnswer) ep.sendMessage(createCmd);
             if (answer.getResult()) {
-                //update imagestorevo
+                // update imagestorevo
 
                 result = new CreateCmdResult(null, null);
             } else {
@@ -112,8 +112,7 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     @Override
-    public void deleteAsync(DataObject data,
-            AsyncCompletionCallback<CommandResult> callback) {
+    public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
         CommandResult result = new CommandResult();
         callback.complete(result);
     }
@@ -125,16 +124,14 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     @Override
-    public void copyAsync(DataObject srcdata, DataObject destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         // TODO Auto-generated method stub
 
     }
 
-	@Override
-	public void resize(DataObject data,
-			AsyncCompletionCallback<CreateCmdResult> callback) {
-		// TODO Auto-generated method stub
+    @Override
+    public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 }

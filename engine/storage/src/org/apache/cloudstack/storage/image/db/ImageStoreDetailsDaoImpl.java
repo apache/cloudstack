@@ -26,14 +26,13 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.springframework.stereotype.Component;
 
-import com.cloud.host.DetailVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
 @Component
-@Local(value=ImageStoreDetailsDao.class)
+@Local(value = ImageStoreDetailsDao.class)
 public class ImageStoreDetailsDaoImpl extends GenericDaoBase<ImageStoreDetailVO, Long> implements ImageStoreDetailsDao {
 
     protected final SearchBuilder<ImageStoreDetailVO> storeSearch;
@@ -62,16 +61,16 @@ public class ImageStoreDetailsDaoImpl extends GenericDaoBase<ImageStoreDetailVO,
 
     @Override
     public Map<String, String> getDetails(long storeId) {
-    	SearchCriteria<ImageStoreDetailVO> sc = storeSearch.create();
-    	sc.setParameters("store", storeId);
+        SearchCriteria<ImageStoreDetailVO> sc = storeSearch.create();
+        sc.setParameters("store", storeId);
 
-    	List<ImageStoreDetailVO> details = listBy(sc);
-    	Map<String, String> detailsMap = new HashMap<String, String>();
-    	for (ImageStoreDetailVO detail : details) {
-    		detailsMap.put(detail.getName(), detail.getValue());
-    	}
+        List<ImageStoreDetailVO> details = listBy(sc);
+        Map<String, String> detailsMap = new HashMap<String, String>();
+        for (ImageStoreDetailVO detail : details) {
+            detailsMap.put(detail.getName(), detail.getValue());
+        }
 
-    	return detailsMap;
+        return detailsMap;
     }
 
     @Override
@@ -85,6 +84,5 @@ public class ImageStoreDetailsDaoImpl extends GenericDaoBase<ImageStoreDetailVO,
         }
 
     }
-
 
 }

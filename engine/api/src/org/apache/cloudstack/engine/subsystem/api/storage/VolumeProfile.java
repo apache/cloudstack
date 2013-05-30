@@ -19,16 +19,17 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 public class VolumeProfile {
-	private String _uri;
-	public String getURI() {
-		return _uri;
-	}
-	
-	public String getPath() {
-		return null;
-	}
-	
-	public long getSize() {
-		return 0;
-	}
+    private String _uri;
+
+    public String getURI() {
+        return _uri;
+    }
+
+    public String getPath() {
+        return null;
+    }
+
+    public long getSize() {
+        return 0;
+    }
 }

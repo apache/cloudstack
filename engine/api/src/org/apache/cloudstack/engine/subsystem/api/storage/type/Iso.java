@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class Iso extends VolumeTypeBase {
-	public Iso() {
-		this.type = "iso";
-	}
+    public Iso() {
+        this.type = "iso";
+    }
 }

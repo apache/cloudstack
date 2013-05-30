@@ -23,6 +23,7 @@ import com.cloud.agent.api.to.DiskTO;
 
 public class AttachAnswer extends Answer {
     private DiskTO disk;
+
     public AttachAnswer() {
         super(null);
     }
@@ -31,6 +32,7 @@ public class AttachAnswer extends Answer {
         super(null);
         this.setDisk(disk);
     }
+
     public AttachAnswer(String errMsg) {
         super(null, false, errMsg);
     }

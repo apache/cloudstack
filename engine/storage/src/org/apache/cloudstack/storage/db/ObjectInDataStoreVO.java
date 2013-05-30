@@ -78,13 +78,13 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "local_path")
     String localDownloadPath;
 
-    @Column (name="url")
+    @Column(name = "url")
     private String downloadUrl;
 
-    @Column(name="format")
+    @Column(name = "format")
     private Storage.ImageFormat format;
 
-    @Column(name="checksum")
+    @Column(name = "checksum")
     private String checksum;
 
     @Column(name = "error_str")
@@ -103,7 +103,7 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
-    @Column(name="update_count", updatable = true, nullable=false)
+    @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
 
     @Column(name = "updated")
@@ -148,10 +148,12 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return this.state;
     }
 
+    @Override
     public void setInstallPath(String path) {
         this.installPath = path;
     }
 
+    @Override
     public String getInstallPath() {
         return this.installPath;
     }
@@ -185,16 +187,16 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     @Override
-	public long getDataStoreId() {
-		return dataStoreId;
-	}
+    public long getDataStoreId() {
+        return dataStoreId;
+    }
 
-	public void setDataStoreId(long dataStoreId) {
-		this.dataStoreId = dataStoreId;
-	}
+    public void setDataStoreId(long dataStoreId) {
+        this.dataStoreId = dataStoreId;
+    }
 
     @Override
     public State getObjectInStoreState() {
-       return this.state;
+        return this.state;
     }
 }

@@ -34,14 +34,14 @@ import com.cloud.agent.api.StoragePoolInfo;
 
 public class SampleImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     @Inject
-	protected ImageStoreDao imageStoreDao;
-	@Inject
-	ImageStoreHelper imageStoreHelper;
-	@Inject
-	ImageStoreProviderManager imageStoreMgr;
-	public SampleImageStoreLifeCycleImpl() {
-	}
+    protected ImageStoreDao imageStoreDao;
+    @Inject
+    ImageStoreHelper imageStoreHelper;
+    @Inject
+    ImageStoreProviderManager imageStoreMgr;
 
+    public SampleImageStoreLifeCycleImpl() {
+    }
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
@@ -49,21 +49,17 @@ public class SampleImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return imageStoreMgr.getImageStore(ids.getId());
     }
 
-
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
         // TODO Auto-generated method stub
         return false;
     }
 
-
     @Override
-    public boolean attachHost(DataStore store, HostScope scope,
-            StoragePoolInfo existingInfo) {
+    public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope) {
@@ -71,13 +67,11 @@ public class SampleImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return false;
     }
 
-
     @Override
     public boolean dettach() {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public boolean unmanaged() {
@@ -85,20 +79,17 @@ public class SampleImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return false;
     }
 
-
     @Override
     public boolean maintain(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }
 
-
     @Override
     public boolean cancelMaintain(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public boolean deleteDataStore(DataStore store) {

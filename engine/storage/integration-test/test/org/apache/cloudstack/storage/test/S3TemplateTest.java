@@ -42,6 +42,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreHelper;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.testng.annotations.Test;
@@ -59,42 +60,41 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.utils.component.ComponentContext;
 
-@ContextConfiguration(locations={"classpath:/storageContext.xml"})
-
+@ContextConfiguration(locations = { "classpath:/storageContext.xml" })
 public class S3TemplateTest extends CloudStackTestNGBase {
-	@Inject
-	DataCenterDao dcDao;
-	ImageStoreVO imageStore;
-	ImageStoreDetailVO imageStoreDetail;
-	@Inject
-	ImageStoreDao imageStoreDao;
-	@Inject
-	TemplateService templateSvr;
-	@Inject
-	VMTemplateDao templateDao;
-	@Inject
-	TemplateDataFactory templateFactory;
-	@Inject
-	DataStoreManager dataStoreMgr;
-	@Inject
-	EndPointSelector epSelector;
-	@Inject
-	DownloadMonitorImpl downloadMonitor;
-	@Inject
-	ImageStoreHelper imageStoreHelper;
-	@Inject
-	StorageCacheManager cacheMgr;
-	long dcId;
-	long templateId;
+    @Inject
+    DataCenterDao dcDao;
+    ImageStoreVO imageStore;
+    ImageStoreDetailVO imageStoreDetail;
+    @Inject
+    ImageStoreDao imageStoreDao;
+    @Inject
+    TemplateService templateSvr;
+    @Inject
+    VMTemplateDao templateDao;
+    @Inject
+    TemplateDataFactory templateFactory;
+    @Inject
+    DataStoreManager dataStoreMgr;
+    @Inject
+    EndPointSelector epSelector;
+    @Inject
+    DownloadMonitorImpl downloadMonitor;
+    @Inject
+    ImageStoreHelper imageStoreHelper;
+    @Inject
+    StorageCacheManager cacheMgr;
+    long dcId;
+    long templateId;
 
-	@Test(priority = -1)
-	public void setUp() {
-		ComponentContext.initComponentsLifeCycle();
-		//create data center
-		DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
-				null, null, NetworkType.Basic, null, null, true,  true, null, null);
-		dc = dcDao.persist(dc);
-		dcId = dc.getId();
+    @Test(priority = -1)
+    public void setUp() {
+        ComponentContext.initComponentsLifeCycle();
+        // create data center
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
+                "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true, true, null, null);
+        dc = dcDao.persist(dc);
+        dcId = dc.getId();
 
         // add s3 image store
         Map<String, Object> sParams = new HashMap<String, Object>();
@@ -121,55 +121,54 @@ public class S3TemplateTest extends CloudStackTestNGBase {
         cParams.put("zoneId", dcId);
         this.imageStoreHelper.createImageStore(cParams);
 
+        VMTemplateVO image = new VMTemplateVO();
+        image.setTemplateType(TemplateType.SYSTEM);
+        image.setUrl(this.getTemplateUrl());
+        image.setUniqueName(UUID.randomUUID().toString());
+        image.setName(UUID.randomUUID().toString());
+        image.setPublicTemplate(false);
+        image.setFeatured(false);
+        image.setRequiresHvm(false);
+        image.setBits(64);
+        image.setFormat(Storage.ImageFormat.VHD);
+        image.setEnablePassword(false);
+        image.setEnableSshKey(false);
+        image.setGuestOSId(133);
+        image.setBootable(true);
+        image.setPrepopulate(true);
+        image.setCrossZones(true);
+        image.setExtractable(true);
+        image.setAccountId(2);
+        image = templateDao.persist(image);
+        templateId = image.getId();
 
-		VMTemplateVO image = new VMTemplateVO();
-		image.setTemplateType(TemplateType.SYSTEM);
-		image.setUrl(this.getTemplateUrl());
-		image.setUniqueName(UUID.randomUUID().toString());
-		image.setName(UUID.randomUUID().toString());
-		image.setPublicTemplate(false);
-		image.setFeatured(false);
-		image.setRequiresHvm(false);
-		image.setBits(64);
-		image.setFormat(Storage.ImageFormat.VHD);
-		image.setEnablePassword(false);
-		image.setEnableSshKey(false);
-		image.setGuestOSId(133);
-		image.setBootable(true);
-		image.setPrepopulate(true);
-		image.setCrossZones(true);
-		image.setExtractable(true);
-		image.setAccountId(2);
-		image = templateDao.persist(image);
-		templateId = image.getId();
+        // inject mockito
+        LocalHostEndpoint ep = new LocalHostEndpoint();
+        ep.setResource(new MockLocalNfsSecondaryStorageResource());
+        Mockito.when(epSelector.select(Matchers.any(DataObject.class))).thenReturn(ep);
+        Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(ep);
+        Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(ep);
+    }
 
-		// inject mockito
-		LocalHostEndpoint ep = new LocalHostEndpoint();
-		ep.setResource(new MockLocalNfsSecondaryStorageResource());
-		Mockito.when(epSelector.select(Mockito.any(DataObject.class))).thenReturn(ep);
-		Mockito.when(epSelector.select(Mockito.any(DataStore.class))).thenReturn(ep);
-        Mockito.when(epSelector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(ep);
-	}
-
-	@Test(priority = 1)
-	public void registerTemplate() {
-		TemplateInfo template = templateFactory.getTemplate(templateId, DataStoreRole.Image);
-		DataStore store = dataStoreMgr.getImageStore(dcId);
-		AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
-		templateSvr.createTemplateAsync(template, store, future);
-		try {
-			TemplateApiResult result = future.get();
-			assertTrue(result.isSuccess(), "failed to register template: " + result.getResult());
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			assertTrue(false, e.getMessage());
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-	         assertTrue(false, e.getMessage());
-		}
-	}
+    @Test(priority = 1)
+    public void registerTemplate() {
+        TemplateInfo template = templateFactory.getTemplate(templateId, DataStoreRole.Image);
+        DataStore store = dataStoreMgr.getImageStore(dcId);
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
+        templateSvr.createTemplateAsync(template, store, future);
+        try {
+            TemplateApiResult result = future.get();
+            assertTrue(result.isSuccess(), "failed to register template: " + result.getResult());
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            assertTrue(false, e.getMessage());
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            assertTrue(false, e.getMessage());
+        }
+    }
 
     @Test(priority = 2)
     public void copyTemplateToCache() {

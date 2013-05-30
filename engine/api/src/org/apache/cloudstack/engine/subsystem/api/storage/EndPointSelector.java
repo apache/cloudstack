@@ -20,7 +20,6 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
 
-
 public interface EndPointSelector {
     public EndPoint select(DataObject srcData, DataObject destData);
 

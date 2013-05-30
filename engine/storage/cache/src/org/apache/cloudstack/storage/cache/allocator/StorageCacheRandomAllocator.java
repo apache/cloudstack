@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.cache.allocator;
 
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -30,27 +31,25 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.storage.ScopeType;
 
-import edu.emory.mathcs.backport.java.util.Collections;
-
 @Component
 public class StorageCacheRandomAllocator implements StorageCacheAllocator {
-	private static final Logger s_logger = Logger
-            .getLogger(StorageCacheRandomAllocator.class);
+    private static final Logger s_logger = Logger.getLogger(StorageCacheRandomAllocator.class);
     @Inject
     DataStoreManager dataStoreMgr;
+
     @Override
     public DataStore getCacheStore(Scope scope) {
         if (scope.getScopeType() != ScopeType.ZONE) {
             s_logger.debug("Can only support zone wide cache storage");
             return null;
         }
-       
+
         List<DataStore> cacheStores = dataStoreMgr.getImageCacheStores(scope);
         if (cacheStores.size() <= 0) {
             s_logger.debug("Can't find cache storage in zone: " + scope.getScopeId());
             return null;
         }
-        
+
         Collections.shuffle(cacheStores);
         return cacheStores.get(0);
     }

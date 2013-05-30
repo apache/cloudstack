@@ -31,6 +31,7 @@ public interface StorageOrchestrator {
 
     /**
      * Prepares all storage ready for a VM to start
+     * 
      * @param vm
      * @param reservationId
      */
@@ -38,6 +39,7 @@ public interface StorageOrchestrator {
 
     /**
      * Releases all storage that were used for a VM shutdown
+     * 
      * @param vm
      * @param disks
      * @param reservationId
@@ -46,6 +48,7 @@ public interface StorageOrchestrator {
 
     /**
      * Destroy all disks
+     * 
      * @param disks
      * @param reservationId
      */
@@ -53,16 +56,21 @@ public interface StorageOrchestrator {
 
     /**
      * Cancel a reservation
-     * @param reservationId reservation to 
+     * 
+     * @param reservationId
+     *            reservation to
      */
     void cancel(String reservationId);
-    
+
     /**
-     * If attaching a volume in allocated state to a running vm, need to create this volume
+     * If attaching a volume in allocated state to a running vm, need to create
+     * this volume
      */
     void prepareAttachDiskToVM(long diskId, long vmId, String reservationId);
-    
+
     boolean createVolume(VolumeEntity volume, long dataStoreId, DiskFormat diskType);
+
     boolean createVolumeFromTemplate(VolumeEntity volume, long dataStoreId, DiskFormat dis, TemplateEntity template);
-    VolumeEntity allocateVolumeInDb(long size, VolumeType type,String volName, Long templateId);
+
+    VolumeEntity allocateVolumeInDb(long size, VolumeType type, String volName, Long templateId);
 }

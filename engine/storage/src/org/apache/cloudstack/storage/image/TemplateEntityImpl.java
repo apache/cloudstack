@@ -39,7 +39,7 @@ public class TemplateEntityImpl implements TemplateEntity {
     }
 
     public ImageStoreInfo getImageDataStore() {
-        return (ImageStoreInfo)templateInfo.getDataStore();
+        return (ImageStoreInfo) templateInfo.getDataStore();
     }
 
     public long getImageDataStoreId() {
@@ -57,7 +57,7 @@ public class TemplateEntityImpl implements TemplateEntity {
 
     @Override
     public long getId() {
-       return this.templateInfo.getId();
+        return this.templateInfo.getId();
     }
 
     public String getExternalId() {
@@ -100,7 +100,6 @@ public class TemplateEntityImpl implements TemplateEntity {
         // TODO Auto-generated method stub
         return null;
     }
-
 
     @Override
     public void addDetail(String name, String value) {

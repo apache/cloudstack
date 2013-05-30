@@ -25,30 +25,31 @@ public class AttachPrimaryDataStoreAnswer extends Answer {
     private String uuid;
     private long capacity;
     private long avail;
+
     public AttachPrimaryDataStoreAnswer(Command cmd) {
         super(cmd);
     }
-    
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     public String getUuid() {
         return this.uuid;
     }
-    
+
     public void setCapacity(long capacity) {
         this.capacity = capacity;
     }
-    
+
     public long getCapacity() {
         return this.capacity;
     }
-    
+
     public void setAvailable(long avail) {
         this.avail = avail;
     }
-    
+
     public long getAvailable() {
         return this.avail;
     }

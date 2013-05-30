@@ -21,9 +21,6 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import java.util.Map;
 import java.util.Set;
 
-
-
-
 public interface DataStoreProvider {
     // constants for provider names
     public static final String NFS_IMAGE = "NFS";
@@ -34,16 +31,19 @@ public interface DataStoreProvider {
     public static final String DEFAULT_PRIMARY = "DefaultPrimary";
 
     public static enum DataStoreProviderType {
-        PRIMARY,
-        IMAGE,
-        ImageCache
+        PRIMARY, IMAGE, ImageCache
     }
-    public DataStoreLifeCycle getDataStoreLifeCycle();
-    public DataStoreDriver getDataStoreDriver();
-    public HypervisorHostListener getHostListener();
-    public String getName();
-    public boolean configure(Map<String, Object> params);
-    public Set<DataStoreProviderType> getTypes();
 
+    public DataStoreLifeCycle getDataStoreLifeCycle();
+
+    public DataStoreDriver getDataStoreDriver();
+
+    public HypervisorHostListener getHostListener();
+
+    public String getName();
+
+    public boolean configure(Map<String, Object> params);
+
+    public Set<DataStoreProviderType> getTypes();
 
 }

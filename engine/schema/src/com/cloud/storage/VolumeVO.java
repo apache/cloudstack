@@ -40,7 +40,8 @@ import com.cloud.utils.db.GenericDao;
 @Table(name = "volumes")
 public class VolumeVO implements Volume {
     @Id
-    @TableGenerator(name = "volume_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "volume_seq", allocationSize = 1)
+    @TableGenerator(name = "volume_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value",
+            pkColumnValue = "volume_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.TABLE)
     @Column(name = "id")
     long id;
@@ -50,10 +51,10 @@ public class VolumeVO implements Volume {
 
     @Column(name = "pool_id")
     Long poolId;
-    
+
     @Column(name = "last_pool_id")
     Long lastPoolId;
-    
+
     @Column(name = "account_id")
     long accountId;
 
@@ -114,9 +115,12 @@ public class VolumeVO implements Volume {
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
-    
-    @Column(name="update_count", updatable = true, nullable=false)
-    protected long updatedCount;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
+
+    @Column(name = "update_count", updatable = true, nullable = false)
+    protected long updatedCount; // This field should be updated everytime the
+                                 // state is updated. There's no set method in
+                                 // the vo object because it is done with in the
+                                 // dao code.
 
     @Column(name = "recreatable")
     boolean recreatable;
@@ -130,17 +134,17 @@ public class VolumeVO implements Volume {
 
     @Column(name = "uuid")
     String uuid;
-    
-    @Column(name="format")
+
+    @Column(name = "format")
     private Storage.ImageFormat format;
 
-    @Column(name="display_volume", updatable=true, nullable=false)
+    @Column(name = "display_volume", updatable = true, nullable = false)
     protected boolean displayVolume;
 
     @Transient
     // @Column(name="reservation")
     String reservationId;
-    
+
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
         this.volumeType = type;
@@ -154,7 +158,8 @@ public class VolumeVO implements Volume {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, Long dcId, Long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.Type vType) {
+    public VolumeVO(String name, Long dcId, Long podId, long accountId, long domainId, Long instanceId, String folder,
+            String path, long size, Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -172,8 +177,8 @@ public class VolumeVO implements Volume {
 
     // Copy Constructor
     public VolumeVO(Volume that) {
-        this(that.getName(), that.getDataCenterId(), that.getPodId(), that.getAccountId(), that.getDomainId(), that.getInstanceId(), that.getFolder(), that.getPath(), that.getSize(), that
-                .getVolumeType());
+        this(that.getName(), that.getDataCenterId(), that.getPodId(), that.getAccountId(), that.getDomainId(), that
+                .getInstanceId(), that.getFolder(), that.getPath(), that.getSize(), that.getVolumeType());
         this.recreatable = that.isRecreatable();
         this.state = that.getState();
         this.size = that.getSize();
@@ -188,18 +193,18 @@ public class VolumeVO implements Volume {
 
     @Override
     public long getUpdatedCount() {
-    	return this.updatedCount;
+        return this.updatedCount;
     }
-    
+
     @Override
     public void incrUpdatedCount() {
-    	this.updatedCount++;
+        this.updatedCount++;
     }
-    
+
     public void decrUpdatedCount() {
-    	this.updatedCount--;
+        this.updatedCount--;
     }
-    
+
     @Override
     public boolean isRecreatable() {
         return recreatable;
@@ -396,7 +401,8 @@ public class VolumeVO implements Volume {
 
     @Override
     public String toString() {
-        return new StringBuilder("Vol[").append(id).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();
+        return new StringBuilder("Vol[").append(id).append("|vm=").append(instanceId).append("|").append(volumeType)
+                .append("]").toString();
     }
 
     @Override
@@ -416,13 +422,13 @@ public class VolumeVO implements Volume {
     public void setChainInfo(String chainInfo) {
         this.chainInfo = chainInfo;
     }
-    
+
     public Long getLastPoolId() {
-    	return this.lastPoolId;
+        return this.lastPoolId;
     }
-    
+
     public void setLastPoolId(Long poolId) {
-    	this.lastPoolId = poolId;
+        this.lastPoolId = poolId;
     }
 
     @Override
@@ -438,26 +444,25 @@ public class VolumeVO implements Volume {
             return false;
         }
     }
-    
+
     @Override
     public String getReservationId() {
-    	return this.reservationId;
-    }
-    
-    @Override
-    public void setReservationId(String reserv) {
-    	this.reservationId = reserv;
-    }
-    
-    @Override
-    public String getUuid() {
-    	return this.uuid;
-    }
-    
-    public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        return this.reservationId;
     }
 
+    @Override
+    public void setReservationId(String reserv) {
+        this.reservationId = reserv;
+    }
+
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
     public boolean isDisplayVolume() {
         return displayVolume;
@@ -467,11 +472,11 @@ public class VolumeVO implements Volume {
         this.displayVolume = displayVolume;
     }
 
-	public Storage.ImageFormat getFormat() {
-		return format;
-	}
+    public Storage.ImageFormat getFormat() {
+        return format;
+    }
 
-	public void setFormat(Storage.ImageFormat format) {
-		this.format = format;
-	}
+    public void setFormat(Storage.ImageFormat format) {
+        this.format = format;
+    }
 }

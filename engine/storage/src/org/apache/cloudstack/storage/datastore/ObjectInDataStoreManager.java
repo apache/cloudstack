@@ -27,11 +27,16 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 public interface ObjectInDataStoreManager {
     public DataObject create(DataObject dataObj, DataStore dataStore);
+
     public boolean delete(DataObject dataObj);
+
     public DataObject get(DataObject dataObj, DataStore store);
+
     public boolean update(DataObject vo, Event event) throws NoTransitionException;
-    DataObjectInStore findObject(long objId, DataObjectType type,
-            long dataStoreId, DataStoreRole role);
+
+    DataObjectInStore findObject(long objId, DataObjectType type, long dataStoreId, DataStoreRole role);
+
     DataObjectInStore findObject(DataObject obj, DataStore store);
-    DataStore findStore(long objId, DataObjectType type,  DataStoreRole role);
+
+    DataStore findStore(long objId, DataObjectType type, DataStoreRole role);
 }

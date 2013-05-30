@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,55 +34,47 @@ import org.apache.cloudstack.storage.image.store.lifecycle.ImageStoreLifeCycle;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.resource.Discoverer;
-import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
-import com.cloud.resource.ServerResource;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
-import com.cloud.utils.UriUtils;
 
 public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
-    private static final Logger s_logger = Logger
-            .getLogger(SwiftImageStoreLifeCycleImpl.class);
+    private static final Logger s_logger = Logger.getLogger(SwiftImageStoreLifeCycleImpl.class);
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
-	protected ImageStoreDao imageStoreDao;
-	@Inject
-	ImageStoreHelper imageStoreHelper;
-	@Inject
-	ImageStoreProviderManager imageStoreMgr;
+    protected ImageStoreDao imageStoreDao;
+    @Inject
+    ImageStoreHelper imageStoreHelper;
+    @Inject
+    ImageStoreProviderManager imageStoreMgr;
 
     protected List<? extends Discoverer> _discoverers;
+
     public List<? extends Discoverer> getDiscoverers() {
         return _discoverers;
     }
+
     public void setDiscoverers(List<? extends Discoverer> _discoverers) {
         this._discoverers = _discoverers;
     }
 
-	public SwiftImageStoreLifeCycleImpl() {
-	}
-
+    public SwiftImageStoreLifeCycleImpl() {
+    }
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
 
         Long dcId = (Long) dsInfos.get("zoneId");
         String url = (String) dsInfos.get("url");
-        String name = (String)dsInfos.get("name");
-        ScopeType scope = (ScopeType)dsInfos.get("scope");
-        String providerName = (String)dsInfos.get("providerName");
-        DataStoreRole role =(DataStoreRole) dsInfos.get("role");
+        String name = (String) dsInfos.get("name");
+        ScopeType scope = (ScopeType) dsInfos.get("scope");
+        String providerName = (String) dsInfos.get("providerName");
+        DataStoreRole role = (DataStoreRole) dsInfos.get("role");
 
-        Map<String, String> details = (Map<String, String>)dsInfos.get("details");
+        Map<String, String> details = (Map<String, String>) dsInfos.get("details");
 
         s_logger.info("Trying to add a swift store at " + url + " in data center " + dcId);
 
@@ -107,21 +96,17 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return imageStoreMgr.getImageStore(ids.getId());
     }
 
-
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
         // TODO Auto-generated method stub
         return false;
     }
 
-
     @Override
-    public boolean attachHost(DataStore store, HostScope scope,
-            StoragePoolInfo existingInfo) {
+    public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope) {
@@ -129,13 +114,11 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return false;
     }
 
-
     @Override
     public boolean dettach() {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public boolean unmanaged() {
@@ -143,20 +126,17 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return false;
     }
 
-
     @Override
     public boolean maintain(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }
 
-
     @Override
     public boolean cancelMaintain(DataStore store) {
         // TODO Auto-generated method stub
         return false;
     }
-
 
     @Override
     public boolean deleteDataStore(DataStore store) {

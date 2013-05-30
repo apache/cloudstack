@@ -72,7 +72,7 @@ public class VolumeObjectTO implements DataTO {
     public Volume.Type getVolumeType() {
         return this.volumeType;
     }
-   
+
     public DataStoreTO getDataStore() {
         return this.dataStore;
     }
@@ -133,29 +133,28 @@ public class VolumeObjectTO implements DataTO {
         this.vmName = vmName;
     }
 
-	public String getChainInfo() {
-		return chainInfo;
-	}
+    public String getChainInfo() {
+        return chainInfo;
+    }
 
-	public void setChainInfo(String chainInfo) {
-		this.chainInfo = chainInfo;
-	}
+    public void setChainInfo(String chainInfo) {
+        this.chainInfo = chainInfo;
+    }
 
-	public long getId() {
-		return id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public Storage.ImageFormat getFormat() {
-		return format;
-	}
+    public Storage.ImageFormat getFormat() {
+        return format;
+    }
 
-	public void setFormat(Storage.ImageFormat format) {
-		this.format = format;
-	}
-
+    public void setFormat(Storage.ImageFormat format) {
+        this.format = format;
+    }
 
 }

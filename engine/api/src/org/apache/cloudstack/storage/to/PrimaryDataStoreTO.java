@@ -25,35 +25,35 @@ import com.cloud.storage.Storage.StoragePoolType;
 public class PrimaryDataStoreTO implements DataStoreTO {
     private final String uuid;
     private final String name;
-    private  String type;
+    private String type;
     private final long id;
     private StoragePoolType poolType;
     private String host;
     private String path;
     private int port;
+
     public PrimaryDataStoreTO(PrimaryDataStoreInfo dataStore) {
         this.uuid = dataStore.getUuid();
         this.name = dataStore.getName();
-      //  this.type = dataStore.getType();
         this.id = dataStore.getId();
         this.setPoolType(dataStore.getPoolType());
         this.setHost(dataStore.getHostAddress());
         this.setPath(dataStore.getPath());
         this.setPort(dataStore.getPort());
     }
-    
+
     public long getId() {
         return this.id;
     }
-    
+
     public String getUuid() {
         return this.uuid;
     }
-    
+
     public String getName() {
         return this.name;
     }
-    
+
     public String getType() {
         return this.type;
     }

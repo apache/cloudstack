@@ -20,9 +20,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.storage.ScopeType;
 
-
 public class HostScope extends AbstractScope {
-    private ScopeType type = ScopeType.HOST;
     private Long hostId;
     private Long zoneId;
 
@@ -30,9 +28,10 @@ public class HostScope extends AbstractScope {
         this.hostId = hostId;
         this.zoneId = zoneId;
     }
+
     @Override
     public ScopeType getScopeType() {
-        return this.type;
+        return ScopeType.HOST;
     }
 
     @Override

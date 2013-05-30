@@ -31,79 +31,73 @@ import com.cloud.utils.db.GenericDaoBase;
 
 /**
  * Join table for storage pools and hosts
- *
+ * 
  */
 @Entity
-@Table(name="storage_pool_host_ref")
+@Table(name = "storage_pool_host_ref")
 public class StoragePoolHostVO implements StoragePoolHostAssoc {
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@Column(name="pool_id")
-	private long poolId;
+    @Column(name = "pool_id")
+    private long poolId;
 
-	@Column(name="host_id")
-	private long hostId;
+    @Column(name = "host_id")
+    private long hostId;
 
-	@Column(name="local_path")
-	private String localPath;
+    @Column(name = "local_path")
+    private String localPath;
 
-	@Column(name=GenericDaoBase.CREATED_COLUMN)
+    @Column(name = GenericDaoBase.CREATED_COLUMN)
     private Date created = null;
 
-	@Column(name="last_updated")
-	@Temporal(value=TemporalType.TIMESTAMP)
+    @Column(name = "last_updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date lastUpdated = null;
 
+    public StoragePoolHostVO() {
+        super();
+    }
 
-	public StoragePoolHostVO() {
-		super();
-	}
+    public StoragePoolHostVO(long poolId, long hostId, String localPath) {
+        this.poolId = poolId;
+        this.hostId = hostId;
+        this.localPath = localPath;
+    }
 
-
-	public StoragePoolHostVO(long poolId, long hostId, String localPath) {
-		this.poolId = poolId;
-		this.hostId = hostId;
-		this.localPath = localPath;
-	}
-
-
-	@Override
-	public long getHostId() {
-		return hostId;
-	}
-
+    @Override
+    public long getHostId() {
+        return hostId;
+    }
 
     @Override
     public long getId() {
         return id;
     }
 
+    @Override
+    public String getLocalPath() {
+        return localPath;
+    }
 
     @Override
-	public String getLocalPath() {
-		return localPath;
-	}
+    public long getPoolId() {
+        return poolId;
+    }
 
-	@Override
-	public long getPoolId() {
-		return poolId;
-	}
+    @Override
+    public Date getCreated() {
+        return created;
+    }
 
-	@Override
-	public Date getCreated() {
-		return created;
-	}
+    @Override
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
 
-	@Override
-	public Date getLastUpdated() {
-		return lastUpdated;
-	}
-
-
-	public void setLocalPath(String localPath) {
-		this.localPath = localPath;
-	}
+    public void setLocalPath(String localPath) {
+        this.localPath = localPath;
+    }
 
 }

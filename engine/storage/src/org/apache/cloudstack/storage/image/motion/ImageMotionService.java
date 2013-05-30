@@ -21,10 +21,10 @@ package org.apache.cloudstack.storage.image.motion;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
 public interface ImageMotionService {
-    void copyTemplateAsync(TemplateInfo destTemplate, TemplateInfo srcTemplate, AsyncCompletionCallback<CommandResult> callback);
+    void copyTemplateAsync(TemplateInfo destTemplate, TemplateInfo srcTemplate,
+            AsyncCompletionCallback<CommandResult> callback);
+
     boolean copyIso(String isoUri, String destIsoUri);
 }

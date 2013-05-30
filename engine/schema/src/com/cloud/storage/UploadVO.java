@@ -34,112 +34,109 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Entity
-@Table(name="upload")
+@Table(name = "upload")
 public class UploadVO implements Upload {
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id;
 
-    @Column(name="uuid")
-	private String uuid;
+    @Column(name = "uuid")
+    private String uuid;
 
-	@Column(name="host_id")
-	private long storeId;
+    @Column(name = "host_id")
+    private long storeId;
 
-	@Column(name="type_id")
-	private long typeId;
+    @Column(name = "type_id")
+    private long typeId;
 
-	@Column(name=GenericDaoBase.CREATED_COLUMN)
-	private Date created = null;
+    @Column(name = GenericDaoBase.CREATED_COLUMN)
+    private Date created = null;
 
-	@Column(name="last_updated")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date lastUpdated = null;
+    @Column(name = "last_updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastUpdated = null;
 
-	@Column (name="upload_pct")
-	private int uploadPercent;
+    @Column(name = "upload_pct")
+    private int uploadPercent;
 
-	@Column (name="type")
-	@Enumerated(EnumType.STRING)
-	private Type type;
+    @Column(name = "type")
+    @Enumerated(EnumType.STRING)
+    private Type type;
 
-	@Column (name="mode")
+    @Column(name = "mode")
     @Enumerated(EnumType.STRING)
     private Mode mode = Mode.FTP_UPLOAD;
 
-	@Column (name="upload_state")
-	@Enumerated(EnumType.STRING)
-	private Status uploadState;
+    @Column(name = "upload_state")
+    @Enumerated(EnumType.STRING)
+    private Status uploadState;
 
-	@Column (name="error_str")
-	private String errorString;
+    @Column(name = "error_str")
+    private String errorString;
 
-	@Column (name="job_id")
-	private String jobId;
+    @Column(name = "job_id")
+    private String jobId;
 
-	@Column (name="url")
-	private String uploadUrl;
+    @Column(name = "url")
+    private String uploadUrl;
 
-	@Column (name="install_path")
-	private String installPath;
+    @Column(name = "install_path")
+    private String installPath;
 
-	@Override
+    @Override
     public long getDataStoreId() {
-		return storeId;
-	}
+        return storeId;
+    }
 
-	public void setDataStoreId(long hostId) {
-		this.storeId = hostId;
-	}
+    public void setDataStoreId(long hostId) {
+        this.storeId = hostId;
+    }
 
-	@Override
+    @Override
     public long getId() {
-		return id;
-	}
+        return id;
+    }
 
-
-	@Override
+    @Override
     public String getUuid() {
         return uuid;
     }
 
     @Override
     public Date getCreated() {
-		return created;
-	}
+        return created;
+    }
 
-	@Override
+    @Override
     public Date getLastUpdated() {
-		return lastUpdated;
-	}
+        return lastUpdated;
+    }
 
-	public void setLastUpdated(Date date) {
-	    lastUpdated = date;
-	}
+    public void setLastUpdated(Date date) {
+        lastUpdated = date;
+    }
 
-	public UploadVO(long hostId, long templateId) {
-		super();
-		this.storeId = hostId;
-		this.typeId = templateId;
-		this.uuid = UUID.randomUUID().toString();
-	}
-
-	public UploadVO(long hostId, long typeId, Date lastUpdated,
-			Status uploadState, Type type,
-			String uploadUrl, Mode mode) {
-		super();
-		this.storeId = hostId;
-		this.typeId = typeId;
-		this.lastUpdated = lastUpdated;
-		this.uploadState = uploadState;
-		this.mode = mode;
-		this.type = type;
-		this.uploadUrl = uploadUrl;
+    public UploadVO(long hostId, long templateId) {
+        super();
+        this.storeId = hostId;
+        this.typeId = templateId;
         this.uuid = UUID.randomUUID().toString();
-	}
+    }
 
-	public UploadVO(long hostId, long typeId, Date lastUpdated,
-            Status uploadState, int uploadPercent, Type type,
+    public UploadVO(long hostId, long typeId, Date lastUpdated, Status uploadState, Type type, String uploadUrl,
+            Mode mode) {
+        super();
+        this.storeId = hostId;
+        this.typeId = typeId;
+        this.lastUpdated = lastUpdated;
+        this.uploadState = uploadState;
+        this.mode = mode;
+        this.type = type;
+        this.uploadUrl = uploadUrl;
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public UploadVO(long hostId, long typeId, Date lastUpdated, Status uploadState, int uploadPercent, Type type,
             Mode mode) {
         super();
         this.storeId = hostId;
@@ -153,82 +150,83 @@ public class UploadVO implements Upload {
 
     }
 
-	protected UploadVO() {
-	}
+    protected UploadVO() {
+    }
 
-	public UploadVO(Long uploadId) {
-		this.id = uploadId;
-	}
+    public UploadVO(Long uploadId) {
+        this.id = uploadId;
+    }
 
-	public void setErrorString(String errorString) {
-		this.errorString = errorString;
-	}
+    public void setErrorString(String errorString) {
+        this.errorString = errorString;
+    }
 
-	@Override
+    @Override
     public String getErrorString() {
-		return errorString;
-	}
+        return errorString;
+    }
 
-	public void setJobId(String jobId) {
-		this.jobId = jobId;
-	}
+    public void setJobId(String jobId) {
+        this.jobId = jobId;
+    }
 
-	@Override
+    @Override
     public String getJobId() {
-		return jobId;
-	}
+        return jobId;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof UploadVO) {
-			UploadVO other = (UploadVO)obj;
-		   return (this.typeId==other.getTypeId() && this.storeId==other.getDataStoreId() && this.type == other.getType());
-		}
-		return false;
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof UploadVO) {
+            UploadVO other = (UploadVO) obj;
+            return (this.typeId == other.getTypeId() && this.storeId == other.getDataStoreId() && this.type == other
+                    .getType());
+        }
+        return false;
+    }
 
-	@Override
-	public int hashCode() {
-		return NumbersUtil.hash(id);
-	}
+    @Override
+    public int hashCode() {
+        return NumbersUtil.hash(id);
+    }
 
-	@Override
+    @Override
     public int getUploadPercent() {
-		return uploadPercent;
-	}
+        return uploadPercent;
+    }
 
-	public void setUploadPercent(int uploadPercent) {
-		this.uploadPercent = uploadPercent;
-	}
+    public void setUploadPercent(int uploadPercent) {
+        this.uploadPercent = uploadPercent;
+    }
 
-	@Override
+    @Override
     public Status getUploadState() {
-		return uploadState;
-	}
+        return uploadState;
+    }
 
-	public void setUploadState(Status uploadState) {
-		this.uploadState = uploadState;
-	}
+    public void setUploadState(Status uploadState) {
+        this.uploadState = uploadState;
+    }
 
-	@Override
+    @Override
     public long getTypeId() {
-		return typeId;
-	}
+        return typeId;
+    }
 
-	public void setTypeId(long typeId) {
-		this.typeId = typeId;
-	}
+    public void setTypeId(long typeId) {
+        this.typeId = typeId;
+    }
 
-	@Override
+    @Override
     public Type getType() {
-		return type;
-	}
+        return type;
+    }
 
-	public void setType(Type type) {
-		this.type = type;
-	}
+    public void setType(Type type) {
+        this.type = type;
+    }
 
-	@Override
+    @Override
     public Mode getMode() {
         return mode;
     }
@@ -239,22 +237,22 @@ public class UploadVO implements Upload {
 
     @Override
     public String getUploadUrl() {
-		return uploadUrl;
-	}
+        return uploadUrl;
+    }
 
-	public void setUploadUrl(String uploadUrl) {
-		this.uploadUrl = uploadUrl;
-	}
+    public void setUploadUrl(String uploadUrl) {
+        this.uploadUrl = uploadUrl;
+    }
 
-	@Override
+    @Override
     public void setId(Long id) {
-		this.id = id;
-	}
+        this.id = id;
+    }
 
-	@Override
+    @Override
     public void setCreated(Date created) {
-		this.created = created;
-	}
+        this.created = created;
+    }
 
     @Override
     public String getInstallPath() {

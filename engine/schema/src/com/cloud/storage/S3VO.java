@@ -18,10 +18,7 @@
  */
 package com.cloud.storage;
 
-import com.cloud.agent.api.to.S3TO;
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,7 +26,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.util.Date;
+
+import com.cloud.agent.api.to.S3TO;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "s3")
@@ -76,11 +75,9 @@ public class S3VO implements S3 {
         super();
     }
 
-    public S3VO(final String uuid, final String accessKey,
-            final String secretKey, final String endPoint,
-            final String bucketName, final Boolean httpsFlag,
-            final Integer connectionTimeout, final Integer maxErrorRetry,
-            final Integer socketTimeout, final Date created) {
+    public S3VO(final String uuid, final String accessKey, final String secretKey, final String endPoint,
+            final String bucketName, final Boolean httpsFlag, final Integer connectionTimeout,
+            final Integer maxErrorRetry, final Integer socketTimeout, final Date created) {
 
         super();
 
@@ -111,10 +108,8 @@ public class S3VO implements S3 {
             httpsFlag = this.httpsFlag == 0 ? false : true;
         }
 
-        return new S3TO(this.id, this.uuid, this.accessKey, this.secretKey,
-                this.endPoint, this.bucketName, httpsFlag,
-                this.connectionTimeout, this.maxErrorRetry, this.socketTimeout,
-                this.created);
+        return new S3TO(this.id, this.uuid, this.accessKey, this.secretKey, this.endPoint, this.bucketName, httpsFlag,
+                this.connectionTimeout, this.maxErrorRetry, this.socketTimeout, this.created);
 
     }
 
