@@ -4944,12 +4944,10 @@
 
                    accountId:{
                      label:'Account',
-                    // docID:'helpAccountForDedication',
+                     docID:'helpAccountForDedication',
                      validation:{required:false}
 
                   }
-
-
                      }
                 },
             
@@ -4973,9 +4971,7 @@
                               },
                             actionFilter:zoneActionfilter
 
-
                           });
-
                     }
                   });
                 }
@@ -8188,16 +8184,6 @@
                     var item = json.createpodresponse.pod;
                     podId = json.createpodresponse.pod.id;
 
-                   /* args.response.success({
-										  data:item
-										});
-                  },
-                  error: function(XMLHttpResponse) {
-                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                    args.response.error(errorMsg);
-                  }
-                });*/
-
                   //EXPLICIT DEDICATION
                 if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       var array2 = [];
@@ -8374,7 +8360,7 @@
 
                    accountId:{
                      label:'Account',
-                    // docID:'helpAccountForDedication',
+                     docID:'helpAccountForDedication',
                      validation:{required:false}
 
                   }
@@ -9142,14 +9128,6 @@
                   success: function(json) {
                     var item = json.addclusterresponse.cluster[0];
                     clusterId= json.addclusterresponse.cluster[0].id;
-                /*    args.response.success({
-										  data: $.extend(item, { state: 'Enabled' })
-										});
-                  },
-                  error: function(XMLHttpResponse) {
-                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                    args.response.error(errorMsg);
-                  }*/
                   
                   //EXPLICIT DEDICATION
                 if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
@@ -9164,7 +9142,6 @@
                          dataType:"json",
                          success:function(json){
                              var jid = json.dedicateclusterresponse.jobid;
-                             //args.response.success({  data: $.extend(item, dedicatedObj , {state:'Enabled'}) });
                               args.response.success({
                                  _custom:
                                    {      jobId: jid
@@ -9365,7 +9342,7 @@
 
                    accountId:{
                      label:'Account',
-                    // docID:'helpAccountForDedication',
+                     docID:'helpAccountForDedication',
                      validation:{required:false}
 
                   }
@@ -9392,8 +9369,6 @@
                                  poll: pollAsyncJobResult
                               },
                             actionFilter:clusterActionfilter
-
-
                           });
                     }
                   });
@@ -10269,7 +10244,6 @@
                          dataType:"json",
                          success:function(json){
                              var jid = json.dedicatehostresponse.host.jobid;
-                             //args.response.success({  data: $.extend(item, dedicatedObj) });
                               args.response.success({
                                  _custom:
                            {      jobId: jid
@@ -10384,7 +10358,7 @@
                    },
                   accountId:{
                      label:'Account',
-                    // docID:'helpAccountForDedication',
+                     docID:'helpAccountForDedication',
                      validation:{required:false}
 
                   }
@@ -10415,11 +10389,6 @@
 
 
                           });
-
-                   /*   args.response.success({
-                        actionFilter: podActionfilter,
-                        data:item
-                      });*/
                     }
                   });
                 }
