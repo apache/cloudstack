@@ -18,11 +18,13 @@
  */
 package com.cloud.storage;
 
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
@@ -33,6 +35,8 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
@@ -71,7 +75,7 @@ public interface VolumeManager extends VolumeApiService {
 
     boolean deleteVolume(long volumeId, Account caller)
             throws ConcurrentOperationException;
-    
+
     void destroyVolume(VolumeVO volume);
 
     DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, Account owner);
@@ -105,4 +109,6 @@ public interface VolumeManager extends VolumeApiService {
     DiskProfile allocateTemplatedVolume(Type type, String name,
             DiskOfferingVO offering, VMTemplateVO template, VMInstanceVO vm,
             Account owner);
+
+
 }

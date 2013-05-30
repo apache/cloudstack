@@ -65,6 +65,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
@@ -635,11 +636,71 @@ public class VolumeServiceImpl implements VolumeService {
         return null;
     }
 
+
+    protected AsyncCallFuture<VolumeApiResult> copyVolumeFromPrimaryToImage(VolumeInfo srcVolume, DataStore destStore) {
+        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
+        VolumeApiResult res = new VolumeApiResult(srcVolume);
+        VolumeInfo destVolume = null;
+        try {
+            destVolume = (VolumeInfo)destStore.create(srcVolume);
+            destVolume.processEvent(Event.CreateOnlyRequested);
+            srcVolume.processEvent(Event.CopyingRequested);    // this is just used for locking that src volume record in DB to avoid using lock
+
+            CopyVolumeContext<VolumeApiResult> context = new CopyVolumeContext<VolumeApiResult>(null, future, srcVolume,
+                    destVolume,
+                    destStore);
+            AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copyVolumeFromPrimaryToImageCallback(null, null))
+            .setContext(context);
+
+            motionSrv.copyAsync(srcVolume, destVolume, caller);
+            return future;
+        } catch (Exception e) {
+            s_logger.error("failed to copy volume to image store", e);
+            if (destVolume != null) {
+                destVolume.processEvent(Event.OperationFailed);
+            }
+            srcVolume.processEvent(Event.OperationFailed); // unlock source volume record
+            res.setResult(e.toString());
+            future.complete(res);
+            return future;
+        }
+    }
+
+    protected Void copyVolumeFromPrimaryToImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
+        VolumeInfo srcVolume = context.srcVolume;
+        VolumeInfo destVolume = context.destVolume;
+        CopyCommandResult result = callback.getResult();
+        AsyncCallFuture<VolumeApiResult> future = context.future;
+        VolumeApiResult res = new VolumeApiResult(destVolume);
+        try {
+            if (res.isFailed()) {
+                destVolume.processEvent(Event.OperationFailed);
+                srcVolume.processEvent(Event.OperationFailed);
+                res.setResult(result.getResult());
+                future.complete(res);
+            }else{
+                srcVolume.processEvent(Event.OperationSuccessed);
+                destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
+                future.complete(res);
+            }
+        } catch (Exception e) {
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+        return null;
+    }
+
+
     @Override
     public AsyncCallFuture<VolumeApiResult> copyVolume(VolumeInfo srcVolume, DataStore destStore) {
 
         if (srcVolume.getState() == Volume.State.Uploaded) {
             return copyVolumeFromImageToPrimary(srcVolume, destStore);
+        }
+
+        if (destStore.getRole() == DataStoreRole.Image) {
+            return copyVolumeFromPrimaryToImage(srcVolume, destStore);
         }
 
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
@@ -1056,7 +1117,7 @@ public class VolumeServiceImpl implements VolumeService {
          * for (Long uniqueName : volumeInfos.keySet()) { TemplateProp vInfo =
          * volumeInfos.get(uniqueName);
          * expungeVolumeAsync(volFactory.getVolume(vInfo.getId(), store));
-         * 
+         *
          * String description = "Deleted volume " + vInfo.getTemplateName() +
          * " on image store " + storeId; s_logger.info(description); }
          */

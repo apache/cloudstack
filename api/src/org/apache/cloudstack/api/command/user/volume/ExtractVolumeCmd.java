@@ -126,9 +126,9 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        try {
+       // try {
             UserContext.current().setEventDetails("Volume Id: "+getId());
-            Long uploadId = _mgr.extractVolume(this);
+            Long uploadId = _volumeService.extractVolume(this);
             if (uploadId != null){
                 Upload uploadInfo = _entityMgr.findById(Upload.class, uploadId);
                 ExtractResponse response = new ExtractResponse();
@@ -150,9 +150,9 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract volume");
             }
-        } catch (URISyntaxException ex) {
-            s_logger.info(ex);
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
-        }
+    //    } catch (URISyntaxException ex) {
+    //        s_logger.info(ex);
+    //        throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
+    //    }
     }
 }

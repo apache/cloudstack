@@ -18,11 +18,6 @@
  */
 package com.cloud.storage;
 
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,11 +38,15 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.cloud.storage.dao.*;
 import org.apache.cloudstack.api.command.user.volume.*;
+import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -73,16 +72,23 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.commons.lang.StringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.S3TO;
+import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
+import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.capacity.CapacityManager;
@@ -113,6 +119,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -127,13 +134,14 @@ import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume.Event;
+import com.cloud.storage.Upload.Status;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
+import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateS3Dao;
@@ -145,6 +153,7 @@ import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
+import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -157,6 +166,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.S3Utils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -320,6 +330,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     SnapshotDataFactory snapshotFactory;
     @Inject
     SnapshotApiService snapshotMgr;
+    @Inject
+    UploadMonitor _uploadMonitor;
+    @Inject
+    UploadDao _uploadDao;
+
     private int _copyvolumewait;
     @Inject
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
@@ -691,8 +706,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 s_logger.debug("create volume failed: " + result.getResult());
                 throw new CloudRuntimeException("create volume failed:" + result.getResult());
             }
-            
-            
+
+
             UsageEventVO usageEvent = new UsageEventVO(
                     EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
                     volume.getDataCenterId(), volume.getId(), volume.getName(),
@@ -1356,7 +1371,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         } else {
             vol.setDeviceId(1l);
         }
-        
+
         vol.setFormat(this.getSupportedImageFormatForCluster(vm.getHypervisorType()));
         vol = _volsDao.persist(vol);
 
@@ -1444,7 +1459,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     private VolumeInfo copyVolume(StoragePoolVO rootDiskPool
             , VolumeInfo volume, VMInstanceVO vm, VMTemplateVO rootDiskTmplt, DataCenterVO dcVO,
             HostPodVO pod, DiskOfferingVO diskVO, ServiceOfferingVO svo, HypervisorType rootDiskHyperType) throws NoTransitionException {
-     
+
         if (!volume
                 .getFormat()
                 .equals(
@@ -1498,7 +1513,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                         ResourceType.primary_storage, new Long(volume.getSize()));
             }
         }
-        
+
         VolumeVO volVO = this._volsDao.findById(vol.getId());
         volVO.setFormat(this.getSupportedImageFormatForCluster(rootDiskHyperType));
         this._volsDao.update(volVO.getId(), volVO);
@@ -2597,4 +2612,222 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         return snapshotMgr.allocSnapshot(volumeId, policyId);
     }
 
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_EXTRACT, eventDescription = "extracting volume", async = true)
+    public Long extractVolume(ExtractVolumeCmd cmd) {
+        Long volumeId = cmd.getId();
+        String url = cmd.getUrl();
+        Long zoneId = cmd.getZoneId();
+        AsyncJobVO job = null; // FIXME: cmd.getJob();
+        String mode = cmd.getMode();
+        Account account = UserContext.current().getCaller();
+
+        if (!_accountMgr.isRootAdmin(account.getType()) && ApiDBUtils.isExtractionDisabled()) {
+            throw new PermissionDeniedException("Extraction has been disabled by admin");
+        }
+
+        VolumeVO volume = _volumeDao.findById(volumeId);
+        if (volume == null) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with specified volumeId");
+            ex.addProxyObject(volume, volumeId, "volumeId");
+            throw ex;
+        }
+
+        // perform permission check
+        _accountMgr.checkAccess(account, null, true, volume);
+
+        if (_dcDao.findById(zoneId) == null) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
+        if (volume.getPoolId() == null) {
+            throw new InvalidParameterValueException("The volume doesnt belong to a storage pool so cant extract it");
+        }
+        // Extract activity only for detached volumes or for volumes whose
+        // instance is stopped
+        if (volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped) {
+            s_logger.debug("Invalid state of the volume with ID: " + volumeId
+                    + ". It should be either detached or the VM should be in stopped state.");
+            PermissionDeniedException ex = new PermissionDeniedException(
+                    "Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
+            ex.addProxyObject(volume, volumeId, "volumeId");
+            throw ex;
+        }
+
+        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont
+            // have any
+            // template
+            // dependence.
+
+            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+            if (template != null) { // For ISO based volumes template = null and
+                // we allow extraction of all ISO based
+                // volumes
+                boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+                if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global
+                    // admins are always allowed to extract
+                    PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
+                    ex.addProxyObject(volume, volumeId, "volumeId");
+                    throw ex;
+                }
+            }
+        }
+
+        Upload.Mode extractMode;
+        if (mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString()))) {
+            throw new InvalidParameterValueException("Please specify a valid extract Mode ");
+        } else {
+            extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
+        }
+
+        long accountId = volume.getAccountId();
+        StoragePool srcPool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
+        DataStore secStore = this.dataStoreMgr.getImageStore(zoneId);
+        String secondaryStorageURL = secStore.getUri();
+
+        List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
+
+        if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0) {
+            return extractURLList.get(0).getId(); // If download url already
+                                                  // Note: volss
+            // exists then return
+        } else {
+            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(secStore.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS,
+                    Upload.Type.VOLUME, url, extractMode);
+            s_logger.debug("Extract Mode - " + uploadJob.getMode());
+            uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
+
+            // Update the async Job
+
+            ExtractResponse resultObj = new ExtractResponse(ApiDBUtils.findVolumeById(volumeId).getUuid(), volume.getName(), ApiDBUtils
+                    .findAccountById(accountId).getUuid(), UploadVO.Status.COPY_IN_PROGRESS.toString(), uploadJob.getUuid());
+            resultObj.setResponseName(cmd.getCommandName());
+            AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
+            if (asyncExecutor != null) {
+                job = asyncExecutor.getJob();
+                _asyncMgr.updateAsyncJobAttachment(job.getId(), Upload.Type.VOLUME.toString(), volumeId);
+                _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+            }
+            //TODO: AncientDataMotionStrategy.copyObject should use different timeout parent for different objects
+            String value = this._configDao.getValue(Config.CopyVolumeWait.toString());
+            int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+            // Copy volume from primary to secondary storage
+            VolumeInfo srcVol = this.volFactory.getVolume(volume.getId());
+            AsyncCallFuture<VolumeApiResult> cvAnswer = this.volService.copyVolume(srcVol, secStore);
+            // Check if you got a valid answer.
+            VolumeApiResult cvResult = null;
+            try {
+                cvResult = cvAnswer.get();
+            } catch (InterruptedException e1) {
+                s_logger.debug("failed copy volume", e1);
+                throw new CloudRuntimeException("Failed to copy volume" , e1);
+            } catch (ExecutionException e1) {
+                s_logger.debug("failed copy volume", e1);
+                throw new CloudRuntimeException("Failed to copy volume" , e1);
+            }
+            if (cvResult == null || cvResult.isFailed()) {
+                String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
+
+                // Update the async job.
+                resultObj.setResultString(errorString);
+                resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
+                if (asyncExecutor != null) {
+                    _asyncMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, resultObj);
+                }
+
+                // Update the DB that volume couldn't be copied
+                uploadJob.setUploadState(UploadVO.Status.COPY_ERROR);
+                uploadJob.setErrorString(errorString);
+                uploadJob.setLastUpdated(new Date());
+                _uploadDao.update(uploadJob.getId(), uploadJob);
+
+                throw new CloudRuntimeException(errorString);
+            }
+
+            VolumeInfo vol = cvResult.getVolume();
+            String volumeLocalPath = vol.getPath();
+            String volumeName = StringUtils.substringBeforeLast(StringUtils.substringAfterLast(volumeLocalPath, "/"), ".");
+            // volss, handle the ova special case;
+            if (getFormatForPool(srcPool) == "ova") {
+                //TODO: need to handle this for S3 as secondary storage
+                CreateVolumeOVACommand cvOVACmd = new CreateVolumeOVACommand(secondaryStorageURL, volumeLocalPath, volumeName, srcPool,
+                        copyvolumewait);
+                CreateVolumeOVAAnswer OVAanswer = null;
+
+                try {
+                    cvOVACmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
+                    OVAanswer = (CreateVolumeOVAAnswer) storageMgr.sendToPool(srcPool, cvOVACmd); // Fang:
+                                                                                                  // for
+                                                                                                  // extract
+                                                                                                  // volume,
+                                                                                                  // create
+                                                                                                  // the
+                                                                                                  // ova
+                                                                                                  // file
+                                                                                                  // here;
+
+                } catch (StorageUnavailableException e) {
+                    s_logger.debug("Storage unavailable");
+                }
+            }
+            // Update the DB that volume is copied and volumePath
+            uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);
+            uploadJob.setLastUpdated(new Date());
+            uploadJob.setInstallPath(volumeLocalPath);
+            _uploadDao.update(uploadJob.getId(), uploadJob);
+
+            DataStoreTO volStore = secStore.getTO();
+            if (volStore instanceof SwiftTO) {
+                throw new UnsupportedServiceException("ExtractVolume is not yet supported for Swift image store provider");
+            }
+
+            if (volStore instanceof S3TO) {
+                // for S3, no need to do anything, just return volume url for
+                // extract template. but we need to set object acl as public_read to
+                // make the url accessible
+                S3TO s3 = (S3TO) volStore;
+                String key = vol.getPath();
+                try {
+                    S3Utils.setObjectAcl(s3, s3.getBucketName(), key, CannedAccessControlList.PublicRead);
+                } catch (Exception ex) {
+                    s_logger.error("Failed to set ACL on S3 object " + key + " to PUBLIC_READ", ex);
+                    throw new CloudRuntimeException("Failed to set ACL on S3 object " + key + " to PUBLIC_READ");
+                }
+                // construct the url from s3
+                StringBuffer s3url = new StringBuffer();
+                s3url.append(s3.isHttps() ? "https://" : "http://");
+                s3url.append(s3.getEndPoint());
+                s3url.append("/");
+                s3url.append(s3.getBucketName());
+                s3url.append("/");
+                s3url.append(key);
+
+                UploadVO vo = _uploadDao.createForUpdate();
+                vo.setLastUpdated(new Date());
+                vo.setUploadUrl(s3url.toString());
+                vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
+                _uploadDao.update(uploadJob.getId(), vo);
+            } else {
+                // create a URL.
+                _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId(), volume.getFormat());
+            }
+            return uploadJob.getId();
+        }
+    }
+
+    private String getFormatForPool(StoragePool pool) {
+        ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
+
+        if (cluster.getHypervisorType() == HypervisorType.XenServer) {
+            return "vhd";
+        } else if (cluster.getHypervisorType() == HypervisorType.KVM) {
+            return "qcow2";
+        } else if (cluster.getHypervisorType() == HypervisorType.VMware) {
+            return "ova";
+        } else if (cluster.getHypervisorType() == HypervisorType.Ovm) {
+            return "raw";
+        } else {
+            return null;
+        }
+    }
 }

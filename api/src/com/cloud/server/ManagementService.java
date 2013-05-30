@@ -241,20 +241,6 @@ public interface ManagementService {
     Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd);
 
     /**
-     * Extracts the volume to a particular location.
-     *
-     * @param cmd
-     *            the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume
-     *            exists),
-     *            id (the id of the volume)
-     * @throws URISyntaxException
-     * @throws InternalErrorException
-     * @throws PermissionDeniedException
-     *
-     */
-    Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException;
-
-    /**
      * return an array of available hypervisors
      *
      * @param zoneId
@@ -381,7 +367,7 @@ public interface ManagementService {
      * @return List of capacities
      */
     List<? extends Capacity> listTopConsumedResources(ListCapacityCmd cmd);
-    
+
     List<String> listDeploymentPlanners();
 
     VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException;

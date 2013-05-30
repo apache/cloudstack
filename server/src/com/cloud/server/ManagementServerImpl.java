@@ -17,7 +17,6 @@
 package com.cloud.server;
 
 import java.lang.reflect.Field;
-import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -46,7 +45,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.region.*;
-import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -397,26 +395,20 @@ import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
-import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -489,12 +481,9 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Upload;
-import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeManager;
@@ -558,7 +547,6 @@ import edu.emory.mathcs.backport.java.util.Collections;
 import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
 import org.apache.cloudstack.api.command.admin.region.RemoveRegionCmd;
 import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 
 
@@ -687,6 +675,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     ConfigurationServer _configServer;
     @Inject
     UserVmManager _userVmMgr;
+    @Inject
+    VolumeDataFactory _volFactory;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -3275,173 +3265,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return _guestOSDao.findById(guestOsId);
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_EXTRACT, eventDescription = "extracting volume", async = true)
-    public Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException {
-        Long volumeId = cmd.getId();
-        String url = cmd.getUrl();
-        Long zoneId = cmd.getZoneId();
-        AsyncJobVO job = null; // FIXME: cmd.getJob();
-        String mode = cmd.getMode();
-        Account account = UserContext.current().getCaller();
-
-        if (!_accountMgr.isRootAdmin(account.getType()) && ApiDBUtils.isExtractionDisabled()) {
-            throw new PermissionDeniedException("Extraction has been disabled by admin");
-        }
-
-        VolumeVO volume = _volumeDao.findById(volumeId);
-        if (volume == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with specified volumeId");
-            ex.addProxyObject(volume, volumeId, "volumeId");
-            throw ex;
-        }
-
-        // perform permission check
-        _accountMgr.checkAccess(account, null, true, volume);
-
-        if (_dcDao.findById(zoneId) == null) {
-            throw new InvalidParameterValueException("Please specify a valid zone.");
-        }
-        if (volume.getPoolId() == null) {
-            throw new InvalidParameterValueException("The volume doesnt belong to a storage pool so cant extract it");
-        }
-        // Extract activity only for detached volumes or for volumes whose
-        // instance is stopped
-        if (volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped) {
-            s_logger.debug("Invalid state of the volume with ID: " + volumeId
-                    + ". It should be either detached or the VM should be in stopped state.");
-            PermissionDeniedException ex = new PermissionDeniedException(
-                    "Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
-            ex.addProxyObject(volume, volumeId, "volumeId");
-            throw ex;
-        }
-
-        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont
-            // have any
-            // template
-            // dependence.
-
-            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-            if (template != null) { // For ISO based volumes template = null and
-                // we allow extraction of all ISO based
-                // volumes
-                boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-                if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global
-                    // admins are always allowed to extract
-                    PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
-                    ex.addProxyObject(volume, volumeId, "volumeId");
-                    throw ex;
-                }
-            }
-        }
-
-        Upload.Mode extractMode;
-        if (mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString()))) {
-            throw new InvalidParameterValueException("Please specify a valid extract Mode ");
-        } else {
-            extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
-        }
-
-        long accountId = volume.getAccountId();
-        StoragePool srcPool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
-        DataStore secStore = this.dataStoreMgr.getImageStore(zoneId);
-        String secondaryStorageURL = secStore.getUri();
-
-        List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
-
-        if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0) {
-            return extractURLList.get(0).getId(); // If download url already  Note: volss
-            // exists then return
-        } else {
-            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(secStore.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, Upload.Type.VOLUME,
-                    url, extractMode);
-            s_logger.debug("Extract Mode - " + uploadJob.getMode());
-            uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
-
-            // Update the async Job
-
-            ExtractResponse resultObj = new ExtractResponse(ApiDBUtils.findVolumeById(volumeId).getUuid(),
-                    volume.getName(), ApiDBUtils.findAccountById(accountId).getUuid(), UploadVO.Status.COPY_IN_PROGRESS.toString(),
-                    uploadJob.getUuid());
-            resultObj.setResponseName(cmd.getCommandName());
-            AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-            if (asyncExecutor != null) {
-                job = asyncExecutor.getJob();
-                _asyncMgr.updateAsyncJobAttachment(job.getId(), Upload.Type.VOLUME.toString(), volumeId);
-                _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
-            }
-            String value = _configs.get(Config.CopyVolumeWait.toString());
-            int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
-            // Copy the volume from the source storage pool to secondary storage
-            CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true, copyvolumewait);
-            CopyVolumeAnswer cvAnswer = null;
-            try {
-                cvAnswer = (CopyVolumeAnswer) _storageMgr.sendToPool(srcPool, cvCmd);
-            } catch (StorageUnavailableException e) {
-                s_logger.debug("Storage unavailable");
-            }
-
-            // Check if you got a valid answer.
-            if (cvAnswer == null || !cvAnswer.getResult()) {
-                String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
-
-                // Update the async job.
-                resultObj.setResultString(errorString);
-                resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
-                if (asyncExecutor != null) {
-                    _asyncMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, resultObj);
-                }
-
-                // Update the DB that volume couldn't be copied
-                uploadJob.setUploadState(UploadVO.Status.COPY_ERROR);
-                uploadJob.setErrorString(errorString);
-                uploadJob.setLastUpdated(new Date());
-                _uploadDao.update(uploadJob.getId(), uploadJob);
-
-                throw new CloudRuntimeException(errorString);
-            }
-
-            String volumeLocalPath = "volumes/" + volume.getId() + "/" + cvAnswer.getVolumePath() + "." + volume.getFormat().toString().toLowerCase();
-          //Fang:  volss, handle the ova special case;
-            if (getFormatForPool(srcPool) == "ova") {
-                CreateVolumeOVACommand cvOVACmd = new CreateVolumeOVACommand(secondaryStorageURL, volumeLocalPath, cvAnswer.getVolumePath(), srcPool, copyvolumewait);
-                CreateVolumeOVAAnswer  OVAanswer = null;
-
-                try {
-                        cvOVACmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
-                        OVAanswer = (CreateVolumeOVAAnswer) _storageMgr.sendToPool(srcPool, cvOVACmd); //Fang: for extract volume, create the ova file here;
-
-                } catch (StorageUnavailableException e) {
-                    s_logger.debug("Storage unavailable");
-                }
-            }
-            // Update the DB that volume is copied and volumePath
-            uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);
-            uploadJob.setLastUpdated(new Date());
-            uploadJob.setInstallPath(volumeLocalPath);
-            _uploadDao.update(uploadJob.getId(), uploadJob);
-
-            // create a URL.
-            _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId(), volume.getFormat());
-            return uploadJob.getId();
-        }
-    }
-
-    private String getFormatForPool(StoragePool pool) {
-        ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
-
-        if (cluster.getHypervisorType() == HypervisorType.XenServer) {
-            return "vhd";
-        } else if (cluster.getHypervisorType() == HypervisorType.KVM) {
-            return "qcow2";
-        } else if (cluster.getHypervisorType() == HypervisorType.VMware) {
-            return "ova";
-        } else if (cluster.getHypervisorType() == HypervisorType.Ovm) {
-            return "raw";
-        } else {
-            return null;
-        }
-    }
 
     @Override
     public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
