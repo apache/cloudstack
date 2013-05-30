@@ -151,7 +151,7 @@
                            url:createURL('listDeploymentPlanners'),
                            dataType:'json',
                            success:function(json){
-                              var items=[];
+                              var items=[{id: '', description: ''}];
                                var plannerObjs = json.listdeploymentplannersresponse.deploymentPlanner;
                           $(plannerObjs).each(function(){
                             items.push({id: this.name, description: this.name});
@@ -208,10 +208,15 @@
 									storageType: args.data.storageType,
 									cpuNumber: args.data.cpuNumber,
 									cpuSpeed: args.data.cpuSpeed,
-									memory: args.data.memory,
-                                                                        deploymentplanner: args.data.deploymentPlanner
-
-								};															
+									memory: args.data.memory 
+								};	
+                
+                if(args.data.deploymentPlanner != null && args.data.deploymentPlanner.length > 0) {
+                  $.extend(data, {
+                    deploymentplanner: args.data.deploymentPlanner
+                  });
+                }
+                
                 var array1 =[];
                    if(args.data.deploymentPlanner == "ImplicitDedicationPlanner" && args.data.plannerMode != ""){
                        array1.push("&serviceofferingdetails[0].ImplicitDedicationMode" +  "=" + args.data.plannerMode);
