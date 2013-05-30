@@ -505,4 +505,12 @@ public class VolumeObject implements VolumeInfo {
     public ImageFormat getFormat() {
         return this.volumeVO.getFormat();
     }
+
+    @Override
+    public boolean delete() {
+        if (dataStore != null) {
+            return dataStore.delete(this);
+        }
+        return true;
+    }
 }

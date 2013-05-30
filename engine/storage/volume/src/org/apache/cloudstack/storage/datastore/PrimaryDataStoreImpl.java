@@ -252,8 +252,9 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public boolean delete(DataObject obj) {
-        // TODO Auto-generated method stub
-        return false;
+        //TODO: clean up through driver
+        objectInStoreMgr.delete(obj);
+        return true;
     }
 
     @Override

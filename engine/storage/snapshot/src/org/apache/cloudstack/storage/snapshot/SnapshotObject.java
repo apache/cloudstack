@@ -284,4 +284,11 @@ public class SnapshotObject implements SnapshotInfo {
 
     }
 
+    @Override
+    public boolean delete() {
+        if (store != null) {
+            return store.delete(this);
+        }
+        return true;
+    }
 }

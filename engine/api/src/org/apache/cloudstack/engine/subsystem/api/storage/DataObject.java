@@ -38,6 +38,8 @@ public interface DataObject {
     // public DiskFormat getFormat();
     public String getUuid();
 
+    boolean delete();
+
     public void processEvent(ObjectInDataStoreStateMachine.Event event);
 
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer);
