@@ -87,13 +87,12 @@ EOF
 
 hypervisor() {
   [ -d /proc/xen ] && mount -t xenfs none /proc/xen
+  [ -d /proc/xen ] && echo "xen-domU" && return 0
 
   local try=$([ -x /usr/sbin/virt-what ] && virt-what | tail -1)
   [ "$try" != "" ] && echo $try && return 0
 
   vmware-checkvm &> /dev/null && echo "vmware" && return 0
-
-  [ -d /proc/xen ] && echo "xen-domU" && return 0
 
   grep -q QEMU /proc/cpuinfo  && echo "kvm" && return 0
   grep -q QEMU /var/log/messages && echo "kvm" && return 0
