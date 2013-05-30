@@ -164,7 +164,7 @@
                      }
                   },
 
-                  plannerKey:{label:'Planner Key' , docID:'helpImplicitPlannerKey'},
+                 // plannerKey:{label:'Planner Key' , docID:'helpImplicitPlannerKey'},
                   plannerMode:{
                     label:'Planner Mode',
                     select:function(args){
@@ -213,9 +213,9 @@
 
 								};															
                 var array1 =[];
-                 if(args.data.plannerMode != null && args.data.plannerKey !=""){
-                   array1.push("&serviceofferingdetails[0]." + args.data.plannerKey + "=" + args.data.plannerMode);
-                }
+                   if(args.data.deploymentPlanner == "ImplicitDedicationPlanner" && args.data.plannerMode != ""){
+                       array1.push("&serviceofferingdetails[0].ImplicitDedicationMode" +  "=" + args.data.plannerMode);
+                 }
 
                 if(args.data.networkRate != null && args.data.networkRate.length > 0) {
 								  $.extend(data, {
