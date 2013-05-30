@@ -543,8 +543,8 @@
           ispublic: {
             isReverse: true,
             isBoolean: true,
-            label: 'label.public',
-            isChecked: true //checked by default (public zone)
+            label: 'Dedicate',
+            isChecked: false //checked by default (public zone)
           },
           domain: {
             label: 'label.domain',
@@ -1597,8 +1597,8 @@
             array1.push("&internaldns2=" + todb(internaldns2));
 
 					if(args.data.pluginFrom == null) { //from zone wizard, not from quick instsaller(args.data.pluginFrom != null && args.data.pluginFrom.name == 'installWizard') who doesn't have public checkbox
-						if(args.data.zone.ispublic == null) //public checkbox in zone wizard is unchecked 
-							array1.push("&domainid=" + args.data.zone.domain);
+					//	if(args.data.zone.ispublic != null) //public checkbox in zone wizard is unchecked 
+					//		array1.push("&domainid=" + args.data.zone.domain);
           }
 					
           if(args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
@@ -1619,8 +1619,10 @@
 
                dedicatedZoneId = json.createzoneresponse.zone.id;
                 //EXPLICIT ZONE DEDICATION
-                if(args.data.pluginFrom == null && args.data.zone.ispublic == null){
+                if(args.data.pluginFrom == null && args.data.zone.ispublic != null){
                       var array2 = [];
+                      if(args.data.zone.domain != null)
+                         array2.push("&domainid=" + args.data.zone.domain);
                       if(args.data.zone.accountId != "")
                         array2.push("&accountId=" +todb(args.data.zone.accountId));
 
