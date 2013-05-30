@@ -109,6 +109,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;

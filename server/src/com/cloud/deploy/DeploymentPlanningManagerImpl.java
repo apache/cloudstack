@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -53,9 +54,12 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
@@ -91,6 +95,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
@@ -157,6 +162,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     @Inject protected HostDao _hostDao;
     @Inject protected HostPodDao _podDao;
     @Inject protected ClusterDao _clusterDao;
+    @Inject protected DedicatedResourceDao _dedicatedDao;
     @Inject protected GuestOSDao _guestOSDao = null;
     @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject protected DiskOfferingDao _diskOfferingDao;
@@ -196,6 +202,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         // call affinitygroup chain
         VirtualMachine vm = vmProfile.getVirtualMachine();
         long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
 
         if (vmGroupCount > 0) {
             for (AffinityGroupProcessor processor : _affinityProcessors) {
@@ -203,13 +210,14 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             }
         }
 
+        checkForNonDedicatedResources(vm, dc, avoids);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: "
                     + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
         }
 
         // call planners
-        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+        //DataCenter dc = _dcDao.findById(vm.getDataCenterId());
         // check if datacenter is in avoid set
         if (avoids.shouldAvoid(dc)) {
             if (s_logger.isDebugEnabled()) {
@@ -428,6 +436,56 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
 
         return dest;
+    }
+
+    private void checkForNonDedicatedResources(VirtualMachine vm, DataCenter dc, ExcludeList avoids) {
+        boolean isExplicit = false;
+        // check affinity group of type Explicit dedication exists
+        List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), "ExplicitDedication");
+
+        if (vmGroupMappings != null && !vmGroupMappings.isEmpty()){
+            isExplicit = true;
+        }
+
+        if (!isExplicit && vm.getType() == VirtualMachine.Type.User) {
+            //add explicitly dedicated resources in avoidList
+            DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
+            if (dedicatedZone != null) {
+                throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated.");
+            }
+
+            List<HostPodVO> podsInDc = _podDao.listByDataCenterId(dc.getId());
+            for (HostPodVO pod : podsInDc) {
+                DedicatedResourceVO dedicatedPod = _dedicatedDao.findByPodId(pod.getId());
+                if (dedicatedPod != null) {
+                    avoids.addPod(dedicatedPod.getPodId());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot use this dedicated pod " + pod.getName() + ".");
+                    }
+                }
+            }
+
+            List<ClusterVO> clusterInDc = _clusterDao.listClustersByDcId(dc.getId());
+            for (ClusterVO cluster : clusterInDc) {
+                DedicatedResourceVO dedicatedCluster = _dedicatedDao.findByClusterId(cluster.getId());
+                if (dedicatedCluster != null) {
+                    avoids.addCluster(dedicatedCluster.getClusterId());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot use this dedicated Cluster " + cluster.getName() + ".");
+                    }
+                }
+            }
+            List<HostVO> hostInDc = _hostDao.listByDataCenterId(dc.getId());
+            for (HostVO host : hostInDc) {
+                DedicatedResourceVO dedicatedHost = _dedicatedDao.findByHostId(host.getId());
+                if (dedicatedHost != null) {
+                    avoids.addHost(dedicatedHost.getHostId());
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Cannot use this dedicated host " + host.getName() + ".");
+                    }
+                }
+            }
+        }
     }
 
     private void resetAvoidSet(ExcludeList avoidSet, ExcludeList removeSet) {

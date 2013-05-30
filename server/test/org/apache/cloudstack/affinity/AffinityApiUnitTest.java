@@ -52,6 +52,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -104,6 +105,10 @@ public class AffinityApiUnitTest {
 
     @Inject
     EventDao _eventDao;
+
+    @Inject
+    DedicatedResourceDao _dedicatedDao;
+
 
     private static long domainId = 5L;
 
@@ -216,6 +221,11 @@ public class AffinityApiUnitTest {
         @Bean
         public AffinityGroupVMMapDao affinityGroupVMMapDao() {
             return Mockito.mock(AffinityGroupVMMapDao.class);
+        }
+
+        @Bean
+        public DedicatedResourceDao dedicatedResourceDao() {
+            return Mockito.mock(DedicatedResourceDao.class);
         }
 
         @Bean
