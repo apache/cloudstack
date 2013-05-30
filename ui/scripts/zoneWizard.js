@@ -348,11 +348,18 @@
           
 	  }													
 										
-          setTimeout(function() {
+      /*    setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
-              $form.find('[rel=domain]').hide();
+              $form.find('[rel=domain]').show();
+              $form.find('[rel=accountId]').show();
             }
-          });
+ 
+            else{
+
+              $form.find('[rel=domain]').hide();
+              $form.find('[rel=accountId]').hide();
+             }             
+          });*/
         },
         fields: {
           name: {
@@ -541,7 +548,7 @@
             validation: { required: false }
           },
           ispublic: {
-            isReverse: true,
+            //isReverse: true,
             isBoolean: true,
             label: 'Dedicate',
             isChecked: false //checked by default (public zone)
@@ -1597,8 +1604,10 @@
             array1.push("&internaldns2=" + todb(internaldns2));
 
 					if(args.data.pluginFrom == null) { //from zone wizard, not from quick instsaller(args.data.pluginFrom != null && args.data.pluginFrom.name == 'installWizard') who doesn't have public checkbox
-					//	if(args.data.zone.ispublic != null) //public checkbox in zone wizard is unchecked 
+					//	if(args.data.zone.ispublic != null){ //public checkbox in zone wizard is unchecked 
 					//		array1.push("&domainid=" + args.data.zone.domain);
+                                                       
+                                              // }
           }
 					
           if(args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
@@ -1622,13 +1631,13 @@
                 if(args.data.pluginFrom == null && args.data.zone.ispublic != null){
                       var array2 = [];
                       if(args.data.zone.domain != null)
-                         array2.push("&domainid=" + args.data.zone.domain);
+                        array2.push("&domainid=" + args.data.zone.domain);
                       if(args.data.zone.accountId != "")
                         array2.push("&accountId=" +todb(args.data.zone.accountId));
 
                       if(dedicatedZoneId != null){
                       $.ajax({
-                         url:createURL("dedicateZone&ZoneId=" +dedicatedZoneId +"&domain=" +args.data.zone.domain + array2.join("")),
+                         url:createURL("dedicateZone&ZoneId=" +dedicatedZoneId + array2.join("")),
                          dataType:"json",
                          success:function(json){
                              var dedicatedObj = json.dedicatezoneresponse.jobid;
