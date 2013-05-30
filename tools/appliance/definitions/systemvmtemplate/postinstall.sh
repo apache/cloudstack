@@ -42,6 +42,9 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install dnsmasq dnsmasq-utils
   # nfs client
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
+  # nfs irqbalance
+  apt-get --no-install-recommends -q -y --force-yes install irqbalance
+
 
   # vpn stuff
   apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
