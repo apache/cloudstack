@@ -22,11 +22,13 @@
 <section id="add-loadbalancer-rule-vpc">
   <title>Adding Load Balancing Rules on a VPC</title>
   <para>In a VPC, you can configure two types of load balancing&mdash;external LB and internal LB.
-    External LB is nothing but load balancing the traffic received at a public IP of the VPC virtual
-    router. The traffic is load balanced within a tier based on your configuration. Supported
-    service providers are Citrix NetScaler and VPC virtual router. When you use internal LB service,
-    traffic received at a tier is load balanced across different tiers within the VPC. External load
-    balancing devices are not supported for internal LB.</para>
+    External LB is nothing but a LB rule created to redirect the traffic received at a public IP of
+    the VPC virtual router. The traffic is load balanced within a tier based on your configuration.
+    Citrix NetScaler and VPC virtual router are supported for external LB. When you use internal LB
+    service, traffic received at a tier is load balanced across different tiers within the VPC. For
+    example, traffic reached at Web tier is redirected to Application tier. External load balancing
+    devices are not supported for internal LB. The service is provided by a internal LB VM
+    configured on the target tier.</para>
   <section id="curent-lb-vpc">
     <title>Load Balancing Within a Tier (External LB)</title>
     <para>A &PRODUCT; user or administrator may create load balancing rules that balance traffic
