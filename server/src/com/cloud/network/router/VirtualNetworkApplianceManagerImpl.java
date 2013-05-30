@@ -1179,7 +1179,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
                         backupRouter.getDataCenterId(), backupRouter.getPodIdToDeployIn(), title, title);
                 try {
-                    rebootRouter(backupRouter.getId(), false);
+                    rebootRouter(backupRouter.getId(), true);
                 } catch (ConcurrentOperationException e) {
                     s_logger.warn("Fail to reboot " + backupRouter.getInstanceName(), e);
                 } catch (ResourceUnavailableException e) {
