@@ -115,7 +115,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Account userAccount = null;
-        Account caller = (Account)UserContext.current().getCaller();
+        Account caller = (Account)UserContext.current().getCallingAccount();
         Long usageType = cmd.getUsageType();
         Long projectId = cmd.getProjectId();
         

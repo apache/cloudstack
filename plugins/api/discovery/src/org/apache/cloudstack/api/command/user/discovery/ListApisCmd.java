@@ -47,7 +47,7 @@ public class ListApisCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         if (_apiDiscoveryService != null) {
-            User user = UserContext.current().getCallerUser();
+            User user = UserContext.current().getCallingUser();
             ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(user, name);
             if (response == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Api Discovery plugin was unable to find an api by that name or process any apis");

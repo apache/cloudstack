@@ -99,7 +99,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             throw new InvalidParameterValueException("Can't find guest network by id");
         }
         
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, guestNtwk);
         
         Network sourceIpNtwk = _networkModel.getNetwork(sourceIpNetworkId);
@@ -373,7 +373,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         
         Map<String, String> tags = cmd.getTags();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(

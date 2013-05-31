@@ -711,7 +711,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         // show this info to admin only
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
             VlanVO vl = ApiDBUtils.findVlanById(ipAddr.getVlanId());
             if (vl != null) {
@@ -1287,7 +1287,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setOsTypeName(os.getDisplayName());
         }
         response.setDetails(result.getDetails());
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         if (result.getFormat() == ImageFormat.ISO) { // Templates are always bootable
             response.setBootable(result.isBootable());
@@ -1380,7 +1380,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateAccount(templateResponse, account.getId());
         populateDomain(templateResponse, account.getDomainId());
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         boolean isAdmin = false;
         if (BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
@@ -1472,7 +1472,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         boolean isAdmin = false;
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
         }
@@ -1747,7 +1747,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateAccount(isoResponse, account.getId());
         populateDomain(isoResponse, account.getDomainId());
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         boolean isAdmin = false;
         if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
@@ -2360,7 +2360,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setReservedIpRange(reservation);
 
         //return vlan information only to Root admin
-        if (network.getBroadcastUri() != null && UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (network.getBroadcastUri() != null && UserContext.current().getCallingAccount().getType() == Account.ACCOUNT_TYPE_ADMIN) {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
             String vlan="N/A";

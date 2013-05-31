@@ -73,7 +73,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
 
     @Override
     public VolumeResponse newVolumeResponse(VolumeJoinVO volume) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         VolumeResponse volResponse = new VolumeResponse();
         volResponse.setId(volume.getUuid());

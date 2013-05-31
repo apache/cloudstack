@@ -573,7 +573,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create=true)
     public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, 
             String networkDomain) throws ResourceAllocationException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(vpcOwnerId);
         
         //Verify that caller can perform actions in behalf of vpc owner
@@ -705,9 +705,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         //verify permissions
-        _accountMgr.checkAccess(ctx.getCaller(), null, false, vpc);
+        _accountMgr.checkAccess(ctx.getCallingAccount(), null, false, vpc);
         
-        return destroyVpc(vpc, ctx.getCaller(), ctx.getCallerUserId());
+        return destroyVpc(vpc, ctx.getCallingAccount(), ctx.getCallingUserId());
     }
 
     @Override
@@ -763,7 +763,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
     public Vpc updateVpc(long vpcId, String vpcName, String displayText) {
         UserContext.current().setEventDetails(" Id: " + vpcId);
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         // Verify input parameters
         VpcVO vpcToUpdate = _vpcDao.findById(vpcId);
@@ -796,7 +796,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, 
             String cidr, Long vpcOffId, String state, String accountName, Long domainId, String keyword,
             Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired, Map<String, String> tags, Long projectId) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
         
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
@@ -940,8 +940,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public boolean startVpc(long vpcId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException, 
     InsufficientCapacityException {
         UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
-        User callerUser = _accountMgr.getActiveUser(ctx.getCallerUserId());
+        Account caller = ctx.getCallingAccount();
+        User callerUser = _accountMgr.getActiveUser(ctx.getCallingUserId());
         
         //check if vpc exists
         Vpc vpc = getActiveVpc(vpcId);
@@ -1004,7 +1004,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public boolean shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        Account caller = ctx.getCallingAccount();
         
         //check if vpc exists
         Vpc vpc = getVpc(vpcId);
@@ -1021,7 +1021,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         boolean success = true;
         List<Provider> providersToImplement = getVpcProviders(vpc.getId());
-        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(ctx.getCallerUserId()), caller);
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(ctx.getCallingUserId()), caller);
         for (VpcProvider element: getVpcElements()){
             if(providersToImplement.contains(element.getProvider())){
                 if (element.shutdownVpc(vpc, context)) {
@@ -1273,7 +1273,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_RESTART, eventDescription = "restarting vpc")
     public boolean restartVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
                                         InsufficientCapacityException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         // Verify input parameters
         Vpc vpc = getActiveVpc(vpcId);
@@ -1508,7 +1508,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         if (deleteNetwork) {
-            User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+            User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallingUserId());
             Account owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
             ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
             _ntwkMgr.destroyNetwork(networkId, context);
@@ -1532,7 +1532,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Boolean listAll = cmd.listAll();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
         String state = cmd.getState();
         Long projectId = cmd.getProjectId();
@@ -1594,7 +1594,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(vpcId);
         return applyStaticRoutes(routes, caller, true);
     }
@@ -1662,7 +1662,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_STATIC_ROUTE_DELETE, eventDescription = "deleting static route")
     public boolean revokeStaticRoute(long routeId) throws ResourceUnavailableException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         
         StaticRouteVO route = _staticRouteDao.findById(routeId);
         if (route == null) {
@@ -1699,7 +1699,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_STATIC_ROUTE_CREATE, eventDescription = "creating static route", create=true)
     public StaticRoute createStaticRoute(long gatewayId, String cidr) throws NetworkRuleConflictException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         
         //parameters validation
         VpcGateway gateway = _vpcGatewayDao.findById(gatewayId);
@@ -1782,7 +1782,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Boolean isRecursive = cmd.isRecursive();
         Boolean listAll = cmd.listAll();
         String accountName = cmd.getAccountName();
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
         Map<String, String> tags = cmd.getTags();
         Long projectId = cmd.getProjectId();
@@ -1924,7 +1924,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "associating Ip", async = true)
     public IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException, 
     InsufficientAddressCapacityException, ConcurrentOperationException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = null;
 
         IpAddress ipToAssoc = _ntwkModel.getIp(ipId);

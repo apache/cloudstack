@@ -374,7 +374,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPLOAD, eventDescription = "uploading volume", async = true)
     public VolumeVO uploadVolume(UploadVolumeCmd cmd)
             throws ResourceAllocationException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         long ownerId = cmd.getEntityOwnerId();
         Account owner = _accountDao.findById(ownerId);
         Long zoneId = cmd.getZoneId();
@@ -816,7 +816,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     public VolumeVO allocVolume(CreateVolumeCmd cmd)
             throws ResourceAllocationException {
         // FIXME: some of the scheduled event stuff might be missing here...
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         long ownerId = cmd.getEntityOwnerId();
         Boolean displayVolumeEnabled = cmd.getDisplayVolume();
@@ -1135,7 +1135,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 // do nothing as offering is public
             } else {
                 _configMgr.checkDiskOfferingAccess(UserContext.current()
-                        .getCaller(), newDiskOffering);
+                        .getCallingAccount(), newDiskOffering);
             }
 
             if (newDiskOffering.isCustomized()) {
@@ -1163,7 +1163,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         /* does the caller have the authority to act on this volume? */
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true,
+        _accountMgr.checkAccess(UserContext.current().getCallingAccount(), null, true,
                 volume);
 
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
@@ -1616,7 +1616,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Long vmId = command.getVirtualMachineId();
         Long volumeId = command.getId();
         Long deviceId = command.getDeviceId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         // Check that the volume ID is valid
         VolumeInfo volume = volFactory.getVolume(volumeId);
@@ -1813,7 +1813,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async = true)
     public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd
                 .getVirtualMachineId() == null)
                 || (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd

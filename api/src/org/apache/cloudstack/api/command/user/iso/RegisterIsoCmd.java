@@ -163,7 +163,7 @@ public class RegisterIsoCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return UserContext.current().getCallingAccount().getId();
         }
 
         return accountId;

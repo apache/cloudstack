@@ -165,7 +165,7 @@ public class ImplicitPlannerTest {
         acct.setDomainId(domainId);
         acct.setId(accountId);
 
-        UserContext.registerContext(1, acct, null, true);
+        UserContext.register(1, acct, null, true);
     }
 
     @Test

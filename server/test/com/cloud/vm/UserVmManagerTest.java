@@ -277,7 +277,7 @@ public class UserVmManagerTest {
        // UserContext.current().setEventDetails("Vm Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
-       UserContext.registerContext(1, account, null, true);
+       UserContext.register(1, account, null, true);
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
@@ -442,7 +442,7 @@ public class UserVmManagerTest {
         // caller is of type 0
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short) 0,
                 UUID.randomUUID().toString());
-        UserContext.registerContext(1, caller, null, true);
+        UserContext.register(1, caller, null, true);
 
         _userVmMgr.moveVMToUser(cmd);
     }
@@ -469,7 +469,7 @@ public class UserVmManagerTest {
         // caller is of type 0
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short) 1,
                 UUID.randomUUID().toString());
-        UserContext.registerContext(1, caller, null, true);
+        UserContext.register(1, caller, null, true);
 
         Account oldAccount = new AccountVO("testaccount", 1, "networkdomain", (short) 0,
                 UUID.randomUUID().toString());

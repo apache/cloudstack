@@ -106,7 +106,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     public String getAccountName() {
         if (accountName == null) {
-            return UserContext.current().getCaller().getAccountName();
+            return UserContext.current().getCallingAccount().getAccountName();
         }
 
         return accountName;
@@ -114,7 +114,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     public Long getDomainId() {
         if (domainId == null) {
-            return UserContext.current().getCaller().getDomainId();
+            return UserContext.current().getCallingAccount().getDomainId();
         }
         return domainId;
     }
@@ -142,7 +142,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return UserContext.current().getCallingAccount().getId();
         }
 
         return accountId;

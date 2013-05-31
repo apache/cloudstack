@@ -97,7 +97,7 @@ public class VpcTest extends TestCase {
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
-        UserContext.registerContext(1, account, null, true);
+        UserContext.register(1, account, null, true);
         vpc = new VpcVO(1, "myvpc", "myvpc", 2, 1, 1, "10.0.1.0/16", "mydomain");
     }
 

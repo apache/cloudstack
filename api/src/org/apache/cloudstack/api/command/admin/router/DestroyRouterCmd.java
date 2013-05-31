@@ -99,7 +99,7 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
         UserContext ctx = UserContext.current();
         ctx.setEventDetails("Router Id: "+getId());
 
-        VirtualRouter result = _routerService.destroyRouter(getId(), ctx.getCaller(), ctx.getCallerUserId());
+        VirtualRouter result = _routerService.destroyRouter(getId(), ctx.getCallingAccount(), ctx.getCallingUserId());
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());

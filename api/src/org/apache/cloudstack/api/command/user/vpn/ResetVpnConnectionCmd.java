@@ -85,7 +85,7 @@ public class ResetVpnConnectionCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return UserContext.current().getCallingAccount().getId();
         }
         return Account.ACCOUNT_ID_SYSTEM;
     }

@@ -101,9 +101,9 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     
     @Override
     public boolean maintain(DataStore store) {
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         StoragePoolVO pool = primaryDataStoreDao.findById(store.getId());
         try {
             StoragePool storagePool = (StoragePool) store;
@@ -257,9 +257,9 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     @Override
     public boolean cancelMaintain(DataStore store) {
         // Change the storage state back to up
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         StoragePoolVO poolVO = primaryDataStoreDao.findById(store.getId());
         StoragePool pool = (StoragePool)store;
        

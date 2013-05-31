@@ -84,7 +84,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Vpc vpc = _vpcMgr.getVpc(vpcId);
         if(vpc == null){
             throw new InvalidParameterValueException("Unable to find VPC");
@@ -135,7 +135,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public boolean deleteNetworkACL(long id) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         NetworkACL acl = _networkACLDao.findById(id);
         if(acl == null) {
             throw new InvalidParameterValueException("Unable to find specified ACL");
@@ -155,7 +155,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
     @Override
     public boolean replaceNetworkACLonPrivateGw(long aclId, long privateGatewayId) throws ResourceUnavailableException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         VpcGateway gateway = _vpcGatewayDao.findById(privateGatewayId);
         if (gateway == null) {
             throw new InvalidParameterValueException("Unable to find specified private gateway");
@@ -196,7 +196,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public boolean replaceNetworkACL(long aclId, long networkId) throws ResourceUnavailableException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         NetworkVO network = _networkDao.findById(networkId);
         if(network == null){
@@ -235,7 +235,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public NetworkACLItem createNetworkACLItem(CreateNetworkACLCmd aclItemCmd){
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Long aclId = aclItemCmd.getACLId();
         if(aclId == null){
             //ACL id is not specified. Get the ACL details from network
@@ -368,7 +368,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String action = cmd.getAction();
         Map<String, String> tags = cmd.getTags();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
@@ -471,7 +471,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         Vpc vpc = _vpcMgr.getVpc(acl.getVpcId());
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         _accountMgr.checkAccess(caller, null, true, vpc);
 

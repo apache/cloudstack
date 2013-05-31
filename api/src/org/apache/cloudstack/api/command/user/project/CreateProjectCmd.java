@@ -66,7 +66,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
         if (accountName != null) {
             return accountName;
         } else {
-            return UserContext.current().getCaller().getAccountName();
+            return UserContext.current().getCallingAccount().getAccountName();
         }
     }
 
@@ -74,7 +74,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
         if (domainId != null) {
             return domainId;
         } else {
-            return UserContext.current().getCaller().getDomainId();
+            return UserContext.current().getCallingAccount().getDomainId();
         }
 
     }
@@ -94,7 +94,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         if ((accountName != null && domainId == null) || (domainId != null && accountName == null)) {
             throw new InvalidParameterValueException("Account name and domain id must be specified together");

@@ -96,15 +96,11 @@ public class ApiDispatcher {
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) throws Exception {
         processParameters(cmd, params);
-
-            UserContext ctx = UserContext.current();
-            ctx.setAccountId(cmd.getEntityOwnerId());
-            cmd.create();
-
+        cmd.create();
     }
 
     private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
 
         if(cmd instanceof BaseAsyncCreateCmd) {
@@ -129,7 +125,6 @@ public class ApiDispatcher {
     public void dispatch(BaseCmd cmd, Map<String, String> params) throws Exception {
         processParameters(cmd, params);
         UserContext ctx = UserContext.current();
-        ctx.setAccountId(cmd.getEntityOwnerId());
         
         if (cmd instanceof BaseAsyncCmd) {
 

@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -30,9 +26,10 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.user.AccountVO;
+import com.cloud.dao.EntityManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -43,8 +40,11 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
 	@Inject private AsyncJobManager _asyncJobMgr;
     @Inject private AccountDao _accountDao;
     @Inject private VMInstanceDao _instanceDao;
+    @Inject
+    private EntityManager _entityMgr;
     
-    private final Map<String, Method> _handlerMap = new HashMap<String, Method>();
+    public final static String Start = "start";
+    public final static String Stop = "stop";
 
 	@Override
     public void runJob(AsyncJob job) {
@@ -55,69 +55,21 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         	VmWork work = (VmWork)ApiSerializerHelper.fromSerializedString(job.getCmdInfo());
         	assert(work != null);
         	
-            AccountVO account = _accountDao.findById(work.getAccountId());
-            assert(account != null);
-            
             VMInstanceVO vm = _instanceDao.findById(work.getVmId());
             assert(vm != null);
     
-            //
-            // Due to legcy massive generic usage in VirtualMachineManagerImpl, we can't dispatch job handling
-            // directly to VirtualMachineManagerImpl, since most handling method are generic method.
-            //
-            // to solve the problem, we have to go through an instantiated VirtualMachineGuru so that it can carry
-            // down correct type back to VirtualMachineManagerImpl. It is sad that we have to write code like this
-            //
-            VirtualMachineGuru guru = _vmMgr.getVmGuru(vm);
-            assert(guru != null);
-            if(guru == null) {
-            	s_logger.error("Unable to find virtual Guru for VM type: " + vm.getType());
+            UserContext context = UserContext.register(work.getUserId(), work.getAccountId(), UuidUtils.first(job.getUuid()));
+            if (cmd.equals(Start)) {
+                _vmMgr.start(vm.getUuid(), null, context.getCallingUser(), context.getCallingAccount());
+            } else if (cmd.equals(Stop)) {
+                _vmMgr.stop(vm.getUuid(), context.getCallingUser(), context.getCallingAccount());
             }
-            
-            UserContext.registerContext(work.getUserId(), account, null, false);
-            try {
-            	Method handler = getHandler(guru, cmd);
-            	if(handler != null) {
-        			handler.invoke(guru, work);
-            		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, null);
-            	} else {
-                	s_logger.error("Unable to find VM work handler. " + cmd);
-            		
-            		_asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, 0, null);
-            	}
-            } finally {
-                UserContext.unregisterContext();
-            }
+            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, null);
         } catch(Throwable e) {
         	s_logger.error("Unexpected exception", e);
-            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, 0, null);
+            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, 0, e);
+        } finally {
+            UserContext.unregister();
         }
-	}
-	
-    private Method getHandler(VirtualMachineGuru guru, String cmd) {
-		
-		synchronized(_handlerMap) {
-			Class<?> clz = guru.getClass();
-			String key = clz.getCanonicalName() + cmd;
-			Method method = _handlerMap.get(key);
-			if(method != null)
-				return method;
-			
-			try {
-				method = clz.getMethod(cmd, VmWork.class);
-				method.setAccessible(true);
-			} catch (SecurityException e) {
-				assert(false);
-				s_logger.error("Unexpected exception", e);
-				return null;
-			} catch (NoSuchMethodException e) {
-				assert(false);
-				s_logger.error("Unexpected exception", e);
-				return null;
-			}
-			
-			_handlerMap.put(key, method);
-			return method;
-		}
 	}
 }

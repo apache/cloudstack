@@ -188,7 +188,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
     @Override
     public boolean deleteTrafficMonitor(DeleteTrafficMonitorCmd cmd) {
         long hostId = cmd.getId();
-        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        User caller = _accountMgr.getActiveUser(UserContext.current().getCallingUserId());
         HostVO trafficMonitor = _hostDao.findById(hostId);
         if (trafficMonitor == null) {
             throw new InvalidParameterValueException("Could not find an traffic monitor with ID: " + hostId);

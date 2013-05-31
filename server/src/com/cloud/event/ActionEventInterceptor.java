@@ -37,8 +37,8 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
             boolean async = actionEvent.async();
             if(async){
                 UserContext ctx = UserContext.current();
-                long userId = ctx.getCallerUserId();
-                long accountId = ctx.getAccountId();
+                long userId = ctx.getCallingUserId();
+                long accountId = ctx.getCallingAccountId();
                 long startEventId = ctx.getStartEventId();
                 String eventDescription = actionEvent.eventDescription();
                 if(ctx.getEventDetails() != null){
@@ -55,8 +55,8 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
         ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
         if (actionEvent != null) {
             UserContext ctx = UserContext.current();
-            long userId = ctx.getCallerUserId();
-            long accountId = ctx.getAccountId();
+            long userId = ctx.getCallingUserId();
+            long accountId = ctx.getCallingAccountId();
             long startEventId = ctx.getStartEventId();
             String eventDescription = actionEvent.eventDescription();
             if(ctx.getEventDetails() != null){
@@ -77,8 +77,8 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
         ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
         if (actionEvent != null) {
             UserContext ctx = UserContext.current();
-            long userId = ctx.getCallerUserId();
-            long accountId = ctx.getAccountId();
+            long userId = ctx.getCallingUserId();
+            long accountId = ctx.getCallingAccountId();
             long startEventId = ctx.getStartEventId();
             String eventDescription = actionEvent.eventDescription();
             if(ctx.getEventDetails() != null){

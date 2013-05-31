@@ -266,7 +266,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 		"part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
-            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), network.getAccountId(),
+            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallingUserId(), network.getAccountId(),
                     EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
@@ -406,7 +406,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         s_logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), 
                     profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
-            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), profile.getAccountId(),
+            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallingUserId(), profile.getAccountId(),
                     EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
                     + profile.getBroadcastUri().getHost() + " for Network: " + profile.getId(), 0);
         }

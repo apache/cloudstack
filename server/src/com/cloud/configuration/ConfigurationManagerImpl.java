@@ -564,7 +564,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "updating configuration")
     public Configuration updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException {
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
         String name = cmd.getCfgName();
         String value = cmd.getValue();
         Long zoneId = cmd.getZoneId();
@@ -1112,7 +1112,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState) {
         String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
 
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Enabled.toString();
@@ -1131,7 +1131,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if zone is disabled
         DataCenterVO zone = _zoneDao.findById(zoneId);
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
@@ -1387,7 +1387,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Transaction txn = Transaction.currentTxn();
         boolean success = false;
 
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
         Long zoneId = cmd.getId();
 
         if (userId == null) {
@@ -1874,7 +1874,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_ZONE_CREATE, eventDescription = "creating zone", async = false)
     public DataCenter createZone(CreateZoneCmd cmd) {
         // grab parameters from the command
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
         String zoneName = cmd.getZoneName();
         String dns1 = cmd.getDns1();
         String dns2 = cmd.getDns2();
@@ -1928,7 +1928,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) {
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
 
         String name = cmd.getServiceOfferingName();
         if ((name == null) || (name.length() == 0)) {
@@ -2046,7 +2046,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long id = cmd.getId();
         String name = cmd.getServiceOfferingName();
         Integer sortKey = cmd.getSortKey();
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2267,7 +2267,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd) {
 
         Long offeringId = cmd.getId();
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2421,7 +2421,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         
         
         // Check if zone is enabled
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
@@ -2610,7 +2610,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         
         // ACL check
-        checkZoneAccess(UserContext.current().getCaller(), zone);
+        checkZoneAccess(UserContext.current().getCallingAccount(), zone);
         
         //Validate the physical network
         if (_physicalNetworkDao.findById(physicalNetworkId) == null) {
@@ -3136,7 +3136,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
 
-        return releasePublicIpRange(vlanDbId, UserContext.current().getCallerUserId(), UserContext.current().getCaller());
+        return releasePublicIpRange(vlanDbId, UserContext.current().getCallingUserId(), UserContext.current().getCallingAccount());
     }
 
 
@@ -3475,7 +3475,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
 
-        return deleteVlanAndPublicIpRange(UserContext.current().getCallerUserId(), vlanDbId, UserContext.current().getCaller());
+        return deleteVlanAndPublicIpRange(UserContext.current().getCallingUserId(), vlanDbId, UserContext.current().getCallingAccount());
     }
 
     @Override
@@ -4049,7 +4049,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(NetworkOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
 
         Long id = cmd.getId();

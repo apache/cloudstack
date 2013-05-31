@@ -91,7 +91,7 @@ public class NetworkACLManagerTest extends TestCase{
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
-        UserContext.registerContext(1, account, null, true);
+        UserContext.register(1, account, null, true);
         acl = Mockito.mock(NetworkACLVO.class);
         aclItem = Mockito.mock(NetworkACLItemVO.class);
     }

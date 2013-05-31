@@ -69,11 +69,11 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     }
 
     public String getAccountName() {
-        return UserContext.current().getCaller().getAccountName();
+        return UserContext.current().getCallingAccount().getAccountName();
     }
 
     public long getDomainId() {
-        return UserContext.current().getCaller().getDomainId();
+        return UserContext.current().getCallingAccount().getDomainId();
     }
 
     private long getZoneId() {
@@ -113,7 +113,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 

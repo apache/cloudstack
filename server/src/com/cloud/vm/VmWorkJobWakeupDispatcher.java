@@ -77,7 +77,7 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
 	        VMInstanceVO vm = _instanceDao.findById(work.getVmId());
 	        assert(vm != null);
 	    
-	        UserContext.registerContext(work.getUserId(), account, null, false);
+	        UserContext.register(work.getUserId(), account, null, false);
 	        try {
 	        	Method handler = getHandler(joinRecord.getWakeupHandler());
 	        	if(handler != null) {
@@ -88,7 +88,7 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
 	    	    		" when waking up job-" + job.getId());
 	        	}
 	        } finally {
-	            UserContext.unregisterContext();
+	            UserContext.unregister();
 	        }
 	    } catch(Throwable e) {
 	    	s_logger.warn("Unexpected exception in waking up job-" + job.getId());

@@ -90,7 +90,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return UserContext.current().getCallingAccount().getId();
         }
 
         return accountId;
@@ -109,7 +109,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         Account owner = _accountService.getAccount(getEntityOwnerId());
-        boolean result = _ravService.removeVpnUser(owner.getId(), userName, UserContext.current().getCaller());
+        boolean result = _ravService.removeVpnUser(owner.getId(), userName, UserContext.current().getCallingAccount());
         if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove vpn user");
         }

@@ -76,7 +76,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }

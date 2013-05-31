@@ -86,7 +86,7 @@ public class CreateNetworkOfferingTest extends TestCase{
         Mockito.when(accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
 
-        UserContext.registerContext(accountMgr.getSystemUser().getId(), accountMgr.getSystemAccount(), null, false);
+        UserContext.register(accountMgr.getSystemUser().getId(), accountMgr.getSystemAccount(), null, false);
     }
 
     //Test Shared network offerings

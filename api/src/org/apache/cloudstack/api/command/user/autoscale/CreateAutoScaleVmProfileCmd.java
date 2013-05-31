@@ -120,7 +120,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         if (autoscaleUserId != null) {
             return autoscaleUserId;
         } else {
-            return UserContext.current().getCaller().getId();
+            return UserContext.current().getCallingAccount().getId();
         }
     }
 
@@ -137,7 +137,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
             User user = _entityMgr.findById(User.class, autoscaleUserId);
             account = _entityMgr.findById(Account.class, user.getAccountId());
         } else {
-            account = UserContext.current().getCaller();
+            account = UserContext.current().getCallingAccount();
         }
         accountId = account.getAccountId();
         domainId = account.getDomainId();

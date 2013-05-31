@@ -112,7 +112,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_GATEWAY_CREATE, eventDescription = "creating s2s vpn gateway", create=true)
     public Site2SiteVpnGateway createVpnGateway(CreateVpnGatewayCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
         //Verify that caller can perform actions in behalf of vpc owner
@@ -157,7 +157,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE, eventDescription = "creating s2s customer gateway", create=true)
     public Site2SiteCustomerGateway createCustomerGateway(CreateVpnCustomerGatewayCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
         //Verify that caller can perform actions in behalf of vpc owner
@@ -225,7 +225,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_CREATE, eventDescription = "creating s2s vpn connection", create=true)
     public Site2SiteVpnConnection createVpnConnection(CreateVpnConnectionCmd cmd) throws NetworkRuleConflictException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
         //Verify that caller can perform actions in behalf of vpc owner
@@ -338,7 +338,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE, eventDescription = "deleting s2s vpn customer gateway", create=true)
     public boolean deleteCustomerGateway(DeleteVpnCustomerGatewayCmd cmd) {
         UserContext.current().setEventDetails(" Id: " + cmd.getId());
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         Long id = cmd.getId();
         Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(id);
@@ -372,7 +372,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_GATEWAY_DELETE, eventDescription = "deleting s2s vpn gateway", create=true)
     public boolean deleteVpnGateway(DeleteVpnGatewayCmd cmd) {
         UserContext.current().setEventDetails(" Id: " + cmd.getId());
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         Long id = cmd.getId();
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(id);
@@ -390,7 +390,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE, eventDescription = "update s2s vpn customer gateway", create=true)
     public Site2SiteCustomerGateway updateCustomerGateway(UpdateVpnCustomerGatewayCmd cmd) {
         UserContext.current().setEventDetails(" Id: " + cmd.getId());
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         Long id = cmd.getId();
         Site2SiteCustomerGatewayVO gw = _customerGatewayDao.findById(id);
@@ -479,7 +479,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_DELETE, eventDescription = "deleting s2s vpn connection", create=true)
     public boolean deleteVpnConnection(DeleteVpnConnectionCmd cmd) throws ResourceUnavailableException {
         UserContext.current().setEventDetails(" Id: " + cmd.getId());
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         Long id = cmd.getId();
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
@@ -529,7 +529,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_RESET, eventDescription = "reseting s2s vpn connection", create=true)
     public Site2SiteVpnConnection resetVpnConnection(ResetVpnConnectionCmd cmd) throws ResourceUnavailableException {
         UserContext.current().setEventDetails(" Id: " + cmd.getId());
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         Long id = cmd.getId();
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
@@ -559,7 +559,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         long startIndex = cmd.getStartIndex();
         long pageSizeVal = cmd.getPageSizeVal();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
@@ -598,7 +598,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         long startIndex = cmd.getStartIndex();
         long pageSizeVal = cmd.getPageSizeVal();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
@@ -642,7 +642,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         long startIndex = cmd.getStartIndex();
         long pageSizeVal = cmd.getPageSizeVal();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 

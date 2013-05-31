@@ -166,7 +166,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 

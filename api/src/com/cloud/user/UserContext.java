@@ -16,103 +16,150 @@
 // under the License.
 package com.cloud.user;
 
-import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.cloud.utils.component.ComponentContext;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
+import com.cloud.dao.EntityManager;
+import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+/**
+ * Calling Context records information about who is making this call.  This
+ * class must be always be available in all CloudStack code.  Every thread
+ * entry point must set the context and remove it when the thread finishes.
+ */
 public class UserContext {
+    private static final Logger s_logger = Logger.getLogger(UserContext.class);
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
 
-    private long userId;
     private String sessionId;
     private Account account;
     private long startEventId = 0;
-    private long accountId;
     private String eventDetails;
-    private boolean apiServer;
+    private User user;
+    private final Map<String, Object> context = new HashMap<String, Object>();
 
-    @Inject private AccountService _accountMgr = null;
+    private static EntityManager s_entityMgr;
+
+    public static void init(EntityManager entityMgr) {
+        s_entityMgr = entityMgr;
+    }
 
     public UserContext() {
     }
 
-    public UserContext(long userId, Account accountObject, String sessionId, boolean apiServer) {
-        this.userId = userId;
-        this.account = accountObject;
+    protected UserContext(User user, Account account, String sessionId) {
+        this.user = user;
+        this.account = account;
         this.sessionId = sessionId;
-        this.apiServer = apiServer;
+    }
+    
+    public void putContextParameter(String key, Object value) {
+        context.put(key, value);
     }
 
-    public long getCallerUserId() {
-        return userId;
+    public Object getContextParameter(String key) {
+        return context.get(key);
     }
 
-    public User getCallerUser() {
-        if (_accountMgr == null) {
-            _accountMgr = ComponentContext.getComponent(AccountService.class);
-        }
-        return _accountMgr.getActiveUser(userId);
+    public long getCallingUserId() {
+        return user.getId();
     }
 
-    public void setCallerUserId(long userId) {
-        this.userId = userId;
+    public User getCallingUser() {
+        return user;
     }
 
     public String getSessionId() {
         return sessionId;
     }
 
-    public Account getCaller() {
+    public Account getCallingAccount() {
         return account;
     }
 
-    public void setCaller(Account accountObject) {
-        this.account = accountObject;
-    }
-
-    public void setSessionKey(String sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public boolean isApiServer() {
-        return apiServer;
-    }
-
-    public void setApiServer(boolean apiServer) {
-        this.apiServer = apiServer;
-    }
-
     public static UserContext current() {
+        return s_currentContext.get();
+    }
+
+    public static UserContext register(User callingUser, Account callingAccount, String sessionId) {
+        assert s_currentContext.get() == null : "There's a context already so what does this new register context mean? " + s_currentContext.get().toString();
+        if (s_currentContext.get() != null) { // FIXME: This should be removed soon.  I added this check only to surface all the places that have this problem.
+            throw new CloudRuntimeException("There's a context already so what does this new register context mean? " + s_currentContext.get().toString());
+        }
+        UserContext callingContext = new UserContext(callingUser, callingAccount, sessionId);
+        s_currentContext.set(callingContext);
+        if (sessionId != null) {
+            NDC.push(sessionId);
+        }
+        s_logger.debug("Setting calling context: " + s_currentContext.get());
+        return callingContext;
+    }
+
+    public static UserContext registerOnceOnly() {
         UserContext context = s_currentContext.get();
         if (context == null) {
-            //
-            // TODO: we should enforce explicit UserContext setup at major entry-points for security concerns,
-            // however, there are many places that run background jobs assume the system context.
-            //
-            // If there is a security concern, all entry points from user (including the front end that takes HTTP
-            // request in and
-            // the core async-job manager that runs commands from user) have explicitly setup the UserContext.
-            //
-            return UserContextInitializer.getInstance().getAdminContext();
+            return register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
         }
+
+        assert context.getCallingUserId() == User.UID_SYSTEM : "You are calling a very specific method that registers a one time system context.  This method is meant for background threads that does processing.";
         return context;
     }
 
-    public static void updateContext(long userId, Account accountObject, String sessionId) {
-        UserContext context = current();
-        assert (context != null) : "Context should be already setup before you can call this one";
-
-        context.setCallerUserId(userId);
-        context.setCaller(accountObject);
-        context.setSessionKey(sessionId);
+    public static UserContext register(String callingUserUuid, String callingAccountUuid, String sessionId) {
+        Account account = s_entityMgr.findByUuid(Account.class, callingAccountUuid);
+        if (account == null) {
+            throw new CloudAuthenticationException("The account is no longer current.").add(Account.class, callingAccountUuid);
+        }
+        
+        User user = s_entityMgr.findByUuid(User.class, callingUserUuid);
+        if (user == null) {
+            throw new CloudAuthenticationException("The user is no longer current.").add(User.class, callingUserUuid);
+        }
+        return register(user, account, sessionId);
     }
 
-    public static void registerContext(long userId, Account accountObject, String sessionId, boolean apiServer) {
-        s_currentContext.set(new UserContext(userId, accountObject, sessionId, apiServer));
+    public static UserContext register(long callingUserId, long callingAccountId, String sessionId) throws CloudAuthenticationException {
+        Account account = s_entityMgr.findById(Account.class, callingAccountId);
+        if (account == null) {
+            throw new CloudAuthenticationException("The account is no longer current.").add(Account.class, Long.toString(callingAccountId));
+        }
+        User user = s_entityMgr.findById(User.class, callingUserId);
+        if (user == null) {
+            throw new CloudAuthenticationException("The user is no longer current.").add(User.class, Long.toString(callingUserId));
+        }
+        return register(user, account, sessionId);
     }
 
-    public static void unregisterContext() {
-        s_currentContext.set(null);
+    public static UserContext register(long callingUserId, Account callingAccount, String sessionId, boolean apiServer) {
+        User user = s_entityMgr.findById(User.class, callingUserId);
+        if (user == null) {
+            throw new CloudAuthenticationException("The user is no longer current.").add(User.class, Long.toString(callingUserId));
+        }
+        return register(user, callingAccount, sessionId);
+    }
+
+    public static UserContext unregister() {
+        assert s_currentContext.get() != null : "Removing the context when we don't need to " + s_currentContext.get().toString();
+        UserContext context = s_currentContext.get();
+        if (context == null) {
+            s_logger.trace("No context to remove");
+            return null;
+        }
+        s_currentContext.remove();
+        s_logger.debug("Context removed " + context);
+        String sessionId = context.getSessionId();
+        if (sessionId != null) {
+            while ((sessionId = NDC.pop()) != null) {
+                if (context.getSessionId().equals(sessionId)) {
+                    break;
+                }
+            }
+        }
+        return context;
     }
 
     public void setStartEventId(long startEventId) {
@@ -123,12 +170,16 @@ public class UserContext {
         return startEventId;
     }
 
-    public long getAccountId() {
-        return accountId;
+    public long getCallingAccountId() {
+        return account.getId();
     }
 
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
+    public String getCallingAccountUuid() {
+        return account.getUuid();
+    }
+
+    public String getCallingUserUuid() {
+        return user.getUuid();
     }
 
     public void setEventDetails(String eventDetails) {
@@ -137,5 +188,13 @@ public class UserContext {
 
     public String getEventDetails() {
         return eventDetails;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuffer("CallContext[acct=").append(account.getId())
+                .append("; user=").append(user.getId())
+                .append("; session=").append(sessionId)
+                .append("]").toString();
     }
 }

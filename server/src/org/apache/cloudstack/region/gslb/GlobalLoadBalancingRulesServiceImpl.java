@@ -151,7 +151,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     public boolean assignToGlobalLoadBalancerRule(AssignToGlobalLoadBalancerRuleCmd assignToGslbCmd) {
 
         UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        Account caller = ctx.getCallingAccount();
 
         long gslbRuleId =  assignToGslbCmd.getGlobalLoadBalancerRuleId();
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
@@ -282,7 +282,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     public boolean removeFromGlobalLoadBalancerRule(RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd) {
 
         UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        Account caller = ctx.getCallingAccount();
 
         long gslbRuleId =  removeFromGslbCmd.getGlobalLoadBalancerRuleId();
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
@@ -379,7 +379,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     public boolean deleteGlobalLoadBalancerRule(DeleteGlobalLoadBalancerRuleCmd deleteGslbCmd) {
 
         UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        Account caller = ctx.getCallingAccount();
 
         long gslbRuleId =  deleteGslbCmd.getGlobalLoadBalancerId();
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
@@ -448,7 +448,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         }
 
         UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        Account caller = ctx.getCallingAccount();
 
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
 

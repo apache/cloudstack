@@ -56,7 +56,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     @Override
     public ZoneResponse newDataCenterResponse(DataCenterJoinVO dataCenter, Boolean showCapacities) {
 
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getUuid());
         zoneResponse.setName(dataCenter.getName());

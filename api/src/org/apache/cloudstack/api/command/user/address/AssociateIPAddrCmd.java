@@ -103,14 +103,14 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         if (accountName != null) {
             return accountName;
         }
-        return UserContext.current().getCaller().getAccountName();
+        return UserContext.current().getCallingAccount().getAccountName();
     }
 
     public long getDomainId() {
         if (domainId != null) {
             return domainId;
         }
-        return UserContext.current().getCaller().getDomainId();
+        return UserContext.current().getCallingAccount().getDomainId();
     }
 
     private long getZoneId() {
@@ -191,7 +191,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         if (accountName != null && domainId != null) {
             Account account = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
             return account.getId();

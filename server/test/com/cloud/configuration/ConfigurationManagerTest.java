@@ -112,7 +112,7 @@ public class ConfigurationManagerTest {
 
         when(configurationMgr._vlanDao.acquireInLockTable(anyLong(), anyInt())).thenReturn(vlan);
 
-        UserContext.registerContext(1, account, null, true);
+        UserContext.register(1, account, null, true);
 
         Field dedicateIdField = _dedicatePublicIpRangeClass.getDeclaredField("id");
         dedicateIdField.setAccessible(true);

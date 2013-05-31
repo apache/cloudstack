@@ -179,10 +179,10 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
 
             if (getOpenFirewall()) {
-                success = success && _firewallService.applyIngressFirewallRules(ipAddressId, callerContext.getCaller());
+                success = success && _firewallService.applyIngressFirewallRules(ipAddressId, callerContext.getCallingAccount());
             }
 
-            success = success && _rulesService.applyPortForwardingRules(ipAddressId, callerContext.getCaller());
+            success = success && _rulesService.applyPortForwardingRules(ipAddressId, callerContext.getCallingAccount());
 
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
@@ -272,7 +272,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
 
         if (account != null) {
             return account.getId();

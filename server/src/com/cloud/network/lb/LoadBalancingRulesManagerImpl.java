@@ -526,7 +526,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterValueException("Failed: LB rule id: " + cmd.getLbRuleId() + " not present ");
         }
 
-        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
+        _accountMgr.checkAccess(caller.getCallingAccount(), null, true, loadBalancer);
         if (loadBalancer.getState() == FirewallRule.State.Revoke) {
             throw new InvalidParameterValueException("Failed:  LB rule id: " + cmd.getLbRuleId()
                     + " is in deleting state: ");
@@ -586,7 +586,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterValueException("Failed: LB rule id: " + cmd.getLbRuleId() + " not present ");
         }
 
-        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
+        _accountMgr.checkAccess(caller.getCallingAccount(), null, true, loadBalancer);
 
         if (loadBalancer.getState() == FirewallRule.State.Revoke) {
             throw new InvalidParameterValueException("Failed:  LB rule id: " + cmd.getLbRuleId()
@@ -727,7 +727,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
         long loadBalancerId = loadBalancer.getId();
         FirewallRule.State backupState = loadBalancer.getState();
-        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
+        _accountMgr.checkAccess(caller.getCallingAccount(), null, true, loadBalancer);
 
         if (apply) {
             if (loadBalancer.getState() == FirewallRule.State.Active) {
@@ -785,7 +785,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
         long loadBalancerId = loadBalancer.getId();
         FirewallRule.State backupState = loadBalancer.getState();
-        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
+        _accountMgr.checkAccess(caller.getCallingAccount(), null, true, loadBalancer);
 
         if (apply) {
             if (loadBalancer.getState() == FirewallRule.State.Active) {
@@ -925,7 +925,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @ActionEvent(eventType = EventTypes.EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, eventDescription = "assigning to load balancer", async = true)
     public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
         UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        Account caller = ctx.getCallingAccount();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
@@ -1053,7 +1053,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterException("Invalid load balancer value: " + loadBalancerId);
         }
 
-        _accountMgr.checkAccess(caller.getCaller(), null, true, loadBalancer);
+        _accountMgr.checkAccess(caller.getCallingAccount(), null, true, loadBalancer);
 
         boolean success = false;
         FirewallRule.State backupState = loadBalancer.getState();
@@ -1151,7 +1151,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_DELETE, eventDescription = "deleting load balancer", async = true)
     public boolean deleteLoadBalancerRule(long loadBalancerId, boolean apply) {
         UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        Account caller = ctx.getCallingAccount();
 
         LoadBalancerVO rule = _lbDao.findById(loadBalancerId);
 
@@ -1160,7 +1160,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
         _accountMgr.checkAccess(caller, null, true, rule);
 
-        boolean result = deleteLoadBalancerRule(loadBalancerId, apply, caller, ctx.getCallerUserId(), true);
+        boolean result = deleteLoadBalancerRule(loadBalancerId, apply, caller, ctx.getCallingUserId(), true);
         if (!result) {
             throw new CloudRuntimeException("Unable to remove load balancer rule " + loadBalancerId);
         }
@@ -1388,7 +1388,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw ex;
         }
         
-        _accountMgr.checkAccess(caller.getCaller(), null, true, ipAddr);
+        _accountMgr.checkAccess(caller.getCallingAccount(), null, true, ipAddr);
 
 
         Long networkId = ipAddr.getAssociatedWithNetworkId();
@@ -1402,7 +1402,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         // verify that lb service is supported by the network
         isLbServiceSupportedInNetwork(networkId, Scheme.Public);
 
-        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPort, srcPort, protocol,
+        _firewallMgr.validateFirewallRule(caller.getCallingAccount(), ipAddr, srcPort, srcPort, protocol,
                 Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
 
         LoadBalancerVO newRule = new LoadBalancerVO(xId, name, description,
@@ -1424,7 +1424,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         //create rule for all CIDRs
         if (openFirewall) {
-            _firewallMgr.createRuleForAllCidrs(sourceIpId, caller.getCaller(), srcPort,
+            _firewallMgr.createRuleForAllCidrs(sourceIpId, caller.getCallingAccount(), srcPort,
                     srcPort, protocol, null, null, newRule.getId(), networkId);
         }
 
@@ -1646,7 +1646,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (ip.getSystem()) {
             s_logger.debug("Releasing system ip address " + lb.getSourceIpAddressId() + " as a part of delete lb rule");
             if (!_networkMgr.disassociatePublicIpAddress(lb.getSourceIpAddressId(), UserContext.current()
-                    .getCallerUserId(), UserContext.current().getCaller())) {
+                    .getCallingUserId(), UserContext.current().getCallingAccount())) {
                 s_logger.warn("Unable to release system ip address id=" + lb.getSourceIpAddressId()
                         + " as a part of delete lb rule");
                 success = false;
@@ -1738,7 +1738,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_UPDATE, eventDescription = "updating load balancer", async = true)
     public LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Long lbRuleId = cmd.getId();
         String name = cmd.getLoadBalancerName();
         String description = cmd.getDescription();
@@ -1810,7 +1810,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd)
             throws PermissionDeniedException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getId();
         Boolean applied = cmd.isApplied();
 
@@ -1876,7 +1876,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public List<LBStickinessPolicyVO> searchForLBStickinessPolicies(ListLBStickinessPoliciesCmd cmd)
             throws PermissionDeniedException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getLbRuleId();
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
@@ -1893,7 +1893,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public List<LBHealthCheckPolicyVO> searchForLBHealthCheckPolicies(ListLBHealthCheckPoliciesCmd cmd)
             throws PermissionDeniedException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getLbRuleId();
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
@@ -1915,7 +1915,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Long networkId = cmd.getNetworkId();
         Map<String, String> tags = cmd.getTags();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(

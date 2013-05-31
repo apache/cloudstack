@@ -432,7 +432,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) {
         Long routerId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
@@ -542,7 +542,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_STOP, eventDescription = "stopping router Vm", async = true)
     public VirtualRouter stopRouter(long routerId, boolean forced) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();
-        Account account = context.getCaller();
+        Account account = context.getCallingAccount();
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -552,7 +552,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         _accountMgr.checkAccess(account, null, true, router);
 
-        UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
+        UserVO user = _userDao.findById(UserContext.current().getCallingUserId());
 
         VirtualRouter virtualRouter = stop(router, forced, user, account);
         if (virtualRouter == null) {
@@ -605,7 +605,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
     public VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -622,7 +622,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     DataCenter.class, router.getDataCenterId());
         }
 
-        UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
+        UserVO user = _userDao.findById(UserContext.current().getCallingUserId());
         s_logger.debug("Stopping and starting router " + router + " as a part of router reboot");
 
         if (stop(router, false, user, caller) != null) {
@@ -1170,8 +1170,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     //Ensure router status is update to date before execute this function. The function would try best to recover all routers except MASTER
     protected void recoverRedundantNetwork(DomainRouterVO masterRouter, DomainRouterVO backupRouter) {
-        UserContext context = UserContext.current();
-        context.setAccountId(1);
         if (masterRouter.getState() == State.Running && backupRouter.getState() == State.Running) {
             HostVO masterHost = _hostDao.findById(masterRouter.getHostId());
             HostVO backupHost = _hostDao.findById(backupRouter.getHostId());
@@ -1283,42 +1281,49 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         @Override
         public void run() {
-            while (true) {
-                try {
-                    Long networkId = _vrUpdateQueue.take();
-                    List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
+            try {
+                UserContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
+                while (true) {
+                    try {
+                        Long networkId = _vrUpdateQueue.take();
+                        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
 
-                    if (routers.size() != 2) {
-                        continue;
+                        if (routers.size() != 2) {
+                            continue;
+                        }
+                        /*
+                         * We update the router pair which the lower id router owned by this mgmt server, in order
+                         * to prevent duplicate update of router status from cluster mgmt servers
+                         */
+                        DomainRouterVO router0 = routers.get(0);
+                        DomainRouterVO router1 = routers.get(1);
+                        DomainRouterVO router = router0;
+                        if ((router0.getId() < router1.getId()) && router0.getHostId() != null) {
+                            router = router0;
+                        } else {
+                            router = router1;
+                        }
+                        if (router.getHostId() == null) {
+                            s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to can't find host");
+                            continue;
+                        }
+                        HostVO host = _hostDao.findById(router.getHostId());
+                        if (host == null || host.getManagementServerId() == null ||
+                                host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                            s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to not belong to this mgmt server");
+                            continue;
+                        }
+                        updateRoutersRedundantState(routers);
+                        checkDuplicateMaster(routers);
+                        checkSanity(routers);
+                    } catch (Exception ex) {
+                        s_logger.error("Fail to complete the RvRStatusUpdateTask! ", ex);
                     }
-                    /*
-                     * We update the router pair which the lower id router owned by this mgmt server, in order
-                     * to prevent duplicate update of router status from cluster mgmt servers
-                     */
-                    DomainRouterVO router0 = routers.get(0);
-                    DomainRouterVO router1 = routers.get(1);
-                    DomainRouterVO router = router0;
-                    if ((router0.getId() < router1.getId()) && router0.getHostId() != null) {
-                        router = router0;
-                    } else {
-                        router = router1;
-                    }
-                    if (router.getHostId() == null) {
-                        s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to can't find host");
-                        continue;
-                    }
-                    HostVO host = _hostDao.findById(router.getHostId());
-                    if (host == null || host.getManagementServerId() == null ||
-                            host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
-                        s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to not belong to this mgmt server");
-                        continue;
-                    }
-                    updateRoutersRedundantState(routers);
-                    checkDuplicateMaster(routers);
-                    checkSanity(routers);
-                } catch (Exception ex) {
-                    s_logger.error("Fail to complete the RvRStatusUpdateTask! ", ex);
                 }
+            } catch (Exception e) {
+                s_logger.error("Unable to setup the calling context", e);
+            } finally {
+                UserContext.unregister();
             }
         }
 
@@ -2778,7 +2783,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 try {
                     if (network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestType.Shared) {
                         Pod pod = _podDao.findById(vm.getPodIdToDeployIn());
-                        Account caller = UserContext.current().getCaller();
+                        Account caller = UserContext.current().getCallingAccount();
                         List<VlanVO> vlanList = _vlanDao.listVlansByNetworkIdAndGateway(network.getId(), nic.getGateway());
                         List<Long>   vlanDbIdList = new ArrayList<Long>();
                         for (VlanVO vlan : vlanList) {
@@ -2794,7 +2799,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     return false;
                 }
                 //this means we did not create a ip alis on the router.
-                NicIpAliasVO alias = new NicIpAliasVO(domr_guest_nic.getId(), routerAliasIp, router.getId(), UserContext.current().getAccountId(), network.getDomainId(), nic.getNetworkId(),nic.getGateway(), nic.getNetmask());
+                NicIpAliasVO alias = new NicIpAliasVO(domr_guest_nic.getId(), routerAliasIp, router.getId(), UserContext.current().getCallingAccountId(), network.getDomainId(), nic.getNetworkId(),nic.getGateway(), nic.getNetmask());
                 alias.setAliasCount((routerPublicIP.getIpMacAddress()));
                 _nicIpAliasDao.persist(alias);
                 List<IpAliasTO> ipaliasTo = new ArrayList<IpAliasTO>();
@@ -3053,8 +3058,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     public VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ResourceUnavailableException,
             InsufficientCapacityException, ConcurrentOperationException {
-        Account caller = UserContext.current().getCaller();
-        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        Account caller = UserContext.current().getCallingAccount();
+        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallingUserId());
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -3090,7 +3095,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             return router;
         }
 
-        UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
+        UserVO user = _userDao.findById(UserContext.current().getCallingUserId());
         Map<Param, Object> params = new HashMap<Param, Object>();
         if (reprogramNetwork) {
             params.put(Param.ReProgramGuestNetworks, true);
@@ -3832,8 +3837,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
-        UserContext context = UserContext.current();
-        context.setAccountId(1);
         List<DomainRouterVO> routers = _routerDao.listIsolatedByHostId(host.getId());
         for (DomainRouterVO router : routers) {
             if (router.isStopPending()) {

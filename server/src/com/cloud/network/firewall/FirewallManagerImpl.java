@@ -147,7 +147,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     public FirewallRule createEgressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         Network network = _networkDao.findById(rule.getNetworkId());
         if (network.getGuestType() == Network.GuestType.Shared) {
@@ -160,7 +160,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     public FirewallRule createIngressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
-         Account caller = UserContext.current().getCaller();
+         Account caller = UserContext.current().getCallingAccount();
         Long sourceIpAddressId = rule.getSourceIpAddressId();
  
         return createFirewallRule(sourceIpAddressId, caller, rule.getXid(), rule.getSourcePortStart(), 
@@ -241,7 +241,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         Map<String, String> tags = cmd.getTags();
         FirewallRule.TrafficType trafficType = cmd.getTrafficType();
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (ipId != null) {
@@ -687,8 +687,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     public boolean revokeFirewallRule(long ruleId, boolean apply) {
-        Account caller = UserContext.current().getCaller();
-        long userId = UserContext.current().getCallerUserId();
+        Account caller = UserContext.current().getCallingAccount();
+        long userId = UserContext.current().getCallingUserId();
         return revokeFirewallRule(ruleId, apply, caller, userId);
     }
 

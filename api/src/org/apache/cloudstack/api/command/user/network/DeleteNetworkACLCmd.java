@@ -73,7 +73,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 

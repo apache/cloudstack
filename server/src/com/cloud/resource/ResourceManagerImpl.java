@@ -400,7 +400,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw ex;
         }
 
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
 		if (Grouping.AllocationState.Disabled == zone.getAllocationState()
 				&& !_accountMgr.isRootAdmin(account.getType())) {
 			PermissionDeniedException ex = new PermissionDeniedException(
@@ -633,7 +633,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         List<String> hostTags = cmd.getHostTags();
 
 		dcId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current()
-				.getCaller(), dcId);
+				.getCallingAccount(), dcId);
 
         // this is for standalone option
         if (clusterName == null && clusterId == null) {
@@ -704,7 +704,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					+ dcId);
         }
 
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
 		if (Grouping.AllocationState.Disabled == zone.getAllocationState()
 				&& !_accountMgr.isRootAdmin(account.getType())) {
 			PermissionDeniedException ex = new PermissionDeniedException(
@@ -927,7 +927,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 	protected boolean doDeleteHost(long hostId, boolean isForced,
 			boolean isForceDeleteStorage) {
 		User caller = _accountMgr.getActiveUser(UserContext.current()
-				.getCallerUserId());
+				.getCallingUserId());
         // Verify that host exists
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -935,7 +935,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					+ " doesn't exist");
         }
 		_accountMgr.checkAccessAndSpecifyAuthority(UserContext.current()
-				.getCaller(), host.getDataCenterId());
+				.getCallingAccount(), host.getDataCenterId());
 
         /*
 		 * TODO: check current agent status and updateAgentStatus to removed. If
@@ -2296,7 +2296,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
 		User caller = _accountMgr.getActiveUser(UserContext.current()
-				.getCallerUserId());
+				.getCallingUserId());
 
 		if (forceDestroyStorage) {
 			// put local storage into mainenance mode, will set all the VMs on

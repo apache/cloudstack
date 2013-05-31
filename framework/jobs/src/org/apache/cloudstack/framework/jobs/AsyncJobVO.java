@@ -35,6 +35,7 @@ import javax.persistence.Transient;
 
 import org.apache.cloudstack.jobs.Job;
 
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -142,6 +143,11 @@ public class AsyncJobVO implements AsyncJob, Job {
 		this.id = id;
 	}
 	
+    @Override
+    public String getShortUuid() {
+        return UuidUtils.first(uuid);
+    }
+
 	@Override
 	public String getType() {
 		return type;

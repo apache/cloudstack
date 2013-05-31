@@ -109,7 +109,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
         if (router == null || router.getRole() != Role.INTERNAL_LB_VM) {
             throw new InvalidParameterValueException("Can't find internal lb vm by id");
         } else {
-            result = _internalLbSvc.startInternalLbVm(getId(), UserContext.current().getCaller(), UserContext.current().getCallerUserId());
+            result = _internalLbSvc.startInternalLbVm(getId(), UserContext.current().getCallingAccount(), UserContext.current().getCallingUserId());
         }
         
         if (result != null){

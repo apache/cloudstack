@@ -73,7 +73,7 @@ public class GetApiLimitCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -87,7 +87,7 @@ public class GetApiLimitCmd extends BaseCmd {
         if ( !apiLimitEnabled ){
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
         }
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         ApiLimitResponse response = _apiLimitService.searchApiLimit(caller);
         response.setResponseName(getCommandName());
         response.setObjectName("apilimit");

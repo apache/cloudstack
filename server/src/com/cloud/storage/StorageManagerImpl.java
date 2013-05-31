@@ -785,7 +785,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     "unable to find zone by id " + zoneId);
         }
         // Check if zone is disabled
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
                 && !_accountMgr.isRootAdmin(account.getType())) {
             throw new PermissionDeniedException(
@@ -1372,9 +1372,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(
             Long primaryStorageId) throws ResourceUnavailableException,
             InsufficientCapacityException {
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
 
         boolean restart = true;
         StoragePoolVO primaryStorage = null;
@@ -1425,9 +1425,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             CancelPrimaryStorageMaintenanceCmd cmd)
             throws ResourceUnavailableException {
         Long primaryStorageId = cmd.getId();
-        Long userId = UserContext.current().getCallerUserId();
+        Long userId = UserContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         StoragePoolVO primaryStorage = null;
 
         primaryStorage = _storagePoolDao.findById(primaryStorageId);

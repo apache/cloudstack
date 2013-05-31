@@ -85,7 +85,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        _ravService.destroyRemoteAccessVpnForIp(publicIpId, UserContext.current().getCaller());
+        _ravService.destroyRemoteAccessVpnForIp(publicIpId, UserContext.current().getCallingAccount());
     }
 
     @Override

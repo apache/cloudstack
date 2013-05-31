@@ -105,6 +105,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
+import com.cloud.user.UserContext;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -1175,10 +1176,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         @Override
         public void run() {
+            try {
+                UserContext.registerOnceOnly();
+            } catch (Exception e) {
+                s_logger.error("Unable to register context", e);
+                return;
+            }
             _request.logD("Processing the first command ");
             StartupCommand[] startups = new StartupCommand[_cmds.length];
             for (int i = 0; i < _cmds.length; i++) {
-                startups[i] = (StartupCommand) _cmds[i];
+                startups[i] = (StartupCommand)_cmds[i];
             }
 
             AgentAttache attache = handleConnectedAgent(_link, startups, _request);

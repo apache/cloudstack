@@ -90,7 +90,7 @@ public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return UserContext.current().getCallingAccount().getId();
     }
 
 	@Override

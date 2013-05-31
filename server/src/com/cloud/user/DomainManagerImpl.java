@@ -121,7 +121,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
     public Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         if (parentId == null) {
             parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
@@ -198,7 +198,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_DELETE, eventDescription = "deleting Domain", async = true)
     public boolean deleteDomain(long domainId, Boolean cleanup) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         DomainVO domain = _domainDao.findById(domainId);
 
@@ -315,14 +315,14 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         for (AccountVO account : accounts) {
             if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 s_logger.debug("Deleting account " + account + " as a part of domain id=" + domainId + " cleanup");
-                success = (success && _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
+                success = (success && _accountMgr.deleteAccount(account, UserContext.current().getCallingUserId(), UserContext.current().getCallingAccount()));
                 if (!success) {
                     s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
                 }
             } else {
                 ProjectVO project = _projectDao.findByProjectAccountId(account.getId());
                 s_logger.debug("Deleting project " + project + " as a part of domain id=" + domainId + " cleanup");
-                success = (success && _projectMgr.deleteProject(UserContext.current().getCaller(), UserContext.current().getCallerUserId(), project));
+                success = (success && _projectMgr.deleteProject(UserContext.current().getCallingAccount(), UserContext.current().getCallingUserId(), project));
                 if (!success) {
                     s_logger.warn("Failed to cleanup project " + project + " as a part of domain cleanup");
                 }
@@ -347,7 +347,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     public Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Long domainId = cmd.getId();
         boolean listAll = cmd.listAll();
         boolean isRecursive = false;
@@ -419,7 +419,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         boolean listAll = cmd.listAll();
         String path = null;
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         if (domainId != null) {
             _accountMgr.checkAccess(caller, getDomain(domainId));
         } else {
@@ -488,7 +488,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         // check permissions
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, domain);
 
         // domain name is unique in the cloud

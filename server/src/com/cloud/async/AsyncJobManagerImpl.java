@@ -400,7 +400,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public AsyncJob queryAsyncJobResult(QueryAsyncJobResultCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         AsyncJobVO job = _jobDao.findById(cmd.getId());
         if (job == null) {

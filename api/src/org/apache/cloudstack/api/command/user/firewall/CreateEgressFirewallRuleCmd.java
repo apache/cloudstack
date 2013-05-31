@@ -133,7 +133,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
-             success = _firewallService.applyEgressFirewallRules (rule, callerContext.getCaller());
+             success = _firewallService.applyEgressFirewallRules (rule, callerContext.getCallingAccount());
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(FirewallRule.class, getEntityId());
             FirewallResponse fwResponse = new FirewallResponse();
@@ -204,7 +204,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
 
         if (account != null) {
             return account.getId();

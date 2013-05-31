@@ -176,7 +176,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject private final RegionManager _regionMgr = null;
 
     private static int _workerCount = 0;
-    private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
@@ -187,16 +186,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @PostConstruct
     void initComponent() {
-        s_instance = this;
-    }
-
-    public static ApiServer getInstance() {
-        return s_instance;
+        UserContext.init(_entityMgr);
     }
 
 	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		init();
 		return true;
 	}
@@ -302,7 +296,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-                UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, true);
+                UserContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, true);
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
                 String responseText = handleRequest(parameterMap, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
@@ -319,7 +313,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
         } finally {
             s_accessLogger.info(sb.toString());
-            UserContext.unregisterContext();
+            UserContext.unregister();
         }
     }
 
@@ -416,7 +410,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (InsufficientCapacityException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (UserContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
 
@@ -426,7 +420,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (ResourceAllocationException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (UserContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -435,7 +429,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (ResourceUnavailableException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (UserContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -448,7 +442,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (Exception ex){
             s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (UserContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -478,8 +472,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     private String queueCommand(BaseCmd cmdObj, Map<String, String> params) throws Exception {
         UserContext ctx = UserContext.current();
-        Long callerUserId = ctx.getCallerUserId();
-        Account caller = ctx.getCaller();
+        Long callerUserId = ctx.getCallingUserId();
+        Account caller = ctx.getCallingAccount();
 
 
         // Queue command based on Cmd super class:
@@ -521,8 +515,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
 
             params.put("ctxStartEventId", String.valueOf(startEventId));
-
-            ctx.setAccountId(asyncCmd.getEntityOwnerId());
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
             AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(),
@@ -746,8 +738,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                         + account.getState());
                 return false;
             }
-
-            UserContext.updateContext(user.getId(), account, null);
 
             try{
                 checkCommandAvailable(user, commandName);

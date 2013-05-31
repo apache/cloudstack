@@ -87,7 +87,7 @@ public class DeleteCiscoAsa1000vResourceCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return UserContext.current().getCallingAccount().getId();
     }
 
 }

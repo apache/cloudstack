@@ -110,7 +110,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
         if (vm == null || vm.getRole() != Role.INTERNAL_LB_VM) {
             throw new InvalidParameterValueException("Can't find internal lb vm by id");
         } else {
-            result = _internalLbSvc.stopInternalLbVm(getId(), isForced(), UserContext.current().getCaller(), UserContext.current().getCallerUserId());
+            result = _internalLbSvc.stopInternalLbVm(getId(), isForced(), UserContext.current().getCallingAccount(), UserContext.current().getCallingUserId());
         }
         
         if (result != null) {

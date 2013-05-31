@@ -85,7 +85,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     public AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName,
             String affinityGroupType, String description) {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, account, domainId, null);
 
         if (_affinityGroupDao.isNameInUse(owner.getAccountId(), owner.getDomainId(), affinityGroupName)) {
@@ -128,7 +128,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName)
             throws ResourceInUseException {
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, account, domainId, null);
 
         AffinityGroupVO group = null;
@@ -180,7 +180,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     public Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
         Filter searchFilter = new Filter(AffinityGroupVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         Long accountId = caller.getAccountId();
         Long domainId = caller.getDomainId();
@@ -322,7 +322,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                     + "; make sure the virtual machine is stopped and not in an error state before updating.");
         }
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(vmInstance.getAccountId());
 
         // check that the affinity groups exist

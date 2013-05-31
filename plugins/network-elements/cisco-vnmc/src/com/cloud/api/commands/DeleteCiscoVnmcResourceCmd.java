@@ -87,7 +87,7 @@ public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return UserContext.current().getCallingAccount().getId();
     }
 
 }

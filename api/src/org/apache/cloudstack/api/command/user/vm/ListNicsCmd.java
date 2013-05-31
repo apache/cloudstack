@@ -66,11 +66,11 @@ public class ListNicsCmd extends BaseListCmd {
     }
 
     public String getAccountName() {
-        return UserContext.current().getCaller().getAccountName();
+        return UserContext.current().getCallingAccount().getAccountName();
     }
 
     public long getDomainId() {
-        return UserContext.current().getCaller().getDomainId();
+        return UserContext.current().getCallingAccount().getDomainId();
     }
 
     public Long getNicId() {
@@ -83,7 +83,7 @@ public class ListNicsCmd extends BaseListCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 

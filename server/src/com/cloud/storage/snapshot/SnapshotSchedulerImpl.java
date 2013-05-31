@@ -27,12 +27,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.ActionEventUtils;
-import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.AsyncJobVO;
@@ -40,9 +39,8 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
-import com.cloud.user.Account;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
@@ -53,11 +51,12 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
-
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
@@ -208,10 +207,6 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
         List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug("Got " + snapshotsToBeExecuted.size() + " snapshots to be executed at " + displayTime);
-
-        // This is done for recurring snapshots, which are executed by the system automatically
-        // Hence set user id to that of system
-        long userId = 1;
 
         for (SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
@@ -378,10 +373,16 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 @Override
                 public void run() {
                     try {
+                        UserContext.registerOnceOnly();
+                    } catch (Exception e) {
+                        s_logger.error("Unable to register context", e);
+                        return;
+                    }
+                    try {
                         Date currentTimestamp = new Date();
                         poll(currentTimestamp);
                     } catch (Throwable t) {
-                        s_logger.warn("Catch throwable in snapshot scheduler " + t.toString(), t);
+                        s_logger.warn("Catch throwable in snapshot scheduler ", t);
                     }
                 }
             };

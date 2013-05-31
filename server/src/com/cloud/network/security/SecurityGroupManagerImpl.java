@@ -585,7 +585,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             throw new InvalidParameterValueException("At least one cidr or at least one security group needs to be specified");
         }
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(securityGroup.getAccountId());
 
         if (owner == null) {
@@ -762,7 +762,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
     private boolean revokeSecurityGroupRule(Long id, SecurityRuleType type) {
         // input validation
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         SecurityGroupRuleVO rule = _securityGroupRuleDao.findById(id);
         if (rule == null) {
@@ -816,7 +816,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_CREATE, eventDescription = "creating security group")
     public SecurityGroupVO createSecurityGroup(CreateSecurityGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         String name = cmd.getSecurityGroupName();
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
 
         if (_securityGroupDao.isNameInUse(owner.getId(), owner.getDomainId(), cmd.getSecurityGroupName())) {
@@ -1055,7 +1055,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_DELETE, eventDescription = "deleting security group")
     public boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException {
         Long groupId = cmd.getId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         SecurityGroupVO group = _securityGroupDao.findById(groupId);
         if (group == null) {
@@ -1307,7 +1307,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             return true;
         }
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCallingAccount();
 
         for (SecurityGroupVO securityGroup: vmSgGrps) {
             Account owner = _accountMgr.getAccount(securityGroup.getAccountId());

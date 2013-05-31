@@ -233,7 +233,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     }
 
     protected Account getCaller(){
-        return UserContext.current().getCaller();
+        return UserContext.current().getCallingAccount();
     }
     
     @Override
@@ -664,7 +664,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                     "VM Snapshot reverting failed due to vm snapshot is not in the state of Created.");
         }
 
-        UserVO callerUser = _userDao.findById(UserContext.current().getCallerUserId());
+        UserVO callerUser = _userDao.findById(UserContext.current().getCallingUserId());
         
         UserVmVO vm = null;
         Long hostId = null;

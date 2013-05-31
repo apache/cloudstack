@@ -90,7 +90,7 @@ public class DedicateGuestVlanRangesTest {
         when(networkService._accountMgr.getAccount(anyLong())).thenReturn(account);
         when(networkService._accountDao.findActiveAccount(anyString(), anyLong())).thenReturn(account);
 
-        UserContext.registerContext(1, account, null, true);
+        UserContext.register(1, account, null, true);
 
         Field accountNameField = _dedicateGuestVlanRangeClass.getDeclaredField("accountName");
         accountNameField.setAccessible(true);

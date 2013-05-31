@@ -95,6 +95,8 @@ public interface AsyncJob extends Job {
     @Override
     Long getInstanceId();
 
+    String getShortUuid();
+
     SyncQueueItem getSyncSource();
     void setSyncSource(SyncQueueItem item);
 }

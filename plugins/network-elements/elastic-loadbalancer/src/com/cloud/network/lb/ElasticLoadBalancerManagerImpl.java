@@ -667,7 +667,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
             } catch (NetworkRuleConflictException e) {
                 s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");
                 if (newIp) {
-                    releaseIp(ipId, UserContext.current().getCallerUserId(), account);
+                    releaseIp(ipId, UserContext.current().getCallingUserId(), account);
                 }
                 throw e;
             }
@@ -681,7 +681,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
                     if (elbVm == null) {
                         s_logger.warn("Failed to deploy a new ELB vm for ip " + ipAddr + " in network " + network + "lb name=" + lb.getName());
                         if (newIp)
-                            releaseIp(ipId, UserContext.current().getCallerUserId(), account);
+                            releaseIp(ipId, UserContext.current().getCallingUserId(), account);
                     }
                 }
 

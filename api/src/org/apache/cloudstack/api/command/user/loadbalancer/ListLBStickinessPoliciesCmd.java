@@ -72,7 +72,7 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
 
         if (lb != null) {
             //check permissions
-            Account caller = UserContext.current().getCaller();
+            Account caller = UserContext.current().getCallingAccount();
             _accountService.checkAccess(caller, null, true, lb);
             List<? extends StickinessPolicy> stickinessPolicies = _lbService.searchForLBStickinessPolicies(this);
             LBStickinessResponse spResponse = _responseGenerator.createLBStickinessPolicyResponse(stickinessPolicies, lb);

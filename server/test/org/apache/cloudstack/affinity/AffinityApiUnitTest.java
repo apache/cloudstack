@@ -117,7 +117,7 @@ public class AffinityApiUnitTest {
         acct.setAccountName("user");
         acct.setDomainId(domainId);
 
-        UserContext.registerContext(1, acct, null, true);
+        UserContext.register(1, acct, null, true);
 
         when(_acctMgr.finalizeOwner((Account) anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
         when(_processor.getType()).thenReturn("mock");

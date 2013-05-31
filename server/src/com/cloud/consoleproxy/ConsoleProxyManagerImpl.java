@@ -1513,7 +1513,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (ip != null && ip.getSystem()) {
             UserContext ctx = UserContext.current();
             try {
-                _rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
+                _rulesMgr.disableStaticNat(ip.getId(), ctx.getCallingAccount(), ctx.getCallingUserId(), true);
             } catch (Exception ex) {
                 s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
             }

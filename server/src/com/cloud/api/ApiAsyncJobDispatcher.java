@@ -87,7 +87,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 accountObject = _accountDao.findById(Long.parseLong(acctIdStr));
             }
 
-            UserContext.registerContext(userId, accountObject, null, false);
+            UserContext.register(userId, accountObject, "job-" + job.getShortUuid(), false);
             try {
                 // dispatch could ultimately queue the job
                 _dispatcher.dispatch(cmdObj, params);
@@ -95,7 +95,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 // serialize this to the async job table
                 _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());
             } finally {
-                UserContext.unregisterContext();
+                UserContext.unregister();
             }
         } catch(Throwable e) {
             String errorMsg = null;

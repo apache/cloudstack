@@ -103,7 +103,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     
     public boolean listInReadyState() {
 
-        Account account = UserContext.current().getCaller();
+        Account account = UserContext.current().getCallingAccount();
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
         // Show only those that are downloaded.
