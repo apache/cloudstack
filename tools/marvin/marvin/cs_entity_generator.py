@@ -269,7 +269,7 @@ def write_entity_classes(entities, module=None):
         body.append('\n')
         for action, details in actions.iteritems():
             imports.append('from marvin.cloudstackAPI import %s' % details['apimodule'])
-            if action in ['create', 'list', 'deploy']:
+            if action.startswith('create') or action.startswith('list') or action.startswith('deploy'):
                 body.append(tabspace + '@classmethod')
             if action not in ['create', 'deploy']:
                 no_id_args = filter(lambda arg: arg!= 'id', details['args'])
@@ -280,7 +280,7 @@ def write_entity_classes(entities, module=None):
                     body.append(tabspace + 'def %s(self, apiclient, **kwargs):' % (action))
                 body.append(tabspace * 2 + 'cmd = %(module)s.%(command)s()' % {"module": details["apimodule"],
                                                                                "command": details["apicmd"]})
-                if action not in ['create', 'list', 'deploy']:
+                if 'id' in details['args']:
                     body.append(tabspace * 2 + 'cmd.id = self.id')
                 for arg in no_id_args:
                     body.append(tabspace * 2 + 'cmd.%s = %s' % (arg, arg))
@@ -319,7 +319,7 @@ def write_entity_classes(entities, module=None):
         code = imports + '\n\n' + body
 
         entitydict[entity] = code
-        #write_entity_factory(entity, actions, path)
+        write_entity_factory(entity, actions, 'factory2')
         if module.find('.') > 0:
             module_path = '/'.join(module.split('.'))[1:]
         else:
@@ -331,7 +331,7 @@ def write_entity_classes(entities, module=None):
             writer.write(code)
 
 
-def write_entity_factory(entity, actions):
+def write_entity_factory(entity, actions, module=None):
     """Data factories for each entity
     """
 
@@ -349,24 +349,27 @@ def write_entity_factory(entity, actions):
     else:
         return
 
-    if os.path.exists("./factory/%sFactory.py" % entity):
+    if not os.path.exists("./factory2"):
+            os.mkdir("./factory2")
+
+    if os.path.exists("./factory2/%sFactory.py" % entity):
         for arg in factory_defaults:
             code += tabspace + '%s = None\n' % arg
-        with open("./factory/%sFactory.py" % entity, "r") as reader:
+        with open("./factory2/%sFactory.py" % entity, "r") as reader:
             rcode = reader.read()
             if rcode.find(code) > 0:
                 return
-        with open("./factory/%sFactory.py" % entity, "a") as writer:
+        with open("./factory2/%sFactory.py" % entity, "a") as writer:
             writer.write(code)
     else:
         code += 'import factory\n'
-        code += 'from marvin.integration.lib.base import %s\n' % entity
+        code += 'from marvin.base import %s\n' % entity
         code += 'class %sFactory(factory.Factory):' % entity
         code += '\n\n'
         code += tabspace + 'FACTORY_FOR = %s.%s\n\n' % (entity, entity)
         for arg in factory_defaults:
             code += tabspace + '%s = None\n' % arg
-        with open("./factory/%sFactory.py" % entity, "w") as writer:
+        with open("./factory2/%sFactory.py" % entity, "w") as writer:
             writer.write(LICENSE)
             writer.write(code)
 
