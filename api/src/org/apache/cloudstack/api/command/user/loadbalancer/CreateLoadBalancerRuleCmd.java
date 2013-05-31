@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -45,7 +46,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createLoadBalancerRule", description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
@@ -238,11 +238,11 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
 
-        UserContext callerContext = UserContext.current();
+        CallContext callerContext = CallContext.current();
         boolean success = true;
         LoadBalancer rule = null;
         try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
 
             if (getOpenFirewall()) {
                 success = success && _firewallService.applyIngressFirewallRules(getSourceIpAddressId(), callerContext.getCallingAccount());
@@ -328,7 +328,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         if (domainId != null) {
             return domainId;
         }
-        return UserContext.current().getCallingAccount().getDomainId();
+        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     public int getDefaultPortStart() {

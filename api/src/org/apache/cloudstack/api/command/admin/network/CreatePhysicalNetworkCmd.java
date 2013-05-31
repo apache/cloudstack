@@ -30,12 +30,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createPhysicalNetwork", description="Creates a physical network", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
 public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
@@ -145,7 +145,7 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Physical Network Id: "+getEntityId());
+        CallContext.current().setEventDetails("Physical Network Id: "+getEntityId());
         PhysicalNetwork result = _networkService.getCreatedPhysicalNetwork(getEntityId());
         if (result != null) {
             PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);

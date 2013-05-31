@@ -20,7 +20,8 @@ import java.lang.reflect.Method;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.user.UserContext;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.utils.component.ComponentMethodInterceptor;
 
 public class ActionEventInterceptor implements ComponentMethodInterceptor {
@@ -36,7 +37,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
         if (actionEvent != null) {
             boolean async = actionEvent.async();
             if(async){
-                UserContext ctx = UserContext.current();
+                CallContext ctx = CallContext.current();
                 long userId = ctx.getCallingUserId();
                 long accountId = ctx.getCallingAccountId();
                 long startEventId = ctx.getStartEventId();
@@ -54,7 +55,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
     public void interceptComplete(Method method, Object target, Object event) {
         ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
         if (actionEvent != null) {
-            UserContext ctx = UserContext.current();
+            CallContext ctx = CallContext.current();
             long userId = ctx.getCallingUserId();
             long accountId = ctx.getCallingAccountId();
             long startEventId = ctx.getStartEventId();
@@ -76,7 +77,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
     public void interceptException(Method method, Object target, Object event) {
         ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
         if (actionEvent != null) {
-            UserContext ctx = UserContext.current();
+            CallContext ctx = CallContext.current();
             long userId = ctx.getCallingUserId();
             long accountId = ctx.getCallingAccountId();
             long startEventId = ctx.getStartEventId();

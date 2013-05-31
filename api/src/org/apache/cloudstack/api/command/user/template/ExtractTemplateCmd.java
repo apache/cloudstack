@@ -28,12 +28,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "extractTemplate", description="Extracts a template", responseObject=ExtractResponse.class)
 public class ExtractTemplateCmd extends BaseAsyncCmd {
@@ -124,7 +124,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         try {
-            UserContext.current().setEventDetails(getEventDescription());
+            CallContext.current().setEventDetails(getEventDescription());
             Long uploadId = _templateService.extract(this);
             if (uploadId != null){
                 ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);

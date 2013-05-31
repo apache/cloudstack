@@ -25,9 +25,9 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteSSHKeyPair", description="Deletes a keypair by name", responseObject=SuccessResponse.class)
 public class DeleteSSHKeyPairCmd extends BaseCmd {
@@ -91,7 +91,7 @@ public class DeleteSSHKeyPairCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);

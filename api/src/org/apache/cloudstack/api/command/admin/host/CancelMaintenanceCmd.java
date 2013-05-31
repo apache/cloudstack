@@ -26,11 +26,11 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "cancelHostMaintenance", description="Cancels host maintenance.", responseObject=HostResponse.class)
 public class CancelMaintenanceCmd extends BaseAsyncCmd  {
@@ -69,7 +69,7 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }

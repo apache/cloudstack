@@ -30,10 +30,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "removeNicFromVirtualMachine", description="Removes VM from specified network by deleting a NIC", responseObject=UserVmResponse.class)
@@ -101,7 +101,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Vm Id: "+getVmId() + " Nic Id: " + getNicId());
+        CallContext.current().setEventDetails("Vm Id: "+getVmId() + " Nic Id: " + getNicId());
         UserVm result = _userVmService.removeNicFromVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));

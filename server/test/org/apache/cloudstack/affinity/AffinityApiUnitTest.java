@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -61,7 +62,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.UserVmVO;
@@ -117,7 +117,7 @@ public class AffinityApiUnitTest {
         acct.setAccountName("user");
         acct.setDomainId(domainId);
 
-        UserContext.register(1, acct, null, true);
+        CallContext.register(1, acct, null, true);
 
         when(_acctMgr.finalizeOwner((Account) anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
         when(_processor.getType()).thenReturn("mock");

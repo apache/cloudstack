@@ -23,6 +23,8 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.api.response.NiciraNvpDeviceResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -32,7 +34,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.element.NiciraNvpElementService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "addNiciraNvpDevice", responseObject=NiciraNvpDeviceResponse.class, description="Adds a Nicira NVP device")
@@ -122,7 +123,7 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCallingAccount().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 
 	@Override

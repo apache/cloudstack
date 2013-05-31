@@ -27,11 +27,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "changeServiceForSystemVm", responseObject=SystemVmResponse.class, description="Changes the service offering for a system vm (console proxy or secondary storage). " +
@@ -76,7 +76,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -86,7 +86,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: "+getId());
 
         ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
         if (serviceOffering == null) {

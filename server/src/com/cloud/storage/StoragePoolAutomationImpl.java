@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -44,7 +45,6 @@ import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleProxyVO;
@@ -101,9 +101,9 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     
     @Override
     public boolean maintain(DataStore store) {
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         StoragePoolVO pool = primaryDataStoreDao.findById(store.getId());
         try {
             StoragePool storagePool = (StoragePool) store;
@@ -257,9 +257,9 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     @Override
     public boolean cancelMaintain(DataStore store) {
         // Change the storage state back to up
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         StoragePoolVO poolVO = primaryDataStoreDao.findById(store.getId());
         StoragePool pool = (StoragePool)store;
        

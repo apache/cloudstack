@@ -44,6 +44,8 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -67,7 +69,6 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 /**
  * Helper class to generate response from DB view VO objects.
@@ -115,7 +116,7 @@ public class ViewResponseHelper {
     }
 
     public static List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         Hashtable<Long, UserVmResponse> vmDataList = new Hashtable<Long, UserVmResponse>();
         // Initialise the vmdatalist with the input data
@@ -136,7 +137,7 @@ public class ViewResponseHelper {
     }
 
     public static List<DomainRouterResponse> createDomainRouterResponse(DomainRouterJoinVO... routers) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Hashtable<Long, DomainRouterResponse> vrDataList = new Hashtable<Long, DomainRouterResponse>();
         // Initialise the vrdatalist with the input data
         for (DomainRouterJoinVO vr : routers) {
@@ -156,7 +157,7 @@ public class ViewResponseHelper {
 
 
     public static List<SecurityGroupResponse> createSecurityGroupResponses(List<SecurityGroupJoinVO> securityGroups) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Hashtable<Long, SecurityGroupResponse> vrDataList = new Hashtable<Long, SecurityGroupResponse>();
         // Initialise the vrdatalist with the input data
         for (SecurityGroupJoinVO vr : securityGroups) {

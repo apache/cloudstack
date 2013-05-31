@@ -26,13 +26,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createProject", description = "Creates a project", responseObject = ProjectResponse.class, since = "3.0.0")
 public class CreateProjectCmd extends BaseAsyncCreateCmd {
@@ -66,7 +66,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
         if (accountName != null) {
             return accountName;
         } else {
-            return UserContext.current().getCallingAccount().getAccountName();
+            return CallContext.current().getCallingAccount().getAccountName();
         }
     }
 
@@ -74,7 +74,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
         if (domainId != null) {
             return domainId;
         } else {
-            return UserContext.current().getCallingAccount().getDomainId();
+            return CallContext.current().getCallingAccount().getDomainId();
         }
 
     }
@@ -94,7 +94,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         if ((accountName != null && domainId == null) || (domainId != null && accountName == null)) {
             throw new InvalidParameterValueException("Account name and domain id must be specified together");
@@ -125,7 +125,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        UserContext.current().setEventDetails("Project Name: " + getName());
+        CallContext.current().setEventDetails("Project Name: " + getName());
         Project project = _projectService.createProject(getName(), getDisplayText(), getAccountName(), getDomainId());
         if (project != null) {
             this.setEntityId(project.getId());

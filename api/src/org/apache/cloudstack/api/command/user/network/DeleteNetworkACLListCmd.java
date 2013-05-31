@@ -27,11 +27,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteNetworkACLList", description="Deletes a Network ACL", responseObject=SuccessResponse.class)
 public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
@@ -74,13 +74,13 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        UserContext.current().setEventDetails("Network ACL Id: " + id);
+        CallContext.current().setEventDetails("Network ACL Id: " + id);
         boolean result = _networkACLService.deleteNetworkACL(id);
 
         if (result) {

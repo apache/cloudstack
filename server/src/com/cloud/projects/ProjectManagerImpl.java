@@ -40,6 +40,8 @@ import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -72,7 +74,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -175,7 +176,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project", create=true)
     @DB
     public Project createProject(String name, String displayText, String accountName, Long domainId) throws ResourceAllocationException{
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = caller;
 
         //check if the user authorized to create the project
@@ -215,7 +216,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         assignAccountToProject(project, owner.getId(), ProjectAccount.Role.Admin);
 
         if (project != null) {
-            UserContext.current().setEventDetails("Project id=" + project.getId());
+            CallContext.current().setEventDetails("Project id=" + project.getId());
         }
 
         //Increment resource count
@@ -231,7 +232,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project", async=true)
     @DB
     public Project enableProject(long projectId){
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         ProjectVO project= getProject(projectId);
         //verify input parameters
@@ -252,7 +253,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_DELETE, eventDescription = "deleting project", async = true) 
     public boolean deleteProject(long projectId) {
-        UserContext ctx = UserContext.current();
+        CallContext ctx = CallContext.current();
 
         ProjectVO project= getProject(projectId);
         //verify input parameters
@@ -442,7 +443,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async=true)
     public Project updateProject(long projectId, String displayText, String newOwnerName) throws ResourceAllocationException{
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
         ProjectVO project = getProject(projectId);
@@ -503,7 +504,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACCOUNT_ADD, eventDescription = "adding account to project", async=true)
     public boolean addAccountToProject(long projectId, String accountName, String email) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
         Project project = getProject(projectId);
@@ -589,7 +590,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACCOUNT_REMOVE, eventDescription = "removing account from project", async=true)
     public boolean deleteAccountFromProject(long projectId, String accountName) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
         Project project = getProject(projectId);
@@ -710,7 +711,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_INVITATION_UPDATE, eventDescription = "updating project invitation", async=true)
     public boolean updateInvitation(long projectId, String accountName, String token, boolean accept) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long accountId = null;
         boolean result = true;
 
@@ -794,7 +795,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACTIVATE, eventDescription = "activating project")
     @DB
     public Project activateProject(long projectId) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
         ProjectVO project = getProject(projectId);
@@ -837,7 +838,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_SUSPEND, eventDescription = "suspending project", async = true)
     public Project suspendProject (long projectId) throws ConcurrentOperationException, ResourceUnavailableException {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         ProjectVO project= getProject(projectId);
         //verify input parameters
@@ -979,7 +980,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_INVITATION_REMOVE, eventDescription = "removing project invitation", async=true)
     public boolean deleteProjectInvitation(long id) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         ProjectInvitation invitation = _projectInvitationDao.findById(id);
         if (invitation == null) {

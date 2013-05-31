@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -139,7 +140,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
@@ -400,7 +400,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw ex;
         }
 
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
 		if (Grouping.AllocationState.Disabled == zone.getAllocationState()
 				&& !_accountMgr.isRootAdmin(account.getType())) {
 			PermissionDeniedException ex = new PermissionDeniedException(
@@ -632,7 +632,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String password = cmd.getPassword();
         List<String> hostTags = cmd.getHostTags();
 
-		dcId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current()
+		dcId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current()
 				.getCallingAccount(), dcId);
 
         // this is for standalone option
@@ -704,7 +704,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					+ dcId);
         }
 
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
 		if (Grouping.AllocationState.Disabled == zone.getAllocationState()
 				&& !_accountMgr.isRootAdmin(account.getType())) {
 			PermissionDeniedException ex = new PermissionDeniedException(
@@ -926,7 +926,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @DB
 	protected boolean doDeleteHost(long hostId, boolean isForced,
 			boolean isForceDeleteStorage) {
-		User caller = _accountMgr.getActiveUser(UserContext.current()
+		User caller = _accountMgr.getActiveUser(CallContext.current()
 				.getCallingUserId());
         // Verify that host exists
         HostVO host = _hostDao.findById(hostId);
@@ -934,7 +934,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 			throw new InvalidParameterValueException("Host with id " + hostId
 					+ " doesn't exist");
         }
-		_accountMgr.checkAccessAndSpecifyAuthority(UserContext.current()
+		_accountMgr.checkAccessAndSpecifyAuthority(CallContext.current()
 				.getCallingAccount(), host.getDataCenterId());
 
         /*
@@ -2295,7 +2295,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					+ host.getGuid());
         }
 
-		User caller = _accountMgr.getActiveUser(UserContext.current()
+		User caller = _accountMgr.getActiveUser(CallContext.current()
 				.getCallingUserId());
 
 		if (forceDestroyStorage) {

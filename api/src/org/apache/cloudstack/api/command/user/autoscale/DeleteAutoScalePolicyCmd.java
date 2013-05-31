@@ -27,11 +27,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteAutoScalePolicy", description = "Deletes a autoscale policy.", responseObject = SuccessResponse.class)
 public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
@@ -85,7 +85,7 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("AutoScale Policy Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Policy Id: " + getId());
         boolean result = _autoScaleService.deleteAutoScalePolicy(id);
 
         if (result) {

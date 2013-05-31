@@ -16,8 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 /**
  * queryAsyncJobResult API command.
@@ -97,7 +98,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     }
 
     protected long saveStartedEvent(String eventType, String description, Long startEventId) {
-        UserContext ctx = UserContext.current();
+        CallContext ctx = CallContext.current();
         Long userId = ctx.getCallingUserId();
         userId = (userId == null) ? User.UID_SYSTEM : userId;
         Long startEvent = startEventId;
@@ -112,7 +113,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     }
 
     protected long saveCompletedEvent(String level, String eventType, String description, Long startEventId) {
-        UserContext ctx = UserContext.current();
+        CallContext ctx = CallContext.current();
         Long userId = ctx.getCallingUserId();
         userId = (userId == null) ? User.UID_SYSTEM : userId;
         Long startEvent = startEventId;

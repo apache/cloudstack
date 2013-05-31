@@ -30,6 +30,8 @@ import com.cloud.network.vpc.NetworkACLItemDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
@@ -56,7 +58,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -248,7 +249,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_CREATE, eventDescription = "creating resource tags")
     public List<ResourceTag> createTags(List<String> resourceIds, TaggedResourceType resourceType, 
             Map<String, String> tags, String customer) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         
         List<ResourceTag> resourceTags = new ArrayList<ResourceTag>(tags.size());
         
@@ -332,7 +333,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_DELETE, eventDescription = "deleting resource tags")
     public boolean deleteTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         
         SearchBuilder<ResourceTagVO> sb = _resourceTagDao.createSearchBuilder();
         sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);

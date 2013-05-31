@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -40,7 +41,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createIpForwardingRule", description="Creates an ip forwarding rule", responseObject=FirewallRuleResponse.class)
 public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements StaticNatRule {
@@ -112,13 +112,13 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
         boolean result = true;
         FirewallRule rule = null;
         try {
-            UserContext.current().setEventDetails("Rule Id: "+ getEntityId());
+            CallContext.current().setEventDetails("Rule Id: "+ getEntityId());
 
             if (getOpenFirewall()) {
-                result = result && _firewallService.applyIngressFirewallRules(ipAddressId, UserContext.current().getCallingAccount());
+                result = result && _firewallService.applyIngressFirewallRules(ipAddressId, CallContext.current().getCallingAccount());
             }
 
-            result = result && _rulesService.applyStaticNatRules(ipAddressId, UserContext.current().getCallingAccount());
+            result = result && _rulesService.applyStaticNatRules(ipAddressId, CallContext.current().getCallingAccount());
             rule = _entityMgr.findById(FirewallRule.class, getEntityId());
             StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule, false);
             IpForwardingRuleResponse fwResponse = _responseGenerator.createIpForwardingRuleResponse(staticNatRule);
@@ -158,7 +158,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
 
         if (account != null) {
             return account.getId();

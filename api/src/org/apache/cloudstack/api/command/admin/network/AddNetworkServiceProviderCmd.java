@@ -29,12 +29,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "addNetworkServiceProvider", description="Adds a network serviceProvider to a physical network", responseObject=ProviderResponse.class, since="3.0.0")
 public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
@@ -97,7 +97,7 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Network ServiceProvider Id: "+getEntityId());
+        CallContext.current().setEventDetails("Network ServiceProvider Id: "+getEntityId());
         PhysicalNetworkServiceProvider result = _networkService.getCreatedPhysicalNetworkServiceProvider(getEntityId());
         if (result != null) {
             ProviderResponse response = _responseGenerator.createNetworkServiceProviderResponse(result);

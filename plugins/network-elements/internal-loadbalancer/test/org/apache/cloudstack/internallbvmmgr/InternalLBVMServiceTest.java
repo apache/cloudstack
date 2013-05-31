@@ -29,6 +29,7 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -43,7 +44,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
@@ -91,7 +91,7 @@ public class InternalLBVMServiceTest extends TestCase {
         Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
         Mockito.when(_accountDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(new AccountVO(2));
-        UserContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
+        CallContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
         
         
         DomainRouterVO validVm = new DomainRouterVO(validVmId,off.getId(),1,"alena",1,HypervisorType.XenServer,1,1,1,

@@ -26,10 +26,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createVpnCustomerGateway", description="Creates site to site vpn customer gateway", responseObject=Site2SiteCustomerGatewayResponse.class)
 public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
@@ -138,7 +138,7 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
-            accountId = UserContext.current().getCallingAccount().getId();
+            accountId = CallContext.current().getCallingAccount().getId();
         }
         return accountId;
     }

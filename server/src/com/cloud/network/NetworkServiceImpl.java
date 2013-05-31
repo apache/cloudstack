@@ -49,6 +49,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 
 import com.cloud.api.ApiDBUtils;
@@ -143,7 +144,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -498,8 +498,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId)
              throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
 
-        Account caller = UserContext.current().getCallingAccount();
-        long callerUserId = UserContext.current().getCallingUserId();
+        Account caller = CallContext.current().getCallingAccount();
+        long callerUserId = CallContext.current().getCallingUserId();
         DataCenter zone = _configMgr.getZone(zoneId);
 
         if (networkId != null) {
@@ -537,8 +537,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_ASSIGN, eventDescription = "allocating portable public Ip", create = true)
     public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        Account caller = UserContext.current().getCallingAccount();
-        long callerUserId = UserContext.current().getCallingUserId();
+        Account caller = CallContext.current().getCallingAccount();
+        long callerUserId = CallContext.current().getCallingUserId();
         DataCenter zone = _configMgr.getZone(zoneId);
 
         if ((networkId == null && vpcId == null) && (networkId != null && vpcId != null)) {
@@ -633,7 +633,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("Invalid network id is given");
         }
 
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         //check whether the nic belongs to user vm.
         NicVO nicVO = _nicDao.findById(nicId);
@@ -733,7 +733,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Override
     @DB
     public boolean releaseSecondaryIpFromNic (long ipAddressId) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         boolean success = false;
 
         // Verify input parameters
@@ -840,8 +840,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @DB
     private boolean releaseIpAddressInternal(long ipAddressId) throws InsufficientAddressCapacityException {
-        Long userId = UserContext.current().getCallingUserId();
-        Account caller = UserContext.current().getCallingAccount();
+        Long userId = CallContext.current().getCallingUserId();
+        Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
         IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
@@ -967,7 +967,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String vlanId = cmd.getVlan();
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         Long zoneId = cmd.getZoneId();
         String aclTypeStr = cmd.getAclType();
@@ -1315,7 +1315,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     return network;
                 }
                 DeployDestination dest = new DeployDestination(zone, null, null, null);
-                UserVO callerUser = _userDao.findById(UserContext.current().getCallingUserId());
+                UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
                 Journal journal = new Journal.LogJournal("Implementing " + network, s_logger);
                 ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, caller);
                 s_logger.debug("Implementing network " + network + " as a part of network provision for persistent network");
@@ -1340,7 +1340,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String keyword = cmd.getKeyword();
         Long zoneId = cmd.getZoneId();
         String zoneType = cmd.getZoneType();
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String guestIpType = cmd.getGuestIpType();
@@ -1730,7 +1730,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_DELETE, eventDescription = "deleting network", async = true)
     public boolean deleteNetwork(long networkId) {
 
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         // Verify network id
         NetworkVO network = _networksDao.findById(networkId);
@@ -1754,7 +1754,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // Perform permission check
         _accountMgr.checkAccess(caller, null, true, network);
 
-        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallingUserId());
+        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
 
         return _networkMgr.destroyNetwork(networkId, context);
@@ -1767,7 +1767,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // This method restarts all network elements belonging to the network and re-applies all the rules
         Long networkId = cmd.getNetworkId();
 
-        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallingUserId());
+        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         Account callerAccount = _accountMgr.getActiveAccountById(callerUser.getAccountId());
 
         // Check if network exists
@@ -3398,7 +3398,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new CloudRuntimeException("Provider is not deletable because there are active networks using this provider, please upgrade these networks to new network offerings");
         }
 
-        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallingUserId());
+        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         Account callerAccount = _accountMgr.getActiveAccountById(callerUser.getAccountId());
         // shutdown the provider instances
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
@@ -3890,7 +3890,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Override
     public List<? extends Nic> listNics(ListNicsCmd cmd) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long nicId = cmd.getNicId();
         Long vmId = cmd.getVmId();
 

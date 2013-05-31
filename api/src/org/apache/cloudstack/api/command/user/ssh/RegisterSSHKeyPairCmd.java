@@ -25,9 +25,9 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SSHKeyPairResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.SSHKeyPair;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "registerSSHKeyPair", description="Register a public key in a keypair under a certain name", responseObject=SSHKeyPairResponse.class)
 public class RegisterSSHKeyPairCmd extends BaseCmd {
@@ -88,7 +88,7 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCallingAccount().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

@@ -31,13 +31,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createGlobalLoadBalancerRule", description="Creates a global load balancer rule",
         responseObject=GlobalLoadBalancerResponse.class)
@@ -137,7 +137,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
 
-        UserContext callerContext = UserContext.current();
+        CallContext callerContext = CallContext.current();
         GlobalLoadBalancerRule rule = _entityMgr.findById(GlobalLoadBalancerRule.class, getEntityId());
         GlobalLoadBalancerResponse response = null;
         if (rule != null) {
@@ -153,7 +153,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
             GlobalLoadBalancerRule gslbRule = _gslbService.createGlobalLoadBalancerRule(this);
             this.setEntityId(gslbRule.getId());
             this.setEntityUuid(gslbRule.getUuid());
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
         } catch (Exception ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
@@ -182,7 +182,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
-            return UserContext.current().getCallingAccount().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
         return accountId;
     }

@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
@@ -53,7 +54,6 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -133,7 +133,7 @@ public class ApplicationLoadBalancerTest extends TestCase{
         
         Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
-        UserContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
+        CallContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
         
         Mockito.when(_ntwkModel.areServicesSupportedInNetwork(Mockito.anyLong(), Mockito.any(Network.Service.class))).thenReturn(true);
         

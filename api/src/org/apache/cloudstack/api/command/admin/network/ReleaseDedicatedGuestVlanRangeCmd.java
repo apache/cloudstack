@@ -28,10 +28,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "releaseDedicatedGuestVlanRange", description = "Releases a dedicated guest vlan range to the system", responseObject = SuccessResponse.class)
 public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
@@ -86,7 +86,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Dedicated guest vlan range Id: " + id);
+        CallContext.current().setEventDetails("Dedicated guest vlan range Id: " + id);
         boolean result = _networkService.releaseDedicatedGuestVlanRange(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

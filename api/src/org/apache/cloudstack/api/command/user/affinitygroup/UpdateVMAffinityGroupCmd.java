@@ -33,13 +33,13 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 
@@ -132,7 +132,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
-        UserContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _affinityGroupService.updateVMAffinityGroups(getId(), getAffinityGroupIdList());
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("affgrp"));

@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -33,7 +34,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "restoreVirtualMachine", description="Restore a VM to original template/ISO or new template/ISO", responseObject=UserVmResponse.class, since="3.0.0")
@@ -63,7 +63,7 @@ public class RestoreVMCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException {
         UserVm result;
-        UserContext.current().setEventDetails("Vm Id: " + getVmId());
+        CallContext.current().setEventDetails("Vm Id: " + getVmId());
         result = _userVmService.restoreVM(this);
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);

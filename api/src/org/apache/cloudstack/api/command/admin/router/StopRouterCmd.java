@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -34,7 +35,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "stopRouter", description = "Stops a router.", responseObject = DomainRouterResponse.class)
 public class StopRouterCmd extends BaseAsyncCmd {
@@ -105,7 +105,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        UserContext.current().setEventDetails("Router Id: "+getId());
+        CallContext.current().setEventDetails("Router Id: "+getId());
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.VIRTUAL_ROUTER) {

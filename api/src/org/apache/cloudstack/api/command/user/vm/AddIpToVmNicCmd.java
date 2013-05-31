@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -39,7 +40,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
@@ -69,11 +69,11 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     }
 
     public String getAccountName() {
-        return UserContext.current().getCallingAccount().getAccountName();
+        return CallContext.current().getCallingAccount().getAccountName();
     }
 
     public long getDomainId() {
-        return UserContext.current().getCallingAccount().getDomainId();
+        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     private long getZoneId() {
@@ -113,7 +113,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 
@@ -145,7 +145,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, ResourceAllocationException,
     ConcurrentOperationException, InsufficientCapacityException {
 
-        UserContext.current().setEventDetails("Nic Id: " + getNicId() );
+        CallContext.current().setEventDetails("Nic Id: " + getNicId() );
         String ip;
         NicSecondaryIp result;
         String secondaryIp = null;

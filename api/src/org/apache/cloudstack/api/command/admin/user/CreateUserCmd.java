@@ -26,10 +26,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createUser", description="Creates a user for an account that already exists", responseObject=UserResponse.class)
 public class CreateUserCmd extends BaseCmd {
@@ -120,7 +120,7 @@ public class CreateUserCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
@@ -139,7 +139,7 @@ public class CreateUserCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("UserName: "+getUserName()+", FirstName :"+getFirstName()+", LastName: "+getLastName());
+        CallContext.current().setEventDetails("UserName: "+getUserName()+", FirstName :"+getFirstName()+", LastName: "+getLastName());
         User user = _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId(), getUserUUID());
         if (user != null) {
             UserResponse response = _responseGenerator.createUserResponse(user);

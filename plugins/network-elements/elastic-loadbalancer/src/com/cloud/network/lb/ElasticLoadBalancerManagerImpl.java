@@ -37,6 +37,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -112,7 +113,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -663,11 +663,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
                 
                 result = _lbMgr.createPublicLoadBalancer(lb.getXid(), lb.getName(), lb.getDescription(),
                         lb.getSourcePortStart(), lb.getDefaultPortStart(), ipId.longValue(), lb.getProtocol(),
-                        lb.getAlgorithm(), false, UserContext.current());
+                        lb.getAlgorithm(), false, CallContext.current());
             } catch (NetworkRuleConflictException e) {
                 s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");
                 if (newIp) {
-                    releaseIp(ipId, UserContext.current().getCallingUserId(), account);
+                    releaseIp(ipId, CallContext.current().getCallingUserId(), account);
                 }
                 throw e;
             }
@@ -681,7 +681,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
                     if (elbVm == null) {
                         s_logger.warn("Failed to deploy a new ELB vm for ip " + ipAddr + " in network " + network + "lb name=" + lb.getName());
                         if (newIp)
-                            releaseIp(ipId, UserContext.current().getCallingUserId(), account);
+                            releaseIp(ipId, CallContext.current().getCallingUserId(), account);
                     }
                 }
 

@@ -38,11 +38,11 @@ import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
 @Component("apiServlet")
@@ -266,7 +266,7 @@ public class ApiServlet extends HttpServlet {
                         writeResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType);
                         return;
                     }
-                    UserContext.register(userId, ((Account)accountObj).getId(), session.getId());
+                    CallContext.register(userId, ((Account)accountObj).getId(), session.getId());
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server
                     // restarts if the userId was serialized to the stored session
@@ -296,8 +296,8 @@ public class ApiServlet extends HttpServlet {
                  * key mechanism updateUserContext(params, session != null ? session.getId() : null);
                  */
 
-                auditTrailSb.insert(0, "(userId=" + UserContext.current().getCallingUserId() + " accountId="
-                        + UserContext.current().getCallingAccount().getId() + " sessionId=" + (session != null ? session.getId() : null) + ")");
+                auditTrailSb.insert(0, "(userId=" + CallContext.current().getCallingUserId() + " accountId="
+                        + CallContext.current().getCallingAccount().getId() + " sessionId=" + (session != null ? session.getId() : null) + ")");
 
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
                 params.put("httpmethod", new String[] { req.getMethod() });
@@ -330,7 +330,7 @@ public class ApiServlet extends HttpServlet {
                 s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
             }
             // cleanup user context to prevent from being peeked in other request context
-            UserContext.unregister();
+            CallContext.unregister();
         }
     }
 

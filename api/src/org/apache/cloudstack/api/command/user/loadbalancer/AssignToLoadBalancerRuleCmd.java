@@ -29,12 +29,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
 @APICommand(name = "assignToLoadBalancerRule", description="Assigns virtual machine or a list of virtual machines to a load balancer rule.", responseObject=SuccessResponse.class)
@@ -97,7 +97,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Load balancer Id: "+getLoadBalancerId()+" VmIds: "+StringUtils.join(getVirtualMachineIds(), ","));
+        CallContext.current().setEventDetails("Load balancer Id: "+getLoadBalancerId()+" VmIds: "+StringUtils.join(getVirtualMachineIds(), ","));
         boolean result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

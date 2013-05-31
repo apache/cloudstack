@@ -30,6 +30,7 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
 import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
@@ -108,7 +109,6 @@ import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
@@ -307,8 +307,8 @@ public class ChildTestConfiguration {
     }
 
     @Bean
-    public UserContext userContext() {
-        return Mockito.mock(UserContext.class);
+    public CallContext userContext() {
+        return Mockito.mock(CallContext.class);
     }
 
     @Bean

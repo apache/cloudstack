@@ -113,6 +113,7 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.AsyncJobVO;
@@ -139,7 +140,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -186,7 +186,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @PostConstruct
     void initComponent() {
-        UserContext.init(_entityMgr);
+        CallContext.init(_entityMgr);
     }
 
 	@Override
@@ -296,7 +296,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-                UserContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, true);
+                CallContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, true);
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
                 String responseText = handleRequest(parameterMap, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
@@ -313,7 +313,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
         } finally {
             s_accessLogger.info(sb.toString());
-            UserContext.unregister();
+            CallContext.unregister();
         }
     }
 
@@ -410,7 +410,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (InsufficientCapacityException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
 
@@ -420,7 +420,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (ResourceAllocationException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -429,7 +429,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (ResourceUnavailableException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -442,7 +442,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         catch (Exception ex){
             s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
             String errorMsg = ex.getMessage();
-            if (UserContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -471,7 +471,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     private String queueCommand(BaseCmd cmdObj, Map<String, String> params) throws Exception {
-        UserContext ctx = UserContext.current();
+        CallContext ctx = CallContext.current();
         Long callerUserId = ctx.getCallingUserId();
         Account caller = ctx.getCallingAccount();
 

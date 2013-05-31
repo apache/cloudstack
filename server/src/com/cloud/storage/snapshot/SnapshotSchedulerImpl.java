@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.AsyncJobVO;
@@ -53,7 +54,6 @@ import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
@@ -373,7 +373,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 @Override
                 public void run() {
                     try {
-                        UserContext.registerOnceOnly();
+                        CallContext.registerOnceOnly();
                     } catch (Exception e) {
                         s_logger.error("Unable to register context", e);
                         return;

@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaint
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
@@ -147,7 +148,6 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
@@ -785,7 +785,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     "unable to find zone by id " + zoneId);
         }
         // Check if zone is disabled
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
                 && !_accountMgr.isRootAdmin(account.getType())) {
             throw new PermissionDeniedException(
@@ -1372,9 +1372,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(
             Long primaryStorageId) throws ResourceUnavailableException,
             InsufficientCapacityException {
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
 
         boolean restart = true;
         StoragePoolVO primaryStorage = null;
@@ -1425,9 +1425,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             CancelPrimaryStorageMaintenanceCmd cmd)
             throws ResourceUnavailableException {
         Long primaryStorageId = cmd.getId();
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         StoragePoolVO primaryStorage = null;
 
         primaryStorage = _storagePoolDao.findById(primaryStorageId);

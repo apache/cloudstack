@@ -32,13 +32,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
 @APICommand(name = "removeFromGlobalLoadBalancerRule", description="Removes a load balancer rule association with" +
@@ -106,7 +106,7 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Global Load balancer rule Id: "+ getGlobalLoadBalancerRuleId()+ " VmIds: "
+        CallContext.current().setEventDetails("Global Load balancer rule Id: "+ getGlobalLoadBalancerRuleId()+ " VmIds: "
                 + StringUtils.join(getLoadBalancerRulesIds(), ","));
         boolean result = _gslbService.removeFromGlobalLoadBalancerRule(this);
         if (result) {

@@ -20,6 +20,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
@@ -27,9 +28,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.dao.EntityManager;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -58,7 +57,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             VMInstanceVO vm = _instanceDao.findById(work.getVmId());
             assert(vm != null);
     
-            UserContext context = UserContext.register(work.getUserId(), work.getAccountId(), UuidUtils.first(job.getUuid()));
+            CallContext context = CallContext.register(work.getUserId(), work.getAccountId(), "job-" + job.getShortUuid());
             if (cmd.equals(Start)) {
                 _vmMgr.start(vm.getUuid(), null, context.getCallingUser(), context.getCallingAccount());
             } else if (cmd.equals(Stop)) {
@@ -69,7 +68,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         	s_logger.error("Unexpected exception", e);
             _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, 0, e);
         } finally {
-            UserContext.unregister();
+            CallContext.unregister();
         }
 	}
 }

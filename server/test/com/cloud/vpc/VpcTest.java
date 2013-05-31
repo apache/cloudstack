@@ -43,13 +43,13 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.DomainRouterDao;
 
 import junit.framework.TestCase;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -97,7 +97,7 @@ public class VpcTest extends TestCase {
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
-        UserContext.register(1, account, null, true);
+        CallContext.register(1, account, null, true);
         vpc = new VpcVO(1, "myvpc", "myvpc", 2, 1, 1, "10.0.1.0/16", "mydomain");
     }
 

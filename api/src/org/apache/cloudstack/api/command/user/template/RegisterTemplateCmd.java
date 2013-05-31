@@ -36,10 +36,10 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "registerTemplate", description="Registers an existing template into the CloudStack cloud. ", responseObject=TemplateResponse.class)
 public class RegisterTemplateCmd extends BaseCmd {
@@ -226,7 +226,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCallingAccount().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,7 +37,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createVPC", description="Creates a VPC", responseObject=VpcResponse.class)
 public class CreateVPCCmd extends BaseAsyncCreateCmd{
@@ -180,7 +180,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCallingAccount().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

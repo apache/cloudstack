@@ -30,13 +30,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "extractVolume", description="Extracts volume", responseObject=ExtractResponse.class)
 public class ExtractVolumeCmd extends BaseAsyncCmd {
@@ -128,7 +128,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         try {
-            UserContext.current().setEventDetails("Volume Id: "+getId());
+            CallContext.current().setEventDetails("Volume Id: "+getId());
             Long uploadId = _mgr.extractVolume(this);
             if (uploadId != null){
                 Upload uploadInfo = _entityMgr.findById(Upload.class, uploadId);

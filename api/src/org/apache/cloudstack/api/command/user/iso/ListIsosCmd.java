@@ -30,10 +30,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listIsos", description="Lists all available ISO files.", responseObject=TemplateResponse.class)
@@ -124,7 +124,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     }
     
     public boolean listInReadyState() {
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
         // Show only those that are downloaded.

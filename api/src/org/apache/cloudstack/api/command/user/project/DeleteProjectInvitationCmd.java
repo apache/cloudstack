@@ -26,10 +26,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteProjectInvitation", description = "Accepts or declines project invitation", responseObject = SuccessResponse.class, since = "3.0.0")
 public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
@@ -67,7 +67,7 @@ public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("Project invitation id " + id);
+        CallContext.current().setEventDetails("Project invitation id " + id);
         boolean result = _projectService.deleteProjectInvitation(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

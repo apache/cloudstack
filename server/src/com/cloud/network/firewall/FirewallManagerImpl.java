@@ -30,6 +30,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
 import com.cloud.network.dao.*;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -73,7 +75,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
@@ -147,7 +148,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     public FirewallRule createEgressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         Network network = _networkDao.findById(rule.getNetworkId());
         if (network.getGuestType() == Network.GuestType.Shared) {
@@ -160,7 +161,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     public FirewallRule createIngressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
-         Account caller = UserContext.current().getCallingAccount();
+         Account caller = CallContext.current().getCallingAccount();
         Long sourceIpAddressId = rule.getSourceIpAddressId();
  
         return createFirewallRule(sourceIpAddressId, caller, rule.getXid(), rule.getSourcePortStart(), 
@@ -226,7 +227,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         if (!_firewallDao.setStateToAdd(newRule)) {
             throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
         }
-        UserContext.current().setEventDetails("Rule Id: " + newRule.getId());
+        CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
 
         txn.commit();
 
@@ -241,7 +242,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         Map<String, String> tags = cmd.getTags();
         FirewallRule.TrafficType trafficType = cmd.getTrafficType();
 
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (ipId != null) {
@@ -687,8 +688,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     public boolean revokeFirewallRule(long ruleId, boolean apply) {
-        Account caller = UserContext.current().getCallingAccount();
-        long userId = UserContext.current().getCallingUserId();
+        Account caller = CallContext.current().getCallingAccount();
+        long userId = CallContext.current().getCallingUserId();
         return revokeFirewallRule(ruleId, apply, caller, userId);
     }
 

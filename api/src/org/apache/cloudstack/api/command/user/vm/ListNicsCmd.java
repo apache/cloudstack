@@ -31,13 +31,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.Nic;
 
 @APICommand(name = "listNics", description = "list the vm nics  IP to NIC", responseObject = NicResponse.class)
@@ -66,11 +66,11 @@ public class ListNicsCmd extends BaseListCmd {
     }
 
     public String getAccountName() {
-        return UserContext.current().getCallingAccount().getAccountName();
+        return CallContext.current().getCallingAccount().getAccountName();
     }
 
     public long getDomainId() {
-        return UserContext.current().getCallingAccount().getDomainId();
+        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     public Long getNicId() {
@@ -83,7 +83,7 @@ public class ListNicsCmd extends BaseListCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 

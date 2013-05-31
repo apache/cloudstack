@@ -26,12 +26,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "resetVpnConnection", description="Reset site to site vpn connection", responseObject=Site2SiteVpnConnectionResponse.class)
 public class ResetVpnConnectionCmd extends BaseAsyncCmd {
@@ -85,7 +85,7 @@ public class ResetVpnConnectionCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
-            return UserContext.current().getCallingAccount().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
         return Account.ACCOUNT_ID_SYSTEM;
     }

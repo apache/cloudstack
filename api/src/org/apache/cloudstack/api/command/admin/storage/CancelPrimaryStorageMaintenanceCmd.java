@@ -26,12 +26,12 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "cancelStorageMaintenance", description="Cancels maintenance for primary storage", responseObject=StoragePoolResponse.class)
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
@@ -82,7 +82,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }

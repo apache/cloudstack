@@ -73,11 +73,12 @@ import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
@@ -188,7 +189,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
     @Override
     public boolean deleteTrafficMonitor(DeleteTrafficMonitorCmd cmd) {
         long hostId = cmd.getId();
-        User caller = _accountMgr.getActiveUser(UserContext.current().getCallingUserId());
+        User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         HostVO trafficMonitor = _hostDao.findById(hostId);
         if (trafficMonitor == null) {
             throw new InvalidParameterValueException("Could not find an traffic monitor with ID: " + hostId);

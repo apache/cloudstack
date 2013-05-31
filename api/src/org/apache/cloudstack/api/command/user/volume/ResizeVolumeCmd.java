@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,7 +36,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 
 @APICommand(name="resizeVolume", description="Resizes a volume", responseObject=VolumeResponse.class)
@@ -134,7 +134,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceAllocationException{
-        UserContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
+        CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
     	Volume volume = _volumeService.resizeVolume(this);
     	if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);

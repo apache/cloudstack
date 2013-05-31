@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.user;
+package org.apache.cloudstack.context;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +24,8 @@ import org.apache.log4j.NDC;
 
 import com.cloud.dao.EntityManager;
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -31,9 +33,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * class must be always be available in all CloudStack code.  Every thread
  * entry point must set the context and remove it when the thread finishes.
  */
-public class UserContext {
-    private static final Logger s_logger = Logger.getLogger(UserContext.class);
-    private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
+public class CallContext {
+    private static final Logger s_logger = Logger.getLogger(CallContext.class);
+    private static ThreadLocal<CallContext> s_currentContext = new ThreadLocal<CallContext>();
 
     private String sessionId;
     private Account account;
@@ -48,10 +50,10 @@ public class UserContext {
         s_entityMgr = entityMgr;
     }
 
-    public UserContext() {
+    public CallContext() {
     }
 
-    protected UserContext(User user, Account account, String sessionId) {
+    protected CallContext(User user, Account account, String sessionId) {
         this.user = user;
         this.account = account;
         this.sessionId = sessionId;
@@ -81,16 +83,16 @@ public class UserContext {
         return account;
     }
 
-    public static UserContext current() {
+    public static CallContext current() {
         return s_currentContext.get();
     }
 
-    public static UserContext register(User callingUser, Account callingAccount, String sessionId) {
+    public static CallContext register(User callingUser, Account callingAccount, String sessionId) {
         assert s_currentContext.get() == null : "There's a context already so what does this new register context mean? " + s_currentContext.get().toString();
         if (s_currentContext.get() != null) { // FIXME: This should be removed soon.  I added this check only to surface all the places that have this problem.
             throw new CloudRuntimeException("There's a context already so what does this new register context mean? " + s_currentContext.get().toString());
         }
-        UserContext callingContext = new UserContext(callingUser, callingAccount, sessionId);
+        CallContext callingContext = new CallContext(callingUser, callingAccount, sessionId);
         s_currentContext.set(callingContext);
         if (sessionId != null) {
             NDC.push(sessionId);
@@ -99,8 +101,8 @@ public class UserContext {
         return callingContext;
     }
 
-    public static UserContext registerOnceOnly() {
-        UserContext context = s_currentContext.get();
+    public static CallContext registerOnceOnly() {
+        CallContext context = s_currentContext.get();
         if (context == null) {
             return register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
         }
@@ -109,7 +111,7 @@ public class UserContext {
         return context;
     }
 
-    public static UserContext register(String callingUserUuid, String callingAccountUuid, String sessionId) {
+    public static CallContext register(String callingUserUuid, String callingAccountUuid, String sessionId) {
         Account account = s_entityMgr.findByUuid(Account.class, callingAccountUuid);
         if (account == null) {
             throw new CloudAuthenticationException("The account is no longer current.").add(Account.class, callingAccountUuid);
@@ -122,7 +124,7 @@ public class UserContext {
         return register(user, account, sessionId);
     }
 
-    public static UserContext register(long callingUserId, long callingAccountId, String sessionId) throws CloudAuthenticationException {
+    public static CallContext register(long callingUserId, long callingAccountId, String sessionId) throws CloudAuthenticationException {
         Account account = s_entityMgr.findById(Account.class, callingAccountId);
         if (account == null) {
             throw new CloudAuthenticationException("The account is no longer current.").add(Account.class, Long.toString(callingAccountId));
@@ -134,7 +136,7 @@ public class UserContext {
         return register(user, account, sessionId);
     }
 
-    public static UserContext register(long callingUserId, Account callingAccount, String sessionId, boolean apiServer) {
+    public static CallContext register(long callingUserId, Account callingAccount, String sessionId, boolean apiServer) {
         User user = s_entityMgr.findById(User.class, callingUserId);
         if (user == null) {
             throw new CloudAuthenticationException("The user is no longer current.").add(User.class, Long.toString(callingUserId));
@@ -142,9 +144,9 @@ public class UserContext {
         return register(user, callingAccount, sessionId);
     }
 
-    public static UserContext unregister() {
+    public static CallContext unregister() {
         assert s_currentContext.get() != null : "Removing the context when we don't need to " + s_currentContext.get().toString();
-        UserContext context = s_currentContext.get();
+        CallContext context = s_currentContext.get();
         if (context == null) {
             s_logger.trace("No context to remove");
             return null;

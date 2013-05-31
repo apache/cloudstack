@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -34,7 +35,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateNetwork", description="Updates a network", responseObject=NetworkResponse.class)
 public class UpdateNetworkCmd extends BaseAsyncCmd {
@@ -130,7 +130,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
-        User callerUser = _accountService.getActiveUser(UserContext.current().getCallingUserId());
+        User callerUser = _accountService.getActiveUser(CallContext.current().getCallingUserId());
         Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());
         Network network = _networkService.getNetwork(id);
         if (network == null) {

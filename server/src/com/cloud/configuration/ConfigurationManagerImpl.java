@@ -71,6 +71,7 @@ import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.config.ConfigKey;
 import org.apache.cloudstack.config.ConfigRepo;
 import org.apache.cloudstack.config.ConfigValue;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -190,7 +191,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
@@ -564,14 +564,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "updating configuration")
     public Configuration updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException {
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
         String name = cmd.getCfgName();
         String value = cmd.getValue();
         Long zoneId = cmd.getZoneId();
         Long clusterId = cmd.getClusterId();
         Long storagepoolId = cmd.getStoragepoolId();
         Long accountId = cmd.getAccountId();
-        UserContext.current().setEventDetails(" Name: " + name + " New Value: " + (((name.toLowerCase()).contains("password")) ? "*****" :
+        CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (((name.toLowerCase()).contains("password")) ? "*****" :
                 (((value == null) ? "" : value))));
         // check if config value exists
         ConfigurationVO config = _configDao.findByName(name);
@@ -1112,7 +1112,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState) {
         String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
 
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Enabled.toString();
@@ -1131,7 +1131,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if zone is disabled
         DataCenterVO zone = _zoneDao.findById(zoneId);
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
@@ -1387,7 +1387,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Transaction txn = Transaction.currentTxn();
         boolean success = false;
 
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
         Long zoneId = cmd.getId();
 
         if (userId == null) {
@@ -1874,7 +1874,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_ZONE_CREATE, eventDescription = "creating zone", async = false)
     public DataCenter createZone(CreateZoneCmd cmd) {
         // grab parameters from the command
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
         String zoneName = cmd.getZoneName();
         String dns1 = cmd.getDns1();
         String dns2 = cmd.getDns2();
@@ -1928,7 +1928,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) {
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
 
         String name = cmd.getServiceOfferingName();
         if ((name == null) || (name.length() == 0)) {
@@ -2032,7 +2032,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (details != null) {
                 _serviceOfferingDetailsDao.persist(offering.getId(), details);
             }
-            UserContext.current().setEventDetails("Service offering id=" + offering.getId());
+            CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
             return null;
@@ -2046,7 +2046,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long id = cmd.getId();
         String name = cmd.getServiceOfferingName();
         Integer sortKey = cmd.getSortKey();
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2104,7 +2104,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (_serviceOfferingDao.update(id, offering)) {
             offering = _serviceOfferingDao.findById(id);
-            UserContext.current().setEventDetails("Service offering id=" + offering.getId());
+            CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
             return null;
@@ -2133,10 +2133,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized);
         newDiskOffering.setUseLocalStorage(localStorageRequired);
         newDiskOffering.setDisplayOffering(isDisplayOfferingEnabled);
-        UserContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
+        CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
         if (offering != null) {
-            UserContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
+            CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
             return offering;
         } else {
             return null;
@@ -2236,7 +2236,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // }
 
         if (_diskOfferingDao.update(diskOfferingId, diskOffering)) {
-            UserContext.current().setEventDetails("Disk offering id=" + diskOffering.getId());
+            CallContext.current().setEventDetails("Disk offering id=" + diskOffering.getId());
             return _diskOfferingDao.findById(diskOfferingId);
         } else {
             return null;
@@ -2255,7 +2255,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (_diskOfferingDao.remove(diskOfferingId)) {
-            UserContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
+            CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
             return true;
         } else {
             return false;
@@ -2267,7 +2267,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd) {
 
         Long offeringId = cmd.getId();
-        Long userId = UserContext.current().getCallingUserId();
+        Long userId = CallContext.current().getCallingUserId();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2284,7 +2284,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (_serviceOfferingDao.remove(offeringId)) {
-            UserContext.current().setEventDetails("Service offering id=" + offeringId);
+            CallContext.current().setEventDetails("Service offering id=" + offeringId);
             return true;
         } else {
             return false;
@@ -2421,7 +2421,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         
         
         // Check if zone is enabled
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
@@ -2610,7 +2610,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         
         // ACL check
-        checkZoneAccess(UserContext.current().getCallingAccount(), zone);
+        checkZoneAccess(CallContext.current().getCallingAccount(), zone);
         
         //Validate the physical network
         if (_physicalNetworkDao.findById(physicalNetworkId) == null) {
@@ -3136,7 +3136,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
 
-        return releasePublicIpRange(vlanDbId, UserContext.current().getCallingUserId(), UserContext.current().getCallingAccount());
+        return releasePublicIpRange(vlanDbId, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount());
     }
 
 
@@ -3475,7 +3475,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
 
-        return deleteVlanAndPublicIpRange(UserContext.current().getCallingUserId(), vlanDbId, UserContext.current().getCallingAccount());
+        return deleteVlanAndPublicIpRange(CallContext.current().getCallingUserId(), vlanDbId, CallContext.current().getCallingAccount());
     }
 
     @Override
@@ -4003,7 +4003,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         txn.commit();
 
-        UserContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
 
@@ -4049,7 +4049,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(NetworkOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
 
         Long id = cmd.getId();
@@ -4275,7 +4275,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_DELETE, eventDescription = "deleting network offering")
     public boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd) {
         Long offeringId = cmd.getId();
-        UserContext.current().setEventDetails(" Id: " + offeringId);
+        CallContext.current().setEventDetails(" Id: " + offeringId);
 
         // Verify network offering id
         NetworkOfferingVO offering = _networkOfferingDao.findById(offeringId);
@@ -4315,7 +4315,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Integer sortKey = cmd.getSortKey();
         Availability availability = null;
         String state = cmd.getState();
-        UserContext.current().setEventDetails(" Id: " + id);
+        CallContext.current().setEventDetails(" Id: " + id);
 
         // Verify input parameters
         NetworkOfferingVO offeringToUpdate = _networkOfferingDao.findById(id);
@@ -4415,7 +4415,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     	acctForUpdate.setDefaultZoneId(defaultZoneId);
     	
     	if (_accountDao.update(account.getId(), acctForUpdate)) {
-    		UserContext.current().setEventDetails("Default zone id= " + defaultZoneId);
+    		CallContext.current().setEventDetails("Default zone id= " + defaultZoneId);
     		return _accountDao.findById(account.getId());
     	} else {
     		return null;

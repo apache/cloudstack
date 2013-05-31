@@ -31,13 +31,13 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentContext;
@@ -87,7 +87,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 accountObject = _accountDao.findById(Long.parseLong(acctIdStr));
             }
 
-            UserContext.register(userId, accountObject, "job-" + job.getShortUuid(), false);
+            CallContext.register(userId, accountObject, "job-" + job.getShortUuid(), false);
             try {
                 // dispatch could ultimately queue the job
                 _dispatcher.dispatch(cmdObj, params);
@@ -95,7 +95,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 // serialize this to the async job table
                 _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());
             } finally {
-                UserContext.unregister();
+                CallContext.unregister();
             }
         } catch(Throwable e) {
             String errorMsg = null;

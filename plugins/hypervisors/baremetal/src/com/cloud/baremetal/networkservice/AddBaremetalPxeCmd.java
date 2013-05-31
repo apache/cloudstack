@@ -30,6 +30,8 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.baremetal.database.BaremetalPxeVO;
@@ -39,7 +41,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.UserContext;
 public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     private static final String s_name = "addexternalpxeresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalPxeCmd.class);
@@ -94,7 +95,7 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCallingAccount().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 
     public Long getPhysicalNetworkId() {

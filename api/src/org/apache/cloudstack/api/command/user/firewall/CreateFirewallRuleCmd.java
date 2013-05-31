@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -39,7 +40,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given ip address", responseObject = FirewallResponse.class)
@@ -117,11 +117,11 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        UserContext callerContext = UserContext.current();
+        CallContext callerContext = CallContext.current();
         boolean success = false;
         FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
         try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _firewallService.applyIngressFirewallRules(rule.getSourceIpAddressId(), callerContext.getCallingAccount());
 
             // State is different after the rule is applied, so get new object here
@@ -212,7 +212,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
 
         if (account != null) {
             return account.getId();

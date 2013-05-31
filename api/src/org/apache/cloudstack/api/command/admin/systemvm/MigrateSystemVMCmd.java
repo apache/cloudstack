@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,7 +37,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateSystemVm", description="Attempts Migration of a system virtual machine to the host specified.", responseObject=SystemVmInstanceResponse.class)
@@ -82,7 +82,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCallingAccount();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -108,7 +108,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
         }
         try{
-            UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
             //FIXME : Should not be calling UserVmService to migrate all types of VMs - need a generic VM layer
             VirtualMachine migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
             if (migratedVm != null) {

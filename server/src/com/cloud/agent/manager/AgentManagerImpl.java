@@ -41,6 +41,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.agent.AgentManager;
@@ -105,7 +106,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -1177,7 +1177,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         @Override
         public void run() {
             try {
-                UserContext.registerOnceOnly();
+                CallContext.registerOnceOnly();
             } catch (Exception e) {
                 s_logger.error("Unable to register context", e);
                 return;

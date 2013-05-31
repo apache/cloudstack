@@ -29,12 +29,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteEgressFirewallRule", description="Deletes an ggress firewall rule", responseObject=SuccessResponse.class)
 public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
@@ -93,7 +93,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        UserContext.current().setEventDetails("Rule Id: " + id);
+        CallContext.current().setEventDetails("Rule Id: " + id);
         boolean result = _firewallService.revokeFirewallRule(id, true);
 
         if (result) {

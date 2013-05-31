@@ -44,6 +44,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -205,7 +206,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserStatsLogVO;
 import com.cloud.user.UserVO;
@@ -432,7 +432,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) {
         Long routerId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
@@ -541,7 +541,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_STOP, eventDescription = "stopping router Vm", async = true)
     public VirtualRouter stopRouter(long routerId, boolean forced) throws ResourceUnavailableException, ConcurrentOperationException {
-        UserContext context = UserContext.current();
+        CallContext context = CallContext.current();
         Account account = context.getCallingAccount();
 
         // verify parameters
@@ -552,7 +552,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         _accountMgr.checkAccess(account, null, true, router);
 
-        UserVO user = _userDao.findById(UserContext.current().getCallingUserId());
+        UserVO user = _userDao.findById(CallContext.current().getCallingUserId());
 
         VirtualRouter virtualRouter = stop(router, forced, user, account);
         if (virtualRouter == null) {
@@ -605,7 +605,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
     public VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -622,7 +622,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     DataCenter.class, router.getDataCenterId());
         }
 
-        UserVO user = _userDao.findById(UserContext.current().getCallingUserId());
+        UserVO user = _userDao.findById(CallContext.current().getCallingUserId());
         s_logger.debug("Stopping and starting router " + router + " as a part of router reboot");
 
         if (stop(router, false, user, caller) != null) {
@@ -1282,7 +1282,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         @Override
         public void run() {
             try {
-                UserContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
+                CallContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
                 while (true) {
                     try {
                         Long networkId = _vrUpdateQueue.take();
@@ -1323,7 +1323,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             } catch (Exception e) {
                 s_logger.error("Unable to setup the calling context", e);
             } finally {
-                UserContext.unregister();
+                CallContext.unregister();
             }
         }
 
@@ -2783,7 +2783,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 try {
                     if (network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestType.Shared) {
                         Pod pod = _podDao.findById(vm.getPodIdToDeployIn());
-                        Account caller = UserContext.current().getCallingAccount();
+                        Account caller = CallContext.current().getCallingAccount();
                         List<VlanVO> vlanList = _vlanDao.listVlansByNetworkIdAndGateway(network.getId(), nic.getGateway());
                         List<Long>   vlanDbIdList = new ArrayList<Long>();
                         for (VlanVO vlan : vlanList) {
@@ -2799,7 +2799,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     return false;
                 }
                 //this means we did not create a ip alis on the router.
-                NicIpAliasVO alias = new NicIpAliasVO(domr_guest_nic.getId(), routerAliasIp, router.getId(), UserContext.current().getCallingAccountId(), network.getDomainId(), nic.getNetworkId(),nic.getGateway(), nic.getNetmask());
+                NicIpAliasVO alias = new NicIpAliasVO(domr_guest_nic.getId(), routerAliasIp, router.getId(), CallContext.current().getCallingAccountId(), network.getDomainId(), nic.getNetworkId(),nic.getGateway(), nic.getNetmask());
                 alias.setAliasCount((routerPublicIP.getIpMacAddress()));
                 _nicIpAliasDao.persist(alias);
                 List<IpAliasTO> ipaliasTo = new ArrayList<IpAliasTO>();
@@ -3058,8 +3058,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     public VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ResourceUnavailableException,
             InsufficientCapacityException, ConcurrentOperationException {
-        Account caller = UserContext.current().getCallingAccount();
-        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallingUserId());
+        Account caller = CallContext.current().getCallingAccount();
+        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -3095,7 +3095,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             return router;
         }
 
-        UserVO user = _userDao.findById(UserContext.current().getCallingUserId());
+        UserVO user = _userDao.findById(CallContext.current().getCallingUserId());
         Map<Param, Object> params = new HashMap<Param, Object>();
         if (reprogramNetwork) {
             params.put(Param.ReProgramGuestNetworks, true);

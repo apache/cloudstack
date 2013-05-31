@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -50,7 +51,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "associateIpAddress", description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
 public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
@@ -103,14 +103,14 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         if (accountName != null) {
             return accountName;
         }
-        return UserContext.current().getCallingAccount().getAccountName();
+        return CallContext.current().getCallingAccount().getAccountName();
     }
 
     public long getDomainId() {
         if (domainId != null) {
             return domainId;
         }
-        return UserContext.current().getCallingAccount().getDomainId();
+        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     private long getZoneId() {
@@ -191,7 +191,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         if (accountName != null && domainId != null) {
             Account account = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
             return account.getId();
@@ -267,7 +267,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException,
                                     ConcurrentOperationException, InsufficientCapacityException {
-        UserContext.current().setEventDetails("Ip Id: " + getEntityId());
+        CallContext.current().setEventDetails("Ip Id: " + getEntityId());
 
         IpAddress result = null;
 

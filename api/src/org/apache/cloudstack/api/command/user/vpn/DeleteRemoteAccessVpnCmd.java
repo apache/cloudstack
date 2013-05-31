@@ -25,12 +25,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteRemoteAccessVpn", description="Destroys a l2tp/ipsec remote access vpn", responseObject=SuccessResponse.class)
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
@@ -85,7 +85,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        _ravService.destroyRemoteAccessVpnForIp(publicIpId, UserContext.current().getCallingAccount());
+        _ravService.destroyRemoteAccessVpnForIp(publicIpId, CallContext.current().getCallingAccount());
     }
 
     @Override

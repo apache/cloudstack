@@ -54,6 +54,7 @@ import org.apache.cloudstack.api.Validate;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
 import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 
@@ -62,7 +63,6 @@ import com.cloud.dao.EntityManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.exception.CSExceptionErrorCode;
@@ -100,7 +100,7 @@ public class ApiDispatcher {
     }
 
     private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
 
         if(cmd instanceof BaseAsyncCreateCmd) {
@@ -124,7 +124,7 @@ public class ApiDispatcher {
 
     public void dispatch(BaseCmd cmd, Map<String, String> params) throws Exception {
         processParameters(cmd, params);
-        UserContext ctx = UserContext.current();
+        CallContext ctx = CallContext.current();
         
         if (cmd instanceof BaseAsyncCmd) {
 

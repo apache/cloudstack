@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.ConfigurationManager;
@@ -72,7 +73,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -277,7 +277,7 @@ public class UserVmManagerTest {
        // UserContext.current().setEventDetails("Vm Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
-       UserContext.register(1, account, null, true);
+       CallContext.register(1, account, null, true);
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
@@ -442,7 +442,7 @@ public class UserVmManagerTest {
         // caller is of type 0
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short) 0,
                 UUID.randomUUID().toString());
-        UserContext.register(1, caller, null, true);
+        CallContext.register(1, caller, null, true);
 
         _userVmMgr.moveVMToUser(cmd);
     }
@@ -469,7 +469,7 @@ public class UserVmManagerTest {
         // caller is of type 0
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short) 1,
                 UUID.randomUUID().toString());
-        UserContext.register(1, caller, null, true);
+        CallContext.register(1, caller, null, true);
 
         Account oldAccount = new AccountVO("testaccount", 1, "networkdomain", (short) 0,
                 UUID.randomUUID().toString());

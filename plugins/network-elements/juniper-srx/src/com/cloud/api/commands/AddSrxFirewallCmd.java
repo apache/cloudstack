@@ -28,6 +28,8 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -37,7 +39,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "addSrxFirewall", responseObject=SrxFirewallResponse.class, description="Adds a SRX firewall device")
@@ -130,6 +131,6 @@ public class AddSrxFirewallCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCallingAccount().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 }

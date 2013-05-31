@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -33,7 +35,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "addF5LoadBalancer", responseObject=F5LoadBalancerResponse.class, description="Adds a F5 BigIP load balancer device")
@@ -127,6 +128,6 @@ public class AddF5LoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCallingAccount().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 }

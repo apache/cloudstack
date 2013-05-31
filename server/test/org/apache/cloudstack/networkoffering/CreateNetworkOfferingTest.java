@@ -33,7 +33,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import junit.framework.TestCase;
@@ -43,6 +42,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -86,7 +87,7 @@ public class CreateNetworkOfferingTest extends TestCase{
         Mockito.when(accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
 
-        UserContext.register(accountMgr.getSystemUser().getId(), accountMgr.getSystemAccount(), null, false);
+        CallContext.register(accountMgr.getSystemUser().getId(), accountMgr.getSystemAccount(), null, false);
     }
 
     //Test Shared network offerings

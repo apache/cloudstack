@@ -26,10 +26,10 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.utils.component.ComponentContext;
 import junit.framework.TestCase;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -78,7 +78,7 @@ public class NetworkACLServiceTest extends TestCase{
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
-        UserContext.register(1, account, null, true);
+        CallContext.register(1, account, null, true);
 
         createACLItemCmd = new CreateNetworkACLCmd(){
             @Override

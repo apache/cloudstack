@@ -25,6 +25,7 @@ import java.lang.reflect.Field;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
+import org.apache.cloudstack.context.CallContext;
 
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -43,7 +44,6 @@ import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.utils.db.Transaction;
 
 import junit.framework.Assert;
@@ -90,7 +90,7 @@ public class DedicateGuestVlanRangesTest {
         when(networkService._accountMgr.getAccount(anyLong())).thenReturn(account);
         when(networkService._accountDao.findActiveAccount(anyString(), anyLong())).thenReturn(account);
 
-        UserContext.register(1, account, null, true);
+        CallContext.register(1, account, null, true);
 
         Field accountNameField = _dedicateGuestVlanRangeClass.getDeclaredField("accountName");
         accountNameField.setAccessible(true);

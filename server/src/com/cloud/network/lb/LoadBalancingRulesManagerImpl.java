@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleI
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.response.ServiceResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 
@@ -138,7 +139,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainService;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
@@ -518,7 +518,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @ActionEvent(eventType = EventTypes.EVENT_LB_STICKINESSPOLICY_CREATE, eventDescription = "create lb stickinesspolicy to load balancer", create = true)
     public StickinessPolicy createLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd)
             throws NetworkRuleConflictException {
-        UserContext caller = UserContext.current();
+        CallContext caller = CallContext.current();
 
         /* Validation : check corresponding load balancer rule exist */
         LoadBalancerVO loadBalancer = _lbDao.findById(cmd.getLbRuleId());
@@ -566,7 +566,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_LB_HEALTHCHECKPOLICY_CREATE, eventDescription = "create load balancer health check to load balancer", create = true)
     public HealthCheckPolicy createLBHealthCheckPolicy(CreateLBHealthCheckPolicyCmd cmd) {
-        UserContext caller = UserContext.current();
+        CallContext caller = CallContext.current();
 
         /*
          * Validation of cmd Monitor interval must be greater than response
@@ -714,7 +714,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public boolean deleteLBStickinessPolicy(long stickinessPolicyId, boolean apply) {
         boolean success = true;
 
-        UserContext caller = UserContext.current();
+        CallContext caller = CallContext.current();
         LBStickinessPolicyVO stickinessPolicy = _lb2stickinesspoliciesDao.findById(stickinessPolicyId);
 
         if (stickinessPolicy == null) {
@@ -772,7 +772,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public boolean deleteLBHealthCheckPolicy(long healthCheckPolicyId, boolean apply) {
         boolean success = true;
 
-        UserContext caller = UserContext.current();
+        CallContext caller = CallContext.current();
         LBHealthCheckPolicyVO healthCheckPolicy = _lb2healthcheckDao.findById(healthCheckPolicyId);
 
         if (healthCheckPolicy == null) {
@@ -924,7 +924,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, eventDescription = "assigning to load balancer", async = true)
     public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
-        UserContext ctx = UserContext.current();
+        CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
@@ -1046,7 +1046,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     private boolean removeFromLoadBalancerInternal(long loadBalancerId, List<Long> instanceIds, boolean rollBack) {
-        UserContext caller = UserContext.current();
+        CallContext caller = CallContext.current();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(loadBalancerId));
         if (loadBalancer == null) {
@@ -1150,7 +1150,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_DELETE, eventDescription = "deleting load balancer", async = true)
     public boolean deleteLoadBalancerRule(long loadBalancerId, boolean apply) {
-        UserContext ctx = UserContext.current();
+        CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
 
         LoadBalancerVO rule = _lbDao.findById(loadBalancerId);
@@ -1328,7 +1328,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                             + network);
                 }
 
-                result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, UserContext.current());
+                result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current());
             } catch (Exception ex) {
                 s_logger.warn("Failed to create load balancer due to ", ex);
                 if (ex instanceof NetworkRuleConflictException) {
@@ -1358,7 +1358,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @DB
     @Override
     public LoadBalancer createPublicLoadBalancer(String xId, String name, String description, 
-            int srcPort, int destPort, long sourceIpId, String protocol, String algorithm, boolean openFirewall, UserContext caller)
+            int srcPort, int destPort, long sourceIpId, String protocol, String algorithm, boolean openFirewall, CallContext caller)
             throws NetworkRuleConflictException {
         
         if (!NetUtils.isValidPort(destPort)) {
@@ -1437,7 +1437,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
             s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" + sourceIpId + ", public port "
                     + srcPort + ", private port " + destPort + " is added successfully.");
-            UserContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
+            CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(),
                     ipAddr.getDataCenterId(), newRule.getId(), null, LoadBalancingRule.class.getName(),
                     newRule.getUuid());
@@ -1645,8 +1645,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         boolean success = true;
         if (ip.getSystem()) {
             s_logger.debug("Releasing system ip address " + lb.getSourceIpAddressId() + " as a part of delete lb rule");
-            if (!_networkMgr.disassociatePublicIpAddress(lb.getSourceIpAddressId(), UserContext.current()
-                    .getCallingUserId(), UserContext.current().getCallingAccount())) {
+            if (!_networkMgr.disassociatePublicIpAddress(lb.getSourceIpAddressId(), CallContext.current()
+                    .getCallingUserId(), CallContext.current().getCallingAccount())) {
                 s_logger.warn("Unable to release system ip address id=" + lb.getSourceIpAddressId()
                         + " as a part of delete lb rule");
                 success = false;
@@ -1738,7 +1738,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_UPDATE, eventDescription = "updating load balancer", async = true)
     public LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long lbRuleId = cmd.getId();
         String name = cmd.getLoadBalancerName();
         String description = cmd.getDescription();
@@ -1810,7 +1810,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd)
             throws PermissionDeniedException {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getId();
         Boolean applied = cmd.isApplied();
 
@@ -1876,7 +1876,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public List<LBStickinessPolicyVO> searchForLBStickinessPolicies(ListLBStickinessPoliciesCmd cmd)
             throws PermissionDeniedException {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getLbRuleId();
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
@@ -1893,7 +1893,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public List<LBHealthCheckPolicyVO> searchForLBHealthCheckPolicies(ListLBHealthCheckPoliciesCmd cmd)
             throws PermissionDeniedException {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long loadBalancerId = cmd.getLbRuleId();
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
@@ -1915,7 +1915,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Long networkId = cmd.getNetworkId();
         Map<String, String> tags = cmd.getTags();
 
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(

@@ -31,13 +31,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createNetworkACL", description = "Creates a ACL rule in the given network (the network has to belong to VPC)",
@@ -166,7 +166,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 
@@ -215,7 +215,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         NetworkACLItem rule = _networkACLService.getNetworkACLItem(getEntityId());
         try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _networkACLService.applyNetworkACL(rule.getAclId());
 
             // State is different after the rule is applied, so get new object here

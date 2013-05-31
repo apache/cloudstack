@@ -27,9 +27,9 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateResourceLimit", description="Updates resource limits for an account or domain.", responseObject=ResourceLimitResponse.class)
 public class UpdateResourceLimitCmd extends BaseCmd {
@@ -97,7 +97,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCallingAccount().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

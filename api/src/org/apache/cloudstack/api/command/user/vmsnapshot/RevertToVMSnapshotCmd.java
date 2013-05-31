@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -33,7 +34,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
@@ -66,7 +66,7 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws  ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, ConcurrentOperationException {
-        UserContext.current().setEventDetails(
+        CallContext.current().setEventDetails(
                 "vmsnapshot id: " + getVmSnapShotId());
         UserVm result = _vmSnapshotService.revertToSnapshot(getVmSnapShotId());
         if (result != null) {

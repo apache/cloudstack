@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
@@ -35,7 +36,6 @@ import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -77,7 +77,7 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
 	        VMInstanceVO vm = _instanceDao.findById(work.getVmId());
 	        assert(vm != null);
 	    
-	        UserContext.register(work.getUserId(), account, null, false);
+	        CallContext.register(work.getUserId(), account, null, false);
 	        try {
 	        	Method handler = getHandler(joinRecord.getWakeupHandler());
 	        	if(handler != null) {
@@ -88,7 +88,7 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
 	    	    		" when waking up job-" + job.getId());
 	        	}
 	        } finally {
-	            UserContext.unregister();
+	            CallContext.unregister();
 	        }
 	    } catch(Throwable e) {
 	    	s_logger.warn("Unexpected exception in waking up job-" + job.getId());

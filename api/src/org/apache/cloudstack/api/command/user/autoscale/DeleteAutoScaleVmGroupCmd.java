@@ -27,11 +27,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteAutoScaleVmGroup", description = "Deletes a autoscale vm group.", responseObject = SuccessResponse.class)
 public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
@@ -85,7 +85,7 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
         boolean result = _autoScaleService.deleteAutoScaleVmGroup(id);
 
         if (result) {

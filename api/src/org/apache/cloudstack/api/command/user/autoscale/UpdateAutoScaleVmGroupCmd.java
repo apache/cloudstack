@@ -30,11 +30,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateAutoScaleVmGroup", description = "Updates an existing autoscale vm group.", responseObject = AutoScaleVmGroupResponse.class)
 public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
@@ -73,7 +73,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
         AutoScaleVmGroup result = _autoScaleService.updateAutoScaleVmGroup(this);
         if (result != null) {
             AutoScaleVmGroupResponse response = _responseGenerator.createAutoScaleVmGroupResponse(result);

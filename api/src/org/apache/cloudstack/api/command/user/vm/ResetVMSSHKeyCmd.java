@@ -29,12 +29,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "resetSSHKeyForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the SSH Key for virtual machine. " +
@@ -136,7 +136,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException {
 
-        UserContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.resetVMSSHKey(this);
 
         if (result != null) {

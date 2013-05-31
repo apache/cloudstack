@@ -26,11 +26,11 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateVolume", description="Updates the volume.", responseObject=VolumeResponse.class)
 public class UpdateVolumeCmd extends BaseAsyncCmd {
@@ -101,7 +101,7 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Volume Id: "+getId());
+        CallContext.current().setEventDetails("Volume Id: "+getId());
         Volume result = _volumeService.updateVolume(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
