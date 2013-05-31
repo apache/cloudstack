@@ -2132,8 +2132,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 CapabilityResponse eIp = new CapabilityResponse();
                 eIp.setName(Capability.ElasticIp.getName());
-                eIp.setValue(offering.getElasticLb() ? "true" : "false");
+                eIp.setValue(offering.getElasticIp() ? "true" : "false");
                 staticNatCapResponse.add(eIp);
+
+                CapabilityResponse associatePublicIp = new CapabilityResponse();
+                associatePublicIp.setName(Capability.AssociatePublicIP.getName());
+                associatePublicIp.setValue(offering.getAssociatePublicIP() ? "true" : "false");
+                staticNatCapResponse.add(associatePublicIp);
 
                 svcRsp.setCapabilities(staticNatCapResponse);
             }
