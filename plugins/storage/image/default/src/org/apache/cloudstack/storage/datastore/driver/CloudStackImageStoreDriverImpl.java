@@ -154,17 +154,16 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
         AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher
                 .create(this);
         caller.setContext(context);
-        caller.setCallback(caller.getTarget().createAsyncCallback(null, null));
-
         if (data.getType() == DataObjectType.TEMPLATE) {
+            caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
             _downloadMonitor.downloadTemplateToStorage(data, caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
+            caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
             _downloadMonitor.downloadVolumeToStorage(data, caller);
         }
     }
 
-    protected Void createAsyncCallback(
-            AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> callback,
+    protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> callback,
             CreateContext<CreateCmdResult> context) {
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
@@ -205,7 +204,48 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
                 templateDao.update(obj.getId(), templateDaoBuilder);
             }
 
-            CreateCmdResult result = new CreateCmdResult(null, answer);
+            CreateCmdResult result = new CreateCmdResult(null, null);
+            caller.complete(result);
+        }
+        return null;
+    }
+
+    protected Void createVolumeAsyncCallback(AsyncCallbackDispatcher<CloudStackImageStoreDriverImpl, DownloadAnswer> callback,
+            CreateContext<CreateCmdResult> context) {
+        DownloadAnswer answer = callback.getResult();
+        DataObject obj = context.data;
+        DataStore store = obj.getDataStore();
+
+        VolumeDataStoreVO volStoreVO = _volumeStoreDao.findByStoreVolume(store.getId(), obj.getId());
+        if (volStoreVO != null) {
+            VolumeDataStoreVO updateBuilder = _volumeStoreDao.createForUpdate();
+            updateBuilder.setDownloadPercent(answer.getDownloadPct());
+            updateBuilder.setDownloadState(answer.getDownloadStatus());
+            updateBuilder.setLastUpdated(new Date());
+            updateBuilder.setErrorString(answer.getErrorString());
+            updateBuilder.setJobId(answer.getJobId());
+            updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
+            updateBuilder.setInstallPath(answer.getInstallPath());
+            updateBuilder.setSize(answer.getTemplateSize());
+            updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
+            _volumeStoreDao.update(volStoreVO.getId(), updateBuilder);
+            // update size in volume table
+            VolumeVO volUpdater = volumeDao.createForUpdate();
+            volUpdater.setSize(answer.getTemplateSize());
+            volumeDao.update(obj.getId(), volUpdater);
+        }
+
+        AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
+
+        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR
+                || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED
+                || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+            CreateCmdResult result = new CreateCmdResult(null, null);
+            result.setSuccess(false);
+            result.setResult(answer.getErrorString());
+            caller.complete(result);
+        } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+            CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
         }
         return null;
