@@ -206,6 +206,7 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATUS = "status";
     public static final String STORAGE_TYPE = "storagetype";
+    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String TARGET_IQN = "targetiqn";
@@ -304,6 +305,8 @@ public class ApiConstants {
     public static final String TEMPLATE_TAG = "templatetag";
     public static final String HYPERVISOR_VERSION = "hypervisorversion";
     public static final String MAX_GUESTS_LIMIT = "maxguestslimit";
+    public static final String MAX_DATA_VOLUMES_LIMIT = "maxdatavolumeslimit";
+    public static final String MAX_HOSTS_PER_CLUSTER = "maxhostspercluster";
     public static final String PROJECT_ID = "projectid";
     public static final String PROJECT_IDS = "projectids";
     public static final String PROJECT = "project";
