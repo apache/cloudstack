@@ -348,11 +348,18 @@
           
 	  }													
 										
-          setTimeout(function() {
+      /*    setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
-              $form.find('[rel=domain]').hide();
+              $form.find('[rel=domain]').show();
+              $form.find('[rel=accountId]').show();
             }
-          });
+ 
+            else{
+
+              $form.find('[rel=domain]').hide();
+              $form.find('[rel=accountId]').hide();
+             }             
+          });*/
         },
         fields: {
           name: {
@@ -541,10 +548,10 @@
             validation: { required: false }
           },
           ispublic: {
-            isReverse: true,
+            //isReverse: true,
             isBoolean: true,
-            label: 'label.public',
-            isChecked: true //checked by default (public zone)
+            label: 'Dedicate',
+            isChecked: false //checked by default (public zone)
           },
           domain: {
             label: 'label.domain',
@@ -570,6 +577,16 @@
               });
             }
           },
+
+           accountId:{
+                     label:'Account',
+                     isHidden:true,
+                     dependsOn:'ispublic',
+                     //docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  },
+
           localstorageenabled: {
             label: 'label.local.storage.enabled',
             isBoolean: true,
@@ -1587,12 +1604,16 @@
             array1.push("&internaldns2=" + todb(internaldns2));
 
 					if(args.data.pluginFrom == null) { //from zone wizard, not from quick instsaller(args.data.pluginFrom != null && args.data.pluginFrom.name == 'installWizard') who doesn't have public checkbox
-						if(args.data.zone.ispublic == null) //public checkbox in zone wizard is unchecked 
-							array1.push("&domainid=" + args.data.zone.domain);
+					//	if(args.data.zone.ispublic != null){ //public checkbox in zone wizard is unchecked 
+					//		array1.push("&domainid=" + args.data.zone.domain);
+                                                       
+                                              // }
           }
 					
           if(args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
             array1.push("&domain=" + todb(args.data.zone.networkdomain));
+          
+          var dedicatedZoneId = null;
 
           $.ajax({
             url: createURL("createZone" + array1.join("")),
@@ -1604,6 +1625,35 @@
                   returnedZone: json.createzoneresponse.zone
                 })
               });
+
+               dedicatedZoneId = json.createzoneresponse.zone.id;
+                //EXPLICIT ZONE DEDICATION
+                if(args.data.pluginFrom == null && args.data.zone.ispublic != null){
+                      var array2 = [];
+                      if(args.data.zone.domain != null)
+                        array2.push("&domainid=" + args.data.zone.domain);
+                      if(args.data.zone.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.zone.accountId));
+
+                      if(dedicatedZoneId != null){
+                      $.ajax({
+                         url:createURL("dedicateZone&ZoneId=" +dedicatedZoneId + array2.join("")),
+                         dataType:"json",
+                         success:function(json){
+                             var dedicatedObj = json.dedicatezoneresponse.jobid;
+                             //args.response.success({ data: $.extend(item, dedicatedObj)});
+
+                         },
+
+                         error:function(json){
+
+                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                         }
+                       });
+
+                     }
+                    }
+
             },
             error: function(XMLHttpResponse) {
               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);

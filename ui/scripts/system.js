@@ -5436,6 +5436,117 @@
                     }
                   },
 
+                   dedicate:{
+                   label: 'Dedicate Zone',
+                messages: {
+                  confirm: function(args) {
+                    return 'Do you really want to dedicate this zone to a domain/account? ';
+                  },
+                  notification: function(args) {
+                    return 'Zone Dedicated';
+                  }
+                },
+                createForm:{
+                   title:'Dedicate Zone',
+                   fields:{
+                         domainId:{
+                      label:'Domain',
+                      validation:{required:true},
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                       }
+                   },
+
+                   accountId:{
+                     label:'Account',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  }
+                     }
+                },
+            
+               action: function(args) {
+                     //EXPLICIT DEDICATION
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+
+                    $.ajax({
+                    url: createURL("dedicateZone&zoneId=" + args.context.physicalResources[0].id + "&domainId=" +args.data.domainId + array2.join("") ),
+                    dataType: "json",
+                    success: function(json) {
+                       var jid = json.dedicatezoneresponse.jobid;
+                            args.response.success({
+                               _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:zoneActionfilter
+
+                          });
+                    }
+                  });
+                }
+
+              },
+
+              release:{
+                label:'Release Dedicated Zone',
+                messages:{
+                   confirm: function(args) {
+                    return 'Do you want to release this dedicated zone ?';
+                  },
+                  notification: function(args) {
+                    return 'Zone dedication released';
+                  }
+                },
+               action:function(args){
+                  $.ajax({
+                     url:createURL("releaseDedicatedZone&zoneid=" + args.context.physicalResources[0].id),
+                     dataType:"json",
+                     async:true,
+                      success:function(json){
+                       var jid = json.releasededicatedzoneresponse.jobid;
+                        args.response.success({
+                             _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:zoneActionfilter
+
+                       });
+                     },
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+
+               }
+              },
+
                   'remove': {
                     label: 'label.action.delete.zone',
                     messages: {
@@ -5533,7 +5644,15 @@
 												  isEditable: true,
 												  converter:cloudStack.converters.toBooleanText
                         }
-                      }
+                      },
+
+                       {
+
+                       isdedicated:{label:'Dedicated'},
+                       domainid:{label:'Domain ID'}
+
+                       }
+
                     ],
                     dataProvider: function(args) {
                       $.ajax({
@@ -5542,12 +5661,32 @@
                           id: args.context.physicalResources[0].id
                         },
                         success: function(json) {
-                          selectedZoneObj = json.listzonesresponse.zone[0];
-                          args.response.success({
-                            data: json.listzonesresponse.zone[0],
-                            actionFilter: zoneActionfilter
-                          });
-                        }
+                           selectedZoneObj = json.listzonesresponse.zone[0];
+                             $.ajax({
+                                                    url:createURL("listDedicatedZones&zoneid=" +args.context.physicalResources[0].id),
+                                                    dataType:"json",
+                                                    async:false,
+                                                    success:function(json){
+                                                        if(json.listdedicatedzonesresponse.dedicatedzone != undefined){
+                                                          var zoneItem = json.listdedicatedzonesresponse.dedicatedzone[0];
+                                                            if (zoneItem.domainid != null) {
+                                                            $.extend(selectedZoneObj, zoneItem , { isdedicated: 'Yes' });
+                                                          }
+                                                        }
+                                                        else
+                                                            $.extend(selectedZoneObj,{ isdedicated: 'No' })
+
+                                                    },
+                                                  error:function(json){
+                                                       args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                                                  }
+                                              });
+                                             args.response.success({
+                                                actionFilter: zoneActionfilter,
+                                                data: selectedZoneObj
+                                            });
+
+                           }
                       });
                     }
                   },
@@ -8507,7 +8646,54 @@
                     label: 'label.end.reserved.system.IP',
                     docID: 'helpPodEndIP',
                     validation: { required: false }
+                  },
+
+                   isDedicated:{
+                       label:'Dedicate',
+                       isBoolean:true,
+                       isChecked:false,
+                       docID:'helpDedicateResource'
+
+
+                   },
+
+                   domainId:{
+                      label:'Domain',
+                      isHidden:true,
+                      validation:{required:true},
+                      dependsOn:'isDedicated',
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                      }
+                   },
+
+                    accountId:{
+                     label:'Account',
+                     isHidden:true,
+                     dependsOn:'isDedicated',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
                   }
+
                 }
               },
 
@@ -8524,22 +8710,57 @@
                 var endip = args.data.reservedSystemEndIp;      //optional
                 if (endip != null && endip.length > 0)
                   array1.push("&endIp=" + todb(endip));
-
+                var podId = null;
                 $.ajax({
                   url: createURL("createPod" + array1.join("")),
                   data: appendData,
                   dataType: "json",
                   success: function(json) {
                     var item = json.createpodresponse.pod;
-                    args.response.success({
-										  data:item
-										});
-                  },
-                  error: function(XMLHttpResponse) {
+                    podId = json.createpodresponse.pod.id;
+
+                  //EXPLICIT DEDICATION
+                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+
+                      if(podId != null){
+                      $.ajax({
+                         url:createURL("dedicatePod&podId=" +podId +"&domainId=" +args.data.domainId + array2.join("")),
+                         dataType:"json",
+                         success:function(json){
+                            var jid = json.dedicatepodresponse.jobid;
+                            args.response.success({
+                               _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+
+                             data:item
+                          });
+
+                         },
+
+                         error:function(json){
+
+                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                         }
+                       });
+
+                     }
+                    }
+                 },
+                 error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                     args.response.error(errorMsg);
                   }
-                });
+
+                });                 
+
+                
               },
 
               notification: {
@@ -8633,6 +8854,123 @@
                 }
               },
 
+                dedicate:{
+                   label: 'Dedicate Pod',
+                messages: {
+                  confirm: function(args) {
+                    return 'Do you really want to dedicate this pod to a domain/account? ';
+                  },
+                  notification: function(args) {
+                    return 'Pod Dedicated';
+                  }
+                },
+                createForm:{
+                   title:'Dedicate Pod',
+                   fields:{
+                         domainId:{
+                      label:'Domain',
+                      validation:{required:true},
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                       }
+                   },
+
+                   accountId:{
+                     label:'Account',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  }
+
+
+                     }
+                },
+                action: function(args) {
+
+                    //EXPLICIT DEDICATION
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+
+                    $.ajax({
+                    url: createURL("dedicatePod&podId=" + args.context.pods[0].id + "&domainId=" +args.data.domainId + array2.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                          var jid = json.dedicatepodresponse.jobid;
+                            args.response.success({
+                               _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:podActionfilter
+                          });
+                      },
+                   error:function(json){
+                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+
+                   }
+                  });
+                }
+
+              },
+
+               release:{
+                label:'Release Dedicated Pod',
+                messages:{
+                   confirm: function(args) {
+                    return 'Do you want to release this dedicated pod ?';
+                  },
+                  notification: function(args) {
+                    return 'Pod dedication released';
+                  }
+                },
+               action:function(args){
+                  $.ajax({
+                     url:createURL("releaseDedicatedPod&podid=" + args.context.pods[0].id),
+                     dataType:"json",
+                     async:true,
+                     success:function(json){
+                       var jid = json.releasededicatedpodresponse.jobid;
+                       args.response.success({
+                             _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:podActionfilter
+
+                       });
+                     },
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+
+               }
+              },
+
+
               disable: {
                 label: 'label.action.disable.pod',
                 messages: {
@@ -8709,23 +9047,56 @@
                       },
                       label: 'label.allocation.state'
                     }
-                  }
+                  },
+
+                   {
+
+                   isdedicated:{label:'Dedicated'},
+                   domainid:{label:'Domain ID'}
+
+                   }
+
                 ],
 
                 dataProvider: function(args) {								  
-									$.ajax({
-										url: createURL("listPods&id=" + args.context.pods[0].id),
-										dataType: "json",
-										async: true,
-										success: function(json) {										  
-											var item = json.listpodsresponse.pod[0];
-											args.response.success({
-												actionFilter: podActionfilter,
-												data:item
-											});
-										}
-									});									              
-                }
+                
+                                                                        $.ajax({
+                                                                                url: createURL("listPods&id=" + args.context.pods[0].id),
+                                                                                dataType: "json",
+                                                                                async: false,
+                                                                                success: function(json) {
+                                                                                     var  item = json.listpodsresponse.pod[0];
+
+
+                                                                                       $.ajax({
+                                                    url:createURL("listDedicatedPods&podid=" +args.context.pods[0].id),
+                                                    dataType:"json",
+                                                    async:false,
+                                                    success:function(json){
+                                                         if(json.listdedicatedpodsresponse.dedicatedpod != undefined){
+                                                            var podItem = json.listdedicatedpodsresponse.dedicatedpod[0];
+                                                        if (podItem.domainid != null) {
+                                                            $.extend(item, podItem , { isdedicated: 'Yes' });
+                                                        }
+                                                    }
+                                                      else
+                                                         $.extend(item ,{ isdedicated: 'No' })
+                                                 },
+                                                 error:function(json){
+                                                     args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+
+                                                 }
+                                           });
+                                             args.response.success({
+                                                actionFilter: podActionfilter,
+                                                data: item
+                                            });
+
+                                         }
+                                                                        });
+
+
+                 }
               },
 
               ipAllocations: {
@@ -9007,8 +9378,55 @@
 
                    },
 
-                  //hypervisor==VMWare begins here
+                  
+                   isDedicated:{
+                       label:'Dedicate',
+                       isBoolean:true,
+                       isChecked:false,
+                       docID:'helpDedicateResource'
 
+
+                   },
+
+                   domainId:{
+                      label:'Domain',
+                      isHidden:true,
+                      validation:{required:true},
+                      dependsOn:'isDedicated',
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                      }
+                   },
+
+                    accountId:{
+                     label:'Account',
+                     isHidden:true,
+                     dependsOn:'isDedicated',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  },
+
+                  //hypervisor==VMWare begins here
+ 
                   vCenterHost: {
                     label: 'label.vcenter.host',
                     docID: 'helpClustervCenterHost',
@@ -9237,21 +9655,53 @@
                   clusterName = hostname + "/" + dcName + "/" + clusterName; //override clusterName
                 }
                 array1.push("&clustername=" + todb(clusterName));
-
+                var clusterId = null;
                 $.ajax({
                   url: createURL("addCluster" + array1.join("")),
                   dataType: "json",
                   async: true,
                   success: function(json) {
                     var item = json.addclusterresponse.cluster[0];
-                    args.response.success({
-										  data: $.extend(item, { state: 'Enabled' })
-										});
-                  },
-                  error: function(XMLHttpResponse) {
+                    clusterId= json.addclusterresponse.cluster[0].id;
+                  
+                  //EXPLICIT DEDICATION
+                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+                    }
+
+                    if(clusterId != null){
+                      $.ajax({
+                         url:createURL("dedicateCluster&clusterId=" +clusterId +"&domainId=" +args.data.domainId + array2.join("")),
+                         dataType:"json",
+                         success:function(json){
+                             var jid = json.dedicateclusterresponse.jobid;
+                              args.response.success({
+                                 _custom:
+                                   {      jobId: jid
+                                    },
+                                  notification: {
+                                    poll: pollAsyncJobResult
+                                    },
+
+                                  data:$.extend(item, {state:'Enabled'})
+                             });
+
+                         },
+
+                         error:function(json){
+                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                         }
+                       });
+                   }
+                 },
+                 error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                     args.response.error(errorMsg);
                   }
+
+
                 });
               },
 
@@ -9386,6 +9836,118 @@
                 }
               },
 
+           dedicate:{
+                label: 'Dedicate Cluster',
+                messages: {
+                  confirm: function(args) {
+                    return 'Do you really want to dedicate this cluster to a domain/account? ';
+                  },
+                  notification: function(args) {
+                    return 'Cluster Dedicated';
+                  }
+                },
+                createForm:{
+                   title:'Dedicate Cluster',
+                   fields:{
+                         domainId:{
+                      label:'Domain',
+                      validation:{required:true},
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                       }
+                   },
+
+                   accountId:{
+                     label:'Account',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  }
+
+               }
+             },
+                action: function(args) {
+                     //EXPLICIT DEDICATION
+
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+
+                    $.ajax({
+                    url: createURL("dedicateCluster&clusterId=" + args.context.clusters[0].id + "&domainId=" +args.data.domainId + array2.join("") ),
+                    dataType: "json",
+                    success: function(json) {
+                       var jid = json.dedicateclusterresponse.jobid;
+                            args.response.success({
+                               _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:clusterActionfilter
+                          });
+                    }
+                  });
+                }
+
+              },
+
+               release:{
+                label:'Release Dedicated Cluster',
+                messages:{
+                   confirm: function(args) {
+                    return 'Do you want to release this dedicated cluster ?';
+                  },
+                  notification: function(args) {
+                    return 'Cluster dedication released';
+                  }
+                },
+               action:function(args){
+                  $.ajax({
+                     url:createURL("releaseDedicatedCluster&clusterid=" + args.context.clusters[0].id),
+                     dataType:"json",
+                     async:true,
+                     success:function(json){
+                       var jid = json.releasededicatedclusterresponse.jobid;
+                       args.response.success({
+                             _custom:
+                           {      jobId: jid
+                             },
+                           notification: {
+                              poll: pollAsyncJobResult
+                              },
+                            actionFilter:clusterActionfilter
+
+                       });
+                     },
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+
+               }
+              },
+  
+
               manage: {
                 label: 'label.action.manage.cluster',
                 messages: {
@@ -9494,7 +10056,13 @@
                     //allocationstate: { label: 'label.allocation.state' },
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
-                  }
+                  },
+
+                   {
+                    isdedicated:{label:'Dedicated'},
+                    domainid:{label:'Domain ID'}
+                   }
+
                 ],
                 dataProvider: function(args) {
 									$.ajax({
@@ -9503,14 +10071,40 @@
 										success: function(json) {
 											var item = json.listclustersresponse.cluster[0];
 											addExtraPropertiesToClusterObject(item);
-											args.response.success({
-												actionFilter: clusterActionfilter,
-												data: item
-											});
-										}
-									});
-                }
-              },
+								             $.ajax({
+                                                                                url:createURL("listDedicatedClusters&clusterid=" +args.context.clusters[0].id),
+                                                                                dataType:"json",
+                                                                                async:false,
+                                                                                success:function(json){
+                                                                                  if(json.listdedicatedclustersresponse.dedicatedcluster != undefined){
+                                                                                  var clusterItem = json.listdedicatedclustersresponse.dedicatedcluster[0];
+                                                                                  if (clusterItem.domainid != null) {
+                                                                                       $.extend(item, clusterItem , { isdedicated: 'Yes' });
+                                                                                     }
+                                                                                   }
+                                                                                  else
+                                                                                     $.extend(item ,{ isdedicated: 'No' })
+
+                                                                                    },
+                                                                                  error:function(json){
+                                                                                     args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                                                                                      }
+                                                                                   });
+                                                                             args.response.success({
+                                                                                   actionFilter: clusterActionfilter,
+                                                                                   data: item
+                                                                                });
+
+                                                                           },
+
+                                                                            error:function(json){
+                                                                               args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+
+                                                                        }
+
+                 });
+              }
+          },
               nexusVswitch: {
                 title:'label.nexusVswitch',
                 listView: {
@@ -9996,7 +10590,55 @@
                     validation: { required: true },
                     isHidden: true,
                     isPassword: true
+                  }, 
+
+                   isDedicated:{
+                       label:'Dedicate',
+                       isBoolean:true,
+                       isChecked:false,
+                       docID:'helpDedicateResource'
+
+
+                   },
+
+                   domainId:{
+                      label:'Domain',
+                      isHidden:true,
+                      validation:{required:true},
+                      dependsOn:'isDedicated',
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+
+                      }
+                   },
+
+                   accountId:{
+                     label:'Account',
+                     isHidden:true,
+                     dependsOn:'isDedicated',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
                   },
+
                   //input_group="general" ends here
 
                   //input_group="VMWare" starts here
@@ -10113,21 +10755,56 @@
 										});									
                   }
                 }
-
+             
+                var hostId = null;
                 $.ajax({
                   url: createURL("addHost"),
                   type: "POST",
 									data: data,
                   success: function(json) {
                     var item = json.addhostresponse.host[0];
-                    args.response.success({
-                      data: item
-                    });
-                  },
-                  error: function(XMLHttpResponse) {
+                    hostId = json.addhostresponse.host[0].id;
+
+
+                       //EXPLICIT DEDICATION
+                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+                    }
+
+                    if(hostId != null){
+                      $.ajax({
+                         url:createURL("dedicateHost&hostId=" +hostId +"&domainId=" +args.data.domainId + array2.join("")),
+                         dataType:"json",
+                         success:function(json){
+                             var jid = json.dedicatehostresponse.host.jobid;
+                              args.response.success({
+                                 _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+
+                             data:item
+
+                            });
+
+                         },
+
+                         error:function(json){
+                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                         }
+                       });
+                   }
+                 },
+
+                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                     args.response.error(errorMsg);
                   }
+
                 });
               },
 
@@ -10174,6 +10851,122 @@
                   });
                 }
               },
+
+
+               dedicate:{
+                   label: 'Dedicate Host',
+                messages: {
+                  confirm: function(args) {
+                    return 'Do you really want to dedicate this host to a domain/account? ';
+                  },
+                  notification: function(args) {
+                    return 'Host Dedicated';
+                  }
+                },
+                createForm:{
+                   title:'Dedicate Host',
+                   fields:{
+                         domainId:{
+                      label:'Domain',
+                      validation:{required:true},
+                      select:function(args){
+                         $.ajax({
+                              url:createURL("listDomains&listAll=true"),
+                              dataType:"json",
+                              async:false,
+                               success: function(json) {
+                                  var domainObjs= json.listdomainsresponse.domain;
+                                  var items=[];
+
+                                  $(domainObjs).each(function() {
+                                  items.push({id:this.id ,description:this.name });
+                                  });
+
+                                  args.response.success({
+                                  data: items
+                                });
+                               }
+
+
+                        });
+                       }
+                   },
+                  accountId:{
+                     label:'Account',
+                     docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  }
+
+
+                     }
+                },
+
+                action: function(args) {
+                     //EXPLICIT DEDICATION
+                      var array2 = [];
+                      if(args.data.accountId != "")
+                        array2.push("&accountId=" +todb(args.data.accountId));
+
+                    $.ajax({
+                    url: createURL("dedicateHost&hostId=" + args.context.hosts[0].id + "&domainId=" +args.data.domainId + array2.join("") ),
+                    dataType: "json",
+                    success: function(json) {
+                       var jid = json.dedicatehostresponse.jobid;
+                            args.response.success({
+                               _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:hostActionfilter
+
+
+                          });
+                    }
+                  });
+                }
+
+              },
+
+              
+               release:{
+                label:'Release Dedicated Host',
+                messages:{
+                   confirm: function(args) {
+                    return 'Do you want to release this dedicated host ?';
+                  },
+                  notification: function(args) {
+                    return 'Host dedication released';
+                  }
+                },
+               action:function(args){
+                  $.ajax({
+                     url:createURL("releaseDedicatedHost&hostid=" + args.context.hosts[0].id),
+                     dataType:"json",
+                     async:true,
+                     success:function(json){
+                       var jid = json.releasededicatedhostresponse.jobid;
+                       args.response.success({
+                             _custom:
+                           {      jobId: jid
+                             },
+                            notification: {
+                                 poll: pollAsyncJobResult
+                              },
+                            actionFilter:hostActionfilter
+
+                       });
+                     },
+                    error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+
+               }
+              },
+
 
               enableMaintenanceMode: {
                 label: 'label.action.enable.maintenance.mode',
@@ -10393,20 +11186,49 @@
                     ipaddress: { label: 'label.ip.address' },
                     version: { label: 'label.version' },
                     disconnected: { label: 'label.last.disconnected' }
-                  }
+                  },
+
+                   {
+
+                   isdedicated:{label:'Dedicated'},
+                   domainid:{label:'Domain ID'}
+
+                   }
+
+
                 ],
 
                 dataProvider: function(args) {								  
-									$.ajax({
-										url: createURL("listHosts&id=" + args.context.hosts[0].id),
-										dataType: "json",
-										async: true,
-										success: function(json) {										  
-											var item = json.listhostsresponse.host[0];
-											args.response.success({
-												actionFilter: hostActionfilter,
-												data: item
-											});
+					        $.ajax({
+							url: createURL("listHosts&id=" + args.context.hosts[0].id),
+							dataType: "json",
+							async: true,
+							success: function(json) {										  
+								var item = json.listhostsresponse.host[0];
+                                                                $.ajax({
+                                                                  url:createURL("listDedicatedHosts&hostid=" +args.context.hosts[0].id),
+                                                                  dataType:"json",
+                                                                  async:false,
+                                                                  success:function(json){
+                                                                      if(json.listdedicatedhostsresponse.dedicatedhost != undefined){
+                                                                      var hostItem = json.listdedicatedhostsresponse.dedicatedhost[0];
+                                                                      if (hostItem.domainid != null) {
+                                                                             $.extend(item, hostItem , { isdedicated: 'Yes' });
+                                                                            }
+                                                                         }
+                                                                           else
+                                                                             $.extend(item ,{ isdedicated: 'No' })
+
+                                                                          },
+                                                                            error:function(json){
+                                                                                  args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                                                                                 }
+                                                                             });
+                                                                                 args.response.success({
+                                                                                   actionFilter: hostActionfilter,
+                                                                                   data: item
+                                                                                 }); 
+
 										}
 									});											
                 }
@@ -12355,6 +13177,12 @@
   var zoneActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = ['enableSwift'];
+
+     if(jsonObj.domainid != null)
+      allowedActions.push("release");
+    else
+    allowedActions.push("dedicate");
+
     allowedActions.push("edit");
     if(jsonObj.allocationstate == "Disabled")
       allowedActions.push("enable");
@@ -12379,7 +13207,15 @@
 
   var podActionfilter = function(args) {
     var podObj = args.context.item;
+    var dedicatedPodObj = args.context.podItem;
     var allowedActions = [];
+   
+     if(podObj.domainid != null)
+      allowedActions.push("release");
+     else
+      allowedActions.push("dedicate");
+
+
     allowedActions.push("edit");
     if(podObj.allocationstate == "Disabled")
       allowedActions.push("enable");
@@ -12418,6 +13254,11 @@
   var clusterActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
+     
+     if(jsonObj.domainid != null)
+      allowedActions.push("release");
+     else
+      allowedActions.push("dedicate");
 
     if(jsonObj.state == "Enabled") {//managed, allocation enabled
 		  allowedActions.push("unmanage");
@@ -12443,6 +13284,12 @@
   var hostActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
+
+     if(jsonObj.domainid != null)
+      allowedActions.push("release");
+     else
+      allowedActions.push("dedicate");
+
 
     if (jsonObj.resourcestate == "Enabled") {
       allowedActions.push("edit");

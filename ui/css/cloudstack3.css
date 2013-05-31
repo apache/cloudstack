@@ -11725,11 +11725,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: 0px -613px;
 }
 
-.restart .icon {
+.restart .icon,
+.release .icon {
   background-position: 0px -63px;
 }
 
-.restart:hover .icon {
+.restart:hover .icon,
+.release:hover .icon {
   background-position: 0px -645px;
 }
 
@@ -11885,14 +11887,16 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .create .icon,
 .createTemplate .icon,
 .enableSwift .icon,
-.addVM .icon {
+.addVM .icon,
+.dedicate .icon {
   background-position: -69px -63px;
 }
 
 .create:hover .icon,
 .createTemplate:hover .icon,
 .enableSwift:hover .icon,
-.addVM:hover .icon {
+.addVM:hover .icon,
+.dedicate:hover .icon {
   background-position: -69px -645px;
 }
 

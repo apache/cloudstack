@@ -16,6 +16,22 @@
 // under the License.
 cloudStack.docs = {
 
+  //Dedicate Resource
+
+   helpDedicateResource:{
+
+    desc:'Check this box to dedicate the resources to specific domain/account',
+    externalLink:''
+
+  },
+
+   helpAccountForDedication:{
+
+   desc:'Please enter an account name which belongs to the above selected domain in order to dedicate this resource to this account',
+   externalLink:''
+
+  },
+
 
  //Delete/archive events
   helpEventsDeleteType:{
