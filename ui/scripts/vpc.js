@@ -3002,7 +3002,7 @@
                 validation: { required: true },
                 dependsOn: 'zoneId',
                 select: function(args) {
-                  var networkSupportingLbExists = false;
+                  var publicLbNetworkExists = false;
                   $.ajax({
                     url: createURL('listNetworks'),
                     data: {
@@ -3010,11 +3010,35 @@
                       supportedservices: 'LB'
                     },
                     success: function(json) {
-                      var networkSupportingLbExists;
-                      if(json.listnetworksresponse.network != null && json.listnetworksresponse.network.length > 0)
-                        networkSupportingLbExists = true;
-                      else
-                        networkSupportingLbExists = false;
+                      var publicLbNetworkExists = false;
+                      
+                      var lbNetworks = json.listnetworksresponse.network;                      
+                      if(lbNetworks != null) {
+                        for(var i = 0; i < lbNetworks.length; i++) {
+                          var thisNetworkOfferingIncludesPublicLbService = false;                          
+                          $.ajax({
+                            url: createURL('listNetworkOfferings'),
+                            data: {
+                              id: lbNetworks[i].networkofferingid
+                            },
+                            async: false,
+                            success: function(json) {                             
+                              var networkOffering = json.listnetworkofferingsresponse.networkoffering[0];                              
+                              $(networkOffering.service).each(function(){                                
+                                var thisService = this;                                
+                                if(thisService.name == "Lb" && lbProviderMap.publicLb.vpc.indexOf(thisService.provider[0].name) != -1) {    
+                                  thisNetworkOfferingIncludesPublicLbService = true;
+                                  return false; //break $.each() loop
+                                }
+                              });   
+                            }
+                          });                          
+                          if(thisNetworkOfferingIncludesPublicLbService == true) {
+                            publicLbNetworkExists = true;
+                            break; //break for loop
+                          }    
+                        }   
+                      }      
 
                       $.ajax({
                         url: createURL('listNetworkOfferings'),
@@ -3029,19 +3053,19 @@
                         success: function(json) {
                           var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
 
-                          var items;
-                          if(networkSupportingLbExists == true) {
+                          //only one network(tier) is allowed to have PublicLb (i.e. provider is PublicLb provider like "VpcVirtualRouter", "Netscaler") in a VPC
+                          var items;                          
+                          if(publicLbNetworkExists == true) { //so, if a PublicLb network(tier) already exists in the vpc, exclude PublicLb network offerings from dropdown
                             items = $.grep(networkOfferings, function(networkOffering) {
-                              var includingPublicLbService = false;
+                              var thisNetworkOfferingIncludesPublicLbService = false;
                               $(networkOffering.service).each(function(){
-                                var thisService = this;
-                                //only one tier is allowed to have PublicLb provider in a VPC
+                                var thisService = this;                                
                                 if(thisService.name == "Lb" && lbProviderMap.publicLb.vpc.indexOf(thisService.provider[0].name) != -1) {                                  
-                                  includingPublicLbService = true;
+                                  thisNetworkOfferingIncludesPublicLbService = true;
                                   return false; //break $.each() loop
                                 }
                               });
-                              return !includingPublicLbService;
+                              return !thisNetworkOfferingIncludesPublicLbService;
                             });
                           }
                           else {
