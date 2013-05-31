@@ -66,4 +66,6 @@ public interface VmwareManager {
     String getPrivateVSwitchName(long dcId, HypervisorType hypervisorType);
     
     public String getRootDiskController();
+
+    boolean isLegacyZone(long dcId);
 }
