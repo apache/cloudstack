@@ -291,9 +291,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 if (!suitableVolumeStoragePools.isEmpty()) {
                     List<Host> suitableHosts = new ArrayList<Host>();
                     suitableHosts.add(host);
-
                     Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                            suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner));
+                            suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner,vmProfile, plan ,avoids));
                     if (potentialResources != null) {
                         Pod pod = _podDao.findById(host.getPodId());
                         Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -347,13 +346,13 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                                 vmProfile, lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
                         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
                         List<Volume> readyAndReusedVolumes = result.second();
+
                         // choose the potential pool for this VM for this host
                         if (!suitableVolumeStoragePools.isEmpty()) {
                             List<Host> suitableHosts = new ArrayList<Host>();
                             suitableHosts.add(host);
-
                             Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                                    suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner));
+                                    suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner,vmProfile, plan ,avoids));
                             if (potentialResources != null) {
                                 Pod pod = _podDao.findById(host.getPodId());
                                 Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -403,7 +402,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                         resetAvoidSet(plannerAvoidOutput, plannerAvoidInput);
 
                         dest = checkClustersforDestination(clusterList, vmProfile, plan, avoids, dc,
-                                getPlannerUsage(planner), plannerAvoidOutput);
+                                getPlannerUsage(planner, vmProfile, plan, avoids), plannerAvoidOutput);
                         if (dest != null) {
                             return dest;
                         }
@@ -510,9 +509,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
     }
 
-    private PlannerResourceUsage getPlannerUsage(DeploymentPlanner planner) {
+    private PlannerResourceUsage getPlannerUsage(DeploymentPlanner planner, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoids) throws InsufficientServerCapacityException {
         if (planner != null && planner instanceof DeploymentClusterPlanner) {
-            return ((DeploymentClusterPlanner) planner).getResourceUsage();
+            return ((DeploymentClusterPlanner) planner).getResourceUsage(vmProfile, plan, avoids);
         } else {
             return DeploymentPlanner.PlannerResourceUsage.Shared;
         }
