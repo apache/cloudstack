@@ -3353,7 +3353,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         // password should be set only on default network element
         if (password != null && nic.isDefaultNic()) {
-            final String encodedPassword = PasswordGenerator.rot13(password);
+            String encodedPassword = PasswordGenerator.rot13(password);
+            // We would unset password for BACKUP router in the RvR, to prevent user from accidently reset the 
+            // password again after BACKUP become MASTER
+            if (router.getIsRedundantRouter() && router.getRedundantState() != RedundantState.MASTER) {
+            	encodedPassword = PasswordGenerator.rot13("saved_password");
+            }
             SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
