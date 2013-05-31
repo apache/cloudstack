@@ -73,6 +73,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
@@ -368,6 +369,11 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public ClusterVSMMapDao clusterVSMMapDao() {
             return Mockito.mock(ClusterVSMMapDao.class);
+        }
+
+        @Bean
+        public LegacyZoneDao legacyZoneDao() {
+            return Mockito.mock(LegacyZoneDao.class);
         }
 
         @Bean

@@ -67,10 +67,12 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.vmware.LegacyZoneVO;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
+import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
@@ -147,6 +149,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject DataCenterDao _dcDao;
     @Inject VmwareDatacenterDao _vmwareDcDao;
     @Inject VmwareDatacenterZoneMapDao _vmwareDcZoneMapDao;
+    @Inject LegacyZoneDao _legacyZoneDao;
 
     String _mountParent;
     StorageLayer _storage;
@@ -1142,5 +1145,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                     + " is not a valid uri");
         }
         return uri;
+    }
+
+    @Override
+    public boolean isLegacyZone(long dcId) {
+        boolean isLegacyZone = false;
+        LegacyZoneVO legacyZoneVo = _legacyZoneDao.findById(dcId);
+        if (legacyZoneVo != null) {
+            isLegacyZone = true;
+        }
+        return isLegacyZone;
     }
 }

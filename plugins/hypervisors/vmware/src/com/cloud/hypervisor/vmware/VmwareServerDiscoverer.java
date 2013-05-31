@@ -149,7 +149,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		}
 
         Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
-        boolean legacyZone = false;
+        boolean legacyZone = _vmwareMgr.isLegacyZone(dcId);
         //Check if NOT a legacy zone.
         if (!legacyZone) {
             String updatedInventoryPath = validateCluster(dcId, url, username, password);
@@ -455,15 +455,15 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 
         if (!vCenterHost.equalsIgnoreCase(url.getHost())) {
             msg = "This cluster " + clusterName + " belongs to vCenter " + url.getHost()
-                + " .But this zone is associated with VMware DC from vCenter " + vCenterHost
+                + ". But this zone is associated with VMware DC from vCenter " + vCenterHost
                 + ". Make sure the cluster being added belongs to vCenter " + vCenterHost
-                + " and DC " + vmwareDcNameFromDb;
+                + " and VMware DC " + vmwareDcNameFromDb;
             s_logger.error(msg);
             throw new DiscoveryException(msg);
         } else if (!vmwareDcNameFromDb.equalsIgnoreCase(vmwareDcNameFromApi)) {
             msg = "This cluster " + clusterName + " belongs to VMware DC " + vmwareDcNameFromApi
                 + " .But this zone is associated with VMware DC " + vmwareDcNameFromDb
-                + ". Make sure the cluster being added belongs to DC " + vmwareDcNameFromDb
+                + ". Make sure the cluster being added belongs to VMware DC " + vmwareDcNameFromDb
                 + " in vCenter " + vCenterHost;
             s_logger.error(msg);
             throw new DiscoveryException(msg);
