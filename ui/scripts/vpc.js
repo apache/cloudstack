@@ -351,7 +351,8 @@
           id: 'internalLoadBalancers',
           fields: {
             name: { label: 'label.name' },
-            sourceipaddress: { label: 'Source IP Address' }                
+            sourceipaddress: { label: 'Source IP Address' },
+            algorithm: { label: 'label.algorithm' }   
           },
           dataProvider: function(args) {                
             $.ajax({
@@ -375,8 +376,8 @@
                   name: { label: 'label.name', validation: { required: true } },
                   description: { label: 'label.description', validation: { required: false } },
                   sourceipaddress: { label: 'Source IP Address', validation: { required: false } },
-                  sourceport: { label: 'sourceport', validation: { required: true } },
-                  instanceport: { label: 'instanceport', validation: { required: true } },
+                  sourceport: { label: 'Source Port', validation: { required: true } },
+                  instanceport: { label: 'Instance Port', validation: { required: true } },
                   algorithm: { 
                     label: 'label.algorithm',
                     validation: { required: true },
@@ -518,7 +519,12 @@
                     name: { label: 'label.name' }
                   },
                   {
-                    id: { label: 'label.id' }
+                    id: { label: 'label.id' },      
+                    description: { label: 'label.description' },
+                    sourceipaddress: { label: 'Source IP Address' },
+                    sourceport: { label: 'Source Port' },
+                    instanceport: { label: 'Instance Port' },
+                    algorithm: { label: 'label.algorithm' }                        
                   }
                 ],                    
                 dataProvider: function(args) {      
@@ -529,11 +535,18 @@
                     },
                     success: function(json) {     
                       var item = json.listloadbalancerssresponse.loadbalancer[0];
+                      
+                      //remove Rules tab and add sourceport, instanceport at Details tab because there is only one element in loadbalancerrul array property.
+                      item.sourceport = item.loadbalancerrule[0].sourceport;
+                      item.instanceport = item.loadbalancerrule[0].instanceport;
+                      
                       args.response.success({ data: item });                          
                     }
                   });                        
                 }
-              },                                              
+              },  
+              
+              /*
               rules: {
                 title: 'label.rules',
                 multiple: true,
@@ -555,7 +568,9 @@
                     }
                   }); 
                 }
-              } ,              
+              },    
+              */
+              
               assignedVms: {
                 title: 'Assigned VMs',
                 multiple: true,
