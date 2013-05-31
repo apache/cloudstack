@@ -373,16 +373,29 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     }
 
     @Override
-    @DB
     @ActionEvent(eventType = EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE, eventDescription =
             "Delete global load balancer rule")
     public boolean deleteGlobalLoadBalancerRule(DeleteGlobalLoadBalancerRuleCmd deleteGslbCmd) {
 
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
-
         long gslbRuleId =  deleteGslbCmd.getGlobalLoadBalancerId();
+
+        try {
+            revokeGslbRule(gslbRuleId, caller);
+        } catch (Exception e) {
+            s_logger.warn("Failed to delete GSLB rule due to" + e.getMessage());
+            return false;
+        }
+
+        return true;
+    }
+
+    @DB
+    private void revokeGslbRule(long gslbRuleId, Account caller) {
+
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
+
         if (gslbRule == null) {
             throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRuleId);
         }
@@ -428,10 +441,11 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                 _gslbLbMapDao.remove(gslbLbMap.getId());
             }
         }
+
         //remove the GSLB rule itself
         _gslbRuleDao.remove(gslbRuleId);
+
         txn.commit();
-        return success;
     }
 
     @Override
@@ -606,6 +620,19 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
         }
 
+        return true;
+    }
+
+    @Override
+    public boolean revokeAllGslbRulesForAccount(com.cloud.user.Account caller, long accountId)
+            throws com.cloud.exception.ResourceUnavailableException {
+        List<GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(accountId);
+        if (gslbRules != null && !gslbRules.isEmpty()) {
+            for (GlobalLoadBalancerRule gslbRule : gslbRules) {
+                revokeGslbRule(gslbRule.getId(), caller);
+            }
+        }
+        s_logger.debug("Successfully cleaned up GSLB rules for account id=" + accountId);
         return true;
     }
 

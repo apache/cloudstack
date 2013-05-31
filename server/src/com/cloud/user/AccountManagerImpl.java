@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -103,6 +104,7 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -235,6 +237,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private ResourceLimitDao _resourceLimitDao;
     @Inject
     private DedicatedResourceDao _dedicatedDao;
+    @Inject
+    private GlobalLoadBalancerRuleDao _gslbRuleDao;
+    @Inject
+    public com.cloud.region.ha.GlobalLoadBalancingRulesService _gslbService;
 
     private List<UserAuthenticator> _userAuthenticators;
     List<UserAuthenticator> _userPasswordEncoders;
@@ -551,6 +557,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     s_logger.error("Unable to delete user: " + user + " as a part of account " + account + " cleanup");
                     accountCleanupNeeded = true;
                 }
+            }
+
+            // delete global load balancer rules for the account.
+            List<org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(accountId);
+            if (gslbRules != null && !gslbRules.isEmpty()) {
+                _gslbService.revokeAllGslbRulesForAccount(caller, accountId);
             }
 
             //delete the account from project accounts
