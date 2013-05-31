@@ -2731,6 +2731,7 @@
                   isEditable: true
                 },
 
+                aclname:{label:'ACL name'},
                 aclid:{label:'ACL id'},
 
                 domain: { label: 'label.domain' },
@@ -2745,12 +2746,23 @@
                 async: true,
                 success: function(json) {
                   var jsonObj = json.listnetworksresponse.network[0];
-                  args.response.success(
-                    {
-                      actionFilter: cloudStack.actionFilter.guestNetwork,
-                      data: jsonObj
-                    }
-                  );
+               
+                     $.ajax({
+                       url:createURL("listNetworkACLLists&id=" + jsonObj.aclid),
+                       dataType:"json",
+                       success:function(json){
+                           var aclObj = json.listnetworkacllistsresponse.networkacllist[0];
+                           args.response.success({
+                              actionFilter: cloudStack.actionFilter.guestNetwork,
+                              data:$.extend(jsonObj , {aclname: aclObj.name})
+
+                          });
+                       },
+                       error:function(json){
+
+                           args.response.error(parseXMLHttpResponse(json));
+                        }
+                    });
                 }
               });
             }
