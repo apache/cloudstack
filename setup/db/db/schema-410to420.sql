@@ -1771,6 +1771,82 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 UPDATE `cloud`.`snapshots` set swift_id=null where swift_id=0;
 
+DROP TABLE IF EXISTS `cloud`.`vm_disk_statistics`;
+CREATE TABLE `cloud`.`vm_disk_statistics` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `data_center_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `volume_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `net_io_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `net_io_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `current_io_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `current_io_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_io_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_io_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `net_bytes_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `net_bytes_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `current_bytes_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `current_bytes_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_bytes_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_bytes_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  UNIQUE KEY `account_id` (`account_id`,`data_center_id`,`vm_id`,`volume_id`),
+  KEY `i_vm_disk_statistics__account_id` (`account_id`),
+  KEY `i_vm_disk_statistics__account_id_data_center_id` (`account_id`,`data_center_id`),
+  CONSTRAINT `fk_vm_disk_statistics__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+insert into `cloud`.`vm_disk_statistics`(data_center_id,account_id,vm_id,volume_id) 
+select volumes.data_center_id, volumes.account_id, vm_instance.id, volumes.id from volumes,vm_instance where vm_instance.vm_type="User" and vm_instance.state<>"Expunging" and volumes.instance_id=vm_instance.id order by vm_instance.id;
+
+DROP TABLE IF EXISTS `cloud_usage`.`vm_disk_statistics`;
+CREATE TABLE `cloud_usage`.`vm_disk_statistics` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `data_center_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `volume_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `net_io_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `net_io_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `current_io_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `current_io_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_io_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_io_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `net_bytes_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `net_bytes_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `current_bytes_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `current_bytes_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_bytes_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_bytes_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  UNIQUE KEY `account_id` (`account_id`,`data_center_id`,`vm_id`,`volume_id`)
+) ENGINE=InnoDB CHARSET=utf8;
+
+insert into `cloud_usage`.`vm_disk_statistics` select * from `cloud`.`vm_disk_statistics`;
+
+DROP TABLE IF EXISTS `cloud_usage`.`usage_vm_disk`;
+CREATE TABLE `cloud_usage`.`usage_vm_disk` (
+  `account_id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `volume_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `io_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `io_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_io_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_io_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `bytes_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `bytes_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_bytes_read` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `agg_bytes_write` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `event_time_millis` bigint(20) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`account_id`,`zone_id`,`vm_id`,`volume_id`,`event_time_millis`)
+) ENGINE=InnoDB CHARSET=utf8;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.stats.interval', 0, 'Interval (in seconds) to report vm disk statistics.');
+
 
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;

@@ -3397,6 +3397,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
             usageRecResponse.setNetworkId(network.getUuid());
 
+        } else if(usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE ||
+                  usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE){
+            //Device Type
+            usageRecResponse.setType(usageRecord.getType());
+            //VM Instance Id
+            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(vm.getUuid());
+            //Volume ID
+            VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(volume.getUuid());
+
         } else if(usageRecord.getUsageType() == UsageTypes.VOLUME){
             //Volume ID
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());

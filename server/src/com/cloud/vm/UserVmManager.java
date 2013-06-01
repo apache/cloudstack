@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.exception.*;
@@ -65,6 +66,8 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmServi
      */
     HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
     
+    HashMap<Long, List<VmDiskStatsEntry>> getVmDiskStatistics(long hostId, String hostName, List<Long> vmIds);
+    
     boolean deleteVmGroup(long groupId);
 
     boolean addInstanceToGroup(long userVmId, String group);
@@ -95,4 +98,6 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmServi
     boolean upgradeVirtualMachine(Long id, Long serviceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
+
+    void collectVmDiskStatistics (UserVmVO userVm);
 }

@@ -341,11 +341,13 @@
   <bean id="usageVMInstanceDaoImpl" class="com.cloud.usage.dao.UsageVMInstanceDaoImpl" />
   <bean id="usageVPNUserDaoImpl" class="com.cloud.usage.dao.UsageVPNUserDaoImpl" />
   <bean id="usageVolumeDaoImpl" class="com.cloud.usage.dao.UsageVolumeDaoImpl" />
+  <bean id="usageVmDiskDaoImpl" class="com.cloud.usage.dao.UsageVmDiskDaoImpl" />
   <bean id="userAccountDaoImpl" class="com.cloud.user.dao.UserAccountDaoImpl" />
   <bean id="userAccountJoinDaoImpl" class="com.cloud.api.query.dao.UserAccountJoinDaoImpl" />
   <bean id="userIpv6AddressDaoImpl" class="com.cloud.network.dao.UserIpv6AddressDaoImpl" />
   <bean id="userStatisticsDaoImpl" class="com.cloud.user.dao.UserStatisticsDaoImpl" />
   <bean id="userStatsLogDaoImpl" class="com.cloud.user.dao.UserStatsLogDaoImpl" />
+  <bean id="userVmDiskStatsDaoImpl" class="com.cloud.user.dao.VmDiskStatisticsDaoImpl" />
   <bean id="userVmCloneSettingDaoImpl" class="com.cloud.vm.dao.UserVmCloneSettingDaoImpl" />
   <bean id="userVmDaoImpl" class="com.cloud.vm.dao.UserVmDaoImpl" />
   <bean id="userVmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />

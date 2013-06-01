@@ -16,20 +16,15 @@
 // under the License.
 package com.cloud.vm;
 
-public interface VmStats {
-    // vm related stats
-    public double getCPUUtilization();
+public interface VmDiskStats {
+    // vm related disk stats
 
-    public double getNetworkReadKBs();
+    public Long getIORead();
 
-    public double getNetworkWriteKBs();
+    public Long getIOWrite();
     
-    public double getDiskReadIOs();
+    public Long getBytesRead();
 
-    public double getDiskWriteIOs();
-    
-    public double getDiskReadKBs();
-
-    public double getDiskWriteKBs();
+    public Long getBytesWrite();
 
 }

@@ -229,6 +229,7 @@ public enum Config {
 	NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),
 	CapacitySkipcountingHours("Advanced", ManagementServer.class, Integer.class, "capacity.skipcounting.hours", "3600", "Time (in seconds) to wait before release VM's cpu and memory when VM in stopped state", null),
 	VmStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.stats.interval", "60000", "The interval (in milliseconds) when vm stats are retrieved from agents.", null),
+	VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Time (in seconds) to wait before taking over a VM in transition state", null),
 	VmDestroyForcestop("Advanced", ManagementServer.class, Boolean.class, "vm.destroy.forcestop", "false", "On destroy, force-stop takes this value ", null),
 

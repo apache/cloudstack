@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -55,6 +56,13 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
     private static final String GET_LAST_ACCOUNT = "SELECT id FROM cloud_usage.account ORDER BY id DESC LIMIT 1";
     private static final String GET_LAST_USER_STATS = "SELECT id FROM cloud_usage.user_statistics ORDER BY id DESC LIMIT 1";
     private static final String GET_PUBLIC_TEMPLATES_BY_ACCOUNTID = "SELECT id FROM cloud.vm_template WHERE account_id = ? AND public = '1' AND removed IS NULL";
+
+    private static final String GET_LAST_VM_DISK_STATS = "SELECT id FROM cloud_usage.vm_disk_statistics ORDER BY id DESC LIMIT 1";
+    private static final String INSERT_VM_DISK_STATS = "INSERT INTO cloud_usage.vm_disk_statistics (id, data_center_id, account_id, vm_id, volume_id, net_io_read, net_io_write, current_io_read, " +
+               "current_io_write, agg_io_read, agg_io_write, net_bytes_read, net_bytes_write, current_bytes_read, current_bytes_write, agg_bytes_read, agg_bytes_write) " +
+                       " VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?, ?,?, ?, ?)";
+    private static final String UPDATE_VM_DISK_STATS = "UPDATE cloud_usage.vm_disk_statistics SET net_io_read=?, net_io_write=?, current_io_read=?, current_io_write=?, agg_io_read=?, agg_io_write=?, " +
+               "net_bytes_read=?, net_bytes_write=?, current_bytes_read=?, current_bytes_write=?, agg_bytes_read=?, agg_bytes_write=?  WHERE id=?";
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
@@ -270,4 +278,101 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         }
         return templateList;
     }
+
+       @Override
+       public Long getLastVmDiskStatsId() {
+               Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        String sql = GET_LAST_VM_DISK_STATS;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return Long.valueOf(rs.getLong(1));
+            }
+        } catch (Exception ex) {
+            s_logger.error("error getting last vm disk stats id", ex);
+        }
+        return null;
+       }
+
+       @Override
+       public void updateVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats) {
+               Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            String sql = UPDATE_VM_DISK_STATS;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql);  // in reality I just want CLOUD_USAGE dataSource connection
+            for (VmDiskStatisticsVO vmDiskStat : vmDiskStats) {
+                pstmt.setLong(1, vmDiskStat.getNetIORead());
+                pstmt.setLong(2, vmDiskStat.getNetIOWrite());
+                pstmt.setLong(3, vmDiskStat.getCurrentIORead());
+                pstmt.setLong(4, vmDiskStat.getCurrentIOWrite());
+                pstmt.setLong(5, vmDiskStat.getAggIORead());
+                pstmt.setLong(6, vmDiskStat.getAggIOWrite());
+                pstmt.setLong(7, vmDiskStat.getNetBytesRead());
+                pstmt.setLong(8, vmDiskStat.getNetBytesWrite());
+                pstmt.setLong(9, vmDiskStat.getCurrentBytesRead());
+                pstmt.setLong(10, vmDiskStat.getCurrentBytesWrite());
+                pstmt.setLong(11, vmDiskStat.getAggBytesRead());
+                pstmt.setLong(12, vmDiskStat.getAggBytesWrite());
+                pstmt.setLong(13, vmDiskStat.getId());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error saving vm disk stats to cloud_usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+
+       }
+
+       @Override
+       public void saveVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats) {
+               Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            String sql = INSERT_VM_DISK_STATS;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
+            for (VmDiskStatisticsVO vmDiskStat : vmDiskStats) {
+                pstmt.setLong(1, vmDiskStat.getId());
+                pstmt.setLong(2, vmDiskStat.getDataCenterId());
+                pstmt.setLong(3, vmDiskStat.getAccountId());
+                if(vmDiskStat.getVmId() != null){
+                    pstmt.setLong(4, vmDiskStat.getVmId());
+                } else {
+                    pstmt.setNull(4, Types.BIGINT);
+                }
+                if(vmDiskStat.getVolumeId() != null){
+                    pstmt.setLong(5, vmDiskStat.getVolumeId());
+                } else {
+                    pstmt.setNull(5, Types.BIGINT);
+                }
+                pstmt.setLong(6, vmDiskStat.getNetIORead());
+                pstmt.setLong(7, vmDiskStat.getNetIOWrite());
+                pstmt.setLong(8, vmDiskStat.getCurrentIORead());
+                pstmt.setLong(9, vmDiskStat.getCurrentIOWrite());
+                pstmt.setLong(10, vmDiskStat.getAggIORead());
+                pstmt.setLong(11, vmDiskStat.getAggIOWrite());
+                pstmt.setLong(12, vmDiskStat.getNetBytesRead());
+                pstmt.setLong(13, vmDiskStat.getNetBytesWrite());
+                pstmt.setLong(14, vmDiskStat.getCurrentBytesRead());
+                pstmt.setLong(15, vmDiskStat.getCurrentBytesWrite());
+                pstmt.setLong(16, vmDiskStat.getAggBytesRead());
+                pstmt.setLong(17, vmDiskStat.getAggBytesWrite());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error saving vm disk stats to cloud_usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+
+       }
 }

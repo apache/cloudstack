@@ -63,6 +63,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
+import org.libvirt.DomainBlockStats;
 import org.libvirt.DomainInfo;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
@@ -99,6 +100,8 @@ import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVmDiskStatsAnswer;
+import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -145,6 +148,7 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -1117,6 +1121,8 @@ ServerResource {
                 return execute((StopCommand) cmd);
             } else if (cmd instanceof GetVmStatsCommand) {
                 return execute((GetVmStatsCommand) cmd);
+            } else if (cmd instanceof GetVmDiskStatsCommand) {
+                return execute((GetVmDiskStatsCommand) cmd);
             } else if (cmd instanceof RebootRouterCommand) {
                 return execute((RebootRouterCommand) cmd);
             } else if (cmd instanceof RebootCommand) {
@@ -3007,6 +3013,26 @@ ServerResource {
         }
     }
 
+    protected GetVmDiskStatsAnswer execute(GetVmDiskStatsCommand cmd) {
+        List<String> vmNames = cmd.getVmNames();
+        try {
+            HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsNameMap = new HashMap<String, List<VmDiskStatsEntry>>();
+            Connect conn = LibvirtConnection.getConnection();
+            for (String vmName : vmNames) {
+                List<VmDiskStatsEntry> statEntry = getVmDiskStat(conn, vmName);
+                if (statEntry == null) {
+                    continue;
+                }
+
+                vmDiskStatsNameMap.put(vmName, statEntry);
+            }
+            return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(), vmDiskStatsNameMap);
+        } catch (LibvirtException e) {
+            s_logger.debug("Can't get vm disk stats: " + e.toString());
+            return new GetVmDiskStatsAnswer(cmd, null, null, null);
+        }
+    }
+
     protected GetVmStatsAnswer execute(GetVmStatsCommand cmd) {
         List<String> vmNames = cmd.getVmNames();
         try {
@@ -4512,10 +4538,46 @@ ServerResource {
         }
     }
 
+    private List<VmDiskStatsEntry> getVmDiskStat(Connect conn, String vmName)
+            throws LibvirtException {
+        Domain dm = null;
+        try {
+            dm = getDomain(conn, vmName);
+
+            List<VmDiskStatsEntry> stats = new ArrayList<VmDiskStatsEntry>();
+
+            List<DiskDef> disks = getDisks(conn, vmName);
+
+            for (DiskDef disk : disks) {
+                DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
+                String path = disk.getDiskPath(); // for example, path = /mnt/pool_uuid/disk_path/
+                String diskPath = null;
+                if (path != null) {
+                    String[] token = path.split("/");
+                    if (token.length > 3) {
+                        diskPath = token[3];
+                        VmDiskStatsEntry stat = new VmDiskStatsEntry(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
+                        stats.add(stat);
+                    }
+                }
+            }
+
+            return stats;
+        } finally {
+            if (dm != null) {
+                dm.free();
+            }
+        }
+    }
+
     private class vmStats {
         long _usedTime;
         long _tx;
         long _rx;
+        long _io_rd;
+        long _io_wr;
+        long _bytes_rd;
+        long _bytes_wr;
         Calendar _timestamp;
     }
 
@@ -4572,10 +4634,44 @@ ServerResource {
                     stats.setNetworkWriteKBs(deltatx / 1024);
             }
 
+            /* get disk stats */
+            List<DiskDef> disks = getDisks(conn, vmName);
+            long io_rd = 0;
+            long io_wr = 0;
+            long bytes_rd = 0;
+            long bytes_wr = 0;
+            for (DiskDef disk : disks) {
+                DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
+                io_rd += blockStats.rd_req;
+                io_wr += blockStats.wr_req;
+                bytes_rd += blockStats.rd_bytes;
+                bytes_wr += blockStats.wr_bytes;
+            }
+            
+            if (oldStats != null) {
+                long deltaiord = io_rd - oldStats._io_rd;
+                if (deltaiord > 0)
+                    stats.setDiskReadIOs(deltaiord);
+                long deltaiowr = io_wr - oldStats._io_wr;
+                if (deltaiowr > 0)
+                    stats.setDiskWriteIOs(deltaiowr);
+                long deltabytesrd = bytes_rd - oldStats._bytes_rd;
+                if (deltabytesrd > 0)
+                    stats.setDiskReadKBs(deltabytesrd / 1024);
+                long deltabyteswr = bytes_wr - oldStats._bytes_wr;
+                if (deltabyteswr > 0)
+                    stats.setDiskWriteKBs(deltabyteswr / 1024);
+            }
+            
+            /* save to Hashmap */
             vmStats newStat = new vmStats();
             newStat._usedTime = info.cpuTime;
             newStat._rx = rx;
             newStat._tx = tx;
+            newStat._io_rd = io_rd;
+            newStat._io_wr = io_wr;
+            newStat._bytes_rd = bytes_rd;
+            newStat._bytes_wr = bytes_wr;
             newStat._timestamp = now;
             _vmStats.put(vmName, newStat);
             return stats;
