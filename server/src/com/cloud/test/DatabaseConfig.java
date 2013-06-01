@@ -967,6 +967,12 @@ public class DatabaseConfig {
         }
         DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace , tags, false);
         diskOffering.setUseLocalStorage(local);
+        Long bytesRate = Long.parseLong(_currentObjectParams.get("bytesRate"));
+        if (bytesRate != null && (bytesRate > 0))
+            diskOffering.setBytesRate(bytesRate);
+        Long iopsRate = Long.parseLong(_currentObjectParams.get("iopsRate"));
+        if (iopsRate != null && (iopsRate > 0))
+            diskOffering.setIopsRate(iopsRate);
         DiskOfferingDaoImpl offering = ComponentContext.inject(DiskOfferingDaoImpl.class);
         try {
             offering.persist(diskOffering);

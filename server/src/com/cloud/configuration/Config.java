@@ -232,6 +232,8 @@ public enum Config {
 	VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Time (in seconds) to wait before taking over a VM in transition state", null),
 	VmDestroyForcestop("Advanced", ManagementServer.class, Boolean.class, "vm.destroy.forcestop", "false", "On destroy, force-stop takes this value ", null),
+        VmDiskThrottlingIORate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.iops_rate", "0", "Default disk I/O rate in requests per second allowed in User vm's disk.", null),
+        VmDiskThrottlingBytesRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.bytes_rate", "0", "Default disk I/O rate in bytes per second allowed in User vm's disk.", null),
 
 	ControlCidr("Advanced", ManagementServer.class, String.class, "control.cidr", "169.254.0.0/16", "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", null),
 	ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),

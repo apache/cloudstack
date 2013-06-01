@@ -90,6 +90,11 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name="sort_key")
     int sortKey;
 
+    @Column(name="bytes_rate")
+    long bytesRate;
+
+    @Column(name="iops_rate")
+    long iopsRate;
 
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
@@ -329,5 +334,20 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
         this.volatileVm = volatileVm;
     }
 
+    public void setBytesRate(long bytesRate) {
+        this.bytesRate = bytesRate;
+    }
+
+    public long getBytesRate() {
+        return bytesRate;
+    }
+
+    public void setIopsRate(long iopsRate) {
+        this.iopsRate = iopsRate;
+    }
+
+    public long getIopsRate() {
+        return iopsRate;
+    }
 
 }

@@ -29,6 +29,8 @@ public class AttachVolumeCommand extends Command {
 	String volumeName;
 	Long deviceId;
 	String chainInfo;
+    long bytesRate;
+    long iopsRate;
 
 	protected AttachVolumeCommand() {
 	}
@@ -95,5 +97,21 @@ public class AttachVolumeCommand extends Command {
 
     public String getChainInfo() {
     	return chainInfo;
+    }
+    
+    public void setBytesRate(long bytesRate) {
+        this.bytesRate = bytesRate;
+    }
+    
+    public long getBytesRate() {
+        return bytesRate;
+    }
+    
+    public void setIopsRate(long iopsRate) {
+        this.iopsRate = iopsRate;
+    }
+    
+    public long getIopsRate() {
+        return iopsRate;
     }
 }

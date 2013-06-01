@@ -290,6 +290,10 @@ ALTER TABLE `cloud`.`nics` ADD COLUMN `display_nic` tinyint(1) NOT NULL DEFAULT 
 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `display_offering` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should disk offering be displayed to the end user';
 
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_rate` bigint(20) unsigned DEFAULT 0;
+
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `iops_rate` bigint(20) unsigned DEFAULT 0;
+
 CREATE TABLE `cloud`.`volume_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `volume_id` bigint unsigned NOT NULL COMMENT 'volume id',
@@ -762,6 +766,8 @@ CREATE VIEW `cloud`.`volume_view` AS
         disk_offering.display_text disk_offering_display_text,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.bytes_rate,
+        disk_offering.iops_rate,
         storage_pool.id pool_id,
         storage_pool.uuid pool_uuid,
         storage_pool.name pool_name,
@@ -1070,6 +1076,8 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.bytes_rate,
+        disk_offering.iops_rate,
         service_offering.cpu,
         service_offering.speed,
         service_offering.ram_size,
@@ -1376,6 +1384,8 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.bytes_rate,
+        disk_offering.iops_rate,
         disk_offering.sort_key,
         disk_offering.type,
 	disk_offering.display_offering,
@@ -1616,6 +1626,8 @@ CREATE VIEW `cloud`.`volume_view` AS
         disk_offering.display_text disk_offering_display_text,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.bytes_rate,
+        disk_offering.iops_rate,
         storage_pool.id pool_id,
         storage_pool.uuid pool_uuid,
         storage_pool.name pool_name,
@@ -1846,7 +1858,8 @@ CREATE TABLE `cloud_usage`.`usage_vm_disk` (
 ) ENGINE=InnoDB CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.stats.interval', 0, 'Interval (in seconds) to report vm disk statistics.');
-
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.iops_rate', 0, 'Default disk I/O rate in requests per second allowed in User vm\'s disk. ');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.bytes_rate', 0, 'Default disk I/O rate in bytes per second allowed in User vm\'s disk. ');
 
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;
