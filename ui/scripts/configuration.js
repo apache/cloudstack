@@ -1215,12 +1215,57 @@
                       $availability.hide();
                     }
 
+                    
+                    //*** LB providers ***
+                    var $lbProvider = args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select');
+                    var $lbProviderOptions = $lbProvider.find('option');
 										//when useVpc is checked and service.Lb.isEnabled is checked                    
                     if($useVpcCb.is(':checked') && $("input[name='service.Lb.isEnabled']").is(":checked") == true) {  
-                      $lbType.css('display', 'inline-block');    
+                      $lbType.css('display', 'inline-block');   
+                                                                                                         
+                      if($lbType.find('select').val() == 'publicLb') { //disable all providers except the ones in lbProviderMap.publicLb.vpc => ["VpcVirtualRouter", "Netscaler"] 
+                        for(var i = 0; i < $lbProviderOptions.length; i++ ) {
+                          var $option = $lbProviderOptions.eq(i);                           
+                          var supportedProviders = lbProviderMap.publicLb.vpc;                            
+                          var thisOpionIsSupported = false;
+                          for(var k = 0; k < supportedProviders.length; k++ ) {
+                            if($option.val() == supportedProviders[k]) {
+                              thisOpionIsSupported = true;
+                              break;
+                            }                               
+                          }   
+                          if(thisOpionIsSupported == true) {
+                            $option.attr('disabled', false);
+                          }
+                          else {
+                            $option.attr('disabled', true);
+                          }                            
+                        }                                                    
+                      }                          
+                      else if($lbType.find('select').val() == 'internalLb') { //disable all providers except the ones in lbProviderMap.internalLb.vpc => ["InternalLbVm"]
+                        for(var i = 0; i < $lbProviderOptions.length; i++ ) {
+                          var $option = $lbProviderOptions.eq(i);                           
+                          var supportedProviders = lbProviderMap.internalLb.vpc;                            
+                          var thisOpionIsSupported = false;                            
+                          for(var k = 0; k < supportedProviders.length; k++ ) {
+                            if($option.val() == supportedProviders[k]) {
+                              thisOpionIsSupported = true;
+                              break;
+                            }                               
+                          }  
+                          if(thisOpionIsSupported == true) {
+                            $option.attr('disabled', false);
+                          }
+                          else {
+                            $option.attr('disabled', true);
+                          }                            
+                        }                             
+                      }     
+                      
+                      $lbProvider.val($lbProvider.find('option:first'));     
                     }
                     else {
-                      $lbType.hide();
+                      $lbType.hide();                      
                     }
                     
 										//when service(s) has Virtual Router as provider.....							
@@ -1521,56 +1566,7 @@
                       args.response.success({data: [
                         {id: 'publicLb', description: 'Public LB'}, 
                         {id: 'internalLb', description: 'Internal LB'}
-                      ]}); 
-                                                       
-                      args.$select.change(function() {  
-                        if($(this).is(':visible') == false) 
-                          return; //if lbType is not visible, do nothing.
-                        
-                        var $lbProvider = $(this).closest('form').find('.form-item[rel=\"service.Lb.provider\"]').find('select');
-                        var $lbProviderOptions = $lbProvider.find('option');
-                                                                        
-                        if($(this).val() == 'publicLb') { //disable all providers except the ones in lbProviderMap.publicLb.vpc => ["VpcVirtualRouter", "Netscaler"] 
-                          for(var i = 0; i < $lbProviderOptions.length; i++ ) {
-                            var $option = $lbProviderOptions.eq(i);                           
-                            var supportedProviders = lbProviderMap.publicLb.vpc;                            
-                            var thisOpionIsSupported = false;
-                            for(var k = 0; k < supportedProviders.length; k++ ) {
-                              if($option.val() == supportedProviders[k]) {
-                                thisOpionIsSupported = true;
-                                break;
-                              }                               
-                            }   
-                            if(thisOpionIsSupported == true) {
-                              $option.attr('disabled', false);
-                            }
-                            else {
-                              $option.attr('disabled', true);
-                            }                            
-                          }                                                    
-                        }                          
-                        else if($(this).val() == 'internalLb') { //disable all providers except the ones in lbProviderMap.internalLb.vpc => ["InternalLbVm"]
-                          for(var i = 0; i < $lbProviderOptions.length; i++ ) {
-                            var $option = $lbProviderOptions.eq(i);                           
-                            var supportedProviders = lbProviderMap.internalLb.vpc;                            
-                            var thisOpionIsSupported = false;                            
-                            for(var k = 0; k < supportedProviders.length; k++ ) {
-                              if($option.val() == supportedProviders[k]) {
-                                thisOpionIsSupported = true;
-                                break;
-                              }                               
-                            }  
-                            if(thisOpionIsSupported == true) {
-                              $option.attr('disabled', false);
-                            }
-                            else {
-                              $option.attr('disabled', true);
-                            }                            
-                          }                             
-                        }     
-                        
-                        $lbProvider.val($lbProvider.find('option:first'));                        
-                      });
+                      ]});                       
                     }
                   },
                                     
