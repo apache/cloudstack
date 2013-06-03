@@ -113,6 +113,64 @@
       return $tier;
     },
 
+    connectorLine: function(args) {
+      var $connector = $('<div></div>').addClass('connector-line');
+      var $router = args.$router;
+      var $tier = args.$tier;
+      var $connectorStart = $('<div></div>').addClass('connector-start');
+      var $connectorMid = $('<div></div>').addClass('connector-mid');
+      var $connectorEnd = $('<div></div>').addClass('connector-end');
+
+      $connector.append($connectorStart, $connectorMid, $connectorEnd);
+
+      var posStartOffsetLeft = 5;
+      var posStartOffsetTop = 10;
+      var posStart = {
+        top: $router.position().top + ($router.outerHeight() / 2 + ($tier.index() * posStartOffsetTop)),
+        left: $router.position().left + $router.outerWidth()
+      };
+      var posStartWidth = 60 - (($tier.index() + 1) * posStartOffsetLeft);
+
+      var posEndOffset = 15;
+      var posEnd = {
+        top: $tier.position().top + ($tier.outerHeight() / 2),
+        left: posStart.left + posStartWidth + posEndOffset
+      };
+      var posEndWidth = Math.abs($tier.position().left -
+                                 (posStart.left + posStartWidth)) - posEndOffset;
+
+      // Start line (next to router)
+      $connectorStart.css({
+        top: posStart.top,
+        left: posStart.left
+      });
+      $connectorStart.width(posStartWidth);
+
+      // End line (next to tier)
+      $connectorEnd.css({
+        top: posEnd.top,
+        left: posEnd.left
+      });
+      $connectorEnd.width(posEndWidth);
+
+      // Mid line (connect start->end)
+      if (posStart.top > posEnd.top) { // Tier above router
+        $connectorMid.css({
+          top: posEnd.top,
+          left: posEnd.left
+        });
+        $connectorMid.height(posStart.top - posEnd.top);
+      } else { // Tier below router
+        $connectorMid.css({
+          top: posStart.top,
+          left: posStart.left + posStartWidth + posEndOffset
+        });
+        $connectorMid.height(posEnd.top - posStart.top);
+      }
+
+      return $connector;
+    },
+
     router: function(args) {
       var $router = elems.tier({
         context: args.context,
@@ -171,7 +229,7 @@
           var section = cloudStack.vpc.sections[id];
           var $section = $('<div>');
           var $loading = $('<div>').addClass('loading-overlay');
-          
+
           if ($.isFunction(section)) {
             section = cloudStack.vpc.sections[id]();
           }
@@ -193,7 +251,7 @@
 
                 $section.appendTo($panel);
               }
-            });            
+            });
           };
 
           if (before) {
@@ -262,9 +320,16 @@
           response: {
             success: function(data) {
               var tiers = data.tiers;
+              var $router;
               var $placeholder = elems.tierPlaceholder({
                 context: context
               });
+
+              // Router
+              $router = elems.router({
+                context: context,
+                dashboardItems: data.routerDashboard
+              }).appendTo($chart);
 
               $(tiers).map(function(index, tier) {
                 var $tier = elems.tier({
@@ -273,6 +338,14 @@
                   dashboardItems: tier._dashboardItems
                 });
                 $tier.appendTo($tiers);
+
+                // Connect tier to router via line
+                //
+                // -- Needs to execute after chart generation is complete,
+                //    so that chart elements have positioning in place.
+                $chart.bind('cloudStack.vpc.chartReady', function() {
+                  elems.connectorLine({ $tier: $tier, $router: $router }).appendTo($chart);
+                });
               });
 
               // Add placeholder tier
@@ -289,12 +362,6 @@
               if (args.complete) {
                 args.complete($chart);
               }
-
-              // Router
-              elems.router({
-                context: context,
-                dashboardItems: data.routerDashboard
-              }).appendTo($chart);
             }
           }
         });
@@ -303,6 +370,7 @@
           chart({
             complete: function($newChart) {
               $chart.replaceWith($newChart);
+              $newChart.trigger('cloudStack.vpc.chartReady');
             }
           });
         });
@@ -314,7 +382,11 @@
         title: vpcItem.displaytext ? vpcItem.displaytext : vpcItem.name,
         maximizeIfSelected: true,
         complete: function($panel) {
-          var $chart = chart();
+          var $chart = chart({
+            complete: function($chart) {
+              $chart.trigger('cloudStack.vpc.chartReady');
+            }
+          });
 
           $chart.appendTo($panel);
         }
