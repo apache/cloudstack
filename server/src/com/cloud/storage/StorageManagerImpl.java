@@ -777,23 +777,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     "zone id can't be null, if scope is zone");
         }
 
-        String hypervisor = cmd.getHypervisor();
-        HypervisorType hypervisorType;
-        if (hypervisor != null) {
-            try {
-                hypervisorType = HypervisorType.getType(hypervisor);
-            } catch (Exception e) {
-                throw new InvalidParameterValueException("invalid hypervisor type" + hypervisor);
+        HypervisorType hypervisorType = HypervisorType.KVM;
+        if (scopeType == ScopeType.ZONE) {
+            String hypervisor = cmd.getHypervisor();
+            if (hypervisor != null) {
+                try {
+                    hypervisorType = HypervisorType.getType(hypervisor);
+                } catch (Exception e) {
+                    throw new InvalidParameterValueException("invalid hypervisor type" + hypervisor);
+                }
+            } else {
+                throw new InvalidParameterValueException(
+                        "Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
-        } else {
-            throw new InvalidParameterValueException(
-                    "Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
-        }
-
-        if (scopeType == ScopeType.ZONE &&
-                (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware)) {
-            throw new InvalidParameterValueException(
-                    "zone wide storage pool is not suported for hypervisor type " + hypervisor);
+            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware) {
+                throw new InvalidParameterValueException(
+                        "zone wide storage pool is not suported for hypervisor type " + hypervisor);
+            }
         }
 
         Map ds = cmd.getDetails();
