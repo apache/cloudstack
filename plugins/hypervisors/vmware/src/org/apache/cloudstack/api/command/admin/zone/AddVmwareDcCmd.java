@@ -99,6 +99,7 @@ public class AddVmwareDcCmd extends BaseCmd {
                 response.setId(result.getUuid());
                 response.setName(result.getVmwareDatacenterName());
                 response.setResponseName(getCommandName());
+                response.setObjectName("vmwaredc");
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VMware Datacenter to zone.");
             }
