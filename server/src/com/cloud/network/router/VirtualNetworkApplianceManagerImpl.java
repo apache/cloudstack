@@ -3395,10 +3395,16 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.getAliasIpForVm(router.getId());
         List<DnsmasqTO> ipList = new ArrayList<DnsmasqTO>();
 
-        NicVO router_guest_ip = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
-        ipList.add(new DnsmasqTO(router_guest_ip.getIp4Address(),router_guest_ip.getGateway(),router_guest_ip.getNetmask()));
+        NicVO router_guest_nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
+        String cidr = NetUtils.getCidrFromGatewayAndNetmask(router_guest_nic.getGateway(), router_guest_nic.getNetmask());
+        String[] cidrPair = cidr.split("\\/");
+        String cidrAddress = cidrPair[0];
+        long cidrSize = Long.parseLong(cidrPair[1]);
+        String startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
+
+        ipList.add(new DnsmasqTO(router_guest_nic.getIp4Address(),router_guest_nic.getGateway(),router_guest_nic.getNetmask(), startIpOfSubnet));
         for (NicIpAliasVO ipAliasVO : ipAliasVOList) {
-             DnsmasqTO dnsmasqTO = new DnsmasqTO(ipAliasVO.getStartIpOfSubnet(), ipAliasVO.getGateway(), ipAliasVO.getNetmask());
+             DnsmasqTO dnsmasqTO = new DnsmasqTO(ipAliasVO.getIp4Address(), ipAliasVO.getGateway(), ipAliasVO.getNetmask(), ipAliasVO.getStartIpOfSubnet());
              ipList.add(dnsmasqTO);
         }
         DataCenterVO dcvo = _dcDao.findById(router.getDataCenterId());

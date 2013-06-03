@@ -71,7 +71,7 @@ import java.util.List;
                                            "conf-dir=/etc/dnsmasq.d\n",
                                            "dhcp-option=tag:net1,3,ipaddress\n",
                                            "dhcp-option=tag:net1,1,netmask\n",
-                                           "dhcp-option=6,10.147.28.149,8.8.8.8\n",
+                                           "dhcp-option=6,router_ip,external_dns\n",
                                            "dhcp-optsfile=/etc/dhcpopts.txt\n",
 
 
@@ -85,11 +85,21 @@ import java.util.List;
          String netmask="";
          String domain= dnsMasqconfigcmd.getDomain();
          String dnsServers="";
+         String dns_external="";
+         if (dnsMasqconfigcmd.getDns1()!= null) {
+             dns_external = dnsMasqconfigcmd.getDns1()+",";
+         }
+         if (dnsMasqconfigcmd.getDns2() != null) {
+             dns_external = dns_external+dnsMasqconfigcmd.getDns2()+",";
+         }
+         dns_external = dns_external + "*";
+         dns_external = dns_external.replace(",*","");
          int i=0;
          for (; i< dnsmasqTOs.size(); i++) {
-              range=range + "dhcp-range=set:range"+i+","+dnsmasqTOs.get(i).getRouterIp()+",static\n";
+              range=range + "dhcp-range=set:range"+i+","+dnsmasqTOs.get(i).getStartIpOfSubnet()+",static\n";
               gateway=gateway +"dhcp-option=tag:range"+i+",3,"+dnsmasqTOs.get(i).getGateway()+"\n";
               netmask=netmask +"dhcp-option=tag:range"+i+",1,"+dnsmasqTOs.get(i).getNetmask()+"\n";
+              dnsServers=dnsServers+"dhcp-option=tag:range"+i+",6,"+dnsmasqTOs.get(i).getRouterIp()+","+dns_external+"\n";
          }
          dnsMasqconf.set(12, "domain="+domain+"\n");
          dnsMasqconf.set(14, "domain="+domain+"\n");
@@ -97,21 +107,7 @@ import java.util.List;
          dnsMasqconf.set(18, range);
          dnsMasqconf.set(22, gateway);
          dnsMasqconf.set(23, netmask);
-         if (dnsMasqconfigcmd.getInternal_dns1() != null) {
-             dnsServers = dnsServers+dnsMasqconfigcmd.getInternal_dns1()+",";
-         }
-         if (dnsMasqconfigcmd.getInternal_dns2() != null) {
-             dnsServers = dnsServers+dnsMasqconfigcmd.getInternal_dns2()+",";
-         }
-         if (dnsMasqconfigcmd.getDns1() != null) {
-             dnsServers = dnsServers+dnsMasqconfigcmd.getDns1()+",";
-         }
-         if (dnsMasqconfigcmd.getDns2() != null) {
-             dnsServers = dnsServers+dnsMasqconfigcmd.getDns2()+",";
-         }
-         dnsServers = dnsServers +"*";
-         dnsServers = dnsServers.replace(",*", "");
-         dnsMasqconf.set(24,"dhcp-option=6,"+dnsServers);
+         dnsMasqconf.set(24,dnsServers);
          return dnsMasqconf.toArray( new  String[dnsMasqconf.size()]);
      }
 
