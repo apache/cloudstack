@@ -347,7 +347,7 @@ enable_irqbalance() {
   local enabled=$1
   local proc=0
 
-  $proc = $(cat /proc/cpuinfo | grep "processor" | wc -l)
+  $proc=$(cat /proc/cpuinfo | grep "processor" | wc -l)
   if [ $proc -le 1 ]  && [ $enabled -eq 1 ]
   then
     enabled=0
