@@ -36,3 +36,11 @@ done
 export CLASSPATH
 PATH=/sbin:/usr/sbin:$PATH
 export PATH
+
+#catalina.out owned by `cloud` not `root`
+if [ ! -f $TOMCAT_LOG ]; then
+    touch $TOMCAT_LOG
+    chown $TOMCAT_USER:$TOMCAT_USER $TOMCAT_LOG
+else
+    chown $TOMCAT_USER:$TOMCAT_USER $TOMCAT_LOG
+fi
