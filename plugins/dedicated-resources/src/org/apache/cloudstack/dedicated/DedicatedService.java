@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.dedicated;
 
-import java.util.List;
-
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.DedicatedResources;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.commands.ListDedicatedClustersCmd;
 import org.apache.cloudstack.api.commands.ListDedicatedHostsCmd;
 import org.apache.cloudstack.api.commands.ListDedicatedPodsCmd;
@@ -26,12 +28,10 @@ import org.apache.cloudstack.api.response.DedicateClusterResponse;
 import org.apache.cloudstack.api.response.DedicateHostResponse;
 import org.apache.cloudstack.api.response.DedicatePodResponse;
 import org.apache.cloudstack.api.response.DedicateZoneResponse;
-import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.DedicatedResources;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.PluggableService;
 
-public interface DedicatedService extends PluggableService{
+import java.util.List;
+
+public interface DedicatedService extends PluggableService {
 
     DedicatePodResponse createDedicatePodResponse(DedicatedResources resource);
 

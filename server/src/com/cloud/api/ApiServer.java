@@ -217,8 +217,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
-        for(PluggableService pluggableService: _pluggableServices)
+        for(PluggableService pluggableService: _pluggableServices) {
             cmdClasses.addAll(pluggableService.getCommands());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Discovered plugin " + pluggableService.getClass().getSimpleName());
+            }
+        }
 
         for(Class<?> cmdClass: cmdClasses) {
             APICommand at = cmdClass.getAnnotation(APICommand.class);

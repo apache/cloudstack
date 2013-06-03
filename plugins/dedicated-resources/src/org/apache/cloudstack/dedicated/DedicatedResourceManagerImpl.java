@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.api.commands.DedicateClusterCmd;
 import org.apache.cloudstack.api.commands.DedicateHostCmd;
 import org.apache.cloudstack.api.commands.DedicatePodCmd;
