@@ -19,6 +19,7 @@ package com.cloud.configuration;
 import com.cloud.dc.VlanVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.utils.Pair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,20 +50,20 @@ public class ValidateIpRangeTest {
 
     @Test
     public void SameSubnetTest() {
-        boolean sameSubnet=configurationMgr.validateIpRange("10.147.33.104", "10.147.33.105", "10.147.33.1", "255.255.255.128", vlanVOList, true, false, null, null, null, null,network);
-        Assert.assertTrue(sameSubnet);
+        Pair<Boolean,Pair<String,String>> sameSubnet=configurationMgr.validateIpRange("10.147.33.104", "10.147.33.105", "10.147.33.1", "255.255.255.128", vlanVOList, true, false, null, null, null, null,network);
+        Assert.assertTrue(sameSubnet.first());
     }
 
     @Test
     public void NewSubnetTest() {
-        boolean sameSubnet= configurationMgr.validateIpRange("10.147.33.140", "10.147.33.145", "10.147.33.129", "255.255.255.191", vlanVOList, true, false, null, null, null, null,network);
-        Assert.assertTrue(!sameSubnet);
+        Pair<Boolean,Pair<String,String>> sameSubnet= configurationMgr.validateIpRange("10.147.33.140", "10.147.33.145", "10.147.33.129", "255.255.255.191", vlanVOList, true, false, null, null, null, null,network);
+        Assert.assertTrue(!sameSubnet.first());
     }
 
     @Test
     public void SuperSetTest() {
         try {
-            configurationMgr.validateIpRange("10.147.33.140", "10.147.33.143", "10.147.33.140", "255.255.255.191", vlanVOList, true, false, null, null, null, null,network);
+            configurationMgr.validateIpRange("10.147.33.10", "10.147.33.20", "10.147.33.21", "255.255.255.127", vlanVOList, true, false, null, null, null, null,network);
         } catch (Exception e) {
             junit.framework.Assert.assertTrue(e.getMessage().contains("superset"));
         }

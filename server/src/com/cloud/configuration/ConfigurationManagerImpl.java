@@ -39,6 +39,7 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -2473,7 +2474,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        boolean sameSubnet=false;
+        Pair<Boolean,Pair<String,String>> sameSubnet= null;
         // Can add vlan range only to the network which allows it
         if (!network.getSpecifyIpRanges()) {
             throw new InvalidParameterValueException("Network " + network + " doesn't support adding ip ranges");
@@ -2508,7 +2509,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                  sameSubnet=validateIpRange(startIP,endIP,newVlanGateway, newVlanNetmask, vlans, ipv4, ipv6, ip6Gateway, ip6Cidr, startIPv6, endIPv6, network);
         }
 
-        if (zoneId == null || (ipv4 && (newVlanGateway == null || newVlanNetmask == null)) || (ipv6 && (ip6Gateway == null || ip6Cidr == null))) {
+        if (zoneId == null  || (ipv6 && (ip6Gateway == null || ip6Cidr == null))) {
             throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual and direct untagged networks");
         }
 
@@ -2527,54 +2528,80 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         Transaction txn = Transaction.currentTxn();
         txn.start();
-
+        if (sameSubnet.first() == false) {
+            s_logger.info("adding a new subnet to the network "+network.getId());
+        }
+        else {
+            // if it is same subnet the user might not send the vlan and the netmask details. so we are
+            //figuring out while validation and setting them here.
+            newVlanGateway = sameSubnet.second().first();
+            newVlanNetmask = sameSubnet.second().second();
+        }
         Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, 
                 endIP, newVlanGateway, newVlanNetmask, vlanId, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
         //create an entry in the nic_secondary table. This will be the new gateway that will be configured on the corresponding routervm.
-        if (sameSubnet == false) {
-           s_logger.info("adding a new subnet to the network "+network.getId());
-        }
+
 
         txn.commit();
 
         return vlan;
     }
 
-    public boolean validateIpRange(String startIP, String endIP, String newVlanGateway, String newVlanNetmask, List<VlanVO> vlans, boolean ipv4, boolean ipv6, String ip6Gateway, String ip6Cidr, String startIPv6, String endIPv6, Network network) {
-        String vlanGateway;
-        String vlanNetmask;
+    public int checkIfSubsetOrSuperset(String newVlanGateway, String newVlanNetmask, VlanVO vlan, String startIP, String endIP) {
+        if (newVlanGateway == null && newVlanNetmask==null) {
+            newVlanGateway = vlan.getVlanGateway();
+            newVlanNetmask = vlan.getVlanNetmask();
+            //this means he is trying to add to the existing  subnet.
+            if (NetUtils.sameSubnet(startIP, newVlanGateway, newVlanNetmask)) {
+                if (NetUtils.sameSubnet(endIP, newVlanGateway, newVlanNetmask)){
+                    return 3;
+                }
+            }
+            return 0;
+        }
+        else if (newVlanGateway == null || newVlanGateway ==null){
+            throw new InvalidParameterValueException("either both netmask and gateway should be passed or both should me omited.");
+        }
+        else {
+            if (!NetUtils.sameSubnet(startIP, newVlanGateway, newVlanNetmask)) {
+                throw new InvalidParameterValueException("The start ip and gateway do not belong to the same subnet");
+            }
+            if (!NetUtils.sameSubnet(endIP, newVlanGateway, newVlanNetmask)) {
+                throw new InvalidParameterValueException("The end ip and gateway do not belong to the same subnet");
+            }
+        }
+        String cidrnew = NetUtils.getCidrFromGatewayAndNetmask(newVlanGateway, newVlanNetmask);
+        String existing_cidr = NetUtils.getCidrFromGatewayAndNetmask(vlan.getVlanGateway(), vlan.getVlanNetmask());
+
+        return  (NetUtils.isNetowrkASubsetOrSupersetOfNetworkB(cidrnew, existing_cidr));
+    }
+
+    public Pair<Boolean,Pair<String,String>> validateIpRange(String startIP, String endIP, String newVlanGateway, String newVlanNetmask, List<VlanVO> vlans, boolean ipv4, boolean ipv6, String ip6Gateway, String ip6Cidr, String startIPv6, String endIPv6, Network network) {
+        String vlanGateway=null;
+        String vlanNetmask=null;
         boolean sameSubnet = false;
         if ( vlans != null && vlans.size() > 0 ) {
-
             for (VlanVO vlan : vlans) {
                 if (ipv4) {
                     vlanGateway = vlan.getVlanGateway();
                     vlanNetmask = vlan.getVlanNetmask();
-                    // Check if ip addresses are in network range
-                    if (!NetUtils.sameSubnet(startIP, vlanGateway, vlanNetmask)) {
-                        if (!NetUtils.sameSubnet(endIP, vlanGateway, vlanNetmask)) {
-                                // check if the the new subnet is not a superset of the existing subnets.
-                                if (NetUtils.isNetworkAWithinNetworkB(NetUtils.getCidrFromGatewayAndNetmask(vlanGateway,vlanNetmask), NetUtils.ipAndNetMaskToCidr(startIP, newVlanNetmask))){
-                                    throw new InvalidParameterValueException ("The new subnet is a superset of the existing subnet");
-                                }
-                                // check if the new subnet is not a subset of the existing subnet.
-                                if (NetUtils.isNetworkAWithinNetworkB(NetUtils.ipAndNetMaskToCidr(startIP, newVlanNetmask), NetUtils.getCidrFromGatewayAndNetmask(vlanGateway,vlanNetmask))){
-                                    throw  new InvalidParameterValueException("The new subnet is a subset of the existing subnet");
-                                }
-                        }
-                    } else if (NetUtils.sameSubnet(endIP, vlanGateway, vlanNetmask)){
-                        // trying to add to the same subnet.
-                        sameSubnet = true;
-                        if (newVlanGateway == null) {
-                            newVlanGateway = vlanGateway;
-                        }
-                        if (!newVlanGateway.equals(vlanGateway)){
-                            throw new InvalidParameterValueException("The gateway of the ip range is not same as the gateway of the subnet.");
-                        }
-                        break;
+                    //check if subset or super set or neither.
+                    int val = checkIfSubsetOrSuperset(newVlanGateway, newVlanNetmask, vlan, startIP, endIP);
+                    if (val == 1) {
+                        // this means that new cidr is a superset of the existing subnet.
+                        throw new InvalidParameterValueException("The subnet you are trying to add is a superset of the existing subnet having gateway"+vlan.getVlanGateway()+" and netmask  "+vlan.getVlanNetmask());
                     }
-                    else {
-                        throw new InvalidParameterValueException("Start ip and End ip is not in vlan range!");
+                    else if (val == 0) {
+                        //this implies the user is trying to add a new subnet which is not a superset or subset of this subnet.
+                        //checking with the other subnets.
+                        continue;
+                    }
+                    else if (val == 2) {
+                        //this means he is trying to add to the same subnet.
+                        throw new InvalidParameterValueException("The subnet you are trying to add is a subset of the existing subnet having gateway"+vlan.getVlanGateway()+" and netmask  "+vlan.getVlanNetmask());
+                    }
+                    else if (val == 3) {
+                        sameSubnet =true;
                     }
                 }
                 if (ipv6) {
@@ -2589,13 +2616,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _networkModel.checkIp6Parameters(startIPv6, endIPv6, ip6Gateway, ip6Cidr);
                 }
             }
-            if (sameSubnet == false) {
-                if (newVlanGateway ==null)  {
-                    throw  new MissingParameterValueException("The gateway for the new subnet is not specified.");
-                }
-            }
         }
-        return  sameSubnet;
+        if (newVlanGateway==null && newVlanNetmask ==null && sameSubnet == false) {
+            throw new InvalidParameterValueException("The ip range dose not belong to any of the existing subnets, Provide the netmask and gateway if you want to add new subnet");
+        }
+        Pair<String,String> vlanDetails=null;
+
+        if (sameSubnet){
+             vlanDetails = new Pair<String, String>(vlanGateway, vlanNetmask);
+        }
+        else {
+             vlanDetails = new Pair<String, String>(newVlanGateway, newVlanNetmask);
+        }
+        //check if the gatewayip is the part of the ip range being added.
+        if (NetUtils.ipRangesOverlap(startIP, endIP, vlanDetails.first(), vlanDetails.first())) {
+            throw new InvalidParameterValueException("The gateway ip should not be the part of the ip range being added.");
+        }
+
+        Pair<Boolean,Pair<String,String>> result = new Pair<Boolean,Pair<String,String>>(sameSubnet, vlanDetails);
+        return  result;
     }
 
     @Override
