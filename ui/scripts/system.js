@@ -11346,6 +11346,7 @@
                             $form.find('.form-item[rel=podId]').hide();
                             $form.find('.form-item[rel=clusterId]').hide();
                             $form.find('.form-item[rel=hostId]').hide();
+                            $form.find('.form-item[rel=hypervisor]').css('display', 'inline-block');
 
 
                          }
@@ -11355,6 +11356,7 @@
                              $form.find('.form-item[rel=hostId]').hide();
                              $form.find('.form-item[rel=podId]').css('display', 'inline-block');
                              $form.find('.form-item[rel=clusterId]').css('display', 'inline-block');
+                             $form.find('.form-item[rel=hypervisor]').hide();
 
 
                          }
@@ -11363,6 +11365,8 @@
                             $form.find('.form-item[rel=podId]').css('display', 'inline-block');
                             $form.find('.form-item[rel=clusterId]').css('display', 'inline-block');
                             $form.find('.form-item[rel=hostId]').css('display', 'inline-block');
+                            $form.find('.form-item[rel=hypervisor]').hide();
+
 
                          }
 
@@ -11370,6 +11374,23 @@
 
                     }
                   },
+
+                  
+                 hypervisor:{
+                    label:'Hypervisor',
+                    isHidden:true,
+                    select:function(args){
+                         var items=[];
+                        items.push({ id: 'KVM', description: _l('KVM') });
+                        items.push({ id: 'VMWARE', description: _l('VMware') });
+
+                      args.response.success({
+                        data: items
+                      });
+
+                    }
+                  },
+
                   zoneid: {
                     label: 'Zone',
                     docID: 'helpPrimaryStorageZone',
@@ -11858,6 +11879,11 @@
                 array1.push("&scope=" + todb(args.data.scope));
 
                 array1.push("&zoneid=" + args.data.zoneid);
+
+               if(args.data.scope == 'zone'){
+                
+                  array1.push("&hypervisor=" + args.data.hypervisor);
+               } 
             
                if(args.data.scope == 'cluster'){
 
