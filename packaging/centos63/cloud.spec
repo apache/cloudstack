@@ -165,13 +165,11 @@ echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
 
 if [ "%{_ossnoss}" == "NONOSS" -o "%{_ossnoss}" == "nonoss" ] ; then
-    echo "Executing mvn packaging for NONOSS ..."
-   mvn clean
-   mvn -Pawsapi,systemvm -Dnonoss package
+   echo "Executing mvn packaging for NONOSS ..."
+   mvn -Pawsapi,systemvm -Dnonoss package clean install
 else
-    echo "Executing mvn packaging for OSS ..."
-   mvn clean
-   mvn -Pawsapi package -Dsystemvm
+   echo "Executing mvn packaging for OSS ..."
+   mvn -Pawsapi package -Dsystemvm clean install
 fi
 
 %install
