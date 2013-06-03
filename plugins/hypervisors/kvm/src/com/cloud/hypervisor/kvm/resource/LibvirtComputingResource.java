@@ -1094,6 +1094,24 @@ ServerResource {
                 This also makes sure we never have any old "garbage" defined
                 in libvirt which might haunt us.
             */
+
+            // check for existing inactive vm definition and remove it
+            // this can sometimes happen during crashes, etc
+            Domain dm = null;
+            try {
+                dm = conn.domainLookupByName(vmName);
+                if (dm != null && dm.isPersistent() == 1) {
+                    // this is safe because it doesn't stop running VMs
+                    dm.undefine();
+                }
+            } catch (LibvirtException e) {
+                // this is what we want, no domain found
+            } finally {
+                if (dm != null) {
+                    dm.free();
+                }
+            }
+
             conn.domainCreateXML(domainXML, 0);
         } catch (final LibvirtException e) {
             throw e;
