@@ -657,7 +657,7 @@
           },
           dataProvider: function(args) {
             $.ajax({
-              url:createURL('listNetworkACLLists&vpc_id=' + args.context.vpc[0].id),
+              url:createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
               success:function(json){  
                 var items = json.listnetworkacllistsresponse.networkacllist;
                 
@@ -3224,7 +3224,7 @@
             // Get network ACL lists
             $.ajax({
               url: createURL('listNetworkACLLists'),
-              data: { 'vpc_id': args.context.vpc[0].id },
+              data: { 'vpcid': args.context.vpc[0].id },
               async: false,
               success: function(json) {
                 networkACLLists = json.listnetworkacllistsresponse;
