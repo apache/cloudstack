@@ -11382,7 +11382,7 @@
                     select:function(args){
                          var items=[];
                         items.push({ id: 'KVM', description: _l('KVM') });
-                        items.push({ id: 'VMWARE', description: _l('VMware') });
+                        items.push({ id: 'VMware', description: _l('VMware') });
 
                       args.response.success({
                         data: items
