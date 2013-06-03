@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.server;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 public class ConfigurationServerImplTest {
     final static String TEST = "the quick brown fox jumped over the lazy dog";
@@ -58,21 +58,4 @@ public class ConfigurationServerImplTest {
             temp.delete();
         }
     }
-
-    @Test
-    public void testGetBase64KeystoreZillionTimes() throws IOException {
-        File temp = File.createTempFile("keystore", "");
-        try {
-            // may cause IOException with the original implementation because of too many open files
-            for (int i = 0; i < 100000; i++) {
-                FileUtils.writeStringToFile(temp, Base64.encodeBase64String(TEST.getBytes()));
-                final String keystore = ConfigurationServerImpl.getBase64Keystore(temp.getPath());
-                // let's decode it to make sure it makes sense
-                Base64.decodeBase64(keystore);
-            }
-        } finally {
-            temp.delete();
-        }
-    }
-
 }
