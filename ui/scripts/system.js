@@ -5375,14 +5375,14 @@
                 isMaximized: true,
                 actions: {                  
                   addVmwareDc: {
-                    label: 'Adds a VMware datacenter',
+                    label: 'Add VMware datacenter',
                     messages: {                      
                       notification: function(args) {
-                        return 'Adds a VMware datacenter';
+                        return 'Add VMware datacenter';
                       }
                     },
                     createForm: {
-                      title: 'Adds a VMware datacenter',
+                      title: 'Add VMware datacenter',
                       fields: {
                         name: { 
                           label: 'label.name',
@@ -5440,7 +5440,40 @@
                       }
                     }
                   },
-                                                      
+                                    
+                  removeVmwareDc: {
+                    label: 'Remove VMware datacenter',
+                    messages: {
+                      confirm: function(args) {
+                        return 'Please confirm you want to remove VMware datacenter';
+                      },
+                      notification: function(args) {
+                        return 'Remove VMware datacenter';
+                      }
+                    },
+                    action: function(args) {
+                      var data = {
+                        zoneid: args.context.physicalResources[0].id
+                      };                      
+                      $.ajax({
+                        url: createURL('removeVmwareDc'),  
+                        data: data,
+                        success: function(json) {
+                          var item = json.updatezoneresponse.zone;
+                          args.response.success({
+                            actionFilter: zoneActionfilter,
+                            data:item
+                          });
+                        }
+                      });
+                    },
+                    notification: {
+                      poll: function(args) {
+                        args.complete();
+                      }
+                    }
+                  },                  
+                  
                   enable: {
                     label: 'label.action.enable.zone',
                     messages: {
@@ -13272,6 +13305,7 @@
     var allowedActions = ['enableSwift'];
 
     allowedActions.push('addVmwareDc');
+    allowedActions.push('removeVmwareDc');
     
      if(jsonObj.domainid != null)
       allowedActions.push("release");
