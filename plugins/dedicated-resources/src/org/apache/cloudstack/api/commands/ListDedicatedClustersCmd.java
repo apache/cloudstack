@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.dedicated.api.commands;
+package org.apache.cloudstack.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,45 +27,45 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.dedicated.api.response.DedicateZoneResponse;
-import org.apache.cloudstack.dedicated.services.DedicatedService;
+import org.apache.cloudstack.api.response.DedicateClusterResponse;
+import org.apache.cloudstack.dedicated.DedicatedService;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.DedicatedResources;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDedicatedZones", description = "List dedicated zones.", responseObject = DedicateZoneResponse.class)
-public class ListDedicatedZonesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDedicatedZonesCmd.class.getName());
+@APICommand(name = "listDedicatedClusters", description = "Lists dedicated clusters.", responseObject = DedicateClusterResponse.class)
+public class ListDedicatedClustersCmd extends BaseListCmd {
+	public static final Logger s_logger = Logger.getLogger(ListDedicatedClustersCmd.class.getName());
 
-    private static final String s_name = "listdedicatedzonesresponse";
-    @Inject DedicatedService _dedicatedservice;
+    private static final String s_name = "listdedicatedclustersresponse";
+    @Inject DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            description="the ID of the Zone")
-    private Long zoneId;
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class,
+            description="the ID of the cluster")
+    private Long clusterId;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="the ID of the domain associated with the zone")
+            description="the ID of the domain associated with the cluster")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-            description = "the name of the account associated with the zone. Must be used with domainId.")
+            description = "the name of the account associated with the cluster. Must be used with domainId.")
     private String accountName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getZoneId() {
-        return zoneId;
+    public Long getClusterId() {
+        return clusterId;
     }
 
     public Long getDomainId(){
@@ -87,19 +87,19 @@ public class ListDedicatedZonesCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends DedicatedResourceVO>, Integer> result = _dedicatedservice.listDedicatedZones(this);
-        ListResponse<DedicateZoneResponse> response = new ListResponse<DedicateZoneResponse>();
-        List<DedicateZoneResponse> Responses = new ArrayList<DedicateZoneResponse>();
+        Pair<List<? extends DedicatedResourceVO>, Integer> result = dedicatedService.listDedicatedClusters(this);
+        ListResponse<DedicateClusterResponse> response = new ListResponse<DedicateClusterResponse>();
+        List<DedicateClusterResponse> Responses = new ArrayList<DedicateClusterResponse>();
         if (result != null) {
             for (DedicatedResources resource : result.first()) {
-                DedicateZoneResponse zoneResponse = _dedicatedservice.createDedicateZoneResponse(resource);
-                Responses.add(zoneResponse);
+                DedicateClusterResponse clusterResponse = dedicatedService.createDedicateClusterResponse(resource);
+                Responses.add(clusterResponse);
             }
             response.setResponses(Responses, result.second());
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to list dedicated zones");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to list dedicated clusters");
         }
     }
 }

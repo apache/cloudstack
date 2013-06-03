@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.dedicated.api.commands;
+package org.apache.cloudstack.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +30,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.dedicated.api.response.DedicateHostResponse;
-import org.apache.cloudstack.dedicated.services.DedicatedService;
+import org.apache.cloudstack.api.response.DedicateHostResponse;
+import org.apache.cloudstack.dedicated.DedicatedService;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DedicatedResourceVO;

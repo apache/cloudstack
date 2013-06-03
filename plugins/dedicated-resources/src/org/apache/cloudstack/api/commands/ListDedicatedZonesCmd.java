@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.dedicated.api.commands;
+package org.apache.cloudstack.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,43 +29,43 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.dedicated.api.response.DedicatePodResponse;
-import org.apache.cloudstack.dedicated.services.DedicatedService;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.DedicateZoneResponse;
+import org.apache.cloudstack.dedicated.DedicatedService;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.DedicatedResources;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDedicatedPods", description = "Lists dedicated pods.", responseObject = DedicatePodResponse.class)
-public class ListDedicatedPodsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDedicatedPodsCmd.class.getName());
+@APICommand(name = "listDedicatedZones", description = "List dedicated zones.", responseObject = DedicateZoneResponse.class)
+public class ListDedicatedZonesCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListDedicatedZonesCmd.class.getName());
 
-    private static final String s_name = "listdedicatedpodsresponse";
-    @Inject DedicatedService dedicatedService;
+    private static final String s_name = "listdedicatedzonesresponse";
+    @Inject DedicatedService _dedicatedservice;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            description="the ID of the pod")
-    private Long podId;
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
+            description="the ID of the Zone")
+    private Long zoneId;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="the ID of the domain associated with the pod")
+            description="the ID of the domain associated with the zone")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-            description = "the name of the account associated with the pod. Must be used with domainId.")
+            description = "the name of the account associated with the zone. Must be used with domainId.")
     private String accountName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getPodId() {
-        return podId;
+    public Long getZoneId() {
+        return zoneId;
     }
 
     public Long getDomainId(){
@@ -87,19 +87,19 @@ public class ListDedicatedPodsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends DedicatedResourceVO>, Integer> result = dedicatedService.listDedicatedPods(this);
-        ListResponse<DedicatePodResponse> response = new ListResponse<DedicatePodResponse>();
-        List<DedicatePodResponse> Responses = new ArrayList<DedicatePodResponse>();
+        Pair<List<? extends DedicatedResourceVO>, Integer> result = _dedicatedservice.listDedicatedZones(this);
+        ListResponse<DedicateZoneResponse> response = new ListResponse<DedicateZoneResponse>();
+        List<DedicateZoneResponse> Responses = new ArrayList<DedicateZoneResponse>();
         if (result != null) {
             for (DedicatedResources resource : result.first()) {
-                DedicatePodResponse podresponse = dedicatedService.createDedicatePodResponse(resource);
-                Responses.add(podresponse);
+                DedicateZoneResponse zoneResponse = _dedicatedservice.createDedicateZoneResponse(resource);
+                Responses.add(zoneResponse);
             }
             response.setResponses(Responses, result.second());
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to list dedicated pods");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to list dedicated zones");
         }
     }
 }

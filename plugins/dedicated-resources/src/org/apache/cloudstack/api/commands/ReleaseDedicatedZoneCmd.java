@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.dedicated.api.commands;
+package org.apache.cloudstack.api.commands;
 
 import javax.inject.Inject;
 
@@ -24,35 +24,35 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.dedicated.services.DedicatedService;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.dedicated.DedicatedService;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "releaseDedicatedPod", description = "Release the dedication for the pod", responseObject = SuccessResponse.class)
-public class ReleaseDedicatedPodCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedPodCmd.class.getName());
+@APICommand(name = "releaseDedicatedZone", description = "Release dedication of zone", responseObject = SuccessResponse.class)
+public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedZoneCmd.class.getName());
 
-    private static final String s_name = "releasededicatedpodresponse";
+    private static final String s_name = "releasededicatedzoneresponse";
     @Inject DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            required=true, description="the ID of the Pod")
-    private Long podId;
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType= ZoneResponse.class,
+            required=true, description="the ID of the Zone")
+    private Long zoneId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getPodId() {
-        return podId;
+    public Long getZoneId() {
+        return zoneId;
     }
 
     /////////////////////////////////////////////////////
@@ -70,12 +70,12 @@ public class ReleaseDedicatedPodCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        boolean result = dedicatedService.releaseDedicatedResource(null, getPodId(), null, null);
+        boolean result = dedicatedService.releaseDedicatedResource(getZoneId(), null, null, null);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release dedicated pod");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release dedicated zone");
         }
     }
 
@@ -86,6 +86,6 @@ public class ReleaseDedicatedPodCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing dedicated pod";
+        return "releasing dedicated zone";
     }
 }

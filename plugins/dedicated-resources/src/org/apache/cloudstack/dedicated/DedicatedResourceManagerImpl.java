@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.dedicated.manager;
+package org.apache.cloudstack.dedicated;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,23 +24,22 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.dedicated.api.commands.DedicateClusterCmd;
-import org.apache.cloudstack.dedicated.api.commands.DedicateHostCmd;
-import org.apache.cloudstack.dedicated.api.commands.DedicatePodCmd;
-import org.apache.cloudstack.dedicated.api.commands.DedicateZoneCmd;
-import org.apache.cloudstack.dedicated.api.commands.ListDedicatedClustersCmd;
-import org.apache.cloudstack.dedicated.api.commands.ListDedicatedHostsCmd;
-import org.apache.cloudstack.dedicated.api.commands.ListDedicatedPodsCmd;
-import org.apache.cloudstack.dedicated.api.commands.ListDedicatedZonesCmd;
-import org.apache.cloudstack.dedicated.api.commands.ReleaseDedicatedClusterCmd;
-import org.apache.cloudstack.dedicated.api.commands.ReleaseDedicatedHostCmd;
-import org.apache.cloudstack.dedicated.api.commands.ReleaseDedicatedPodCmd;
-import org.apache.cloudstack.dedicated.api.commands.ReleaseDedicatedZoneCmd;
-import org.apache.cloudstack.dedicated.api.response.DedicateClusterResponse;
-import org.apache.cloudstack.dedicated.api.response.DedicateHostResponse;
-import org.apache.cloudstack.dedicated.api.response.DedicatePodResponse;
-import org.apache.cloudstack.dedicated.api.response.DedicateZoneResponse;
-import org.apache.cloudstack.dedicated.services.DedicatedService;
+import org.apache.cloudstack.api.commands.DedicateClusterCmd;
+import org.apache.cloudstack.api.commands.DedicateHostCmd;
+import org.apache.cloudstack.api.commands.DedicatePodCmd;
+import org.apache.cloudstack.api.commands.DedicateZoneCmd;
+import org.apache.cloudstack.api.commands.ListDedicatedClustersCmd;
+import org.apache.cloudstack.api.commands.ListDedicatedHostsCmd;
+import org.apache.cloudstack.api.commands.ListDedicatedPodsCmd;
+import org.apache.cloudstack.api.commands.ListDedicatedZonesCmd;
+import org.apache.cloudstack.api.commands.ReleaseDedicatedClusterCmd;
+import org.apache.cloudstack.api.commands.ReleaseDedicatedHostCmd;
+import org.apache.cloudstack.api.commands.ReleaseDedicatedPodCmd;
+import org.apache.cloudstack.api.commands.ReleaseDedicatedZoneCmd;
+import org.apache.cloudstack.api.response.DedicateClusterResponse;
+import org.apache.cloudstack.api.response.DedicateHostResponse;
+import org.apache.cloudstack.api.response.DedicatePodResponse;
+import org.apache.cloudstack.api.response.DedicateZoneResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -51,7 +50,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.DedicatedResources;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DedicatedResourceDao;

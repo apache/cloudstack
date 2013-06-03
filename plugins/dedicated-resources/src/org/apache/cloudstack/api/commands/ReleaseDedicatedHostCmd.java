@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.dedicated.api.commands;
+package org.apache.cloudstack.api.commands;
 
 import javax.inject.Inject;
 
@@ -24,35 +24,35 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.dedicated.services.DedicatedService;
+import org.apache.cloudstack.dedicated.DedicatedService;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "releaseDedicatedZone", description = "Release dedication of zone", responseObject = SuccessResponse.class)
-public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedZoneCmd.class.getName());
+@APICommand(name = "releaseDedicatedHost", description = "Release the dedication for host", responseObject = SuccessResponse.class)
+public class ReleaseDedicatedHostCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedHostCmd.class.getName());
 
-    private static final String s_name = "releasededicatedzoneresponse";
+    private static final String s_name = "releasededicatedhostresponse";
     @Inject DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType= ZoneResponse.class,
-            required=true, description="the ID of the Zone")
-    private Long zoneId;
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
+            required=true, description="the ID of the host")
+    private Long hostId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getZoneId() {
-        return zoneId;
+    public Long getHostId() {
+        return hostId;
     }
 
     /////////////////////////////////////////////////////
@@ -70,12 +70,12 @@ public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        boolean result = dedicatedService.releaseDedicatedResource(getZoneId(), null, null, null);
+        boolean result = dedicatedService.releaseDedicatedResource(null, null, null, getHostId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release dedicated zone");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release dedicated Host");
         }
     }
 
@@ -86,6 +86,6 @@ public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing dedicated zone";
+        return "releasing dedicated host";
     }
 }

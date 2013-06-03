@@ -14,30 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.dedicated.api.response;
+package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.dc.DedicatedResources;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value = DedicatedResources.class)
-public class DedicateZoneResponse extends BaseResponse {
+public class DedicateClusterResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the dedicated resource")
     private String id;
 
-    @SerializedName("zoneid") @Param(description="the ID of the Zone")
-    private String zoneId;
+    @SerializedName("clusterid") @Param(description="the ID of the cluster")
+    private String clusterId;
 
-    @SerializedName("zonename") @Param(description="the Name of the Zone")
-    private String zoneName;
+    @SerializedName("clustername") @Param(description="the name of the cluster")
+    private String clusterName;
 
-    @SerializedName("domainid") @Param(description="the domain ID to which the Zone is dedicated")
+    @SerializedName("domainid") @Param(description="the domain ID of the cluster")
     private String domainId;
 
-    @SerializedName("accountid") @Param(description="the Account Id to which the Zone is dedicated")
+    @SerializedName("accountid") @Param(description="the Account ID of the cluster")
     private String accountId;
 
     public String getId() {
@@ -48,20 +45,20 @@ public class DedicateZoneResponse extends BaseResponse {
         this.id = id;
     }
 
-    public String getZoneId() {
-        return zoneId;
+    public String getClusterId() {
+        return clusterId;
     }
 
-    public void setZoneId(String zoneId) {
-        this.zoneId = zoneId;
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
     }
 
-    public String getZoneName() {
-        return zoneName;
+    public String getClusterName() {
+        return clusterName;
     }
 
-    public void setZoneName(String zoneName) {
-        this.zoneName = zoneName;
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
     }
 
     public String getDomainId() {
@@ -79,5 +76,4 @@ public class DedicateZoneResponse extends BaseResponse {
     public void setAccountId(String accountId) {
         this.accountId = accountId;
     }
-
 }

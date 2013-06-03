@@ -14,27 +14,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.dedicated.api.response;
+package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.dc.DedicatedResources;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class DedicateHostResponse extends BaseResponse {
+@EntityReference(value = DedicatedResources.class)
+public class DedicatePodResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the dedicated resource")
     private String id;
 
-    @SerializedName("hostid") @Param(description="the ID of the host")
-    private String hostId;
+    @SerializedName("podid") @Param(description="the ID of the Pod")
+    private String podId;
 
-    @SerializedName("hostname") @Param(description="the name of the host")
-    private String hostName;
+    @SerializedName("podname") @Param(description="the Name of the Pod")
+    private String podName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the host")
+    @SerializedName("domainid") @Param(description="the domain ID to which the Pod is dedicated")
     private String domainId;
 
-    @SerializedName("accountid") @Param(description="the Account ID of the host")
+    @SerializedName("accountid") @Param(description="the Account Id to which the Pod is dedicated")
     private String accountId;
 
     public String getId() {
@@ -45,20 +48,20 @@ public class DedicateHostResponse extends BaseResponse {
         this.id = id;
     }
 
-    public String getHostId() {
-        return hostId;
+    public String getPodId() {
+        return podId;
     }
 
-    public void setHostId(String hostId) {
-        this.hostId = hostId;
+    public void setPodId(String podId) {
+        this.podId = podId;
     }
 
-    public String getHostName() {
-        return hostName;
+    public String getPodName() {
+        return podName;
     }
 
-    public void setHostName(String hostName) {
-        this.hostName = hostName;
+    public void setPodName(String podName) {
+        this.podName = podName;
     }
 
     public String getDomainId() {

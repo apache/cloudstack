@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.dedicated.api.commands;
+package org.apache.cloudstack.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,30 +28,29 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.dedicated.api.response.DedicatePodResponse;
-import org.apache.cloudstack.dedicated.services.DedicatedService;
+import org.apache.cloudstack.api.response.DedicateHostResponse;
+import org.apache.cloudstack.dedicated.DedicatedService;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DedicatedResources;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "dedicatePod", description ="Dedicates a Pod.", responseObject = DedicatePodResponse.class)
-public class DedicatePodCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DedicatePodCmd.class.getName());
-
-    private static final String s_name = "dedicatepodresponse";
-    @Inject public DedicatedService dedicatedService;
+@APICommand(name = "dedicateHost", description = "Dedicates a host.", responseObject = DedicateHostResponse.class)
+public class DedicateHostCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DedicateHostCmd.class.getName());
+    private static final String s_name = "dedicatehostresponse";
+    @Inject DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            required=true, description="the ID of the Pod")
-    private Long podId;
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType = HostResponse.class,
+            required=true, description="the ID of the host to update")
+    private Long hostId;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class, required=true, description="the ID of the containing domain")
     private Long domainId;
@@ -63,9 +62,8 @@ public class DedicatePodCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
-    public Long getPodId() {
-        return podId;
+    public Long getHostId() {
+        return hostId;
     }
 
     public Long getDomainId() {
@@ -92,19 +90,19 @@ public class DedicatePodCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        List<? extends DedicatedResources> result = dedicatedService.dedicatePod(getPodId(), getDomainId(), getAccountName());
-        ListResponse<DedicatePodResponse> response = new ListResponse<DedicatePodResponse>();
-        List<DedicatePodResponse> podResponseList = new ArrayList<DedicatePodResponse>();
+        List<? extends DedicatedResources> result = dedicatedService.dedicateHost(getHostId(), getDomainId(), getAccountName());
+        ListResponse<DedicateHostResponse> response = new ListResponse<DedicateHostResponse>();
+        List<DedicateHostResponse> hostResponseList = new ArrayList<DedicateHostResponse>();
         if (result != null) {
             for (DedicatedResources resource : result) {
-                DedicatePodResponse podresponse = dedicatedService.createDedicatePodResponse(resource);
-                podResponseList.add(podresponse);
+                DedicateHostResponse hostResponse = dedicatedService.createDedicateHostResponse(resource);
+                hostResponseList.add(hostResponse);
             }
-            response.setResponses(podResponseList);
+            response.setResponses(hostResponseList);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to dedicate pod");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to dedicate host");
         }
     }
 
@@ -115,6 +113,6 @@ public class DedicatePodCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "dedicating a pod";
+        return "dedicating a host";
     }
 }
