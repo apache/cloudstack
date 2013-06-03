@@ -567,7 +567,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 					GetStorageStatsCommand command = new GetStorageStatsCommand(pool.getUuid(), pool.getPoolType(), pool.getPath());
 					long poolId = pool.getId();
 					try {
-    					Answer answer = _storageManager.sendToPool(pool.getId(), command);
+    					Answer answer = _storageManager.sendToPool(pool, command);
     					if (answer != null && answer.getResult()) {
     						storagePoolStats.put(pool.getId(), (StorageStats)answer);
     
