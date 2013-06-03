@@ -5373,7 +5373,74 @@
 
               detailView: {
                 isMaximized: true,
-                actions: {
+                actions: {                  
+                  addVmwareDc: {
+                    label: 'Adds a VMware datacenter',
+                    messages: {                      
+                      notification: function(args) {
+                        return 'Adds a VMware datacenter';
+                      }
+                    },
+                    createForm: {
+                      title: 'Adds a VMware datacenter',
+                      fields: {
+                        name: { 
+                          label: 'label.name',
+                          validation: { required: true }
+                        },
+                        url: { 
+                          label: 'label.url',
+                          validation: { required: false }
+                        },
+                        username: {
+                          label: 'label.username',
+                          validation: { required: false }
+                        },
+                        password: {
+                          label: 'label.password',
+                          isPassword: true,
+                          validation: { required: false }
+                        },
+                      }
+                    },                    
+                    action: function(args) {
+                      var data = {
+                        zoneid: args.context.physicalResources[0].id,
+                        name: args.data.name
+                      };
+                      
+                      if(args.data.url != null && args.data.url.length > 0) {
+                        $.extend(data, {
+                          url: args.data.url 
+                        })
+                      }
+                      if(args.data.username != null && args.data.username.length > 0) {
+                        $.extend(data, {
+                          username: args.data.username 
+                        })
+                      }
+                      if(args.data.password != null && args.data.password.length > 0) {
+                        $.extend(data, {
+                          password: args.data.password 
+                        })
+                      }
+                      
+                      $.ajax({
+                        url: createURL('addVmwareDc'),  
+                        data: data,                       
+                        success: function(json) {
+                          //var item = json.addvmwaredcresponse.vmwaredc;
+                          args.response.success();
+                        }
+                      });
+                    },
+                    notification: {
+                      poll: function(args) {
+                        args.complete();
+                      }
+                    }
+                  },
+                                                      
                   enable: {
                     label: 'label.action.enable.zone',
                     messages: {
@@ -13204,6 +13271,8 @@
     var jsonObj = args.context.item;
     var allowedActions = ['enableSwift'];
 
+    allowedActions.push('addVmwareDc');
+    
      if(jsonObj.domainid != null)
       allowedActions.push("release");
     else
