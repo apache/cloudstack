@@ -112,16 +112,215 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void updateSystemVmTemplates(Connection conn) {
-	    PreparedStatement sql = null;
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        boolean xenserver = false;
+        boolean kvm = false;
+        boolean VMware = false;
+        boolean Hyperv = false;
+        boolean LXC = false;
+        s_logger.debug("Updating System Vm template IDs");
+        try{
+            //Get all hypervisors in use
+            try {
+                pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
+                rs = pstmt.executeQuery();
+                while(rs.next()){
+                    if("XenServer".equals(rs.getString(1))){
+                        xenserver = true;
+                    } else if("KVM".equals(rs.getString(1))){
+                        kvm = true;
+                    } else if("VMware".equals(rs.getString(1))){
+                        VMware = true;
+                    } else if("Hyperv".equals(rs.getString(1))) {
+                        Hyperv = true;
+                    } else if("LXC".equals(rs.getString(1))) {
+                        LXC = true;
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while listing hypervisors in use", e);
+            }
+
+            s_logger.debug("Updating XenSever System Vms");
+            //XenServer
+            try {
+                //Get 4.2.0 xenserer system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name like 'systemvm-xenserver-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'XenServer'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (xenserver){
+                        throw new CloudRuntimeException("4.2.0 XenServer SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 XenServer SystemVm template not found. XenServer hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating XenServer systemVm template", e);
+            }
+
+            //KVM
+            s_logger.debug("Updating KVM System Vms");
+            try {
+                //Get 4.2.0 KVM system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-kvm-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'KVM'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (kvm){
+                        throw new CloudRuntimeException("4.2.0 KVM SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 KVM SystemVm template not found. KVM hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating KVM systemVm template", e);
+            }
+
+            //VMware
+            s_logger.debug("Updating VMware System Vms");
+            try {
+                //Get 4.2.0 VMware system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-vmware-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'VMware'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (VMware){
+                        throw new CloudRuntimeException("4.2.0 VMware SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 VMware SystemVm template not found. VMware hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating VMware systemVm template", e);
+            }
+
+            //Hyperv
+            s_logger.debug("Updating Hyperv System Vms");
+            try {
+                //Get 4.2.0 Hyperv system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-hyperv-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'Hyperv'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (Hyperv){
+                        throw new CloudRuntimeException("4.2.0 HyperV SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 Hyperv SystemVm template not found. Hyperv hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating Hyperv systemVm template", e);
+            }
+
+            //LXC
+            s_logger.debug("Updating LXC System Vms");
+            try {
+                //Get 4.2.0 LXC system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-lxc-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'LXC'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (LXC){
+                        throw new CloudRuntimeException("4.2.0 LXC SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 LXC SystemVm template not found. LXC hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating LXC systemVm template", e);
+            }
+            s_logger.debug("Updating System Vm Template IDs Complete");
+        }
+        finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        pstmt = null;
         try {
-            sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
-            sql.executeUpdate();
+            pstmt = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to upgrade vm template data store uuid: " + e.toString());
         } finally {
-            if (sql != null) {
+            if (pstmt != null) {
                 try {
-                    sql.close();
+                    pstmt.close();
                 } catch (SQLException e) {
                 }
             }
