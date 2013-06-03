@@ -86,6 +86,7 @@ known_categories = {
     'Pod': 'Pod',
     'PublicIpRange': 'Network',
     'Zone': 'Zone',
+    'Vmware' : 'Zone',
     'NetworkOffering': 'Network Offering',
     'NetworkACL': 'Network ACL',
     'Network': 'Network',

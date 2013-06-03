@@ -265,6 +265,10 @@ addSecondaryStorage=1
 updateHostPassword=1
 releaseHostReservation=1
 
+#### VmWare DC
+addVmwareDc=1
+removeVmwareDc=1
+
 #### volume commands
 attachVolume=15
 uploadVolume=15
