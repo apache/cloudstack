@@ -110,12 +110,6 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "shared or local storage")
     private String storageType;
 
-    @SerializedName("diskBytesRate") @Param(description="bytes rate of the disk offering")
-    private Long bytesRate;
-
-    @SerializedName("diskIORate") @Param(description="io requests rate of the disk offering")
-    private Long iopsRate;
-
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "Hypervisor the volume belongs to")
     private String hypervisor;
@@ -262,14 +256,6 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
-    }
-
-    public void setBytesRate(long bytesRate) {
-        this.bytesRate = bytesRate;
-    }
-
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
     }
 
     public void setHypervisor(String hypervisor) {

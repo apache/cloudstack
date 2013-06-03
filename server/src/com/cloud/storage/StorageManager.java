@@ -35,8 +35,6 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
 import com.cloud.vm.DiskProfile;
@@ -124,8 +122,4 @@ public interface StorageManager extends StorageService {
     DataStore createLocalStorage(Host host, StoragePoolInfo poolInfo) throws ConnectionException;
 
     BigDecimal getStorageOverProvisioningFactor(Long dcId);
-
-    Long getDiskBytesRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
-
-    Long getDiskIORate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
 }

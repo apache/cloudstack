@@ -1393,8 +1393,6 @@ ServerResource {
             VolumeTO volume = new VolumeTO(cmd.getVolumeId(), dskch.getType(),
                     pool.getType(), pool.getUuid(), pool.getPath(),
                     vol.getName(), vol.getName(), disksize, null);
-            volume.setBytesRate(dskch.getBytesRate());
-            volume.setIopsRate(dskch.getIopsRate());
             return new CreateAnswer(cmd, volume);
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to create volume: " + e.toString());
@@ -2610,7 +2608,7 @@ ServerResource {
                     cmd.getPoolUuid());
             KVMPhysicalDisk disk = primary.getPhysicalDisk(cmd.getVolumePath());
             attachOrDetachDisk(conn, cmd.getAttach(), cmd.getVmName(), disk,
-                    cmd.getDeviceId().intValue(), cmd.getBytesRate(), cmd.getIopsRate());
+                    cmd.getDeviceId().intValue());
         } catch (LibvirtException e) {
             return new AttachVolumeAnswer(cmd, e.toString());
         } catch (InternalErrorException e) {
@@ -3478,11 +3476,6 @@ ServerResource {
                 }
 
             }
-            
-            if (volume.getBytesRate() > 0)
-                disk.setBytesRate(volume.getBytesRate());
-            if (volume.getIopsRate() > 0)
-                disk.setIopsRate(volume.getIopsRate());
 
             vm.getDevices().addDevice(disk);
         }
@@ -3617,7 +3610,7 @@ ServerResource {
 
     protected synchronized String attachOrDetachDisk(Connect conn,
             boolean attach, String vmName, KVMPhysicalDisk attachingDisk,
-            int devId, long bytesRate, long iopsRate) throws LibvirtException, InternalErrorException {
+            int devId) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -3657,10 +3650,6 @@ ServerResource {
                     diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId,
                             DiskDef.diskBus.VIRTIO);
                 }
-                if (bytesRate > 0)
-                    diskdef.setBytesRate(bytesRate);
-                if (iopsRate > 0)
-                    diskdef.setIopsRate(iopsRate);
             }
 
             String xml = diskdef.toString();

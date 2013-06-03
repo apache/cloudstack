@@ -35,8 +35,6 @@ public class DiskProfile {
     private Long templateId;
     private long volumeId;
     private String path;
-    private long bytesRate;
-    private long iopsRate;
 
     private HypervisorType hyperType;
 
@@ -155,21 +153,5 @@ public class DiskProfile {
     
     public void setSize(long size) {
     	this.size = size;
-    }
-    
-    public void setBytesRate(long bytesRate) {
-        this.bytesRate = bytesRate;
-    }
-    
-    public long getBytesRate() {
-        return bytesRate;
-    }
-    
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
-    }
-    
-    public long getIopsRate() {
-        return iopsRate;
     }
 }

@@ -37,8 +37,6 @@ public class VolumeTO implements InternalIdentity {
     private long deviceId;
     private String chainInfo;
     private String guestOsType;
-    private long bytesRate;
-    private long iopsRate;
 
     public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
         this.id = id;
@@ -134,21 +132,5 @@ public class VolumeTO implements InternalIdentity {
     @Override
     public String toString() {
         return new StringBuilder("Vol[").append(id).append("|").append(type).append("|").append(path).append("|").append(size).append("]").toString();
-    }
-    
-    public void setBytesRate(long bytesRate) {
-        this.bytesRate = bytesRate;
-    }
-    
-    public long getBytesRate() {
-        return bytesRate;
-    }
-    
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
-    }
-    
-    public long getIopsRate() {
-        return iopsRate;
     }
 }

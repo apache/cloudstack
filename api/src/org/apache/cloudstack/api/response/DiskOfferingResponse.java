@@ -57,12 +57,6 @@ public class DiskOfferingResponse extends BaseResponse {
 
     @SerializedName("storagetype") @Param(description="the storage type for this disk offering")
     private String storageType;
-    
-    @SerializedName("diskBytesRate") @Param(description="bytes rate of the disk offering")
-    private Long bytesRate;
-
-    @SerializedName("diskIORate") @Param(description="io requests rate of the disk offering")
-    private Long iopsRate;
 
     @SerializedName("displayoffering") @Param(description="whether to display the offering to the end user or not.")
     private Boolean displayOffering;
@@ -154,13 +148,5 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
-    }
-    
-    public void setBytesRate(long bytesRate) {
-        this.bytesRate = bytesRate;
-    }
-    
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
     }
 }

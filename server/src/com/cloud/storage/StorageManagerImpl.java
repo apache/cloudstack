@@ -127,7 +127,6 @@ import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
@@ -143,7 +142,6 @@ import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.listener.VolumeStateListener;
@@ -1883,38 +1881,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public String getName() {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    // get bytesRate from disk_offering and vm.disk.throttling.bytes_rate
-    @Override
-    public Long getDiskBytesRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
-        if ((offering != null) && (offering.getBytesRate() > 0)) {
-            return offering.getBytesRate();
-        } else if ((diskOffering != null) && (diskOffering.getBytesRate() > 0)) {
-            return diskOffering.getBytesRate();
-        } else {
-            Long bytesRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesRate.key()));
-            if (bytesRate > 0)  {
-                return bytesRate;
-            }
-        }
-        return 0L;
-    }
-
-    // get iopsRate from disk_offering and vm.disk.throttling.io_rate
-    @Override
-    public Long getDiskIORate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
-        if ((offering != null) && (offering.getIopsRate() > 0)) {
-            return offering.getIopsRate();
-        } else if ((diskOffering != null) && (diskOffering.getIopsRate() > 0)) {
-            return diskOffering.getIopsRate();
-        } else {
-            Long iopsRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIORate.key()));
-            if (iopsRate > 0)  {
-                return iopsRate;
-            }
-        }
-        return 0L;
     }
 
 }

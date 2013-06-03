@@ -1669,8 +1669,8 @@
                   networkkbswrite: (jsonObj.networkkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024),
                   diskkbsread: (jsonObj.diskkbsread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024),
                   diskkbswrite: (jsonObj.diskkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskkbswrite * 1024),
-                  diskioread: (jsonObj.diskioread == null)? "N/A": jsonObj.diskioread,
-                  diskiowrite: (jsonObj.diskiowrite == null)? "N/A": jsonObj.diskiowrite
+                  diskioread: (jsonObj.diskioread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskioread * 1024),
+                  diskiowrite: (jsonObj.diskiowrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskiowrite * 1024)
                   }
                 });
               }

@@ -115,7 +115,6 @@ import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
@@ -337,9 +336,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 diskOffering.getUseLocalStorage(),
                 diskOffering.isRecreatable(), null);
         dskCh.setHyperType(dataDiskHyperType);
-        dskCh.setBytesRate(storageMgr.getDiskBytesRate(null, diskOffering));
-        dskCh.setIopsRate(storageMgr.getDiskIORate(null, diskOffering));
-
         DataCenterVO destPoolDataCenter = _dcDao.findById(destPoolDcId);
         HostPodVO destPoolPod = _podDao.findById(destPoolPodId);
         
@@ -515,8 +511,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         DataCenterVO dc = _dcDao.findById(volume.getDataCenterId());
         DiskProfile dskCh = new DiskProfile(volume, diskOffering,
                 snapshot.getHypervisorType());
-        dskCh.setBytesRate(storageMgr.getDiskBytesRate(null, diskOffering));
-        dskCh.setIopsRate(storageMgr.getDiskIORate(null, diskOffering));
 
         // Determine what pod to store the volume in
         while ((pod = _resourceMgr.findPod(null, null, dc, account.getId(),
@@ -617,8 +611,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         DiskProfile dskCh = createDiskCharacteristics(volume, template, dc,
                 diskOffering);
         dskCh.setHyperType(vm.getHypervisorType());
-        dskCh.setBytesRate(storageMgr.getDiskBytesRate(offering, diskOffering));
-        dskCh.setIopsRate(storageMgr.getDiskIORate(offering, diskOffering));
         // Find a suitable storage to create volume on
         StoragePool destPool = storageMgr.findStoragePool(dskCh, dc, pod,
                 clusterId, null, vm, avoidPools);
@@ -663,8 +655,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         dskCh.setHyperType(hyperType);
-        dskCh.setBytesRate(storageMgr.getDiskBytesRate(offering, diskOffering));
-        dskCh.setIopsRate(storageMgr.getDiskIORate(offering, diskOffering));
         
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(
                 avoids);
@@ -2242,12 +2232,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         for (VolumeVO vol : vols) {
             PrimaryDataStoreInfo pool = (PrimaryDataStoreInfo)this.dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
-            ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-            VolumeTO newVolume = new VolumeTO(vol, pool);
-            newVolume.setBytesRate(storageMgr.getDiskBytesRate(offering, diskOffering));
-            newVolume.setIopsRate(storageMgr.getDiskIORate(offering, diskOffering));
-            vm.addDisk(newVolume);
+            vm.addDisk(new VolumeTO(vol, pool));
         }
 
         if (vm.getType() == VirtualMachine.Type.User) {
@@ -2477,12 +2462,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
-            ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-            VolumeTO newVolume = new VolumeTO(vol, pool);
-            newVolume.setBytesRate(storageMgr.getDiskBytesRate(offering, diskOffering));
-            newVolume.setIopsRate(storageMgr.getDiskIORate(offering, diskOffering));
-            vm.addDisk(newVolume);
+            vm.addDisk(new VolumeTO(vol, pool));
         }
     }
     

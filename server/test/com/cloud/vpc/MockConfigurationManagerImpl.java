@@ -489,7 +489,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA,
-            boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details, Long bytesRate, Long iopsRate) {
+            boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -654,7 +654,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#createDiskOffering(java.lang.Long, java.lang.String, java.lang.String, java.lang.Long, java.lang.String, boolean, boolean, boolean)
      */
     @Override
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled, Long bytesRate, Long iopsRate) {
+    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled) {
         // TODO Auto-generated method stub
         return null;
     }

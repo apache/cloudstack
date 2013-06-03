@@ -86,12 +86,6 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
-    
-    @SerializedName("diskBytesRate") @Param(description="bytes rate of the service offering")
-    private Long bytesRate;
-
-    @SerializedName("diskIORate") @Param(description="io requests rate of the service offering")
-    private Long iopsRate;
 
     @SerializedName(ApiConstants.DEPLOYMENT_PLANNER) @Param(description="deployment strategy used to deploy VM.")
     private String deploymentPlanner;
@@ -253,13 +247,5 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setVolatileVm(boolean isVolatile) {
         this.isVolatile = isVolatile;
-    }
-    
-    public void setBytesRate(long bytesRate) {
-        this.bytesRate = bytesRate;
-    }
-    
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
     }
 }

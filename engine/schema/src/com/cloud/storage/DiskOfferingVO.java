@@ -99,13 +99,6 @@ public class DiskOfferingVO implements DiskOffering {
 
     @Column(name="sort_key")
     int sortKey;
-    
-    @Column(name="bytes_rate")
-    long bytesRate;
-
-    @Column(name="iops_rate")
-    long iopsRate;
-
 
     @Column(name="display_offering")
     boolean displayOffering;
@@ -334,21 +327,4 @@ public class DiskOfferingVO implements DiskOffering {
     public void setDisplayOffering(boolean displayOffering) {
         this.displayOffering = displayOffering;
     }
-
-    public void setBytesRate(long bytesRate) {
-       this.bytesRate = bytesRate;
-    }
-
-    public long getBytesRate() {
-       return bytesRate;
-    }
-
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
-    }
-
-    public long getIopsRate() {
-        return iopsRate;
-    }
-
 }

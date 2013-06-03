@@ -184,12 +184,6 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
 
-    @Column(name="bytes_rate")
-    long bytesRate;
-
-    @Column(name="iops_rate")
-    long iopsRate;
-
     @Column(name="pool_id")
     private long poolId;
 
@@ -747,22 +741,6 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.useLocalStorage = useLocalStorage;
     }
 
-
-    public void setBytesRate(long bytesRate) {
-       this.bytesRate = bytesRate;
-    }
-
-    public long getBytesRate() {
-       return bytesRate;
-    }
-
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
-    }
-
-    public long getIopsRate() {
-        return iopsRate;
-    }
 
 
     public long getPoolId() {

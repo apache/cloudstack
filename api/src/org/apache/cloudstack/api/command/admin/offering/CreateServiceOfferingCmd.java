@@ -93,12 +93,6 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
     private Map<String, String> details;
 
-    @Parameter(name="bytesRate", type=CommandType.LONG, required=false, description="bytes rate of the disk offering")
-    private Long bytesRate;
-
-    @Parameter(name="iopsRate", type=CommandType.LONG, required=false, description="io requests rate of the disk offering")
-    private Long iopsRate;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -175,14 +169,6 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         Collection<String> paramsCollection = details.values();
         Map<String, String> params = (Map<String, String>)(paramsCollection.toArray())[0];
         return params;
-    }
-
-    public long getBytesRate() {
-       return bytesRate;
-    }
-
-    public long getIopsRate() {
-        return iopsRate;
     }
 
     /////////////////////////////////////////////////////
