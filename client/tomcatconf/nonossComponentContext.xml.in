@@ -80,6 +80,7 @@
   <bean id="VmwareDatacenterDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterDaoImpl" />
   <bean id="VmwareDatacenterZoneMapDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDaoImpl" />
   <bean id="LegacyZoneDaoImpl" class="com.cloud.hypervisor.vmware.dao.LegacyZoneDaoImpl" />
+  <bean id="vmwareStorageMotionStrategy" class="org.apache.cloudstack.storage.motion.VmwareStorageMotionStrategy"/>
 
   <!--
     Nicira support components
