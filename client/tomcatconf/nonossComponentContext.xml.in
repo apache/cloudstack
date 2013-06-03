@@ -374,4 +374,14 @@
     </property>
   </bean>
 
+  <!--
+    Dedicated Resources components
+  -->
+
+  <bean id="DedicatedResourceManagerImpl" class="org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl"/>
+  <bean id="ExplicitDedicationProcessor" class="org.apache.cloudstack.affinity.ExplicitDedicationProcessor">
+    <property name="name" value="ExplicitDedicationProcessor"/>
+    <property name="type" value="ExplicitDedication"/>
+  </bean>
+
 </beans>
