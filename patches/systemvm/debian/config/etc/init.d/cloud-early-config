@@ -350,7 +350,7 @@ enable_irqbalance() {
   $proc = $(cat /proc/cpuinfo | grep "processor" | wc -l)
   if [ $proc -le 1 ]  && [ $enabled -eq 1 ]
   then
-    enabled = 0
+    enabled=0
   fi
 
   log_it "Processors = $proc  Enable service ${svc} = $enabled"
