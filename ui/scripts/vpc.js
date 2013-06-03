@@ -3047,11 +3047,24 @@
                           zoneid: args.zoneId,
                           guestiptype: 'Isolated',
                           supportedServices: 'SourceNat',
-                          specifyvlan: false,
                           state: 'Enabled'
                         },
                         success: function(json) {
                           var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+                          args.$select.change(function() {
+                            var $vlan = args.$select.closest('form').find('[rel=vlan]');
+                            var networkOffering = $.grep(
+                              networkOfferings, function(netoffer) {
+                                return netoffer.id == args.$select.val();
+                              }
+                            )[0];
+
+                            if (networkOffering.specifyvlan) {
+                              $vlan.css('display', 'inline-block');
+                            } else {
+                              $vlan.hide();
+                            }
+                          });
 
                           //only one network(tier) is allowed to have PublicLb (i.e. provider is PublicLb provider like "VpcVirtualRouter", "Netscaler") in a VPC
                           var items;                          
@@ -3085,6 +3098,11 @@
                     }
                   });
                 }
+              },
+              vlan: {
+                label: 'VLAN',
+                validation: { required: true },
+                isHidden: true
               },
               gateway: {
                 label: 'label.gateway',

@@ -376,20 +376,41 @@
                           var items = json.listvpcsresponse.vpc;
                           var baseUrl = 'listNetworkOfferings&zoneid=' + args.zoneId;
                           var listUrl;
+                          var data = {
+                            guestiptype: 'Isolated',
+                            supportedServices: 'SourceNat',
+                            state: 'Enabled',
+                          };
+                          
                           if(items != null && items.length > 0) 
                             listUrl = baseUrl;
                           else
                             listUrl = baseUrl + '&forVpc=false';
+
+                          if (args.context.vpc) {
+                            data.forVpc = true;
+                          }
+                          
                           $.ajax({
                             url: createURL(listUrl),
-                            data: {
-                              guestiptype: 'Isolated',
-                              supportedServices: 'SourceNat',
-                              specifyvlan: false,
-                              state: 'Enabled'
-                            },
+                            data: data,
                             success: function(json) {
                               networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                              args.$select.change(function() {
+                                var $vlan = args.$select.closest('form').find('[rel=vlan]');
+                                var networkOffering = $.grep(
+                                  networkOfferingObjs, function(netoffer) {
+                                    return netoffer.id == args.$select.val();
+                                  }
+                                )[0];
+
+                                if (networkOffering.specifyvlan) {
+                                  $vlan.css('display', 'inline-block');
+                                } else {
+                                  $vlan.hide();
+                                }
+                              });
+                              
                               args.response.success({
                                 data: $.map(networkOfferingObjs, function(zone) {
                                   return {
@@ -405,26 +426,39 @@
                     }
                   },
 
+                  vlan: {
+                    label: 'VLAN',
+                    validation: { required: true },
+                    isHidden: true
+                  },
+
                   vpcid: {
                     label: 'label.vpc',
                     dependsOn: 'networkOfferingId',
                     select: function(args) {
                       var networkOfferingObj;
                       var $form = args.$select.closest('form');
+                      var data = {
+                        listAll: true,
+												details: 'min'
+                      };
+
+                      if (args.context.vpc) {
+                        data.id = args.context.vpc[0].id;
+                      }
+                      
                       $(networkOfferingObjs).each(function(key, value) {
                         if(value.id == args.networkOfferingId) {
                           networkOfferingObj = value;
                           return false; //break each loop
                         }
                       });
+                      
                       if(networkOfferingObj.forvpc == true) {
                         args.$select.closest('.form-item').css('display', 'inline-block');
                         $.ajax({
                           url: createURL('listVPCs'),
-                          data: {
-                            listAll: true,
-														details: 'min'
-                          },
+                          data: data,
                           success: function(json) {
                             var items = json.listvpcsresponse.vpc;
                             var data;
@@ -477,12 +511,17 @@
                     vpcid: args.data.vpcid
                   });
                 }
+
+                if (args.$form.find('.form-item[rel=vlan]').css('display') != 'none') {
+                  $.extend(dataObj, { vlan: args.data.vlan });
+                }
+
                 if(args.data.networkDomain != null && args.data.networkDomain.length > 0 && args.$form.find('.form-item[rel=vpcid]').css("display") == "none") {
                   $.extend(dataObj, {
                     networkDomain: args.data.networkDomain
                   });                
                 }
-															
+
                 $.ajax({
                   url: createURL('createNetwork'),
 									data: dataObj,
