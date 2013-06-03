@@ -5536,7 +5536,7 @@
                     }
                   },
 
-                   dedicate:{
+                  dedicateZone:{
                    label: 'Dedicate Zone',
                 messages: {
                   confirm: function(args) {
@@ -5611,7 +5611,7 @@
 
               },
 
-              release:{
+              releaseDedicatedZone:{
                 label:'Release Dedicated Zone',
                 messages:{
                    confirm: function(args) {
@@ -13308,9 +13308,9 @@
     allowedActions.push('removeVmwareDc');
     
      if(jsonObj.domainid != null)
-      allowedActions.push("release");
+      allowedActions.push("releaseDedicatedZone");
     else
-    allowedActions.push("dedicate");
+    allowedActions.push("dedicateZone");
 
     allowedActions.push("edit");
     if(jsonObj.allocationstate == "Disabled")
