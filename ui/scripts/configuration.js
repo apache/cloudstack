@@ -1193,19 +1193,46 @@
                     var $sourceNATField = args.$form.find('input[name=\"service.SourceNat.isEnabled\"]');
                     var $guestTypeField = args.$form.find('select[name=guestIpType]');
                     
+                    //*** VPC checkbox ***
                     var $useVpc = args.$form.find('.form-item[rel=\"useVpc\"]');
                     var $useVpcCb = $useVpc.find("input[type=checkbox]");
                     if($guestTypeField.val() == 'Shared') { //Shared network offering
                       $useVpc.hide();											
-											if($useVpcCb.is(':checked')) { //if useVpc is checked,											  
-												$useVpcCb.removeAttr("checked");  //remove "checked" attribute in useVpc
-												$useVpcCb.trigger("click");  //trigger useVpc.onChange()
+											if($useVpcCb.is(':checked')) { //if useVpc is checked,												  
+												$useVpcCb.removeAttr("checked");  //remove "checked" attribute in useVpc												
 											}
 										}
 										else { //Isolated network offering 
 										  $useVpc.css('display', 'inline-block');
-										}
-										
+										}										                    
+                    var $providers = $useVpcCb.closest('form').find('.dynamic-input select');                     
+                    var $optionsOfProviders = $providers.find('option');                   
+                    //p.s. Netscaler is supported in both vpc and non-vpc                    
+                    if ($useVpc.is(':visible') && $useVpcCb.is(':checked')) { //*** vpc ***                      
+                      $optionsOfProviders.each(function(index) {                         
+                        if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler') {
+                          $(this).attr('disabled', false);
+                        }
+                        else {
+                          $(this).attr('disabled', true);
+                        }
+                      });     
+                    } 
+                    else { //*** non-vpc ***                      
+                      $optionsOfProviders.each(function(index) {                          
+                        if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter') { 
+                          $(this).attr('disabled', true);
+                        }
+                        else {
+                          $(this).attr('disabled', false);
+                        }
+                      });                                              
+                    }                    
+                    $providers.each(function() {
+                      $(this).val($(this).find('option:first'));
+                    });
+                                      
+                    
 											
                     if (!requiredNetworkOfferingExists &&
                         $sourceNATField.is(':checked') &&
@@ -1523,40 +1550,7 @@
                   useVpc: {
                     label: 'VPC',
                     docID: 'helpNetworkOfferingVPC',
-                    isBoolean: true,
-                    onChange: function(args) {                      
-                      var $vpc = args.$checkbox;
-                      var $providers = $vpc.closest('form').find('.dynamic-input select');                     
-                      var $optionsOfProviders = $providers.find('option');
-                     
-                      //p.s. Netscaler is supported in both vpc and non-vpc
-                      
-                      if ($vpc.is(':checked')) { //*** vpc ***
-                        $optionsOfProviders.each(function(index) {                         
-                          if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler') {
-                            $(this).attr('disabled', false);
-                          }
-                          else {
-                            $(this).attr('disabled', true);
-                          }
-                        });     
-                      } 
-                      else { //*** non-vpc ***
-                        $optionsOfProviders.each(function(index) {                          
-                          if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter') { 
-                            $(this).attr('disabled', true);
-                          }
-                          else {
-                            $(this).attr('disabled', false);
-                          }
-                        });                                              
-                      }
-                      
-                      $providers.each(function() {
-                        $(this).val($(this).find('option:first'));
-                      });
-                      
-                    }
+                    isBoolean: true                    
                   },
 					                  
                   lbType: { //only shown when VPC is checked and LB service is checked
