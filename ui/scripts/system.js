@@ -2155,7 +2155,7 @@
                         fields: {
                           vlanrange: { 
                             label: 'VLAN Range', 
-                            select: function(args) {
+                          /*  select: function(args) {
                               var items = [];                             
                               if(args.context.physicalNetworks[0].vlan != null && args.context.physicalNetworks[0].vlan.length > 0) {
                                 var vlanranges = args.context.physicalNetworks[0].vlan.split(";");
@@ -2164,7 +2164,7 @@
                                 }                                
                               }
                               args.response.success({data: items});
-                            },
+                            },*/
                             validation: { required: true } 
                           },                          
                           account: { label: 'label.account', validation: { required: true } },
