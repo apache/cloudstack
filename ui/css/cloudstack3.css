@@ -11726,12 +11726,12 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .restart .icon,
-.release .icon {
+.releaseDedicatedZone .icon {
   background-position: 0px -63px;
 }
 
 .restart:hover .icon,
-.release:hover .icon {
+.releaseDedicatedZone:hover .icon {
   background-position: 0px -645px;
 }
 
@@ -11888,7 +11888,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .createTemplate .icon,
 .enableSwift .icon,
 .addVM .icon,
-.dedicate .icon {
+.dedicateZone .icon {
   background-position: -69px -63px;
 }
 
@@ -11896,7 +11896,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .createTemplate:hover .icon,
 .enableSwift:hover .icon,
 .addVM:hover .icon,
-.dedicate:hover .icon {
+.dedicateZone:hover .icon {
   background-position: -69px -645px;
 }
 
