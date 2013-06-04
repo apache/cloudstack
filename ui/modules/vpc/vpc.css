@@ -271,10 +271,8 @@
   float: left;
   /*+placement:shift 10px 176px;*/
   position: relative;
-  left: 10px;
-  top: 176px;
   left: 0px;
-  top: 240px;
+  top: 237px;
 }
 
 .vpc-network-chart .tier-item.router .header {
