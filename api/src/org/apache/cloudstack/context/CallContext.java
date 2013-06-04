@@ -155,9 +155,13 @@ public class CallContext {
         s_logger.debug("Context removed " + context);
         String sessionId = context.getSessionId();
         if (sessionId != null) {
-            while ((sessionId = NDC.pop()) != null) {
-                if (context.getSessionId().equals(sessionId)) {
+            String sessionIdOnStack = null;
+            while ((sessionIdOnStack = NDC.pop()) != null) {
+                if (sessionId.equals(sessionIdOnStack)) {
                     break;
+                }
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Popping from NDC: " + sessionId);
                 }
             }
         }

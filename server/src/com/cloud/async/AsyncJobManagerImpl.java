@@ -108,15 +108,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject private MessageBus _messageBus;
     @Inject private AsyncJobMonitor _jobMonitor;
 
-    // property
-    private String defaultDispatcher;
-    public String getDefaultDispatcher() {
-		return defaultDispatcher;
-	}
-	public void setDefaultDispatcher(String defaultDispatcher) {
-		this.defaultDispatcher = defaultDispatcher;
-	}
-
 	private long _jobExpireSeconds = 86400;						// 1 day
     private long _jobCancelThresholdSeconds = 3600;         	// 1 hour (for cancelling the jobs blocking other jobs)
 
@@ -491,16 +482,14 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
     
     private AsyncJobDispatcher getDispatcher(String dispatcherName) {
-    	if(dispatcherName == null || dispatcherName.isEmpty())
-    		dispatcherName = defaultDispatcher;
+        assert (dispatcherName != null && !dispatcherName.isEmpty()) : "Who's not setting the dispatcher when submitting a job?  Who am I suppose to call if you do that!";
     	
-    	if(_jobDispatchers != null) {
-    		for(AsyncJobDispatcher dispatcher : _jobDispatchers) {
-    			if(dispatcherName.equals(dispatcher.getName()))
-    				return dispatcher;
-    		}
-    	}
-    	return null;
+        for (AsyncJobDispatcher dispatcher : _jobDispatchers) {
+            if (dispatcherName.equals(dispatcher.getName()))
+                return dispatcher;
+        }
+
+        throw new CloudRuntimeException("Unable to find dispatcher name: " + dispatcherName);
     }
     
     private AsyncJobDispatcher getWakeupDispatcher(AsyncJob job) {

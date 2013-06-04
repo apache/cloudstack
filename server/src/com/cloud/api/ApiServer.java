@@ -171,6 +171,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject List<APIChecker> _apiAccessCheckers;
 
     @Inject
+    ApiAsyncJobDispatcher _asyncDispatcher;
+
+    @Inject
     private EntityManager _entityMgr;
 
     @Inject private final RegionManager _regionMgr = null;
@@ -520,6 +523,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
                     asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null);
+            job.setDispatcher(_asyncDispatcher.getName());
 
             long jobId = _asyncMgr.submitAsyncJob(job);
 
@@ -537,7 +541,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 return getBaseAsyncResponse(jobId, asyncCmd);
             }
         } else {
-            _dispatcher.dispatch(cmdObj, params);
+            _dispatcher.dispatch(cmdObj, params, false);
 
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible

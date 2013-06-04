@@ -90,7 +90,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             CallContext.register(userId, accountObject, "job-" + job.getShortUuid(), false);
             try {
                 // dispatch could ultimately queue the job
-                _dispatcher.dispatch(cmdObj, params);
+                _dispatcher.dispatch(cmdObj, params, true);
 
                 // serialize this to the async job table
                 _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());

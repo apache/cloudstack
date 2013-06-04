@@ -58,7 +58,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 
-import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.dao.EntityManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -122,7 +121,7 @@ public class ApiDispatcher {
         }
     }
 
-    public void dispatch(BaseCmd cmd, Map<String, String> params) throws Exception {
+    public void dispatch(BaseCmd cmd, Map<String, String> params, boolean execute) throws Exception {
         processParameters(cmd, params);
         CallContext ctx = CallContext.current();
         
@@ -142,7 +141,7 @@ public class ApiDispatcher {
                 }
 
                 if (queueSizeLimit != null) {
-                	if(AsyncJobExecutionContext.getCurrentExecutionContext() == null) {
+                    if (!execute) {
                 		// if we are not within async-execution context, enqueue the command
                         _asyncMgr.syncAsyncJobExecution((AsyncJob)asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
                 		return;
