@@ -156,7 +156,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
     public List<AlertVO> listOlderAlerts(Date oldTime) {
         if (oldTime == null) return null;
         SearchCriteria<AlertVO> sc = createSearchCriteria();
-        sc.addAnd("createDate", SearchCriteria.Op.LT, oldTime);
+        sc.addAnd("createdDate", SearchCriteria.Op.LT, oldTime);
         sc.addAnd("archived", SearchCriteria.Op.EQ, false);
         return listIncludingRemovedBy(sc, null);
     }
