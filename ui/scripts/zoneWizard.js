@@ -1233,26 +1233,21 @@
               if(selectedHypervisorObj == null) {
                 return;
               }
-
-                // ZWPS is supported only for KVM as the hypervisor
-             if(selectedHypervisorObj.hypervisortype != "KVM"){
-                       var scope=[];
-                       scope.push({ id: 'cluster', description: _l('label.cluster') });
-                       //scope.push({ id: 'host', description: _l('label.host') });
-                       args.response.success({data: scope});
-                    }
-
-              else {
-                       var scope=[];
-                       scope.push({ id: 'zone', description: _l('label.zone.wide') });
-                       scope.push({ id: 'cluster', description: _l('label.cluster') });
-                      // scope.push({ id: 'host', description: _l('label.host') });
-                       args.response.success({data: scope});
-                    }
-
-                }
-
-              },
+                 
+              //zone-wide-primary-storage is supported only for KVM and VMWare
+              if(selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware"){
+                var scope=[];
+                scope.push({ id: 'zone', description: _l('label.zone.wide') });
+                scope.push({ id: 'cluster', description: _l('label.cluster') });                      
+                args.response.success({data: scope});
+              }
+              else {     
+                var scope=[];
+                scope.push({ id: 'cluster', description: _l('label.cluster') });                       
+                args.response.success({data: scope});                       
+              }
+            }
+          },
 
           protocol: {
             label: 'label.protocol',
@@ -3514,6 +3509,11 @@
           array1.push("&name=" + todb(args.data.primaryStorage.name));
           array1.push("&scope=" + todb(args.data.primaryStorage.scope));
 
+          //zone-wide-primary-storage is supported only for KVM and VMWare
+          if(args.data.primaryStorage.scope == "zone") {
+            array1.push("&hypervisor=" + todb(args.data.returnedCluster.hypervisortype)); //hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.
+          }
+          
 					var server = args.data.primaryStorage.server;
           var url = null;
           if (args.data.primaryStorage.protocol == "nfs") {
