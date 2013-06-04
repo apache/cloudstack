@@ -3330,7 +3330,7 @@
 
                 // Get internal load balancers
                 $.ajax({
-                  url: createURL('listLoadBalancers'),
+                  url: createURL('listLoadBalancers&listAll=true'),
                   async: false,
                   data: { networkid: tier.id },
                   success: function(json) {
@@ -3343,7 +3343,7 @@
 
                 // Get Public LB IPs
                 $.ajax({
-                  url: createURL('listPublicIpAddresses'),
+                  url: createURL('listPublicIpAddresses&listAll=true'),
                   async: false,
                   data: { networkid: tier.id, forloadbalancing: true },
                   success: function(json) {
@@ -3356,7 +3356,7 @@
                 
                 // Get static NAT IPs
                 $.ajax({
-                  url: createURL('listPublicIpAddresses'),
+                  url: createURL('listPublicIpAddresses&listAll=true'),
                   async: false,
                   data: { networkid: tier.id, isstaticnat: true },
                   success: function(json) {
@@ -3369,7 +3369,7 @@
                 
                 // Get VMs
                 $.ajax({
-                  url: createURL('listVirtualMachines'),
+                  url: createURL('listVirtualMachines&listAll=true'),
                   async: false,
                   data: { networkid: tier.id },
                   success: function(json) {
