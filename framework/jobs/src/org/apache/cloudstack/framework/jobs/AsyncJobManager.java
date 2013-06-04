@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under ones
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -54,10 +54,10 @@ public interface AsyncJobManager extends Manager {
 
     /**
      * Used by upper level job to wait for completion of a down-level job (usually VmWork jobs)
-     * in synchronized way. Caller needs to use waitAndCheck() to check the completion status
+     * in synchronous way. Caller needs to use waitAndCheck() to check the completion status
      * of the down-level job
      * 
-     * Due to the amount of legacy code that relies on synchronized-call semantics, this form of joinJob
+     * Due to the amount of legacy code that relies on synchronous-call semantics, this form of joinJob
      * is used mostly
      * 
      * 
@@ -68,19 +68,19 @@ public interface AsyncJobManager extends Manager {
 	
     /**
      * Used by upper level job to wait for completion of a down-level job (usually VmWork jobs)
-     * in asynchronized way, it will cause upper job to cease current execution, upper job will be
+     * in asynchronous way, it will cause upper job to cease current execution, upper job will be
      * rescheduled to execute periodically or on wakeup events detected from message bus
      * 
      * @param jobId upper job that is going to wait the completion of a down-level job
      * @param joinJobId down-level job
-     * @Param wakeupHandler	wakeup handler
-     * @Param wakeupDispatcher wakeup dispatcher
-     * @param wakeupTopcisOnMessageBus
+     * @Param wakeupHandler	wake-up handler
+     * @Param wakeupDispatcher wake-up dispatcher
+     * @param wakeupTopicsOnMessageBus
      * @param wakeupIntervalInMilliSeconds
      * @param timeoutInMilliSeconds
      */
     void joinJob(long jobId, long joinJobId, String wakeupHandler, String wakupDispatcher,
-    		String[] wakeupTopcisOnMessageBus, long wakeupIntervalInMilliSeconds, long timeoutInMilliSeconds);
+    		String[] wakeupTopicsOnMessageBus, long wakeupIntervalInMilliSeconds, long timeoutInMilliSeconds);
     
     /**
      * Dis-join two related jobs
@@ -107,7 +107,7 @@ public interface AsyncJobManager extends Manager {
     void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit);
     
     /**
-     * This method will be deprecated after all code has been migrated to fully-asynchronized mode
+     * This method will be deprecated after all code has been migrated to fully-asynchronous mode
      * that uses async-feature of joinJob/disjoinJob
      * 
      * @param wakupTopicsOnMessageBus topic on message bus to wakeup the wait
