@@ -31,7 +31,7 @@ public interface EventDao extends GenericDao<EventVO, Long> {
 
     EventVO findCompletedEvent(long startId);
 
-    public List<EventVO> listToArchiveOrDeleteEvents(List<Long> ids, String type, Date olderThan, List<Long> accountIds);
+    public List<EventVO> listToArchiveOrDeleteEvents(List<Long> ids, String type, Date startDate, Date endDate, List<Long> accountIds);
 
     public void archiveEvents(List<EventVO> events);
 

@@ -53,8 +53,8 @@ public class AlertControlsUnitTest extends TestCase {
         _mgmtServer._alertDao = _alertDao;
         _mgmtServer._accountMgr = _accountMgr;
         doReturn(3L).when(_accountMgr).checkAccessAndSpecifyAuthority(any(Account.class), anyLong());
-        when(_alertDao.archiveAlert(anyList(), anyString(), any(Date.class), anyLong())).thenReturn(true);
-        when(_alertDao.deleteAlert(anyList(), anyString(), any(Date.class), anyLong())).thenReturn(true);
+        when(_alertDao.archiveAlert(anyList(), anyString(), any(Date.class), any(Date.class), anyLong())).thenReturn(true);
+        when(_alertDao.deleteAlert(anyList(), anyString(), any(Date.class), any(Date.class), anyLong())).thenReturn(true);
     }
 
     @After
@@ -72,12 +72,12 @@ public class AlertControlsUnitTest extends TestCase {
     protected void archiveAlerts() {
         // archive alerts
         String msg = "Archive Alerts: TEST FAILED";
-        assertNotNull(msg, _mgmtServer._alertDao.archiveAlert(null, "system alert",null, 2L));
+        assertNotNull(msg, _mgmtServer._alertDao.archiveAlert(null, "system alert",null, null, 2L));
     }
 
     protected void deleteAlerts() {
         // delete alerts
         String msg = "Delete Alerts: TEST FAILED";
-        assertNotNull(msg, _mgmtServer._alertDao.deleteAlert(null, "system alert",null, 2L));
+        assertNotNull(msg, _mgmtServer._alertDao.deleteAlert(null, "system alert",null, null, 2L));
     }
 }

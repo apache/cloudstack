@@ -48,8 +48,13 @@ public class DeleteEventsCmd extends BaseCmd {
             description = "the IDs of the events")
     private List<Long> ids;
 
-    @Parameter(name=ApiConstants.OLDER_THAN, type=CommandType.DATE, description="delete events older than (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\")")
-    private Date olderThan;
+    @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, description="end date range to delete events" +
+            " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
+    private Date endDate;
+
+    @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, description="start date range to delete events" +
+            " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
+    private Date startDate;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "delete by event type")
     private String type;
@@ -62,8 +67,12 @@ public class DeleteEventsCmd extends BaseCmd {
         return ids;
     }
 
-    public Date getOlderThan() {
-        return olderThan;
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public Date getStartDate() {
+        return startDate;
     }
 
     public String getType() {
@@ -90,8 +99,10 @@ public class DeleteEventsCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        if(ids == null && type == null && olderThan == null) {
+        if(ids == null && type == null && endDate == null) {
             throw new InvalidParameterValueException("either ids, type or enddate must be specified");
+        } else if (startDate != null && endDate == null) {
+            throw new InvalidParameterValueException("enddate must be specified with startdate parameter");
         }
         boolean result = _mgr.deleteEvents(this);
         if (result) {

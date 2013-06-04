@@ -41,7 +41,8 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         AlertSearchByIdsAndType = createSearchBuilder();
         AlertSearchByIdsAndType.and("id", AlertSearchByIdsAndType.entity().getId(), Op.IN);
         AlertSearchByIdsAndType.and("type", AlertSearchByIdsAndType.entity().getType(), Op.EQ);
-        AlertSearchByIdsAndType.and("createdDateL", AlertSearchByIdsAndType.entity().getCreatedDate(), Op.LT);
+        AlertSearchByIdsAndType.and("createdDateB", AlertSearchByIdsAndType.entity().getCreatedDate(), Op.BETWEEN);
+        AlertSearchByIdsAndType.and("createdDateL", AlertSearchByIdsAndType.entity().getCreatedDate(), Op.LTEQ);
         AlertSearchByIdsAndType.and("data_center_id", AlertSearchByIdsAndType.entity().getDataCenterId(), Op.EQ);
         AlertSearchByIdsAndType.and("archived", AlertSearchByIdsAndType.entity().getArchived(), Op.EQ);
         AlertSearchByIdsAndType.done();
@@ -89,7 +90,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
     }
 
     @Override
-    public boolean archiveAlert(List<Long> Ids, String type, Date olderThan, Long zoneId) {
+    public boolean archiveAlert(List<Long> Ids, String type, Date startDate, Date endDate, Long zoneId) {
         SearchCriteria<AlertVO> sc = AlertSearchByIdsAndType.create();
 
         if (Ids != null) {
@@ -101,8 +102,10 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         if(zoneId != null) {
             sc.setParameters("data_center_id", zoneId);
         }
-        if(olderThan != null) {
-            sc.setParameters("createdDateL", olderThan);
+        if (startDate != null && endDate != null) {
+            sc.setParameters("createdDateB", startDate, endDate);
+        } else if (endDate != null) {
+            sc.setParameters("createdDateL", endDate);
         }
         sc.setParameters("archived", false);
 
@@ -112,20 +115,22 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
             result = false;
             return result;
         }
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        for (AlertVO alert : alerts) {
-            alert = lockRow(alert.getId(), true);
-            alert.setArchived(true);
-            update(alert.getId(), alert);
-            txn.commit();
+        if (alerts != null && !alerts.isEmpty()) {
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            for (AlertVO alert : alerts) {
+                alert = lockRow(alert.getId(), true);
+                alert.setArchived(true);
+                update(alert.getId(), alert);
+                txn.commit();
+            }
+            txn.close();
         }
-        txn.close();
         return result;
     }
 
     @Override
-    public boolean deleteAlert(List<Long> ids, String type, Date olderThan, Long zoneId) {
+    public boolean deleteAlert(List<Long> ids, String type, Date startDate, Date endDate, Long zoneId) {
         SearchCriteria<AlertVO> sc = AlertSearchByIdsAndType.create();
 
         if (ids != null) {
@@ -137,8 +142,10 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         if(zoneId != null) {
             sc.setParameters("data_center_id", zoneId);
         }
-        if(olderThan != null) {
-            sc.setParameters("createdDateL", olderThan);
+        if (startDate != null && endDate != null) {
+            sc.setParameters("createdDateB", startDate, endDate);
+        } else if (endDate != null) {
+            sc.setParameters("createdDateL", endDate);
         }
         sc.setParameters("archived", false);
 

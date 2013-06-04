@@ -848,7 +848,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             permittedAccountIds = _accountDao.getAccountIdsForDomains(permittedDomainIds);
         }
 
-        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), permittedAccountIds);
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
         _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
 
@@ -875,7 +875,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             permittedAccountIds = _accountDao.getAccountIdsForDomains(permittedDomainIds);
         }
 
-        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), permittedAccountIds);
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
         ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
         _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
 
@@ -2236,14 +2236,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public boolean archiveAlerts(ArchiveAlertsCmd cmd) {
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
-        boolean result = _alertDao.archiveAlert(cmd.getIds(), cmd.getType(), cmd.getOlderThan(), zoneId);
+        boolean result = _alertDao.archiveAlert(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), zoneId);
         return result;
     }
 
     @Override
     public boolean deleteAlerts(DeleteAlertsCmd cmd) {
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
-        boolean result = _alertDao.deleteAlert(cmd.getIds(), cmd.getType(), cmd.getOlderThan(), zoneId);
+        boolean result = _alertDao.deleteAlert(cmd.getIds(), cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), zoneId);
         return result;
     }
 
