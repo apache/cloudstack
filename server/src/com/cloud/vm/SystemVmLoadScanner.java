@@ -22,6 +22,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.context.CallContext;
+
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
@@ -67,6 +70,12 @@ public class SystemVmLoadScanner<T> {
 
             @Override
             public void run() {
+                try {
+                    CallContext.registerOnceOnly();
+                } catch (CloudAuthenticationException e) {
+                    s_logger.error("Unable to start the capacity scan task", e);
+                    System.exit(1);
+                }
                 Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                 try {
                     reallyRun();
