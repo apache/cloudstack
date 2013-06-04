@@ -134,15 +134,16 @@
         top: $router.position().top + ($router.outerHeight() / 2 + ($tier.index() * posStartOffsetTop)),
         left: $router.position().left + $router.outerWidth()
       };
-      var posStartWidth = 60 - (($tier.index() + 1) * posStartOffsetLeft);
+      var posStartWidth = 60 - ($tier.index() > 2 ? (($tier.index() + 1) * posStartOffsetLeft) : 0);
 
       var posEndOffset = 15;
+      var posEndWidthOffset = 3;
       var posEnd = {
         top: $tier.position().top + ($tier.outerHeight() / 2),
         left: posStart.left + posStartWidth + posEndOffset
       };
       var posEndWidth = Math.abs($tier.position().left -
-                                 (posStart.left + posStartWidth)) - posEndOffset;
+                                 (posStart.left + posStartWidth)) + posEndWidthOffset;
 
       // Start line (next to router)
       $connectorStart.css({
