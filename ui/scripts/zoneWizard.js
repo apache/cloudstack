@@ -3511,7 +3511,7 @@
 
           //zone-wide-primary-storage is supported only for KVM and VMWare
           if(args.data.primaryStorage.scope == "zone") {
-            array1.push("&hypervisor=" + todb(args.data.returnedCluster.hypervisortype)); //hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.
+            array1.push("&hypervisor=" + todb(args.data.cluster.hypervisor)); //hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.
           }
           
 					var server = args.data.primaryStorage.server;
