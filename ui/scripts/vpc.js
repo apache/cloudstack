@@ -2746,7 +2746,8 @@
                 async: true,
                 success: function(json) {
                   var jsonObj = json.listnetworksresponse.network[0];
-               
+                   if(jsonObj.aclid != null){
+ 
                      $.ajax({
                        url:createURL("listNetworkACLLists&id=" + jsonObj.aclid),
                        dataType:"json",
@@ -2763,6 +2764,16 @@
                            args.response.error(parseXMLHttpResponse(json));
                         }
                     });
+                  }
+
+                   else{
+                      args.response.success({
+                           actionFilter: cloudStack.actionFilter.guestNetwork,
+                           data:$.extend(jsonObj,{aclname:'None'})
+
+                          });
+
+                 }                   
                 }
               });
             }
