@@ -973,8 +973,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
 
             if (nicInSameNetwork == null) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("VM " + instanceId
-                        + " cannot be added because it doesn't belong in the same network.");
+                InvalidParameterValueException ex =
+                        new InvalidParameterValueException("VM with id specified cannot be added because it doesn't belong in the same network.");
                 ex.addProxyObject(vm.getUuid(), "instanceId");
                 throw ex;
             }
