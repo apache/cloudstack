@@ -16,16 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -34,6 +24,7 @@ import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.ClusterSyncCommand;
@@ -42,9 +33,11 @@ import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -54,26 +47,38 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
@@ -96,19 +101,29 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @Local(value = { SimulatorManager.class })
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager {
     private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
     @Inject
-    MockVmManager _mockVmMgr = null;
+    MockVmManager _mockVmMgr;
     @Inject
-    MockStorageManager _mockStorageMgr = null;
+    MockStorageManager _mockStorageMgr;
     @Inject
-    MockAgentManager _mockAgentMgr = null;
+    MockAgentManager _mockAgentMgr;
     @Inject
-    MockConfigurationDao _mockConfigDao = null;
+    MockNetworkManager _mockNetworkMgr;
+    @Inject
+    MockConfigurationDao _mockConfigDao;
     @Inject
     MockHostDao _mockHost = null;
     private ConnectionConcierge _concierge;
@@ -213,19 +228,19 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             } else if (cmd instanceof CheckVirtualMachineCommand) {
                 return _mockVmMgr.checkVmState((CheckVirtualMachineCommand) cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
-                return _mockVmMgr.SetStaticNatRules((SetStaticNatRulesCommand) cmd);
+                return _mockNetworkMgr.SetStaticNatRules((SetStaticNatRulesCommand) cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
-                return _mockVmMgr.SetFirewallRules((SetFirewallRulesCommand) cmd);
+                return _mockNetworkMgr.SetFirewallRules((SetFirewallRulesCommand) cmd);
             } else if (cmd instanceof SetPortForwardingRulesCommand) {
-                return _mockVmMgr.SetPortForwardingRules((SetPortForwardingRulesCommand) cmd);
+                return _mockNetworkMgr.SetPortForwardingRules((SetPortForwardingRulesCommand) cmd);
             } else if (cmd instanceof NetworkUsageCommand) {
-                return _mockVmMgr.getNetworkUsage((NetworkUsageCommand) cmd);
+                return _mockNetworkMgr.getNetworkUsage((NetworkUsageCommand) cmd);
             } else if (cmd instanceof IpAssocCommand) {
-                return _mockVmMgr.IpAssoc((IpAssocCommand) cmd);
+                return _mockNetworkMgr.IpAssoc((IpAssocCommand) cmd);
             } else if (cmd instanceof LoadBalancerConfigCommand) {
-                return _mockVmMgr.LoadBalancerConfig((LoadBalancerConfigCommand) cmd);
+                return _mockNetworkMgr.LoadBalancerConfig((LoadBalancerConfigCommand) cmd);
             } else if (cmd instanceof DhcpEntryCommand) {
-                return _mockVmMgr.AddDhcpEntry((DhcpEntryCommand) cmd);
+                return _mockNetworkMgr.AddDhcpEntry((DhcpEntryCommand) cmd);
             } else if (cmd instanceof VmDataCommand) {
                 return _mockVmMgr.setVmData((VmDataCommand) cmd);
             } else if (cmd instanceof CleanupNetworkRulesCmd) {
@@ -306,6 +321,36 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 return new Answer(cmd);
             } else if (cmd instanceof CopyVolumeCommand) {
                 return _mockStorageMgr.CopyVolume((CopyVolumeCommand) cmd);
+            } else if (cmd instanceof PlugNicCommand) {
+                return _mockNetworkMgr.plugNic((PlugNicCommand) cmd);
+            } else if (cmd instanceof UnPlugNicCommand) {
+                return _mockNetworkMgr.unplugNic((UnPlugNicCommand) cmd);
+            } else if (cmd instanceof IpAssocVpcCommand) {
+                return _mockNetworkMgr.ipAssoc((IpAssocVpcCommand) cmd);
+            } else if (cmd instanceof SetSourceNatCommand) {
+                return _mockNetworkMgr.setSourceNat((SetSourceNatCommand) cmd);
+            } else if (cmd instanceof SetNetworkACLCommand) {
+                return _mockNetworkMgr.setNetworkAcl((SetNetworkACLCommand) cmd);
+            } else if (cmd instanceof SetPortForwardingRulesVpcCommand) {
+                return _mockNetworkMgr.setVpcPortForwards((SetPortForwardingRulesVpcCommand) cmd);
+            } else if (cmd instanceof SetStaticRouteCommand) {
+                return _mockNetworkMgr.setStaticRoute((SetStaticRouteCommand) cmd);
+            } else if (cmd instanceof Site2SiteVpnCfgCommand) {
+                return _mockNetworkMgr.siteToSiteVpn((Site2SiteVpnCfgCommand) cmd);
+            } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
+                return _mockNetworkMgr.checkSiteToSiteVpnConnection((CheckS2SVpnConnectionsCommand) cmd);
+            } else if (cmd instanceof CreateVMSnapshotCommand) {
+                return _mockVmMgr.createVmSnapshot((CreateVMSnapshotCommand)cmd);
+            } else if (cmd instanceof DeleteVMSnapshotCommand) {
+                return _mockVmMgr.deleteVmSnapshot((DeleteVMSnapshotCommand)cmd);
+            } else if (cmd instanceof RevertToVMSnapshotCommand) {
+                return _mockVmMgr.revertVmSnapshot((RevertToVMSnapshotCommand)cmd);
+            } else if (cmd instanceof NetworkRulesVmSecondaryIpCommand) {
+                return _mockVmMgr.plugSecondaryIp((NetworkRulesVmSecondaryIpCommand)cmd);
+            } else if (cmd instanceof ScaleVmCommand) {
+                return _mockVmMgr.scaleVm((ScaleVmCommand) cmd);
+            } else if (cmd instanceof PvlanSetupCommand) {
+                return _mockNetworkMgr.setupPVLAN((PvlanSetupCommand) cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }

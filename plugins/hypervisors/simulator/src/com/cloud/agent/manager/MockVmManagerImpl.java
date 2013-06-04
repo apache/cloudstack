@@ -346,7 +346,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer startVM(StartCommand cmd, SimulatorInfo info) {
+    public StartAnswer startVM(StartCommand cmd, SimulatorInfo info) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
         String result = startVM(vm.getName(), vm.getNics(), vm.getCpus()* vm.getMaxSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
         if (result != null) {
@@ -361,26 +361,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         return new CheckSshAnswer(cmd);
     }
 
-    @Override
-    public Answer SetStaticNatRules(SetStaticNatRulesCommand cmd) {
-        return new Answer(cmd);
-    }
 
-    @Override
-    public Answer SetPortForwardingRules(SetPortForwardingRulesCommand cmd) {
-        return new Answer(cmd);
-    }
-
-    @Override
-    public Answer SetFirewallRules(SetFirewallRulesCommand cmd) {
-        return new Answer(cmd);
-    }
-
-
-    @Override
-    public NetworkUsageAnswer getNetworkUsage(NetworkUsageCommand cmd) {
-        return new NetworkUsageAnswer(cmd, null, 100L, 100L);
-    }
 
     @Override
     public MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info) {
@@ -438,21 +419,6 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer IpAssoc(IpAssocCommand cmd) {
-        return new Answer(cmd);
-    }
-
-    @Override
-    public Answer LoadBalancerConfig(LoadBalancerConfigCommand cmd) {
-        return new Answer(cmd);
-    }
-
-    @Override
-    public Answer AddDhcpEntry(DhcpEntryCommand cmd) {
-        return new Answer(cmd);
-    }
-
-    @Override
     public Answer setVmData(VmDataCommand cmd) {
         return new Answer(cmd);
     }
@@ -482,7 +448,32 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer stopVM(StopCommand cmd) {
+    public Answer scaleVm(ScaleVmCommand cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Answer plugSecondaryIp(NetworkRulesVmSecondaryIpCommand cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Answer createVmSnapshot(CreateVMSnapshotCommand cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public StopAnswer stopVM(StopCommand cmd) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         try {
             txn.start();
@@ -509,7 +500,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer rebootVM(RebootCommand cmd) {
+    public RebootAnswer rebootVM(RebootCommand cmd) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         try {
             txn.start();
