@@ -31,5 +31,6 @@ public interface ApplicationLoadBalancerRuleDao extends GenericDao<ApplicationLo
     long countBySourceIp(Ip sourceIp, long sourceIpNetworkId);
     List<ApplicationLoadBalancerRuleVO> listBySourceIpAndNotRevoked(Ip sourceIp, long sourceNetworkId);
     List<String> listLbIpsBySourceIpNetworkIdAndScheme(long sourceIpNetworkId, Scheme scheme);
+    long countBySourceIpAndNotRevoked(Ip sourceIp, long sourceIpNetworkId);
 
 }

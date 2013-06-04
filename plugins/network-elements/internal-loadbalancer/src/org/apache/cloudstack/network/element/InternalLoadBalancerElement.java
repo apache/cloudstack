@@ -64,7 +64,6 @@ import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.offering.NetworkOffering;
@@ -394,23 +393,16 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         //1) Group rules by the source ip address as NetworkManager always passes the entire network lb config to the element
         Map<Ip, List<LoadBalancingRule>> groupedRules = groupBySourceIp(rules);
 
-        //2) Count rules in revoke state
         Set<Ip> vmsToDestroy = new HashSet<Ip>();
         
         for (Ip sourceIp : groupedRules.keySet()) {
+            //2) Check if there are non revoked rules for the source ip address
             List<LoadBalancingRule> rulesToCheck = groupedRules.get(sourceIp);
-            int revoke = 0;
-            for (LoadBalancingRule ruleToCheck : rulesToCheck) {
-                if (ruleToCheck.getState() == FirewallRule.State.Revoke){
-                    revoke++;
-                }
-            }
-            
-            if (revoke == rulesToCheck.size()) {
-                s_logger.debug("Have to destroy internal lb vm for source ip " + sourceIp);
+            if (_appLbDao.countBySourceIpAndNotRevoked(sourceIp, rulesToCheck.get(0).getNetworkId()) == 0) {
+                s_logger.debug("Have to destroy internal lb vm for source ip " + sourceIp + " as it has 0 rules in non-Revoke state");
                 vmsToDestroy.add(sourceIp);
-            } 
-        }        
+            }
+        }
         return vmsToDestroy;
     }
 
