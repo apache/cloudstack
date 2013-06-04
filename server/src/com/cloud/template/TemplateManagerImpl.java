@@ -384,7 +384,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_EXTRACT, eventDescription = "extracting ISO", async = true)
-    public Pair<Long, String> extract(ExtractIsoCmd cmd) {
+    public String extract(ExtractIsoCmd cmd) {
         Account account = UserContext.current().getCaller();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
@@ -392,18 +392,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String mode = cmd.getMode();
         Long eventId = cmd.getStartEventId();
 
-        // FIXME: async job needs fixing
-        Pair<Long, String> uploadPair = extract(account, templateId, url, zoneId, mode, eventId, true, null, _asyncMgr);
-        if (uploadPair != null) {
-            return uploadPair;
-        } else {
-            throw new CloudRuntimeException("Failed to extract the iso");
-        }
+        return extract(account, templateId, url, zoneId, mode, eventId, true);
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_EXTRACT, eventDescription = "extracting template", async = true)
-    public Pair<Long, String> extract(ExtractTemplateCmd cmd) {
+    public String extract(ExtractTemplateCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
@@ -418,13 +412,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateAdapter adapter = getAdapter(template.getHypervisorType());
         TemplateProfile profile = adapter.prepareExtractTemplate(cmd);
 
-        // FIXME: async job needs fixing
-        Pair<Long, String> uploadPair = extract(caller, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
-        if (uploadPair != null) {
-            return uploadPair;
-        } else {
-            throw new CloudRuntimeException("Failed to extract the teamplate");
-        }
+        return extract(caller, templateId, url, zoneId, mode, eventId, false);
     }
 
     @Override
@@ -440,8 +428,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return vmTemplate;
     }
 
-    private Pair<Long, String> extract(Account caller, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO,
-            AsyncJobVO job, AsyncJobManager mgr) {
+    private String extract(Account caller, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO) {
         String desc = Upload.Type.TEMPLATE.toString();
         if (isISO) {
             desc = Upload.Type.ISO.toString();
@@ -505,82 +492,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
         }
 
-        if (tmpltStore.getProviderName().equalsIgnoreCase("Swift")) {
-            throw new UnsupportedServiceException("ExtractTemplate is not yet supported for Swift image store provider");
-        }
-
-        if (tmpltStore.getProviderName().equalsIgnoreCase("S3")) {
-            // for S3, no need to do anything, just return template url for
-            // extract template. but we need to set object acl as public_read to
-            // make the url accessible
-            S3TO s3 = (S3TO) tmpltStore.getTO();
-            String key = tmpltStoreRef.getLocalDownloadPath();
-            try {
-                S3Utils.setObjectAcl(s3, s3.getBucketName(), key, CannedAccessControlList.PublicRead);
-            } catch (Exception ex) {
-                s_logger.error("Failed to set ACL on S3 object " + key + " to PUBLIC_READ", ex);
-                throw new CloudRuntimeException("Failed to set ACL on S3 object " + key + " to PUBLIC_READ");
-            }
-            // construct the url from s3
-            StringBuffer s3url = new StringBuffer();
-            s3url.append(s3.isHttps() ? "https://" : "http://");
-            s3url.append(s3.getEndPoint());
-            s3url.append("/");
-            s3url.append(s3.getBucketName());
-            s3url.append("/");
-            s3url.append(key);
-
-            return new Pair<Long, String>(null, s3url.toString());
-        }
-
-        // for NFS image store case, control will come here
-        Upload.Mode extractMode;
-        if (mode == null
-                || (!mode.equalsIgnoreCase(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equalsIgnoreCase(Upload.Mode.HTTP_DOWNLOAD.toString()))) {
-            throw new InvalidParameterValueException("Please specify a valid extract Mode. Supported modes: " + Upload.Mode.FTP_UPLOAD + ", "
-                    + Upload.Mode.HTTP_DOWNLOAD);
-        } else {
-            extractMode = mode.equalsIgnoreCase(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
-        }
-
-        if (extractMode == Upload.Mode.FTP_UPLOAD) {
-            URI uri = null;
-            try {
-                uri = new URI(url);
-                if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp"))) {
-                    throw new InvalidParameterValueException("Unsupported scheme for url: " + url);
-                }
-            } catch (Exception ex) {
-                throw new InvalidParameterValueException("Invalid url given: " + url);
-            }
-
-            String host = uri.getHost();
-            try {
-                InetAddress hostAddr = InetAddress.getByName(host);
-                if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
-                    throw new InvalidParameterValueException("Illegal host specified in url");
-                }
-                if (hostAddr instanceof Inet6Address) {
-                    throw new InvalidParameterValueException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-                }
-            } catch (UnknownHostException uhe) {
-                throw new InvalidParameterValueException("Unable to resolve " + host);
-            }
-
-            if (_uploadMonitor.isTypeUploadInProgress(templateId, isISO ? Type.ISO : Type.TEMPLATE)) {
-                throw new IllegalArgumentException(template.getName()
-                        + " upload is in progress. Please wait for some time to schedule another upload for the same");
-            }
-
-            return new Pair<Long, String>(_uploadMonitor.extractTemplate(template, url, tmpltStoreRef, zoneId, eventId, job.getId(), mgr), null);
-        }
-
-        UploadVO vo = _uploadMonitor.createEntityDownloadURL(template, tmpltStoreRef, zoneId, eventId);
-        if (vo != null) {
-            return new Pair<Long, String>(vo.getId(), null);
-        } else {
-            return null;
-        }
+        return tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat());
     }
 
     public void prepareTemplateInAllStoragePools(final VMTemplateVO template, long zoneId) {

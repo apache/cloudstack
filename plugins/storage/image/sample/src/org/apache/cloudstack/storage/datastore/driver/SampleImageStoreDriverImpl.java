@@ -37,6 +37,7 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.VMTemplateDao;
 
 //http-read-only based image store
@@ -134,4 +135,12 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
         // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
 }

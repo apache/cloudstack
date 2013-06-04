@@ -305,12 +305,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 // status to trigger callback.
                 td.setStatus(Status.POST_DOWNLOAD_FINISHED);
                 // set template size for S3
-                if (td instanceof S3TemplateDownloader){
-                    long size = ((S3TemplateDownloader)td).totalBytes;
-                    DownloadJob dnld = jobs.get(jobId);
-                    dnld.setTemplatesize(size);
-                    dnld.setTemplatePhysicalSize(size);
-                }
+                S3TemplateDownloader std = (S3TemplateDownloader) td;
+                long size = std.totalBytes;
+                DownloadJob dnld = jobs.get(jobId);
+                dnld.setTemplatesize(size);
+                dnld.setTemplatePhysicalSize(size);
+                dnld.setTmpltPath(std.getDownloadLocalPath()); // update template path to include file name.
             }
             dj.cleanup();
             break;

@@ -48,6 +48,7 @@ import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import org.apache.log4j.Logger;
 
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
@@ -78,6 +79,7 @@ import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.S3Utils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -421,5 +423,30 @@ public class S3ImageStoreDriverImpl implements ImageStoreDriver {
         // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
+        // for S3, no need to do anything, just return template url for
+        // extract template. but we need to set object acl as public_read to
+        // make the url accessible
+        S3TO s3 = (S3TO)getStoreTO(store);
+        String key = installPath;
+        try {
+            S3Utils.setObjectAcl(s3, s3.getBucketName(), key, CannedAccessControlList.PublicRead);
+        } catch (Exception ex) {
+            s_logger.error("Failed to set ACL on S3 object " + key + " to PUBLIC_READ", ex);
+            throw new CloudRuntimeException("Failed to set ACL on S3 object " + key + " to PUBLIC_READ");
+        }
+        // construct the url from s3
+        StringBuffer s3url = new StringBuffer();
+        s3url.append(s3.isHttps() ? "https://" : "http://");
+        s3url.append(s3.getEndPoint());
+        s3url.append("/");
+        s3url.append(s3.getBucketName());
+        s3url.append("/");
+        s3url.append(key);
+        return s3url.toString();
+    }
+
 
 }

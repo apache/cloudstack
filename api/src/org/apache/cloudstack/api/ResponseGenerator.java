@@ -215,6 +215,8 @@ public interface ResponseGenerator {
 
     ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode, String url);
 
+    ExtractResponse createExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url);
+
     String toSerializedString(CreateCmdResponse response, String responseType);
 
     AsyncJobResponse createAsyncJobResponse(AsyncJob job);
@@ -360,7 +362,7 @@ public interface ResponseGenerator {
     public NicResponse createNicResponse(Nic result);
 
     ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances);
-    
+
     AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
 
     Long getAffinityGroupId(String name, long entityOwnerId);
@@ -370,7 +372,7 @@ public interface ResponseGenerator {
     PortableIpResponse createPortableIPResponse(PortableIp portableIp);
 
     InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result);
-    
+
     IsolationMethodResponse createIsolationMethodResponse(IsolationType method);
 
 }

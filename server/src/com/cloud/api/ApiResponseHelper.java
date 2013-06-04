@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.api;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -40,7 +37,6 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -184,7 +180,6 @@ import com.cloud.configuration.ResourceLimit;
 import com.cloud.dao.EntityManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -266,16 +261,10 @@ import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Upload;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Swift;
 import com.cloud.storage.UploadVO;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateS3VO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -1599,6 +1588,29 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<SecurityGroupResponse> listSgs = ViewResponseHelper.createSecurityGroupResponses(viewSgs);
         assert listSgs != null && listSgs.size() == 1 : "There should be one security group returned";
         return listSgs.get(0);
+    }
+
+    //TODO: we need to deprecate uploadVO, since extract is done in a synchronous fashion
+    @Override
+    public ExtractResponse createExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url) {
+
+        ExtractResponse response = new ExtractResponse();
+        response.setObjectName("template");
+        VMTemplateVO template = ApiDBUtils.findTemplateById(id);
+        response.setId(template.getUuid());
+        response.setName(template.getName());
+        if (zoneId != null) {
+            DataCenter zone = ApiDBUtils.findZoneById(zoneId);
+            response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
+        }
+        response.setMode(mode);
+            response.setUrl(url);
+            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
+        Account account = ApiDBUtils.findAccountById(accountId);
+        response.setAccountId(account.getUuid());
+
+        return response;
     }
 
     @Override
@@ -3480,6 +3492,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    @Override
     public NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result) {
         NicSecondaryIpResponse response = new NicSecondaryIpResponse();
         NicVO nic = _entityMgr.findById(NicVO.class, result.getNicId());
@@ -3492,6 +3505,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    @Override
     public NicResponse createNicResponse(Nic result) {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
@@ -3713,6 +3727,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
 
+    @Override
     public NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL) {
         NetworkACLResponse response = new NetworkACLResponse();
         response.setId(networkACL.getUuid());

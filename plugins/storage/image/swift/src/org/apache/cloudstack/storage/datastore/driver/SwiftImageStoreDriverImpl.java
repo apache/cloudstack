@@ -61,6 +61,7 @@ import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.DataStoreRole;
@@ -423,5 +424,11 @@ public class SwiftImageStoreDriverImpl implements ImageStoreDriver {
         // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
+        throw new UnsupportedServiceException("Extract entity url is not yet supported for Swift image store provider");
+    }
+
 
 }

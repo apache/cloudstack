@@ -75,18 +75,18 @@ public interface TemplateApiService {
      *
      * @param cmd
      *            - the command specifying the mode and id of the ISO
-     * @return extractId.
+     * @return extractUrl extract url.
      */
-    Pair<Long, String> extract(ExtractIsoCmd cmd) throws InternalErrorException;
+    String extract(ExtractIsoCmd cmd) throws InternalErrorException;
 
     /**
      * Extracts a Template
      *
      * @param cmd
      *            - the command specifying the mode and id of the template
-     * @return extractId
+     * @return extractUrl  extract url
      */
-    Pair<Long, String> extract(ExtractTemplateCmd cmd) throws InternalErrorException;
+    String extract(ExtractTemplateCmd cmd) throws InternalErrorException;
 
     VirtualMachineTemplate getTemplate(long templateId);
 

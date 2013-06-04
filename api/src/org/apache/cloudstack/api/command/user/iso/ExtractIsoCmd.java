@@ -124,16 +124,9 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     public void execute(){
         try {
             UserContext.current().setEventDetails(getEventDescription());
-            Pair<Long, String> uploadPair = _templateService.extract(this);
-            if (uploadPair != null){
-                ExtractResponse response = null;
-                if (uploadPair.second() != null ) {
-                    // region-wide image store
-                    response = _responseGenerator.createExtractResponse(null, id, zoneId, getEntityOwnerId(), mode, uploadPair.second());
-                } else {
-                    // nfs image store
-                    response = _responseGenerator.createExtractResponse(uploadPair.first(), id, zoneId, getEntityOwnerId(), mode, null);
-                }
+            String uploadUrl = _templateService.extract(this);
+            if (uploadUrl != null) {
+                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
                 response.setObjectName("iso");
                 this.setResponseObject(response);

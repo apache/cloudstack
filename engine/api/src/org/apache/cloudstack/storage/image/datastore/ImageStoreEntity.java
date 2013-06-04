@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.storage.ImageStore;
+import com.cloud.storage.Storage.ImageFormat;
 
 public interface ImageStoreEntity extends DataStore, ImageStore {
     TemplateInfo getTemplate(long templateId);
@@ -40,4 +41,6 @@ public interface ImageStoreEntity extends DataStore, ImageStore {
     Set<TemplateInfo> listTemplates();
 
     String getMountPoint(); // get the mount point on ssvm.
+
+    String createEntityExtractUrl(String installPath, ImageFormat format);  // get the entity download URL
 }

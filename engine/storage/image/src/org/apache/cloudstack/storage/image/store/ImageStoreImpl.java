@@ -42,6 +42,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.component.ComponentContext;
 
@@ -189,7 +190,13 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public String getMountPoint() {
-        return this.imageDataStoreVO.getParent();
+        return imageDataStoreVO.getParent();
     }
+
+    @Override
+    public String createEntityExtractUrl(String installPath, ImageFormat format) {
+        return driver.createEntityExtractUrl(this, installPath, format);
+    }
+
 
 }

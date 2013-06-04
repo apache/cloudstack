@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -40,6 +41,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.snapshot.SnapshotObject;
@@ -48,6 +50,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -55,12 +58,18 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Upload.Mode;
+import com.cloud.storage.Upload.Status;
+import com.cloud.storage.Upload.Type;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -98,6 +107,8 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     SnapshotManager snapshotMgr;
     @Inject
     AccountDao _accountDao;
+    @Inject
+    ConfigurationDao _configDao;
     @Inject
     SecondaryStorageVmManager _ssvmMgr;
     @Inject
@@ -403,6 +414,41 @@ public class CloudStackImageStoreDriverImpl implements ImageStoreDriver {
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
+        // find an endpoint to send command
+        EndPoint ep = _epSelector.select(store);
+        // Create Symlink at ssvm
+        String path = installPath;
+        String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();
+        CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity) store).getMountPoint(), path, uuid);
+        Answer ans = ep.sendMessage(cmd);
+        if (ans == null || !ans.getResult()) {
+            String errorString = "Unable to create a link for entity at " + installPath + " on ssvm," + ans.getDetails();
+            s_logger.error(errorString);
+            throw new CloudRuntimeException(errorString);
+        }
+        // Construct actual URL locally now that the symlink exists at SSVM
+        return generateCopyUrl(ep.getPublicAddr(), uuid);
+    }
+
+    private String generateCopyUrl(String ipAddress, String uuid){
+
+        String hostname = ipAddress;
+        String scheme = "http";
+        boolean _sslCopy = false;
+        String sslCfg = _configDao.getValue(Config.SecStorageEncryptCopy.toString());
+        if ( sslCfg != null ){
+            _sslCopy = Boolean.parseBoolean(sslCfg);
+        }
+        if (_sslCopy) {
+            hostname = ipAddress.replace(".", "-");
+            hostname = hostname + ".realhostip.com";
+            scheme = "https";
+        }
+        return scheme + "://" + hostname + "/userdata/" + uuid;
     }
 
 }
