@@ -59,6 +59,7 @@ import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
@@ -331,8 +332,12 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 return _mockNetworkMgr.setSourceNat((SetSourceNatCommand) cmd);
             } else if (cmd instanceof SetNetworkACLCommand) {
                 return _mockNetworkMgr.setNetworkAcl((SetNetworkACLCommand) cmd);
+            } else if (cmd instanceof SetupGuestNetworkCommand) {
+                return _mockNetworkMgr.setUpGuestNetwork((SetupGuestNetworkCommand) cmd);
             } else if (cmd instanceof SetPortForwardingRulesVpcCommand) {
                 return _mockNetworkMgr.setVpcPortForwards((SetPortForwardingRulesVpcCommand) cmd);
+            } else if (cmd instanceof SetStaticNatRulesCommand) {
+                return _mockNetworkMgr.setVPCStaticNatRules((SetStaticNatRulesCommand) cmd);
             } else if (cmd instanceof SetStaticRouteCommand) {
                 return _mockNetworkMgr.setStaticRoute((SetStaticRouteCommand) cmd);
             } else if (cmd instanceof Site2SiteVpnCfgCommand) {
@@ -340,18 +345,19 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
                 return _mockNetworkMgr.checkSiteToSiteVpnConnection((CheckS2SVpnConnectionsCommand) cmd);
             } else if (cmd instanceof CreateVMSnapshotCommand) {
-                return _mockVmMgr.createVmSnapshot((CreateVMSnapshotCommand)cmd);
+                return _mockVmMgr.createVmSnapshot((CreateVMSnapshotCommand) cmd);
             } else if (cmd instanceof DeleteVMSnapshotCommand) {
-                return _mockVmMgr.deleteVmSnapshot((DeleteVMSnapshotCommand)cmd);
+                return _mockVmMgr.deleteVmSnapshot((DeleteVMSnapshotCommand) cmd);
             } else if (cmd instanceof RevertToVMSnapshotCommand) {
-                return _mockVmMgr.revertVmSnapshot((RevertToVMSnapshotCommand)cmd);
+                return _mockVmMgr.revertVmSnapshot((RevertToVMSnapshotCommand) cmd);
             } else if (cmd instanceof NetworkRulesVmSecondaryIpCommand) {
-                return _mockVmMgr.plugSecondaryIp((NetworkRulesVmSecondaryIpCommand)cmd);
+                return _mockVmMgr.plugSecondaryIp((NetworkRulesVmSecondaryIpCommand) cmd);
             } else if (cmd instanceof ScaleVmCommand) {
                 return _mockVmMgr.scaleVm((ScaleVmCommand) cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return _mockNetworkMgr.setupPVLAN((PvlanSetupCommand) cmd);
             } else {
+                s_logger.error("Simulator does not implement command of type "+cmd.toString());
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch(Exception e) {

@@ -23,24 +23,47 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
+import com.cloud.agent.api.SetupGuestNetworkAnswer;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetNetworkACLAnswer;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
+import com.cloud.agent.api.routing.SetSourceNatAnswer;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteAnswer;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.simulator.MockVMVO;
+import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.component.ManagerBase;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
 
 public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkManager {
+    private static final Logger s_logger = Logger.getLogger(MockVmManagerImpl.class);
+
+    @Inject
+    MockVMDao _mockVmDao;
 
     @Override
     public Answer SetStaticNatRules(SetStaticNatRulesCommand cmd) {
@@ -53,8 +76,22 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
     }
 
     @Override
-    public Answer SetFirewallRules(SetFirewallRulesCommand cmd) {
-        return new Answer(cmd);
+    public SetFirewallRulesAnswer SetFirewallRules(SetFirewallRulesCommand cmd) {
+        String[] results = new String[cmd.getRules().length];
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        if (routerIp == null) {
+            return new SetFirewallRulesAnswer(cmd, false, results);
+        }
+
+        String[][] rules = cmd.generateFwRules();
+        StringBuilder sb = new StringBuilder();
+        String[] fwRules = rules[0];
+        if (fwRules.length > 0) {
+            for (int i = 0; i < fwRules.length; i++) {
+                sb.append(fwRules[i]).append(',');
+            }
+        }
+        return new SetFirewallRulesAnswer(cmd, true, results);
     }
 
 
@@ -84,38 +121,107 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
     }
 
     @Override
-    public Answer plugNic(PlugNicCommand cmd) {
-        return new Answer(cmd);
+    public PlugNicAnswer plugNic(PlugNicCommand cmd) {
+        String vmname = cmd.getVmName();
+        if (_mockVmDao.findByVmName(vmname) != null) {
+            s_logger.debug("Plugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+            return new PlugNicAnswer(cmd,  true, "success");
+        }
+        s_logger.error("Plug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+        return new PlugNicAnswer(cmd, false, "failure");
     }
 
     @Override
-    public Answer unplugNic(UnPlugNicCommand cmd) {
-        return new Answer(cmd);
+    public UnPlugNicAnswer unplugNic(UnPlugNicCommand cmd) {
+        String vmname = cmd.getVmName();
+        if (_mockVmDao.findByVmName(vmname) != null) {
+            s_logger.debug("Plugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+            return new UnPlugNicAnswer(cmd,  true, "success");
+        }
+        s_logger.error("Plug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+        return new UnPlugNicAnswer(cmd, false, "failure");
     }
 
     @Override
-    public Answer ipAssoc(IpAssocVpcCommand cmd) {
-        return new Answer(cmd);
+    public IpAssocAnswer ipAssoc(IpAssocVpcCommand cmd) {
+        String[] results = new String[cmd.getIpAddresses().length];
+        int i = 0;
+        IpAddressTO[] ips = cmd.getIpAddresses();
+        for (IpAddressTO ip : ips) {
+            results[i++] = ip.getPublicIp() + " - success";
+        }
+        return new IpAssocAnswer(cmd, results);
     }
 
     @Override
-    public Answer setSourceNat(SetSourceNatCommand cmd) {
-        return new Answer(cmd);
+    public SetSourceNatAnswer setSourceNat(SetSourceNatCommand cmd) {
+        return new SetSourceNatAnswer(cmd, true, "success");
     }
 
     @Override
-    public Answer setNetworkAcl(SetNetworkACLCommand cmd) {
-        return new Answer(cmd);
+    public SetNetworkACLAnswer setNetworkAcl(SetNetworkACLCommand cmd) {
+        String[] results = new String[cmd.getRules().length];
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(routerIp);
+        sb.append(routerName);
+
+        String [][] rules = cmd.generateFwRules();
+        String[] aclRules = rules[0];
+
+        for (int i = 0; i < aclRules.length; i++) {
+            sb.append(aclRules[i]).append(',');
+        }
+        return new SetNetworkACLAnswer(cmd, true, results);
     }
 
     @Override
-    public Answer setVpcPortForwards(SetPortForwardingRulesVpcCommand cmd) {
-        return new Answer(cmd);
+    public SetPortForwardingRulesAnswer setVpcPortForwards(SetPortForwardingRulesVpcCommand cmd) {
+        String[] results = new String[cmd.getRules().length];
+        StringBuilder sb = new StringBuilder();
+        for (PortForwardingRuleTO rule : cmd.getRules()) {
+            sb.append("src:");
+            sb.append(rule.getStringSrcPortRange());
+            sb.append("dst:");
+            sb.append(rule.getStringDstPortRange());
+        }
+        return new SetPortForwardingRulesAnswer(cmd, results, true);
     }
 
     @Override
-    public Answer setStaticRoute(SetStaticRouteCommand cmd) {
-        return new Answer(cmd);
+    public SetStaticRouteAnswer setStaticRoute(SetStaticRouteCommand cmd) {
+        String[] results = new String[cmd.getStaticRoutes().length];
+        String [][] rules = cmd.generateSRouteRules();
+        StringBuilder sb = new StringBuilder();
+        String[] srRules = rules[0];
+        for (int i = 0; i < srRules.length; i++) {
+            sb.append(srRules[i]).append(',');
+        }
+        return new SetStaticRouteAnswer(cmd, true, results);
+    }
+
+    @Override
+    public SetupGuestNetworkAnswer setUpGuestNetwork(SetupGuestNetworkCommand cmd) {
+        String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        try {
+            MockVMVO vms = _mockVmDao.findByVmName(domrName);
+            if (vms == null) {
+                return new SetupGuestNetworkAnswer(cmd, false, "Can not find VM " + domrName);
+            }
+            return new SetupGuestNetworkAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = "Creating guest network failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new SetupGuestNetworkAnswer(cmd, false, msg);
+        }
+    }
+
+    @Override
+    public SetStaticNatRulesAnswer setVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
+        String[] results = new String[cmd.getRules().length];
+        return new SetStaticNatRulesAnswer(cmd, results, true);
     }
 
     @Override

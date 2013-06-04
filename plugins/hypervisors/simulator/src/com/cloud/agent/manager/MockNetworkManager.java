@@ -22,19 +22,29 @@ package com.cloud.agent.manager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
+import com.cloud.agent.api.SetupGuestNetworkAnswer;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetNetworkACLAnswer;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
+import com.cloud.agent.api.routing.SetSourceNatAnswer;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteAnswer;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.utils.component.Manager;
@@ -57,19 +67,23 @@ public interface MockNetworkManager extends Manager {
 
     Answer setupPVLAN(PvlanSetupCommand cmd);
 
-    Answer plugNic(PlugNicCommand cmd);
+    PlugNicAnswer plugNic(PlugNicCommand cmd);
 
-    Answer unplugNic(UnPlugNicCommand cmd);
+    UnPlugNicAnswer unplugNic(UnPlugNicCommand cmd);
 
-    Answer ipAssoc(IpAssocVpcCommand cmd);
+    IpAssocAnswer ipAssoc(IpAssocVpcCommand cmd);
 
-    Answer setSourceNat(SetSourceNatCommand cmd);
+    SetSourceNatAnswer setSourceNat(SetSourceNatCommand cmd);
 
-    Answer setNetworkAcl(SetNetworkACLCommand cmd);
+    SetNetworkACLAnswer setNetworkAcl(SetNetworkACLCommand cmd);
 
-    Answer setVpcPortForwards(SetPortForwardingRulesVpcCommand cmd);
+    SetPortForwardingRulesAnswer setVpcPortForwards(SetPortForwardingRulesVpcCommand cmd);
 
-    Answer setStaticRoute(SetStaticRouteCommand cmd);
+    SetupGuestNetworkAnswer setUpGuestNetwork(SetupGuestNetworkCommand cmd);
+
+    SetStaticNatRulesAnswer setVPCStaticNatRules(SetStaticNatRulesCommand cmd);
+
+    SetStaticRouteAnswer setStaticRoute(SetStaticRouteCommand cmd);
 
     Answer siteToSiteVpn(Site2SiteVpnCfgCommand cmd);
 

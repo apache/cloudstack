@@ -17,12 +17,47 @@
 package com.cloud.agent.manager;
 
 
-import com.cloud.agent.api.*;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BumpUpPriorityCommand;
+import com.cloud.agent.api.CheckRouterAnswer;
+import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.CreateVMSnapshotAnswer;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
+import com.cloud.agent.api.DeleteVMSnapshotAnswer;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.GetVmStatsAnswer;
+import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortAnswer;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MigrateAnswer;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.RevertToVMSnapshotAnswer;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.SecurityGroupRuleAnswer;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.StartAnswer;
+import com.cloud.agent.api.StartCommand;
+import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.*;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.network.Networks.TrafficType;
@@ -437,17 +472,33 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public Answer createVmSnapshot(CreateVMSnapshotCommand cmd) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        String vmName = cmd.getVmName();
+        String vmSnapshotName = cmd.getTarget().getSnapshotName();
+
+        s_logger.debug("Created snapshot " +vmSnapshotName+ " for vm " + vmName);
+        return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
     }
 
     @Override
     public Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        String vm = cmd.getVmName();
+        String snapshotName = cmd.getTarget().getSnapshotName();
+        if(_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+            return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name "+ cmd.getVmName());
+        }
+        s_logger.debug("Removed snapshot " +snapshotName+ " of VM "+vm);
+        return new DeleteVMSnapshotAnswer(cmd, true, "success");
     }
 
     @Override
     public Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        String vm = cmd.getVmName();
+        String snapshot = cmd.getTarget().getSnapshotName();
+        if(_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+            return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name "+ cmd.getVmName());
+        }
+        s_logger.debug("Reverted to snapshot " +snapshot+ " of VM "+vm);
+        return new RevertToVMSnapshotAnswer(cmd, true, "success");
     }
 
     @Override
