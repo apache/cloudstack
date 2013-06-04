@@ -137,7 +137,7 @@
 }
 
 .vpc-network-chart .tier-item .content .dashboard {
-  height: 117px;
+  display: inline-block;
 }
 
 .vpc-network-chart .tier-item .content .dashboard-item {
@@ -265,7 +265,7 @@
 
 .vpc-network-chart .tier-item.router {
   width: 258px;
-  height: 218px;
+  height: 224px;
   background: #BDBDBD;
   border: 1px solid #808080;
   float: left;
@@ -325,6 +325,7 @@
 }
 
 .vpc-network-chart .tier-item.router .dashboard-item span {
+  padding-right: 10px;
   color: #FFFFFF;
   /*+text-shadow:0px 1px #000000;*/
   -moz-text-shadow: 0px 1px #000000;
