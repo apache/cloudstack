@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.framework.jobs;
+package org.apache.cloudstack.framework.jobs.impl;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +26,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJob.Topics;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;

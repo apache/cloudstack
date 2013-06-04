@@ -27,7 +27,7 @@ import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.framework.jobs.SyncQueueItemVO;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;

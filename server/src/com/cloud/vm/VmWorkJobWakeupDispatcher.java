@@ -29,8 +29,8 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
-import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
 import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
 

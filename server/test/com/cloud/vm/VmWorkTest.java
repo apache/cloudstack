@@ -41,7 +41,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.ComponentContext;
@@ -49,7 +48,8 @@ import com.cloud.utils.db.Transaction;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO.Step;
@@ -167,10 +167,10 @@ public class VmWorkTest extends TestCase {
 	public void testExceptionSerialization() {
 		InsufficientCapacityException exception = new InsufficientStorageCapacityException("foo", VmWorkJobVO.class, 1L);
 		
-		String encodedString = SerializerHelper.toObjectSerializedString(exception);
+		String encodedString = JobSerializerHelper.toObjectSerializedString(exception);
 		System.out.println(encodedString);
 
-		exception = (InsufficientCapacityException)SerializerHelper.fromObjectSerializedString(encodedString);
+		exception = (InsufficientCapacityException)JobSerializerHelper.fromObjectSerializedString(encodedString);
 		Assert.assertTrue(exception.getScope() == VmWorkJobVO.class);
 		Assert.assertTrue(exception.getMessage().equals("foo"));
 	}

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.framework.jobs;
+package org.apache.cloudstack.framework.jobs.impl;
 
 import java.util.Date;
 
@@ -26,6 +26,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJob.JournalType;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDao;

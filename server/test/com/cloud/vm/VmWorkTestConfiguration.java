@@ -20,9 +20,6 @@ import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import org.apache.cloudstack.framework.jobs.AsyncJobMonitor;
-import org.apache.cloudstack.framework.jobs.SyncQueueManager;
-import org.apache.cloudstack.framework.jobs.SyncQueueManagerImpl;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDaoImpl;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
@@ -33,6 +30,9 @@ import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueDaoImpl;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDaoImpl;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobMonitor;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueManager;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueManagerImpl;
 import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
 import org.apache.cloudstack.vm.jobs.VmWorkJobDaoImpl;
 

@@ -35,8 +35,8 @@ import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;

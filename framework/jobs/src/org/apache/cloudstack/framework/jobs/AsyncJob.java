@@ -18,6 +18,7 @@ package org.apache.cloudstack.framework.jobs;
 
 import java.util.Date;
 
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueItem;
 import org.apache.cloudstack.jobs.Job;
 
 public interface AsyncJob extends Job {

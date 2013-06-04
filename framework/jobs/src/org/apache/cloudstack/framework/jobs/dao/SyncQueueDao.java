@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs.dao;
 
-import org.apache.cloudstack.framework.jobs.SyncQueueVO;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 
 import com.cloud.utils.db.GenericDao;
 

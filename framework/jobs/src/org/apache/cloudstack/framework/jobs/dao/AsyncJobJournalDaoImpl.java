@@ -18,7 +18,7 @@ package org.apache.cloudstack.framework.jobs.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.framework.jobs.AsyncJobJournalVO;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobJournalVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

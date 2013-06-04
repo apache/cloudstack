@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
-import org.apache.cloudstack.framework.jobs.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.framework.jobs;
+package org.apache.cloudstack.framework.jobs.impl;
 
 import org.apache.cloudstack.api.InternalIdentity;
 

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.framework.jobs;
+package org.apache.cloudstack.framework.jobs.impl;
 
 import java.util.Date;
 import java.util.UUID;
@@ -33,6 +33,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.jobs.Job;
 
 import com.cloud.utils.UuidUtils;

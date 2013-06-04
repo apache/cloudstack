@@ -20,15 +20,15 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
-import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.SyncQueueItem;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueItem;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.utils.component.ComponentContext;
 
 public class AsyncJobExecutionContext  {
@@ -109,7 +109,7 @@ public class AsyncJobExecutionContext  {
     	
     	AsyncJobJoinMapVO record = _joinMapDao.getJoinRecord(_job.getId(), joinedJobId);
     	if(record.getJoinStatus() == AsyncJobConstants.STATUS_FAILED && record.getJoinResult() != null) {
-    		Object exception = SerializerHelper.fromObjectSerializedString(record.getJoinResult());
+    		Object exception = JobSerializerHelper.fromObjectSerializedString(record.getJoinResult());
     		if(exception != null && exception instanceof Exception) {
     			if(exception instanceof InsufficientCapacityException)
     				throw (InsufficientCapacityException)exception;

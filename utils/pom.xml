@@ -64,6 +64,11 @@
       <version>${cs.codec.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${cs.gson.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-collections</groupId>
       <artifactId>commons-collections</artifactId>
       <version>${cs.collections.version}</version>

@@ -27,7 +27,7 @@ import java.util.TimeZone;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
-import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;

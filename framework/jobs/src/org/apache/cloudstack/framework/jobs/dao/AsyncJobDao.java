@@ -19,7 +19,7 @@ package org.apache.cloudstack.framework.jobs.dao;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.cloudstack.framework.jobs.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 
 import com.cloud.utils.db.GenericDao;
 

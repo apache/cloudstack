@@ -18,7 +18,7 @@ package org.apache.cloudstack.framework.jobs.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.framework.jobs.AsyncJobJoinMapVO;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
 
 import com.cloud.utils.db.GenericDao;
 

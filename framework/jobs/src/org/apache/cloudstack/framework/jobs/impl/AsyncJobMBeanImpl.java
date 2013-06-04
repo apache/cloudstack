@@ -14,12 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.framework.jobs;
+package org.apache.cloudstack.framework.jobs.impl;
 
 import java.util.Date;
 import java.util.TimeZone;
 
 import javax.management.StandardMBean;
+
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobMBean;
 
 import com.cloud.utils.DateUtil;
 

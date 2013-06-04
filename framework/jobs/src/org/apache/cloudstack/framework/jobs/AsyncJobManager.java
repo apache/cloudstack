@@ -19,6 +19,7 @@ package org.apache.cloudstack.framework.jobs;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.Manager;
