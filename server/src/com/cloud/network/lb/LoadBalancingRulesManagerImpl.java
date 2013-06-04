@@ -1933,6 +1933,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        sb.and("scheme", sb.entity().getScheme(), SearchCriteria.Op.EQ);
 
         if (instanceId != null) {
             SearchBuilder<LoadBalancerVMMapVO> lbVMSearch = _lb2VmMapDao.createSearchBuilder();
