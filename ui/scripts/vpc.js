@@ -433,9 +433,7 @@
                       }
                     );    
                   }
-                });
-                
-                args.response.success();
+                });        
               },
               notification: {
                 poll: pollAsyncJobResult
@@ -444,12 +442,12 @@
           },
           
           detailView: {
-            name: 'Internal Lb details',
+            name: 'Internal LB details',
             actions: {
               assignVm: { 
-                label: 'Assign VMs to LB',
+                label: 'Assign VMs to Internal LB',
                 messages: {
-                  notification: function(args) { return 'Assign VM to internal LB rule'; }
+                  notification: function(args) { return 'Assign VMs to Internal LB'; }
                 },
                 listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
                   type: 'checkbox',
@@ -509,7 +507,40 @@
                 notification: {
                   poll: pollAsyncJobResult
                 }
-              }
+              },                           
+              remove: {
+                label: 'Delete Internal LB',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm you want to delete Internal LB';
+                  },
+                  notification: function(args) {
+                    return 'Delete Internal LB';
+                  }
+                },
+                action: function(args) {
+                  var data = {
+                    id: args.context.internalLoadBalancers[0].id
+                  };                
+                  $.ajax({
+                    url: createURL('deleteLoadBalancer'),
+                    data: data,
+                    async: true,
+                    success: function(json) {
+                      var jid = json.deleteloadbalancerresponse.jobid;                                                   
+                      args.response.success({
+                        _custom: { jobId: jid }
+                      });                      
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }              
             },                
             tabs: {
               details: {
