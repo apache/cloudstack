@@ -116,7 +116,6 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
-import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
@@ -947,9 +946,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public StoragePoolForMigrationResponse createStoragePoolForMigrationResponse(StoragePool pool) {
+    public StoragePoolResponse createStoragePoolForMigrationResponse(StoragePool pool) {
         List<StoragePoolJoinVO> viewPools = ApiDBUtils.newStoragePoolView(pool);
-        List<StoragePoolForMigrationResponse> listPools = ViewResponseHelper.createStoragePoolForMigrationResponse(
+        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolForMigrationResponse(
                 viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
         assert listPools != null && listPools.size() == 1 : "There should be one storage pool returned";
         return listPools.get(0);

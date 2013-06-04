@@ -16,16 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
-
 import com.cloud.serializer.Param;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+
+import java.util.Date;
 
 @EntityReference(value=StoragePool.class)
 public class StoragePoolResponse extends BaseResponse {
@@ -88,6 +87,10 @@ public class StoragePoolResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor type of the storage pool")
     private String hypervisor;
+
+    @SerializedName("suitableformigration") @Param(description="true if this pool is suitable to migrate a volume," +
+            " false otherwise")
+    private Boolean suitableForMigration;
 
     /**
      * @return the scope
@@ -258,5 +261,9 @@ public class StoragePoolResponse extends BaseResponse {
 
     public void setState(StoragePoolStatus state) {
         this.state = state;
+    }
+
+    public void setSuitableForMigration(Boolean suitableForMigration) {
+        this.suitableForMigration = suitableForMigration;
     }
 }
