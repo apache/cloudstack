@@ -2796,7 +2796,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         for (VlanVO vlan : vlanList) {
                             vlanDbIdList.add(vlan.getId());
                         }
-                        routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
+                        if (dc.getNetworkType() == NetworkType.Basic) {
+                            routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
+                        }
+                        else {
+                            routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), null, caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
+                        }
+
                         routerAliasIp = routerPublicIP.getAddress().addr();
                     }
                 }
