@@ -1549,22 +1549,30 @@
             add: {
               label: 'label.acquire.new.ip',
               addRow: 'true',
+              createForm: {
+                title: 'label.acquire.new.ip',
+                desc: 'message.acquire.new.ip',
+                fields: {
+                  ipaddr: { label: 'label.ip.address' }
+                }
+              },
               messages: {
-                confirm: function(args) {
-                  return 'message.acquire.new.ip';
-                },
                 notification: function(args) {
                   return 'label.acquire.new.ip';
                 }
               },
               action: function(args) {
-                var dataObj = {};
+                var dataObj = {
+                  nicId: args.context.nics[0].id
+                };
+
+                if (args.data.ipaddr) {
+                  dataObj.ipaddr = args.data.ipaddr;
+                }
 
                 $.ajax({
                   url: createURL('addIpToNic'),
-                  data: {
-                    nicId: args.context.nics[0].id
-                  },
+                  data: dataObj,
                   success: function(json) {
                     args.response.success({
                       _custom: {
