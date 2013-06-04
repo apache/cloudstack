@@ -25,8 +25,30 @@
   position: relative;
 }
 
+.vpc-network-chart .info-box {
+  font-size: 12px;
+  color: #6E6B6B;
+  padding: 9px 1px 10px 20px;
+  background: #FFFFFF;
+  border: 1px dotted #808080;
+  position: absolute;
+  top: 42px;
+  left: 10px;
+  width: 737px;
+}
+
+.vpc-network-chart .info-box .color-key {
+  display: block;
+  background: #2983E3;
+  padding: 1px;
+  float: left;
+  width: 10px;
+  height: 10px;
+  margin: 0px 9px 1px 0px;
+}
+
 .vpc-network-chart .tiers {
-  margin: 40px 46px 0 0;
+  margin: 66px 46px 0 0;
   width: 362px;
   float: right;
 }
@@ -249,8 +271,10 @@
   float: left;
   /*+placement:shift 10px 176px;*/
   position: relative;
+  left: 10px;
+  top: 176px;
   left: 0px;
-  top: 214px;
+  top: 240px;
 }
 
 .vpc-network-chart .tier-item.router .header {
@@ -323,6 +347,12 @@
   top: 0px;
   left: 0px;
   background: #CCCCCC;
+}
+
+.vpc-network-chart .connector-line.highlighted .connector-start,
+.vpc-network-chart .connector-line.highlighted .connector-mid,
+.vpc-network-chart .connector-line.highlighted .connector-end {
+  background: #2983E3;
 }
 
 .vpc-network-chart .connector-line .connector-start,

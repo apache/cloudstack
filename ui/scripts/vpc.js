@@ -3379,7 +3379,18 @@
                     error = true;
                   }
                 });
-                
+
+                // Highlight if any tier VM contains guest network
+                $.grep(
+                  virtualMachines.virtualmachine ? virtualMachines.virtualmachine : [],
+                  function(vm) {
+                    return $.grep(vm.nic,
+                                  function(nic) {
+                                    return nic.type == 'Shared';
+                                  }).length;
+                  }
+                ).length ? tier._highlighted = true : tier._highlighted = false;
+
                 return $.extend(tier, {
                   _dashboardItems: [
                     {

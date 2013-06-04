@@ -117,11 +117,16 @@
       var $connector = $('<div></div>').addClass('connector-line');
       var $router = args.$router;
       var $tier = args.$tier;
+      var isHighlighted = args.isHighlighted;
       var $connectorStart = $('<div></div>').addClass('connector-start');
       var $connectorMid = $('<div></div>').addClass('connector-mid');
       var $connectorEnd = $('<div></div>').addClass('connector-end');
 
       $connector.append($connectorStart, $connectorMid, $connectorEnd);
+
+      if (isHighlighted) {
+        $connector.addClass('highlighted');
+      }
 
       var posStartOffsetLeft = 5;
       var posStartOffsetTop = 10;
@@ -309,6 +314,7 @@
         var $chart = $('<div>').addClass('vpc-network-chart');
         var $tiers = $('<div>').addClass('tiers');
         var $toolbar = $('<div>').addClass('toolbar');
+        var $info = $('<div>').addClass('info-box');
 
         $toolbar.appendTo($chart);
         $tiers.appendTo($chart);
@@ -344,7 +350,11 @@
                 // -- Needs to execute after chart generation is complete,
                 //    so that chart elements have positioning in place.
                 $chart.bind('cloudStack.vpc.chartReady', function() {
-                  elems.connectorLine({ $tier: $tier, $router: $router }).appendTo($chart);
+                  elems.connectorLine({
+                    $tier: $tier,
+                    $router: $router,
+                    isHighlighted: tier._highlighted
+                  }).appendTo($chart);
                 });
               });
 
@@ -361,6 +371,13 @@
 
               if (args.complete) {
                 args.complete($chart);
+              }
+
+              if ($chart.find('.connector-line.highlighted').size()) {
+                $info.appendTo($chart).append(
+                  $('<span>').addClass('color-key'),
+                  $('<span>').html('= Contains a public network')
+                );
               }
             }
           }
