@@ -558,7 +558,7 @@
 									  listAll: true
 									},
 									success: function(json) {									  
-										var zones = json.listzonesresponse.zone;
+										var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
 
 										args.response.success({
 											data: $.map(zones, function(zone) {
@@ -4394,7 +4394,7 @@
 									  listAll: true
 									},
 									success: function(json) {									  
-										var zones = json.listzonesresponse.zone;
+										var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
 
 										args.response.success({
 											data: $.map(zones, function(zone) {
@@ -4509,7 +4509,7 @@
                         url: createURL('listZones'),
                         data: data,
                         success: function(json) {
-                          var zones = json.listzonesresponse.zone;
+                          var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
                           var advZones = $.grep(zones, function(zone) {
                             return zone.networktype == 'Advanced' && ! zone.securitygroupsenabled;
                           });

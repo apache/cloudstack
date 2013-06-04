@@ -70,7 +70,7 @@
 								listAll: true
 							},
 							success: function(json) {
-								var zones = json.listzonesresponse.zone;
+								var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
 
 								args.response.success({
 									data: $.map(zones, function(zone) {
