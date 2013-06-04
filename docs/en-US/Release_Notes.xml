@@ -4895,11 +4895,11 @@ under the License.
                                     <tbody>
                                         <row>
                                             <entry><para>Name</para></entry>
-                                            <entry><para>systemvm-vmware-3.0.5</para></entry>
+                                            <entry><para>systemvm-vmware-4.0</para></entry>
                                         </row>
                                         <row>
                                             <entry><para>Description</para></entry>
-                                            <entry><para>systemvm-vmware-3.0.5</para></entry>
+                                            <entry><para>systemvm-vmware-4.0</para></entry>
                                         </row>
                                         <row>
                                             <entry><para>URL</para></entry>
@@ -5464,8 +5464,8 @@ under the License.
                                         </row>
                                         <row>
                                             <entry><para>VMware</para></entry>
-                                            <entry><para>Name: systemvm-vmware-3.0.5</para>
-                                                <para>Description: systemvm-vmware-3.0.5</para>
+                                            <entry><para>Name: systemvm-vmware-4.0</para>
+                                                <para>Description: systemvm-vmware-4.0</para>
                                                 <para>URL:
                                                     http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para>
                                                 <para>Zone: Choose the zone where this hypervisor is used</para>
