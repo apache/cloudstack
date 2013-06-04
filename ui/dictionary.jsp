@@ -25,6 +25,8 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.acquire.new.secondary.ip': '<fmt:message key="label.acquire.new.secondary.ip" />',
+'label.view.secondary.ips': '<fmt:message key="label.view.secondary.ips" />',
 'message.acquire.ip.nic': '<fmt:message key="message.acquire.ip.nic" />',
 'message.select.affinity.groups': '<fmt:message key="message.select.affinity.groups" />',
 'message.no.affinity.groups': '<fmt:message key="message.no.affinity.groups" />',

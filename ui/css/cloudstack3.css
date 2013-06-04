@@ -1762,20 +1762,49 @@ div.list-view td.state.off span {
 .detail-group .main-groups table td.value .view-all {
   cursor: pointer;
   /*[empty]height:;*/
-  border-left: 1px solid #9FA2A5;
   /*+border-radius:4px 0 0 4px;*/
   -moz-border-radius: 4px 0 0 4px;
   -webkit-border-radius: 4px 0 0 4px;
   -khtml-border-radius: 4px 0 0 4px;
   border-radius: 4px 0 0 4px;
-  background: url(../images/sprites.png) no-repeat 100% -398px;
   float: right;
-  margin: 1px 0 0;
-  padding: 8px 33px 6px 15px;
+  margin: 7px 0 0;
+  padding: 0px;
+}
+
+.detail-group .main-groups table td.value .view-all span {
+  display: block;
+  float: left;
+  padding: 5px 2px 8px 4px;
+  background: url(../images/gradients.png) repeat-x 0px -529px;
+  border-left: 1px solid #9FA2A6;
+  /*+border-radius:4px 0 0 4px;*/
+  -moz-border-radius: 4px 0 0 4px;
+  -webkit-border-radius: 4px 0 0 4px;
+  -khtml-border-radius: 4px 0 0 4px;
+  border-radius: 4px 0 0 4px;
+  margin-top: -5px;
+}
+
+.detail-group .main-groups table td.value .view-all .end {
+  background: url(../images/sprites.png) no-repeat 100% -397px;
+  float: right;
+  width: 22px;
+  height: 25px;
+  padding: 0px;
+  margin: -6px 0px 0px;
 }
 
 .detail-group .main-groups table td.value .view-all:hover {
   background-position: 100% -431px;
+}
+
+.detail-group .main-groups table td.value .view-all:hover span {
+  background-position: 0px -566px;
+}
+
+.detail-group .main-groups table td.value .view-all:hover div.end {
+  background-position: -618px -430px;
 }
 
 .detail-view .detail-group .button.add {

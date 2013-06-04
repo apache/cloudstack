@@ -1576,6 +1576,7 @@
             viewAll: {
               path: 'network.secondaryNicIps',
               attachTo: 'ipaddress',
+              label: 'label.view.secondary.ips',
               title: function(args) {
                 var title = _l('label.menu.ipaddresses') + ' - ' + args.context.nics[0].name;
                 

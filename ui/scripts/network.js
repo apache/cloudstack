@@ -1547,10 +1547,10 @@
           },
           actions: {
             add: {
-              label: 'label.acquire.new.ip',
+              label: 'label.acquire.new.secondary.ip',
               addRow: 'true',
               createForm: {
-                title: 'label.acquire.new.ip',
+                title: 'label.acquire.new.secondary.ip',
                 desc: 'message.acquire.ip.nic',
                 fields: {
                   ipaddr: { label: 'label.ip.address' }
@@ -1558,7 +1558,7 @@
               },
               messages: {
                 notification: function(args) {
-                  return 'label.acquire.new.ip';
+                  return 'label.acquire.new.secondary.ip';
                 }
               },
               action: function(args) {

@@ -1096,7 +1096,12 @@
                   .filter('.' + tabData.viewAll.attachTo).find('td.value')
                   .append(
                     $('<div>').addClass('view-all').append(
-                      $('<span>').html(_l('label.view.all'))
+                      $('<span>').html(
+                        tabData.viewAll.label ?
+                          _l(tabData.viewAll.label) :
+                          _l('label.view.all')
+                      ),
+                      $('<div>').addClass('end')
                     ).click(function() {
                       viewAll(
                         tabData.viewAll.path,
