@@ -3361,75 +3361,56 @@
           }
           array1.push("&clustername=" + todb(clusterName));
 
-           if(args.data.cluster.hypervisor == "VMware"){
-
-              var vmwareData = {
-
-                 zoneId: args.data.returnedZone.id,
-                 username: args.data.cluster.vCenterUsername,
-                 password: args.data.cluster.vCenterPassword,
-                 name: args.data.cluster.vCenterDatacenter
-
-              };
-
-              $.ajax({
-                        url: createURL('addVmwareDc&url=' + todb(url)),
-                        data: vmwareData,
-                        success: function(json) {
-                           var item = json.addvmwaredcresponse.vmwaredc;
-                           if(item.id != null){
-                           $.ajax({
-                             url: createURL("addCluster" + array1.join("")),
-                             dataType: "json",
-                             async: true,
-                             success: function(json) {
-                                     stepFns.addPrimaryStorage({
-                                     data: $.extend(args.data, {
-                                     returnedCluster: json.addclusterresponse.cluster[0]
-                                       })
-                                    });
-
-                               },
-                                error: function(XMLHttpResponse) {
-                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                    error('addCluster', errorMsg, { fn: 'addCluster', args: args });
-                               }
-                          });
-                         }
-
-                        }
-                      });
-
-          }
-
+          if(args.data.cluster.hypervisor == "VMware"){
+            var vmwareData = {
+              zoneId: args.data.returnedZone.id,
+              username: args.data.cluster.vCenterUsername,
+              password: args.data.cluster.vCenterPassword,
+              name: args.data.cluster.vCenterDatacenter
+            };
+            $.ajax({
+              url: createURL('addVmwareDc&url=' + todb(url)),
+              data: vmwareData,
+              success: function(json) {
+                var item = json.addvmwaredcresponse.vmwaredc;
+                if(item.id != null){
+                $.ajax({
+                  url: createURL("addCluster" + array1.join("")),
+                  dataType: "json",
+                  async: true,
+                  success: function(json) {
+                    stepFns.addPrimaryStorage({ //skip "add host step" when hypervisor is VMware
+                      data: $.extend(args.data, {
+                      returnedCluster: json.addclusterresponse.cluster[0]
+                    })
+                    });
+                  },
+                  error: function(XMLHttpResponse) {
+                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                    error('addCluster', errorMsg, { fn: 'addCluster', args: args });
+                  }
+                });
+              }
+            }
+          });
+         }
          else{
-
           $.ajax({
             url: createURL("addCluster" + array1.join("")),
             dataType: "json",
             async: true,
             success: function(json) {
-              if(args.data.cluster.hypervisor != "VMware") {
-                stepFns.addHost({
-                  data: $.extend(args.data, {
-                    returnedCluster: json.addclusterresponse.cluster[0]
-                  })
-                });
-              }
-              else { 
-                stepFns.addPrimaryStorage({
-                  data: $.extend(args.data, {
-                    returnedCluster: json.addclusterresponse.cluster[0]
-                  })
-                });
-              }
+              stepFns.addHost({
+                data: $.extend(args.data, {
+                  returnedCluster: json.addclusterresponse.cluster[0]
+                })
+              });                            
             },
             error: function(XMLHttpResponse) {
               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
               error('addCluster', errorMsg, { fn: 'addCluster', args: args });
             }
           });
-
          }
         },
 
