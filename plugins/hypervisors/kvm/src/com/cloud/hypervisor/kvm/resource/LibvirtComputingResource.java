@@ -1671,7 +1671,7 @@ ServerResource {
     private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
         Connect conn;
         NicTO nic = cmd.getNic();
-        String vmName = cmd.getInstanceName();
+        String vmName = cmd.getVmName();
         try {
             conn = LibvirtConnection.getConnectionByVmName(vmName);
             Domain vm = getDomain(conn, vmName);
