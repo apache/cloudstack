@@ -51,7 +51,8 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         ToArchiveOrDeleteEventSearch.and("id", ToArchiveOrDeleteEventSearch.entity().getId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("type", ToArchiveOrDeleteEventSearch.entity().getType(), Op.EQ);
         ToArchiveOrDeleteEventSearch.and("accountIds", ToArchiveOrDeleteEventSearch.entity().getAccountId(), Op.IN);
-        ToArchiveOrDeleteEventSearch.and("createDateL", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LT);
+        ToArchiveOrDeleteEventSearch.and("createdDateB", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.BETWEEN);
+        ToArchiveOrDeleteEventSearch.and("createdDateL", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LTEQ);
         ToArchiveOrDeleteEventSearch.and("archived", ToArchiveOrDeleteEventSearch.entity().getArchived(), Op.EQ);
         ToArchiveOrDeleteEventSearch.done();
     }
@@ -80,7 +81,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     }
 
     @Override
-    public List<EventVO> listToArchiveOrDeleteEvents(List<Long> ids, String type, Date olderThan, List<Long> accountIds) {
+    public List<EventVO> listToArchiveOrDeleteEvents(List<Long> ids, String type, Date startDate, Date endDate, List<Long> accountIds) {
         SearchCriteria<EventVO> sc = ToArchiveOrDeleteEventSearch.create();
         if (ids != null) {
             sc.setParameters("id", ids.toArray(new Object[ids.size()]));
@@ -88,8 +89,10 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         if (type != null) {
             sc.setParameters("type", type);
         }
-        if (olderThan != null) {
-            sc.setParameters("createDateL", olderThan);
+        if (startDate != null && endDate != null) {
+            sc.setParameters("createdDateB", startDate, endDate);
+        } else if (endDate != null) {
+            sc.setParameters("createdDateL", endDate);
         }
         if (accountIds != null && !accountIds.isEmpty()) {
             sc.setParameters("accountIds", accountIds.toArray(new Object[accountIds.size()]));
