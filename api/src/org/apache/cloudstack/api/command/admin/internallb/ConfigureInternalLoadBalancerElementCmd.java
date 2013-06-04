@@ -17,10 +17,13 @@
 
 package org.apache.cloudstack.api.command.admin.internallb;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.VirtualRouterProvider;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,13 +34,8 @@ import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.log4j.Logger;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.VirtualRouterProvider;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+import javax.inject.Inject;
+import java.util.List;
 
 @APICommand(name = "configureInternalLoadBalancerElement", responseObject=InternalLoadBalancerElementResponse.class,
             description="Configures an Internal Load Balancer element.", since="4.2.0")
@@ -98,11 +96,8 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        s_logger.debug("hello alena");
         UserContext.current().setEventDetails("Internal load balancer element: " + id);
-        s_logger.debug("hello alena");
         VirtualRouterProvider result = _service.get(0).configureInternalLoadBalancerElement(getId(), getEnabled());
-        s_logger.debug("hello alena");
         if (result != null){
             InternalLoadBalancerElementResponse routerResponse = _responseGenerator.createInternalLbElementResponse(result);
             routerResponse.setResponseName(getCommandName());
