@@ -38,9 +38,9 @@ div.toolbar,
 div.toolbar,
 .multi-wizard .progress ul li,
 .multi-wizard.zone-wizard .select-container .field .select-array-item {
-/*\*/
+  /*\*/
   display: block;
-/**/
+  /**/
   -height: 1px;
 }
 
@@ -3461,7 +3461,7 @@ div.view table td.editable div.action.cancel {
 /*** Actions*/
 table td.actions {
   cursor: default;
-/*Make fixed*/
+  /*Make fixed*/
   width: 200px;
   min-width: 200px;
   max-width: 200px;
@@ -4329,7 +4329,7 @@ Dialogs*/
   margin: 6px 9px 9px;
   padding: 9px;
   color: #FFFFFF;
-/*Adjusting the font size for proper display*/
+  /*Adjusting the font size for proper display*/
   font-size: 10px;
   border-left: 1px solid #6A6A6A;
   border-right: 1px solid #6A6A6A;
@@ -7857,6 +7857,13 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   font-weight: bold;
 }
 
+.multi-edit .data .data-body .data-item tr td.add-vm p {
+  text-indent: 0;
+  padding-left: 9px;
+  margin-top: 3px;
+  margin-bottom: 6px;
+}
+
 .multi-edit .data .data-body .data-item tr td.multi-actions .icon {
   /*+placement:shift -3px -2px;*/
   position: relative;
@@ -7975,14 +7982,13 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 .multi-edit .header-fields input[type=submit] {
 }
 
-/* Sortable */
+/*Sortable*/
 .multi-edit table tbody tr td.reorder,
 .multi-edit table thead tr th.reorder {
   width: 30px !important;
   min-width: 30px !important;
   max-width: 30px !important;
 }
-
 
 /*Security Rules*/
 .security-rules .multi-edit input {

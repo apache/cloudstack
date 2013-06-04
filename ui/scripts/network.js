@@ -3692,9 +3692,7 @@
                                 $.extend(item, {
                                   _itemData: $.map(data.listvirtualmachinesresponse.virtualmachine, function(vm) {
                                     return $.extend(vm, {
-                                      _displayName: vm.id == vm.displayname ?
-                                        (vm.instancename ? vm.instancename : vm.name)
-                                      : vm.displayname
+                                      _displayName: '<p>VM: ' + vm.name + '</p>' + '<p>IP: ' + item.vmguestip + '</p>' // Also display attached IP
                                     });
                                   }),
                                   _context: {
