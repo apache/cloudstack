@@ -35,6 +35,12 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
     private static final Logger s_logger = Logger.getLogger(VmWorkJobDispatcher.class);
 
+    public static final String VM_WORK_QUEUE = "VmWorkJobQueue";
+    public static final String VM_WORK_JOB_DISPATCHER = "VmWorkJobDispatcher";
+    public static final String VM_WORK_JOB_WAKEUP_DISPATCHER = "VmWorkJobWakeupDispatcher";
+    public final static String Start = "start";
+    public final static String Stop = "stop";
+
 	@Inject private VirtualMachineManager _vmMgr;
 	@Inject private AsyncJobManager _asyncJobMgr;
     @Inject private AccountDao _accountDao;
@@ -42,9 +48,6 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     @Inject
     private EntityManager _entityMgr;
     
-    public final static String Start = "start";
-    public final static String Stop = "stop";
-
 	@Override
     public void runJob(AsyncJob job) {
         try {

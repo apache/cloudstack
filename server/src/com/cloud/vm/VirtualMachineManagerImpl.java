@@ -35,6 +35,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -720,8 +721,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     
     @Override
     @DB
-    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User callingUser, Account callingAccount, DeploymentPlan planToDeploy)
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        CallContext context = CallContext.current();
+        callingUser = context.getCallingUser();
+        callingAccount = context.getCallingAccount();
+
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
     	
     	VmWorkJobVO workJob = null;
@@ -732,7 +737,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         	_vmDao.lockRow(vm.getId(), true);
         	
         	List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-        		VirtualMachine.Type.Instance, vm.getId(), VmWorkConstants.VM_WORK_START);
+                    VirtualMachine.Type.Instance, vm.getId(), VmWorkJobDispatcher.Start);
         	
         	if(pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
         		assert(pendingWorkJobs.size() == 1);
@@ -740,32 +745,31 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         	} else {
         		workJob = new VmWorkJobVO();
         	
-        		workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-        		workJob.setCmd(VmWorkConstants.VM_WORK_START);
+                workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                workJob.setCmd(VmWorkJobDispatcher.Start);
         		
-        		workJob.setAccountId(account.getId());
-        		workJob.setUserId(caller.getId());
+                workJob.setAccountId(callingAccount.getId());
+        		workJob.setUserId(callingUser.getId());
         		workJob.setStep(VmWorkJobVO.Step.Starting);
         		workJob.setVmType(vm.getType());
         		workJob.setVmInstanceId(vm.getId());
 
         		// save work context info (there are some duplications)
         		VmWorkStart workInfo = new VmWorkStart();
-        		workInfo.setAccountId(account.getId());
-        		workInfo.setUserId(caller.getId());
+                workInfo.setAccountId(callingAccount.getId());
+        		workInfo.setUserId(callingUser.getId());
         		workInfo.setVmId(vm.getId());
         		workInfo.setPlan(planToDeploy);
         		workInfo.setParams(params);
         		workJob.setCmdInfo(ApiSerializerHelper.toSerializedString(workInfo));
         		
-        		_jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+                _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
         	}
     	
         	txn.commit();
     	} catch(Throwable e) {
     		s_logger.error("Unexpected exception", e);
-    		txn.rollback();
-    		throw new ConcurrentOperationException("Unhandled exception, converted to ConcurrentOperationException");
+            throw new ConcurrentOperationException("Unhandled exception, converted to ConcurrentOperationException", e);
     	}
 
     	final long jobId = workJob.getId();
@@ -1186,7 +1190,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         	_vmDao.lockRow(vm.getId(), true);
         	
         	List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-        		VirtualMachine.Type.Instance, vm.getId(), VmWorkConstants.VM_WORK_STOP);
+                    VirtualMachine.Type.Instance, vm.getId(), VmWorkJobDispatcher.Start);
         	
         	if(pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
         		assert(pendingWorkJobs.size() == 1);
@@ -1194,8 +1198,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         	} else {
         		workJob = new VmWorkJobVO();
         	
-        		workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-        		workJob.setCmd(VmWorkConstants.VM_WORK_STOP);
+                workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                workJob.setCmd(VmWorkJobDispatcher.Stop);
         		
         		workJob.setAccountId(account.getId());
         		workJob.setUserId(user.getId());
@@ -1211,7 +1215,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         		workInfo.setForceStop(forced);
         		workJob.setCmdInfo(ApiSerializerHelper.toSerializedString(workInfo));
         		
-        		_jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+                _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
         	}
     	
         	txn.commit();

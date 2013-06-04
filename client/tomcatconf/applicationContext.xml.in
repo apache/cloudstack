@@ -768,7 +768,6 @@
   <bean id="templateInstallStrategyImpl" class="org.apache.cloudstack.storage.volume.TemplateInstallStrategyImpl" />
   <bean id="unknown" class="org.apache.cloudstack.storage.image.format.Unknown" />
   <bean id="usageEventUtils" class="com.cloud.event.UsageEventUtils" />
-  <bean id="userContextInitializer" class="com.cloud.user.UserContextInitializer" />
   <bean id="VHD" class="org.apache.cloudstack.storage.image.format.VHD" />
   <bean id="vMEntityManagerImpl" class="org.apache.cloudstack.engine.vm.VMEntityManagerImpl" />
   <bean id="virtualMachineEntityImpl" class="org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl" />

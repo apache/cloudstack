@@ -199,7 +199,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             txt.commit();
             return job.getId();
         } catch(Exception e) {
-            txt.rollback();
             String errMsg = "Unable to schedule async job for command " + job.getCmd() + ", unexpected exception.";
             s_logger.warn(errMsg, e);
             throw new CloudRuntimeException(errMsg);

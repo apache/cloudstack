@@ -57,7 +57,7 @@ public class VmWorkTestApiJobDispatcher extends AdapterBase implements AsyncJobD
 		VmWorkJobVO workJob = new VmWorkJobVO();
     	
 		workJob.setDispatcher("TestWorkJobDispatcher");
-		workJob.setCmd(VmWorkConstants.VM_WORK_START);
+        workJob.setCmd(VmWorkJobDispatcher.Start);
 		
 		workJob.setAccountId(1L);
 		workJob.setUserId(1L);
@@ -74,10 +74,10 @@ public class VmWorkTestApiJobDispatcher extends AdapterBase implements AsyncJobD
 		workInfo.setParams(null);
 		workJob.setCmdInfo(ApiSerializerHelper.toSerializedString(workInfo));
 		
-		_jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, 1L);
+        _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, 1L);
 		
 		_jobMgr.joinJob(job.getId(), workJob.getId(), "processVmStartWakeup",
-				VmWorkConstants.VM_WORK_JOB_WAKEUP_DISPATCHER,
+                VmWorkJobDispatcher.VM_WORK_JOB_WAKEUP_DISPATCHER,
 				new String[] {},
 				3000, 120000);
 		AsyncJobExecutionContext.getCurrentExecutionContext().resetSyncSource();

@@ -69,6 +69,7 @@ public interface AsyncJob extends Job {
 
     @Override
     Long getInitMsid();
+
     void setInitMsid(Long msid);
 
     @Override
@@ -76,6 +77,7 @@ public interface AsyncJob extends Job {
     
     @Override
     Long getCompleteMsid();
+
     void setCompleteMsid(Long msid);
 
     @Override
@@ -98,5 +100,6 @@ public interface AsyncJob extends Job {
     String getShortUuid();
 
     SyncQueueItem getSyncSource();
+
     void setSyncSource(SyncQueueItem item);
 }

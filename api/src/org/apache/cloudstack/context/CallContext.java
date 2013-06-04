@@ -29,7 +29,7 @@ import com.cloud.user.User;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
- * Calling Context records information about who is making this call.  This
+ * CallContext records information about the environment the call is made.  This
  * class must be always be available in all CloudStack code.  Every thread
  * entry point must set the context and remove it when the thread finishes.
  */

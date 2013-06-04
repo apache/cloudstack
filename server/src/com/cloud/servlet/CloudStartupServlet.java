@@ -26,12 +26,18 @@ import javax.servlet.http.HttpServlet;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
+import org.apache.cloudstack.context.CallContext;
+
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentContext;
 
 public class CloudStartupServlet extends HttpServlet {
-    public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
+    public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class);
     static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
     
     Timer _timer = new Timer();
@@ -39,12 +45,20 @@ public class CloudStartupServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
     	LogUtils.initLog4j("log4j-cloud.xml");
-    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());
     	
     	// wait when condition is ready for initialization
     	_timer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
+                AccountVO account = new AccountVO(Account.ACCOUNT_ID_SYSTEM);
+                UserVO user = new UserVO(User.UID_SYSTEM);
+                try {
+                    CallContext.register(user, account, null);
+                } catch (Exception e) {
+                    s_logger.error("Unable to initialize call context", e);
+                    System.exit(1);
+                }
 				if(ComponentContext.getApplicationContext() != null) {
 					_timer.cancel();
 					ComponentContext.initComponentsLifeCycle();

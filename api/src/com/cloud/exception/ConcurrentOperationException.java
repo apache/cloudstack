@@ -25,4 +25,8 @@ public class ConcurrentOperationException extends CloudException {
     public ConcurrentOperationException(String msg) {
         super(msg);
     }
+
+    public ConcurrentOperationException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 }
