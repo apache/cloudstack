@@ -24,14 +24,14 @@
     <para>The feature can only be implemented on IPv4 addresses.</para>
   </note>
   <para>&PRODUCT; provides you with the flexibility to add guest IP ranges from different subnets in
-    Basic zones and security groups-enabled Advanced zones. What it implies in the case of security
-    groups-enabled Advanced zones is multiple subnets can be added to the same VLAN. With the
-    addition of this feature, you will be able to add IP address ranges from the same subnet or from
-    a different one during IP address exhaustion. To support this feature, the capability of
+    Basic zones and security groups-enabled Advanced zones. For security groups-enabled Advanced
+    zones, it implies multiple subnets can be added to the same VLAN. With the addition of this
+    feature, you will be able to add IP address ranges from the same subnet or from a different one
+    when IP address are exhausted. To support this feature, the capability of
       <code>createVlanIpRange</code> API is extended to add IP ranges also from a different
     subnet.</para>
-  <para>As an admin, you should manually configure the gateway of the new subnet before adding the
-    IP range. &PRODUCT; supports only one gateway for a subnet; overlapping subnets are not
+  <para>Ensure that you manually configure the gateway of the new subnet before adding the IP range.
+    Note that &PRODUCT; supports only one gateway for a subnet; overlapping subnets are not
     currently supported.</para>
   <para>Use the <code>deleteVlanRange</code> API to delete IP ranges. This operation fails if an IP
     from the remove range is in use. If the remove range contains the IP address on which the DHCP
