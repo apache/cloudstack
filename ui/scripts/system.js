@@ -9530,7 +9530,7 @@
                   vCenterHost: {
                     label: 'label.vcenter.host',
                     docID: 'helpClustervCenterHost',
-                    validation: { required: true }
+                    validation: { required: false } //legacy zone - validation not required for new VMware dc model
                   },
                   vCenterUsername: {
                     label: 'label.vcenter.username',
@@ -9546,7 +9546,7 @@
                   vCenterDatacenter: {
                     label: 'label.vcenter.datacenter',
                     docID: 'helpClustervCenterDatacenter',
-                    validation: { required: true }
+                    validation: { required: false } //legacy zone - validation not required for new VMware dc model
                   },
 
                     overridepublictraffic:{
