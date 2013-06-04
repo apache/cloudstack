@@ -873,6 +873,7 @@
               var isVPC = false;
               var isAdvancedSGZone = false;
               var hiddenTabs = [];
+              var isSharedNetwork;
 
               // Get network offering data
               $.ajax({
@@ -884,6 +885,10 @@
 
                   if (networkoffering.forvpc) {
                     isVPC = true;
+                  }
+
+                  if (networkoffering.guestiptype == 'Shared') {
+                    isSharedNetwork = true;
                   }
 
                   $(networkoffering.service).each(function(){
@@ -932,7 +937,7 @@
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC || isAdvancedSGZone ) {
+              if (isVPC || isAdvancedSGZone || isSharedNetwork) {
                  hiddenTabs.push('egressRules');
                }
               
