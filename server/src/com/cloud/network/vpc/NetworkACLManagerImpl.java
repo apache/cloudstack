@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.network.vpc;
 
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
@@ -29,6 +31,7 @@ import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.NetworkACLItem.State;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -73,6 +76,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     VpcGatewayDao _vpcGatewayDao;
     @Inject
     NetworkModel _ntwkModel;
+    @Inject
+    ConfigurationManager _configMgr;
 
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
@@ -133,9 +138,22 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     @Override
     public boolean replaceNetworkACL(NetworkACL acl, NetworkVO network) throws ResourceUnavailableException {
+
+        NetworkOffering guestNtwkOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+
+        if (guestNtwkOff == null) {
+            throw new InvalidParameterValueException("Can't find network offering associated with network: "+network.getUuid());
+        }
+
+        //verify that ACLProvider is supported by network offering
+        if(!_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.NetworkACL)){
+            throw new InvalidParameterValueException("Cannot apply NetworkACL. Network Offering does not support NetworkACL service");
+        }
+
         network.setNetworkACLId(acl.getId());
         //Update Network ACL
         if(_networkDao.update(network.getId(), network)){
+            s_logger.debug("Updated network: "+network.getId()+ "with Network ACL Id: "+acl.getId()+", Applying ACL items");
             //Apply ACL to network
             return applyACLToNetwork(network.getId());
         }

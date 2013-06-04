@@ -1039,7 +1039,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @Override
     public void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, 
-            String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner) {
+            String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId) {
         
         NetworkOffering guestNtwkOff = _configMgr.getNetworkOffering(newNtwkOffId);
         
@@ -1084,6 +1084,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
         }
+
+        //5) When aclId is provided, verify that ACLProvider is supported by network offering
+        if(aclId != null && (!_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.NetworkACL))){
+            throw new InvalidParameterValueException("Cannot apply NetworkACL. Network Offering does not support NetworkACL service");
+        }
+
     }
 
     @Override
@@ -2034,7 +2040,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         //1) Validate if network can be created for VPC
-        validateNtwkOffForNtwkInVpc(null, ntwkOffId, cidr, networkDomain, vpc, gateway, owner);
+        validateNtwkOffForNtwkInVpc(null, ntwkOffId, cidr, networkDomain, vpc, gateway, owner, aclId);
 
         //2) Create network
         Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId,
