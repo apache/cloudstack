@@ -97,5 +97,5 @@ public interface VolumeApiService {
      * @throws PermissionDeniedException
      *
      */
-    Long extractVolume(ExtractVolumeCmd cmd);
+    String extractVolume(ExtractVolumeCmd cmd);
 }

@@ -126,33 +126,26 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-       // try {
-            UserContext.current().setEventDetails("Volume Id: "+getId());
-            Long uploadId = _volumeService.extractVolume(this);
-            if (uploadId != null){
-                Upload uploadInfo = _entityMgr.findById(Upload.class, uploadId);
-                ExtractResponse response = new ExtractResponse();
-                response.setResponseName(getCommandName());
-                response.setObjectName("volume");
-                Volume vol = _entityMgr.findById(Volume.class, id);
-                response.setId(vol.getUuid());
-                response.setName(vol.getName());
-                DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
-                response.setZoneId(zone.getUuid());
-                response.setZoneName(zone.getName());
-                response.setMode(mode);
-                response.setUploadId(uploadInfo.getUuid());
-                response.setState(uploadInfo.getUploadState().toString());
-                Account account = _entityMgr.findById(Account.class, getEntityOwnerId());
-                response.setAccountId(account.getUuid());
-                response.setUrl(uploadInfo.getUploadUrl());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract volume");
-            }
-    //    } catch (URISyntaxException ex) {
-    //        s_logger.info(ex);
-    //        throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
-    //    }
+        UserContext.current().setEventDetails("Volume Id: " + getId());
+        String uploadUrl = _volumeService.extractVolume(this);
+        if (uploadUrl != null) {
+            ExtractResponse response = new ExtractResponse();
+            response.setResponseName(getCommandName());
+            response.setObjectName("volume");
+            Volume vol = _entityMgr.findById(Volume.class, id);
+            response.setId(vol.getUuid());
+            response.setName(vol.getName());
+            DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+            response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
+            response.setMode(mode);
+            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
+            Account account = _entityMgr.findById(Account.class, getEntityOwnerId());
+            response.setAccountId(account.getUuid());
+            response.setUrl(uploadUrl);
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract volume");
+        }
     }
 }

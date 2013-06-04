@@ -1605,8 +1605,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setZoneName(zone.getName());
         }
         response.setMode(mode);
-            response.setUrl(url);
-            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
+        response.setUrl(url);
+        response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
         Account account = ApiDBUtils.findAccountById(accountId);
         response.setAccountId(account.getUuid());
 
