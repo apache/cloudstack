@@ -193,28 +193,6 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         return null;
     }
 
-    public boolean rebootVM(String vmName) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-        try {
-            txn.start();
-            MockVm vm = _mockVmDao.findByVmName(vmName);
-            if (vm != null) {
-                vm.setState(State.Running);
-                _mockVmDao.update(vm.getId(), (MockVMVO) vm);
-
-            }
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-            throw new CloudRuntimeException("unable to reboot vm " + vmName, ex);
-        } finally {
-            txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
-            txn.close();
-        }
-        return true;
-    }
-
     @Override
     public Map<String, MockVMVO> getVms(String hostGuid) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
