@@ -25,6 +25,7 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'message.acquire.ip.nic': '<fmt:message key="message.acquire.ip.nic" />',
 'message.select.affinity.groups': '<fmt:message key="message.select.affinity.groups" />',
 'message.no.affinity.groups': '<fmt:message key="message.no.affinity.groups" />',
 'label.action.delete.nic': '<fmt:message key="label.action.delete.nic" />',

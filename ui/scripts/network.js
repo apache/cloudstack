@@ -1551,7 +1551,7 @@
               addRow: 'true',
               createForm: {
                 title: 'label.acquire.new.ip',
-                desc: 'message.acquire.new.ip',
+                desc: 'message.acquire.ip.nic',
                 fields: {
                   ipaddr: { label: 'label.ip.address' }
                 }

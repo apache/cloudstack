@@ -3748,6 +3748,10 @@ Dialogs*/
   font-size: 15px;
 }
 
+.ui-dialog div.form-container span.message br {
+  margin-bottom: 13px;
+}
+
 .ui-dialog div.form-container div.form-item {
   width: 100%;
   display: inline-block;
