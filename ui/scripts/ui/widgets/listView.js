@@ -25,6 +25,7 @@
       var messages = args.action ? args.action.messages : {};
       var preAction = args.action ? args.action.preAction : {};
       var action = args.action ? args.action.action : {};
+      var needsRefresh = args.action.needsRefresh;
       var section;
       var data = {
         id: $instanceRow.data('list-view-item-id'),
@@ -142,6 +143,12 @@
             $item: $instanceRow
           });
         } else {
+          if (needsRefresh) {
+            var $loading = $('<div>').addClass('loading-overlay');
+            
+            $listView.prepend($loading);
+          }
+          
           var actionArgs = {
             data: data,
             ref: options.ref,
@@ -205,6 +212,15 @@
                           $newRow = replaceItem($instanceRow,
                                                 $instanceRow.data('json-obj'),
                                                 actionFilter);
+                        }
+
+                        if (needsRefresh) {
+                          if ($listView.closest('.detail-view').size()) {
+                            $('.detail-view:last .button.refresh').click();
+                          } else {                            
+                            $loading.remove();
+                            $listView.listView('refresh');
+                          }
                         }
                       }
 
@@ -293,7 +309,8 @@
       if (!args.action.action.externalLink &&
           !args.action.createForm &&
           args.action.addRow != 'true' &&
-          !action.custom && !action.uiCustom) {
+          !action.custom && !action.uiCustom &&
+          !args.action.listView) {
         cloudStack.dialog.confirm({
           message: messages.confirm(messageArgs),
           action: function() {
@@ -306,6 +323,14 @@
         });
       } else if (action.custom || action.uiCustom) {
         performAction();
+      } else if (args.action.listView) {
+        cloudStack.dialog.listView({
+          context: context,
+          listView: args.action.listView,
+          after: function(args) {
+            performAction(null, { context: args.context });
+          }
+        });
       } else {
         var addRow = args.action.addRow == "false" ? false : true;
         var isHeader = args.action.isHeader;
