@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+   http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="pvlan">
+  <title>Isolation in Advanced Zone Using Private VLAN</title>
+  <para/>
+  <section id="about-pvlan">
+    <title>About Private VLAN</title>
+    <para>In an Ethernet switch, a VLAN is a broadcast domain in which hosts can establish direct
+      communication with each another at Layer 2. Private VLAN is designed as an extension of VLAN
+      standard to add further segmentation of the logical broadcast domain. A regular VLAN is a
+      single broadcast domain, whereas a private VLAN partitions a larger VLAN broadcast domain into
+      smaller sub-domains. A sub-domain is represented by a pair of VLANs: a Primary VLAN and a
+      Secondary VLAN.  The original VLAN that is being divided into smaller groups is called
+      Primary, That implies all VLAN pairs in a private VLAN share the same Primary VLAN. All the
+      secondary VLANs exist only inside the Primary. Each Secondary VLAN has a specific VLAN ID
+      associated to it, which differentiates one sub-domain from another.</para>
+    <para>For further reading:</para>
+    <itemizedlist>
+      <listitem>
+        <para><ulink
+            url="http://www.cisco.com/en/US/docs/switches/lan/catalyst3750/software/release/12.2_25_see/configuration/guide/swpvlan.html#wp1038379"
+            >Understanding Private VLANs</ulink></para>
+      </listitem>
+      <listitem>
+        <para><ulink url="http://tools.ietf.org/html/rfc5517">Cisco Systems' Private VLANs: Scalable
+            Security in a Multi-Client Environment</ulink></para>
+      </listitem>
+      <listitem>
+        <para><ulink url="http://kb.vmware.com">Private VLAN (PVLAN) on vNetwork Distributed Switch
+            - Concept Overview (1010691)</ulink></para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="prereq-pvlan">
+    <title>Prerequisites</title>
+    <para>Ensure that you configure private VLAN on your physical switches out-of-band.</para>
+  </section>
+</section>

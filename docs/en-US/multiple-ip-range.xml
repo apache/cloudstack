@@ -27,7 +27,8 @@
     Basic zones and security groups-enabled Advanced zones. For security groups-enabled Advanced
     zones, it implies multiple subnets can be added to the same VLAN. With the addition of this
     feature, you will be able to add IP address ranges from the same subnet or from a different one
-    when IP address are exhausted. To support this feature, the capability of
+    when IP address are exhausted. This would in turn allows you to employ higher number of subnets
+    and thus reduce the address management overhead. To support this feature, the capability of
       <code>createVlanIpRange</code> API is extended to add IP ranges also from a different
     subnet.</para>
   <para>Ensure that you manually configure the gateway of the new subnet before adding the IP range.
