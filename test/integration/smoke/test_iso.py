@@ -485,7 +485,7 @@ class TestISO(cloudstackTestCase):
         if len(self.zones) <= 1:
             self.skipTest("Not enough zones available to perform copy template")
 
-        self.services["destzoneid"] = filter(lambda z: z.id != self.zone.id, self.zones)[0]
+        self.services["destzoneid"] = filter(lambda z: z.id != self.zone.id, self.zones)[0].id
 
         self.debug("Copy ISO from %s to %s" % (
                                                self.zone.id,
