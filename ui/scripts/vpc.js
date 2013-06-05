@@ -2544,7 +2544,7 @@
                  label:'ACL',
                  select:function(args){
                  $.ajax({
-                 url: createURL('listNetworkACLLists'),
+                 url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
                  dataType: 'json',
                  async: true,
                  success: function(json) {
