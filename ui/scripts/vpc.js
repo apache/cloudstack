@@ -605,7 +605,6 @@
               
               assignedVms: {
                 title: 'Assigned VMs',
-                multiple: true,
                 listView: {  
                   id: 'assignedVms',
                   fields: {
@@ -625,11 +624,12 @@
                     }); 
                   },
                   actions: {
-                    add: {                      
+                    add: {
                       label: 'Assign VMs',
-                      messages: {                       
+                      messages: {
                         notification: function(args) { return 'Assign VMs'; }
                       },
+                      needsRefresh: true,
                       listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
                         type: 'checkbox',
                         filters: false,
@@ -688,36 +688,57 @@
                       notification: {
                         poll: pollAsyncJobResult
                       }                      
-                    },
-                    
-                    remove: {
-                      label: 'remove VM from load balancer',
-                      addRow: 'false',
-                      messages: {
-                        confirm: function(args) {
-                          return 'Please confirm you want to remove VM from load balancer';
-                        },
-                        notification: function(args) {
-                          return 'remove VM from load balancer';
-                        }
-                      },
-                      action: function(args) {                        
-                        $.ajax({
-                          url: createURL('removeFromLoadBalancerRule'),
-                          data: {   
-                            id: args.context.internalLoadBalancers[0].id,
-                            virtualmachineids: args.context.assignedVms[0].id
+                    }
+                  },
+                  detailView: {
+                    actions: {
+                      remove: {
+                        label: 'remove VM from load balancer',
+                        addRow: 'false',
+                        messages: {
+                          confirm: function(args) {
+                            return 'Please confirm you want to remove VM from load balancer';
                           },
-                          success: function(json) {                            
-                            var jid = json.removefromloadbalancerruleresponse.jobid;
-                            args.response.success({
-                              _custom: { jobId: jid }
-                            });                            
+                          notification: function(args) {
+                            return 'remove VM from load balancer';
                           }
-                        });
-                      },
-                      notificaton: {
-                        poll: pollAsyncJobResult
+                        },
+                        action: function(args) {                        
+                          $.ajax({
+                            url: createURL('removeFromLoadBalancerRule'),
+                            data: {   
+                              id: args.context.internalLoadBalancers[0].id,
+                              virtualmachineids: args.context.assignedVms[0].id
+                            },
+                            success: function(json) {                            
+                              var jid = json.removefromloadbalancerruleresponse.jobid;
+                              args.response.success({
+                                _custom: { jobId: jid }
+                              });                            
+                            }
+                          });
+                        },
+                        notificaton: {
+                          poll: pollAsyncJobResult
+                        }
+                      }
+                    },
+                    tabs: {
+                      details: {
+                        title: 'label.details',
+                        fields: [
+                          {
+                            name: { label: 'label.name' }
+                          },
+                          {
+                            ipaddress: { label: 'label.ip.address' }
+                          }
+                        ],
+                        dataProvider: function(args) {
+                          setTimeout(function() {
+                            args.response.success({ data: args.context.assignedVms[0] });
+                          });
+                        }
                       }
                     }
                   }
