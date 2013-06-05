@@ -625,6 +625,71 @@
                     }); 
                   },
                   actions: {
+                    add: {                      
+                      label: 'Assign VMs',
+                      messages: {                       
+                        notification: function(args) { return 'Assign VMs'; }
+                      },
+                      listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
+                        type: 'checkbox',
+                        filters: false,
+                        dataProvider: function(args) {                         
+                          $.ajax({
+                            url: createURL('listVirtualMachines'),
+                            data: {
+                              networkid: args.context.networks[0].id,
+                              listAll: true
+                            },
+                            success: function(json) {
+                              var instances = json.listvirtualmachinesresponse.virtualmachine;
+
+                              // Pre-select existing instances in LB rule
+                              $(instances).map(function(index, instance) {
+                                instance._isSelected = $.grep(
+                                  args.context.internalLoadBalancers[0].loadbalancerinstance,
+                                  
+                                  function(lbInstance) {
+                                    return lbInstance.id == instance.id;
+                                  }
+                                ).length ? true : false;
+                              });
+                              
+                              args.response.success({
+                                data: instances
+                              });
+                            }
+                          });
+                        }
+                      }),
+                      action: function(args) {                          
+                        var vms = args.context.instances;
+                        var array1 = [];
+                        for(var i = 0; i < vms.length; i++) {
+                          array1.push(vms[i].id);
+                        }
+                        var virtualmachineids = array1.join(',');
+                        
+                        $.ajax({
+                          url: createURL('assignToLoadBalancerRule'),
+                          data: {
+                            id: args.context.internalLoadBalancers[0].id,
+                            virtualmachineids: virtualmachineids
+                          },
+                          dataType: 'json',
+                          async: true,
+                          success: function(data) {                          
+                            var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
+                            args.response.success({
+                              _custom: { jobId: jid }
+                            });
+                          }
+                        });
+                      },
+                      notification: {
+                        poll: pollAsyncJobResult
+                      }                      
+                    },
+                    
                     remove: {
                       label: 'remove VM from load balancer',
                       addRow: 'false',
