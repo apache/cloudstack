@@ -269,7 +269,7 @@ def describe_setup_in_basic_mode():
     for l in range(1):
         z = zone()
         z.dns1 = "8.8.8.8"
-        z.dns2 = "4.4.4.4"
+        z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
         z.name = "test"+str(l)
@@ -390,7 +390,7 @@ def describe_setup_in_eip_mode():
     for l in range(1):
         z = zone()
         z.dns1 = "8.8.8.8"
-        z.dns2 = "4.4.4.4"
+        z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
         z.name = "test"+str(l)
@@ -519,7 +519,7 @@ def describe_setup_in_advanced_mode():
     for l in range(1):
         z = zone()
         z.dns1 = "8.8.8.8"
-        z.dns2 = "4.4.4.4"
+        z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
         z.name = "test"+str(l)
@@ -645,7 +645,7 @@ def describe_setup_in_advancedsg_mode():
     for l in range(1):
         z = zone()
         z.dns1 = "8.8.8.8"
-        z.dns2 = "4.4.4.4"
+        z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
         z.name = "test"+str(l)
