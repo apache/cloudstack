@@ -4709,7 +4709,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
-        UserVmVO vm = profile.getVirtualMachine();
+        UserVmVO vm = _vmDao.findById(profile.getId());
         if (vm.getState() == State.Running)
             collectVmDiskStatistics(vm);
     }
