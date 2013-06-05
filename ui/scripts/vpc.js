@@ -442,6 +442,7 @@
           },
           
           detailView: {
+            isMaximized: true,
             name: 'Internal LB details',
             actions: {
               assignVm: { 
@@ -605,24 +606,24 @@
               assignedVms: {
                 title: 'Assigned VMs',
                 multiple: true,
-                fields: [
-                  {
+                listView: {                  
+                  fields: {
                     name: { label: 'label.name' },
                     ipaddress: { label: 'label.ip.address' }
-                  }
-                ],
-                dataProvider: function(args) {
-                  $.ajax({
-                    url: createURL('listLoadBalancers'),
-                    data: {
-                      id: args.context.internalLoadBalancers[0].id
-                    },
-                    success: function(json) {     
-                      var item = json.listloadbalancerssresponse.loadbalancer[0];
-                      args.response.success({ data: item.loadbalancerinstance });                          
-                    }
-                  }); 
-                }
+                  },
+                  dataProvider: function(args) {
+                    $.ajax({
+                      url: createURL('listLoadBalancers'),
+                      data: {
+                        id: args.context.internalLoadBalancers[0].id
+                      },
+                      success: function(json) {     
+                        var item = json.listloadbalancerssresponse.loadbalancer[0];
+                        args.response.success({ data: item.loadbalancerinstance });                          
+                      }
+                    }); 
+                  }                 
+                }                
               }               
             }                
           }              
