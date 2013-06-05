@@ -606,7 +606,8 @@
               assignedVms: {
                 title: 'Assigned VMs',
                 multiple: true,
-                listView: {                  
+                listView: {  
+                  id: 'assignedVms',
                   fields: {
                     name: { label: 'label.name' },
                     ipaddress: { label: 'label.ip.address' }
@@ -622,7 +623,39 @@
                         args.response.success({ data: item.loadbalancerinstance });                          
                       }
                     }); 
-                  }                 
+                  },
+                  actions: {
+                    remove: {
+                      label: 'remove VM from load balancer',
+                      addRow: 'false',
+                      messages: {
+                        confirm: function(args) {
+                          return 'Please confirm you want to remove VM from load balancer';
+                        },
+                        notification: function(args) {
+                          return 'remove VM from load balancer';
+                        }
+                      },
+                      action: function(args) {                        
+                        $.ajax({
+                          url: createURL('removeFromLoadBalancerRule'),
+                          data: {   
+                            id: args.context.internalLoadBalancers[0].id,
+                            virtualmachineids: args.context.assignedVms[0].id
+                          },
+                          success: function(json) {                            
+                            var jid = json.removefromloadbalancerruleresponse.jobid;
+                            args.response.success({
+                              _custom: { jobId: jid }
+                            });                            
+                          }
+                        });
+                      },
+                      notificaton: {
+                        poll: pollAsyncJobResult
+                      }
+                    }
+                  }
                 }                
               }               
             }                
