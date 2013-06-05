@@ -73,7 +73,7 @@ public final class S3Utils {
         super();
     }
 
-    private static AmazonS3 acquireClient(final ClientOptions clientOptions) {
+    public static AmazonS3 acquireClient(final ClientOptions clientOptions) {
 
         final AWSCredentials credentials = new BasicAWSCredentials(
                 clientOptions.getAccessKey(), clientOptions.getSecretKey());
