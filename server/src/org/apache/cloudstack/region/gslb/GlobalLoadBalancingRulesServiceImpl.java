@@ -528,6 +528,10 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
     @Override
     public List<GlobalLoadBalancerRule> listGlobalLoadBalancerRule(ListGlobalLoadBalancerRuleCmd listGslbCmd) {
+
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getCaller();
+
         Integer regionId =  listGslbCmd.getRegionId();
         Long ruleId = listGslbCmd.getId();
         List<GlobalLoadBalancerRule> response = new ArrayList<GlobalLoadBalancerRule>();
@@ -546,12 +550,14 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             if (gslbRule == null) {
                 throw new InvalidParameterValueException("Invalid gslb rule id specified");
             }
+            _accountMgr.checkAccess(caller, org.apache.cloudstack.acl.SecurityChecker.AccessType.ListEntry, false, gslbRule);
+
             response.add(gslbRule);
             return response;
         }
 
         if (regionId != null) {
-            List<GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByRegionId(regionId);
+            List<GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(caller.getAccountId());
             if (gslbRules != null) {
                 response.addAll(gslbRules);
             }
