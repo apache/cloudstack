@@ -303,28 +303,30 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         //Validate Protocol
-        //Check if protocol is a number
-        if(StringUtils.isNumeric(protocol)){
-            int protoNumber = Integer.parseInt(protocol);
-            if(protoNumber < 0 || protoNumber > 255){
-                throw new InvalidParameterValueException("Invalid protocol number: " + protoNumber);
+        if(protocol != null){
+            //Check if protocol is a number
+            if(StringUtils.isNumeric(protocol)){
+                int protoNumber = Integer.parseInt(protocol);
+                if(protoNumber < 0 || protoNumber > 255){
+                    throw new InvalidParameterValueException("Invalid protocol number: " + protoNumber);
+                }
+            } else {
+                //Protocol is not number
+                //Check for valid protocol strings
+                String supportedProtocols = "tcp,udp,icmp,all";
+                if(!supportedProtocols.contains(protocol.toLowerCase())){
+                    throw new InvalidParameterValueException("Invalid protocol: " + protocol);
+                }
             }
-        } else {
-            //Protocol is not number
-            //Check for valid protocol strings
-            String supportedProtocols = "tcp,udp,icmp,all";
-            if(!supportedProtocols.contains(protocol.toLowerCase())){
-                throw new InvalidParameterValueException("Invalid protocol: " + protocol);
+
+            // icmp code and icmp type can't be passed in for any other protocol rather than icmp
+            if (!protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (icmpCode != null || icmpType != null)) {
+                throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
             }
-        }
 
-        // icmp code and icmp type can't be passed in for any other protocol rather than icmp
-        if (!protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (icmpCode != null || icmpType != null)) {
-            throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
-        }
-
-        if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (portStart != null || portEnd != null)) {
-            throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
+            if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (portStart != null || portEnd != null)) {
+                throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
+            }
         }
 
         //validate icmp code and type
