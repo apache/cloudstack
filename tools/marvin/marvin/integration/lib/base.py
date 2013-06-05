@@ -1371,18 +1371,18 @@ class NetworkOffering:
 
         if "useVpc" in services:
             cmd.useVpc = services["useVpc"]
-        cmd.serviceProviderList = []
+        cmd.serviceproviderlist = []
         if "serviceProviderList" in services:
             for service, provider in services["serviceProviderList"].items():
-                cmd.serviceProviderList.append({
+                cmd.serviceproviderlist.append({
                                             'service': service,
                                             'provider': provider
                                            })
-        if "servicecapabilitylist" in services:
-            cmd.serviceCapabilityList = []
-            for service, capability in services["servicecapabilitylist"].items():
+        if "serviceCapabilityList" in services:
+            cmd.servicecapabilitylist = []
+            for service, capability in services["serviceCapabilityList"].items():
                 for ctype, value in capability.items():
-                    cmd.serviceCapabilityList.append({
+                    cmd.servicecapabilitylist.append({
                                             'service': service,
                                             'capabilitytype': ctype,
                                             'capabilityvalue': value
@@ -2798,7 +2798,7 @@ class VPC:
 
     @classmethod
     def create(cls, apiclient, services, vpcofferingid,
-                    zoneid, networkDomain=None, account=None, domainid=None):
+                    zoneid, networkDomain=None, account=None, domainid=None, **kwargs):
         """Creates the virtual private connection (VPC)"""
 
         cmd = createVPC.createVPCCmd()
@@ -2806,13 +2806,15 @@ class VPC:
         cmd.displaytext = "-".join([services["displaytext"], random_gen()])
         cmd.vpcofferingid = vpcofferingid
         cmd.zoneid = zoneid
-        cmd.cidr = services["cidr"]
+        if "cidr" in services:
+            cmd.cidr = services["cidr"]
         if account:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
         if networkDomain:
             cmd.networkDomain = networkDomain
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
         return VPC(apiclient.createVPC(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None):
@@ -3216,3 +3218,83 @@ class Region:
         cmd.id = self.id
         region = apiclient.removeRegion(cmd)
         return region
+
+
+class ApplicationLoadBalancer:
+    """Manage Application Load Balancers in VPC"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, name=None, sourceport=None, instanceport=22,
+               algorithm="roundrobin", scheme="internal", sourcenetworkid=None, networkid=None):
+        """Create Application Load Balancer"""
+        cmd = createLoadBalancer.createLoadBalancerCmd()
+
+        if "name" in services:
+            cmd.name = services["name"]
+        elif name:
+            cmd.name = name
+
+        if "sourceport" in services:
+            cmd.sourceport = services["sourceport"]
+        elif sourceport:
+            cmd.sourceport = sourceport
+
+        if "instanceport" in services:
+            cmd.instanceport = services["instanceport"]
+        elif instanceport:
+            cmd.instanceport = instanceport
+
+        if "algorithm" in services:
+            cmd.algorithm = services["algorithm"]
+        elif algorithm:
+            cmd.algorithm = algorithm
+
+        if "scheme" in services:
+            cmd.scheme = services["scheme"]
+        elif scheme:
+            cmd.scheme = scheme
+
+        if "sourceipaddressnetworkid" in services:
+            cmd.sourceipaddressnetworkid = services["sourceipaddressnetworkid"]
+        elif sourcenetworkid:
+            cmd.sourceipaddressnetworkid = sourcenetworkid
+
+        if "networkid" in services:
+            cmd.networkid = services["networkid"]
+        elif networkid:
+            cmd.networkid = networkid
+
+        return LoadBalancerRule(apiclient.createLoadBalancer(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete application load balancer"""
+        cmd = deleteLoadBalancer.deleteLoadBalancerCmd()
+        cmd.id = self.id
+        apiclient.deleteLoadBalancerRule(cmd)
+        return
+
+    def assign(self, apiclient, vms):
+        """Assign virtual machines to load balancing rule"""
+        cmd = assignToLoadBalancerRule.assignToLoadBalancerRuleCmd()
+        cmd.id = self.id
+        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        apiclient.assignToLoadBalancerRule(cmd)
+        return
+
+    def remove(self, apiclient, vms):
+        """Remove virtual machines from load balancing rule"""
+        cmd = removeFromLoadBalancerRule.removeFromLoadBalancerRuleCmd()
+        cmd.id = self.id
+        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        apiclient.removeFromLoadBalancerRule(cmd)
+        return
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all appln load balancers"""
+        cmd = listLoadBalancers.listLoadBalancersCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listLoadBalancerRules(cmd))
