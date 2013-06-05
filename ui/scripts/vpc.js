@@ -3482,17 +3482,41 @@
                   }
                 ).length ? tier._highlighted = true : tier._highlighted = false;
 
+                // Get LB capabilities
+                var lbSchemes = $.grep(
+                  $.grep(
+                    tier.service,
+                    function(service) {
+                      return service.name == 'Lb';
+                    }
+                  )[0].capability,
+                  function(capability) {
+                    return capability.name == 'LbSchemes';
+                  }
+                );
+
+                var hasLbScheme = function(schemeVal) {
+                  return $.grep(
+                    lbSchemes,
+                    function(scheme) {
+                      return scheme.value == schemeVal;
+                    }
+                  ).length ? true : false;
+                };
+
                 return $.extend(tier, {
                   _dashboardItems: [
                     {
                       id: 'internalLoadBalancers',
                       name: 'Internal LB',
-                      total: internalLoadBalancers.count
+                      total: internalLoadBalancers.count,
+                      _disabled: !hasLbScheme('Internal')
                     },
                     {
                       id: 'publicLbIps',
                       name: 'Public LB IP',
-                      total: publicLbIps.count
+                      total: publicLbIps.count,
+                      _disabled: !hasLbScheme('Public')
                     },
                     {
                       id: 'tierStaticNATs',
