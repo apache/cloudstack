@@ -34,6 +34,15 @@ class Services:
 
     def __init__(self):
         self.services = {
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                # Random characters are appended in create account to
+                # ensure unique username generated each time
+                "password": "password",
+                },
             "off":
                 {
                     "name": "Service Offering",
