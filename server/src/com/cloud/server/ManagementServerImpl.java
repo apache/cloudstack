@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -373,15 +374,6 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.*;
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateStaticRouteCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.DeleteStaticRouteCmd;
@@ -1184,10 +1176,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             allHosts.remove(srcHost);
 
             // Check if the host has storage pools for all the volumes of the vm to be migrated.
-            for (Host host : allHosts) {
+            for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
+                Host host = iterator.next();
                 Map<Volume, List<StoragePool>> volumePools = findSuitablePoolsForVolumes(vmProfile, host);
                 if (volumePools.isEmpty()) {
-                    allHosts.remove(host);
+                    iterator.remove();
                 } else {
                     if (!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) {
                         requiresStorageMotion.put(host, true);

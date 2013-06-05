@@ -2544,7 +2544,7 @@
                  label:'ACL',
                  select:function(args){
                  $.ajax({
-                 url: createURL('listNetworkACLLists'),
+                 url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
                  dataType: 'json',
                  async: true,
                  success: function(json) {
@@ -2763,7 +2763,7 @@
                 },
 
                 aclname:{label:'ACL name'},
-                aclid:{label:'ACL id'},
+                //aclid:{label:'ACL id'},
 
                 domain: { label: 'label.domain' },
                 account: { label: 'label.account' }
@@ -3155,7 +3155,28 @@
                 label: 'label.netmask',
                 docID: 'helpTierNetmask',
                 validation: { required: true }
-              }
+              },
+
+               aclid:{
+               label:'ACL',
+               select:function(args){
+                   $.ajax({
+                 url: createURL('listNetworkACLLists&vpcid=' +args.context.vpc[0].id),
+                 dataType: 'json',
+                 async: true,
+                 success: function(json) {
+                      var objs = json.listnetworkacllistsresponse.networkacllist;
+                      var items = [];
+                        items.push({id:'',description:''});
+                      $(objs).each(function() {
+
+                          items.push({id: this.id, description: this.name});
+                           });
+                     args.response.success({data: items});
+                       }
+                     });
+                }
+
             }
           },
           action: function(args) {
@@ -3170,6 +3191,10 @@
               gateway: args.data.gateway,
               netmask: args.data.netmask
             };
+
+            if(args.data.aclid !='')
+                $.extend(dataObj, {aclid:args.data.aclid});
+
 
             $.ajax({
               url: createURL('createNetwork'),

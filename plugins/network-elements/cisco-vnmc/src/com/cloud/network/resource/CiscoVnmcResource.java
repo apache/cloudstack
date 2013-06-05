@@ -501,7 +501,7 @@ public class CiscoVnmcResource implements ServerResource {
     }
 
     /*
-     * Destination NAT
+     * PF
      */
     private synchronized Answer execute(SetPortForwardingRulesCommand cmd) {
         refreshVnmcConnection();
