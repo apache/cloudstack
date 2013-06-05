@@ -125,7 +125,9 @@
                     <configuration>
                         <testExcludes>
                             <exclude>**/com/cloud/upgrade/*.java</exclude>
+<!--                              
                             <exclude>**/com/cloud/async/*.java</exclude>
+-->       
                         </testExcludes>
                     </configuration>
                     <goals>

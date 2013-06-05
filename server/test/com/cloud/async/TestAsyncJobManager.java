@@ -24,6 +24,18 @@ import java.util.List;
 import javax.inject.Inject;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobJournalVO;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobMonitor;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.messagebus.TopicConstants;
@@ -36,13 +48,6 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.cloud.async.AsyncJobJournalVO;
-import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobMonitor;
-import com.cloud.async.dao.AsyncJobJoinMapDao;
-import com.cloud.async.dao.AsyncJobJournalDao;
-import com.cloud.async.dao.SyncQueueDao;
-import com.cloud.async.dao.SyncQueueItemDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -212,7 +217,7 @@ public class TestAsyncJobManager extends TestCase {
 		});
 		thread.start();
     
-		jobMonitor.registerActiveTask(1, 1, false);
+		jobMonitor.registerActiveTask(1);
 		
     	asyncMgr.waitAndCheck(new String[] {"VM"}, 5000L, 10000L, new Predicate() {
     		public boolean checkCondition() {

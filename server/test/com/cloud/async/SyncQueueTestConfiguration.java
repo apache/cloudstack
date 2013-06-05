@@ -16,16 +16,18 @@
 // under the License.
 package com.cloud.async;
 
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDaoImpl;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueDaoImpl;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDaoImpl;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueManager;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueManagerImpl;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.cloud.async.dao.AsyncJobJoinMapDao;
-import com.cloud.async.dao.AsyncJobJoinMapDaoImpl;
-import com.cloud.async.dao.SyncQueueDao;
-import com.cloud.async.dao.SyncQueueDaoImpl;
-import com.cloud.async.dao.SyncQueueItemDao;
-import com.cloud.async.dao.SyncQueueItemDaoImpl;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 

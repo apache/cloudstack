@@ -14,23 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.async;
 
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDaoImpl;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDaoImpl;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDao;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDaoImpl;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueDaoImpl;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDaoImpl;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueManager;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueManagerImpl;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.cloud.api.ApiDispatcher;
-import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.dao.AsyncJobDaoImpl;
-import com.cloud.async.dao.AsyncJobJoinMapDao;
-import com.cloud.async.dao.AsyncJobJoinMapDaoImpl;
-import com.cloud.async.dao.AsyncJobJournalDao;
-import com.cloud.async.dao.AsyncJobJournalDaoImpl;
-import com.cloud.async.dao.SyncQueueDao;
-import com.cloud.async.dao.SyncQueueDaoImpl;
-import com.cloud.async.dao.SyncQueueItemDao;
-import com.cloud.async.dao.SyncQueueItemDaoImpl;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;

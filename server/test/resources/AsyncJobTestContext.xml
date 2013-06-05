@@ -27,29 +27,26 @@
   <bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />
 
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
-  <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
   <bean id="instantiatePostProcessor" class="com.cloud.utils.component.ComponentInstantiationPostProcessor">
     <property name="Interceptors">
         <list>
             <ref bean="transactionContextBuilder" />
-            <ref bean="actionEventInterceptor" />
         </list>
     </property>
   </bean>
 
   <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl">
-    <property name="defaultDispatcher" value="ApiAsyncJobDispatcher" />
   </bean>
   <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher">
     <property name="name" value="ApiAsyncJobDispatcher" />
   </bean>
-  <bean id="asyncJobMonitor" class="com.cloud.async.AsyncJobMonitor">
+  <bean id="asyncJobMonitor" class="org.apache.cloudstack.framework.jobs.impl.AsyncJobMonitor">
     <property name="inactivityWarningThresholdMs" value="5" />
     <property name="InactivityCheckIntervalMs" value="1" />
   </bean>
   
   <bean id="messageBus" class = "org.apache.cloudstack.framework.messagebus.MessageBusBase" />
 
-  <bean class="com.cloud.async.AsyncJobTestConfiguration" />
+  <bean id="AsyncJobTestConfiguration" class="com.cloud.async.AsyncJobTestConfiguration" />
 
 </beans>

@@ -22,6 +22,9 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueManager;
+import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
