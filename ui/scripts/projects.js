@@ -849,6 +849,9 @@
                           getUpdatedItem: function(data) {
                             return $.extend(data, { state: 'Destroyed' });
                           },
+                          onComplete: function(data) {
+                            $(window).trigger('cloudStack.deleteProject', args);
+                          },
                           getActionFilter: function(args) {
                             return function() {
                               return [];
