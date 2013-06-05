@@ -2116,6 +2116,21 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         }
                     }
 
+                // In some scenarios even though guesVmCidr and network CIDR do not appear similar but
+                // the IP ranges exactly matches, in these special cases make sure no Reservation gets applied
+                if (network.getNetworkCidr() == null) {
+                    if (NetUtils.isSameIpRange(guestVmCidr, network.getCidr()) && !guestVmCidr.equals(network.getCidr())) {
+                        throw new InvalidParameterValueException("The Start IP and End IP of guestvmcidr: "+ guestVmCidr + " and CIDR: " + network.getCidr() + " are same, " +
+                                "even though both the cidrs appear to be different. As a precaution no IP Reservation will be applied.");
+                    }
+                } else {
+                    if(NetUtils.isSameIpRange(guestVmCidr, network.getNetworkCidr()) && !guestVmCidr.equals(network.getNetworkCidr())) {
+                        throw new InvalidParameterValueException("The Start IP and End IP of guestvmcidr: "+ guestVmCidr + " and Network CIDR: " + network.getNetworkCidr() + " are same, " +
+                                "even though both the cidrs appear to be different. As a precaution IP Reservation will not be affected. If you want to reset IP Reservation, " +
+                                "specify guestVmCidr to be: " + network.getNetworkCidr());
+                    }
+                }
+
                 // When reservation is applied for the first time, network_cidr will be null
                 // Populate it with the actual network cidr
                 if (network.getNetworkCidr() == null) {
