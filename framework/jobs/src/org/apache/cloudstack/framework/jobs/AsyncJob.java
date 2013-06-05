@@ -90,8 +90,6 @@ public interface AsyncJob extends Job {
     @Override
     Date getLastPolled();
 
-    Date getRemoved();
-
     @Override
     String getInstanceType();
 

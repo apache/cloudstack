@@ -95,7 +95,7 @@ public class CallContext {
         CallContext callingContext = new CallContext(callingUser, callingAccount, sessionId);
         s_currentContext.set(callingContext);
         if (sessionId != null) {
-            NDC.push(sessionId);
+            NDC.push("job-" + sessionId);
         }
         s_logger.debug("Setting calling context: " + s_currentContext.get());
         return callingContext;

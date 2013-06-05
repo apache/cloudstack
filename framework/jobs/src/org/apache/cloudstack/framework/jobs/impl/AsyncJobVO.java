@@ -125,12 +125,12 @@ public class AsyncJobVO implements AsyncJob, Job {
         uuid = UUID.randomUUID().toString();
     }
 
-    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, String instanceType) {
+    public AsyncJobVO(String uuid, long userId, long accountId, String cmd, String cmdInfo, Long instanceId, String instanceType) {
 		this.userId = userId;
 		this.accountId = accountId;
 		this.cmd = cmd;
 		this.cmdInfo = cmdInfo;
-	    uuid = UUID.randomUUID().toString();
+        this.uuid = uuid;
 	    this.instanceId = instanceId;
 	    this.instanceType = instanceType;
     }
@@ -313,15 +313,6 @@ public class AsyncJobVO implements AsyncJob, Job {
 		this.lastPolled = lastPolled;
 	}
 
-	@Override
-    public Date getRemoved() {
-		return removed;
-	}
-
-	public void setRemoved(Date removed) {
-		this.removed = removed;
-	}
-	
     @Override
     public String getInstanceType() {
 		return instanceType;

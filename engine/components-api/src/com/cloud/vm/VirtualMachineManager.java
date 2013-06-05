@@ -27,7 +27,6 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -200,15 +199,6 @@ public interface VirtualMachineManager extends Manager {
     boolean migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId)
             throws ResourceUnavailableException, ConcurrentOperationException,
             ManagementServerException, VirtualMachineMigrationException;
-
-    //
-    // VM work handlers
-    //
-    VirtualMachine processVmStartWork(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
-           throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
-
-    boolean processVmStopWork(String vmUuid, boolean forced, User user, Account account)
-    	throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType);
 }

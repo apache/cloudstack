@@ -34,7 +34,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
@@ -517,8 +516,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             		//
             		// setup execution environment
             		//
-                    NDC.push("job-" + job.getId());
-                    
             		txn = Transaction.open(Transaction.CLOUD_DB);
             		
                     try {
@@ -588,7 +585,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 	                    if(txn != null)
 	                    	txn.close();
 	                    
-	                    NDC.pop();
                     } catch(Throwable e) {
                 		s_logger.error("Double exception", e);
                     }

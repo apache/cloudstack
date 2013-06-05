@@ -41,7 +41,8 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     public final static String Start = "start";
     public final static String Stop = "stop";
 
-	@Inject private VirtualMachineManager _vmMgr;
+    @Inject
+    private VirtualMachineManagerImpl _vmMgr;
 	@Inject private AsyncJobManager _asyncJobMgr;
     @Inject private AccountDao _accountDao;
     @Inject private VMInstanceDao _instanceDao;
@@ -50,25 +51,32 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     
 	@Override
     public void runJob(AsyncJob job) {
+        VmWork work = null;
         try {
         	String cmd = job.getCmd();
         	assert(cmd != null);
         	
-        	VmWork work = (VmWork)ApiSerializerHelper.fromSerializedString(job.getCmdInfo());
+            work = (VmWork)ApiSerializerHelper.fromSerializedString(job.getCmdInfo());
         	assert(work != null);
         	
+            CallContext context = CallContext.register(work.getUserId(), work.getAccountId(), "job-" + job.getShortUuid());
+
             VMInstanceVO vm = _instanceDao.findById(work.getVmId());
+            if (vm == null) {
+                s_logger.info("Unable to find vm " + work.getVmId());
+            }
             assert(vm != null);
     
-            CallContext context = CallContext.register(work.getUserId(), work.getAccountId(), "job-" + job.getShortUuid());
             if (cmd.equals(Start)) {
-                _vmMgr.start(vm.getUuid(), null, context.getCallingUser(), context.getCallingAccount());
+                VmWorkStart start = (VmWorkStart)work;
+                _vmMgr.processVmStartWork(vm.getUuid(), start.getParams(), start.getPlan());
             } else if (cmd.equals(Stop)) {
-                _vmMgr.stop(vm.getUuid(), context.getCallingUser(), context.getCallingAccount());
+                VmWorkStop stop = (VmWorkStop)work;
+                _vmMgr.processVmStopWork(vm.getUuid(), stop.isForceStop());
             }
             _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, null);
         } catch(Throwable e) {
-        	s_logger.error("Unexpected exception", e);
+            s_logger.error("Unable to complete " + job, e);
             _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, 0, e);
         } finally {
             CallContext.unregister();

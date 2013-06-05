@@ -341,18 +341,6 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
         return false;
 	}
 
-	@Override
-    public VirtualMachine processVmStartWork(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-    	
-		try {
-			Thread.sleep(120000);
-		} catch (InterruptedException e) {
-		}
-    	
-        return null;
-    }
-
 	int wakeupCount = 0;
 	public void processVmStartWakeup() {
 		s_logger.info("processVmStartWakeup. job-" + AsyncJobExecutionContext.getCurrentExecutionContext().getJob().getId());
@@ -364,12 +352,6 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 		}
 	}
 	
-	@Override
-    public boolean processVmStopWork(String vmUuid, boolean forced, User user, Account account)
-        throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-    	return true;
-    }
-
     @Override
     public VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException,
             ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {

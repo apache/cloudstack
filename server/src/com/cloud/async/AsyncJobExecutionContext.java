@@ -147,7 +147,20 @@ public class AsyncJobExecutionContext  {
 		return context;
 	}
 	
-	public static void setCurrentExecutionContext(AsyncJobExecutionContext currentContext) {
+    public static AsyncJobExecutionContext registerPseudoExecutionContext() {
+        AsyncJobExecutionContext context = s_currentExectionContext.get();
+        if (context == null) {
+            context = new AsyncJobExecutionContext();
+            context = ComponentContext.inject(context);
+            context.getJob();
+            setCurrentExecutionContext(context);
+        }
+
+        return context;
+    }
+
+    // This is intended to be package level access for AsyncJobManagerImpl only.
+    static void setCurrentExecutionContext(AsyncJobExecutionContext currentContext) {
 		s_currentExectionContext.set(currentContext);
 	}
 }

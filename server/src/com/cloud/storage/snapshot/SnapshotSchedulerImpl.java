@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -247,7 +248,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 params.put("id", ""+cmd.getEntityId());
                 params.put("ctxStartEventId", "1");
 
-                AsyncJobVO job = new AsyncJobVO(User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
+                AsyncJobVO job = new AsyncJobVO(UUID.randomUUID().toString(), User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
                         cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
 

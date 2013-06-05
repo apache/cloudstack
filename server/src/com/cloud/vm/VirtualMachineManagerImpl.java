@@ -266,20 +266,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
     protected List<DeploymentPlanner> _planners;
+
     public List<DeploymentPlanner> getPlanners() {
-		return _planners;
-	}
-	public void setPlanners(List<DeploymentPlanner> _planners) {
-		this._planners = _planners;
-	}
+        return _planners;
+    }
+
+    public void setPlanners(List<DeploymentPlanner> _planners) {
+        this._planners = _planners;
+    }
 
     protected List<HostAllocator> _hostAllocators;
+
     public List<HostAllocator> getHostAllocators() {
-		return _hostAllocators;
-	}
-	public void setHostAllocators(List<HostAllocator> _hostAllocators) {
-		this._hostAllocators = _hostAllocators;
-	}
+        return _hostAllocators;
+    }
+
+    public void setHostAllocators(List<HostAllocator> _hostAllocators) {
+        this._hostAllocators = _hostAllocators;
+    }
 
 	@Inject
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -804,9 +808,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return;
     }
 
-    @Override
-    public VirtualMachine processVmStartWork(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+    public void processVmStartWork(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        CallContext context = CallContext.current();
+        User caller = context.getCallingUser();
+        Account account = context.getCallingAccount();
+
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         VirtualMachineGuru vmGuru = getVmGuru(vm);
   
@@ -997,7 +1004,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Start completed for VM " + vm);
                             }
-                            return startedVm;
+                            return;
                         } else {
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
@@ -1073,8 +1080,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName()
                             + "' (" + vm.getUuid() + "), see management server log for details");
         }
-
-        return startedVm;
     }
     
     @Override
@@ -1259,9 +1264,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    @Override
-    public boolean processVmStopWork(String vmUuid, boolean forced, User user, Account account) throws AgentUnavailableException,
+    public void processVmStopWork(String vmUuid, boolean forced) throws AgentUnavailableException,
             OperationTimedoutException, ConcurrentOperationException {
+        CallContext context = CallContext.current();
+        User user = context.getCallingUser();
+        Account account = context.getCallingAccount();
+
         VmWorkJobVO work = _workJobDao.findById(AsyncJobExecutionContext.getCurrentExecutionContext().getJob().getId());
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
@@ -1271,7 +1279,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("HostId is null but this is not a forced stop, cannot stop vm " + vm + " with state:" + vm.getState());
                 }
-                return false;
+                return;
             }
             
             try {
@@ -1281,7 +1289,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
   
             _workJobDao.updateStep(work.getId(), VmWorkJobVO.Step.Done);
-            return true;
+            return;
         }
 
         VirtualMachineGuru vmGuru = getVmGuru(vm);
@@ -1313,10 +1321,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Updating work item to Done, id:" + work.getId());
                         }
-                        return changeState(vm, Event.AgentReportStopped, null, work, Step.Done);
+                        changeState(vm, Event.AgentReportStopped, null, work, Step.Done);
+                        return;
                     } catch (NoTransitionException e) {
                         s_logger.warn("Unable to cleanup " + vm);
-                        return false;
+                        return;
                     }
                 } else {
                     if (s_logger.isDebugEnabled()) {
@@ -1351,7 +1360,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (NoTransitionException e) {
                         s_logger.warn("Unable to transition the state " + vm);
                     }
-                    return false;
+                    return;
                 } else {
                     s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
                     vmGuru.finalizeStop(profile, answer);
@@ -1387,10 +1396,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _workJobDao.updateStep(work.getId(), VmWorkJobVO.Step.Done);
             }
 
-            return stateTransitTo(vm, Event.OperationSucceeded, null, null);
+            stateTransitTo(vm, Event.OperationSucceeded, null, null);
+            return;
         } catch (NoTransitionException e) {
             s_logger.warn(e.getMessage());
-            return false;
+            return;
         }
     }
 
