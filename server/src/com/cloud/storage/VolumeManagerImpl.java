@@ -496,7 +496,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     
     @DB
     protected VolumeInfo createVolumeFromSnapshot(VolumeVO volume,
-            SnapshotVO snapshot) {
+            SnapshotVO snapshot) throws StorageUnavailableException {
         Account account = _accountDao.findById(volume.getAccountId());
 
         final HashSet<StoragePool> poolsToAvoid = new HashSet<StoragePool>();
@@ -523,7 +523,13 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 
             }
         }
-        
+
+        if (pool == null) {
+            String msg = "There are no available storage pools to store the volume in";
+            s_logger.info(msg);
+            throw new StorageUnavailableException(msg, -1);
+        }
+
         VolumeInfo vol = this.volFactory.getVolume(volume.getId());
         DataStore store = this.dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         SnapshotInfo snapInfo = this.snapshotFactory.getSnapshot(snapshot.getId());
@@ -582,7 +588,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
     }
 
-    protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId) {
+    protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId) throws StorageUnavailableException {
         VolumeInfo createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId); 
         createdVolume = createVolumeFromSnapshot(volume,
