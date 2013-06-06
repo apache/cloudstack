@@ -693,7 +693,13 @@
                           success: function(data) {                          
                             var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
                             args.response.success({
-                              _custom: { jobId: jid }
+                              _custom: { 
+                                jobId: jid,
+                                getUpdatedItem: function(json) {
+                                  $('.list-view').listView('refresh');
+                                  //return json.queryasyncjobresultresponse.jobresult.volume;
+                                }
+                              }
                             });
                           }
                         });
