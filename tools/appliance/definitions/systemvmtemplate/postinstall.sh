@@ -113,7 +113,7 @@ fix_nameserver() {
   # Replace /etc/resolv.conf also
   cat > /etc/resolv.conf << EOF
 nameserver 8.8.8.8
-nameserver 4.4.4.4
+nameserver 8.8.4.4
 EOF
 }
 

@@ -54,10 +54,9 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 	/**
 	 * List user vm instances with virtualized networking (i.e. not direct attached networking) for the given account and datacenter
 	 * @param accountId will search for vm instances belonging to this account
-	 * @param dcId will search for vm instances in this zone
 	 * @return the list of vm instances owned by the account in the given data center that have virtualized networking (not direct attached networking)
 	 */
-	List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId, long networkId);
+	List<UserVmVO> listVirtualNetworkInstancesByAcctAndNetwork(long accountId, long networkId);
 	
 	List<UserVmVO> listByNetworkIdAndStates(long networkId, State... states);
 	

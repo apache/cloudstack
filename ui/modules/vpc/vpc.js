@@ -231,7 +231,15 @@
         $dashboardItem.append($total, $name);
         $dashboardItem.appendTo($dashboard);
 
+        if (dashboardItem._disabled) {
+          $dashboardItem.addClass('disabled');
+        }
+
         $dashboardItem.click(function() {
+          if ($dashboardItem.is('.disabled')) {
+            return false;
+          }
+          
           var section = cloudStack.vpc.sections[id];
           var $section = $('<div>');
           var $loading = $('<div>').addClass('loading-overlay');

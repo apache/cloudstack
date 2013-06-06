@@ -154,6 +154,15 @@
   cursor: pointer;
 }
 
+.vpc-network-chart .tier-item .content .dashboard-item.disabled {
+  /*+opacity:50%;*/
+  filter: alpha(opacity=50);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+  -moz-opacity: 0.5;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .vpc-network-chart .tier-item .content .dashboard-item:hover {
   background-color: #DBEDFE;
   /*+box-shadow:inset 0px 1px 2px #000000;*/
@@ -271,6 +280,8 @@
   float: left;
   /*+placement:shift 10px 176px;*/
   position: relative;
+  left: 10px;
+  top: 176px;
   left: 0px;
   top: 237px;
 }
