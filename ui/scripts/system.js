@@ -5388,9 +5388,9 @@
                           label: 'label.name',
                           validation: { required: true }
                         },
-                        url: { 
-                          label: 'label.url',
-                          validation: { required: false }
+                        vcenter: { 
+                          label: 'vcenter',
+                          validation: { required: true }
                         },
                         username: {
                           label: 'label.username',
@@ -5406,14 +5406,10 @@
                     action: function(args) {
                       var data = {
                         zoneid: args.context.physicalResources[0].id,
-                        name: args.data.name
-                      };
+                        name: args.data.name,
+                        vcenter: args.data.vcenter 
+                      };                                          
                       
-                      if(args.data.url != null && args.data.url.length > 0) {
-                        $.extend(data, {
-                          url: args.data.url 
-                        })
-                      }
                       if(args.data.username != null && args.data.username.length > 0) {
                         $.extend(data, {
                           username: args.data.username 
