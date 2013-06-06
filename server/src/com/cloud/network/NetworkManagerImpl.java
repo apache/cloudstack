@@ -1490,23 +1490,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         return configs;
                     }
                 }
-            } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null && vpcId == null) {
-                // don't allow to have 2 networks with the same cidr in the same zone for the account
-                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), plan.getDataCenterId(), predefined.getCidr(), true);
-                if (configs.size() > 0) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
-                    }
-
-                    if (errorIfAlreadySetup) {
-                        InvalidParameterValueException ex = new InvalidParameterValueException("Found existing network configuration (with specified id) for offering (with specified id)");
-                        ex.addProxyObject(offering.getUuid(), "offeringId");
-                        ex.addProxyObject(configs.get(0).getUuid(), "networkConfigId");
-                        throw ex;
-                    } else {
-                        return configs;
-                    }
-                }
             }
 
             List<NetworkVO> networks = new ArrayList<NetworkVO>();
