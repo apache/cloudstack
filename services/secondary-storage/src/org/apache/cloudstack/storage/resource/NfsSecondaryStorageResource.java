@@ -245,21 +245,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 s_logger.debug("Directory " + downloadPath + " already exists");
             }
 
-            List<File> files = getDirectory(s3, s3.getBucketName(), destPath, downloadDirectory, new FileNamingStrategy() {
+            File destFile = S3Utils.getFile(s3, s3.getBucketName(), srcData.getPath(), downloadDirectory, new FileNamingStrategy() {
                 @Override
                 public String determineFileName(final String key) {
                     return substringAfterLast(key, S3Utils.SEPARATOR);
                 }
             });
-
-            // find out template name
-            File destFile = null;
-            for (File f : files) {
-                if (!f.getName().endsWith(".properties")) {
-                    destFile = f;
-                    break;
-                }
-            }
 
             if (destFile == null) {
                 return new CopyCmdAnswer("Can't find template");
@@ -334,6 +325,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new CopyCmdAnswer(errMsg);
         }
     }
+
 
     protected Answer copySnapshotToTemplateFromNfsToNfsXenserver(CopyCommand cmd, SnapshotObjectTO srcData, NfsTO srcDataStore,
             TemplateObjectTO destData, NfsTO destDataStore) {
