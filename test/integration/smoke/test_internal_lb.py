@@ -170,10 +170,10 @@ class TestInternalLb(cloudstackTestCase):
                 networkid=ntwk.id)
 
         #5) Assign the VM to the Internal Load Balancer
-        applb.assign(self.apiclient, vms=[vm.id])
+        applb.assign(self.apiclient, vms=[vm])
 
         #6) Remove the vm from the Interanl Load Balancer
-        applb.remove(self.apiclient, vms=[vm.id])
+        applb.remove(self.apiclient, vms=[vm])
 
         #7) Delete the Load Balancer
         applb.delete(self.apiclient)
