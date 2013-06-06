@@ -17,12 +17,47 @@
 package com.cloud.agent.manager;
 
 
-import com.cloud.agent.api.*;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BumpUpPriorityCommand;
+import com.cloud.agent.api.CheckRouterAnswer;
+import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.CreateVMSnapshotAnswer;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
+import com.cloud.agent.api.DeleteVMSnapshotAnswer;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.GetVmStatsAnswer;
+import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortAnswer;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MigrateAnswer;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.RevertToVMSnapshotAnswer;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.SecurityGroupRuleAnswer;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.StartAnswer;
+import com.cloud.agent.api.StartCommand;
+import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.*;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.network.Networks.TrafficType;
@@ -193,28 +228,6 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         return null;
     }
 
-    public boolean rebootVM(String vmName) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-        try {
-            txn.start();
-            MockVm vm = _mockVmDao.findByVmName(vmName);
-            if (vm != null) {
-                vm.setState(State.Running);
-                _mockVmDao.update(vm.getId(), (MockVMVO) vm);
-
-            }
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-            throw new CloudRuntimeException("unable to reboot vm " + vmName, ex);
-        } finally {
-            txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
-            txn.close();
-        }
-        return true;
-    }
-
     @Override
     public Map<String, MockVMVO> getVms(String hostGuid) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
@@ -346,7 +359,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer startVM(StartCommand cmd, SimulatorInfo info) {
+    public StartAnswer startVM(StartCommand cmd, SimulatorInfo info) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
         String result = startVM(vm.getName(), vm.getNics(), vm.getCpus()* vm.getMaxSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
         if (result != null) {
@@ -361,26 +374,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         return new CheckSshAnswer(cmd);
     }
 
-    @Override
-    public Answer SetStaticNatRules(SetStaticNatRulesCommand cmd) {
-        return new Answer(cmd);
-    }
 
-    @Override
-    public Answer SetPortForwardingRules(SetPortForwardingRulesCommand cmd) {
-        return new Answer(cmd);
-    }
-
-    @Override
-    public Answer SetFirewallRules(SetFirewallRulesCommand cmd) {
-        return new Answer(cmd);
-    }
-
-
-    @Override
-    public NetworkUsageAnswer getNetworkUsage(NetworkUsageCommand cmd) {
-        return new NetworkUsageAnswer(cmd, null, 100L, 100L);
-    }
 
     @Override
     public MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info) {
@@ -438,21 +432,6 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer IpAssoc(IpAssocCommand cmd) {
-        return new Answer(cmd);
-    }
-
-    @Override
-    public Answer LoadBalancerConfig(LoadBalancerConfigCommand cmd) {
-        return new Answer(cmd);
-    }
-
-    @Override
-    public Answer AddDhcpEntry(DhcpEntryCommand cmd) {
-        return new Answer(cmd);
-    }
-
-    @Override
     public Answer setVmData(VmDataCommand cmd) {
         return new Answer(cmd);
     }
@@ -482,7 +461,48 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer stopVM(StopCommand cmd) {
+    public Answer scaleVm(ScaleVmCommand cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Answer plugSecondaryIp(NetworkRulesVmSecondaryIpCommand cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Answer createVmSnapshot(CreateVMSnapshotCommand cmd) {
+        String vmName = cmd.getVmName();
+        String vmSnapshotName = cmd.getTarget().getSnapshotName();
+
+        s_logger.debug("Created snapshot " +vmSnapshotName+ " for vm " + vmName);
+        return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
+    }
+
+    @Override
+    public Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd) {
+        String vm = cmd.getVmName();
+        String snapshotName = cmd.getTarget().getSnapshotName();
+        if(_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+            return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name "+ cmd.getVmName());
+        }
+        s_logger.debug("Removed snapshot " +snapshotName+ " of VM "+vm);
+        return new DeleteVMSnapshotAnswer(cmd, true, "success");
+    }
+
+    @Override
+    public Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd) {
+        String vm = cmd.getVmName();
+        String snapshot = cmd.getTarget().getSnapshotName();
+        if(_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+            return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name "+ cmd.getVmName());
+        }
+        s_logger.debug("Reverted to snapshot " +snapshot+ " of VM "+vm);
+        return new RevertToVMSnapshotAnswer(cmd, true, "success");
+    }
+
+    @Override
+    public StopAnswer stopVM(StopCommand cmd) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         try {
             txn.start();
@@ -509,7 +529,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer rebootVM(RebootCommand cmd) {
+    public RebootAnswer rebootVM(RebootCommand cmd) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         try {
             txn.start();

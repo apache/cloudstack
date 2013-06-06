@@ -29,6 +29,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
+import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
+import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.HostVO;
 import com.cloud.resource.ResourceManager;
@@ -39,6 +41,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -98,12 +101,12 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
         Set<Long> hostRunningStrictImplicitVmsOfOtherAccounts = new HashSet<Long>();
         Set<Long> allOtherHosts = new HashSet<Long>();
         for (Long host : allHosts) {
-            List<UserVmVO> userVms = getVmsOnHost(host);
-            if (userVms == null || userVms.isEmpty()) {
+            List<VMInstanceVO> vms = getVmsOnHost(host);
+            if (vms == null || vms.isEmpty()) {
                 emptyHosts.add(host);
-            } else if (checkHostSuitabilityForImplicitDedication(account.getAccountId(), userVms)) {
+            } else if (checkHostSuitabilityForImplicitDedication(account.getAccountId(), vms)) {
                 hostRunningVmsOfAccount.add(host);
-            } else if (checkIfAllVmsCreatedInStrictMode(account.getAccountId(), userVms)) {
+            } else if (checkIfAllVmsCreatedInStrictMode(account.getAccountId(), vms)) {
                 hostRunningStrictImplicitVmsOfOtherAccounts.add(host);
             } else {
                 allOtherHosts.add(host);
@@ -139,12 +142,12 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
         return clusterList;
     }
 
-    private List<UserVmVO> getVmsOnHost(long hostId) {
-        List<UserVmVO> vms = _vmDao.listUpByHostId(hostId);
-        List<UserVmVO> vmsByLastHostId = _vmDao.listByLastHostId(hostId);
+    private List<VMInstanceVO> getVmsOnHost(long hostId) {
+        List<VMInstanceVO> vms =  _vmInstanceDao.listUpByHostId(hostId);
+        List<VMInstanceVO> vmsByLastHostId = _vmInstanceDao.listByLastHostId(hostId);
         if (vmsByLastHostId.size() > 0) {
             // check if any VMs are within skip.counting.hours, if yes we have to consider the host.
-            for (UserVmVO stoppedVM : vmsByLastHostId) {
+            for (VMInstanceVO stoppedVM : vmsByLastHostId) {
                 long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - stoppedVM.getUpdateTime()
                         .getTime()) / 1000;
                 if (secondsSinceLastUpdate < capacityReleaseInterval) {
@@ -156,9 +159,12 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
         return vms;
     }
 
-    private boolean checkHostSuitabilityForImplicitDedication(Long accountId, List<UserVmVO> allVmsOnHost) {
+    private boolean checkHostSuitabilityForImplicitDedication(Long accountId, List<VMInstanceVO> allVmsOnHost) {
         boolean suitable = true;
-        for (UserVmVO vm : allVmsOnHost) {
+        if (allVmsOnHost.isEmpty())
+            return false;
+
+        for (VMInstanceVO vm : allVmsOnHost) {
             if (vm.getAccountId() != accountId) {
                 s_logger.info("Host " + vm.getHostId() + " found to be unsuitable for implicit dedication as it is " +
                         "running instances of another account");
@@ -170,15 +176,17 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
                             "is running instances of this account which haven't been created using implicit dedication.");
                     suitable = false;
                     break;
-                }
+            }
             }
         }
         return suitable;
     }
 
-    private boolean checkIfAllVmsCreatedInStrictMode(Long accountId, List<UserVmVO> allVmsOnHost) {
+    private boolean checkIfAllVmsCreatedInStrictMode(Long accountId, List<VMInstanceVO> allVmsOnHost) {
         boolean createdByImplicitStrict = true;
-        for (UserVmVO vm : allVmsOnHost) {
+        if (allVmsOnHost.isEmpty())
+            return false;
+        for (VMInstanceVO vm : allVmsOnHost) {
             if (!isImplicitPlannerUsedByOffering(vm.getServiceOfferingId())) {
                 s_logger.info("Host " + vm.getHostId() + " found to be running a vm created by a planner other" +
                         " than implicit.");
@@ -243,7 +251,84 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
     }
 
     @Override
-    public PlannerResourceUsage getResourceUsage() {
-        return PlannerResourceUsage.Dedicated;
+    public PlannerResourceUsage getResourceUsage(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+            DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
+        // Check if strict or preferred mode should be used.
+        boolean preferred = isServiceOfferingUsingPlannerInPreferredMode(vmProfile.getServiceOfferingId());
+
+        // If service offering in strict mode return resource usage as Dedicated
+        if (!preferred) {
+            return PlannerResourceUsage.Dedicated;
+        }
+        else {
+            // service offering is in implicit mode.
+            // find is it possible to deploy in dedicated mode,
+            // if its possible return dedicated else return shared.
+            List<Long> clusterList = super.orderClusters(vmProfile, plan, avoid);
+            Set<Long> hostsToAvoid = avoid.getHostsToAvoid();
+            Account account = vmProfile.getOwner();
+
+            // Get the list of all the hosts in the given clusters
+            List<Long> allHosts = new ArrayList<Long>();
+            for (Long cluster : clusterList) {
+                List<HostVO> hostsInCluster = resourceMgr.listAllHostsInCluster(cluster);
+                for (HostVO hostVO : hostsInCluster) {
+
+                    allHosts.add(hostVO.getId());
+                }
+            }
+
+            // Go over all the hosts in the cluster and get a list of
+            // 1. All empty hosts, not running any vms.
+            // 2. Hosts running vms for this account and created by a service
+            // offering which uses an
+            // implicit dedication planner.
+            // 3. Hosts running vms created by implicit planner and in strict
+            // mode of other accounts.
+            // 4. Hosts running vms from other account or from this account but
+            // created by a service offering which uses
+            // any planner besides implicit.
+            Set<Long> emptyHosts = new HashSet<Long>();
+            Set<Long> hostRunningVmsOfAccount = new HashSet<Long>();
+            Set<Long> hostRunningStrictImplicitVmsOfOtherAccounts = new HashSet<Long>();
+            Set<Long> allOtherHosts = new HashSet<Long>();
+            for (Long host : allHosts) {
+                List<VMInstanceVO> vms = getVmsOnHost(host);
+                // emptyHost should contain only Hosts which are not having any VM's (user/system) on it.
+                if (vms == null || vms.isEmpty()) {
+                    emptyHosts.add(host);
+                } else if (checkHostSuitabilityForImplicitDedication(account.getAccountId(), vms)) {
+                    hostRunningVmsOfAccount.add(host);
+                } else if (checkIfAllVmsCreatedInStrictMode(account.getAccountId(), vms)) {
+                    hostRunningStrictImplicitVmsOfOtherAccounts.add(host);
+                } else {
+                    allOtherHosts.add(host);
+                }
+            }
+
+            // Hosts running vms of other accounts created by ab implicit
+            // planner in strict mode should always be avoided.
+            avoid.addHostList(hostRunningStrictImplicitVmsOfOtherAccounts);
+
+            if (!hostRunningVmsOfAccount.isEmpty()
+                    && (hostsToAvoid == null || !hostsToAvoid.containsAll(hostRunningVmsOfAccount))) {
+                // Check if any of hosts that are running implicit dedicated vms are available (not in avoid list).
+                // If so, we'll try and use these hosts. We can deploy in Dedicated mode
+                return PlannerResourceUsage.Dedicated;
+            } else if (!emptyHosts.isEmpty() && (hostsToAvoid == null || !hostsToAvoid.containsAll(emptyHosts))) {
+                // If there aren't implicit resources try on empty hosts, As empty hosts are available we can deploy in Dedicated mode.
+                // Empty hosts can contain hosts which are not having user vms but system vms are running.
+                // But the host where system vms are running is marked as shared and still be part of empty Hosts.
+                // The scenario will fail where actual Empty hosts and uservms not running host.
+                return PlannerResourceUsage.Dedicated;
+            } else if (!preferred) {
+                return PlannerResourceUsage.Dedicated;
+            } else {
+                if (!allOtherHosts.isEmpty() && (hostsToAvoid == null || !hostsToAvoid.containsAll(allOtherHosts))) {
+                    return PlannerResourceUsage.Shared;
+                }
+            }
+            return PlannerResourceUsage.Shared;
+        }
     }
 }

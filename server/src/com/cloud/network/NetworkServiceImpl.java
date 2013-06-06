@@ -1285,10 +1285,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Network offering can't be used for VPC networks");
             }
 
-            if(aclId == null){
-                //Use default deny all ACL, when aclId is not specified
-                aclId = NetworkACL.DEFAULT_DENY;
-            } else {
+            if(aclId != null){
                 NetworkACL acl = _networkACLDao.findById(aclId);
                 if(acl == null){
                     throw new InvalidParameterValueException("Unable to find specified NetworkACL");
@@ -1938,7 +1935,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         //perform below validation if the network is vpc network
         if (network.getVpcId() != null && networkOfferingId != null) {
             Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
-            _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, networkOfferingId, null, null, vpc, null, _accountMgr.getAccount(network.getAccountId()));
+            _vpcMgr.validateNtwkOffForNtwkInVpc(networkId, networkOfferingId, null, null, vpc, null, _accountMgr.getAccount(network.getAccountId()), null);
         }
 
         // don't allow to update network in Destroy state

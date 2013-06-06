@@ -30,6 +30,7 @@ import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
     @Inject
@@ -65,7 +66,7 @@ public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
 
 
     @Override
-    public boolean attachZone(DataStore dataStore, ZoneScope scope) {
+    public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisor) {
         // TODO Auto-generated method stub
         return false;
     }

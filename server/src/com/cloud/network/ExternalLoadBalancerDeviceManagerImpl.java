@@ -210,20 +210,20 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         zoneId = pNetwork.getDataCenterId();
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
 
+        ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        if (ntwkSvcProvider == null) {
+            throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() +
+                    " is not enabled in the physical network: " + physicalNetworkId + "to add this device");
+        } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
+            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() +
+                    " is in shutdown state in the physical network: " + physicalNetworkId + "to add this device");
+        }
+
         if (gslbProvider) {
             ExternalLoadBalancerDeviceVO zoneGslbProvider = _externalLoadBalancerDeviceDao.findGslbServiceProvider(
                     physicalNetworkId, ntwkDevice.getNetworkServiceProvder());
             if (zoneGslbProvider != null) {
                 throw new CloudRuntimeException("There is a GSLB service provider configured in the zone alredy.");
-            }
-        } else {
-            ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
-            if (ntwkSvcProvider == null) {
-                throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() +
-                        " is not enabled in the physical network: " + physicalNetworkId + "to add this device");
-            } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-                throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() +
-                        " is in shutdown state in the physical network: " + physicalNetworkId + "to add this device");
             }
         }
 

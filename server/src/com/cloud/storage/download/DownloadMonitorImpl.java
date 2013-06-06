@@ -552,7 +552,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 			//Create usage event
             long size = -1;
             if(volumeHost!=null){
-                size = volumeHost.getPhysicalSize();
+                size = volumeHost.getSize();
                 volume.setSize(size);
                 this._volumeDao.update(volume.getId(), volume);
             }

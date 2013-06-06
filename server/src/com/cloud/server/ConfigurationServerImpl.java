@@ -47,6 +47,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -437,23 +438,13 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
     }
 
-    private String getBase64Keystore(String keystorePath) throws IOException {
-        byte[] storeBytes = new byte[4094];
-        int len = 0;
-        try {
-            len = new FileInputStream(keystorePath).read(storeBytes);
-        } catch (EOFException e) {
-        } catch (Exception e) {
-            throw new IOException("Cannot read the generated keystore file");
-        }
-        if (len > 3000) { // Base64 codec would enlarge data by 1/3, and we have 4094 bytes in database entry at most
-            throw new IOException("KeyStore is too big for database! Length " + len);
+    static String getBase64Keystore(String keystorePath) throws IOException {
+        byte[] storeBytes = FileUtils.readFileToByteArray(new File(keystorePath));
+        if (storeBytes.length > 3000) { // Base64 codec would enlarge data by 1/3, and we have 4094 bytes in database entry at most
+            throw new IOException("KeyStore is too big for database! Length " + storeBytes.length);
         }
 
-        byte[] encodeBytes = new byte[len];
-        System.arraycopy(storeBytes, 0, encodeBytes, 0, len);
-
-        return new String(Base64.encodeBase64(encodeBytes));
+        return new String(Base64.encodeBase64(storeBytes));
     }
 
     private void generateDefaultKeystore(String keystorePath) throws IOException {

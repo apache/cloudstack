@@ -93,7 +93,7 @@
         <entry key="cache.size" value="50" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
 
   <bean id="diskOfferingDaoImpl" class="com.cloud.storage.dao.DiskOfferingDaoImpl">
@@ -156,9 +156,17 @@
         <entry key="cache.size" value="100" />
         <entry key="cache.time.to.live" value="600" />
       </map>
-    </property>  
+    </property>
   </bean>
-  
+  <bean id="dedicatedResourceDaoImpl" class="com.cloud.dc.dao.DedicatedResourceDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="30" />
+        <entry key="cache.time.to.live" value="3600" />
+      </map>
+    </property>
+  </bean>
+
   <!--
     DAOs with default configuration
   -->
@@ -673,7 +681,6 @@
   <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
 
   <bean id="apiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
-
   <bean id="alertManagerImpl" class="com.cloud.alert.AlertManagerImpl" />
   <bean id="asyncJobExecutorContextImpl" class="com.cloud.async.AsyncJobExecutorContextImpl" />
   <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl" />
@@ -796,6 +803,7 @@
   <bean id="mockAgentManagerImpl" class="com.cloud.agent.manager.MockAgentManagerImpl" />
   <bean id="mockStorageManagerImpl" class="com.cloud.agent.manager.MockStorageManagerImpl" />
   <bean id="mockVmManagerImpl" class="com.cloud.agent.manager.MockVmManagerImpl" />
+  <bean id="mockNetworkManagerImpl" class="com.cloud.agent.manager.MockNetworkManagerImpl" />
   <bean id="simulatorManagerImpl" class="com.cloud.agent.manager.SimulatorManagerImpl" />
   <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
   <bean id="volumeManagerImpl" class="com.cloud.storage.VolumeManagerImpl" />

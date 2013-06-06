@@ -438,6 +438,10 @@ public class EventTypes {
     public static final String EVENT_PORTABLE_IP_RANGE_DELETE = "PORTABLE.IP.RANGE.DELETE";
     public static final String EVENT_PORTABLE_IP_TRANSFER = "PORTABLE.IP.TRANSFER";
 
+    // Dedicated Resources
+    public static final String EVENT_DEDICATE_RESOURCE = "DEDICATE.RESOURCE";
+    public static final String EVENT_DEDICATE_RESOURCE_RELEASE = "DEDICATE.RESOURCE.RELEASE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

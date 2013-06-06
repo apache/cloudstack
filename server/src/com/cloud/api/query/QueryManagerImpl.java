@@ -97,6 +97,8 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -255,6 +257,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     @Inject
     private AffinityGroupJoinDao _affinityGroupJoinDao;
 
+    @Inject
+    private DedicatedResourceDao _dedicatedDao;
     /* (non-Javadoc)
      * @see com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack.api.command.admin.user.ListUsersCmd)
      */
@@ -2252,12 +2256,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 sc.addAnd("name", SearchCriteria.Op.SC, ssc);
             }
 
-            if (domainId != null) {
+            /*List all resources due to Explicit Dedication except the dedicated resources of other account
+             * if (domainId != null) {
                 // for domainId != null
                 // right now, we made the decision to only list zones associated
                 // with this domain, private zone
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-            }  else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            }  else */
+            if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 // it was decided to return all zones for the user's domain, and
                 // everything above till root
                 // list all zones belonging to this domain, and all of its
@@ -2286,6 +2292,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
                 // remove disabled zones
                 sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
+
+                //remove Dedicated zones not dedicated to this domainId or subdomainId
+                List<Long> dedicatedZoneIds = removeDedicatedZoneNotSuitabe(domainIds);
+                if(!dedicatedZoneIds.isEmpty()){
+                    sdc.addAnd("id", SearchCriteria.Op.NIN, dedicatedZoneIds.toArray(new Object[dedicatedZoneIds.size()]));
+                }
 
             } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 // it was decided to return all zones for the domain admin, and
@@ -2316,6 +2328,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
                 // remove disabled zones
                 sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
+
+              //remove Dedicated zones not dedicated to this domainId or subdomainId
+                List<Long> dedicatedZoneIds = removeDedicatedZoneNotSuitabe(domainIds);
+                if(!dedicatedZoneIds.isEmpty()){
+                    sdc.addAnd("id", SearchCriteria.Op.NIN, dedicatedZoneIds.toArray(new Object[dedicatedZoneIds.size()]));
+                }
             }
 
             // handle available=FALSE option, only return zones with at least one VM running there
@@ -2341,6 +2359,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return _dcJoinDao.searchAndCount(sc, searchFilter);
     }
 
+    private List<Long> removeDedicatedZoneNotSuitabe(List<Long> domainIds) {
+      //remove dedicated zone of other domain
+        List<Long> dedicatedZoneIds = new ArrayList<Long>();
+        List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listZonesNotInDomainIds(domainIds);
+        for (DedicatedResourceVO dr : dedicatedResources) {
+            if(dr != null) {
+                dedicatedZoneIds.add(dr.getDataCenterId());
+            }
+        }
+        return dedicatedZoneIds;
+    }
 
     // This method is used for permissions check for both disk and service
     // offerings

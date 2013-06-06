@@ -114,7 +114,7 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     }
 
     @Override
-    public boolean attachZone(DataStore dataStore, ZoneScope scope) {
+    public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
         // TODO Auto-generated method stub
         return false;
     }

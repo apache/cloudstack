@@ -32,6 +32,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ConfigurationServer;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
@@ -95,9 +96,11 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -412,6 +415,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     AffinityGroupDao _affinityGroupDao;
+    @Inject
+    DedicatedResourceDao _dedicatedDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -748,6 +755,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         if (vm.getState() == State.Running && vm.getHostId() != null) {
+            collectVmDiskStatistics(vm);
             return _itMgr.reboot(vm, null, caller, owner);
         } else {
             s_logger.error("Vm id=" + vmId
@@ -1036,6 +1044,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         Network oldDefaultNetwork = null;
         oldDefaultNetwork = _networkModel.getDefaultNetworkForVm(vmId);
+        String oldNicIdString = Long.toString(_networkModel.getDefaultNic(vmId).getId());
         long oldNetworkOfferingId = -1L;
 
         if(oldDefaultNetwork!=null) {
@@ -1075,13 +1084,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             String nicIdString = Long.toString(nic.getId());
             long newNetworkOfferingId = network.getNetworkOfferingId();
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
-                    vmInstance.getId(), nicIdString, oldNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid());
+                    vmInstance.getId(), oldNicIdString, oldNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid());
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
                      vmInstance.getId(), nicIdString, newNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid());
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
                     vmInstance.getId(), nicIdString, newNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid());
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
-                     vmInstance.getId(), nicIdString, oldNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid());
+                     vmInstance.getId(), oldNicIdString, oldNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid());
             return _vmDao.findById(vmInstance.getId());
         }
 
@@ -1189,6 +1198,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         boolean success = false;
         if(vmInstance.getState().equals(State.Running)){
             int retry = _scaleRetry;
+            boolean enableDynamicallyScaleVm = Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vmInstance.getDataCenterId()));
+            if(!enableDynamicallyScaleVm){
+               throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
+            }
+
             // Increment CPU and Memory count accordingly.
             if (newCpu > currentCpu) {
                 _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
@@ -2413,8 +2427,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + zone.getId());
         }
 
-        if (zone.getDomainId() != null) {
-            DomainVO domain = _domainDao.findById(zone.getDomainId());
+        boolean isExplicit = false;
+        // check affinity group type Explicit dedication
+        if (affinityGroupIdList != null) {
+            for (Long affinityGroupId : affinityGroupIdList) {
+                AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
+                String agType = ag.getType();
+                if (agType.equals("ExplicitDedication")) {
+                    isExplicit = true;
+                }
+            }
+        }
+        // check if zone is dedicated
+        DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(zone.getId());
+        if (isExplicit && dedicatedZone != null) {
+            DomainVO domain = _domainDao.findById(dedicatedZone.getDomainId());
             if (domain == null) {
                 throw new CloudRuntimeException("Unable to find the domain "
                         + zone.getDomainId() + " for the zone: " + zone);
@@ -3804,7 +3831,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
 
-        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException(
                     "Unable to find the VM by id=" + vmId);
@@ -3857,6 +3884,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + destinationHost.getResourceState());
         }
 
+        HostVO srcHost = _hostDao.findById(srcHostId);
+        HostVO destHost = _hostDao.findById(destinationHost.getId());
+        //if srcHost is dedicated and destination Host is not
+        if (checkIfHostIsDedicated(srcHost) && !checkIfHostIsDedicated(destHost)) {
+            //raise an alert
+            String msg = "VM is migrated on a non-dedicated host " + destinationHost.getName();
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+        }
+        //if srcHost is non dedicated but destination Host is.
+        if (!checkIfHostIsDedicated(srcHost) && checkIfHostIsDedicated(destHost)) {
+            //raise an alert
+            String msg = "VM is migrated on a dedicated host " + destinationHost.getName();
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
+        }
+
         // call to core process
         DataCenterVO dcVO = _dcDao.findById(destinationHost.getDataCenterId());
         HostPodVO pod = _podDao.findById(destinationHost.getPodId());
@@ -3880,8 +3922,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + " already has max Running VMs(count includes system VMs), cannot migrate to this host");
         }
 
+        collectVmDiskStatistics(vm);
         VMInstanceVO migratedVm = _itMgr.migrate(vm, srcHostId, dest);
         return migratedVm;
+    }
+
+    private boolean checkIfHostIsDedicated(HostVO host) {
+        long hostId = host.getId();
+        DedicatedResourceVO dedicatedHost = _dedicatedDao.findByHostId(hostId);
+        DedicatedResourceVO dedicatedClusterOfHost = _dedicatedDao.findByClusterId(host.getClusterId());
+        DedicatedResourceVO dedicatedPodOfHost = _dedicatedDao.findByPodId(host.getPodId());
+        if(dedicatedHost != null || dedicatedClusterOfHost != null || dedicatedPodOfHost != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -4003,7 +4058,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VMInstanceVO migratedVm = _itMgr.migrateWithStorage(vm, srcHostId, destinationHost.getId(), volToPoolObjectMap);
         return migratedVm;
-    }
+}
 
     @DB
     @Override
@@ -4657,6 +4712,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
+        UserVmVO vm = _vmDao.findById(profile.getId());
+        if (vm.getState() == State.Running)
+            collectVmDiskStatistics(vm);
     }
 
 }

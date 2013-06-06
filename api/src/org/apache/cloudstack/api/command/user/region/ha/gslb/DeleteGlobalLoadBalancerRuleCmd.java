@@ -87,13 +87,19 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        _gslbService.deleteGlobalLoadBalancerRule(this);
-        UserContext.current().setEventDetails("Deleting global Load balancer Id: " + getGlobalLoadBalancerId());
+        UserContext.current().setEventDetails("Deleting global Load balancer rule Id: " + getGlobalLoadBalancerId());
+        boolean result = _gslbService.deleteGlobalLoadBalancerRule(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Global Load Balancer rule.");
+        }
     }
 
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
+        return BaseAsyncCmd.gslbSyncObject;
     }
 
     @Override

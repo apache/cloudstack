@@ -166,6 +166,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.DISPLAY_NETWORK) @Param(description="an optional field, whether to the display the network to the end user or not.")
     private Boolean displayNetwork;
 
+    @SerializedName(ApiConstants.ACL_ID) @Param(description="ACL Id associated with the VPC network")
+    private String aclId;
+
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -352,4 +356,12 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 	public void setIp6Cidr(String ip6Cidr) {
 		this.ip6Cidr = ip6Cidr;
 	}
+
+    public String getAclId() {
+        return aclId;
+    }
+
+    public void setAclId(String aclId) {
+        this.aclId = aclId;
+    }
 }

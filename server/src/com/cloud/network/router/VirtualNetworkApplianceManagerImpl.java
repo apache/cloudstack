@@ -1179,7 +1179,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
                         backupRouter.getDataCenterId(), backupRouter.getPodIdToDeployIn(), title, title);
                 try {
-                    rebootRouter(backupRouter.getId(), false);
+                    rebootRouter(backupRouter.getId(), true);
                 } catch (ConcurrentOperationException e) {
                     s_logger.warn("Fail to reboot " + backupRouter.getInstanceName(), e);
                 } catch (ResourceUnavailableException e) {
@@ -1438,9 +1438,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             assert guestNetwork.getTrafficType() == TrafficType.Guest;
         
             // 1) Get deployment plan and find out the list of routers
-            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic ||
-                    _networkModel.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup))
-                    && guestNetwork.getTrafficType() == TrafficType.Guest;
+            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic);
         
             // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
             List<DeployDestination> destinations = new ArrayList<DeployDestination>();
@@ -2475,18 +2473,21 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         //Reapply dhcp and dns configuration.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
             List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(guestNetworkId, NicIpAlias.state.revoked);
-            s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to apply on the router as a part of dhco configuration");
+            s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to revoke on the router as a part of dhcp configuration");
             List<IpAliasTO> revokedIpAliasTOs = new ArrayList<IpAliasTO>();
             for (NicIpAliasVO revokedAliasVO : revokedIpAliasVOs) {
                 revokedIpAliasTOs.add(new IpAliasTO(revokedAliasVO.getIp4Address(), revokedAliasVO.getNetmask(), revokedAliasVO.getAliasCount().toString()));
             }
             List<NicIpAliasVO> aliasVOs = _nicIpAliasDao.listByNetworkIdAndState(guestNetworkId, NicIpAlias.state.active);
-            s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhco configuration");
+            s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhcp configuration");
             List<IpAliasTO> activeIpAliasTOs = new ArrayList<IpAliasTO>();
             for (NicIpAliasVO aliasVO : aliasVOs) {
                    activeIpAliasTOs.add(new IpAliasTO(aliasVO.getIp4Address(), aliasVO.getNetmask(), aliasVO.getAliasCount().toString()));
             }
-            createDeleteIpAliasCommand(router, revokedIpAliasTOs, activeIpAliasTOs, guestNetworkId, cmds);
+            if (revokedIpAliasTOs.size() != 0 || activeIpAliasTOs.size() != 0){
+                createDeleteIpAliasCommand(router, revokedIpAliasTOs, activeIpAliasTOs, guestNetworkId, cmds);
+                configDnsMasq(router, _networkDao.findById(guestNetworkId), cmds);
+            }
 
         }
     }
@@ -2795,7 +2796,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         for (VlanVO vlan : vlanList) {
                             vlanDbIdList.add(vlan.getId());
                         }
-                        routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
+                        if (dc.getNetworkType() == NetworkType.Basic) {
+                            routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
+                        }
+                        else {
+                            routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), null, caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
+                        }
+
                         routerAliasIp = routerPublicIP.getAddress().addr();
                     }
                 }
@@ -2846,13 +2853,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             Commands cmds = new Commands(OnError.Continue);
             List<NicIpAliasVO> revokedIpAliasVOs = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.revoked);
-            s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to apply on the router as a part of dhco configuration");
+            s_logger.debug("Found" + revokedIpAliasVOs.size() + "ip Aliases to revoke on the router as a part of dhcp configuration");
             List<IpAliasTO> revokedIpAliasTOs = new ArrayList<IpAliasTO>();
             for (NicIpAliasVO revokedAliasVO : revokedIpAliasVOs) {
                 revokedIpAliasTOs.add(new IpAliasTO(revokedAliasVO.getIp4Address(), revokedAliasVO.getNetmask(), revokedAliasVO.getAliasCount().toString()));
             }
             List<NicIpAliasVO> aliasVOs = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.active);
-            s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhco configuration");
+            s_logger.debug("Found" + aliasVOs.size() + "ip Aliases to apply on the router as a part of dhcp configuration");
             List<IpAliasTO> activeIpAliasTOs = new ArrayList<IpAliasTO>();
             for (NicIpAliasVO aliasVO : aliasVOs) {
                 activeIpAliasTOs.add(new IpAliasTO(aliasVO.getIp4Address(), aliasVO.getNetmask(), aliasVO.getAliasCount().toString()));
@@ -3370,20 +3377,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         Nic defaultNic = findGatewayIp(vm.getId());
         String gatewayIp = defaultNic.getGateway();
-        boolean needGateway = true;
         if (gatewayIp != null && !gatewayIp.equals(nic.getGateway())) {
-            needGateway = false;
-            GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
-            // Do set dhcp:router option for non-default nic on certain OS(including Windows), and leave other OS unset.
-            // Because some OS(e.g. CentOS) would set routing on wrong interface
-            for (String name : _guestOSNeedGatewayOnNonDefaultNetwork) {
-                if (guestOS.getDisplayName().startsWith(name)) {
-                    needGateway = true;
-                    break;
-                }
-            }
-        }
-        if (!needGateway) {
             gatewayIp = "0.0.0.0";
         }
         dhcpCommand.setDefaultRouter(gatewayIp);
@@ -3410,10 +3404,16 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.getAliasIpForVm(router.getId());
         List<DnsmasqTO> ipList = new ArrayList<DnsmasqTO>();
 
-        NicVO router_guest_ip = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
-        ipList.add(new DnsmasqTO(router_guest_ip.getIp4Address(),router_guest_ip.getGateway(),router_guest_ip.getNetmask()));
+        NicVO router_guest_nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
+        String cidr = NetUtils.getCidrFromGatewayAndNetmask(router_guest_nic.getGateway(), router_guest_nic.getNetmask());
+        String[] cidrPair = cidr.split("\\/");
+        String cidrAddress = cidrPair[0];
+        long cidrSize = Long.parseLong(cidrPair[1]);
+        String startIpOfSubnet = NetUtils.getIpRangeStartIpFromCidr(cidrAddress, cidrSize);
+
+        ipList.add(new DnsmasqTO(router_guest_nic.getIp4Address(),router_guest_nic.getGateway(),router_guest_nic.getNetmask(), startIpOfSubnet));
         for (NicIpAliasVO ipAliasVO : ipAliasVOList) {
-             DnsmasqTO dnsmasqTO = new DnsmasqTO(ipAliasVO.getStartIpOfSubnet(), ipAliasVO.getGateway(), ipAliasVO.getNetmask());
+             DnsmasqTO dnsmasqTO = new DnsmasqTO(ipAliasVO.getIp4Address(), ipAliasVO.getGateway(), ipAliasVO.getNetmask(), ipAliasVO.getStartIpOfSubnet());
              ipList.add(dnsmasqTO);
         }
         DataCenterVO dcvo = _dcDao.findById(router.getDataCenterId());

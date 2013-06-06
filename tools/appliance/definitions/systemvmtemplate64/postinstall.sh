@@ -42,6 +42,8 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install dnsmasq dnsmasq-utils
   # nfs client
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
+  # nfs irqbalance
+  apt-get --no-install-recommends -q -y --force-yes install irqbalance
 
   # vpn stuff
   apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
@@ -110,7 +112,7 @@ fix_nameserver() {
   # Replace /etc/resolv.conf also
   cat > /etc/resolv.conf << EOF
 nameserver 8.8.8.8
-nameserver 4.4.4.4
+nameserver 8.8.4.4
 EOF
 }
 

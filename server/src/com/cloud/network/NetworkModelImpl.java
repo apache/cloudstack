@@ -1673,7 +1673,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (networkDomainMap.subdomainAccess) {
             Set<Long> parentDomains = _domainMgr.getDomainParentIds(domainId);
 
-            if (parentDomains.contains(domainId)) {
+            if (parentDomains.contains(networkDomainId)) {
                 return true;
             }
         }

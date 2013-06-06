@@ -70,7 +70,7 @@
 								listAll: true
 							},
 							success: function(json) {
-								var zones = json.listzonesresponse.zone;
+								var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
 
 								args.response.success({
 									data: $.map(zones, function(zone) {
@@ -1576,6 +1576,7 @@
             viewAll: {
               path: 'network.secondaryNicIps',
               attachTo: 'ipaddress',
+              label: 'label.view.secondary.ips',
               title: function(args) {
                 var title = _l('label.menu.ipaddresses') + ' - ' + args.context.nics[0].name;
                 

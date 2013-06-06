@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
 /**
@@ -109,4 +110,6 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 			Long clusterId, String[] tags);
 
 	List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags);
+
+    List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType);
 }

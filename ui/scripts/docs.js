@@ -16,14 +16,22 @@
 // under the License.
 cloudStack.docs = {
 
-  //Implicit Planner
+  //Dedicate Resource
 
-  helpImplicitPlannerKey:{
+   helpDedicateResource:{
 
-    desc:'Please provide a Planner key for the Implicit Planner you are going to use and then select its mode below .Eg - Planner Key :ImplicitDedicationMode',
+    desc:'Check this box to dedicate the resources to specific domain/account',
     externalLink:''
 
   },
+
+   helpAccountForDedication:{
+
+   desc:'Please enter an account name which belongs to the above selected domain in order to dedicate this resource to this account',
+   externalLink:''
+
+  },
+
 
  //Delete/archive events
   helpEventsDeleteType:{

@@ -24,14 +24,16 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import com.cloud.org.Cluster;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.db.GenericDao;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Cluster;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.utils.db.GenericDao;
 
 /**
  * Storage Pool DB view.
@@ -99,7 +101,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="data_center_type")
     private String zoneType;
-    
+
     @Column(name="pod_id")
     private long podId;
 
@@ -128,10 +130,15 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="job_status")
     private int jobStatus;
-    
+
     @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
+
+
+    @Column(name = "hypervisor")
+    @Enumerated(value = EnumType.STRING)
+    private HypervisorType hypervisor;
 
     /**
      * @return the scope
@@ -145,6 +152,14 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
      */
     public void setScope(ScopeType scope) {
         this.scope = scope;
+    }
+
+    public HypervisorType getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(HypervisorType hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     @Override
@@ -293,7 +308,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     public void setZoneType(String zoneType) {
         this.zoneType = zoneType;
     }
-    
+
     public long getPodId() {
         return podId;
     }

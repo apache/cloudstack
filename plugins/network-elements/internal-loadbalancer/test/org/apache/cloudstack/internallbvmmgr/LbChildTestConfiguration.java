@@ -56,7 +56,7 @@ import com.cloud.user.dao.AccountDao;
 @Configuration
 @ComponentScan(
     basePackageClasses={
-            NetUtils.class,
+            NetUtils.class
     },
     includeFilters={@Filter(value=LbChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
     useDefaultFilters=false

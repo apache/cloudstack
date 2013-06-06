@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -51,15 +54,29 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveredWithErrorException;
+import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.hypervisor.vmware.LegacyZoneVO;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
+import com.cloud.hypervisor.vmware.VmwareDatacenterService;
+import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
+import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
+import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
@@ -67,9 +84,10 @@ import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
-import com.cloud.utils.ssh.SshHelper;
+import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
@@ -83,11 +101,11 @@ import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
@@ -98,8 +116,8 @@ import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
 
-@Local(value = {VmwareManager.class})
-public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener {
+@Local(value = {VmwareManager.class, VmwareDatacenterService.class})
+public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
 
     private static final int STARTUP_DELAY = 60000; 				// 60 seconds
@@ -124,6 +142,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject ConfigurationDao _configDao;
     @Inject ConfigurationServer _configServer;
     @Inject HypervisorCapabilitiesDao _hvCapabilitiesDao;
+    @Inject DataCenterDao _dcDao;
+    @Inject VmwareDatacenterDao _vmwareDcDao;
+    @Inject VmwareDatacenterZoneMapDao _vmwareDcZoneMapDao;
+    @Inject LegacyZoneDao _legacyZoneDao;
 
     String _mountParent;
     StorageLayer _storage;
@@ -495,7 +517,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                         _configServer.updateKeyPairs();
 
                         s_logger.info("Copy System VM patch ISO file to secondary storage. source ISO: " + srcIso.getAbsolutePath() +
-                        	", destination: " + destIso.getAbsolutePath());
+                                ", destination: " + destIso.getAbsolutePath());
                         try {
                             FileUtil.copyfile(srcIso, destIso);
                         } catch(IOException e) {
@@ -544,7 +566,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         assert(isoFile != null);
         if(!isoFile.exists()) {
-        	s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
+            s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
         }
         return isoFile;
     }
@@ -561,7 +583,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         assert(keyFile != null);
         if(!keyFile.exists()) {
-        	s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
+            s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
         }
         return keyFile;
     }
@@ -864,5 +886,247 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public String getRootDiskController() {
         return _rootDiskController;
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddVmwareDcCmd.class);
+        cmdList.add(RemoveVmwareDcCmd.class);
+        return cmdList;
+    }
+
+    @Override
+    @DB
+    public VmwareDatacenterVO addVmwareDatacenter(AddVmwareDcCmd cmd) throws ResourceInUseException {
+        VmwareDatacenterVO vmwareDc = null;
+        Long zoneId = cmd.getZoneId();
+        String userName = cmd.getUsername();
+        String password = cmd.getPassword();
+        String vCenterHost = cmd.getVcenter();
+        String vmwareDcName = cmd.getName();
+
+        // Zone validation
+        validateZone(zoneId, "add VMware datacenter to zone");
+
+        VmwareDatacenterZoneMapVO vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
+        // Check if zone is associated with VMware DC
+        if (vmwareDcZoneMap != null) {
+            throw new CloudRuntimeException("Zone " + zoneId + " is already associated with a VMware datacenter.");
+        }
+
+        // Validate username, password, VMware DC name and vCenter
+        if (userName == null) {
+            throw new InvalidParameterValueException("Missing or invalid parameter username.");
+        }
+
+        if (password == null) {
+            throw new InvalidParameterValueException("Missing or invalid parameter username.");
+        }
+
+        if (vmwareDcName == null) {
+            throw new InvalidParameterValueException("Missing or invalid parameter name. Please provide valid VMware datacenter name.");
+        }
+
+        if (vCenterHost == null) {
+            throw new InvalidParameterValueException("Missing or invalid parameter name. " +
+                    "Please provide valid VMware vCenter server's IP address or fully qualified domain name.");
+        }
+
+        // Check if DC is already part of zone
+        // In that case vmware_data_center table should have the DC
+        vmwareDc = _vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
+        if (vmwareDc != null) {
+            throw new ResourceInUseException("This DC is already part of other CloudStack zone(s). Cannot add this DC to more zones.");
+        }
+
+        VmwareContext context = null;
+        DatacenterMO dcMo = null;
+        String dcCustomFieldValue;
+        boolean addDcCustomFieldDef = false;
+        boolean dcInUse = false;
+        String guid;
+        ManagedObjectReference dcMor;
+        try {
+            context = VmwareContextFactory.create(vCenterHost, userName, password);
+
+            // Check if DC exists on vCenter
+            dcMo = new DatacenterMO(context, vmwareDcName);
+            dcMor = dcMo.getMor();
+            if (dcMor == null) {
+                String msg = "Unable to find VMware DC " + vmwareDcName + " in vCenter " + vCenterHost + ". ";
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+
+            // Check if DC is already associated with another cloudstack deployment
+            // Get custom field property cloud.zone over this DC
+            guid = vmwareDcName + "@" + vCenterHost;
+
+            dcCustomFieldValue = dcMo.getCustomFieldValue(CustomFieldConstants.CLOUD_ZONE);
+            if (dcCustomFieldValue == null) {
+                addDcCustomFieldDef = true;
+            }
+            dcInUse = Boolean.parseBoolean(dcCustomFieldValue);
+            if (dcInUse) {
+                throw new ResourceInUseException("This DC is being managed by other CloudStack deployment. Cannot add this DC to zone.");
+            }
+
+            // Add DC to database into vmware_data_center table
+            vmwareDc = new VmwareDatacenterVO(guid, vmwareDcName, vCenterHost, userName, password);
+            Transaction txn = Transaction.currentTxn();
+            try {
+                txn.start();
+                vmwareDc = _vmwareDcDao.persist(vmwareDc);
+                txn.commit();
+            } catch (Exception e) {
+                txn.rollback();
+                s_logger.error("Failed to persist VMware datacenter details to database. Exception: " + e.getMessage());
+                throw new CloudRuntimeException(e.getMessage());
+            }
+
+            // Map zone with vmware datacenter
+            vmwareDcZoneMap = new VmwareDatacenterZoneMapVO(zoneId, vmwareDc.getId());
+
+            txn = Transaction.currentTxn();
+            try {
+                txn.start();
+                vmwareDcZoneMap = _vmwareDcZoneMapDao.persist(vmwareDcZoneMap);
+                txn.commit();
+            } catch (Exception e) {
+                txn.rollback();
+                s_logger.error("Failed to associate VMware datacenter with zone " + zoneId + ". Exception: " + e.getMessage());
+                // Removing VMware datacenter from vmware_data_center table because association with zone failed.
+                _vmwareDcDao.remove(vmwareDcZoneMap.getId());
+                throw new CloudRuntimeException(e.getMessage());
+            }
+
+            // Set custom field for this DC
+            if (addDcCustomFieldDef) {
+                dcMo.ensureCustomFieldDef(CustomFieldConstants.CLOUD_ZONE);
+            }
+            dcMo.setCustomFieldValue(CustomFieldConstants.CLOUD_ZONE, "true");
+
+        } catch (Throwable e) {
+            String msg = "Failed to add VMware DC to zone ";
+            if (e instanceof RemoteException) {
+                msg = "Encountered remote exception at vCenter. " + VmwareHelper.getExceptionMessage(e);
+            } else {
+                msg += "due to : " + e.getMessage();
+            }
+            throw new CloudRuntimeException(msg);
+        } finally {
+            if (context != null)
+                context.close();
+            context = null;
+        }
+        return vmwareDc;
+    }
+
+
+    @Override
+    public boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws ResourceInUseException {
+        Long zoneId = cmd.getZoneId();
+        // Validate zone
+        validateZone(zoneId, "remove VMware datacenter from zone");
+
+        // Get DC associated with this zone
+        VmwareDatacenterZoneMapVO vmwareDcZoneMap;
+        VmwareDatacenterVO vmwareDatacenter;
+        String vmwareDcName;
+        long vmwareDcId;
+        String vCenterHost;
+        String userName;
+        String password;
+        DatacenterMO dcMo = null;
+        Transaction txn;
+
+        vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
+        // Check if zone is associated with VMware DC
+        if (vmwareDcZoneMap == null) {
+            throw new CloudRuntimeException("Zone " + zoneId + " is not associated with any VMware datacenter.");
+        }
+
+        vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
+        vmwareDatacenter = _vmwareDcDao.findById(vmwareDcId);
+        vmwareDcName = vmwareDatacenter.getVmwareDatacenterName();
+        vCenterHost = vmwareDatacenter.getVcenterHost();
+        userName = vmwareDatacenter.getUser();
+        password = vmwareDatacenter.getPassword();
+        txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            // Remove the VMware datacenter entry in table vmware_data_center
+            _vmwareDcDao.remove(vmwareDcId);
+            // Remove the map entry in table vmware_data_center_zone_map
+            _vmwareDcZoneMapDao.remove(vmwareDcZoneMap.getId());
+            txn.commit();
+        } catch (Exception e) {
+            s_logger.info("Caught exception when trying to delete VMware datacenter record." + e.getMessage());
+            throw new CloudRuntimeException("Failed to delete VMware datacenter.");
+        }
+
+        // Construct context
+        VmwareContext context = null;
+        try {
+            context = VmwareContextFactory.create(vCenterHost, userName, password);
+
+            // Check if DC exists on vCenter
+            try {
+                dcMo = new DatacenterMO(context, vmwareDcName);
+            } catch(Throwable t) {
+                String msg = "Unable to find DC " + vmwareDcName + " in vCenter " + vCenterHost;
+                s_logger.error(msg);
+                throw new DiscoveryException(msg);
+            }
+
+            assert (dcMo != null);
+
+            // Reset custom field property cloud.zone over this DC
+            dcMo.setCustomFieldValue(CustomFieldConstants.CLOUD_ZONE, "false");
+            s_logger.info("Sucessfully reset custom field property cloud.zone over DC " + vmwareDcName);
+        } catch (Exception e) {
+            String msg = "Unable to reset custom field property cloud.zone over DC " + vmwareDcName
+                    + " due to : " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        } finally {
+            if (context != null)
+                context.close();
+            context = null;
+        }
+        return true;
+    }
+
+    private void validateZone(Long zoneId, String errStr) throws ResourceInUseException {
+        // Check if zone with specified id exists
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "Can't find zone by the id specified.");
+            throw ex;
+        }
+
+        // Check if zone has resources? - For now look for clusters
+        List<ClusterVO> clusters = _clusterDao.listByZoneId(zoneId);
+        if (clusters != null && clusters.size() > 0) {
+            // Look for VMware hypervisor.
+            for (ClusterVO cluster : clusters) {
+                if (cluster.getHypervisorType().equals(HypervisorType.VMware)) {
+                    throw new ResourceInUseException("Zone has one or more clusters."
+                            + " Can't " + errStr + " which already has clusters.");
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean isLegacyZone(long dcId) {
+        boolean isLegacyZone = false;
+        LegacyZoneVO legacyZoneVo = _legacyZoneDao.findById(dcId);
+        if (legacyZoneVo != null) {
+            isLegacyZone = true;
+        }
+        return isLegacyZone;
     }
 }

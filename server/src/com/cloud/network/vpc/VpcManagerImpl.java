@@ -16,27 +16,6 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
-import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -80,6 +59,7 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
+import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -87,7 +67,6 @@ import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
-import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -121,6 +100,25 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 @Component
@@ -1039,7 +1037,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @Override
     public void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, 
-            String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner) {
+            String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId) {
         
         NetworkOffering guestNtwkOff = _configMgr.getNetworkOffering(newNtwkOffId);
         
@@ -1084,6 +1082,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
         }
+
+        //5) When aclId is provided, verify that ACLProvider is supported by network offering
+        if(aclId != null && (!_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.NetworkACL))){
+            throw new InvalidParameterValueException("Cannot apply NetworkACL. Network Offering does not support NetworkACL service");
+        }
+
     }
 
     @Override
@@ -2034,7 +2038,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         //1) Validate if network can be created for VPC
-        validateNtwkOffForNtwkInVpc(null, ntwkOffId, cidr, networkDomain, vpc, gateway, owner);
+        validateNtwkOffForNtwkInVpc(null, ntwkOffId, cidr, networkDomain, vpc, gateway, owner, aclId);
 
         //2) Create network
         Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId,
@@ -2109,6 +2113,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         hTypes.add(HypervisorType.XenServer);
         hTypes.add(HypervisorType.VMware);
         hTypes.add(HypervisorType.KVM);
+        hTypes.add(HypervisorType.Simulator);
         return hTypes;
     }
 

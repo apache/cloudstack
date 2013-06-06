@@ -1070,7 +1070,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     private String getNameForDNatIpPool(String tenantName, String identifier) {
-        return "IpPool-" + tenantName + "-" + identifier;
+        return "IpPool-" + tenantName + "-" + identifier + "n";
     }
 
     private String getDnForDNatIpPool(String tenantName, String identifier) {

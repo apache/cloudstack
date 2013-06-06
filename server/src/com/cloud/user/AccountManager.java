@@ -47,21 +47,15 @@ public interface AccountManager extends AccountService {
     
     boolean deleteAccount(AccountVO account, long callerUserId, Account caller);
 
-	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller);
-
 	Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
 	
-	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details, String uuid);
-	
-	UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID);
-	
+	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String uuid);
+		
     /**
      * Logs out a user
      * @param userId
      */
-    void logoutUser(Long userId);
-
-    UserAccount getUserAccount(String username, Long domainId);
+    void logoutUser(long userId);
     
     /**
      * Authenticates a user when s/he logs in.
@@ -87,9 +81,7 @@ public interface AccountManager extends AccountService {
      * @return the user/account pair if one exact match was found, null otherwise
      */
     Pair<User, Account> findUserByApiKey(String apiKey);
-
-    boolean lockAccount(long accountId);
-
+    
 	boolean enableAccount(long accountId);
 
 	void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId,

@@ -121,7 +121,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         if(vpcId != null){
-            sc.setParameters("vpcId", name);
+            sc.setParameters("vpcId", vpcId);
         }
 
         if(networkId != null){

@@ -173,8 +173,6 @@ ALTER TABLE upload ADD uuid VARCHAR(40);
 ALTER TABLE async_job modify job_cmd VARCHAR(255);
 
 
-ALTER TABLE `cloud`.`alert` ADD INDEX `last_sent` (`last_sent` DESC) ;
-
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `is_persistent` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides an ability to create persistent networks';
 
 

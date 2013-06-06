@@ -39,7 +39,7 @@ public class UnPlugNicCommand extends Command{
         this.instanceName = instanceName;
     }
 
-    public String getInstanceName() {
+    public String getVmName() {
         return instanceName;
     }
 }

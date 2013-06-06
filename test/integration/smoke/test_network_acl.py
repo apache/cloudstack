@@ -24,96 +24,154 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 
+class Services:
+    def __init__(self):
+        self.services = {
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                "password": "password",
+            },
+            "virtual_machine": {
+                "displayname": "Test VM",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "hypervisor": 'XenServer',
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": 'TCP',
+            },
+            "ostype": 'CentOS 5.3 (64-bit)',
+            "service_offering": {
+                "name": "Tiny Instance",
+                "displaytext": "Tiny Instance",
+                "cpunumber": 1,
+                "cpuspeed": 100,
+                "memory": 256,
+            },
+            "network_offering": {
+                "name": "Network offering for internal lb service",
+                "displaytext": "Network offering for internal lb service",
+                "guestiptype": "Isolated",
+                "traffictype": "Guest",
+                "supportedservices": "Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL",
+                "serviceProviderList": {
+                    "Dhcp": "VpcVirtualRouter",
+                    "Dns": "VpcVirtualRouter",
+                    "Vpn": "VpcVirtualRouter",
+                    "UserData": "VpcVirtualRouter",
+                    "Lb": "InternalLbVM",
+                    "SourceNat": "VpcVirtualRouter",
+                    "StaticNat": "VpcVirtualRouter",
+                    "PortForwarding": "VpcVirtualRouter",
+                    "NetworkACL": "VpcVirtualRouter",
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
+                    "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
+                }
+            }
+        }
+
+
 class TestNetworkACL(cloudstackTestCase):
-    networkOfferingId = 11
-    networkId = None
-    vmId = None
-    vpcId = None
-    aclId = None
 
-    zoneId = 1
-    serviceOfferingId = 1 
-    templateId = 5
+    @classmethod
+    def setUpClass(cls):
+        cls.apiclient = super(TestNetworkACL, cls).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        cls.zone = get_zone(cls.apiclient, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offering"]
+        )
+        cls.account = Account.create(cls.apiclient, services=cls.services["account"])
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        cls.debug("Successfully created account: %s, id: \
+                   %s" % (cls.account.name,\
+                          cls.account.id))
+        cls.cleanup = [cls.account]
 
-    def setUp(self):
-        self.apiClient = self.testClient.getApiClient()
-
-
-    
     @attr(tags=["advanced"])
-    def test_networkAcl(self):
+    def test_network_acl(self):
+        """Test network ACL lists and items in VPC"""
+
+        # 0) Get the default network offering for VPC
+        networkOffering = NetworkOffering.list(self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
+        self.assert_(networkOffering is not None and len(networkOffering) > 0, "No VPC based network offering")
 
         # 1) Create VPC
-        self.createVPC()
+        vpcOffering = VpcOffering.list(self.apiclient)
+        self.assert_(vpcOffering is not None and len(vpcOffering)>0, "No VPC offerings found")
+        self.services["vpc"] = {}
+        self.services["vpc"]["name"] = "vpc-networkacl"
+        self.services["vpc"]["displaytext"] = "vpc-networkacl"
+        self.services["vpc"]["cidr"] = "10.1.1.0/24"
+        vpc = VPC.create(
+                apiclient=self.apiclient,
+                services=self.services["vpc"],
+                networkDomain="vpc.networkacl",
+                vpcofferingid=vpcOffering[0].id,
+                zoneid=self.zone.id,
+                account=self.account.name,
+                domainid=self.domain.id
+        )
+        self.assert_(vpc is not None, "VPC creation failed")
 
-        # 2) Create ACl
-        self.createACL()
+        # 2) Create ACL
+        aclgroup = NetworkACLList.create(apiclient=self.apiclient, services={}, name="acl", description="acl", vpcid=vpc.id)
+        self.assertIsNotNone(aclgroup, "Failed to create NetworkACL list")
+        self.debug("Created a network ACL list %s" % aclgroup.name)
 
-        # 3) Create ACl Item
-        self.createACLItem()
+        # 3) Create ACL Item
+        aclitem = NetworkACL.create(apiclient=self.apiclient, services={},
+            protocol="TCP", number="10", action="Deny", aclid=aclgroup.id, cidrlist=["0.0.0.0/0"])
+        self.assertIsNotNone(aclitem, "Network failed to aclItem")
+        self.debug("Added a network ACL %s to ACL list %s" % (aclitem.id, aclgroup.name))
 
         # 4) Create network with ACL
-        self.createNetwork()
+        self.services["vpcnetwork"] = {}
+        self.services["vpcnetwork"]["name"] = "vpcntwk"
+        self.services["vpcnetwork"]["displaytext"] = "vpcntwk"
+        ntwk = Network.create(
+            apiclient=self.apiclient,
+            services=self.services["vpcnetwork"],
+            accountid=self.account.name,
+            domainid=self.domain.id,
+            networkofferingid=networkOffering[0].id,
+            zoneid=self.zone.id,
+            vpcid=vpc.id,
+            aclid=aclgroup.id,
+            gateway="10.1.1.1",
+            netmask="255.255.255.192"
+        )
+        self.assertIsNotNone(ntwk, "Network failed to create")
+        self.debug("Network %s created in VPC %s" %(ntwk.id, vpc.id))
+
         # 5) Deploy a vm
-        self.deployVm()
+        self.services["virtual_machine"]["networkids"] = ntwk.id
+        vm = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+            templateid=self.template.id,
+            zoneid=self.zone.id,
+            accountid=self.account.name,
+            domainid= self.domain.id,
+            serviceofferingid=self.service_offering.id,
+        )
+        self.assert_(vm is not None, "VM failed to deploy")
+        self.assert_(vm.state == 'Running', "VM is not running")
+        self.debug("VM %s deployed in VPC %s" %(vm.id, vpc.id))
 
-    def createACL(self):
-        createAclCmd = createNetworkACLList.createNetworkACLListCmd()
-        createAclCmd.name = "acl1"
-        createAclCmd.description = "new acl"
-        createAclCmd.vpcId = TestNetworkACL.vpcId
-        createAclResponse = self.apiClient.createNetworkACLList(createAclCmd)
-        TestNetworkACL.aclId = createAclResponse.id
-
-    def createACLItem(self):
-        createAclItemCmd = createNetworkACL.createNetworkACLCmd()
-        createAclItemCmd.cidr = "0.0.0.0/0"
-        createAclItemCmd.protocol = "TCP"
-        createAclItemCmd.number = "10"
-        createAclItemCmd.action = "Deny"
-        createAclItemCmd.aclId = TestNetworkACL.aclId
-        createAclItemResponse = self.apiClient.createNetworkACL(createAclItemCmd)
-        self.assertIsNotNone(createAclItemResponse.id, "Network failed to aclItem")
-
-    def createVPC(self):
-        createVPCCmd = createVPC.createVPCCmd()
-        createVPCCmd.name = "new vpc"
-        createVPCCmd.cidr = "10.1.1.0/24"
-        createVPCCmd.displaytext = "new vpc"
-        createVPCCmd.vpcofferingid = 1
-        createVPCCmd.zoneid = self.zoneId
-        createVPCResponse = self.apiClient.createVPC(createVPCCmd)
-        TestNetworkACL.vpcId = createVPCResponse.id
-
-
-    def createNetwork(self):
-        createNetworkCmd = createNetwork.createNetworkCmd()
-        createNetworkCmd.name = "vpc network"
-        createNetworkCmd.displaytext = "vpc network"
-        createNetworkCmd.netmask = "255.255.255.0"
-        createNetworkCmd.gateway = "10.1.1.1"
-        createNetworkCmd.zoneid = self.zoneId
-        createNetworkCmd.vpcid = TestNetworkACL.vpcId
-        createNetworkCmd.networkofferingid = TestNetworkACL.networkOfferingId
-        createNetworkCmd.aclId = TestNetworkACL.aclId
-        createNetworkResponse = self.apiClient.createNetwork(createNetworkCmd)
-        TestNetworkACL.networkId = createNetworkResponse.id
-
-        self.assertIsNotNone(createNetworkResponse.id, "Network failed to create")
-
-    def deployVm(self):
-        deployVirtualMachineCmd = deployVirtualMachine.deployVirtualMachineCmd()
-        deployVirtualMachineCmd.networkids = TestNetworkACL.networkId
-        deployVirtualMachineCmd.serviceofferingid = TestNetworkACL.serviceOfferingId
-        deployVirtualMachineCmd.zoneid = TestNetworkACL.zoneId
-        deployVirtualMachineCmd.templateid = TestNetworkACL.templateId
-        deployVirtualMachineCmd.hypervisor = "XenServer"
-        deployVMResponse = self.apiClient.deployVirtualMachine(deployVirtualMachineCmd)
-        TestNetworkACL.vmId = deployVMResponse.id
-
-    def tearDown(self):
-        #destroy the vm
-        if TestNetworkACL.vmId is not None:
-            destroyVirtualMachineCmd = destroyVirtualMachine.destroyVirtualMachineCmd()
-            destroyVirtualMachineCmd.id = TestNetworkACL.vmId
-            destroyVirtualMachineResponse = self.apiClient.destroyVirtualMachine(destroyVirtualMachineCmd)
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls.cleanup)
+        except Exception, e:
+            raise Exception("Cleanup failed with %s" % e)

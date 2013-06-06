@@ -49,6 +49,7 @@ import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
 import com.cloud.dc.dao.DcDetailsDaoImpl;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.dc.dao.PodVlanMapDaoImpl;
@@ -173,7 +174,7 @@ import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
     },
 includeFilters={@Filter(value=ChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
 useDefaultFilters=false
-)
+        )
 
 public class ChildTestConfiguration {
 
@@ -333,13 +334,18 @@ public class ChildTestConfiguration {
     }
 
     @Bean
+    public DedicatedResourceDao DedicatedResourceDao() {
+        return Mockito.mock(DedicatedResourceDao.class);
+    }
+
+    @Bean
     public NetworkOfferingServiceMapDao networkOfferingServiceMapDao() {
         return Mockito.mock(NetworkOfferingServiceMapDao.class);
     }
 
     @Bean
     public DataCenterLinkLocalIpAddressDao datacenterLinkLocalIpAddressDao() {
-    	return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
+        return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
     }
 
     @Bean
@@ -357,7 +363,6 @@ public class ChildTestConfiguration {
         return Mockito.mock(AccountDetailsDao.class);
     }
 
-    
     public static class Library implements TypeFilter {
 
         @Override

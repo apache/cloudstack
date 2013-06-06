@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.*;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -84,6 +85,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
@@ -161,6 +163,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.dc.DataCenter.NetworkType;
 
 @Component
 @Local({ ResourceManager.class, ResourceService.class })
@@ -218,6 +221,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected StorageService                 _storageSvr;
     @Inject
     PlannerHostReservationDao _plannerHostReserveDao;
+    @Inject
+    protected DedicatedResourceDao           _dedicatedDao;
 
     protected List<? extends Discoverer> _discoverers;
     public List<? extends Discoverer> getDiscoverers() {
@@ -444,7 +449,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					+ cmd.getHypervisor() + " to a supported ");
         }
 
-        if (zone.isSecurityGroupEnabled()) {
+        if (zone.isSecurityGroupEnabled() && zone.getNetworkType().equals(NetworkType.Advanced)) {
             if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer
                     && hypervisorType != HypervisorType.Simulator) {
                 throw new InvalidParameterValueException("Don't support hypervisor type " + hypervisorType + " in advanced security enabled zone");
@@ -1025,6 +1030,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 		hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN,
 				capacityTypes);
         _capacityDao.remove(hostCapacitySC);
+        // remove from dedicated resources
+        DedicatedResourceVO dr = _dedicatedDao.findByHostId(hostId);
+        if (dr != null) {
+            _dedicatedDao.remove(dr.getId());
+        }
         txn.commit();
         return true;
     }
@@ -1099,11 +1109,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 						&& Boolean.parseBoolean(_configDao
 								.getValue(Config.VmwareUseNexusVSwitch
 										.toString()))) {
-                    _clusterVSMMapDao.removeByClusterId(cmd.getId());
-                }
-            }
+				    _clusterVSMMapDao.removeByClusterId(cmd.getId());
+				}
+				// remove from dedicated resources
+				DedicatedResourceVO dr = _dedicatedDao.findByClusterId(cluster.getId());
+				if (dr != null) {
+				    _dedicatedDao.remove(dr.getId());
+				}
+			}
 
-            txn.commit();
+			txn.commit();
             return true;
 		} catch (CloudRuntimeException e) {
             throw e;

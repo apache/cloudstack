@@ -133,25 +133,19 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public Pair<List<Long>,Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId, Long projectId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Account getActiveAccountByName(String accountName, Long domainId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Account getActiveAccountById(Long accountId) {
+    public Account getActiveAccountById(long accountId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Account getAccount(Long accountId) {
+    public Account getAccount(long accountId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -193,23 +187,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean deleteAccount(AccountVO account, long callerUserId, Account caller) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public void checkAccess(Account account, Domain domain) throws PermissionDeniedException {
         // TODO Auto-generated method stub
 
     }
-
-    @Override
-    public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
+    
     @Override
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
         // TODO Auto-generated method stub
@@ -244,14 +226,10 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public void logoutUser(Long userId) {
+    public void logoutUser(long userId) {
         // TODO Auto-generated method stub
     }
 
-    @Override
-    public UserAccount getUserAccount(String username, Long domainId) {
-        return null;
-    }
 
     @Override
     public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {
@@ -263,19 +241,10 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         return null;
     }
 
-    @Override
-    public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID) {
-        return null;
-    }
 
     @Override
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         return null;
-    }
-
-    @Override
-    public boolean lockAccount(long accountId) {
-        return true;
     }
 
     @Override
@@ -341,14 +310,21 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         return null;
     }
 
-    @Override
-    public Account createAccount(String accountName, short accountType,
-            Long domainId, String networkDomain, Map details, String uuid) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+
     @Override
     public RoleType getRoleType(Account account) {
+        return null;
+    }
+
+    @Override
+    public boolean deleteAccount(AccountVO account, long callerUserId, Account caller) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
+        // TODO Auto-generated method stub
         return null;
     }
 

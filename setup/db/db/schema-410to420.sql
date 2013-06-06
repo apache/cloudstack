@@ -27,12 +27,15 @@ ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `storage_motion_support
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_hosts_per_cluster`=32 WHERE `hypervisor_type`='VMware';
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'XenServer', '6.1.0', 50, 1, 13, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_hosts_per_cluster) VALUES (UUID(), 'VMware', '5.1', 128, 0, 32);
+UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE id=16;
+UPDATE `cloud`.`hypervisor_capabilities` SET `storage_motion_supported`=true WHERE id=11;
 DELETE FROM `cloud`.`configuration` where name='vmware.percluster.host.max';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'xen.nics.max', '7', 'Maximum allowed nics for Vms created on Xen');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.apiserver.address', 'http://localhost:8081', 'Specify the address at which the Midonet API server can be contacted (if using Midonet)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.providerrouter.id', 'd7c5e6a3-e2f4-426b-b728-b7ce6a0448e5', 'Specifies the UUID of the Midonet provider router (if using Midonet)');
 ALTER TABLE `cloud`.`load_balancer_vm_map` ADD state VARCHAR(40) NULL COMMENT 'service status updated by LB healthcheck manager';
 
+alter table storage_pool add hypervisor varchar(32);
 alter table storage_pool change storage_provider_id storage_provider_name varchar(255);
 alter table template_host_ref add state varchar(255);
 alter table template_host_ref add update_count bigint unsigned;
@@ -178,6 +181,27 @@ CREATE TABLE `cloud`.`affinity_group_vm_map` (
 
 
 
+CREATE TABLE `cloud`.`dedicated_resources` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `data_center_id` bigint unsigned COMMENT 'data center id',
+  `pod_id` bigint unsigned COMMENT 'pod id',
+  `cluster_id` bigint unsigned COMMENT 'cluster id',
+  `host_id` bigint unsigned COMMENT 'host id',
+  `domain_id` bigint unsigned COMMENT 'domain id of the domain to which resource is dedicated',
+  `account_id` bigint unsigned COMMENT 'account id of the account to which resource is dedicated',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_dedicated_resources__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_dedicated_resources__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
+  CONSTRAINT `fk_dedicated_resources__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`),
+  CONSTRAINT `fk_dedicated_resources__host_id` FOREIGN KEY (`host_id`) REFERENCES `cloud`.`host`(`id`),
+  CONSTRAINT `fk_dedicated_resources__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
+  CONSTRAINT `fk_dedicated_resources__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
+  INDEX `i_dedicated_resources_domain_id`(`domain_id`),
+  INDEX `i_dedicated_resources_account_id`(`account_id`),
+  CONSTRAINT `uc_dedicated_resources__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE nic_secondary_ips (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `uuid` varchar(40),
@@ -202,6 +226,9 @@ ALTER TABLE `cloud`.`alert` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL D
 ALTER TABLE `cloud`.`event` ADD COLUMN `archived` tinyint(1) unsigned NOT NULL DEFAULT 0;
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'alert.purge.interval', '86400', 'The interval (in seconds) to wait before running the alert purge thread');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'alert.purge.delay', '0', 'Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts');
+
+INSERT INTO `cloud`.`dedicated_resources` (`data_center_id`, `domain_id`) SELECT `id`, `domain_id` FROM `cloud`.`data_center` WHERE `domain_id` IS NOT NULL;
+UPDATE `cloud`.`data_center` SET `domain_id` = NULL WHERE `domain_id` IS NOT NULL;
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
 CREATE VIEW `cloud`.`event_view` AS
@@ -335,6 +362,8 @@ CREATE TABLE `cloud`.`global_load_balancer_lb_rule_map` (
   CONSTRAINT `fk_gslb_rule_id` FOREIGN KEY(`gslb_rule_id`) REFERENCES `global_load_balancing_rules`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_lb_rule_id` FOREIGN KEY(`lb_rule_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'cloud.dns.name', null, 'DNS name of the cloud for the GSLB service');
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.cpus', '40', 'The default maximum number of cpu cores that can be used for an account');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.memory', '40960', 'The default maximum memory (in MiB) that can be used for an account');
@@ -808,6 +837,7 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         storage_pool.removed,
         storage_pool.capacity_bytes,
         storage_pool.scope,
+        storage_pool.hypervisor,
         cluster.id cluster_id,
         cluster.uuid cluster_uuid,
         cluster.name cluster_name,
@@ -985,6 +1015,31 @@ CREATE TABLE `cloud`.`network_asa1000v_map` (
   CONSTRAINT `fk_network_asa1000v_map__asa1000v_id` FOREIGN KEY (`asa1000v_id`) REFERENCES `external_cisco_asa1000v_devices`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`vmware_data_center` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `name` varchar(255) NOT NULL COMMENT 'Name of VMware datacenter',
+  `guid` varchar(255) NOT NULL UNIQUE COMMENT 'id of VMware datacenter',
+  `vcenter_host` varchar(255) NOT NULL COMMENT 'vCenter host containing this VMware datacenter',
+  `username` varchar(255) NOT NULL COMMENT 'Name of vCenter host user',
+  `password` varchar(255) NOT NULL COMMENT 'Password of vCenter host user',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`vmware_data_center_zone_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `zone_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of CloudStack zone',
+  `vmware_data_center_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of VMware datacenter',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vmware_data_center_zone_map__vmware_data_center_id` FOREIGN KEY (`vmware_data_center_id`) REFERENCES `vmware_data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`legacy_zones` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `zone_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of CloudStack zone',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_legacy_zones__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `eip_associate_public_ip` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if public IP is associated with user VM creation by default when EIP service is enabled.' AFTER `elastic_ip_service`;
 
@@ -1722,6 +1777,10 @@ update `cloud`.`vpc_gateways` set network_acl_id = 2;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'VpcManager', 'blacklisted.routes', NULL, 'Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway');
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.dynamic.scale.vm', 'false', 'Enables/Diables dynamically scaling a vm');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'scale.retry', '2', 'Number of times to retry scaling up the vm');
+
 UPDATE `cloud`.`snapshots` set swift_id=null where swift_id=0;
 
 DROP TABLE IF EXISTS `cloud`.`vm_disk_statistics`;
@@ -1803,7 +1862,8 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.bytes_rate', 0, 'Default disk I/O rate in bytes per second allowed in User vm\'s disk. ');
 
 -- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;			
+SET foreign_key_checks = 1;
+
 UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;
 #update shared sg enabled network with not null name in Advance Security Group enabled network
 UPDATE `cloud`.`networks` set name='Shared SG enabled network', display_text='Shared SG enabled network' WHERE name IS null AND traffic_type='Guest' AND data_center_id IN (select id from data_center where networktype='Advanced' and is_security_group_enabled=1) AND acl_type='Domain';

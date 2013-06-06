@@ -21,10 +21,34 @@
   width: 100%;
   height: 100%;
   overflow: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.vpc-network-chart .info-box {
+  font-size: 12px;
+  color: #6E6B6B;
+  padding: 9px 1px 10px 20px;
+  background: #FFFFFF;
+  border: 2px solid #CFCFCF;
+  position: absolute;
+  top: 42px;
+  left: 10px;
+  width: 737px;
+}
+
+.vpc-network-chart .info-box .color-key {
+  display: block;
+  background: #2983E3;
+  padding: 1px;
+  float: left;
+  width: 10px;
+  height: 10px;
+  margin: 0px 9px 1px 0px;
 }
 
 .vpc-network-chart .tiers {
-  margin: 40px 46px 0 0;
+  margin: 66px 46px 0 0;
   width: 362px;
   float: right;
 }
@@ -113,7 +137,7 @@
 }
 
 .vpc-network-chart .tier-item .content .dashboard {
-  height: 117px;
+  display: inline-block;
 }
 
 .vpc-network-chart .tier-item .content .dashboard-item {
@@ -128,6 +152,15 @@
   border-radius: 4px;
   float: left;
   cursor: pointer;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item.disabled {
+  /*+opacity:50%;*/
+  filter: alpha(opacity=50);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+  -moz-opacity: 0.5;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .vpc-network-chart .tier-item .content .dashboard-item:hover {
@@ -241,7 +274,7 @@
 
 .vpc-network-chart .tier-item.router {
   width: 258px;
-  height: 218px;
+  height: 224px;
   background: #BDBDBD;
   border: 1px solid #808080;
   float: left;
@@ -249,27 +282,29 @@
   position: relative;
   left: 10px;
   top: 176px;
+  left: 0px;
+  top: 237px;
 }
 
 .vpc-network-chart .tier-item.router .header {
   padding: 15px 0 14px;
   border-bottom: 1px solid #808080;
   background: #C3C6C9;
-/*Old browsers*/
+  /*Old browsers*/
   background: -moz-linear-gradient(top, #c3c6c9 0%, #909497 100%);
-/*FF3.6+*/
+  /*FF3.6+*/
   background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#c3c6c9), color-stop(100%,#909497));
-/*Chrome,Safari4+*/
+  /*Chrome,Safari4+*/
   background: -webkit-linear-gradient(top, #c3c6c9 0%,#909497 100%);
-/*Chrome10+,Safari5.1+*/
+  /*Chrome10+,Safari5.1+*/
   background: -o-linear-gradient(top, #c3c6c9 0%,#909497 100%);
-/*Opera 11.10+*/
+  /*Opera 11.10+*/
   background: -ms-linear-gradient(top, #c3c6c9 0%,#909497 100%);
-/*IE10+*/
+  /*IE10+*/
   background: linear-gradient(to bottom, #c3c6c9 0%,#909497 100%);
-/*W3C*/
+  /*W3C*/
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#c3c6c9', endColorstr='#909497',GradientType=0 );
-/*IE6-8*/
+  /*IE6-8*/
 }
 
 .vpc-network-chart .tier-item.router .header .title {
@@ -299,6 +334,7 @@
 }
 
 .vpc-network-chart .tier-item.router .dashboard-item span {
+  padding-right: 10px;
   color: #FFFFFF;
   /*+text-shadow:0px 1px #000000;*/
   -moz-text-shadow: 0px 1px #000000;
@@ -309,5 +345,40 @@
 
 .vpc-network-chart .tier-item.router .dashboard-item:hover {
   background-color: #818181;
+}
+
+.vpc-network-chart .connector-line {
+}
+
+.vpc-network-chart .connector-line .connector-start,
+.vpc-network-chart .connector-line .connector-mid,
+.vpc-network-chart .connector-line .connector-end {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  background: #CCCCCC;
+}
+
+.vpc-network-chart .connector-line.highlighted .connector-start,
+.vpc-network-chart .connector-line.highlighted .connector-mid,
+.vpc-network-chart .connector-line.highlighted .connector-end {
+  background: #2983E3;
+}
+
+.vpc-network-chart .connector-line .connector-start,
+.vpc-network-chart .connector-line .connector-end {
+  height: 3px;
+}
+
+.vpc-network-chart .connector-line .connector-start {
+  width: 50px;
+  margin-left: 18px;
+}
+
+.vpc-network-chart .connector-line .connector-mid {
+  width: 3px;
+}
+
+.vpc-network-chart .connector-line .connector-end {
 }
 

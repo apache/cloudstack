@@ -135,19 +135,6 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 		return false;
 	}
 
-	@Override
-	public boolean applyPortForwardingRules(long ipAddressId,
-			boolean continueOnError, Account caller) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean applyStaticNatRulesForIp(long sourceIpId,
-			boolean continueOnError, Account caller, boolean forRevoke) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
 	@Override
 	public boolean applyPortForwardingRulesForNetwork(long networkId,
@@ -161,13 +148,6 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 			boolean continueOnError, Account caller) {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	public void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm,
-			Account caller) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -191,25 +171,6 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 		return false;
 	}
 
-	@Override
-	public List<? extends FirewallRule> listFirewallRulesByIp(long ipAddressId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<? extends PortForwardingRule> listPortForwardingRulesForApplication(
-			long ipId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<? extends PortForwardingRule> gatherPortForwardingRulesForApplication(
-			List<? extends IpAddress> addrs) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public boolean revokePortForwardingRulesForVm(long vmId) {
@@ -217,11 +178,6 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 		return false;
 	}
 
-	@Override
-	public boolean revokeStaticNatRulesForVm(long vmId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
 	@Override
 	public FirewallRule[] reservePorts(IpAddress ip, String protocol,
@@ -231,25 +187,6 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 		return null;
 	}
 
-	@Override
-	public boolean releasePorts(long ipId, String protocol, Purpose purpose,
-			int... ports) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public List<PortForwardingRuleVO> listByNetworkId(long networkId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean applyStaticNatForIp(long sourceIpId,
-			boolean continueOnError, Account caller, boolean forRevoke) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
 	@Override
 	public boolean applyStaticNatsForNetwork(long networkId,

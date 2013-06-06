@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -373,15 +374,6 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.*;
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateStaticRouteCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.DeleteStaticRouteCmd;
@@ -922,38 +914,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    @Override
-    public List<EventVO> getEvents(long userId, long accountId, Long domainId, String type, String level, Date startDate, Date endDate) {
-        SearchCriteria<EventVO> sc = _eventDao.createSearchCriteria();
-        if (userId > 0) {
-            sc.addAnd("userId", SearchCriteria.Op.EQ, userId);
-        }
-        if (accountId > 0) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
-        if (type != null) {
-            sc.addAnd("type", SearchCriteria.Op.EQ, type);
-        }
-        if (level != null) {
-            sc.addAnd("level", SearchCriteria.Op.EQ, level);
-        }
-        if (startDate != null && endDate != null) {
-            startDate = massageDate(startDate, 0, 0, 0);
-            endDate = massageDate(endDate, 23, 59, 59);
-            sc.addAnd("createDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
-        } else if (startDate != null) {
-            startDate = massageDate(startDate, 0, 0, 0);
-            sc.addAnd("createDate", SearchCriteria.Op.GTEQ, startDate);
-        } else if (endDate != null) {
-            endDate = massageDate(endDate, 23, 59, 59);
-            sc.addAnd("createDate", SearchCriteria.Op.LTEQ, endDate);
-        }
-
-        return _eventDao.search(sc, null);
-    }
 
     @Override
     public boolean archiveEvents(ArchiveEventsCmd cmd) {
@@ -1216,10 +1176,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             allHosts.remove(srcHost);
 
             // Check if the host has storage pools for all the volumes of the vm to be migrated.
-            for (Host host : allHosts) {
+            for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
+                Host host = iterator.next();
                 Map<Volume, List<StoragePool>> volumePools = findSuitablePoolsForVolumes(vmProfile, host);
                 if (volumePools.isEmpty()) {
-                    allHosts.remove(host);
+                    iterator.remove();
                 } else {
                     if (!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) {
                         requiresStorageMotion.put(host, true);
@@ -2229,8 +2190,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends GuestOsCategory>, Integer>(result.first(), result.second());
     }
 
-    @Override
-    public ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId) {
+
+    protected ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId) {
         return _consoleProxyMgr.assignProxy(dataCenterId, userVmId);
     }
 
@@ -4134,8 +4095,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     }
 
-    @Override
-    public void enableAdminUser(String password) {
+
+    private void enableAdminUser(String password) {
         String encodedPassword = null;
 
         UserVO adminUser = _userDao.getUser(2);
