@@ -5588,7 +5588,7 @@
                      //EXPLICIT DEDICATION
                       var array2 = [];
                       if(args.data.accountId != "")
-                        array2.push("&accountId=" +todb(args.data.accountId));
+                        array2.push("&account=" +todb(args.data.accountId));
 
                     $.ajax({
                     url: createURL("dedicateZone&zoneId=" + args.context.physicalResources[0].id + "&domainId=" +args.data.domainId + array2.join("") ),
@@ -8823,7 +8823,7 @@
                 if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       var array2 = [];
                       if(args.data.accountId != "")
-                        array2.push("&accountId=" +todb(args.data.accountId));
+                        array2.push("&account=" +todb(args.data.accountId));
 
                       if(podId != null){
                       $.ajax({
@@ -9008,7 +9008,7 @@
                     //EXPLICIT DEDICATION
                       var array2 = [];
                       if(args.data.accountId != "")
-                        array2.push("&accountId=" +todb(args.data.accountId));
+                        array2.push("&account=" +todb(args.data.accountId));
 
                     $.ajax({
                     url: createURL("dedicatePod&podId=" + args.context.pods[0].id + "&domainId=" +args.data.domainId + array2.join("")),
@@ -9768,7 +9768,7 @@
                 if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       var array2 = [];
                       if(args.data.accountId != "")
-                        array2.push("&accountId=" +todb(args.data.accountId));
+                        array2.push("&account=" +todb(args.data.accountId));
                     }
 
                     if(clusterId != null){
@@ -9989,7 +9989,7 @@
 
                       var array2 = [];
                       if(args.data.accountId != "")
-                        array2.push("&accountId=" +todb(args.data.accountId));
+                        array2.push("&account=" +todb(args.data.accountId));
 
                     $.ajax({
                     url: createURL("dedicateCluster&clusterId=" + args.context.clusters[0].id + "&domainId=" +args.data.domainId + array2.join("") ),
@@ -10870,7 +10870,7 @@
                 if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       var array2 = [];
                       if(args.data.accountId != "")
-                        array2.push("&accountId=" +todb(args.data.accountId));
+                        array2.push("&account=" +todb(args.data.accountId));
                     }
 
                     if(hostId != null){
@@ -11006,7 +11006,7 @@
                      //EXPLICIT DEDICATION
                       var array2 = [];
                       if(args.data.accountId != "")
-                        array2.push("&accountId=" +todb(args.data.accountId));
+                        array2.push("&account=" +todb(args.data.accountId));
 
                     $.ajax({
                     url: createURL("dedicateHost&hostId=" + args.context.hosts[0].id + "&domainId=" +args.data.domainId + array2.join("") ),

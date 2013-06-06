@@ -1628,7 +1628,7 @@
                       if(args.data.zone.domain != null)
                         array2.push("&domainid=" + args.data.zone.domain);
                       if(args.data.zone.accountId != "")
-                        array2.push("&accountId=" +todb(args.data.zone.accountId));
+                        array2.push("&account=" +todb(args.data.zone.accountId));
 
                       if(dedicatedZoneId != null){
                       $.ajax({
