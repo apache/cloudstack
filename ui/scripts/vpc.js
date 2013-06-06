@@ -57,6 +57,13 @@
       }
     },
     fields: {
+
+       'rulenumber':{
+           label:'Rule Number',
+           edit:true
+
+       },
+
       'cidrlist': { edit: true, label: 'label.cidr' },
       action: {
         label: 'Action',
