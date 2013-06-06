@@ -1110,8 +1110,8 @@
                   { //updatePhysicalNetwork API
                     state: { label: 'label.state' },
                     vlan: {
-                      label: 'VLAN Range(s)',
-                      isEditable: true
+                      label: 'VLAN Range(s)'
+                     // isEditable: true
                     },
                   /*  endVlan: {
                       label: 'label.end.vlan',
