@@ -947,8 +947,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Check if DC is already part of zone
         // In that case vmware_data_center table should have the DC
         String vCenterHost = uri.getHost();
-        List<VmwareDatacenterVO> vmwareDcs = _vmwareDcDao.getVmwareDatacenterByNameAndVcenter(vmwareDcName, vCenterHost);
-        if (vmwareDcs != null && vmwareDcs.size() != 0) {
+        vmwareDc = _vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
+        if (vmwareDc != null) {
             throw new ResourceInUseException("This DC is already part of other CloudStack zone(s). Cannot add this DC to more zones.");
         }
 
