@@ -58,7 +58,7 @@
     },
     fields: {
 
-       'rulenumber':{
+       'number':{
            label:'Rule Number',
            edit:true
 
