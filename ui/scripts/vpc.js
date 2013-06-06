@@ -445,6 +445,7 @@
             isMaximized: true,
             name: 'Internal LB details',
             actions: {
+              /*
               assignVm: { 
                 label: 'Assign VMs to Internal LB',
                 messages: {
@@ -508,7 +509,8 @@
                 notification: {
                   poll: pollAsyncJobResult
                 }
-              },                           
+              },      
+              */                     
               remove: {
                 label: 'Delete Internal LB',
                 messages: {
