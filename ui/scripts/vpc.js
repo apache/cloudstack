@@ -667,7 +667,7 @@
                               var items = [];
                               if(instances != null) {
                                 for(var i = 0; i < instances.length; i++) {
-                                  if(instances[i]._isSelected = true)
+                                  if(instances[i]._isSelected == true)
                                     continue;
                                   else
                                     items.push(instances[i]);
