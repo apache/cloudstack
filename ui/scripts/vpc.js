@@ -654,8 +654,19 @@
                                 ).length ? true : false;
                               });
                               
+                              //remove assigned VMs (i.e. instance._isSelected == true)
+                              var items = [];
+                              if(instances != null) {
+                                for(var i = 0; i < instances.length; i++) {
+                                  if(instances[i]._isSelected = true)
+                                    continue;
+                                  else
+                                    items.push(instances[i]);
+                                }
+                              }
+                              
                               args.response.success({
-                                data: instances
+                                data: items
                               });
                             }
                           });
