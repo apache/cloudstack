@@ -651,7 +651,21 @@
                       listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
                         type: 'checkbox',
                         filters: false,
-                        dataProvider: function(args) {                         
+                        dataProvider: function(args) {       
+                          var assignedInstances;
+                          $.ajax({
+                            url: createURL('listLoadBalancers'),
+                            data: {
+                              id: args.context.internalLoadBalancers[0].id
+                            },
+                            async: false,
+                            success: function(json) {    
+                              assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;         
+                              if(assignedInstances == null)
+                                assignedInstances = []; 
+                            }
+                          });                     
+                          
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
@@ -663,11 +677,9 @@
 
                               // Pre-select existing instances in LB rule
                               $(instances).map(function(index, instance) {
-                                instance._isSelected = $.grep(
-                                  args.context.internalLoadBalancers[0].loadbalancerinstance,
-                                  
-                                  function(lbInstance) {
-                                    return lbInstance.id == instance.id;
+                                instance._isSelected = $.grep(assignedInstances,                                  
+                                  function(assignedInstance) {
+                                    return assignedInstance.id == instance.id;
                                   }
                                 ).length ? true : false;
                               });
