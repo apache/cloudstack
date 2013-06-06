@@ -3595,7 +3595,20 @@
                 ).length ? tier._highlighted = true : tier._highlighted = false;
 
                 // Get LB capabilities
-                var lbSchemes = $.grep(
+
+              var lbSchemes = $.grep(
+                    tier.service,
+                    function(service) {
+                      return service.name == 'Lb';
+                    }
+                  ).length? $.grep($.grep(
+                    tier.service,
+                    function(service) {
+                      return service.name == 'Lb';
+                    }
+                  )[0].capability,function(capability){ return capability.name == 'LbSchemes';}) : [] ;
+
+          /*      var lbSchemes = $.grep(
                   $.grep(
                     tier.service,
                     function(service) {
@@ -3605,7 +3618,7 @@
                   function(capability) {
                     return capability.name == 'LbSchemes';
                   }
-                );
+                );*/
 
                 var hasLbScheme = function(schemeVal) {
                   return $.grep(
