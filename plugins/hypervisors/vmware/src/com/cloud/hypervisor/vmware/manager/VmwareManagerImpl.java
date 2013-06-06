@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLDecoder;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,8 +38,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -50,8 +48,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.storage.MigrateVolumeAnswer;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -80,7 +76,6 @@ import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
-import com.cloud.hypervisor.vmware.mo.CustomFieldsManagerMO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
@@ -89,7 +84,6 @@ import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
-import com.cloud.utils.ssh.SshHelper;
 import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -103,15 +97,10 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.UriUtils;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -121,8 +110,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
@@ -530,7 +517,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                         _configServer.updateKeyPairs();
 
                         s_logger.info("Copy System VM patch ISO file to secondary storage. source ISO: " + srcIso.getAbsolutePath() +
-                        	", destination: " + destIso.getAbsolutePath());
+                                ", destination: " + destIso.getAbsolutePath());
                         try {
                             FileUtil.copyfile(srcIso, destIso);
                         } catch(IOException e) {
@@ -579,7 +566,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         assert(isoFile != null);
         if(!isoFile.exists()) {
-        	s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
+            s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
         }
         return isoFile;
     }
@@ -596,7 +583,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         assert(keyFile != null);
         if(!keyFile.exists()) {
-        	s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
+            s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
         }
         return keyFile;
     }
@@ -914,9 +901,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     public VmwareDatacenterVO addVmwareDatacenter(AddVmwareDcCmd cmd) throws ResourceInUseException {
         VmwareDatacenterVO vmwareDc = null;
         Long zoneId = cmd.getZoneId();
-        String url = cmd.getUrl();
         String userName = cmd.getUsername();
         String password = cmd.getPassword();
+        String vCenterHost = cmd.getVcenter();
         String vmwareDcName = cmd.getName();
 
         // Zone validation
@@ -928,25 +915,26 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             throw new CloudRuntimeException("Zone " + zoneId + " is already associated with a VMware datacenter.");
         }
 
-        // Validate url and get uri
-        URI uri = getUri(url);
-
-        // Validate username and password and DC name
+        // Validate username, password, VMware DC name and vCenter
         if (userName == null) {
-            throw new InvalidParameterValueException("Invalid parameter username.");
+            throw new InvalidParameterValueException("Missing or invalid parameter username.");
         }
 
         if (password == null) {
-            throw new InvalidParameterValueException("Invalid parameter password.");
+            throw new InvalidParameterValueException("Missing or invalid parameter username.");
         }
 
         if (vmwareDcName == null) {
-            throw new InvalidParameterValueException("Invalid parameter name. Please provide valid VMware datacenter name.");
+            throw new InvalidParameterValueException("Missing or invalid parameter name. Please provide valid VMware datacenter name.");
+        }
+
+        if (vCenterHost == null) {
+            throw new InvalidParameterValueException("Missing or invalid parameter name. " +
+                    "Please provide valid VMware vCenter server's IP address or fully qualified domain name.");
         }
 
         // Check if DC is already part of zone
         // In that case vmware_data_center table should have the DC
-        String vCenterHost = uri.getHost();
         vmwareDc = _vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
         if (vmwareDc != null) {
             throw new ResourceInUseException("This DC is already part of other CloudStack zone(s). Cannot add this DC to more zones.");
@@ -963,14 +951,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             context = VmwareContextFactory.create(vCenterHost, userName, password);
 
             // Check if DC exists on vCenter
-            try {
-                dcMo = new DatacenterMO(context, vmwareDcName);
-            } catch(Throwable t) {
-                String msg = "Unable to find DC " + vmwareDcName + " in vCenter " + vCenterHost;
+            dcMo = new DatacenterMO(context, vmwareDcName);
+            dcMor = dcMo.getMor();
+            if (dcMor == null) {
+                String msg = "Unable to find VMware DC " + vmwareDcName + " in vCenter " + vCenterHost + ". ";
                 s_logger.error(msg);
-                throw new DiscoveryException(msg);
+                throw new InvalidParameterValueException(msg);
             }
-            assert (dcMo != null);
 
             // Check if DC is already associated with another cloudstack deployment
             // Get custom field property cloud.zone over this DC
@@ -1020,9 +1007,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             }
             dcMo.setCustomFieldValue(CustomFieldConstants.CLOUD_ZONE, "true");
 
-        } catch (Exception e) {
-            String msg = "VMware DC discovery failed due to : " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(msg);
+        } catch (Throwable e) {
+            String msg = "Failed to add VMware DC to zone ";
+            if (e instanceof RemoteException) {
+                msg = "Encountered remote exception at vCenter. " + VmwareHelper.getExceptionMessage(e);
+            } else {
+                msg += "due to : " + e.getMessage();
+            }
             throw new CloudRuntimeException(msg);
         } finally {
             if (context != null)
@@ -1031,6 +1022,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         return vmwareDc;
     }
+
 
     @Override
     public boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws ResourceInUseException {
@@ -1070,8 +1062,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _vmwareDcZoneMapDao.remove(vmwareDcZoneMap.getId());
             txn.commit();
         } catch (Exception e) {
-            s_logger.info("Caught exception when trying to delete VMware datacenter record.." + e.getMessage());
-            throw new CloudRuntimeException("Failed to delete VMware datacenter ");
+            s_logger.info("Caught exception when trying to delete VMware datacenter record." + e.getMessage());
+            throw new CloudRuntimeException("Failed to delete VMware datacenter.");
         }
 
         // Construct context
@@ -1083,7 +1075,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             try {
                 dcMo = new DatacenterMO(context, vmwareDcName);
             } catch(Throwable t) {
-                String msg = "able to find DC " + vmwareDcName + " in vCenter " + vCenterHost;
+                String msg = "Unable to find DC " + vmwareDcName + " in vCenter " + vCenterHost;
                 s_logger.error(msg);
                 throw new DiscoveryException(msg);
             }
@@ -1095,7 +1087,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             s_logger.info("Sucessfully reset custom field property cloud.zone over DC " + vmwareDcName);
         } catch (Exception e) {
             String msg = "Unable to reset custom field property cloud.zone over DC " + vmwareDcName
-                       + " due to : " + VmwareHelper.getExceptionMessage(e);
+                    + " due to : " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg);
             throw new CloudRuntimeException(msg);
         } finally {
@@ -1111,7 +1103,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "Can't find zone by the id specified");
+                    "Can't find zone by the id specified.");
             throw ex;
         }
 
@@ -1122,38 +1114,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             for (ClusterVO cluster : clusters) {
                 if (cluster.getHypervisorType().equals(HypervisorType.VMware)) {
                     throw new ResourceInUseException("Zone has one or more clusters."
-                        + " Can't " + errStr + " which already has clusters.");
+                            + " Can't " + errStr + " which already has clusters.");
                 }
             }
         }
-    }
-
-    private URI getUri(String url) throws InvalidParameterValueException {
-        if (url == null) {
-            throw new InvalidParameterValueException("Invalid url.");
-        }
-
-        URI uri = null;
-        try {
-            uri = new URI(UriUtils.encodeURIComponent(url));
-            if (uri.getScheme() == null) {
-                throw new InvalidParameterValueException(
-                        "uri.scheme is null " + url
-                                + ", add http:// as a prefix");
-            } else if (uri.getScheme().equalsIgnoreCase("http")) {
-                if (uri.getHost() == null
-                        || uri.getHost().equalsIgnoreCase("")
-                        || uri.getPath() == null
-                        || uri.getPath().equalsIgnoreCase("")) {
-                    throw new InvalidParameterValueException(
-                            "Your host and/or path is wrong.  Make sure it's of the format http://hostname/path");
-                }
-            }
-        } catch (URISyntaxException e) {
-            throw new InvalidParameterValueException(url
-                    + " is not a valid uri");
-        }
-        return uri;
     }
 
     @Override

@@ -214,7 +214,7 @@ public class VmwareDatacenterApiUnitTest {
         Mockito.when(_vmwareDcZoneMapDao.findByZoneId(1L)).thenReturn(null);
         Mockito.when(_vmwareDcZoneMapDao.expunge(1L)).thenReturn(true);
         Mockito.when(addCmd.getZoneId()).thenReturn(1L);
-        Mockito.when(addCmd.getUrl()).thenReturn(url);
+        Mockito.when(addCmd.getVcenter()).thenReturn(vCenterHost);
         Mockito.when(addCmd.getUsername()).thenReturn(user);
         Mockito.when(addCmd.getPassword()).thenReturn(password);
         Mockito.when(addCmd.getName()).thenReturn(vmwareDcName);
@@ -265,7 +265,7 @@ public class VmwareDatacenterApiUnitTest {
 
     //@Test(expected = InvalidParameterValueException.class)
     public void testAddVmwareDcWithNullUrl() throws ResourceInUseException, IllegalArgumentException, DiscoveryException, Exception {
-        Mockito.when(addCmd.getUrl()).thenReturn(null);
+        Mockito.when(addCmd.getVcenter()).thenReturn(null);
         _vmwareDatacenterService.addVmwareDatacenter(addCmd);
     }
 

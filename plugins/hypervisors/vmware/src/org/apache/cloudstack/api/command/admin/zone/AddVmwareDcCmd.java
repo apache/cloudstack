@@ -48,8 +48,8 @@ public class AddVmwareDcCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="Name of VMware datacenter to be added to specified zone.")
     private String name;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=false, description="The URL of vCenter.")
-    private String url;
+    @Parameter(name=ApiConstants.VCENTER, type=CommandType.STRING, required=true, description="The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
+    private String vCenter;
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=false, description="The Username required to connect to resource.")
     private String username;
@@ -64,8 +64,8 @@ public class AddVmwareDcCmd extends BaseCmd {
         return name;
     }
 
-    public String getUrl() {
-        return url;
+    public String getVcenter() {
+        return vCenter;
     }
 
     public String getUsername() {

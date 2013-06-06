@@ -405,6 +405,7 @@ public class ApiConstants {
     public static final String VSM_CONFIG_MODE = "vsmconfigmode";
     public static final String VSM_CONFIG_STATE = "vsmconfigstate";
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
+    public static final String VCENTER = "vcenter";
     public static final String ADD_VSM_FLAG = "addvsmflag";
     public static final String END_POINT = "endpoint";
     public static final String REGION_ID = "regionid";

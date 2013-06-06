@@ -75,7 +75,7 @@ public class VmwareDatacenterDaoImpl extends GenericDaoBase<VmwareDatacenterVO, 
 
     @Override
     public List<VmwareDatacenterVO> getVmwareDatacenterByNameAndVcenter(String name, String vCenterHost) {
-        SearchCriteria<VmwareDatacenterVO> sc = guidSearch.create();
+        SearchCriteria<VmwareDatacenterVO> sc = nameVcSearch.create();
         sc.setParameters("name", name);
         sc.setParameters("vCenterHost", vCenterHost);
         return search(sc, null);
@@ -83,7 +83,7 @@ public class VmwareDatacenterDaoImpl extends GenericDaoBase<VmwareDatacenterVO, 
 
     @Override
     public List<VmwareDatacenterVO> listVmwareDatacenterByName(String name) {
-        SearchCriteria<VmwareDatacenterVO> sc = guidSearch.create();
+        SearchCriteria<VmwareDatacenterVO> sc = nameSearch.create();
         sc.setParameters("name", name);
         return search(sc, null);
     }
