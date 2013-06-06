@@ -359,6 +359,8 @@
           fields: {
             name: { label: 'label.name' },
             sourceipaddress: { label: 'Source IP Address' },
+            sourceport: { label: 'Source Port' },
+            instanceport: { label: 'Instance Port' },
             algorithm: { label: 'label.algorithm' }   
           },
           dataProvider: function(args) {                
@@ -369,8 +371,15 @@
               },
               success: function(json) {                    
                 var items = json.listloadbalancerssresponse.loadbalancer;
-                args.response.success({ data: items });
-                
+                if(items != null) {
+                  for(var i = 0; i < items.length; i++) {
+                    var item = items[i];                    
+                    //there is only one element in loadbalancerrul array property.
+                    item.sourceport = item.loadbalancerrule[0].sourceport;
+                    item.instanceport = item.loadbalancerrule[0].instanceport;
+                  }
+                }                
+                args.response.success({ data: items });                
               }
             });                
           },
