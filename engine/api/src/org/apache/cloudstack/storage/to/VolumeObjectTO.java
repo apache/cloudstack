@@ -65,6 +65,7 @@ public class VolumeObjectTO implements DataTO {
         return this.uuid;
     }
 
+    @Override
     public String getPath() {
         return this.path;
     }
@@ -73,6 +74,7 @@ public class VolumeObjectTO implements DataTO {
         return this.volumeType;
     }
 
+    @Override
     public DataStoreTO getDataStore() {
         return this.dataStore;
     }
@@ -89,6 +91,7 @@ public class VolumeObjectTO implements DataTO {
         return this.size;
     }
 
+    @Override
     public DataObjectType getObjectType() {
         return DataObjectType.VOLUME;
     }
@@ -141,6 +144,7 @@ public class VolumeObjectTO implements DataTO {
         this.chainInfo = chainInfo;
     }
 
+    @Override
     public long getId() {
         return id;
     }

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
-import static com.cloud.utils.S3Utils.getDirectory;
 import static com.cloud.utils.S3Utils.putFile;
 import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
@@ -28,7 +27,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -68,7 +66,6 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DownloadSnapshotFromS3Command;
 import com.cloud.agent.api.DownloadSnapshotFromSwiftCommand;
@@ -87,18 +84,14 @@ import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
-import com.cloud.agent.api.UploadTemplateToS3FromSecondaryStorageCommand;
 import com.cloud.agent.api.UploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
-import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.UploadCommand;
-import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -120,9 +113,7 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
-import com.cloud.utils.S3Utils.ClientOptions;
 import com.cloud.utils.S3Utils.FileNamingStrategy;
-import com.cloud.utils.S3Utils.ObjectNamingStrategy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
@@ -188,10 +179,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((GetStorageStatsCommand) cmd);
         } else if (cmd instanceof CheckHealthCommand) {
             return new CheckHealthAnswer((CheckHealthCommand) cmd, true);
-        } else if (cmd instanceof DeleteTemplateCommand) {
-            return execute((DeleteTemplateCommand) cmd);
-        } else if (cmd instanceof DeleteVolumeCommand) {
-            return execute((DeleteVolumeCommand) cmd);
         } else if (cmd instanceof ReadyCommand) {
             return new ReadyAnswer((ReadyCommand) cmd);
         } else if (cmd instanceof SecStorageFirewallCfgCommand) {
@@ -212,8 +199,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((DownloadSnapshotFromS3Command) cmd);
         } else if (cmd instanceof DeleteSnapshotBackupCommand) {
             return execute((DeleteSnapshotBackupCommand) cmd);
-        } else if (cmd instanceof DeleteSnapshotBackupCommand2) {
-            return execute((DeleteSnapshotBackupCommand2) cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand) {
             return execute((DeleteSnapshotsDirCommand) cmd);
         } else if (cmd instanceof DownloadTemplateFromSwiftToSecondaryStorageCommand) {
@@ -222,6 +207,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((UploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof CopyCommand) {
             return execute((CopyCommand) cmd);
+        } else if (cmd instanceof DeleteCommand) {
+            return execute((DeleteCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1228,11 +1215,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return join("_", "SNAPSHOT", accountId, volumeId);
     }
 
-    protected Answer execute(final DeleteSnapshotBackupCommand2 cmd) {
-        DataStoreTO dstore = cmd.getDataStore();
+    protected Answer deleteSnapshot(final DeleteCommand cmd) {
+        DataTO obj = cmd.getData();
+        DataStoreTO dstore = obj.getDataStore();
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO) dstore;
-            String relativeSnapshotPath = cmd.getSnapshotPath();
+            String relativeSnapshotPath = obj.getPath();
             String parent = getRootDir(nfs.getUrl());
 
             if (relativeSnapshotPath.startsWith(File.separator)) {
@@ -1258,7 +1246,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new Answer(cmd, true, null);
         } else if (dstore instanceof S3TO) {
             final S3TO s3 = (S3TO) dstore;
-            final String path = cmd.getSnapshotPath();
+            final String path = obj.getPath();
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteObject(s3, bucket, path);
@@ -1270,7 +1258,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new Answer(cmd, false, errorMessage);
             }
         } else if (dstore instanceof SwiftTO) {
-            String path = cmd.getSnapshotPath();
+            String path = obj.getPath();
             String filename = StringUtils.substringAfterLast(path, "/"); // assuming
                                                                          // that
                                                                          // the
@@ -1585,11 +1573,26 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
-    protected Answer execute(final DeleteTemplateCommand cmd) {
-        DataStoreTO dstore = cmd.getDataStore();
+    protected Answer execute(final DeleteCommand cmd){
+        DataTO obj = cmd.getData();
+        DataObjectType objType = obj.getObjectType();
+        switch (objType){
+        case TEMPLATE:
+            return deleteTemplate(cmd);
+        case VOLUME:
+            return deleteVolume(cmd);
+        case SNAPSHOT:
+            return deleteSnapshot(cmd);
+        }
+        return Answer.createUnsupportedCommandAnswer(cmd);
+    }
+
+    protected Answer deleteTemplate(DeleteCommand cmd) {
+        DataTO obj = cmd.getData();
+        DataStoreTO dstore = obj.getDataStore();
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO) dstore;
-            String relativeTemplatePath = cmd.getTemplatePath();
+            String relativeTemplatePath = obj.getPath();
             String parent = getRootDir(nfs.getUrl());
 
             if (relativeTemplatePath.startsWith(File.separator)) {
@@ -1647,7 +1650,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new Answer(cmd, true, null);
         } else if (dstore instanceof S3TO) {
             final S3TO s3 = (S3TO) dstore;
-            final String path = cmd.getTemplatePath();
+            final String path = obj.getPath();
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteDirectory(s3, bucket, path);
@@ -1660,7 +1663,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
         } else if (dstore instanceof SwiftTO) {
             SwiftTO swift = (SwiftTO) dstore;
-            String container = "T-" + cmd.getTemplateId();
+            String container = "T-" + obj.getId();
             String object = "";
 
             try {
@@ -1681,11 +1684,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
-    protected Answer execute(final DeleteVolumeCommand cmd) {
-        DataStoreTO dstore = cmd.getDataStore();
+    protected Answer deleteVolume(final DeleteCommand cmd) {
+        DataTO obj = cmd.getData();
+        DataStoreTO dstore = obj.getDataStore();
         if (dstore instanceof NfsTO) {
             NfsTO nfs = (NfsTO) dstore;
-            String relativeVolumePath = cmd.getVolumePath();
+            String relativeVolumePath = obj.getPath();
             String parent = getRootDir(nfs.getUrl());
 
             if (relativeVolumePath.startsWith(File.separator)) {
@@ -1742,7 +1746,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new Answer(cmd, true, null);
         } else if (dstore instanceof S3TO) {
             final S3TO s3 = (S3TO) dstore;
-            final String path = cmd.getVolumePath();
+            final String path = obj.getPath();
             final String bucket = s3.getBucketName();
             try {
                 S3Utils.deleteDirectory(s3, bucket, path);
@@ -1754,8 +1758,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new Answer(cmd, false, errorMessage);
             }
         } else if (dstore instanceof SwiftTO) {
-            Long volumeId = cmd.getVolumeId();
-            String path = cmd.getVolumePath();
+            Long volumeId = obj.getId();
+            String path = obj.getPath();
             String filename = StringUtils.substringAfterLast(path, "/"); // assuming
                                                                          // that
                                                                          // the
@@ -1780,6 +1784,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
+    @Override
     synchronized public String getRootDir(String secUrl) {
         if (!_inSystemVM) {
             return _parent;

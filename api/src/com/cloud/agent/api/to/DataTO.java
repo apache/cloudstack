@@ -25,4 +25,6 @@ public interface DataTO {
      * @return
      */
     String getPath();
+
+    long getId();
 }

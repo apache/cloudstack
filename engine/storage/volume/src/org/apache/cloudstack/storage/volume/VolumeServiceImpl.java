@@ -55,6 +55,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -67,6 +68,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -78,6 +80,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -212,6 +215,16 @@ public class VolumeServiceImpl implements VolumeService {
             volDao.remove(volume.getId());
             future.complete(result);
             return future;
+        }
+
+        // Find out if the volume is at state of download_in_progress on secondary storage
+        VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
+        if (volumeStore != null) {
+            if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
+                s_logger.debug("Volume: " + volume.getName() + " is currently being uploaded; cant' delete it.");
+                future.complete(result);
+                return future;
+            }
         }
 
         VolumeVO vol = volDao.findById(volume.getId());

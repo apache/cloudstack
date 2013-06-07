@@ -80,6 +80,7 @@ public class TemplateObjectTO implements DataTO {
         return this.uuid;
     }
 
+    @Override
     public long getId() {
         return id;
     }

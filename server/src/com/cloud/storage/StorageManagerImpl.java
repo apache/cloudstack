@@ -71,6 +71,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -88,8 +89,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand2;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
@@ -1198,7 +1197,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                         if (installPath != null) {
                             EndPoint ep = _epSelector.select(store);
-                            DeleteSnapshotBackupCommand2 cmd = new DeleteSnapshotBackupCommand2(store.getTO(), destroyedSnapshotStoreVO.getInstallPath());
+                            DeleteCommand cmd = new DeleteCommand(snap.getTO());
                             Answer answer = ep.sendMessage(cmd);
                             if (answer == null || !answer.getResult()) {
                                 s_logger.debug("Failed to delete " + destroyedSnapshotStoreVO + " due to "

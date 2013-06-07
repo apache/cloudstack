@@ -342,42 +342,6 @@ public class SnapshotServiceImpl implements SnapshotService {
         return null;
     }
 
-    @DB
-    protected boolean destroySnapshotBackUp(SnapshotVO snapshot) {
-        SnapshotDataStoreVO snapshotStore = this._snapshotStoreDao
-                .findBySnapshot(snapshot.getId(), DataStoreRole.Image);
-        if (snapshotStore == null) {
-            s_logger.debug("Can't find snapshot" + snapshot.getId() + " backed up into image store");
-            return false;
-        }
-        DataStore store = this.dataStoreMgr.getDataStore(snapshotStore.getDataStoreId(), DataStoreRole.Image);
-        if (store == null) {
-            s_logger.debug("Can't find mage store " + snapshotStore.getDataStoreId());
-            return false;
-        }
-
-        try {
-            SnapshotInfo snapshotInfo = this.snapshotfactory.getSnapshot(snapshot.getId(), store);
-            snapshotInfo.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
-
-            AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
-            DeleteSnapshotContext<CommandResult> context = new DeleteSnapshotContext<CommandResult>(null, snapshotInfo,
-                    future);
-            AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
-            caller.setCallback(caller.getTarget().deleteSnapshotCallback(null, null)).setContext(context);
-
-            store.getDriver().deleteAsync(snapshotInfo, caller);
-
-            SnapshotResult result = future.get();
-            if (result.isFailed()) {
-                s_logger.debug("Failed to delete snapsoht: " + result.getResult());
-            }
-            return result.isSuccess();
-        } catch (Exception e) {
-            s_logger.debug("Failed to delete snapshot", e);
-            return false;
-        }
-    }
 
     protected Void deleteSnapshotCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> callback,
             DeleteSnapshotContext<CommandResult> context) {

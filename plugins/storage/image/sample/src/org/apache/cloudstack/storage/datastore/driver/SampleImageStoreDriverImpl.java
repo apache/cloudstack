@@ -18,30 +18,17 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.util.Set;
-
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.image.ImageStoreDriver;
-
-import com.cloud.agent.api.to.DataObjectType;
+import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.VMTemplateDao;
 
 //http-read-only based image store
-public class SampleImageStoreDriverImpl implements ImageStoreDriver {
+public class SampleImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     @Inject
     EndPointSelector selector;
     @Inject
@@ -50,10 +37,6 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
     public SampleImageStoreDriverImpl() {
     }
 
-    @Override
-    public DataTO getTO(DataObject data) {
-        return null;
-    }
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
@@ -61,80 +44,7 @@ public class SampleImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-    @Override
-    public String grantAccess(DataObject data, EndPoint ep) {
-        return data.getUri();
-    }
 
-    @Override
-    public boolean revokeAccess(DataObject data, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return true;
-    }
-
-    @Override
-    public Set<DataObject> listObjects(DataStore store) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        // for default http data store, can create http based template/iso
-        CreateCmdResult result = new CreateCmdResult("", null);
-        if (!data.getUri().startsWith("http")) {
-            result.setResult("can't register an image which is not a http link");
-            callback.complete(result);
-            return;
-        }
-
-        if (data.getSize() == null && data.getType() == DataObjectType.TEMPLATE) {
-            // the template size is unknown during registration, need to find
-            // out the size of template
-            EndPoint ep = selector.select(data);
-            if (ep == null) {
-                result.setResult("can't find storage client for:" + data.getId() + "," + data.getType());
-                callback.complete(result);
-                return;
-            }
-            CreateObjectCommand createCmd = new CreateObjectCommand(data.getTO());
-            CreateObjectAnswer answer = (CreateObjectAnswer) ep.sendMessage(createCmd);
-            if (answer.getResult()) {
-                // update imagestorevo
-
-                result = new CreateCmdResult(null, null);
-            } else {
-                result.setResult(answer.getDetails());
-            }
-
-        }
-
-        callback.complete(result);
-    }
-
-    @Override
-    public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
-        CommandResult result = new CommandResult();
-        callback.complete(result);
-    }
-
-    @Override
-    public boolean canCopy(DataObject srcData, DataObject destData) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        // TODO Auto-generated method stub
-
-    }
 
     @Override
     public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {

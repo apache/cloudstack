@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.template;
 
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -47,6 +42,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -54,14 +50,19 @@ import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.TemplateProfile;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.Account;
 import com.cloud.utils.UriUtils;
@@ -79,6 +80,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Inject TemplateDataFactory imageFactory;
     @Inject TemplateManager templateMgr;
     @Inject AlertManager alertMgr;
+    @Inject VMTemplateZoneDao templateZoneDao;
     @Inject
     EndPointSelector _epSelector;
 
@@ -219,8 +221,20 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             }
         }
 
+        String eventType = "";
+        if (template.getFormat().equals(ImageFormat.ISO)) {
+            eventType = EventTypes.EVENT_ISO_DELETE;
+        } else {
+            eventType = EventTypes.EVENT_TEMPLATE_DELETE;
+        }
 
         for (DataStore imageStore : imageStores) {
+            // publish zone-wide usage event
+            Long sZoneId = ((ImageStoreEntity)imageStore).getDataCenterId();
+            if (sZoneId != null) {
+                UsageEventUtils.publishUsageEvent(eventType, template.getAccountId(), sZoneId, template.getId(), null, null, null);
+            }
+
             s_logger.info("Delete template from image store: " + imageStore.getName());
             AsyncCallFuture<TemplateApiResult> future = this.imageService
                     .deleteTemplateAsync(this.imageFactory.getTemplate(template.getId(), imageStore));
@@ -229,6 +243,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 success = result.isSuccess();
                 if ( !success )
                     break;
+
+                // remove from template_zone_ref
+                List<VMTemplateZoneVO> templateZones = templateZoneDao.listByZoneTemplate(sZoneId, template.getId());
+                if (templateZones != null) {
+                    for (VMTemplateZoneVO templateZone : templateZones) {
+                        templateZoneDao.remove(templateZone.getId());
+                    }
+                }
             } catch (InterruptedException e) {
                 s_logger.debug("delete template Failed", e);
                 throw new CloudRuntimeException("delete template Failed", e);
