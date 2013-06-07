@@ -1209,7 +1209,7 @@ class TestRebootRouter(cloudstackTestCase):
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
-                      (self.vm_1.ipaddress, e))
+                      (self.nat_rule.ipaddress.ipaddress, e))
         return
 
     def tearDown(self):
