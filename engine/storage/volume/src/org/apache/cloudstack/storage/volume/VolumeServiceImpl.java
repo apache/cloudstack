@@ -428,51 +428,52 @@ public class VolumeServiceImpl implements VolumeService {
     public AsyncCallFuture<VolumeApiResult> createVolumeFromSnapshot(
             VolumeInfo volume, DataStore store, SnapshotInfo snapshot) {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
-        
+
         try {
-        	DataObject volumeOnStore = store.create(volume);
-        	volume.processEvent(Event.CreateOnlyRequested);
-        	 CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, 
-        			 (VolumeObject)volume, store, volumeOnStore, future);
-             AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
-             caller.setCallback(caller.getTarget().createVolumeFromSnapshotCallback(null, null))
-             .setContext(context);
-        	this.motionSrv.copyAsync(snapshot, volumeOnStore, caller);
+            DataObject volumeOnStore = store.create(volume);
+            volume = this.volFactory.getVolume(volume.getId(), store);
+            volume.processEvent(Event.CreateOnlyRequested);
+            CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null,
+                    (VolumeObject)volume, store, volumeOnStore, future);
+            AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().createVolumeFromSnapshotCallback(null, null))
+            .setContext(context);
+            this.motionSrv.copyAsync(snapshot, volumeOnStore, caller);
         } catch (Exception e) {
-        	s_logger.debug("create volume from snapshot failed", e);
-        	VolumeApiResult result = new VolumeApiResult(volume);
-        	result.setResult(e.toString());
-        	future.complete(result);
+            s_logger.debug("create volume from snapshot failed", e);
+            VolumeApiResult result = new VolumeApiResult(volume);
+            result.setResult(e.toString());
+            future.complete(result);
         }
-        
+
         return future;
     }
-    
-    protected Void createVolumeFromSnapshotCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, 
-    		CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
-    	CopyCommandResult result = callback.getResult();
-    	VolumeInfo volume = context.vo;
-    	VolumeApiResult apiResult = new VolumeApiResult(volume);
-    	Event event = null;
-    	if (result.isFailed()) {
-    		apiResult.setResult(result.getResult());
-    		event = Event.OperationFailed;
-    	} else {
-    		event = Event.OperationSuccessed;
-    	}
-    	
-    	try {
-    		volume.processEvent(event);
-    	} catch (Exception e) {
-    		s_logger.debug("create volume from snapshot failed", e);
-    		apiResult.setResult(e.toString());
-    	}
-    	
-    	AsyncCallFuture<VolumeApiResult> future = context.future;
-    	future.complete(apiResult);
-    	return null;
+
+    protected Void createVolumeFromSnapshotCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback,
+            CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
+        CopyCommandResult result = callback.getResult();
+        VolumeInfo volume = context.vo;
+        VolumeApiResult apiResult = new VolumeApiResult(volume);
+        Event event = null;
+        if (result.isFailed()) {
+            apiResult.setResult(result.getResult());
+            event = Event.OperationFailed;
+        } else {
+            event = Event.OperationSuccessed;
+        }
+
+        try {
+            volume.processEvent(event);
+        } catch (Exception e) {
+            s_logger.debug("create volume from snapshot failed", e);
+            apiResult.setResult(e.toString());
+        }
+
+        AsyncCallFuture<VolumeApiResult> future = context.future;
+        future.complete(apiResult);
+        return null;
     }
-    
+
     protected VolumeVO duplicateVolumeOnAnotherStorage(Volume volume, StoragePool pool) {
         Long lastPoolId = volume.getPoolId();
         VolumeVO newVol = new VolumeVO(volume);
