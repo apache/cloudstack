@@ -4531,7 +4531,21 @@
                   networkdomain: {
                     docID: 'helpVPCDomain',
                     label: 'label.DNS.domain.for.guest.networks'
+                  },
+
+                  loadbalancer:{        //Support for Netscaler as an external device for load balancing
+                    label:'Load Balancer',
+                    select:function(args){
+
+                        var items = [];
+                        items.push({id:'vpcvirtualrouter' , description:'VPC Virtual Router'});
+                        items.push({id:'netscaler' , description:'NetScaler'});
+
+                        args.response.success({data:items});
                   }
+
+                }
+
                 }
               },              
               action: function(args) {										
