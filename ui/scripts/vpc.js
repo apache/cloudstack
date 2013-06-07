@@ -359,6 +359,8 @@
           fields: {
             name: { label: 'label.name' },
             sourceipaddress: { label: 'Source IP Address' },
+            sourceport: { label: 'Source Port' },
+            instanceport: { label: 'Instance Port' },
             algorithm: { label: 'label.algorithm' }   
           },
           dataProvider: function(args) {                
@@ -369,8 +371,15 @@
               },
               success: function(json) {                    
                 var items = json.listloadbalancerssresponse.loadbalancer;
-                args.response.success({ data: items });
-                
+                if(items != null) {
+                  for(var i = 0; i < items.length; i++) {
+                    var item = items[i];                    
+                    //there is only one element in loadbalancerrul array property.
+                    item.sourceport = item.loadbalancerrule[0].sourceport;
+                    item.instanceport = item.loadbalancerrule[0].instanceport;
+                  }
+                }                
+                args.response.success({ data: items });                
               }
             });                
           },
@@ -642,7 +651,21 @@
                       listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
                         type: 'checkbox',
                         filters: false,
-                        dataProvider: function(args) {                         
+                        dataProvider: function(args) {       
+                          var assignedInstances;
+                          $.ajax({
+                            url: createURL('listLoadBalancers'),
+                            data: {
+                              id: args.context.internalLoadBalancers[0].id
+                            },
+                            async: false,
+                            success: function(json) {    
+                              assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;         
+                              if(assignedInstances == null)
+                                assignedInstances = []; 
+                            }
+                          });                     
+                          
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
@@ -654,11 +677,9 @@
 
                               // Pre-select existing instances in LB rule
                               $(instances).map(function(index, instance) {
-                                instance._isSelected = $.grep(
-                                  args.context.internalLoadBalancers[0].loadbalancerinstance,
-                                  
-                                  function(lbInstance) {
-                                    return lbInstance.id == instance.id;
+                                instance._isSelected = $.grep(assignedInstances,                                  
+                                  function(assignedInstance) {
+                                    return assignedInstance.id == instance.id;
                                   }
                                 ).length ? true : false;
                               });
@@ -667,7 +688,7 @@
                               var items = [];
                               if(instances != null) {
                                 for(var i = 0; i < instances.length; i++) {
-                                  if(instances[i]._isSelected = true)
+                                  if(instances[i]._isSelected == true)
                                     continue;
                                   else
                                     items.push(instances[i]);
@@ -701,11 +722,7 @@
                             var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
                             args.response.success({
                               _custom: { 
-                                jobId: jid,
-                                getUpdatedItem: function(json) {
-                                  $('.list-view').listView('refresh');
-                                  //return json.queryasyncjobresultresponse.jobresult.volume;
-                                }
+                                jobId: jid
                               }
                             });
                           }

@@ -294,6 +294,9 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public List<NetworkACLItemVO> listNetworkACLItems(long guestNtwkId) {
         Network network = _networkMgr.getNetwork(guestNtwkId);
+        if(network.getNetworkACLId() == null){
+            return null;
+        }
         return _networkACLItemDao.listByACL(network.getNetworkACLId());
     }
 
