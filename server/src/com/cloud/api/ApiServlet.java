@@ -325,12 +325,17 @@ public class ApiServlet extends HttpServlet {
                 s_logger.error("unknown exception writing api response", ex);
                 auditTrailSb.append(" unknown exception writing api response");
         } finally {
-            s_accessLogger.info(auditTrailSb.toString());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
+        	
+        	try {
+	            s_accessLogger.info(auditTrailSb.toString());
+	            if (s_logger.isDebugEnabled()) {
+	                s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
+	            }
+	            // cleanup user context to prevent from being peeked in other request context ???
+	            CallContext.unregister(); 
+            } catch(Throwable e) {
+            	s_logger.error("Really unexpected exception", e);
             }
-            // cleanup user context to prevent from being peeked in other request context
-            CallContext.unregister();
         }
     }
 
@@ -355,6 +360,7 @@ public class ApiServlet extends HttpServlet {
 
             resp.setStatus(responseCode);
             resp.getWriter().print(response);
+            resp.flushBuffer();
         } catch (IOException ioex) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("exception writing response: " + ioex);

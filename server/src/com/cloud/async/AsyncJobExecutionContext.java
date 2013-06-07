@@ -141,6 +141,7 @@ public class AsyncJobExecutionContext  {
 		if(context == null) {
 			context = new AsyncJobExecutionContext();
 			context = ComponentContext.inject(context);
+			context.getJob();
 			setCurrentExecutionContext(context);
 		}
 		

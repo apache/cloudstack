@@ -120,7 +120,7 @@ public class Transaction {
         Transaction txn = tls.get();
         assert txn != null : "No Transaction on stack.  Did you mark the method with @DB?";
 
-        assert checkAnnotation(3, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn;
+        // assert checkAnnotation(3, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn;
         return txn;
     }
 

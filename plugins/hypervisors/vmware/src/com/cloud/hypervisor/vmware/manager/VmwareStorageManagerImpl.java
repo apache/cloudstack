@@ -1199,7 +1199,11 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private static String getSnapshotRelativeDirInSecStorage(long accountId, long volumeId) {
         return "snapshots/" + accountId + "/" + volumeId;
     }
-
+    
+    private static String getVolumeRelativeDirInSecStroage(long volumeId) {
+        return "volumes/" + volumeId;
+    }
+    
     @Override
     public CreateVMSnapshotAnswer execute(VmwareHostService hostService, CreateVMSnapshotCommand cmd) {
         List<VolumeTO> volumeTOs = cmd.getVolumeTOs();

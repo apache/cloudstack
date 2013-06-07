@@ -145,7 +145,6 @@ public class CallContext {
     }
 
     public static CallContext unregister() {
-        assert s_currentContext.get() != null : "Removing the context when we don't need to " + s_currentContext.get().toString();
         CallContext context = s_currentContext.get();
         if (context == null) {
             s_logger.trace("No context to remove");
@@ -156,8 +155,9 @@ public class CallContext {
         String sessionId = context.getSessionId();
         if (sessionId != null) {
             String sessionIdOnStack = null;
+            String sessionIdPushedToNDC = "job-" + sessionId;
             while ((sessionIdOnStack = NDC.pop()) != null) {
-                if (sessionId.equals(sessionIdOnStack)) {
+                if (sessionIdPushedToNDC.equals(sessionIdOnStack)) {
                     break;
                 }
                 if (s_logger.isTraceEnabled()) {

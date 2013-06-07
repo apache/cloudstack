@@ -353,7 +353,6 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 		return false;
 	}
 
-	@Override
 	public VirtualMachine processVmStartWork(String vmUuid,
 			Map<Param, Object> params, User caller, Account account,
 			DeploymentPlan planToDeploy) throws InsufficientCapacityException,
@@ -362,7 +361,6 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 		return null;
 	}
 
-	@Override
 	public boolean processVmStopWork(String vmUuid, boolean forced, User user,
 			Account account) throws AgentUnavailableException,
 			OperationTimedoutException, ConcurrentOperationException {

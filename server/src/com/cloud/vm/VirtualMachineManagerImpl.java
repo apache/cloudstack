@@ -781,9 +781,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
     	//
-    	// TODO : this will be replaced with fully-asynchronized way later so that we don't need
-    	// to wait here. The reason we do it synchronized here is that callers of advanceStart is expecting
-    	// synchronized semantics
+    	// TODO : this will be replaced with fully-asynchronous way later so that we don't need
+    	// to wait here. The reason we do synchronous-wait here is that callers of advanceStart is expecting
+    	// synchronous semantics
     	//
     	//
     	_jobMgr.waitAndCheck(
@@ -1233,12 +1233,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	final long jobId = workJob.getId();
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
     	
-    	//
-    	// TODO : this will be replaced with fully-asynchronized way later so that we don't need
-    	// to wait here. The reason we do it synchronized here is that callers of advanceStart is expecting
-    	// synchronized semantics
-    	//
-    	//
     	_jobMgr.waitAndCheck(
     		new String[] { TopicConstants.VM_POWER_STATE, TopicConstants.JOB_STATE },
     		3000L, 600000L, new Predicate() {
