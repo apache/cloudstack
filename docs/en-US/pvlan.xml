@@ -22,15 +22,37 @@
 <section id="pvlan">
   <title>Isolation in Advanced Zone Using Private VLAN</title>
   <para/>
+  <itemizedlist>
+    <listitem>
+      <para>isolate VMs from other VMs on the same network (Shared Networks are the most common use
+        case) using PVLANs</para>
+    </listitem>
+    <listitem>
+      <para>create a Network Offering enabling PVLAN support</para>
+    </listitem>
+    <listitem>
+      <para>create shared networks based on a network offering which has PVLANs enabled</para>
+    </listitem>
+    <listitem>
+      <para>supported in VPC as well as non-VPC deployments</para>
+    </listitem>
+    <listitem>
+      <para>supported on all Hypervisors</para>
+    </listitem>
+    <listitem>
+      <para>Allow end users to deploy VMs on Isolated Networks or VPC along with the Shared Networks
+        that have PVLAN support</para>
+    </listitem>
+  </itemizedlist>
   <section id="about-pvlan">
     <title>About Private VLAN</title>
-    <para>In an Ethernet switch, a VLAN is a broadcast domain in which hosts can establish direct
+    <para>In an Ethernet switch, a VLAN is a broadcast domain where hosts can establish direct
       communication with each another at Layer 2. Private VLAN is designed as an extension of VLAN
       standard to add further segmentation of the logical broadcast domain. A regular VLAN is a
       single broadcast domain, whereas a private VLAN partitions a larger VLAN broadcast domain into
       smaller sub-domains. A sub-domain is represented by a pair of VLANs: a Primary VLAN and a
-      Secondary VLAN.  The original VLAN that is being divided into smaller groups is called
-      Primary, That implies all VLAN pairs in a private VLAN share the same Primary VLAN. All the
+      Secondary VLAN. The original VLAN that is being divided into smaller groups is called Primary,
+      which implies that all VLAN pairs in a private VLAN share the same Primary VLAN. All the
       secondary VLANs exist only inside the Primary. Each Secondary VLAN has a specific VLAN ID
       associated to it, which differentiates one sub-domain from another.</para>
     <para>For further reading:</para>
@@ -49,6 +71,9 @@
             - Concept Overview (1010691)</ulink></para>
       </listitem>
     </itemizedlist>
+  </section>
+  <section id="ability-pvlan">
+    <title>Prerequisites</title>
   </section>
   <section id="prereq-pvlan">
     <title>Prerequisites</title>
