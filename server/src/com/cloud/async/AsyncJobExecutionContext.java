@@ -18,6 +18,8 @@ package com.cloud.async;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -81,11 +83,15 @@ public class AsyncJobExecutionContext  {
     	_jobMgr.updateAsyncJobAttachment(_job.getId(), instanceType, instanceId);
     }
 	
-    public void logJobJournal(AsyncJob.JournalType journalType, String
-	    journalText, String journalObjJson) {
+    public void logJobJournal(AsyncJob.JournalType journalType, String journalText, String journalObjJson) {
 		assert(_job != null);
 		_jobMgr.logJobJournal(_job.getId(), journalType, journalText, journalObjJson);
 	}
+
+    public void log(Logger logger, String journalText) {
+        _jobMgr.logJobJournal(_job.getId(), AsyncJob.JournalType.SUCCESS, journalText, null);
+        logger.debug(journalText);
+    }
 
     public void joinJob(long joinJobId) {
     	assert(_job != null);

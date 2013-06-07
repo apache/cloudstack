@@ -515,14 +515,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             synchronized (this) {
                 try {
-                    JmxUtil.registerMBean("VMware " + _morHyperHost.getValue(), "Command " + cmdSequence + "-" + cmd.getClass().getSimpleName(), mbean);
+                    JmxUtil.registerMBean("VMware " + _morHyperHost.getPresetParams(), "Command " + cmdSequence + "-" + cmd.getClass().getSimpleName(), mbean);
                     _cmdMBeans.add(mbean);
 
                     if (_cmdMBeans.size() >= MAX_CMD_MBEAN) {
                         PropertyMapDynamicBean mbeanToRemove = _cmdMBeans.get(0);
                         _cmdMBeans.remove(0);
 
-                        JmxUtil.unregisterMBean("VMware " + _morHyperHost.getValue(), "Command " + mbeanToRemove.getProp("Sequence") + "-" + mbeanToRemove.getProp("Name"));
+                        JmxUtil.unregisterMBean("VMware " + _morHyperHost.getPresetParams(), "Command " + mbeanToRemove.getProp("Sequence") + "-" + mbeanToRemove.getProp("Name"));
                     }
                 } catch (Exception e) {
                     if(s_logger.isTraceEnabled())
@@ -4583,7 +4583,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     DatastoreSummary dsSummary = dsMo.getSummary();
                     String address = hostMo.getHostName();
-                    StoragePoolInfo pInfo = new StoragePoolInfo(poolUuid, address, dsMo.getMor().getValue(), "", StoragePoolType.LVM, dsSummary.getCapacity(), dsSummary.getFreeSpace());
+                    StoragePoolInfo pInfo = new StoragePoolInfo(poolUuid, address, dsMo.getMor().getPresetParams(), "", StoragePoolType.LVM, dsSummary.getCapacity(), dsSummary.getFreeSpace());
                     StartupStorageCommand cmd = new StartupStorageCommand();
                     cmd.setName(poolUuid);
                     cmd.setPoolInfo(pInfo);
@@ -5088,11 +5088,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             int endMs = infos.get(infos.size()-1).getTimestamp().getSecond() * 1000 + infos.get(infos.size()-1).getTimestamp().getMillisecond();
                             int beginMs = infos.get(0).getTimestamp().getSecond() * 1000 + infos.get(0).getTimestamp().getMillisecond();
                             sampleDuration = (endMs - beginMs) /1000;
-                            List<PerfMetricSeries> vals = ((PerfEntityMetric)values.get(i)).getValue();
+                            List<PerfMetricSeries> vals = ((PerfEntityMetric)values.get(i)).getPresetParams();
                             for(int vi = 0; ((vals!= null) && (vi < vals.size())); ++vi){
                                 if(vals.get(vi) instanceof PerfMetricIntSeries) {
                                     PerfMetricIntSeries val = (PerfMetricIntSeries)vals.get(vi);
-                                    List<Long> perfValues = val.getValue();
+                                    List<Long> perfValues = val.getPresetParams();
                                     if (vals.get(vi).getId().getCounterId() == rxPerfCounterInfo.getKey()) {
                                         networkReadKBs = sampleDuration * perfValues.get(3); //get the average RX rate multiplied by sampled duration
                                     }

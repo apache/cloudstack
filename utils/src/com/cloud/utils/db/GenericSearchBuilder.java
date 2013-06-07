@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Transient;
@@ -199,6 +200,16 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
+    public GenericSearchBuilder<T, K> and(Object useless, Op op, String name) {
+        constructCondition(name, " AND ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+
+    public Preset and(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " AND ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
     public GenericSearchBuilder<T, K> and() {
         constructCondition(null, " AND ", null, null);
         return this;
@@ -217,19 +228,53 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return and(name, useless, op);
     }
     
+    public GenericSearchBuilder<T, K> where(Object useless, Op op, String name) {
+        return and(name, useless, op);
+    }
+
+    public Preset where(Object useless, Op op) {
+        return and(useless, op);
+    }
+
     public GenericSearchBuilder<T, K> left(String name, Object useless, Op op) {
         constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
         return this;
     }
     
+    public GenericSearchBuilder<T, K> left(Object useless, Op op, String name) {
+        constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+
+    public Preset left(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " ( ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
+    public GenericSearchBuilder<T, K> op(Object useless, Op op, String name) {
+        return left(useless, op, name);
+    }
+
+    public Preset op(Object useless, Op op) {
+        return left(useless, op);
+    }
+
     public GenericSearchBuilder<T, K> op(String name, Object useless, Op op) {
         return left(name, useless, op);
     }
     
+    public GenericSearchBuilder<T, K> openParen(Object useless, Op op, String name) {
+        return left(name, useless, op);
+    }
+
     public GenericSearchBuilder<T, K> openParen(String name, Object useless, Op op) {
         return left(name, useless, op);
     }
     
+    public Preset openParen(Object useless, Op op) {
+        return left(useless, op);
+    }
+
     public GroupBy<T, K> groupBy(Object... useless) {
         assert _groupBy == null : "Can't do more than one group bys";
         _groupBy = new GroupBy<T, K>(this);
@@ -254,6 +299,16 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
+    public GenericSearchBuilder<T, K> or(Object useless, Op op, String name) {
+        constructCondition(name, " OR ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+
+    public Preset or(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " OR ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
     public GenericSearchBuilder<T, K> join(String name, GenericSearchBuilder<?, ?> builder, Object useless, Object useless2, JoinBuilder.JoinType joinType) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
@@ -272,7 +327,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
-    protected void constructCondition(String conditionName, String cond, Attribute attr, Op op) {
+    protected Condition constructCondition(String conditionName, String cond, Attribute attr, Op op) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert op == null || _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert op != Op.SC : "Call join";
@@ -280,6 +335,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         Condition condition = new Condition(conditionName, cond, attr, op);
         _conditions.add(condition);
         _specifiedAttrs.clear();
+        return condition;
     }
 
     /**
@@ -360,6 +416,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         protected final String cond;
         protected final Op op;
         protected final Attribute attr;
+        protected Object[] presets;
         
         protected Condition(String name) {
             this(name, null, null, null);
@@ -370,8 +427,21 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
             this.attr = attr;
             this.cond = cond;
             this.op = op;
+            this.presets = null;
         }
         
+        public boolean isPreset() {
+            return presets != null;
+        }
+
+        public void setPresets(Object... presets) {
+            this.presets = presets;
+        }
+
+        public Object[] getPresets() {
+            return presets;
+        }
+
         public void toSql(StringBuilder sql, Object[] params, int count) {
             if (count > 0) {
                 sql.append(cond);
@@ -443,6 +513,24 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
             this.attr = attr;
             this.params = params;
             this.field = field;
+        }
+    }
+    
+    public class Preset {
+        GenericSearchBuilder<T, K> builder;
+        Condition condition;
+
+        protected Preset(GenericSearchBuilder<T, K> builder, Condition condition) {
+            this.builder = builder;
+            this.condition = condition;
+        }
+
+        public GenericSearchBuilder<T, K> values(Object... params) {
+            if (condition.op.getParams() > 0 && condition.op.params != params.length) {
+                throw new CloudRuntimeException("The # of parameters set " + params.length + " does not match # of parameters required by " + condition.op);
+            }
+            condition.setPresets(params);
+            return builder;
         }
     }
 }

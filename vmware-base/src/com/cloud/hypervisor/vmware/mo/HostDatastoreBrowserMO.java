@@ -37,7 +37,7 @@ public class HostDatastoreBrowserMO extends BaseMO {
 
 	public void DeleteFile(String datastoreFullPath) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - deleteFile(). target mor: " + _mor.getValue() + ", file datastore path: " + datastoreFullPath);
+			s_logger.trace("vCenter API trace - deleteFile(). target mor: " + _mor.getPresetParams() + ", file datastore path: " + datastoreFullPath);
 
 		_context.getService().deleteFile(_mor, datastoreFullPath);
 
@@ -47,7 +47,7 @@ public class HostDatastoreBrowserMO extends BaseMO {
 
 	public HostDatastoreBrowserSearchResults searchDatastore(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - searchDatastore(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
+			s_logger.trace("vCenter API trace - searchDatastore(). target mor: " + _mor.getPresetParams() + ", file datastore path: " + datastorePath);
 
 		try {
 			ManagedObjectReference morTask = _context.getService().searchDatastoreTask(_mor, datastorePath, searchSpec);
@@ -78,7 +78,7 @@ public class HostDatastoreBrowserMO extends BaseMO {
 
 	public HostDatastoreBrowserSearchResults searchDatastoreSubFolders(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
+			s_logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.getPresetParams() + ", file datastore path: " + datastorePath);
 
 		try {
 			ManagedObjectReference morTask = _context.getService().searchDatastoreSubFoldersTask(_mor, datastorePath, searchSpec);

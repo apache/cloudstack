@@ -39,7 +39,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -85,6 +84,7 @@ import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dao.EntityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenter;
@@ -167,6 +167,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
@@ -185,6 +187,9 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 @Local(value = VirtualMachineManager.class)
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
+
+    @Inject
+    protected EntityManager _entityMgr;
 
     @Inject
     protected StorageManager _storageMgr;
@@ -327,6 +332,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected long _opWaitInterval;
     protected int _lockStateRetry;
     protected boolean _forceStop;
+
+    SearchBuilder<VolumeVO> RootVolumeSearch;
 
     @Override
     public void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru) {
@@ -529,6 +536,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _nodeId = _clusterMgr.getManagementNodeId();
 
         _agentMgr.registerForHostEvents(this, true, true, true);
+        
+        RootVolumeSearch = _entityMgr.createSearchBuilder(VolumeVO.class);
+        VolumeVO rvsEntity = RootVolumeSearch.entity();
+        RootVolumeSearch.and(rvsEntity.getVolumeType(), SearchCriteria.Op.EQ).values(Volume.Type.ROOT)
+                .and(rvsEntity.getInstanceId(), SearchCriteria.Op.EQ, "instance")
+                .and(rvsEntity.getDeviceId(), SearchCriteria.Op.EQ).values(0)
+                .done();
       
         return true;
     }
@@ -808,175 +822,151 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return;
     }
 
-    public void processVmStartWork(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy)
+    private Pair<DeploymentPlan, DeployDestination> findDestination(VirtualMachineProfileImpl profile, DeploymentPlan planRequested, boolean reuseVolume,
+            ReservationContext reservation, AsyncJobExecutionContext job) throws InsufficientCapacityException, ResourceUnavailableException {
+        VirtualMachine vm = profile.getVirtualMachine();
+
+        DataCenterDeployment plan = null;
+        if (planRequested != null) {
+            plan = new DataCenterDeployment(planRequested);
+        } else {
+            plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, reservation);
+        }
+        
+        job.log(s_logger, "Starting " + vm + " with requested " + plan);
+
+        boolean planChangedByVolume = false;
+        List<VolumeVO> vols = _entityMgr.search(VolumeVO.class, RootVolumeSearch.create("instance", vm.getId()));
+        
+        if (vols.size() > 0 && reuseVolume) {
+            // edit plan if this vm's ROOT volume is in READY state already
+            
+            VolumeVO vol = vols.get(0);
+            // make sure if the templateId is unchanged. If it is changed,
+            // let planner reassign pool for the volume even if it ready.
+            Long volTemplateId = vol.getTemplateId();
+            if (vol.isRecreatable() && volTemplateId != null &&
+                    vm.getTemplateId() != -1 && volTemplateId.longValue() != vm.getTemplateId()) {
+                job.log(s_logger, "Recreating" + vol + " of " + vm + " because its template has changed.");
+            } else {
+                StoragePool pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(vol.getPoolId());
+                Long rootVolPodId = pool.getPodId();
+                Long rootVolClusterId = pool.getClusterId();
+                Long clusterIdSpecified = plan.getClusterId();
+                if (clusterIdSpecified != null && rootVolClusterId != null &&
+                    clusterIdSpecified.longValue() != rootVolClusterId.longValue()) {
+                    job.log(s_logger, "Unable to satisfy the deployment plan because it is requesting cluster " + clusterIdSpecified + " but the root volume is in cluster " + rootVolClusterId);
+                    throw new ResourceUnavailableException("Unable to satisfy the deployment plan because it is requesting cluster " + clusterIdSpecified
+                            + " but the root volume is in cluster " + rootVolClusterId, Cluster.class, clusterIdSpecified);
+                }
+                plan.setPoolId(vol.getPoolId());
+                plan.setClusterId(rootVolClusterId);
+                plan.setPodId(rootVolPodId);
+                planChangedByVolume = true;
+                job.log(s_logger, "Deployment plan has been adjusted to " + plan);
+            }
+        }
+
+        DeployDestination dest = null;
+        try {
+            dest = _dpMgr.planDeployment(profile, plan, plan.getAvoids());
+        } catch (AffinityConflictException e2) {
+            throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict", e2);
+        }
+
+        if (dest == null && planChangedByVolume) {
+            job.log(s_logger, "Unable to find a deploy destination using the adjusted deployment plan.  Replanning with ");
+            return findDestination(profile, planRequested, false, reservation, job);
+        }
+
+        if (dest == null) {
+            throw new InsufficientServerCapacityException("Unable to create a deployment for " + vm,
+                    DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(profile));
+        }
+
+        plan.getAvoids().addHost(dest.getHost().getId());
+        job.log(s_logger, "Final deploy destination: " + dest);
+        return new Pair<DeploymentPlan, DeployDestination>(plan, dest);
+    }
+
+    /**
+     * orchestrateStart orchestrates the vm start process.  Note that this
+     * method is not in the interface.
+     * 
+     * @param vmUuid uuid for the vm
+     * @param params additional parameters passed
+     * @param planRequested deployment requested
+     * @throws InsufficientCapacityException when there's not enough infrastructure capacity to ensure successful start of a vm.
+     * @throws ConcurrentOperationException when there are multiple operations on the vm.
+     * @throws ResourceUnavailableException when the resource being used to start the vm is not available.
+     */
+    public void orchestrateStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planRequested)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         CallContext context = CallContext.current();
         User caller = context.getCallingUser();
         Account account = context.getCallingAccount();
+        AsyncJobExecutionContext job = AsyncJobExecutionContext.getCurrentExecutionContext();
 
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+        if (vm == null) {
+            throw new ConcurrentOperationException("Unable to find vm by " + vmUuid);
+        }
+
         VirtualMachineGuru vmGuru = getVmGuru(vm);
   
         Ternary<VMInstanceVO, ReservationContext, VmWorkJobVO> start = changeToStartState(vmGuru, vm, caller, account);
         assert(start != null);
 
-        ReservationContext ctx = start.second();
+        ReservationContext reservation = start.second();
         VmWorkJobVO work = start.third();
 
         VMInstanceVO startedVm = null;
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterId() + " and podId: " + vm.getPodIdToDeployIn());
-        }
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
-        if(planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:" + planToDeploy.getDataCenterId() + ", podId: " + planToDeploy.getPodId() + ", clusterId: "
-                        + planToDeploy.getClusterId() + ", hostId: " + planToDeploy.getHostId() + ", poolId: " + planToDeploy.getPoolId());
-            }
-            plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), planToDeploy.getPoolId(), planToDeploy.getPhysicalNetworkId(), ctx);
-        }
-
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
 
         boolean canRetry = true;
         try {
-            ExcludeList avoids = null;
-            if (planToDeploy != null) {
-                avoids = planToDeploy.getAvoids();
-            }
-            if (avoids == null) {
-                avoids = new ExcludeList();
-            }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
-            }
 
-            boolean planChangedByVolume = false;
             boolean reuseVolume = true;
-            DataCenterDeployment originalPlan = plan;
+            DeploymentPlan plan = planRequested;
 
             int retry = _retry;
             while (retry-- != 0) { // It's != so that it can match -1.
 
-                if(reuseVolume){
-                    // edit plan if this vm's ROOT volume is in READY state already
-                    List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
-                    for (VolumeVO vol : vols) {
-                        // make sure if the templateId is unchanged. If it is changed,
-                        // let planner
-                        // reassign pool for the volume even if it ready.
-                        Long volTemplateId = vol.getTemplateId();
-                        if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(vol + " of " + vm + " is READY, but template ids don't match, let the planner reassign a new pool");
-                            }
-                            continue;
-                        }
-
-                        StoragePool pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(vol.getPoolId());
-                        if (!pool.isInMaintenance()) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Root volume is ready, need to place VM in volume's cluster");
-                            }
-                            long rootVolDcId = pool.getDataCenterId();
-                            Long rootVolPodId = pool.getPodId();
-                            Long rootVolClusterId = pool.getClusterId();
-                            if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
-                                Long clusterIdSpecified = planToDeploy.getClusterId();
-                                if (clusterIdSpecified != null && rootVolClusterId != null) {
-                                    if (rootVolClusterId.longValue() != clusterIdSpecified.longValue()) {
-                                        // cannot satisfy the plan passed in to the
-                                        // planner
-                                        if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Cannot satisfy the deployment plan passed in since the ready Root volume is in different cluster. volume's cluster: " + rootVolClusterId
-                                                    + ", cluster specified: " + clusterIdSpecified);
-                                        }
-                                        throw new ResourceUnavailableException("Root volume is ready in different cluster, Deployment plan provided cannot be satisfied, unable to create a deployment for "
-                                                + vm, Cluster.class, clusterIdSpecified);
-                                    }
-                                }
-                                plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId(), null, ctx);
-                            }else{
-                                plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId(), null, ctx);
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
-                                }
-                                planChangedByVolume = true;
-                            }
-                        }
-                    }
-                }
-
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, account, params);
-                DeployDestination dest = null;
-                try {
-                    dest = _dpMgr.planDeployment(vmProfile, plan, avoids);
-                } catch (AffinityConflictException e2) {
-                    s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
-                    throw new CloudRuntimeException(
-                            "Unable to create deployment, affinity rules associted to the VM conflict");
-
-                }
-                if (dest == null) {
-                    if (planChangedByVolume) {
-                        plan = originalPlan;
-                        planChangedByVolume = false;
-                        //do not enter volume reuse for next retry, since we want to look for resorces outside the volume's cluster
-                        reuseVolume = false;
-                        continue;
-                    }
-                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile,
-                            DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(vmProfile));
-                }
-
-                if (dest != null) {
-                    avoids.addHost(dest.getHost().getId());
-                    AsyncJobExecutionContext.getCurrentExecutionContext().logJobJournal(
-                            AsyncJob.JournalType.SUCCESS, "Deployment found, dest host: " + dest.getHost().getId(), null);
-                    break;
-                }
+                Pair<DeploymentPlan, DeployDestination> result = findDestination(vmProfile, plan, reuseVolume, reservation, job);
+                plan = result.first();
+                DeployDestination dest = result.second();
 
                 long destHostId = dest.getHost().getId();
                 vm.setPodId(dest.getPod().getId());
                 Long cluster_id = dest.getCluster().getId();
-                ClusterDetailsVO cluster_detail_cpu =  _clusterDetailsDao.findDetail(cluster_id,"cpuOvercommitRatio");
-                ClusterDetailsVO cluster_detail_ram =  _clusterDetailsDao.findDetail(cluster_id,"memoryOvercommitRatio");
+                ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
+                ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
                 vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
                 vmProfile.setMemoryOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
 
-                try {
-                    if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
-                        throw new ConcurrentOperationException("Unable to update the state of the Virtual Machine");
-                    }
-                } catch (NoTransitionException e1) {
-                    throw new ConcurrentOperationException(e1.getMessage());
+                if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
+                    throw new ConcurrentOperationException("Unable to update the state of the Virtual Machine");
                 }
 
                 try {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM is being created in podId: " + vm.getPodIdToDeployIn());
-                    }
-                    _networkMgr.prepare(vmProfile, dest, ctx);
-                    if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        volumeMgr.prepare(vmProfile, dest);
-                    }
-                    //since StorageMgr succeeded in volume creation, reuse Volume for further tries until current cluster has capacity
-                    if(!reuseVolume){
-                        reuseVolume = true;
-                    }
+                    _networkMgr.prepare(vmProfile, dest, reservation);
+                    volumeMgr.prepare(vmProfile, dest);
+
+                    reuseVolume = true;
 
                     Commands cmds = null;
-                    vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
+                    vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, reservation);
 
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
                     cmds = new Commands(OnError.Stop);
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost()));
 
-                    vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
+                    vmGuru.finalizeDeployment(cmds, vmProfile, dest, reservation);
 
                     work.setStep(VmWorkJobVO.Step.Starting);
                     _workJobDao.update(work.getId(), work);
@@ -996,7 +986,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             }
                             destHostId = finalHost.getId();
                         }
-                        if (vmGuru.finalizeStart(vmProfile, destHostId, cmds, ctx)) {
+                        if (vmGuru.finalizeStart(vmProfile, destHostId, cmds, reservation)) {
                             if (!changeState(vm, Event.OperationSucceeded, destHostId, work, Step.Done)) {
                                 throw new ConcurrentOperationException("Unable to transition to a new state.");
                             }
@@ -1031,7 +1021,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw new AgentUnavailableException("Unable to start " + vm.getHostName(), destHostId, e);
                 } catch (ResourceUnavailableException e) {
                     s_logger.info("Unable to contact resource.", e);
-                    if (!avoids.add(e)) {
+                    if (!plan.getAvoids().add(e)) {
                         if (e.getScope() == Volume.class || e.getScope() == Nic.class) {
                             throw e;
                         } else {
@@ -1041,7 +1031,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 } catch (InsufficientCapacityException e) {
                     s_logger.info("Insufficient capacity ", e);
-                    if (!avoids.add(e)) {
+                    if (!plan.getAvoids().add(e)) {
                         if (e.getScope() == Volume.class || e.getScope() == Nic.class) {
                             throw e;
                         } else {
@@ -1050,7 +1040,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 } catch (Exception e) {
                     s_logger.error("Failed to start instance " + vm, e);
-                    throw new AgentUnavailableException("Unable to start instance due to " + e.getMessage(), destHostId, e);
+                    throw new CloudRuntimeException("Unable to start instance due to " + e.getMessage(), e);
                 } finally {
                     if (startedVm == null && canRetry) {
                         VmWorkJobVO.Step prevStep = work.getStep();
@@ -1064,14 +1054,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
             }
+        } catch (NoTransitionException e1) {
+            throw new CloudRuntimeException(e1.getMessage());
         } finally {
             if (startedVm == null) {
-                if (canRetry) {
-                    try {
-                        changeState(vm, Event.OperationFailed, null, work, Step.Done);
-                    } catch (NoTransitionException e) {
-                        throw new ConcurrentOperationException(e.getMessage());
-                    }
+                try {
+                    changeState(vm, Event.OperationFailed, null, work, Step.Done);
+                } catch (NoTransitionException e) {
+                    throw new ConcurrentOperationException(e.getMessage());
                 }
             }
         }

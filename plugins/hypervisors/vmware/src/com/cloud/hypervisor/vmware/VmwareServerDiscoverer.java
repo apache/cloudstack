@@ -345,7 +345,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				details.put("url", hostMo.getHostName());
 				details.put("username", username);
 				details.put("password", password);
-				String guid = morHost.getType() + ":" + morHost.getValue()
+				String guid = morHost.getType() + ":" + morHost.getPresetParams()
 						+ "@" + url.getHost();
 				details.put("guid", guid);
 
@@ -414,7 +414,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 						"ClusterComputeResource"))
 					return false;
 
-				if (!morParent.getValue().equals(morCluster.getValue()))
+				if (!morParent.getPresetParams().equals(morCluster.getPresetParams()))
 					return false;
 			}
 		}

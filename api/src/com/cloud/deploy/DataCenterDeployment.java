@@ -27,11 +27,15 @@ public class DataCenterDeployment implements DeploymentPlan {
     Long _hostId;
     Long _physicalNetworkId;
     ExcludeList _avoids = null;
-    boolean _recreateDisks;
     ReservationContext _context;
 
-    public DataCenterDeployment() {
-    	_dcId = 0;
+    @SuppressWarnings("unused")
+    private DataCenterDeployment() {  // Hide this constructor
+    }
+    
+    public DataCenterDeployment(DeploymentPlan that) {
+        this(that.getDataCenterId(), that.getPodId(), that.getClusterId(), that.getHostId(), that.getPoolId(), that.getPhysicalNetworkId(), that.getReservationContext());
+        _avoids = new ExcludeList(that.getAvoids());
     }
     
     public DataCenterDeployment(long dataCenterId) {
@@ -77,6 +81,22 @@ public class DataCenterDeployment implements DeploymentPlan {
         return _poolId;
     }
 
+    public void setPoolId(Long poolId) {
+        _poolId = poolId;
+    }
+
+    public void setClusterId(Long clusterId) {
+        _clusterId = clusterId;
+    }
+
+    public void setHostId(Long hostId) {
+        _hostId = hostId;
+    }
+
+    public void setPodId(Long podId) {
+        _podId = podId;
+    }
+
     @Override
     public ExcludeList getAvoids() {
         return _avoids;
@@ -95,6 +115,34 @@ public class DataCenterDeployment implements DeploymentPlan {
     @Override
     public ReservationContext getReservationContext() {
         return _context;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder("DeploymentPlan[");
+        if (_hostId != null) {
+            str.append("Host=").append(_hostId);
+        } else if (_clusterId != null) {
+            str.append("Cluster=").append(_clusterId);
+        } else if (_podId != null) {
+            str.append("Pod=").append(_podId);
+        } else {
+            str.append("Zone=").append(_dcId);
+        }
+
+        if (_poolId != null) {
+            str.append(", Storage=").append(_poolId);
+        }
+
+        if (_physicalNetworkId != null) {
+            str.append(", Physical Network = ").append(_physicalNetworkId);
+        }
+
+        if (_avoids != null) {
+            str.append(_avoids.toString());
+        }
+
+        return str.append("]").toString();
     }
 
 }

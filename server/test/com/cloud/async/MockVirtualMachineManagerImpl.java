@@ -353,21 +353,6 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 		return false;
 	}
 
-	public VirtualMachine processVmStartWork(String vmUuid,
-			Map<Param, Object> params, User caller, Account account,
-			DeploymentPlan planToDeploy) throws InsufficientCapacityException,
-			ConcurrentOperationException, ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public boolean processVmStopWork(String vmUuid, boolean forced, User user,
-			Account account) throws AgentUnavailableException,
-			OperationTimedoutException, ConcurrentOperationException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 	@Override
 	public NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType) {
 		// TODO Auto-generated method stub

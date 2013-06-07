@@ -729,7 +729,7 @@ public class VirtualMachineMO extends BaseMO {
 	    			else if(prop.getName().startsWith("value[")) {
 		    			CustomFieldStringValue val = (CustomFieldStringValue)prop.getVal();
 		    			if(val != null)
-		    				gcTagValue = val.getValue();
+		    				gcTagValue = val.getPresetParams();
 	    			}
 	    		}
 
@@ -852,7 +852,7 @@ public class VirtualMachineMO extends BaseMO {
 		if(values != null) {
 			for(OptionValue option : values) {
 				if(option.getKey().equals("RemoteDisplay.vnc.port")) {
-					String value = (String)option.getValue();
+					String value = (String)option.getPresetParams();
 					if(value != null) {
                         return new Pair<String, Integer>(summary.getHostIp(), Integer.parseInt(value));
                     }
@@ -872,9 +872,9 @@ public class VirtualMachineMO extends BaseMO {
 		String rdmDeviceName, int sizeInMb, ManagedObjectReference morDs, int controllerKey) throws Exception {
 
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - createDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + vmdkDatastorePath
+			s_logger.trace("vCenter API trace - createDisk(). target MOR: " + _mor.getPresetParams() + ", vmdkDatastorePath: " + vmdkDatastorePath
 				+ ", sizeInMb: " + sizeInMb + ", diskType: " + diskType + ", diskMode: " + diskMode + ", rdmDeviceName: " + rdmDeviceName
-				+ ", datastore: " + morDs.getValue() + ", controllerKey: " + controllerKey);
+				+ ", datastore: " + morDs.getPresetParams() + ", controllerKey: " + controllerKey);
 
 		assert(vmdkDatastorePath != null);
 		assert(morDs != null);
@@ -958,8 +958,8 @@ public class VirtualMachineMO extends BaseMO {
 	public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs) throws Exception {
 
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
-				+ new Gson().toJson(vmdkDatastorePathChain) + ", datastore: " + morDs.getValue());
+			s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getPresetParams() + ", vmdkDatastorePath: "
+				+ new Gson().toJson(vmdkDatastorePathChain) + ", datastore: " + morDs.getPresetParams());
 
 		VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, getScsiDeviceControllerKey(),
 			vmdkDatastorePathChain, morDs, -1, 1);
@@ -991,7 +991,7 @@ public class VirtualMachineMO extends BaseMO {
 	public void attachDisk(Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain, int controllerKey) throws Exception {
 
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
+			s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getPresetParams() + ", vmdkDatastorePath: "
 				+ new Gson().toJson(vmdkDatastorePathChain));
 
 		VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey,
@@ -1025,7 +1025,7 @@ public class VirtualMachineMO extends BaseMO {
 	public List<Pair<String, ManagedObjectReference>> detachDisk(String vmdkDatastorePath, boolean deleteBackingFile) throws Exception {
 
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - detachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
+			s_logger.trace("vCenter API trace - detachDisk(). target MOR: " + _mor.getPresetParams() + ", vmdkDatastorePath: "
 				+ vmdkDatastorePath + ", deleteBacking: " + deleteBackingFile);
 
 		// Note: if VM has been taken snapshot, original backing file will be renamed, therefore, when we try to find the matching
@@ -1091,7 +1091,7 @@ public class VirtualMachineMO extends BaseMO {
 
 	public void detachAllDisks() throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - detachAllDisk(). target MOR: " + _mor.getValue());
+			s_logger.trace("vCenter API trace - detachAllDisk(). target MOR: " + _mor.getPresetParams());
 
 		VirtualDisk[] disks = getAllDiskDevice();
 		if(disks.length > 0) {
@@ -1126,8 +1126,8 @@ public class VirtualMachineMO extends BaseMO {
 		boolean connect, boolean connectAtBoot) throws Exception {
 
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - detachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: "
-				+ isoDatastorePath + ", datastore: " + morDs.getValue() + ", connect: " + connect + ", connectAtBoot: " + connectAtBoot);
+			s_logger.trace("vCenter API trace - detachIso(). target MOR: " + _mor.getPresetParams() + ", isoDatastorePath: "
+				+ isoDatastorePath + ", datastore: " + morDs.getPresetParams() + ", connect: " + connect + ", connectAtBoot: " + connectAtBoot);
 
 		assert(isoDatastorePath != null);
 		assert(morDs != null);
@@ -1185,7 +1185,7 @@ public class VirtualMachineMO extends BaseMO {
 
 	public void detachIso(String isoDatastorePath) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - detachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: "
+			s_logger.trace("vCenter API trace - detachIso(). target MOR: " + _mor.getPresetParams() + ", isoDatastorePath: "
 				+ isoDatastorePath);
 
 		VirtualDevice device = getIsoDevice();
@@ -1226,7 +1226,7 @@ public class VirtualMachineMO extends BaseMO {
 	public Pair<VmdkFileDescriptor, byte[]> getVmdkFileInfo(String vmdkDatastorePath) throws Exception {
 
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - getVmdkFileInfo(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
+			s_logger.trace("vCenter API trace - getVmdkFileInfo(). target MOR: " + _mor.getPresetParams() + ", vmdkDatastorePath: "
 				+ vmdkDatastorePath);
 
 		Pair<DatacenterMO, String> dcPair = getOwnerDatacenter();

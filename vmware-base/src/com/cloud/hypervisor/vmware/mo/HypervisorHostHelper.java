@@ -746,9 +746,9 @@ public class HypervisorHostHelper {
         averageBandwidth.setValue((long) networkRateMbps.intValue() * 1024L * 1024L);
         // We chose 50% higher allocation than average bandwidth.
         // TODO(sateesh): Also let user specify the peak coefficient
-        peakBandwidth.setValue((long) (averageBandwidth.getValue() * 1.5));
+        peakBandwidth.setValue((long) (averageBandwidth.getPresetParams() * 1.5));
         // TODO(sateesh): Also let user specify the burst coefficient
-        burstSize.setValue((long) (5 * averageBandwidth.getValue() / 8));
+        burstSize.setValue((long) (5 * averageBandwidth.getPresetParams() / 8));
 
         shapingPolicy.setEnabled(isEnabled);
         shapingPolicy.setAverageBandwidth(averageBandwidth);
@@ -892,14 +892,14 @@ public class HypervisorHostHelper {
             ManagedObjectReference morParent = hostMo.getParentMor();
             if(morParent != null && morParent.getType().equals("ClusterComputeResource")) {
                 // to be conservative, lock cluster
-                GlobalLock lock = GlobalLock.getInternLock("ClusterLock." + morParent.getValue());
+                GlobalLock lock = GlobalLock.getInternLock("ClusterLock." + morParent.getPresetParams());
                 try {
                     if(lock.lock(DEFAULT_LOCK_TIMEOUT_SECONDS)) {
                         try {
                             List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)hostMo.getContext().getVimClient().getDynamicProperty(morParent, "host");
                             if(hosts != null) {
                                 for(ManagedObjectReference otherHost: hosts) {
-                                    if(!otherHost.getValue().equals(hostMo.getMor().getValue())) {
+                                    if(!otherHost.getPresetParams().equals(hostMo.getMor().getPresetParams())) {
                                         HostMO otherHostMo = new HostMO(hostMo.getContext(), otherHost);
                                         try {
                                             if(s_logger.isDebugEnabled())

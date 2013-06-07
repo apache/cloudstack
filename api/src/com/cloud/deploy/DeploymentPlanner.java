@@ -103,6 +103,10 @@ public interface DeploymentPlanner extends Adapter {
         public ExcludeList() {
         }
 
+        public ExcludeList(ExcludeList that) {
+            this(that.getDataCentersToAvoid(), that.getPodsToAvoid(), that.getClustersToAvoid(), that.getHostsToAvoid(), that.getPoolsToAvoid());
+        }
+
         public ExcludeList(Set<Long> _dcIds, Set<Long> _podIds, Set<Long> _clusterIds, Set<Long> _hostIds, Set<Long> _poolIds) {
             if (_dcIds != null) {
                 this._dcIds = new HashSet<Long>(_dcIds);
@@ -311,6 +315,27 @@ public interface DeploymentPlanner extends Adapter {
 
         public Set<Long> getPoolsToAvoid() {
             return _poolIds;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder str = new StringBuilder("Avoiding[");
+            if (_dcIds != null) {
+                str.append("Zones={").append(_dcIds.toString()).append("}");
+            }
+            if (_podIds != null) {
+                str.append("; Pods={").append(_podIds.toString()).append("}");
+            }
+            if (_clusterIds != null) {
+                str.append("; Clusters={").append(_clusterIds.toString()).append("}");
+            }
+            if (_hostIds != null) {
+                str.append("; Hosts={").append(_hostIds.toString()).append("}");
+            }
+            if (_poolIds != null) {
+                str.append("; DataStore={").append(_poolIds.toString()).append("}");
+            }
+            return str.append("]").toString();
         }
     }
 }

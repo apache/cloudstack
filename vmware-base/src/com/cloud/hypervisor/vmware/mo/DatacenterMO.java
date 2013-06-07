@@ -117,7 +117,7 @@ public class DatacenterMO extends BaseMO {
 									break;		// break out inner loop
 								}
 							} else if(prop.getVal() instanceof CustomFieldStringValue) {
-								String val = ((CustomFieldStringValue)prop.getVal()).getValue();
+								String val = ((CustomFieldStringValue)prop.getVal()).getPresetParams();
 								if(val.equals(vmLabel)) {
 									list.add(new VirtualMachineMO(_context, oc.getObj()));
 									break;		// break out inner loop
@@ -451,7 +451,7 @@ public class DatacenterMO extends BaseMO {
                             dvSwitchMor = (ManagedObjectReference) prop.getVal();
                         }
                     }
-                    if ((dvPortGroupKey != null) && dvPortGroupKey.equals(dvPortGroupMor.getValue())) {
+                    if ((dvPortGroupKey != null) && dvPortGroupKey.equals(dvPortGroupMor.getPresetParams())) {
                         return dvSwitchMor;
                     }
                 }
@@ -474,7 +474,7 @@ public class DatacenterMO extends BaseMO {
         ManagedObjectReference dvsMor = getDvSwitchMor(networkInfo.first());
         String dvSwitchUuid = getDvSwitchUuid(dvsMor);
         dvPortConnection.setSwitchUuid(dvSwitchUuid);
-        dvPortConnection.setPortgroupKey(networkInfo.first().getValue());
+        dvPortConnection.setPortgroupKey(networkInfo.first().getPresetParams());
         dvPortBacking.setPort(dvPortConnection);
         System.out.println("Plugging NIC device into network " + networkInfo.second() + " backed by dvSwitch: "
                 + dvSwitchUuid);

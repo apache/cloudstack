@@ -985,8 +985,8 @@ public class F5BigIpResource implements ServerResource {
 						continue;
 					}
 					
-					long high = stat.getValue().getHigh(); 
-					long low = stat.getValue().getLow(); 
+					long high = stat.getPresetParams().getHigh(); 
+					long low = stat.getPresetParams().getLow(); 
 					long full = getFullUsage(high, low);
 					
 					

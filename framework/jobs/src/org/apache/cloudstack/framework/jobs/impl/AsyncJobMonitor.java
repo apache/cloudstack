@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
-import org.apache.cloudstack.framework.jobs.AsyncJob.Topics;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
@@ -114,7 +113,7 @@ public class AsyncJobMonitor extends ManagerBase {
 			
 			long threadId = Thread.currentThread().getId();
 			boolean fromPoolThread = Thread.currentThread().getName().contains(AsyncJobConstants.JOB_POOL_THREAD_PREFIX);
-			ActiveTaskRecord record = new ActiveTaskRecord(threadId, jobId, fromPoolThread);
+            ActiveTaskRecord record = new ActiveTaskRecord(jobId, threadId, fromPoolThread);
 			_activeTasks.put(jobId, record);
 			if(fromPoolThread)
 				_activePoolThreads++;

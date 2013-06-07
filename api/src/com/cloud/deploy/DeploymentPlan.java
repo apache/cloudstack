@@ -20,47 +20,44 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.vm.ReservationContext;
 
 /**
+ * DeploymentPlan gives explicit direction on where to deploy a virtual machine.
+ * 
  */
 public interface DeploymentPlan {
-    // TODO: This interface is not fully developed. It really
-    // number of parameters to be specified.
-
     /**
      * @return data center the VM should deploy in.
      */
-    public long getDataCenterId();
+    long getDataCenterId();
 
     /**
      * @return pod the Vm should deploy in; null if no preference.
      */
-    public Long getPodId();
+    Long getPodId();
 
     /**
      * @return cluster the VM should deploy in; null if no preference.
      */
-    public Long getClusterId();
+    Long getClusterId();
 
     /**
      * @return host the VM should deploy in; null if no preference.
      */
-    public Long getHostId();
+    Long getHostId();
 
     /**
      * @return pool the VM should be created in; null if no preference.
      */
-    public Long getPoolId();
+    Long getPoolId();
 
     /**
-     * @param avoids
-     *            Set the ExcludeList to avoid for deployment
+     * @param avoids Set the ExcludeList to avoid for deployment
      */
-    public void setAvoids(ExcludeList avoids);
+    void setAvoids(ExcludeList avoids);
 
     /**
-     * @return
-     *         the ExcludeList to avoid for deployment
+     * @return the ExcludeList to avoid for deployment
      */
-    public ExcludeList getAvoids();
+    ExcludeList getAvoids();
 
     Long getPhysicalNetworkId();
 
