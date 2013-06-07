@@ -4536,20 +4536,29 @@
                   loadbalancer:{        //Support for Netscaler as an external device for load balancing
                     label:'Load Balancer',
                     select:function(args){
-
-                        var items = [];
-                        items.push({id:'vpcvirtualrouter' , description:'VPC Virtual Router'});
-                        items.push({id:'netscaler' , description:'NetScaler'});
-
+                         $.ajax({
+                          url:createURL('listVPCOfferings&listall=true'),
+                          dataType:'json',
+                          success:function(json){
+                        var items=[];
+                        var vpcObj = json.listvpcofferingsresponse.vpcoffering;
+                        $(vpcObj).each(function(){
+                          items.push({id:this.id , description:this.name});
+                          });
                         args.response.success({data:items});
-                  }
+
+                         }
+
+                     });
+
+                   }
 
                 }
 
                 }
               },              
               action: function(args) {										
-								var defaultvpcofferingid;
+						/*		var defaultvpcofferingid;
 								$.ajax({
 								  url: createURL("listVPCOfferings"),
 									dataType: "json",
@@ -4560,14 +4569,14 @@
 									success: function(json) {
 									  defaultvpcofferingid = json.listvpcofferingsresponse.vpcoffering[0].id;
 									}
-								});
+								});*/
 								
 								var dataObj = {
 									name: args.data.name,
 									displaytext: args.data.displaytext,
 									zoneid: args.data.zoneid,
 									cidr: args.data.cidr,
-									vpcofferingid: defaultvpcofferingid
+									vpcofferingid: args.data.loadbalancer    // Support for external load balancer
 								};
 								
 								if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
