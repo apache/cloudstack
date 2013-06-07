@@ -2208,6 +2208,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         domainIdRecursiveListProject.second(true);
                     }
                 }
+            } else if (domainId != null) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    permittedAccounts.add(caller.getId());
+                }
             }
 
         }
