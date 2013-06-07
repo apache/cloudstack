@@ -2065,17 +2065,24 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public NicVO getPlaceholderNicForRouter(Network network, Long podId) {
         List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkIdAndVmType(network.getId(), VirtualMachine.Type.DomainRouter);
         for (NicVO nic : nics) {
-            if (nic.getReserver() == null && nic.getIp4Address() != null) {
+            if (nic.getReserver() == null && (nic.getIp4Address() != null || nic.getIp6Address() != null)) {
                 if (podId == null) {
                     return nic;
                 } else {
                     //return nic only when its ip address belong to the pod range (for the Basic zone case)
                     List<? extends Vlan> vlans = _vlanDao.listVlansForPod(podId);
                     for (Vlan vlan : vlans) {
-                        IpAddress ip = _ipAddressDao.findByIpAndNetworkId(network.getId(), nic.getIp4Address());
-                        if (ip != null && ip.getVlanId() == vlan.getId()) {
-                            return nic;
-                        }
+                    	if (nic.getIp4Address() != null) {
+                    		IpAddress ip = _ipAddressDao.findByIpAndNetworkId(network.getId(), nic.getIp4Address());
+                    		if (ip != null && ip.getVlanId() == vlan.getId()) {
+                    			return nic;
+                    		}
+                    	} else {
+                    		UserIpv6AddressVO ipv6 = _ipv6Dao.findByNetworkIdAndIp(network.getId(), nic.getIp6Address());
+                    		if (ipv6 != null && ipv6.getVlanId() == vlan.getId()) {
+                    			return nic;
+                    		}
+                    	}
                     }
                 }
             }

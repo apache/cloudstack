@@ -221,7 +221,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         
-        //FIXME - save ipv6 informaiton in the placeholder nic
         Transaction txn = Transaction.currentTxn();
         txn.start();
         _networkMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
@@ -229,8 +228,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
             if (placeholderNic == null) {
-                s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " and ipv6 address " + requestedIp6Addr + " for the network " + network);
-                _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), VirtualMachine.Type.DomainRouter);
+                s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " and ipv6 address " + nic.getIp6Address() + " for the network " + network);
+                _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), nic.getIp6Address(), VirtualMachine.Type.DomainRouter);
             }
         }
         txn.commit();

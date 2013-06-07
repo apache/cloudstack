@@ -774,7 +774,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 // If a NIC doesn't exist for the load balancing IP address, create one
                 loadBalancingIpNic = _nicDao.findByIp4AddressAndNetworkId(loadBalancingIpAddress, network.getId());
                 if (loadBalancingIpNic == null) {
-                    loadBalancingIpNic = _networkMgr.savePlaceholderNic(network, loadBalancingIpAddress, null);
+                    loadBalancingIpNic = _networkMgr.savePlaceholderNic(network, loadBalancingIpAddress, null, null);
                 }
 
                 // Save a mapping between the source IP address and the load balancing IP address NIC
@@ -1019,7 +1019,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         if (add) {
             // Insert a new NIC for this guest network to reserve the self IP
-            _networkMgr.savePlaceholderNic(guestConfig, selfIp, null);
+            _networkMgr.savePlaceholderNic(guestConfig, selfIp, null, null);
         } else {
             // release the self-ip obtained from guest network
             Nic selfipNic = getPlaceholderNic(guestConfig);

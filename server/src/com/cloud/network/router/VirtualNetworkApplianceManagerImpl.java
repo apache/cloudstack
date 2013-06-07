@@ -1740,30 +1740,34 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             if (!setupPublicNetwork) {
+            	Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, plan.getPodId());
             	if (guestNetwork.getCidr() != null) {
-            	    Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, plan.getPodId());
-            	    if (placeholder != null) {
-            	        s_logger.debug("Requesting ip address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + guestNetwork);
-            	        defaultNetworkStartIp = placeholder.getIp4Address();
-            	    } else {
-            	        String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
-                        if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
-                            defaultNetworkStartIp = startIp;
-                        } else if (s_logger.isDebugEnabled()){
-                            s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + 
-                                    " is already allocated, can't use it for domain router; will get random ip address from the range");
-                        }
-            	    }
+            		if (placeholder != null && placeholder.getIp4Address() != null) {
+            			s_logger.debug("Requesting ipv4 address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + guestNetwork);
+            			defaultNetworkStartIp = placeholder.getIp4Address(); 
+            		} else {
+            			String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
+            			if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+            				defaultNetworkStartIp = startIp;
+            			} else if (s_logger.isDebugEnabled()){
+            				s_logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId() + 
+            						" is already allocated, can't use it for domain router; will get random ip address from the range");
+            			}
+            		}
             	}
-            	
-            	//FIXME - get ipv6 stored in the placeholder
+
             	if (guestNetwork.getIp6Cidr() != null) {
-            		String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
-            		if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
-            			defaultNetworkStartIpv6 = startIpv6;
-            		} else if (s_logger.isDebugEnabled()){
-            			s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId() + 
-            					" is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+            		if (placeholder != null && placeholder.getIp6Address() != null) {
+            			s_logger.debug("Requesting ipv6 address " + placeholder.getIp6Address() + " stored in placeholder nic for the network " + guestNetwork);
+            			defaultNetworkStartIpv6 = placeholder.getIp6Address(); 
+            		} else {
+            			String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
+            			if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
+            				defaultNetworkStartIpv6 = startIpv6;
+            			} else if (s_logger.isDebugEnabled()){
+            				s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId() + 
+            						" is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+            			}
             		}
             	}
             }

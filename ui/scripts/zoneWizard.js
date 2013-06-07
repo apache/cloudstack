@@ -3366,10 +3366,11 @@
               zoneId: args.data.returnedZone.id,
               username: args.data.cluster.vCenterUsername,
               password: args.data.cluster.vCenterPassword,
-              name: args.data.cluster.vCenterDatacenter
+              name: args.data.cluster.vCenterDatacenter,
+              vcenter: args.data.cluster.vCenterHost
             };
             $.ajax({
-              url: createURL('addVmwareDc&url=' + todb(url)),
+              url: createURL('addVmwareDc'),
               data: vmwareData,
               success: function(json) {
                 var item = json.addvmwaredcresponse.vmwaredc;

@@ -3044,6 +3044,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             _accountGuestVlanMapDao.update(guestVlanMapId, accountGuestVlanMapVO);
         } else {
             Transaction txn = Transaction.currentTxn();
+            txn.start();
             accountGuestVlanMapVO = new AccountGuestVlanMapVO(vlanOwner.getAccountId(), physicalNetworkId);
             accountGuestVlanMapVO.setGuestVlanRange(startVlan + "-" +  endVlan);
             _accountGuestVlanMapDao.persist(accountGuestVlanMapVO);
