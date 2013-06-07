@@ -4325,9 +4325,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
 
     @Override
-    public NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType) {
+    public NicVO savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType) {
         NicVO nic = new NicVO(null, null, network.getId(), null); 
         nic.setIp4Address(ip4Address);
+        nic.setIp6Address(ip6Address);
         nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
         nic.setState(Nic.State.Reserved);
         nic.setVmType(vmType);

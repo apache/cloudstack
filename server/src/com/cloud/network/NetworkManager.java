@@ -381,7 +381,7 @@ public interface NetworkManager  {
     
     String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod, Account caller, String requestedIp) throws InsufficientAddressCapacityException;
 
-    NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType);
+    NicVO savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
 
     DhcpServiceProvider getDhcpServiceProvider(Network network);
 
