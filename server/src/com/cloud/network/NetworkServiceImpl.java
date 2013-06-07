@@ -2680,9 +2680,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         vnetString = vnetString+vnetRange.first().toString()+"-"+value.toString()+";";
                     }
                }
-                vnetString = vnetString+"*";
-                vnetString = vnetString.replace(";*","");
-                network.setVnet(vnetString);
+               if (vnetString.length() > 0 && vnetString.charAt(vnetString.length()-1)==';') {
+                   vnetString = vnetString.substring(0, vnetString.length()-1);
+               }
+               network.setVnet(vnetString);
             }
 
             for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
@@ -2788,12 +2789,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         _datacneter_vnet.deleteRange(txn, network.getDataCenterId(), network.getId(), start, end);
 
         String vnetString="";
-        for (Pair<Integer,Integer> vnetRange : existingRanges ){
-            vnetString=vnetString+vnetRange.first().toString()+"-"+vnetRange.second().toString()+";";
+        if (existingRanges.isEmpty()) {
+            network.setVnet(null);
+        } else {
+            for (Pair<Integer,Integer> vnetRange : existingRanges ) {
+                vnetString=vnetString+vnetRange.first().toString()+"-"+vnetRange.second().toString()+";";
+            }
+            vnetString = vnetString.substring(0, vnetString.length()-1);
+            network.setVnet(vnetString);
         }
-        vnetString = vnetString+"*";
-        vnetString = vnetString.replace(";*","");
-        network.setVnet(vnetString);
         _physicalNetworkDao.update(network.getId(), network);
         txn.commit();
         _physicalNetworkDao.releaseFromLockTable(network.getId());
