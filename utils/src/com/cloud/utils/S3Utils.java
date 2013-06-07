@@ -222,8 +222,15 @@ public final class S3Utils {
                         key, bucketName, tempFile.getName()));
             }
 
-            connection.getObject(new GetObjectRequest(bucketName, key),
-                    tempFile);
+            try {
+                connection.getObject(new GetObjectRequest(bucketName, key), tempFile);
+            } catch (AmazonClientException ex) {
+                // hack to handle different ETAG format generated from RiakCS for multi-part uploaded object
+                String msg = ex.getMessage();
+                if (!msg.contains("verify integrity")){
+                    throw ex;
+                }
+            }
 
             final File targetFile = new File(targetDirectory,
                     namingStrategy.determineFileName(key));
@@ -245,7 +252,8 @@ public final class S3Utils {
                             targetDirectory.getAbsolutePath(), bucketName, key),
                     e);
 
-        } finally {
+        }
+        finally {
 
             if (tempFile != null) {
                 tempFile.delete();
