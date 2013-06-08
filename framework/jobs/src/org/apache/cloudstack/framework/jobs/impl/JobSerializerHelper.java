@@ -22,12 +22,23 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -43,6 +54,7 @@ public class JobSerializerHelper {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.setVersion(1.5);
         s_logger.debug("Job GSON Builder initialized.");
+        gsonBuilder.registerTypeAdapter(Class.class, new ClassTypeAdapter());
         s_gson = gsonBuilder.create();
     }
 
@@ -124,4 +136,67 @@ public class JobSerializerHelper {
             throw new CloudRuntimeException("Unable to serialize: " + base64EncodedString, e);
     	}
     }
+
+    public static class ClassTypeAdapter implements JsonSerializer<Class<?>>, JsonDeserializer<Class<?>> {
+        @Override
+        public JsonElement serialize(Class<?> clazz, Type typeOfResponseObj, JsonSerializationContext ctx) {
+            return new JsonPrimitive(clazz.getName());
+        }
+
+        @Override
+        public Class<?> deserialize(JsonElement arg0, Type arg1, JsonDeserializationContext arg2) throws JsonParseException {
+            String str = arg0.getAsString();
+            try {
+                return Class.forName(str);
+            } catch (ClassNotFoundException e) {
+                throw new CloudRuntimeException("Unable to find class " + str);
+            }
+        }
+    }
+
+    public static class ThrowableTypeAdapter implements JsonSerializer<Throwable>, JsonDeserializer<Throwable> {
+
+        @Override
+        public Throwable deserialize(JsonElement json, Type type, JsonDeserializationContext ctx) throws JsonParseException {
+            JsonObject obj = (JsonObject)json;
+
+            String className = obj.get("class").getAsString();
+            try {
+                Class<Throwable> clazz  = (Class<Throwable>)Class.forName(className);
+                Throwable cause = s_gson.fromJson(obj.get("cause"), Throwable.class);
+                String msg = obj.get("msg").getAsString();
+                Constructor<Throwable> constructor = clazz.getConstructor(String.class, Throwable.class);
+                Throwable th = constructor.newInstance(msg, cause);
+                return th;
+            } catch (ClassNotFoundException e) {
+                throw new JsonParseException("Unable to find " + className);
+            } catch (NoSuchMethodException e) {
+                throw new JsonParseException("Unable to find constructor for " + className);
+            } catch (SecurityException e) {
+                throw new JsonParseException("Unable to get over security " + className);
+            } catch (InstantiationException e) {
+                throw new JsonParseException("Unable to instantiate " + className);
+            } catch (IllegalAccessException e) {
+                throw new JsonParseException("Illegal access to " + className, e);
+            } catch (IllegalArgumentException e) {
+                throw new JsonParseException("Illegal argument to " + className, e);
+            } catch (InvocationTargetException e) {
+                throw new JsonParseException("Cannot invoke " + className, e);
+            }
+        }
+
+        @Override
+        public JsonElement serialize(Throwable th, Type type, JsonSerializationContext ctx) {
+            JsonObject json = new JsonObject();
+
+            json.add("class", new JsonPrimitive(th.getClass().getName()));
+            json.add("cause", s_gson.toJsonTree(th.getCause()));
+            json.add("msg", new JsonPrimitive(th.getMessage()));
+//            json.add("stack", s_gson.toJsonTree(th.getStackTrace()));
+
+            return json;
+        }
+
+    }
+
 }

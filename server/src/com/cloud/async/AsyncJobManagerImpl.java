@@ -51,6 +51,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobJournalVO;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobMBeanImpl;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobMonitor;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueItem;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueManager;
@@ -60,7 +61,6 @@ import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.messagebus.TopicConstants;
 
-import com.cloud.api.ApiSerializerHelper;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -234,7 +234,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             job.setInstanceId(null);
 
             if (resultObject != null) {
-                job.setResult(ApiSerializerHelper.toSerializedString(resultObject));
+                job.setResult(JobSerializerHelper.toSerializedString(resultObject));
             }
 
             job.setLastUpdated(DateUtil.currentGMTTime());
@@ -281,7 +281,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
             job.setProcessStatus(processStatus);
             if(resultObject != null) {
-                job.setResult(ApiSerializerHelper.toSerializedString(resultObject));
+                job.setResult(JobSerializerHelper.toSerializedString(resultObject));
             }
             job.setLastUpdated(DateUtil.currentGMTTime());
             _jobDao.update(jobId, job);
@@ -531,7 +531,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     
                     // execute the job
                     if(s_logger.isDebugEnabled()) {
-                        s_logger.debug("Executing " + job.getCmd() + " for job-" + job.getId());
+                        s_logger.debug("Executing " + job);
                     }
 
                     if((getAndResetPendingSignals(job) & AsyncJobConstants.SIGNAL_MASK_WAKEUP) != 0) {
@@ -913,7 +913,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private static String getSerializedErrorMessage(String errorMessage) {
-        return ApiSerializerHelper.toSerializedString(getResetResultResponse(errorMessage));
+        return JobSerializerHelper.toSerializedString(getResetResultResponse(errorMessage));
     }
 
     @Override
