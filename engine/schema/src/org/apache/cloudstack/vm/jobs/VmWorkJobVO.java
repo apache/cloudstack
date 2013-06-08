@@ -27,7 +27,6 @@ import javax.persistence.Table;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Type;
 
 
 @Entity
@@ -56,7 +55,11 @@ public class VmWorkJobVO extends AsyncJobVO {
     @Column(name="vm_instance_id")
     long vmInstanceId;
 
-    public VmWorkJobVO() {
+    protected VmWorkJobVO() {
+    }
+
+    public VmWorkJobVO(String related) {
+        setRelated(related);
     }
     
     public Step getStep() {

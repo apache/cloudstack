@@ -93,7 +93,7 @@ public class OvsVifDriver extends VifDriverBase {
                 }
             } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
                 s_logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + logicalSwitchUuid);
-                intf.setVirtualPortInterfaceId(nic.getUuid());
+                intf.setVirtualPortInterfaceId(nic.getNicUuid());
                 String brName = (trafficLabel != null && !trafficLabel.isEmpty()) ? _pifs.get(trafficLabel) : _pifs.get("private");
                 intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
             }

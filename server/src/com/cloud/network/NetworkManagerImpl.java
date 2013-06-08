@@ -1771,7 +1771,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         Integer networkRate = _networkModel.getNetworkRate(config.getId(), null);
         to.setNetworkRateMbps(networkRate);
 
-        to.setUuid(config.getUuid());
+        to.setNicUuid(config.getUuid());
 
         return to;
     }

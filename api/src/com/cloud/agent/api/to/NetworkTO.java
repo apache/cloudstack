@@ -42,11 +42,11 @@ public class NetworkTO {
     public NetworkTO() {
     }
 
-    public String getUuid() {
+    public String getNicUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
+    public void setNicUuid(String uuid) {
         this.uuid = uuid;
     }
 

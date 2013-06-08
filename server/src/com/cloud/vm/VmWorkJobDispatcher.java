@@ -59,7 +59,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             work = (VmWork)ApiSerializerHelper.fromSerializedString(job.getCmdInfo());
         	assert(work != null);
         	
-            CallContext context = CallContext.register(work.getUserId(), work.getAccountId(), "job-" + job.getShortUuid());
+            CallContext.register(work.getUserId(), work.getAccountId(), job.getRelated());
 
             VMInstanceVO vm = _instanceDao.findById(work.getVmId());
             if (vm == null) {

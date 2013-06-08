@@ -145,7 +145,7 @@ public class MidoNetVifDriver extends VifDriverBase {
                 if (b.getName().equals(netName)) {
                     for (BridgePort p : b.getPorts()) {
                         UUID pvif = p.getVifId();
-                        if (pvif != null && p.getVifId().toString().equals(nic.getUuid())){
+                        if (pvif != null && p.getVifId().toString().equals(nic.getNicUuid())){
                             getMyHost(api).addHostInterfacePort()
                                     .interfaceName(tapName)
                                     .portId(p.getId())

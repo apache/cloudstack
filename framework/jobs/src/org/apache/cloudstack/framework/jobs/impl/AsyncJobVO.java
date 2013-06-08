@@ -71,6 +71,9 @@ public class AsyncJobVO implements AsyncJob, Job {
 	@Column(name="job_cmd_ver")
     private int cmdVersion;
 	
+    @Column(name = "related")
+    private String related;
+
     @Column(name="job_cmd_info", length=65535)
     private String cmdInfo;
   
@@ -123,14 +126,16 @@ public class AsyncJobVO implements AsyncJob, Job {
 
     public AsyncJobVO() {
         uuid = UUID.randomUUID().toString();
+        related = UUID.randomUUID().toString();
     }
 
-    public AsyncJobVO(String uuid, long userId, long accountId, String cmd, String cmdInfo, Long instanceId, String instanceType) {
+    public AsyncJobVO(String related, long userId, long accountId, String cmd, String cmdInfo, Long instanceId, String instanceType) {
 		this.userId = userId;
 		this.accountId = accountId;
 		this.cmd = cmd;
 		this.cmdInfo = cmdInfo;
-        this.uuid = uuid;
+        uuid = UUID.randomUUID().toString();
+        this.related = related;
 	    this.instanceId = instanceId;
 	    this.instanceType = instanceType;
     }
@@ -147,6 +152,15 @@ public class AsyncJobVO implements AsyncJob, Job {
     @Override
     public String getShortUuid() {
         return UuidUtils.first(uuid);
+    }
+
+    public void setRelated(String related) {
+        this.related = related;
+    }
+
+    @Override
+    public String getRelated() {
+        return related;
     }
 
 	@Override

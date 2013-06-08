@@ -35,12 +35,6 @@ public class SystemVmResponse extends BaseResponse {
     @SerializedName("systemvmtype") @Param(description="the system VM type")
     private String systemVmType;
 
-    @SerializedName("jobid") @Param(description="the job ID associated with the system VM. This is only displayed if the router listed is part of a currently running asynchronous job.")
-    private String jobId;
-
-    @SerializedName("jobstatus") @Param(description="the job status associated with the system VM.  This is only displayed if the router listed is part of a currently running asynchronous job.")
-    private Integer jobStatus;
-
     @SerializedName("zoneid") @Param(description="the Zone ID for the system VM")
     private String zoneId;
 
@@ -119,7 +113,7 @@ public class SystemVmResponse extends BaseResponse {
 
     @Override
     public String getObjectId() {
-        return this.getId();
+        return getId();
     }
 
 

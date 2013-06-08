@@ -101,4 +101,6 @@ public interface AsyncJob extends Job {
     SyncQueueItem getSyncSource();
 
     void setSyncSource(SyncQueueItem item);
+
+    String getRelated();
 }

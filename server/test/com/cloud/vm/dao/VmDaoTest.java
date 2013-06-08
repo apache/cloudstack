@@ -19,8 +19,12 @@ package com.cloud.vm.dao;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Inject;
+
+import junit.framework.Assert;
+import junit.framework.TestCase;
 
 import org.junit.After;
 import org.junit.Before;
@@ -37,9 +41,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-
-import junit.framework.Assert;
-import junit.framework.TestCase;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/vmdaoTestContext.xml")
@@ -76,11 +77,11 @@ public class VmDaoTest extends TestCase {
 	
 	@Test
 	public void testPowerStateUpdate() {
-		UserVmVO userVmInstance = new UserVmVO(1L, "Dummy", "DummyInstance", 
+		UserVmVO userVmInstance = new UserVmVO(1L, "Dummy", "DummyInstance",
 				1L, HypervisorType.Any, 1L, true, false, 1L, 1L, 1L, null, null, null);
 		userVmDao.persist(userVmInstance);
 		
-		userVmInstance = new UserVmVO(2L, "Dummy2", "DummyInstance2", 
+		userVmInstance = new UserVmVO(2L, "Dummy2", "DummyInstance2",
 				1L, HypervisorType.Any, 1L, true, false, 1L, 1L, 1L, null, null, null);
 		userVmDao.persist(userVmInstance);
 		
@@ -147,7 +148,7 @@ public class VmDaoTest extends TestCase {
 	
 	@Test
 	public void testVmWork() {
-		VmWorkJobVO workJob = new VmWorkJobVO();
+        VmWorkJobVO workJob = new VmWorkJobVO(UUID.randomUUID().toString());
 		workJob.setAccountId(1);
 		workJob.setUserId(1L);
 		workJob.setCmd("StartVM");
@@ -158,7 +159,7 @@ public class VmDaoTest extends TestCase {
 		
 		workJobDao.persist(workJob);
 
-		VmWorkJobVO workJob2 = new VmWorkJobVO();
+        VmWorkJobVO workJob2 = new VmWorkJobVO(UUID.randomUUID().toString());
 		workJob2.setAccountId(1);
 		workJob2.setUserId(1L);
 		workJob2.setCmd("StopVM");

@@ -520,7 +520,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             params.put("ctxStartEventId", String.valueOf(startEventId));
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
-            AsyncJobVO job = new AsyncJobVO(ctx.getSessionId(), callerUserId, caller.getId(), cmdObj.getClass().getName(),
+            AsyncJobVO job = new AsyncJobVO(ctx.getContextId(), callerUserId, caller.getId(), cmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
                     asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null);
             job.setDispatcher(_asyncDispatcher.getName());

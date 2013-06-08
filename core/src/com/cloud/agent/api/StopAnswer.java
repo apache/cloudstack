@@ -17,8 +17,6 @@
 package com.cloud.agent.api;
 
 public class StopAnswer extends RebootAnswer {
-    Integer vncPort;
-
     protected StopAnswer() {
     }
 
@@ -35,11 +33,6 @@ public class StopAnswer extends RebootAnswer {
 
     public StopAnswer(StopCommand cmd, Exception e) {
         super(cmd, e);
-    }
-
-    @Override
-    public Integer getVncPort() {
-        return vncPort;
     }
 
 }

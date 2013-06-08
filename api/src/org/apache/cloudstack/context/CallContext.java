@@ -18,6 +18,7 @@ package org.apache.cloudstack.context;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
@@ -26,6 +27,7 @@ import com.cloud.dao.EntityManager;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -37,7 +39,7 @@ public class CallContext {
     private static final Logger s_logger = Logger.getLogger(CallContext.class);
     private static ThreadLocal<CallContext> s_currentContext = new ThreadLocal<CallContext>();
 
-    private String sessionId;
+    private String contextId;
     private Account account;
     private long startEventId = 0;
     private String eventDetails;
@@ -53,10 +55,10 @@ public class CallContext {
     public CallContext() {
     }
 
-    protected CallContext(User user, Account account, String sessionId) {
+    protected CallContext(User user, Account account, String contextId) {
         this.user = user;
         this.account = account;
-        this.sessionId = sessionId;
+        this.contextId = contextId;
     }
     
     public void putContextParameter(String key, Object value) {
@@ -75,8 +77,8 @@ public class CallContext {
         return user;
     }
 
-    public String getSessionId() {
-        return sessionId;
+    public String getContextId() {
+        return contextId;
     }
 
     public Account getCallingAccount() {
@@ -87,17 +89,18 @@ public class CallContext {
         return s_currentContext.get();
     }
 
-    public static CallContext register(User callingUser, Account callingAccount, String sessionId) {
+    public static CallContext register(User callingUser, Account callingAccount, String contextId) {
         assert s_currentContext.get() == null : "There's a context already so what does this new register context mean? " + s_currentContext.get().toString();
         if (s_currentContext.get() != null) { // FIXME: This should be removed soon.  I added this check only to surface all the places that have this problem.
             throw new CloudRuntimeException("There's a context already so what does this new register context mean? " + s_currentContext.get().toString());
         }
-        CallContext callingContext = new CallContext(callingUser, callingAccount, sessionId);
-        s_currentContext.set(callingContext);
-        if (sessionId != null) {
-            NDC.push("job-" + sessionId);
+        if (contextId == null) {
+            contextId = UUID.randomUUID().toString();
         }
-        s_logger.debug("Setting calling context: " + s_currentContext.get());
+        CallContext callingContext = new CallContext(callingUser, callingAccount, contextId);
+        s_currentContext.set(callingContext);
+        NDC.push("ctx-" + UuidUtils.first(contextId));
+        s_logger.debug("Setting calling context: " + callingContext);
         return callingContext;
     }
 
@@ -111,7 +114,7 @@ public class CallContext {
         return context;
     }
 
-    public static CallContext register(String callingUserUuid, String callingAccountUuid, String sessionId) {
+    public static CallContext register(String callingUserUuid, String callingAccountUuid, String contextId) {
         Account account = s_entityMgr.findByUuid(Account.class, callingAccountUuid);
         if (account == null) {
             throw new CloudAuthenticationException("The account is no longer current.").add(Account.class, callingAccountUuid);
@@ -121,10 +124,10 @@ public class CallContext {
         if (user == null) {
             throw new CloudAuthenticationException("The user is no longer current.").add(User.class, callingUserUuid);
         }
-        return register(user, account, sessionId);
+        return register(user, account, contextId);
     }
 
-    public static CallContext register(long callingUserId, long callingAccountId, String sessionId) throws CloudAuthenticationException {
+    public static CallContext register(long callingUserId, long callingAccountId, String contextId) throws CloudAuthenticationException {
         Account account = s_entityMgr.findById(Account.class, callingAccountId);
         if (account == null) {
             throw new CloudAuthenticationException("The account is no longer current.").add(Account.class, Long.toString(callingAccountId));
@@ -133,15 +136,15 @@ public class CallContext {
         if (user == null) {
             throw new CloudAuthenticationException("The user is no longer current.").add(User.class, Long.toString(callingUserId));
         }
-        return register(user, account, sessionId);
+        return register(user, account, contextId);
     }
 
-    public static CallContext register(long callingUserId, Account callingAccount, String sessionId, boolean apiServer) {
+    public static CallContext register(long callingUserId, Account callingAccount, String contextId, boolean apiServer) {
         User user = s_entityMgr.findById(User.class, callingUserId);
         if (user == null) {
             throw new CloudAuthenticationException("The user is no longer current.").add(User.class, Long.toString(callingUserId));
         }
-        return register(user, callingAccount, sessionId);
+        return register(user, callingAccount, contextId);
     }
 
     public static CallContext unregister() {
@@ -152,17 +155,15 @@ public class CallContext {
         }
         s_currentContext.remove();
         s_logger.debug("Context removed " + context);
-        String sessionId = context.getSessionId();
-        if (sessionId != null) {
-            String sessionIdOnStack = null;
-            String sessionIdPushedToNDC = "job-" + sessionId;
-            while ((sessionIdOnStack = NDC.pop()) != null) {
-                if (sessionIdPushedToNDC.equals(sessionIdOnStack)) {
-                    break;
-                }
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Popping from NDC: " + sessionId);
-                }
+        String contextId = context.getContextId();
+        String sessionIdOnStack = null;
+        String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
+        while ((sessionIdOnStack = NDC.pop()) != null) {
+            if (sessionIdPushedToNDC.equals(sessionIdOnStack)) {
+                break;
+            }
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Popping from NDC: " + contextId);
             }
         }
         return context;
@@ -200,7 +201,7 @@ public class CallContext {
     public String toString() {
         return new StringBuffer("CallContext[acct=").append(account.getId())
                 .append("; user=").append(user.getId())
-                .append("; session=").append(sessionId)
+                .append("; session=").append(contextId)
                 .append("]").toString();
     }
 }

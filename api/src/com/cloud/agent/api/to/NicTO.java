@@ -23,7 +23,7 @@ public class NicTO extends NetworkTO {
     Integer networkRateMbps;
     Integer networkRateMulticastMbps;
     boolean defaultNic;
-    String uuid;
+    String nicUuid;
     List <String> nicSecIps;
 
     public NicTO() {
@@ -59,13 +59,13 @@ public class NicTO extends NetworkTO {
     }
 
     @Override
-    public String getUuid() {
-        return uuid;
+    public String getNicUuid() {
+        return nicUuid;
     }
 
     @Override
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public void setNicUuid(String uuid) {
+        this.nicUuid = uuid;
     }
 
     @Override

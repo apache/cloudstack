@@ -20,8 +20,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
+
+import junit.framework.TestCase;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -32,7 +35,14 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import junit.framework.TestCase;
+import com.google.gson.Gson;
+
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
+import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
+import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
+import org.apache.cloudstack.vm.jobs.VmWorkJobVO.Step;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.cluster.ClusterManager;
@@ -45,14 +55,6 @@ import com.cloud.utils.LogUtils;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
-import com.google.gson.Gson;
-
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
-import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
-import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
-import org.apache.cloudstack.vm.jobs.VmWorkJobVO.Step;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations="classpath:/VmWorkTestContext.xml")
@@ -90,10 +92,11 @@ public class VmWorkTest extends TestCase {
 		}
  	}
 	
-    @After                                                   
-    public void tearDown() {                                 
-    	Transaction.currentTxn().close();                    
-    }                                                        
+    @Override
+    @After
+    public void tearDown() {
+    	Transaction.currentTxn().close();
+    }
 	
 	@Test
 	public void testDeployPlanSerialization() {
@@ -122,7 +125,7 @@ public class VmWorkTest extends TestCase {
 	}
 	
 	public void testVmWorkDispatcher() {
-		VmWorkJobVO workJob = new VmWorkJobVO();
+        VmWorkJobVO workJob = new VmWorkJobVO(UUID.randomUUID().toString());
 		workJob.setDispatcher("VmWorkJobDispatcher");
 		workJob.setCmd("doVmWorkStart");
 		workJob.setAccountId(1L);

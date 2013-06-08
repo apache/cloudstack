@@ -73,7 +73,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         NicVO nicVO = _nicDao.findById(profile.getId());
-        to.setUuid(nicVO.getUuid());
+        to.setNicUuid(nicVO.getUuid());
         //check whether the this nic has secondary ip addresses set
         //set nic secondary ip address in NicTO which are used for security group
         // configuration. Use full when vm stop/start

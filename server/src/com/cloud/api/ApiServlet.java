@@ -266,7 +266,7 @@ public class ApiServlet extends HttpServlet {
                         writeResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType);
                         return;
                     }
-                    CallContext.register(userId, ((Account)accountObj).getId(), session.getId());
+                    CallContext.register(userId, ((Account)accountObj).getId(), null);
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server
                     // restarts if the userId was serialized to the stored session
@@ -332,7 +332,7 @@ public class ApiServlet extends HttpServlet {
 	                s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
 	            }
 	            // cleanup user context to prevent from being peeked in other request context ???
-	            CallContext.unregister(); 
+	            CallContext.unregister();
             } catch(Throwable e) {
             	s_logger.error("Really unexpected exception", e);
             }

@@ -54,7 +54,7 @@ public class VmWorkTestApiJobDispatcher extends AdapterBase implements AsyncJobD
 			}
 		}
 		
-		VmWorkJobVO workJob = new VmWorkJobVO();
+        VmWorkJobVO workJob = new VmWorkJobVO(job.getRelated());
     	
 		workJob.setDispatcher("TestWorkJobDispatcher");
         workJob.setCmd(VmWorkJobDispatcher.Start);

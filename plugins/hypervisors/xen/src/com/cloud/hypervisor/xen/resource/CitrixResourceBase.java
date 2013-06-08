@@ -1055,7 +1055,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected VIF createVif(Connection conn, String vmName, VM vm, NicTO nic) throws XmlRpcException, XenAPIException {
-        assert(nic.getUuid() != null) : "Nic should have a uuid value";
+        assert(nic.getNicUuid() != null) : "Nic should have a uuid value";
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating VIF for " + vmName + " on nic " + nic);
@@ -1067,7 +1067,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         // Nicira needs these IDs to find the NIC 
         vifr.otherConfig = new HashMap<String, String>();
-        vifr.otherConfig.put("nicira-iface-id", nic.getUuid());
+        vifr.otherConfig.put("nicira-iface-id", nic.getNicUuid());
         vifr.otherConfig.put("nicira-vm-id", vm.getUuid(conn)); 
 
         vifr.network = getNetwork(conn, nic);

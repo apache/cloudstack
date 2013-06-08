@@ -1282,7 +1282,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         @Override
         public void run() {
             try {
-                CallContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
+                CallContext.registerOnceOnly();
                 while (true) {
                     try {
                         Long networkId = _vrUpdateQueue.take();

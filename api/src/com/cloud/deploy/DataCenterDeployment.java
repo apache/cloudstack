@@ -54,6 +54,7 @@ public class DataCenterDeployment implements DeploymentPlan {
         _poolId = poolId;
         _physicalNetworkId = physicalNetworkId;
         _context = context;
+        _avoids = new ExcludeList();
     }
 
     @Override

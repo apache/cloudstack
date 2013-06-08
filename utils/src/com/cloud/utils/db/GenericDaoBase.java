@@ -68,7 +68,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.component.ComponentMethodInterceptable;
@@ -130,8 +129,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     protected Field[] _embeddedFields;
 
     // This is private on purpose.  Everyone should use createPartialSelectSql()
-    private Pair<StringBuilder, Attribute[]> _partialSelectSql;
-    private Pair<StringBuilder, Attribute[]> _partialQueryCacheSelectSql;
+    private final Pair<StringBuilder, Attribute[]> _partialSelectSql;
+    private final Pair<StringBuilder, Attribute[]> _partialQueryCacheSelectSql;
     protected StringBuilder _discriminatorClause;
     protected Map<String, Object> _discriminatorValues;
     protected String _selectByIdSql;
@@ -178,6 +177,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return builder;
     }
 
+    @Override
     public Map<String, Attribute> getAllAttributes() {
         return _allAttributes;
     }
@@ -351,7 +351,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @Override
-    public List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock, 
+    public List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock,
             final boolean cache, final boolean enable_query_cache) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
@@ -420,6 +420,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @Override @SuppressWarnings("unchecked")
     public <M> List<M> customSearchIncludingRemoved(SearchCriteria<M> sc, final Filter filter) {
+        if (sc.isSelectAll()) {
+            return (List<M>)searchIncludingRemoved((SearchCriteria<T>)sc, filter, null, false);
+        }
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;

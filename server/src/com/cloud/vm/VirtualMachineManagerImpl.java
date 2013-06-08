@@ -351,7 +351,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public VirtualMachineGuru getVmGuru(VirtualMachine vm) {
-        return _vmGurus.values().iterator().next();
+        return _vmGurus.get(vm.getType());
     }
 
     @Override
@@ -540,6 +540,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         RootVolumeSearch = _entityMgr.createSearchBuilder(VolumeVO.class);
         VolumeVO rvsEntity = RootVolumeSearch.entity();
         RootVolumeSearch.and(rvsEntity.getVolumeType(), SearchCriteria.Op.EQ).values(Volume.Type.ROOT)
+                .and(rvsEntity.getState(), SearchCriteria.Op.EQ).values(Volume.State.Ready)
                 .and(rvsEntity.getInstanceId(), SearchCriteria.Op.EQ, "instance")
                 .and(rvsEntity.getDeviceId(), SearchCriteria.Op.EQ).values(0)
                 .done();
@@ -761,7 +762,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         		assert(pendingWorkJobs.size() == 1);
         		workJob = pendingWorkJobs.get(0);
         	} else {
-        		workJob = new VmWorkJobVO();
+                workJob = new VmWorkJobVO(context.getContextId());
         	
                 workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
                 workJob.setCmd(VmWorkJobDispatcher.Start);
@@ -848,6 +849,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (vol.isRecreatable() && volTemplateId != null &&
                     vm.getTemplateId() != -1 && volTemplateId.longValue() != vm.getTemplateId()) {
                 job.log(s_logger, "Recreating" + vol + " of " + vm + " because its template has changed.");
+                plan.setPoolId(null);
             } else {
                 StoragePool pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(vol.getPoolId());
                 Long rootVolPodId = pool.getPodId();
@@ -1176,6 +1178,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void advanceStop(final String vmUuid, boolean forced, User user, Account account) throws ResourceUnavailableException,
             OperationTimedoutException, ConcurrentOperationException {
+        CallContext context = CallContext.current();
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
     	VmWorkJobVO workJob = null;
     	Transaction txn = Transaction.currentTxn();
@@ -1191,7 +1194,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         		assert(pendingWorkJobs.size() == 1);
         		workJob = pendingWorkJobs.get(0);
         	} else {
-        		workJob = new VmWorkJobVO();
+                workJob = new VmWorkJobVO(context.getContextId());
         	
                 workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
                 workJob.setCmd(VmWorkJobDispatcher.Stop);
@@ -1953,6 +1956,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public VirtualMachine migrateWithStorage(String vmUuid, long srcHostId, long destHostId,
             Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException,
             ManagementServerException, VirtualMachineMigrationException {
+        CallContext context = CallContext.current();
 
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         HostVO srcHost = _hostDao.findById(srcHostId);
@@ -1989,7 +1993,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         VirtualMachineTO to = hvGuru.implement(profile);
 
-        VmWorkJobVO work = new VmWorkJobVO();
+        VmWorkJobVO work = new VmWorkJobVO(context.getContextId());
 //        VmWorkJobVO work = new VmWorkJobVO(UUID.randomUUID().toString(), _nodeId, State.Migrating, vm.getType(), vm.getId());
 //        work.setStep(Step.Prepare);
 //        work.setResourceType(ItWorkVO.ResourceType.Host);
