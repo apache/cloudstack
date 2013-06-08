@@ -2091,37 +2091,6 @@ ServerResource {
                 + File.separator + snapshotName, true);
     }
 
-    protected DeleteSnapshotBackupAnswer execute(
-            final DeleteSnapshotBackupCommand cmd) {
-        Long dcId = cmd.getDataCenterId();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        KVMStoragePool secondaryStoragePool = null;
-        try {
-            secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(cmd
-                    .getSecondaryStorageUrl());
-
-            String ssPmountPath = secondaryStoragePool.getLocalPath();
-            String snapshotDestPath = ssPmountPath + File.separator
-                    + "snapshots" + File.separator + dcId + File.separator
-                    + accountId + File.separator + volumeId;
-
-            final Script command = new Script(_manageSnapshotPath,
-                    _cmdsTimeout, s_logger);
-            command.add("-d", snapshotDestPath);
-            command.add("-n", cmd.getSnapshotName());
-
-            command.execute();
-        } catch (CloudRuntimeException e) {
-            return new DeleteSnapshotBackupAnswer(cmd, false, e.toString());
-        } finally {
-            if (secondaryStoragePool != null) {
-                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
-            }
-        }
-        return new DeleteSnapshotBackupAnswer(cmd, true, null);
-    }
-
 
     protected CreateVolumeFromSnapshotAnswer execute(
             final CreateVolumeFromSnapshotCommand cmd) {

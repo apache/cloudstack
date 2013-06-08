@@ -65,7 +65,6 @@ import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DownloadSnapshotFromS3Command;
 import com.cloud.agent.api.DownloadSnapshotFromSwiftCommand;
@@ -197,8 +196,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((DownloadSnapshotFromSwiftCommand) cmd);
         } else if (cmd instanceof DownloadSnapshotFromS3Command) {
             return execute((DownloadSnapshotFromS3Command) cmd);
-        } else if (cmd instanceof DeleteSnapshotBackupCommand) {
-            return execute((DeleteSnapshotBackupCommand) cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand) {
             return execute((DeleteSnapshotsDirCommand) cmd);
         } else if (cmd instanceof DownloadTemplateFromSwiftToSecondaryStorageCommand) {
@@ -1284,41 +1281,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
-    protected Answer execute(final DeleteSnapshotBackupCommand cmd) {
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String name = cmd.getSnapshotUuid();
-        DataStoreTO dstore = cmd.getDataStore();
-        if (dstore instanceof NfsTO) {
-            final String result = deleteSnapshotBackupFromLocalFileSystem(((NfsTO) dstore).getUrl(), accountId, volumeId, name, cmd.isAll());
-            if (result != null) {
-                s_logger.warn(result);
-                return new Answer(cmd, false, result);
-            }
-        } else if (dstore instanceof S3TO) {
-            final String result = deleteSnapshotBackupfromS3((S3TO) dstore, accountId, volumeId, name, cmd.isAll());
-            if (result != null) {
-                s_logger.warn(result);
-                return new Answer(cmd, false, result);
-            }
-        } else if (dstore instanceof SwiftTO) {
-            String filename;
-            if (cmd.isAll()) {
-                filename = "";
-            } else {
-                filename = name;
-            }
-            String result = swiftDelete((SwiftTO) dstore, "V-" + volumeId.toString(), filename);
-            if (result != null) {
-                String errMsg = "failed to delete snapshot " + filename + " , err=" + result;
-                s_logger.warn(errMsg);
-                return new Answer(cmd, false, errMsg);
-            }
-        } else {
-            return new Answer(cmd, false, "Unsupported image data store: " + dstore);
-        }
-        return new Answer(cmd, true, "success");
-    }
 
     Map<String, TemplateProp> swiftListTemplate(SwiftTO swift) {
         String[] containers = swiftList(swift, "", "");
