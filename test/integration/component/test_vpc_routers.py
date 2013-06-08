@@ -509,7 +509,6 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                          )
         return
 
-    @unittest.skip("Needs hosts")
     @attr(tags=["advanced", "intervlan"])
     def test_04_migrate_router_after_creating_vpc(self):
         """ Test migration of router to another host after creating VPC """
@@ -531,7 +530,6 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         self.migrate_router(routers[0])
     	return
 
-    @unittest.skip("Fails")
     @attr(tags=["advanced", "intervlan"])
     def test_05_change_service_offerring_vpc(self):
 	""" Tests to change service offering of the Router after 
@@ -1236,7 +1234,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                          )
         return
 
-    @unittest.skip("Untested - hosts not available")
     @attr(tags=["advanced", "intervlan"])
     def test_04_migrate_router_after_addition_of_one_guest_network(self):
 	""" Test migrate of router after addition of one guest network
@@ -1280,7 +1277,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         self.migrate_router(routers[0])
     	return
 
-    @unittest.skip("Fails")
     @attr(tags=["advanced", "intervlan"])
     def test_05_chg_srv_off_router_after_addition_of_one_guest_network(self):
 	""" Test to change service offering of router after addition of one guest network

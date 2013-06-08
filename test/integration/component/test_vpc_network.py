@@ -459,7 +459,6 @@ class TestVPCNetwork(cloudstackTestCase):
                                 )
         return
 
-    @unittest.skip("Skip - Requires netscaler setup")
     @attr(tags=["netscaler", "intervlan"])
     def test_03_create_network_netscaler(self):
         """ Test create network using netscaler for LB
@@ -707,7 +706,6 @@ class TestVPCNetwork(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Skipping - able to create network with RvR")
     def test_06_create_network_with_rvr(self):
         """ Test create network with eredundant router capability
         """
@@ -1038,7 +1036,6 @@ class TestVPCNetwork(cloudstackTestCase):
         "Network creation failed as VPC support nw with conserve mode OFF")
         return
 
-@unittest.skip("tested")
 class TestVPCNetworkRanges(cloudstackTestCase):
 
     @classmethod
@@ -1670,7 +1667,6 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Error while NW upgrade - Failed to implement network (with specified id) elements and resources as a part of network update")
     def test_01_network_services_upgrade(self):
         """ Test update Network that is part of a VPC to a network offering
             that has more services.
