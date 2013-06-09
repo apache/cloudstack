@@ -48,6 +48,7 @@ under the License.
     <section id="generating-rpms">
         <title>Generating RPMS</title>
         <para>Now that we have the prerequisites and source, you will cd to the <filename>packaging/centos63/</filename> directory.</para>
+            <programlisting><prompt>$</prompt> cd packaging/centos63</programlisting>
         <para>Generating RPMs is done using the <filename>package.sh</filename> script: 
             <programlisting><prompt>$</prompt>./package.sh</programlisting>
         </para>
