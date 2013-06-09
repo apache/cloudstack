@@ -55,6 +55,7 @@ public class JobSerializerHelper {
         gsonBuilder.setVersion(1.5);
         s_logger.debug("Job GSON Builder initialized.");
         gsonBuilder.registerTypeAdapter(Class.class, new ClassTypeAdapter());
+        gsonBuilder.registerTypeAdapter(Throwable.class, new ThrowableTypeAdapter());
         s_gson = gsonBuilder.create();
     }
 
