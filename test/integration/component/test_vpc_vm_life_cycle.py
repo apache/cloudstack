@@ -212,11 +212,6 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls.vpc_off = VpcOffering.create(
-                                     cls.api_client,
-                                     cls.services["vpc_offering"]
-                                     )
-        cls.vpc_off.update(cls.api_client, state='Enabled')
 
         cls.account = Account.create(
                                      cls.api_client,
@@ -268,18 +263,6 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                     )
         # Enable Network offering
         cls.nw_off_no_lb.update(cls.api_client, state='Enabled')
-
-        # Creating network using the network offering created
-        cls.network_2 = Network.create(
-                                cls.api_client,
-                                cls.services["network"],
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                networkofferingid=cls.nw_off_no_lb.id,
-                                zoneid=cls.zone.id,
-                                gateway='10.1.2.1',
-                                vpcid=cls.vpc.id
-                                )
         # Spawn an instance in that network
         cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
@@ -289,7 +272,6 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
-        # Spawn an instance in that network
         cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
@@ -298,15 +280,6 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network_1.id)]
                                   )
-        cls.vm_3 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.name,
-                                  domainid=cls.account.domainid,
-                                  serviceofferingid=cls.service_offering.id,
-                                  networkids=[str(cls.network_2.id)]
-                                  )
-
         cls.public_ip_1 = PublicIPAddress.create(
                                 cls.api_client,
                                 accountid=cls.account.name,
@@ -370,20 +343,15 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                         cls.service_offering,
                         cls.nw_off,
                         cls.nw_off_no_lb,
+                        cls.account
                         ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.account.delete(cls.api_client)
-            wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-
-            # Waiting for network cleanup to delete vpc offering
-            wait_for_cleanup(cls.api_client, ["network.gc.wait", "network.gc.interval"])
-            cls.vpc_off.delete(cls.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -398,10 +366,6 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                              "network.gc.interval",
-                                              "network.gc.wait"])
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1106,16 +1070,14 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                         cls.service_offering,
                         cls.nw_off,
                         cls.shared_nw_off,
-                        cls.vpc_off
+                        cls.vpc_off,
+                        cls.account
                         ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.account.delete(cls.api_client)
-            wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
-            #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1129,12 +1091,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                              "network.gc.interval",
-                                              "network.gc.wait"])
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1822,16 +1779,14 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                         cls.service_offering,
                         cls.nw_off,
                         cls.nw_off_no_lb,
-                        cls.vpc_off
+                        cls.vpc_off,
+                        cls.account
                         ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.account.delete(cls.api_client)
-            wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
-            #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1847,10 +1802,6 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                              "network.gc.interval",
-                                              "network.gc.wait"])
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2088,11 +2039,6 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls.vpc_off = VpcOffering.create(
-                                     cls.api_client,
-                                     cls.services["vpc_offering"]
-                                     )
-        cls.vpc_off.update(cls.api_client, state='Enabled')
 
         cls.account = Account.create(
                                      cls.api_client,
@@ -2246,21 +2192,14 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                         cls.service_offering,
                         cls.nw_off,
                         cls.nw_off_no_lb,
+                        cls.account
                         ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.account.delete(cls.api_client)
-            wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
-            #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-
-            # Waiting for network cleanup to delete vpc offering
-            wait_for_cleanup(cls.api_client, ["network.gc.wait",
-                                              "network.gc.interval"])
-            cls.vpc_off.delete(cls.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2289,10 +2228,6 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                              "network.gc.interval",
-                                              "network.gc.wait"])
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2806,6 +2741,3 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                          "List LB rules should not return anything"
                          )
         return
-
-
-
