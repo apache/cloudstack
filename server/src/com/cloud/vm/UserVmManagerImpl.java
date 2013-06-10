@@ -3380,9 +3380,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         boolean status;
         State vmState = vm.getState();
 
-        // Collect vm disk statistics from host before stopping Vm
-         collectVmDiskStatistics(vm);
-
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
             status = vmEntity.destroy(new Long(userId).toString());

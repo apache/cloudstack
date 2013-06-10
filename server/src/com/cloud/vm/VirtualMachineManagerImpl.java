@@ -1328,7 +1328,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Unable to migrate vm: " + e.toString());
         }
 
-        VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
+        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         boolean migrationResult = false;
         try {
             migrationResult = this.volumeMgr.storageMigration(profile, destPool);
