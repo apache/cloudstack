@@ -63,7 +63,6 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
     public List<SnapshotPolicyVO> listByVolumeId(long volumeId, Filter filter) {
         SearchCriteria<SnapshotPolicyVO> sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
-        sc.setParameters("active", true);
         return listBy(sc, filter);
     }
 	
