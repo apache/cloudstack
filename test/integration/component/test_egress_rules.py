@@ -1966,7 +1966,6 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
         return
 
 
-@unittest.skip("Valid bug- ID: CS-12647")
 class TestInvalidParametersForEgress(cloudstackTestCase):
 
     def setUp(self):

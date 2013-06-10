@@ -811,7 +811,53 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new SetFirewallRulesAnswer(cmd, true, results);
     }
 
+    protected SetStaticNatRulesAnswer SetVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetVPCStaticNatRulesCommand: " + _gson.toJson(cmd));
+        }
+
+        String[] results = new String[cmd.getRules().length];
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        String controlIp = getRouterSshControlIp(cmd);
+
+        int i = 0;
+        boolean endResult = true;
+        for (StaticNatRuleTO rule : cmd.getRules()) {
+            // Prepare command to be send to VPC VR
+            String args = "";
+            args += rule.revoked() ? " -D" : " -A";
+            args += " -l " + rule.getSrcIp();
+            args += " -r " + rule.getDstIp();
+
+            // Invoke command on VPC VR.
+            try {
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_staticnat.sh " + args);
+
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/vpc_staticnat.sh " + args);
+
+                if (!result.first()) {
+                    s_logger.error("SetVPCStaticNatRulesCommand failure on setting one rule. args: " + args);
+                    results[i++] = "Failed";
+                    endResult = false;
+                } else {
+                    results[i++] = null;
+                }
+            } catch (Throwable e) {
+                s_logger.error("SetVPCStaticNatRulesCommand (args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
+                results[i++] = "Failed";
+                endResult = false;
+            }
+        }
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
+    }
+
     protected Answer execute(SetStaticNatRulesCommand cmd) {
+
+        if (cmd.getVpcId() != null) {
+            return SetVPCStaticNatRules(cmd);
+        }
+
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource SetFirewallRuleCommand: " + _gson.toJson(cmd));
         }
@@ -1262,7 +1308,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += rule.revoked() ? " -D" : " -A";
             args += " -P " + rule.getProtocol().toLowerCase();
             args += " -l " + rule.getSrcIp();
-            args += " -p " + rule.getStringSrcPortRange().replace(":", "-");
+            args += " -p " + rule.getStringSrcPortRange();
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 

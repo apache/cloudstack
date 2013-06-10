@@ -2132,7 +2132,6 @@ class TestLoadBalancingRule(cloudstackTestCase):
         return
 
 
-@unittest.skip("Questions - How to verify after changing public/private ports?")
 class TestDeleteCreateLBRule(cloudstackTestCase):
 
     @classmethod

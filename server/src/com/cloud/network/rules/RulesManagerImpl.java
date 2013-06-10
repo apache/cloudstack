@@ -1371,7 +1371,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         // create new static nat rule
         // Get nic IP4 address
-        Nic guestNic = _networkModel.getNicInNetwork(vm.getId(), networkId);
+        Nic guestNic = _networkModel.getNicInNetworkIncludingRemoved(vm.getId(), networkId);
         if (guestNic == null) {
             throw new InvalidParameterValueException("Vm doesn't belong to the network with specified id");
         }

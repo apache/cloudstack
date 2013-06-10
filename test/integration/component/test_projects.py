@@ -559,7 +559,6 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
         return
 
 
-@unittest.skip("Deleting domain doesn't cleanup account")
 class TestDeleteDomainWithProject(cloudstackTestCase):
 
     @classmethod

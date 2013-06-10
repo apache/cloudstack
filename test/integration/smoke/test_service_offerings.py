@@ -92,7 +92,7 @@ class Services:
                             "displaytext": "Small Instance",
                             "cpunumber": 1,
                             "cpuspeed": 100,
-                            "memory": 256,
+                            "memory": 128,
                         },
                     "medium":
                         {
@@ -433,7 +433,7 @@ class TestServiceOfferings(cloudstackTestCase):
         )
         self.assertAlmostEqual(
             int(total_mem) / 1024, # In MBs
-            self.small_offering.memory,
+            int(self.small_offering.memory),
             "Check Memory(kb) for small offering"
         )
         return

@@ -2401,9 +2401,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Override
     public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
-            String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+            String affinityGroupType, Long vmId, String accountName, Long domainId, boolean isRecursive,
+            boolean listAll, Long startIndex, Long pageSize) {
         Pair<List<AffinityGroupJoinVO>, Integer> result = listAffinityGroupsInternal(affinityGroupId,
-                affinityGroupName, affinityGroupType, vmId, startIndex, pageSize);
+                affinityGroupName, affinityGroupType, vmId, accountName, domainId, isRecursive, listAll, startIndex, pageSize);
         ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();
         List<AffinityGroupResponse> agResponses = ViewResponseHelper.createAffinityGroupResponses(result.first());
         response.setResponses(agResponses, result.second());
@@ -2412,12 +2413,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
 
     public Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsInternal(Long affinityGroupId,
-            String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+            String affinityGroupName, String affinityGroupType, Long vmId, String accountName, Long domainId,
+            boolean isRecursive, boolean listAll, Long startIndex, Long pageSize) {
 
         Account caller = UserContext.current().getCaller();
 
         Long accountId = caller.getAccountId();
-        Long domainId = caller.getDomainId();
 
         if (vmId != null) {
             UserVmVO userVM = _userVmDao.findById(vmId);
@@ -2429,20 +2430,25 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             return listAffinityGroupsByVM(vmId.longValue(), startIndex, pageSize);
         }
 
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                domainId, isRecursive, null);
+        _accountMgr.buildACLSearchParameters(caller, affinityGroupId, accountName, null, permittedAccounts,
+                domainIdRecursiveListProject, listAll, true);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         Filter searchFilter = new Filter(AffinityGroupJoinVO.class, "id", true, startIndex, pageSize);
         SearchBuilder<AffinityGroupJoinVO> groupSearch = _affinityGroupJoinDao.createSearchBuilder();
+        _accountMgr.buildACLViewSearchBuilder(groupSearch, domainId, isRecursive, permittedAccounts,
+                listProjectResourcesCriteria);
+
         groupSearch.select(null, Func.DISTINCT, groupSearch.entity().getId()); // select
                                                                                // distinct
 
         SearchCriteria<AffinityGroupJoinVO> sc = groupSearch.create();
-
-        if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (affinityGroupId != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, affinityGroupId);
@@ -2457,8 +2463,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
 
-        Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc,
-                searchFilter);
+        Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc, searchFilter);
         // search group details by ids
         Integer count = uniqueGroupsPair.second();
         if (count.intValue() == 0) {

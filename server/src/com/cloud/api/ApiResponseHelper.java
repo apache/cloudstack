@@ -3404,8 +3404,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             //Device Type
             usageRecResponse.setType(usageRecord.getType());
             //VM Instance Id
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(vm.getUuid());
+            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
+            usageRecResponse.setVirtualMachineId(vm.getUuid());
             //Volume ID
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
             usageRecResponse.setUsageId(volume.getUuid());

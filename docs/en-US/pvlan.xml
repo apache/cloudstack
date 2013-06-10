@@ -21,18 +21,69 @@
 -->
 <section id="pvlan">
   <title>Isolation in Advanced Zone Using Private VLAN</title>
-  <para/>
+  <para>Isolation of guest traffic in shared networks can be achieved by using Private VLANs
+    (PVLAN). PVLANs provide Layer 2 isolation between ports within the same VLAN. In a PVLAN-enabled
+    shared network, a user VM cannot reach other user VM though they can reach the DHCP server and
+    gateway, this would in turn allow users to control traffic within a network and help them deploy
+    multiple applications without communication between application as well as prevent communication
+    with other users’ VMs.</para>
+  <itemizedlist>
+    <listitem>
+      <para>Isolate VMs in a shared networks by using Private VLANs.</para>
+    </listitem>
+    <listitem>
+      <para>Supported in both VPC and non-VPC deployments.</para>
+    </listitem>
+    <listitem>
+      <para>Supported on all hypervisors.</para>
+    </listitem>
+    <listitem>
+      <para>Allow end users to deploy VMs in an isolated networks, or a VPC, or a Private
+        VLAN-enabled shared network.</para>
+    </listitem>
+  </itemizedlist>
   <section id="about-pvlan">
     <title>About Private VLAN</title>
-    <para>In an Ethernet switch, a VLAN is a broadcast domain in which hosts can establish direct
+    <para>In an Ethernet switch, a VLAN is a broadcast domain where hosts can establish direct
       communication with each another at Layer 2. Private VLAN is designed as an extension of VLAN
       standard to add further segmentation of the logical broadcast domain. A regular VLAN is a
       single broadcast domain, whereas a private VLAN partitions a larger VLAN broadcast domain into
       smaller sub-domains. A sub-domain is represented by a pair of VLANs: a Primary VLAN and a
-      Secondary VLAN.  The original VLAN that is being divided into smaller groups is called
-      Primary, That implies all VLAN pairs in a private VLAN share the same Primary VLAN. All the
+      Secondary VLAN. The original VLAN that is being divided into smaller groups is called Primary,
+      which implies that all VLAN pairs in a private VLAN share the same Primary VLAN. All the
       secondary VLANs exist only inside the Primary. Each Secondary VLAN has a specific VLAN ID
-      associated to it, which differentiates one sub-domain from another.</para>
+      associated to it, which differentiates one sub-domain from another. </para>
+    <para>Three types of ports exist in a private VLAN domain, which essentially determine the
+      behaviour of the participating hosts. Each ports will have its own unique set of rules, which
+      regulate a connected host's ability to communicate with other connected host within the same
+      private VLAN domain. Configure each host that is part of a PVLAN pair can be by using one of
+      these three port designation:</para>
+    <itemizedlist>
+      <listitem>
+        <para><emphasis role="bold">Promiscuous</emphasis>: A promiscuous port can communicate with
+          all the interfaces, including the community and isolated host ports that belong to the
+          secondary VLANs. In Promiscuous mode, hosts are connected to promiscuous ports and are
+          able to communicate directly with resources on both primary and secondary VLAN. Routers,
+          DHCP servers, and other trusted devices are typically attached to promiscuous
+          ports.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">Isolated VLANs</emphasis>: The ports within an isolated VLAN
+          cannot communicate with each other at the layer-2 level. The hosts that are connected to
+          Isolated ports can directly communicate only with the Promiscuous resources. If your
+          customer device needs to have access only to a gateway router, attach it to an isolated
+          port.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis role="bold">Community VLANs</emphasis>: The ports within a community VLAN
+          can communicate with each other and with the promiscuous ports, but they cannot
+          communicate with the ports in other communities at the layer-2 level. In a Community mode,
+          direct communication is permitted only with the hosts in the same community and those that
+          are connected to the Primary PVLAN in promiscuous mode. If your customer has two devices
+          that need to be isolated from other customers' devices, but to be able to communicate
+          among themselves, deploy them in community ports.</para>
+      </listitem>
+    </itemizedlist>
     <para>For further reading:</para>
     <itemizedlist>
       <listitem>
@@ -52,6 +103,61 @@
   </section>
   <section id="prereq-pvlan">
     <title>Prerequisites</title>
-    <para>Ensure that you configure private VLAN on your physical switches out-of-band.</para>
+    <itemizedlist>
+      <listitem>
+        <para>Use a PVLAN supported switch.</para>
+        <para>See <ulink
+            url="http://www.cisco.com/en/US/products/hw/switches/ps708/products_tech_note09186a0080094830.shtml"
+            >Private VLAN Catalyst Switch Support Matrix</ulink>for more information.</para>
+      </listitem>
+      <listitem>
+        <para>Connect a switch to the gateway; connect additional switches to the gateway via a
+          trunk port: Only Cisco Catalyst 4500 has the PVLAN promiscuous trunk mode to connect both
+          normal VLAN and PVLAN to a PVLAN-unaware switch. For other Catalyst PVLAN support switch,
+          connect the switch to upper switch by using cables. The number of cables should be greater
+          than the number of PVLANs used.</para>
+      </listitem>
+      <listitem>
+        <para>All the layer 2 switches, which are PVLAN-aware, are connected to each other, and one
+          of them is connected to a router. All the ports connected to the host would be configured
+          in trunk mode. Allow Management VLAN, Primary VLAN (public) and secondary Isolated VLAN
+          ports. Configure the switch port connected to the router in PVLAN promiscuous trunk mode,
+          which would translate an isolated VLAN to primary VLAN for router, which is PVLAN-unaware.
+        </para>
+      </listitem>
+      <listitem>
+        <para>If your Catalyst switch supports PVLAN, but not PVLAN promiscuous trunk mode, perform
+          the following: </para>
+        <orderedlist numeration="loweralpha">
+          <listitem>
+            <para>Configure one of the switch port as trunk for management network (management
+              VLAN).</para>
+          </listitem>
+          <listitem>
+            <para>For each PVLAN, perform the following:</para>
+            <orderedlist numeration="lowerroman">
+              <listitem>
+                <para>Connect one port of the Catalyst switch to the upper switch.</para>
+              </listitem>
+              <listitem>
+                <para>Set the port in the Catalyst Switch in promiscuous mode for one pair of
+                  PVLAN</para>
+              </listitem>
+              <listitem>
+                <para>Set the port in upper switch to access mode, and allow only the traffic of
+                  primary VLAN of the PVLAN pair.</para>
+              </listitem>
+            </orderedlist>
+          </listitem>
+        </orderedlist>
+      </listitem>
+      <listitem>
+        <para>Configure private VLAN on your physical switches out-of-band.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="ability-pvlan">
+    <title/>
+    <para/>
   </section>
 </section>

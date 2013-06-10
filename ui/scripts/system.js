@@ -11425,8 +11425,8 @@
                     label: 'label.scope',
                     select: function(args) {
                       var scope = [
-                        { id: 'zone', description: _l('label.zone.wide') },
-                        { id: 'cluster', description: _l('label.cluster') }
+                        { id: 'cluster', description: _l('label.cluster') },
+                        { id: 'zone', description: _l('label.zone.wide') }
                        // { id: 'host', description: _l('label.host') }
                       ];
 

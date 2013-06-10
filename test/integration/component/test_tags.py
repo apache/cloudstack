@@ -690,7 +690,6 @@ class TestResourceTags(cloudstackTestCase):
         return
 
     @attr(tags=["advanced"])
-    @unittest.skip("Not supported in 3.0.5")
     def test_04_vpn_tag(self):
         """ Test Create tag on vpn and remove the vpn
         """
@@ -1421,7 +1420,6 @@ class TestResourceTags(cloudstackTestCase):
         return
 
     @attr(tags=["basic", "sg"])
-    @unittest.skip("skip")
     def test_11_migrate_tagged_vm_del(self):
         """ Test migration of a tagged vm and delete the tag
         """

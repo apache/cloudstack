@@ -2474,7 +2474,6 @@ class TestVPC(cloudstackTestCase):
              "Updation of VPC display text failed.")
 
 
-@unittest.skip("Skip")    
 class TestVPCHostMaintenance(cloudstackTestCase):
 
     @classmethod
