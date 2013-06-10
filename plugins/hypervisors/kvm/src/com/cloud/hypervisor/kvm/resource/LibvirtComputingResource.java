@@ -1411,8 +1411,10 @@ ServerResource {
             VolumeTO volume = new VolumeTO(cmd.getVolumeId(), dskch.getType(),
                     pool.getType(), pool.getUuid(), pool.getPath(),
                     vol.getName(), vol.getName(), disksize, null);
-            volume.setBytesRate(dskch.getBytesRate());
-            volume.setIopsRate(dskch.getIopsRate());
+            volume.setBytesReadRate(dskch.getBytesReadRate());
+            volume.setBytesWriteRate(dskch.getBytesWriteRate());
+            volume.setIopsReadRate(dskch.getIopsReadRate());
+            volume.setIopsWriteRate(dskch.getIopsWriteRate());
             return new CreateAnswer(cmd, volume);
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to create volume: " + e.toString());
@@ -2628,7 +2630,7 @@ ServerResource {
                     cmd.getPoolUuid());
             KVMPhysicalDisk disk = primary.getPhysicalDisk(cmd.getVolumePath());
             attachOrDetachDisk(conn, cmd.getAttach(), cmd.getVmName(), disk,
-                    cmd.getDeviceId().intValue(), cmd.getBytesRate(), cmd.getIopsRate());
+                    cmd.getDeviceId().intValue(), cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate());
         } catch (LibvirtException e) {
             return new AttachVolumeAnswer(cmd, e.toString());
         } catch (InternalErrorException e) {
@@ -3497,10 +3499,14 @@ ServerResource {
 
             }
             
-            if (volume.getBytesRate() > 0)
-                disk.setBytesRate(volume.getBytesRate());
-            if (volume.getIopsRate() > 0)
-                disk.setIopsRate(volume.getIopsRate());
+            if (volume.getBytesReadRate() > 0)
+                disk.setBytesReadRate(volume.getBytesReadRate());
+            if (volume.getBytesWriteRate() > 0)
+                disk.setBytesWriteRate(volume.getBytesWriteRate());
+            if (volume.getIopsReadRate() > 0)
+                disk.setIopsReadRate(volume.getIopsReadRate());
+            if (volume.getIopsWriteRate() > 0)
+                disk.setIopsWriteRate(volume.getIopsWriteRate());
 
             vm.getDevices().addDevice(disk);
         }
@@ -3635,7 +3641,7 @@ ServerResource {
 
     protected synchronized String attachOrDetachDisk(Connect conn,
             boolean attach, String vmName, KVMPhysicalDisk attachingDisk,
-            int devId, long bytesRate, long iopsRate) throws LibvirtException, InternalErrorException {
+            int devId, long bytesReadRate, long bytesWriteRate, long iopsReadRate, long iopsWriteRate) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -3675,10 +3681,14 @@ ServerResource {
                     diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId,
                             DiskDef.diskBus.VIRTIO);
                 }
-                if (bytesRate > 0)
-                    diskdef.setBytesRate(bytesRate);
-                if (iopsRate > 0)
-                    diskdef.setIopsRate(iopsRate);
+                if (bytesReadRate > 0)
+                    diskdef.setBytesReadRate(bytesReadRate);
+                if (bytesWriteRate > 0)
+                    diskdef.setBytesWriteRate(bytesWriteRate);
+                if (iopsReadRate > 0)
+                    diskdef.setIopsReadRate(iopsReadRate);
+                if (iopsWriteRate > 0)
+                    diskdef.setIopsWriteRate(iopsWriteRate);
             }
 
             String xml = diskdef.toString();

@@ -108,15 +108,25 @@ public class LibvirtDomainXMLParser {
                 
                 NodeList iotune = disk.getElementsByTagName("iotune");
                 if ((iotune != null) && (iotune.getLength() !=0)) {
-                    String bytesRateStr = getTagValue("total_bytes_sec", (Element)iotune.item(0));
-                    if (bytesRateStr != null) {
-                        Long bytesRate = Long.parseLong(bytesRateStr);
-                        def.setBytesRate(bytesRate);
+                    String bytesReadRateStr = getTagValue("read_bytes_sec", (Element)iotune.item(0));
+                    if (bytesReadRateStr != null) {
+                        Long bytesReadRate = Long.parseLong(bytesReadRateStr);
+                        def.setBytesReadRate(bytesReadRate);
                     }
-                    String iopsRateStr = getTagValue("total_iops_sec", (Element)iotune.item(0));
-                    if (iopsRateStr != null) {
-                        Long iopsRate = Long.parseLong(iopsRateStr);
-                        def.setIopsRate(iopsRate);
+                    String bytesWriteRateStr = getTagValue("write_bytes_sec", (Element)iotune.item(0));
+                    if (bytesWriteRateStr != null) {
+                        Long bytesWriteRate = Long.parseLong(bytesWriteRateStr);
+                        def.setBytesWriteRate(bytesWriteRate);
+                    }
+                    String iopsReadRateStr = getTagValue("read_iops_sec", (Element)iotune.item(0));
+                    if (iopsReadRateStr != null) {
+                        Long iopsReadRate = Long.parseLong(iopsReadRateStr);
+                        def.setIopsReadRate(iopsReadRate);
+                    }
+                    String iopsWriteRateStr = getTagValue("write_iops_sec", (Element)iotune.item(0));
+                    if (iopsWriteRateStr != null) {
+                        Long iopsWriteRate = Long.parseLong(iopsWriteRateStr);
+                        def.setIopsWriteRate(iopsWriteRate);
                     }
                 }
 

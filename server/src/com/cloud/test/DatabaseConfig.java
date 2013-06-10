@@ -918,6 +918,20 @@ public class DatabaseConfig {
         }
 
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+
+        Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
+        if (bytesReadRate != null && (bytesReadRate > 0))
+            serviceOffering.setBytesReadRate(bytesReadRate);
+        Long bytesWriteRate = Long.parseLong(_currentObjectParams.get("bytesWriteRate"));
+        if (bytesWriteRate != null && (bytesWriteRate > 0))
+            serviceOffering.setBytesWriteRate(bytesWriteRate);
+        Long iopsReadRate = Long.parseLong(_currentObjectParams.get("iopsReadRate"));
+        if (iopsReadRate != null && (iopsReadRate > 0))
+            serviceOffering.setIopsReadRate(iopsReadRate);
+        Long iopsWriteRate = Long.parseLong(_currentObjectParams.get("iopsWriteRate"));
+        if (iopsWriteRate != null && (iopsWriteRate > 0))
+            serviceOffering.setIopsWriteRate(iopsWriteRate);
+
         ServiceOfferingDaoImpl dao = ComponentContext.inject(ServiceOfferingDaoImpl.class);
         try {
             dao.persist(serviceOffering);
@@ -967,12 +981,20 @@ public class DatabaseConfig {
         }
         DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace , tags, false);
         diskOffering.setUseLocalStorage(local);
-        Long bytesRate = Long.parseLong(_currentObjectParams.get("bytesRate"));
-        if (bytesRate != null && (bytesRate > 0))
-            diskOffering.setBytesRate(bytesRate);
-        Long iopsRate = Long.parseLong(_currentObjectParams.get("iopsRate"));
-        if (iopsRate != null && (iopsRate > 0))
-            diskOffering.setIopsRate(iopsRate);
+
+        Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
+        if (bytesReadRate != null && (bytesReadRate > 0))
+            diskOffering.setBytesReadRate(bytesReadRate);
+        Long bytesWriteRate = Long.parseLong(_currentObjectParams.get("bytesWriteRate"));
+        if (bytesWriteRate != null && (bytesWriteRate > 0))
+            diskOffering.setBytesWriteRate(bytesWriteRate);
+        Long iopsReadRate = Long.parseLong(_currentObjectParams.get("iopsReadRate"));
+        if (iopsReadRate != null && (iopsReadRate > 0))
+            diskOffering.setIopsReadRate(iopsReadRate);
+        Long iopsWriteRate = Long.parseLong(_currentObjectParams.get("iopsWriteRate"));
+        if (iopsWriteRate != null && (iopsWriteRate > 0))
+            diskOffering.setIopsWriteRate(iopsWriteRate);
+
         DiskOfferingDaoImpl offering = ComponentContext.inject(DiskOfferingDaoImpl.class);
         try {
             offering.persist(diskOffering);

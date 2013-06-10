@@ -37,8 +37,10 @@ public class VolumeTO implements InternalIdentity {
     private long deviceId;
     private String chainInfo;
     private String guestOsType;
-    private long bytesRate;
-    private long iopsRate;
+    private long bytesReadRate;
+    private long bytesWriteRate;
+    private long iopsReadRate;
+    private long iopsWriteRate;
 
     public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
         this.id = id;
@@ -136,19 +138,36 @@ public class VolumeTO implements InternalIdentity {
         return new StringBuilder("Vol[").append(id).append("|").append(type).append("|").append(path).append("|").append(size).append("]").toString();
     }
     
-    public void setBytesRate(long bytesRate) {
-        this.bytesRate = bytesRate;
+    public void setBytesReadRate(long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
     }
-    
-    public long getBytesRate() {
-        return bytesRate;
+
+    public long getBytesReadRate() {
+        return bytesReadRate;
     }
-    
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
+
+    public void setBytesWriteRate(long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
     }
-    
-    public long getIopsRate() {
-        return iopsRate;
+
+    public long getBytesWriteRate() {
+        return bytesWriteRate;
     }
+
+    public void setIopsReadRate(long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public long getIopsWriteRate() {
+        return iopsWriteRate;
+    }
+
 }

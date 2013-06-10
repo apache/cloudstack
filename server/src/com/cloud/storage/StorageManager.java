@@ -125,7 +125,11 @@ public interface StorageManager extends StorageService {
 
     BigDecimal getStorageOverProvisioningFactor(Long dcId);
 
-    Long getDiskBytesRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskBytesReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
 
-    Long getDiskIORate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+    Long getDiskBytesWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+
+    Long getDiskIopsReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
+
+    Long getDiskIopsWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering);
 }

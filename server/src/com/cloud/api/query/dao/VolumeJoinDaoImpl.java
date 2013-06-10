@@ -160,8 +160,11 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             }
             volResponse.setStorageType(volume.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared
                     .toString());
-            volResponse.setBytesRate(volume.getBytesRate());
-            volResponse.setIopsRate(volume.getIopsRate());
+            volResponse.setBytesReadRate(volume.getBytesReadRate());
+            volResponse.setBytesWriteRate(volume.getBytesReadRate());
+            volResponse.setIopsReadRate(volume.getIopsWriteRate());
+            volResponse.setIopsWriteRate(volume.getIopsWriteRate());
+
         }
         Long poolId = volume.getPoolId();
         String poolName = (poolId == null) ? "none" : volume.getPoolName();

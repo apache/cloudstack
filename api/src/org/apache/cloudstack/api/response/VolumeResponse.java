@@ -110,11 +110,17 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "shared or local storage")
     private String storageType;
 
-    @SerializedName("diskBytesRate") @Param(description="bytes rate of the disk offering")
-    private Long bytesRate;
+    @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the disk volume")
+    private Long bytesReadRate;
 
-    @SerializedName("diskIORate") @Param(description="io requests rate of the disk offering")
-    private Long iopsRate;
+    @SerializedName("diskBytesWriteRate") @Param(description="bytes write rate of the disk volume")
+    private Long bytesWriteRate;
+
+    @SerializedName("diskIopsReadRate") @Param(description="io requests read rate of the disk volume")
+    private Long iopsReadRate;
+
+    @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the disk volume")
+    private Long iopsWriteRate;
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "Hypervisor the volume belongs to")
@@ -264,12 +270,36 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.storageType = storageType;
     }
 
-    public void setBytesRate(long bytesRate) {
-        this.bytesRate = bytesRate;
+    public void setBytesReadRate(long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
     }
 
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
+    public long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public long getIopsWriteRate() {
+        return iopsWriteRate;
     }
 
     public void setHypervisor(String hypervisor) {

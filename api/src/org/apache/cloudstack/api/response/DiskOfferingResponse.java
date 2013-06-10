@@ -58,11 +58,17 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("storagetype") @Param(description="the storage type for this disk offering")
     private String storageType;
     
-    @SerializedName("diskBytesRate") @Param(description="bytes rate of the disk offering")
-    private Long bytesRate;
+    @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the disk offering")
+    private Long bytesReadRate;
 
-    @SerializedName("diskIORate") @Param(description="io requests rate of the disk offering")
-    private Long iopsRate;
+    @SerializedName("diskBytesWriteRate") @Param(description="bytes write rate of the disk offering")
+    private Long bytesWriteRate;
+
+    @SerializedName("diskIopsReadRate") @Param(description="io requests read rate of the disk offering")
+    private Long iopsReadRate;
+
+    @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the disk offering")
+    private Long iopsWriteRate;
 
     @SerializedName("displayoffering") @Param(description="whether to display the offering to the end user or not.")
     private Boolean displayOffering;
@@ -155,12 +161,20 @@ public class DiskOfferingResponse extends BaseResponse {
     public void setStorageType(String storageType) {
         this.storageType = storageType;
     }
-    
-    public void setBytesRate(long bytesRate) {
-        this.bytesRate = bytesRate;
+
+    public void setBytesReadRate(long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
     }
-    
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
+
+    public void setBytesWriteRate(long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
     }
+
+    public void setIopsReadRate(long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public void setIopsWriteRate(long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }    
 }

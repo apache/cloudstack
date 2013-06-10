@@ -87,11 +87,17 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
     
-    @SerializedName("diskBytesRate") @Param(description="bytes rate of the service offering")
-    private Long bytesRate;
+    @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the service offering")
+    private Long bytesReadRate;
 
-    @SerializedName("diskIORate") @Param(description="io requests rate of the service offering")
-    private Long iopsRate;
+    @SerializedName("diskBytesWriteRate") @Param(description="bytes write rate of the service offering")
+    private Long bytesWriteRate;
+
+    @SerializedName("diskIopsReadRate") @Param(description="io requests read rate of the service offering")
+    private Long iopsReadRate;
+
+    @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the service offering")
+    private Long iopsWriteRate;
 
     @SerializedName(ApiConstants.DEPLOYMENT_PLANNER) @Param(description="deployment strategy used to deploy VM.")
     private String deploymentPlanner;
@@ -255,11 +261,19 @@ public class ServiceOfferingResponse extends BaseResponse {
         this.isVolatile = isVolatile;
     }
     
-    public void setBytesRate(long bytesRate) {
-        this.bytesRate = bytesRate;
+    public void setBytesReadRate(long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
     }
-    
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
+
+    public void setBytesWriteRate(long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public void setIopsReadRate(long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public void setIopsWriteRate(long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
     }
 }

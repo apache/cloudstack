@@ -100,12 +100,17 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name="sort_key")
     int sortKey;
     
-    @Column(name="bytes_rate")
-    long bytesRate;
+    @Column(name="bytes_read_rate")
+    long bytesReadRate;
 
-    @Column(name="iops_rate")
-    long iopsRate;
+    @Column(name="bytes_write_rate")
+    long bytesWriteRate;
 
+    @Column(name="iops_read_rate")
+    long iopsReadRate;
+
+    @Column(name="iops_write_rate")
+    long iopsWriteRate;
 
     @Column(name="display_offering")
     boolean displayOffering;
@@ -335,20 +340,35 @@ public class DiskOfferingVO implements DiskOffering {
         this.displayOffering = displayOffering;
     }
 
-    public void setBytesRate(long bytesRate) {
-       this.bytesRate = bytesRate;
+    public void setBytesReadRate(long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
     }
 
-    public long getBytesRate() {
-       return bytesRate;
+    public long getBytesReadRate() {
+        return bytesReadRate;
     }
 
-    public void setIopsRate(long iopsRate) {
-        this.iopsRate = iopsRate;
+    public void setBytesWriteRate(long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
     }
 
-    public long getIopsRate() {
-        return iopsRate;
+    public long getBytesWriteRate() {
+        return bytesWriteRate;
     }
 
+    public void setIopsReadRate(long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public long getIopsWriteRate() {
+        return iopsWriteRate;
+    }
 }

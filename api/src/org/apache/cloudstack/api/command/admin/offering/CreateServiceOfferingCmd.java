@@ -93,11 +93,17 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
     private Map<String, String> details;
 
-    @Parameter(name="bytesRate", type=CommandType.LONG, required=false, description="bytes rate of the disk offering")
-    private Long bytesRate;
+    @Parameter(name=ApiConstants.BYTES_READ_RATE, type=CommandType.LONG, required=false, description="bytes read rate of the disk offering")
+    private Long bytesReadRate;
 
-    @Parameter(name="iopsRate", type=CommandType.LONG, required=false, description="io requests rate of the disk offering")
-    private Long iopsRate;
+    @Parameter(name=ApiConstants.BYTES_WRITE_RATE, type=CommandType.LONG, required=false, description="bytes write rate of the disk offering")
+    private Long bytesWriteRate;
+
+    @Parameter(name=ApiConstants.IOPS_READ_RATE, type=CommandType.LONG, required=false, description="io requests read rate of the disk offering")
+    private Long iopsReadRate;
+
+    @Parameter(name=ApiConstants.IOPS_WRITE_RATE, type=CommandType.LONG, required=false, description="io requests write rate of the disk offering")
+    private Long iopsWriteRate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -177,12 +183,20 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return params;
     }
 
-    public long getBytesRate() {
-       return bytesRate;
+    public long getBytesReadRate() {
+        return (bytesReadRate == null) || (bytesReadRate < 0) ? 0 : bytesReadRate;
     }
 
-    public long getIopsRate() {
-        return iopsRate;
+    public long getBytesWriteRate() {
+        return (bytesWriteRate == null) || (bytesWriteRate < 0) ? 0 : bytesWriteRate;
+    }
+
+    public long getIopsReadRate() {
+        return (iopsReadRate == null) || (iopsReadRate < 0) ? 0 : iopsReadRate;
+    }
+
+    public long getIopsWriteRate() {
+        return (iopsWriteRate == null) || (iopsWriteRate < 0) ? 0 : iopsWriteRate;
     }
 
     /////////////////////////////////////////////////////

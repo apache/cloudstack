@@ -441,8 +441,10 @@ public class LibvirtVMDef {
         private boolean _readonly = false;
         private boolean _shareable = false;
         private boolean _deferAttach = false;
-        private Long _bytesRate;
-        private Long _iopsRate;
+        private Long _bytesReadRate;
+        private Long _bytesWriteRate;
+        private Long _iopsReadRate;
+        private Long _iopsWriteRate;
 
         public void setDeviceType(deviceType deviceType) {
             _deviceType = deviceType;
@@ -588,12 +590,20 @@ public class LibvirtVMDef {
             return suffix - 'a';
         }
         
-        public void setBytesRate(Long bytesRate) {
-            _bytesRate = bytesRate;
+        public void setBytesReadRate(long bytesReadRate) {
+            _bytesReadRate = bytesReadRate;
         }
-        
-        public void setIopsRate(Long iopsRate) {
-            _iopsRate = iopsRate;
+
+        public void setBytesWriteRate(long bytesWriteRate) {
+            _bytesWriteRate = bytesWriteRate;
+        }
+
+        public void setIopsReadRate(long iopsReadRate) {
+            _iopsReadRate = iopsReadRate;
+        }
+
+        public void setIopsWriteRate(long iopsWriteRate) {
+            _iopsWriteRate = iopsWriteRate;
         }
 
         @Override
@@ -643,7 +653,8 @@ public class LibvirtVMDef {
             String libvirtVersion = Script.runSimpleBashScript("virsh version |grep API | awk '{print $4}'");
             String qemuVersion = Script.runSimpleBashScript("virsh version |grep hypervisor | awk '{print $4}'");
             if ((_deviceType != deviceType.CDROM) && (libvirtVersion != null) && (qemuVersion != null) 
-                    && (((_bytesRate != null) && (_bytesRate > 0)) || ((_iopsRate != null) && (_iopsRate > 0)))) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
+                    && (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
+                    || ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)) )) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
                 String[] libvirtVersions = libvirtVersion.split("\\.");
                 String[] qemuVersions = qemuVersion.split("\\.");
                 if (((libvirtVersions != null) && (libvirtVersions.length == 3) && ((Integer.valueOf(libvirtVersions[0]) > 0)
@@ -653,10 +664,14 @@ public class LibvirtVMDef {
                         || ((Integer.valueOf(qemuVersions[0]) == 1) && (Integer.valueOf(qemuVersions[1]) > 1))
                         || ((Integer.valueOf(qemuVersions[0]) == 1) && (Integer.valueOf(qemuVersions[1]) == 1) && (Integer.valueOf(qemuVersions[1]) >= 0))))) {
                     diskBuilder.append("<iotune>\n");
-                    if ((_bytesRate != null) && (_bytesRate > 0))
-                        diskBuilder.append("<total_bytes_sec>" + _bytesRate + "</total_bytes_sec>\n");
-                    if ((_iopsRate != null) && (_iopsRate > 0))
-                        diskBuilder.append("<total_iops_sec>" + _iopsRate + "</total_iops_sec>\n");
+                    if ((_bytesReadRate != null) && (_bytesReadRate > 0))
+                        diskBuilder.append("<read_bytes_sec>" + _bytesReadRate + "</read_bytes_sec>\n");
+                    if ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
+                        diskBuilder.append("<write_bytes_sec>" + _bytesWriteRate + "</write_bytes_sec>\n");
+                    if ((_iopsReadRate != null) && (_iopsReadRate > 0))
+                        diskBuilder.append("<read_iops_sec>" + _iopsReadRate + "</read_iops_sec>\n");
+                    if ((_iopsWriteRate != null) && (_iopsWriteRate > 0))
+                        diskBuilder.append("<write_iops_sec>" + _iopsWriteRate + "</write_iops_sec>\n");
                     diskBuilder.append("</iotune>\n");
                 }
             }

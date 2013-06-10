@@ -337,8 +337,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 diskOffering.getUseLocalStorage(),
                 diskOffering.isRecreatable(), null);
         dskCh.setHyperType(dataDiskHyperType);
-        dskCh.setBytesRate(storageMgr.getDiskBytesRate(null, diskOffering));
-        dskCh.setIopsRate(storageMgr.getDiskIORate(null, diskOffering));
+        dskCh.setBytesReadRate(storageMgr.getDiskBytesReadRate(null, diskOffering));
+        dskCh.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(null, diskOffering));
+        dskCh.setIopsReadRate(storageMgr.getDiskIopsReadRate(null, diskOffering));
+        dskCh.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(null, diskOffering));
 
         DataCenterVO destPoolDataCenter = _dcDao.findById(destPoolDcId);
         HostPodVO destPoolPod = _podDao.findById(destPoolPodId);
@@ -515,8 +517,10 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         DataCenterVO dc = _dcDao.findById(volume.getDataCenterId());
         DiskProfile dskCh = new DiskProfile(volume, diskOffering,
                 snapshot.getHypervisorType());
-        dskCh.setBytesRate(storageMgr.getDiskBytesRate(null, diskOffering));
-        dskCh.setIopsRate(storageMgr.getDiskIORate(null, diskOffering));
+        dskCh.setBytesReadRate(storageMgr.getDiskBytesReadRate(null, diskOffering));
+        dskCh.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(null, diskOffering));
+        dskCh.setIopsReadRate(storageMgr.getDiskIopsReadRate(null, diskOffering));
+        dskCh.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(null, diskOffering));
 
         // Determine what pod to store the volume in
         while ((pod = _resourceMgr.findPod(null, null, dc, account.getId(),
@@ -617,8 +621,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         DiskProfile dskCh = createDiskCharacteristics(volume, template, dc,
                 diskOffering);
         dskCh.setHyperType(vm.getHypervisorType());
-        dskCh.setBytesRate(storageMgr.getDiskBytesRate(offering, diskOffering));
-        dskCh.setIopsRate(storageMgr.getDiskIORate(offering, diskOffering));
+        dskCh.setBytesReadRate(storageMgr.getDiskBytesReadRate(null, diskOffering));
+        dskCh.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(null, diskOffering));
+        dskCh.setIopsReadRate(storageMgr.getDiskIopsReadRate(null, diskOffering));
+        dskCh.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(null, diskOffering));
+
         // Find a suitable storage to create volume on
         StoragePool destPool = storageMgr.findStoragePool(dskCh, dc, pod,
                 clusterId, null, vm, avoidPools);
@@ -657,15 +664,21 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         if (volume.getVolumeType() == Type.ROOT
                 && Storage.ImageFormat.ISO != template.getFormat()) {
             dskCh = createDiskCharacteristics(volume, template, dc, offering);
+            dskCh.setBytesReadRate(storageMgr.getDiskBytesReadRate(offering, diskOffering));
+            dskCh.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(offering, diskOffering));
+            dskCh.setIopsReadRate(storageMgr.getDiskIopsReadRate(offering, diskOffering));
+            dskCh.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(offering, diskOffering));
         } else {
             dskCh = createDiskCharacteristics(volume, template, dc,
                     diskOffering);
+            dskCh.setBytesReadRate(storageMgr.getDiskBytesReadRate(null, diskOffering));
+            dskCh.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(null, diskOffering));
+            dskCh.setIopsReadRate(storageMgr.getDiskIopsReadRate(null, diskOffering));
+            dskCh.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(null, diskOffering));
         }
 
         dskCh.setHyperType(hyperType);
-        dskCh.setBytesRate(storageMgr.getDiskBytesRate(offering, diskOffering));
-        dskCh.setIopsRate(storageMgr.getDiskIORate(offering, diskOffering));
-        
+ 
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(
                 avoids);
 
@@ -1555,6 +1568,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     volume.getFolder(), volume.getPath(), volume.getName(),
                     deviceId, volume.getChainInfo());
             cmd.setPoolUuid(volumePool.getUuid());
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            cmd.setBytesReadRate(storageMgr.getDiskBytesReadRate(null, diskOffering));
+            cmd.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(null, diskOffering));
+            cmd.setIopsReadRate(storageMgr.getDiskIopsReadRate(null, diskOffering));
+            cmd.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(null, diskOffering));
 
             try {
                 answer = (AttachVolumeAnswer) _agentMgr.send(hostId, cmd);
@@ -1915,6 +1933,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             StoragePoolVO volumePool = _storagePoolDao.findById(volume
                     .getPoolId());
             cmd.setPoolUuid(volumePool.getUuid());
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            cmd.setBytesReadRate(storageMgr.getDiskBytesReadRate(null, diskOffering));
+            cmd.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(null, diskOffering));
+            cmd.setIopsReadRate(storageMgr.getDiskIopsReadRate(null, diskOffering));
+            cmd.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(null, diskOffering));
 
             // Collect vm disk statistics from host before stopping Vm
             _userVmMgr.collectVmDiskStatistics(vm);
@@ -2245,8 +2268,17 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
             VolumeTO newVolume = new VolumeTO(vol, pool);
-            newVolume.setBytesRate(storageMgr.getDiskBytesRate(offering, diskOffering));
-            newVolume.setIopsRate(storageMgr.getDiskIORate(offering, diskOffering));
+            if (vol.getVolumeType() == Type.ROOT) {
+                newVolume.setBytesReadRate(storageMgr.getDiskBytesReadRate(offering, diskOffering));
+                newVolume.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(offering, diskOffering));
+                newVolume.setIopsReadRate(storageMgr.getDiskIopsReadRate(offering, diskOffering));
+                newVolume.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(offering, diskOffering));
+            } else {
+                newVolume.setBytesReadRate(storageMgr.getDiskBytesReadRate(null, diskOffering));
+                newVolume.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(null, diskOffering));
+                newVolume.setIopsReadRate(storageMgr.getDiskIopsReadRate(null, diskOffering));
+                newVolume.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(null, diskOffering));
+            }
             vm.addDisk(newVolume);
         }
 
@@ -2480,8 +2512,17 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
             VolumeTO newVolume = new VolumeTO(vol, pool);
-            newVolume.setBytesRate(storageMgr.getDiskBytesRate(offering, diskOffering));
-            newVolume.setIopsRate(storageMgr.getDiskIORate(offering, diskOffering));
+            if (vol.getVolumeType() == Type.ROOT) {
+                newVolume.setBytesReadRate(storageMgr.getDiskBytesReadRate(offering, diskOffering));
+                newVolume.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(offering, diskOffering));
+                newVolume.setIopsReadRate(storageMgr.getDiskIopsReadRate(offering, diskOffering));
+                newVolume.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(offering, diskOffering));
+            } else {
+                newVolume.setBytesReadRate(storageMgr.getDiskBytesReadRate(null, diskOffering));
+                newVolume.setBytesWriteRate(storageMgr.getDiskBytesWriteRate(null, diskOffering));
+                newVolume.setIopsReadRate(storageMgr.getDiskIopsReadRate(null, diskOffering));
+                newVolume.setIopsWriteRate(storageMgr.getDiskIopsWriteRate(null, diskOffering));
+            }
             vm.addDisk(newVolume);
         }
     }
