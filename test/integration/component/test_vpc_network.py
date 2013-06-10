@@ -35,139 +35,144 @@ class Services:
 
     def __init__(self):
         self.services = {
-                         "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                                    },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,
-                                    "memory": 128,
-                                    },
-                         "network_offering": {
-                                    "name": 'VPC Network offering',
-                                    "displaytext": 'VPC Network off',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "useVpc": 'on',
-                                    "serviceProviderList": {
-                                            "Vpn": 'VpcVirtualRouter',
-                                            "Dhcp": 'VpcVirtualRouter',
-                                            "Dns": 'VpcVirtualRouter',
-                                            "SourceNat": 'VpcVirtualRouter',
-                                            "PortForwarding": 'VpcVirtualRouter',
-                                            "Lb": 'VpcVirtualRouter',
-                                            "UserData": 'VpcVirtualRouter',
-                                            "StaticNat": 'VpcVirtualRouter',
-                                            "NetworkACL": 'VpcVirtualRouter'
-                                        },
-                                    "servicecapabilitylist": {
-                                    },
-                                },
-                         "network_off_netscaler": {
-                                    "name": 'Network offering-netscaler',
-                                    "displaytext": 'Network offering-netscaler',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "useVpc": 'on',
-                                    "serviceProviderList": {
-                                            "Dhcp": 'VpcVirtualRouter',
-                                            "Dns": 'VpcVirtualRouter',
-                                            "SourceNat": 'VpcVirtualRouter',
-                                            "PortForwarding": 'VpcVirtualRouter',
-                                            "Vpn": 'VpcVirtualRouter',
-                                            "Lb": 'Netscaler',
-                                            "UserData": 'VpcVirtualRouter',
-                                            "StaticNat": 'VpcVirtualRouter',
-                                        },
-                                    },
-                         "network_off_shared": {
-                                    "name": 'Shared Network offering',
-                                    "displaytext": 'Shared Network offering',
-                                    "guestiptype": 'Shared',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "useVpc": 'on',
-                                    "specifyIpRanges": True,
-                                    "specifyVlan": True
-                                    },
-                         "vpc_offering": {
-                                    "name": 'VPC off',
-                                    "displaytext": 'VPC off',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
-                                },
-                         "vpc": {
-                                 "name": "TestVPC",
-                                 "displaytext": "TestVPC",
-                                 "cidr": '10.0.0.1/24'
-                                 },
-                         "network": {
-                                  "name": "Test Network",
-                                  "displaytext": "Test Network",
-                                  "netmask": '255.255.255.0'
-                                },
-                         "lbrule": {
-                                    "name": "SSH",
-                                    "alg": "leastconn",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "openfirewall": False,
-                                    "startport": 22,
-                                    "endport": 2222,
-                                    "protocol": "TCP",
-                                    "cidrlist": '0.0.0.0/0',
-                                },
-                         "natrule": {
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "startport": 22,
-                                    "endport": 22,
-                                    "protocol": "TCP",
-                                    "cidrlist": '0.0.0.0/0',
-                                },
-                         "fw_rule": {
-                                    "startport": 1,
-                                    "endport": 6000,
-                                    "cidr": '0.0.0.0/0',
-                                    # Any network (For creating FW rule)
-                                    "protocol": "TCP"
-                                },
-                         "http_rule": {
-                                    "startport": 80,
-                                    "endport": 80,
-                                    "cidrlist": '0.0.0.0/0',
-                                    "protocol": "ICMP"
-                                },
-                         "virtual_machine": {
-                                    "displayname": "Test VM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'XenServer',
-                                    # Hypervisor type should be same as
-                                    # hypervisor type of cluster
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                                },
-                         "ostype": 'CentOS 5.3 (64-bit)',
-                         # Cent OS 5.3 (64 bit)
-                         "sleep": 60,
-                         "timeout": 10,
-                         "mode": 'advanced'
-                    }
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                # Random characters are appended for unique
+                # username
+                "password": "password",
+            },
+            "service_offering": {
+                "name": "Tiny Instance",
+                "displaytext": "Tiny Instance",
+                "cpunumber": 1,
+                "cpuspeed": 100,
+                "memory": 128,
+            },
+            "network_offering": {
+                "name": 'VPC Network offering',
+                "displaytext": 'VPC Network off',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "serviceProviderList": {
+                    "Vpn": 'VpcVirtualRouter',
+                    "Dhcp": 'VpcVirtualRouter',
+                    "Dns": 'VpcVirtualRouter',
+                    "SourceNat": 'VpcVirtualRouter',
+                    "PortForwarding": 'VpcVirtualRouter',
+                    "Lb": 'VpcVirtualRouter',
+                    "UserData": 'VpcVirtualRouter',
+                    "StaticNat": 'VpcVirtualRouter',
+                    "NetworkACL": 'VpcVirtualRouter'
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
+                    "Lb": {"lbSchemes": "public", "SupportedLbIsolation": "dedicated"}
+                },
+            },
+            "network_off_netscaler": {
+                "name": 'Network offering-netscaler',
+                "displaytext": 'Network offering-netscaler',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "serviceProviderList": {
+                    "Dhcp": 'VpcVirtualRouter',
+                    "Dns": 'VpcVirtualRouter',
+                    "SourceNat": 'VpcVirtualRouter',
+                    "PortForwarding": 'VpcVirtualRouter',
+                    "Vpn": 'VpcVirtualRouter',
+                    "Lb": 'Netscaler',
+                    "UserData": 'VpcVirtualRouter',
+                    "StaticNat": 'VpcVirtualRouter',
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
+                    "Lb": {"lbSchemes": "public", "SupportedLbIsolation": "dedicated"}
+                },
+            },
+            "network_off_shared": {
+                "name": 'Shared Network offering',
+                "displaytext": 'Shared Network offering',
+                "guestiptype": 'Shared',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "specifyIpRanges": True,
+                "specifyVlan": True
+            },
+            "vpc_offering": {
+                "name": 'VPC off',
+                "displaytext": 'VPC off',
+                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+            },
+            "vpc": {
+                "name": "TestVPC",
+                "displaytext": "TestVPC",
+                "cidr": '10.0.0.1/24'
+            },
+            "network": {
+                "name": "Test Network",
+                "displaytext": "Test Network",
+                "netmask": '255.255.255.0'
+            },
+            "lbrule": {
+                "name": "SSH",
+                "alg": "leastconn",
+                # Algorithm used for load balancing
+                "privateport": 22,
+                "publicport": 2222,
+                "openfirewall": False,
+                "startport": 22,
+                "endport": 2222,
+                "protocol": "TCP",
+                "cidrlist": '0.0.0.0/0',
+            },
+            "natrule": {
+                "privateport": 22,
+                "publicport": 22,
+                "startport": 22,
+                "endport": 22,
+                "protocol": "TCP",
+                "cidrlist": '0.0.0.0/0',
+            },
+            "fw_rule": {
+                "startport": 1,
+                "endport": 6000,
+                "cidr": '0.0.0.0/0',
+                # Any network (For creating FW rule)
+                "protocol": "TCP"
+            },
+            "http_rule": {
+                "startport": 80,
+                "endport": 80,
+                "cidrlist": '0.0.0.0/0',
+                "protocol": "ICMP"
+            },
+            "virtual_machine": {
+                "displayname": "Test VM",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "hypervisor": 'XenServer',
+                # Hypervisor type should be same as
+                # hypervisor type of cluster
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": 'TCP',
+            },
+            "ostype": 'CentOS 5.3 (64-bit)',
+            # Cent OS 5.3 (64 bit)
+            "sleep": 60,
+            "timeout": 10,
+        }
 
 
 class TestVPCNetwork(cloudstackTestCase):
