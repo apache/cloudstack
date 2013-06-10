@@ -16,7 +16,7 @@
 # under the License.
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering
+from marvin.integration.lib.base import Account, VirtualMachine, ServiceOffering, Host
 from marvin.integration.lib.common import get_zone, get_domain, get_template, cleanup_resources
 
 from nose.plugins.attrib import attr
@@ -76,6 +76,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             domainid=cls.domain.id
         )
         cls.services["account"] = cls.account.name
+        cls.hosts = Host.list(cls.apiclient, hypervisortype='Simulator')
         cls.cleanup = [
             cls.account
         ]
@@ -177,10 +178,12 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             "Running",
             msg="VM is not in Running state"
         )
+        vm1clusterid = filter(lambda c: c.id == vm1.hostid, self.hosts)[0].clusterid
+        vm2clusterid = filter(lambda c: c.id == vm2.hostid, self.hosts)[0].clusterid
         self.assertNotEqual(
-            vm1.hostid,
-            vm2.hostid,
-            msg="VMs meant to be dispersed are deployed on the same host"
+            vm1clusterid,
+            vm2clusterid,
+            msg="VMs (%s, %s) meant to be dispersed are deployed in the same cluster %s" % (vm1.id, vm2.id, vm1clusterid)
         )
 
     @attr(tags=["simulator", "advanced", "basic", "sg"])
@@ -236,10 +239,12 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             "Running",
             msg="VM is not in Running state"
         )
-        self.assertNotEqual(
-            vm1.hostid,
-            vm2.hostid,
-            msg="VMs meant to be concentrated are deployed on the different hosts"
+        vm1clusterid = filter(lambda c: c.id == vm1.hostid, self.hosts)[0].clusterid
+        vm2clusterid = filter(lambda c: c.id == vm2.hostid, self.hosts)[0].clusterid
+        self.assertEqual(
+            vm1clusterid,
+            vm2clusterid,
+            msg="VMs (%s, %s) meant to be concentrated are deployed on different clusters (%s, %s)" % (vm1.id, vm2.id, vm1clusterid, vm2clusterid)
         )
 
     @classmethod
