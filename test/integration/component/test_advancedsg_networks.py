@@ -730,6 +730,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
                                                                      networkids=self.shared_network_sg.id,
 								     serviceofferingid=self.service_offering.id
                                                                      )
+        self.cleanup_vms.append(self.shared_network_admin_account_virtual_machine)
         vms = VirtualMachine.list(
                             self.api_client,
                             id=self.shared_network_admin_account_virtual_machine.id,
