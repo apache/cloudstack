@@ -76,7 +76,7 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             domainid=cls.domain.id
         )
         cls.services["account"] = cls.account.name
-        cls.hosts = Host.list(cls.apiclient, hypervisortype='Simulator')
+        cls.hosts = Host.list(cls.apiclient, type='Routing')
         cls.cleanup = [
             cls.account
         ]
