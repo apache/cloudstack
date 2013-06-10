@@ -113,6 +113,70 @@
       return $tier;
     },
 
+    connectorLine: function(args) {
+      var $connector = $('<div></div>').addClass('connector-line');
+      var $router = args.$router;
+      var $tier = args.$tier;
+      var isHighlighted = args.isHighlighted;
+      var $connectorStart = $('<div></div>').addClass('connector-start');
+      var $connectorMid = $('<div></div>').addClass('connector-mid');
+      var $connectorEnd = $('<div></div>').addClass('connector-end');
+
+      $connector.append($connectorStart, $connectorMid, $connectorEnd);
+
+      if (isHighlighted) {
+        $connector.addClass('highlighted');
+      }
+
+      var posStartOffsetLeft = 5;
+      var posStartOffsetTop = 10;
+      var posStart = {
+        top: $router.position().top + ($router.outerHeight() / 2 + ($tier.index() * posStartOffsetTop)),
+        left: $router.position().left + $router.outerWidth()
+      };
+      var posStartWidth = 60 - ($tier.index() > 2 ? (($tier.index() + 1) * posStartOffsetLeft) : 0);
+
+      var posEndOffset = 15;
+      var posEndWidthOffset = 3;
+      var posEnd = {
+        top: $tier.position().top + ($tier.outerHeight() / 2),
+        left: posStart.left + posStartWidth + posEndOffset
+      };
+      var posEndWidth = Math.abs($tier.position().left -
+                                 (posStart.left + posStartWidth)) + posEndWidthOffset;
+
+      // Start line (next to router)
+      $connectorStart.css({
+        top: posStart.top,
+        left: posStart.left
+      });
+      $connectorStart.width(posStartWidth);
+
+      // End line (next to tier)
+      $connectorEnd.css({
+        top: posEnd.top,
+        left: posEnd.left
+      });
+      $connectorEnd.width(posEndWidth);
+
+      // Mid line (connect start->end)
+      if (posStart.top > posEnd.top) { // Tier above router
+        $connectorMid.css({
+          top: posEnd.top,
+          left: posEnd.left
+        });
+        $connectorMid.height(posStart.top - posEnd.top);
+      } else { // Tier below router
+        $connectorMid.css({
+          top: posStart.top,
+          left: posStart.left + posStartWidth + posEndOffset
+        });
+        $connectorMid.height(posEnd.top - posStart.top);
+      }
+
+      return $connector;
+    },
+
     router: function(args) {
       var $router = elems.tier({
         context: args.context,
@@ -167,11 +231,19 @@
         $dashboardItem.append($total, $name);
         $dashboardItem.appendTo($dashboard);
 
+        if (dashboardItem._disabled) {
+          $dashboardItem.addClass('disabled');
+        }
+
         $dashboardItem.click(function() {
+          if ($dashboardItem.is('.disabled')) {
+            return false;
+          }
+          
           var section = cloudStack.vpc.sections[id];
           var $section = $('<div>');
           var $loading = $('<div>').addClass('loading-overlay');
-          
+
           if ($.isFunction(section)) {
             section = cloudStack.vpc.sections[id]();
           }
@@ -193,7 +265,7 @@
 
                 $section.appendTo($panel);
               }
-            });            
+            });
           };
 
           if (before) {
@@ -251,6 +323,7 @@
         var $chart = $('<div>').addClass('vpc-network-chart');
         var $tiers = $('<div>').addClass('tiers');
         var $toolbar = $('<div>').addClass('toolbar');
+        var $info = $('<div>').addClass('info-box');
 
         $toolbar.appendTo($chart);
         $tiers.appendTo($chart);
@@ -262,9 +335,16 @@
           response: {
             success: function(data) {
               var tiers = data.tiers;
+              var $router;
               var $placeholder = elems.tierPlaceholder({
                 context: context
               });
+
+              // Router
+              $router = elems.router({
+                context: context,
+                dashboardItems: data.routerDashboard
+              }).appendTo($chart);
 
               $(tiers).map(function(index, tier) {
                 var $tier = elems.tier({
@@ -273,6 +353,18 @@
                   dashboardItems: tier._dashboardItems
                 });
                 $tier.appendTo($tiers);
+
+                // Connect tier to router via line
+                //
+                // -- Needs to execute after chart generation is complete,
+                //    so that chart elements have positioning in place.
+                $chart.bind('cloudStack.vpc.chartReady', function() {
+                  elems.connectorLine({
+                    $tier: $tier,
+                    $router: $router,
+                    isHighlighted: tier._highlighted
+                  }).appendTo($chart);
+                });
               });
 
               // Add placeholder tier
@@ -290,11 +382,12 @@
                 args.complete($chart);
               }
 
-              // Router
-              elems.router({
-                context: context,
-                dashboardItems: data.routerDashboard
-              }).appendTo($chart);
+              if ($chart.find('.connector-line.highlighted').size()) {
+                $info.appendTo($chart).append(
+                  $('<span>').addClass('color-key'),
+                  $('<span>').html('= Contains a public network')
+                );
+              }
             }
           }
         });
@@ -303,6 +396,7 @@
           chart({
             complete: function($newChart) {
               $chart.replaceWith($newChart);
+              $newChart.trigger('cloudStack.vpc.chartReady');
             }
           });
         });
@@ -314,7 +408,11 @@
         title: vpcItem.displaytext ? vpcItem.displaytext : vpcItem.name,
         maximizeIfSelected: true,
         complete: function($panel) {
-          var $chart = chart();
+          var $chart = chart({
+            complete: function($chart) {
+              $chart.trigger('cloudStack.vpc.chartReady');
+            }
+          });
 
           $chart.appendTo($panel);
         }

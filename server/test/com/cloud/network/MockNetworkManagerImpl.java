@@ -23,8 +23,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -77,7 +75,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Component
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class MockNetworkManagerImpl extends ManagerBase implements NetworkManager, NetworkService {
 
@@ -913,7 +910,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
 
 
     @Override
-    public NicVO savePlaceholderNic(Network network, String ip4Address, Type vmType) {
+    public NicVO savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType) {
         // TODO Auto-generated method stub
         return null;
     }

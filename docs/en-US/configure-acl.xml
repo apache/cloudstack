@@ -37,31 +37,66 @@
       <para>All the VPCs that you have created for the account is listed in the page.</para>
     </listitem>
     <listitem>
-      <para>Click the Settings icon.</para>
-      <para>The following options are displayed.</para>
+      <para>Click the Configure button of the VPC, for which you want to configure load balancing
+        rules.</para>
+      <para>For each tier, the following options are displayed:</para>
       <itemizedlist>
         <listitem>
-          <para>IP Addresses</para>
+          <para>Internal LB</para>
         </listitem>
         <listitem>
-          <para>Gateways</para>
+          <para>Public LB IP</para>
         </listitem>
         <listitem>
-          <para>Site-to-Site VPN</para>
+          <para>Static NAT</para>
         </listitem>
         <listitem>
-          <para>Network ACLs</para>
+          <para>Virtual Machines</para>
+        </listitem>
+        <listitem>
+          <para>CIDR</para>
+        </listitem>
+      </itemizedlist>
+      <para>The following router information is displayed:</para>
+      <itemizedlist>
+        <listitem>
+          <para>Private Gateways</para>
+        </listitem>
+        <listitem>
+          <para>Public IP Addresses</para>
+        </listitem>
+        <listitem>
+          <para>Site-to-Site VPNs</para>
+        </listitem>
+        <listitem>
+          <para>Network ACL Lists</para>
         </listitem>
       </itemizedlist>
     </listitem>
     <listitem>
-      <para>Select Network ACLs.</para>
-      <para>The Network ACLs page is displayed.</para>
+      <para>Select Network ACL Lists.</para>
+      <para>The following default rules are displayed in the Network ACLs page: default_allow,
+        default_deny.</para>
     </listitem>
     <listitem>
-      <para>Click Add Network ACLs.</para>
+      <para>Click Add ACL Lists, and specify the following:</para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis role="bold">ACL List Name</emphasis>: A name for the ACL list.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Description</emphasis>: A short description of the ACL list
+            that can be displayed to users.</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Select the ACL list.</para>
+    </listitem>
+    <listitem>
+      <para>Select the ACL List Rules tab.</para>
       <para>To add an ACL rule, fill in the following fields to specify what kind of network traffic
-        is allowed in this tier. </para>
+        is allowed in the VPC. </para>
       <itemizedlist>
         <listitem>
           <para><emphasis role="bold">CIDR</emphasis>: The CIDR acts as the Source CIDR for the
@@ -74,7 +109,8 @@
           <para><emphasis role="bold">Protocol</emphasis>: The networking protocol that sources use
             to send traffic to the tier. The TCP and UDP protocols are typically used for data
             exchange and end-user communications. The ICMP protocol is typically used to send error
-            messages or network monitoring data.</para>
+            messages or network monitoring data. All supports all the traffic. Other option is
+            Protocol Number.</para>
         </listitem>
         <listitem>
           <para><emphasis role="bold">Start Port</emphasis>, <emphasis role="bold">End
@@ -83,8 +119,10 @@
             fields.</para>
         </listitem>
         <listitem>
-          <para><emphasis role="bold">Select Tier</emphasis>: Select the tier for which you want to
-            add this ACL rule.</para>
+          <para><emphasis role="bold">Protocol Number</emphasis>: The protocol number associated
+            with IPv4 or IPv6. For more information, see <ulink
+              url="http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml">Protocol
+              Numbers</ulink>.</para>
         </listitem>
         <listitem>
           <para><emphasis role="bold">ICMP Type</emphasis>, <emphasis role="bold">ICMP
@@ -92,48 +130,14 @@
             sent.</para>
         </listitem>
         <listitem>
-          <para><emphasis role="bold">Traffic Type</emphasis>: Select the traffic type you want to
-            apply. </para>
-          <itemizedlist>
-            <listitem>
-              <para><emphasis role="bold">Egress</emphasis>: To add an egress rule, select Egress
-                from the Traffic type drop-down box and click Add. This specifies what type of
-                traffic is allowed to be sent out of VM instances in this tier. If no egress rules
-                are specified, all traffic from the tier is allowed out at the VPC virtual router.
-                Once egress rules are specified, only the traffic specified in egress rules and the
-                responses to any traffic that has been allowed in through an ingress rule are
-                allowed out. No egress rule is required for the VMs in a tier to communicate with
-                each other.</para>
-            </listitem>
-            <listitem>
-              <para><emphasis role="bold">Ingress</emphasis>: To add an ingress rule, select Ingress
-                from the Traffic type drop-down box and click Add. This specifies what network
-                traffic is allowed into the VM instances in this tier. If no ingress rules are
-                specified, then no traffic will be allowed in, except for responses to any traffic
-                that has been allowed out through an egress rule.</para>
-            </listitem>
-          </itemizedlist>
-          <note>
-            <para>By default, all incoming and outgoing traffic to the guest networks is blocked. To
-              open the ports, create a new network ACL.</para>
-          </note>
+          <para><emphasis role="bold">Action</emphasis>: What action to be taken. </para>
         </listitem>
       </itemizedlist>
     </listitem>
     <listitem>
       <para>Click Add. The ACL rule is added.</para>
-      <para>To view the list of ACL rules you have added, click the desired tier from the Network
-        ACLs page, then select the Network ACL tab.</para>
-      <mediaobject>
-        <imageobject>
-          <imagedata fileref="./images/network-acl.png"/>
-        </imageobject>
-        <textobject>
-          <phrase>network-acl.png: adding, editing, deleting an ACL rule.</phrase>
-        </textobject>
-      </mediaobject>
       <para>You can edit the tags assigned to the ACL rules and delete the ACL rules you have
-        created. Click the appropriate button in the Actions column.</para>
+        created. Click the appropriate button in the Details tab.</para>
     </listitem>
   </orderedlist>
 </section>

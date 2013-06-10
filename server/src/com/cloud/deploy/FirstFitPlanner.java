@@ -497,7 +497,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
         }
 
     @Override
-    public PlannerResourceUsage getResourceUsage() {
+    public PlannerResourceUsage getResourceUsage(VirtualMachineProfile vmProfile,
+            DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
         return PlannerResourceUsage.Shared;
     }
 }

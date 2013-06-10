@@ -54,6 +54,7 @@ import com.cloud.usage.dao.UsageSecurityGroupDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
+import com.cloud.usage.dao.UsageVmDiskDao;
 import com.cloud.usage.dao.UsageVolumeDao;
 import com.cloud.usage.parser.IPAddressUsageParser;
 import com.cloud.usage.parser.LoadBalancerUsageParser;
@@ -64,13 +65,15 @@ import com.cloud.usage.parser.SecurityGroupUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
+import com.cloud.usage.parser.VmDiskUsageParser;
 import com.cloud.usage.parser.VolumeUsageParser;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
-
+import com.cloud.user.dao.VmDiskStatisticsDao;
 
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -108,6 +111,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     @Inject private UsageVPNUserDao m_usageVPNUserDao;
     @Inject private UsageSecurityGroupDao m_usageSecurityGroupDao;
     @Inject private UsageJobDao m_usageJobDao;
+    @Inject private VmDiskStatisticsDao m_vmDiskStatsDao;
+    @Inject private UsageVmDiskDao m_usageVmDiskDao;
     @Inject protected AlertManager _alertMgr;
     @Inject protected UsageEventDao _usageEventDao;
     @Inject ConfigurationDao _configDao;
@@ -121,6 +126,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     TimeZone m_usageTimezone = TimeZone.getTimeZone("GMT");;
     private final GlobalLock m_heartbeatLock = GlobalLock.getInternLock("usage.job.heartbeat.check");
     private List<UsageNetworkVO> usageNetworks = new ArrayList<UsageNetworkVO>();
+    private List<UsageVmDiskVO> usageVmDisks = new ArrayList<UsageVmDiskVO>();
 
     private final ScheduledExecutorService m_executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
     private final ScheduledExecutorService m_heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
@@ -389,6 +395,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             List<AccountVO> accounts = null;
             List<UserStatisticsVO> userStats = null;
             Map<String, UsageNetworkVO> networkStats = null;
+            List<VmDiskStatisticsVO> vmDiskStats = null;
+            Map<String, UsageVmDiskVO> vmDiskUsages = null;
             Transaction userTxn = Transaction.open(Transaction.CLOUD_DB);
             try {
                 Long limit = Long.valueOf(500);
@@ -479,6 +487,46 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     }
                     offset = new Long(offset.longValue() + limit.longValue());
                 } while ((userStats != null) && !userStats.isEmpty());
+
+                // reset offset
+                offset = Long.valueOf(0);
+
+                // get all the vm network stats to create usage_vm_network records for the vm network usage
+                Long lastVmDiskStatsId = m_usageDao.getLastVmDiskStatsId();
+                if (lastVmDiskStatsId == null) {
+                       lastVmDiskStatsId = Long.valueOf(0);
+                }
+                SearchCriteria<VmDiskStatisticsVO> sc4 = m_vmDiskStatsDao.createSearchCriteria();
+                sc4.addAnd("id", SearchCriteria.Op.LTEQ, lastVmDiskStatsId);
+                do {
+                    Filter filter = new Filter(VmDiskStatisticsVO.class, "id", true, offset, limit);
+
+                    vmDiskStats = m_vmDiskStatsDao.search(sc4, filter);
+
+                    if ((vmDiskStats != null) && !vmDiskStats.isEmpty()) {
+                        // now copy the accounts to cloud_usage db
+                        m_usageDao.updateVmDiskStats(vmDiskStats);
+                    }
+                    offset = new Long(offset.longValue() + limit.longValue());
+                } while ((vmDiskStats != null) && !vmDiskStats.isEmpty());
+
+                // reset offset
+                offset = Long.valueOf(0);
+
+                sc4 = m_vmDiskStatsDao.createSearchCriteria();
+                sc4.addAnd("id", SearchCriteria.Op.GT, lastVmDiskStatsId);
+                do {
+                    Filter filter = new Filter(VmDiskStatisticsVO.class, "id", true, offset, limit);
+
+                    vmDiskStats = m_vmDiskStatsDao.search(sc4, filter);
+
+                    if ((vmDiskStats != null) && !vmDiskStats.isEmpty()) {
+                        // now copy the accounts to cloud_usage db
+                        m_usageDao.saveVmDiskStats(vmDiskStats);
+                    }
+                    offset = new Long(offset.longValue() + limit.longValue());
+                } while ((vmDiskStats != null) && !vmDiskStats.isEmpty());
+
             } finally {
                 userTxn.close();
             }
@@ -563,6 +611,53 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("created network stats helper entries for " + numAcctsProcessed + " accts");
+                }
+
+                // get vm disk stats in order to compute vm disk usage
+                vmDiskUsages = m_usageVmDiskDao.getRecentVmDiskStats();
+
+                // Keep track of user stats for an account, across all of its public IPs
+                Map<String, VmDiskStatisticsVO> aggregatedDiskStats = new HashMap<String, VmDiskStatisticsVO>();
+                startIndex = 0;
+                do {
+                       vmDiskStats = m_vmDiskStatsDao.listActiveAndRecentlyDeleted(recentlyDeletedDate, startIndex, 500);
+
+                    if (vmDiskUsages != null) {
+                        for (VmDiskStatisticsVO vmDiskStat : vmDiskStats) {
+                            if(vmDiskStat.getVmId() != null){
+                                String hostKey = vmDiskStat.getDataCenterId() + "-" + vmDiskStat.getAccountId()+"-Vm-" + vmDiskStat.getVmId()+"-Disk-" + vmDiskStat.getVolumeId();
+                                VmDiskStatisticsVO hostAggregatedStat = aggregatedDiskStats.get(hostKey);
+                                if (hostAggregatedStat == null) {
+                                    hostAggregatedStat = new VmDiskStatisticsVO(vmDiskStat.getAccountId(), vmDiskStat.getDataCenterId(), vmDiskStat.getVmId(),vmDiskStat.getVolumeId());
+                                }
+
+                                hostAggregatedStat.setAggIORead(hostAggregatedStat.getAggIORead() + vmDiskStat.getAggIORead());
+                                hostAggregatedStat.setAggIOWrite(hostAggregatedStat.getAggIOWrite() + vmDiskStat.getAggIOWrite());
+                                hostAggregatedStat.setAggBytesRead(hostAggregatedStat.getAggBytesRead() + vmDiskStat.getAggBytesRead());
+                                hostAggregatedStat.setAggBytesWrite(hostAggregatedStat.getAggBytesWrite() + vmDiskStat.getAggBytesWrite());
+                                aggregatedDiskStats.put(hostKey, hostAggregatedStat);
+                            }
+                        }
+                    }
+                    startIndex += 500;
+                } while ((userStats != null) && !userStats.isEmpty());
+
+                // loop over the user stats, create delta entries in the usage_disk helper table
+                numAcctsProcessed = 0;
+                usageVmDisks.clear();
+                for (String key : aggregatedDiskStats.keySet()) {
+                       UsageVmDiskVO currentVmDiskStats = null;
+                    if (vmDiskStats != null) {
+                        currentVmDiskStats = vmDiskUsages.get(key);
+                    }
+
+                    createVmDiskHelperEntry(aggregatedDiskStats.get(key), currentVmDiskStats, endDateMillis);
+                    numAcctsProcessed++;
+                }
+                m_usageVmDiskDao.saveUsageVmDisks(usageVmDisks);
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("created vm disk stats helper entries for " + numAcctsProcessed + " accts");
                 }
 
                 // commit the helper records, then start a new transaction
@@ -698,6 +793,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (s_logger.isDebugEnabled()) {
             if (!parsed) {
                 s_logger.debug("network usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
+
+        parsed = VmDiskUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("vm disk usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
 
@@ -1004,6 +1106,59 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     "; curABS: " + currentAccountedBytesSent + "; curABR: " + currentAccountedBytesReceived + "; ubs: " + bytesSent + "; ubr: " + bytesReceived);
         }
         usageNetworks.add(usageNetworkVO);
+    }
+
+    private void createVmDiskHelperEntry(VmDiskStatisticsVO vmDiskStat, UsageVmDiskVO usageVmDiskStat, long timestamp) {
+        long currentAccountedIORead = 0L;
+        long currentAccountedIOWrite = 0L;
+        long currentAccountedBytesRead = 0L;
+        long currentAccountedBytesWrite = 0L;
+        if (usageVmDiskStat != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("getting current accounted bytes for... accountId: " + usageVmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() + "; aiw: " + vmDiskStat.getAggIOWrite() +
+                        "; air: " + usageVmDiskStat.getAggIORead() + "; abw: " + vmDiskStat.getAggBytesWrite() + "; abr: " + usageVmDiskStat.getAggBytesRead());
+            }
+            currentAccountedIORead = usageVmDiskStat.getAggIORead();
+            currentAccountedIOWrite = usageVmDiskStat.getAggIOWrite();
+            currentAccountedBytesRead = usageVmDiskStat.getAggBytesRead();
+            currentAccountedBytesWrite = usageVmDiskStat.getAggBytesWrite();
+        }
+        long ioRead = vmDiskStat.getAggIORead()  - currentAccountedIORead;
+        long ioWrite = vmDiskStat.getAggIOWrite() - currentAccountedIOWrite;
+        long bytesRead = vmDiskStat.getAggBytesRead()  - currentAccountedBytesRead;
+        long bytesWrite = vmDiskStat.getAggBytesWrite() - currentAccountedBytesWrite;
+
+        if (ioRead < 0) {
+            s_logger.warn("Calculated negative value for io read: " + ioRead + ", vm disk stats say: " + vmDiskStat.getAggIORead() + ", previous vm disk usage was: " + currentAccountedIORead);
+            ioRead = 0;
+        }
+        if (ioWrite < 0) {
+            s_logger.warn("Calculated negative value for io write: " + ioWrite + ", vm disk stats say: " + vmDiskStat.getAggIOWrite() + ", previous vm disk usage was: " + currentAccountedIOWrite);
+            ioWrite = 0;
+        }
+        if (bytesRead < 0) {
+            s_logger.warn("Calculated negative value for bytes read: " + bytesRead + ", vm disk stats say: " + vmDiskStat.getAggBytesRead() + ", previous vm disk usage was: " + currentAccountedBytesRead);
+            bytesRead = 0;
+        }
+        if (bytesWrite < 0) {
+            s_logger.warn("Calculated negative value for bytes write: " + bytesWrite + ", vm disk stats say: " + vmDiskStat.getAggBytesWrite() + ", previous vm disk usage was: " + currentAccountedBytesWrite);
+            bytesWrite = 0;
+        }
+
+        long vmId = 0;
+
+        if(vmDiskStat.getVmId() != null){
+               vmId = vmDiskStat.getVmId();
+        }
+
+        UsageVmDiskVO usageVmDiskVO = new UsageVmDiskVO(vmDiskStat.getAccountId(), vmDiskStat.getDataCenterId(), vmId, vmDiskStat.getVolumeId(), ioRead, ioWrite,
+                       vmDiskStat.getAggIORead(), vmDiskStat.getAggIOWrite(), bytesRead, bytesWrite, vmDiskStat.getAggBytesRead(), vmDiskStat.getAggBytesWrite(), timestamp);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("creating vmDiskHelperEntry... accountId: " + vmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() + "; aiw: " + vmDiskStat.getAggIOWrite() + "; air: " + vmDiskStat.getAggIORead() +
+                    "; curAIR: " + currentAccountedIORead + "; curAIW: " + currentAccountedIOWrite + "; uir: " + ioRead + "; uiw: " + ioWrite + "; abw: " + vmDiskStat.getAggBytesWrite() + "; abr: " + vmDiskStat.getAggBytesRead() +
+                    "; curABR: " + currentAccountedBytesRead + "; curABW: " + currentAccountedBytesWrite + "; ubr: " + bytesRead + "; ubw: " + bytesWrite);
+        }
+        usageVmDisks.add(usageVmDiskVO);
     }
 
     private void createIPHelperEvent(UsageEventVO event) {

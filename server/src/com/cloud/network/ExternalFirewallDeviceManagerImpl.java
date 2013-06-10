@@ -485,7 +485,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
         if (add && (!reservedIpAddressesForGuestNetwork.contains(network.getGateway()))) {
             // Insert a new NIC for this guest network to reserve the gateway address
-            _networkMgr.savePlaceholderNic(network,  network.getGateway(), null);
+            _networkMgr.savePlaceholderNic(network,  network.getGateway(), null, null);
         }
         
         // Delete any mappings used for inline external load balancers in this network

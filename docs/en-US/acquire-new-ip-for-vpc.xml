@@ -39,28 +39,43 @@
       <para>Click the Configure button of the VPC to which you want to deploy the VMs.</para>
       <para>The VPC page is displayed where all the tiers you created are listed in a
         diagram.</para>
-    </listitem>
-    <listitem>
-      <para>Click the Settings icon.</para>
       <para>The following options are displayed.</para>
       <itemizedlist>
         <listitem>
-          <para>IP Addresses</para>
+          <para>Internal LB</para>
         </listitem>
         <listitem>
-          <para>Gateways</para>
+          <para>Public LB IP</para>
         </listitem>
         <listitem>
-          <para>Site-to-Site VPN</para>
+          <para>Static NAT</para>
         </listitem>
         <listitem>
-          <para>Network ACLs</para>
+          <para>Virtual Machines</para>
+        </listitem>
+        <listitem>
+          <para>CIDR</para>
+        </listitem>
+      </itemizedlist>
+      <para>The following router information is displayed:</para>
+      <itemizedlist>
+        <listitem>
+          <para>Private Gateways</para>
+        </listitem>
+        <listitem>
+          <para>Public IP Addresses</para>
+        </listitem>
+        <listitem>
+          <para>Site-to-Site VPNs</para>
+        </listitem>
+        <listitem>
+          <para>Network ACL Lists</para>
         </listitem>
       </itemizedlist>
     </listitem>
     <listitem>
       <para>Select IP Addresses.</para>
-      <para>The IP Addresses page is displayed.</para>
+      <para>The Public IP Addresses page is displayed.</para>
     </listitem>
     <listitem>
       <para>Click Acquire New IP, and click Yes in the confirmation dialog.</para>

@@ -34,6 +34,15 @@ class Services:
 
     def __init__(self):
         self.services = {
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                # Random characters are appended in create account to
+                # ensure unique username generated each time
+                "password": "password",
+                },
             "off":
                 {
                     "name": "Service Offering",
@@ -83,7 +92,7 @@ class Services:
                             "displaytext": "Small Instance",
                             "cpunumber": 1,
                             "cpuspeed": 100,
-                            "memory": 256,
+                            "memory": 128,
                         },
                     "medium":
                         {
@@ -424,7 +433,7 @@ class TestServiceOfferings(cloudstackTestCase):
         )
         self.assertAlmostEqual(
             int(total_mem) / 1024, # In MBs
-            self.small_offering.memory,
+            int(self.small_offering.memory),
             "Check Memory(kb) for small offering"
         )
         return

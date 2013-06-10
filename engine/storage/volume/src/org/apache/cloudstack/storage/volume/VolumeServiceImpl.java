@@ -428,6 +428,7 @@ public class VolumeServiceImpl implements VolumeService {
         
         try {
         	DataObject volumeOnStore = store.create(volume);
+            volume = this.volFactory.getVolume(volume.getId(), store);
         	volume.processEvent(Event.CreateOnlyRequested);
         	 CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null,
         			 (VolumeObject)volume, store, volumeOnStore, future);

@@ -59,6 +59,8 @@
       })
 
       var ret = function() {
+        $('.overlay').remove();
+        
         return $formContainer.dialog({
           dialogClass: 'create-form',
           closeOnEscape: false,

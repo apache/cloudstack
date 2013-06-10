@@ -147,8 +147,10 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
@@ -297,6 +299,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     protected DownloadMonitor _downloadMonitor;
     @Inject
     protected ResourceTagDao _resourceTagDao;
+    @Inject
+    protected VmDiskStatisticsDao _vmDiskStatsDao;
     @Inject
     protected VMSnapshotDao _vmSnapshotDao;
     @Inject
@@ -1576,6 +1580,13 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             } else {
                 _volsDao.attachVolume(volume.getId(), vm.getId(), deviceId);
             }
+            // insert record for disk I/O statistics
+            VmDiskStatisticsVO diskstats = _vmDiskStatsDao.findBy(vm.getAccountId(), vm.getDataCenterId(),vm.getId(), volume.getId());
+            if (diskstats == null) {
+               diskstats = new VmDiskStatisticsVO(vm.getAccountId(), vm.getDataCenterId(),vm.getId(), volume.getId());
+               _vmDiskStatsDao.persist(diskstats);
+            }
+
             return _volsDao.findById(volume.getId());
         } else {
             if (answer != null) {
@@ -1743,6 +1754,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
         }
 
+        // reload the volume from db
+        volumeOnPrimaryStorage = volFactory.getVolume(volumeOnPrimaryStorage.getId());
         boolean moveVolumeNeeded = needMoveVolume(rootVolumeOfVm, volumeOnPrimaryStorage);
 
         if (moveVolumeNeeded) {
@@ -1902,6 +1915,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             StoragePoolVO volumePool = _storagePoolDao.findById(volume
                     .getPoolId());
             cmd.setPoolUuid(volumePool.getUuid());
+
+            // Collect vm disk statistics from host before stopping Vm
+            _userVmMgr.collectVmDiskStatistics(vm);
 
             try {
                 answer = _agentMgr.send(vm.getHostId(), cmd);
@@ -2612,4 +2628,17 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
     }
 
+
+    @Override
+    public String getVmNameFromVolumeId(long volumeId) {
+        Long instanceId;
+        VolumeVO volume = _volsDao.findById(volumeId);
+        return getVmNameOnVolume(volume);
+    }
+
+    @Override
+    public String getStoragePoolOfVolume(long volumeId) {
+        VolumeVO vol = _volsDao.findById(volumeId);
+        return dataStoreMgr.getPrimaryDataStore(vol.getPoolId()).getUuid();
+    }
 }

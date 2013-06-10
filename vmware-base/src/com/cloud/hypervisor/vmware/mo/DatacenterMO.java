@@ -488,4 +488,9 @@ public class DatacenterMO extends BaseMO {
         dvSwitchMor = _context.getVimClient().getDecendentMoRef(networkFolderMor, "VmwareDistributedVirtualSwitch", dvSwitchName);
         return dvSwitchMor;
     }
+
+    public boolean ensureCustomFieldDef(String fieldName) throws Exception {
+        CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, _context.getServiceContent().getCustomFieldsManager());
+        return cfmMo.ensureCustomFieldDef("Datacenter", fieldName) > 0;
+    }
 }

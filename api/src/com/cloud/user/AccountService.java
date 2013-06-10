@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.user;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -26,7 +25,6 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.utils.Pair;
 
 public interface AccountService {
 
@@ -78,13 +76,11 @@ public interface AccountService {
 
     Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId);
 
-    Pair<List<Long>, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId, Long projectId);
-
     Account getActiveAccountByName(String accountName, Long domainId);
 
-    Account getActiveAccountById(Long accountId);
+    Account getActiveAccountById(long accountId);
 
-    Account getAccount(Long accountId);
+    Account getAccount(long accountId);
 
     User getActiveUser(long userId);
 

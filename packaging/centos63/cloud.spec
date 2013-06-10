@@ -165,11 +165,11 @@ echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
 
 if [ "%{_ossnoss}" == "NONOSS" -o "%{_ossnoss}" == "nonoss" ] ; then
-    echo "Executing mvn packaging for NONOSS ..."
-   mvn -Pawsapi,systemvm -Dnonoss package
+   echo "Executing mvn packaging for NONOSS ..."
+   mvn -Pawsapi,systemvm -Dnonoss package clean install
 else
-    echo "Executing mvn packaging for OSS ..."
-   mvn -Pawsapi package -Dsystemvm
+   echo "Executing mvn packaging for OSS ..."
+   mvn -Pawsapi package -Dsystemvm clean install
 fi
 
 %install
@@ -215,6 +215,8 @@ ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/li
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
+
+/bin/touch ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management/catalina.out
 
 install -D client/target/utilities/bin/cloud-migrate-databases ${RPM_BUILD_ROOT}%{_bindir}/%{name}-migrate-databases
 install -D client/target/utilities/bin/cloud-set-guest-password ${RPM_BUILD_ROOT}%{_bindir}/%{name}-set-guest-password
@@ -519,6 +521,7 @@ fi
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}-management
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
+%attr(0644,cloud,cloud) %{_localstatedir}/log/%{name}/management/catalina.out
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent

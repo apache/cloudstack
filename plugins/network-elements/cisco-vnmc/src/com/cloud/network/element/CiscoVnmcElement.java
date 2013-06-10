@@ -807,7 +807,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
         for (StaticNat rule : rules) {
             IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-            StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, 
+            StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule.getSourceIpAddressId(), sourceIp.getAddress().addr(), null,
                     null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
             rulesTO.add(ruleTO);
         }

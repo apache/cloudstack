@@ -41,6 +41,9 @@
     </listitem>
     <listitem>
       <para>Click the Configure button of the VPC for which you want to set up tiers.</para>
+    </listitem>
+    <listitem>
+      <para>Click Create network.</para>
       <para>The Add new tier dialog is displayed, as follows:</para>
       <mediaobject>
         <imageobject>
@@ -62,7 +65,7 @@
         </listitem>
         <listitem>
           <para><emphasis role="bold">Network Offering</emphasis>: The following default network
-            offerings are listed: DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
+            offerings are listed: Internal LB, DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
             DefaultIsolatedNetworkOfferingForVpcNetworks</para>
           <para>In a VPC, only one tier can be created by using LB-enabled network offering.</para>
         </listitem>

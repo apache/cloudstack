@@ -79,14 +79,17 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
@@ -163,7 +166,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.dc.DataCenter.NetworkType;
 
 @Component
 @Local({ ResourceManager.class, ResourceService.class })
@@ -223,6 +225,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected AttacheHandler _attacheHandler; // FIXME: Get rid of me!
     @Inject
     PlannerHostReservationDao _plannerHostReserveDao;
+    @Inject
+    protected DedicatedResourceDao           _dedicatedDao;
 
     protected List<? extends Discoverer> _discoverers;
     public List<? extends Discoverer> getDiscoverers() {
@@ -1030,6 +1034,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 		hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN,
 				capacityTypes);
         _capacityDao.remove(hostCapacitySC);
+        // remove from dedicated resources
+        DedicatedResourceVO dr = _dedicatedDao.findByHostId(hostId);
+        if (dr != null) {
+            _dedicatedDao.remove(dr.getId());
+        }
         txn.commit();
         return true;
     }
@@ -1106,6 +1115,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 										.toString()))) {
                     _clusterVSMMapDao.removeByClusterId(cmd.getId());
                 }
+				// remove from dedicated resources
+				DedicatedResourceVO dr = _dedicatedDao.findByClusterId(cluster.getId());
+				if (dr != null) {
+				    _dedicatedDao.remove(dr.getId());
+				}
             }
 
             txn.commit();

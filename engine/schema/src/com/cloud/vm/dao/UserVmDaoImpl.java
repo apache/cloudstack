@@ -283,11 +283,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
 
     @Override
-    public List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId, long networkId) {
+    public List<UserVmVO> listVirtualNetworkInstancesByAcctAndNetwork(long accountId, long networkId) {
 
         SearchCriteria<UserVmVO> sc = AccountDataCenterVirtualSearch.create();
         sc.setParameters("account", accountId);
-        sc.setParameters("dc", dcId);
         sc.setJoinParameters("nicSearch", "networkId", networkId);
 
         return listBy(sc);

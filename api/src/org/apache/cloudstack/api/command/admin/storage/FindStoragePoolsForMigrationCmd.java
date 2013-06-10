@@ -27,14 +27,14 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "findStoragePoolsForMigration", description="Lists storage pools available for migration of a volume.",
-    responseObject=StoragePoolForMigrationResponse.class)
+    responseObject=StoragePoolResponse.class)
 public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(FindStoragePoolsForMigrationCmd.class.getName());
 
@@ -74,13 +74,13 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
     public void execute() {
         Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools =
                 _mgr.listStoragePoolsForMigrationOfVolume(getId());
-        ListResponse<StoragePoolForMigrationResponse> response = new ListResponse<StoragePoolForMigrationResponse>();
-        List<StoragePoolForMigrationResponse> poolResponses = new ArrayList<StoragePoolForMigrationResponse>();
+        ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
+        List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
 
         List<? extends StoragePool> allPools = pools.first();
         List<? extends StoragePool> suitablePoolList = pools.second();
         for (StoragePool pool : allPools) {
-            StoragePoolForMigrationResponse poolResponse = _responseGenerator.createStoragePoolForMigrationResponse(pool);
+            StoragePoolResponse poolResponse = _responseGenerator.createStoragePoolForMigrationResponse(pool);
             Boolean suitableForMigration = false;
             for (StoragePool suitablePool : suitablePoolList) {
                 if (suitablePool.getId() == pool.getId()) {

@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import javax.inject.Inject;
@@ -119,7 +118,6 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
-import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
@@ -145,7 +143,6 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
@@ -254,7 +251,6 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
-import com.cloud.server.Criteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.service.ServiceOfferingVO;
@@ -265,7 +261,6 @@ import com.cloud.storage.S3;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Swift;
@@ -950,9 +945,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public StoragePoolForMigrationResponse createStoragePoolForMigrationResponse(StoragePool pool) {
+    public StoragePoolResponse createStoragePoolForMigrationResponse(StoragePool pool) {
         List<StoragePoolJoinVO> viewPools = ApiDBUtils.newStoragePoolView(pool);
-        List<StoragePoolForMigrationResponse> listPools = ViewResponseHelper.createStoragePoolForMigrationResponse(
+        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolForMigrationResponse(
                 viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
         assert listPools != null && listPools.size() == 1 : "There should be one storage pool returned";
         return listPools.get(0);
@@ -1868,148 +1863,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ApiDBUtils.newEventResponse(vEvent);
     }
 
-    private List<CapacityVO> sumCapacities(List<? extends Capacity> hostCapacities) {
-        Map<String, Long> totalCapacityMap = new HashMap<String, Long>();
-        Map<String, Long> usedCapacityMap = new HashMap<String, Long>();
-
-        Set<Long> poolIdsToIgnore = new HashSet<Long>();
-        Criteria c = new Criteria();
-        // TODO: implement
-        List<? extends StoragePoolVO> allStoragePools = ApiDBUtils.searchForStoragePools(c);
-        for (StoragePoolVO pool : allStoragePools) {
-            StoragePoolType poolType = pool.getPoolType();
-            if (!(poolType.isShared())) {// All the non shared storages shouldn't show up in the capacity calculation
-                poolIdsToIgnore.add(pool.getId());
-            }
-        }
-
-        float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
-
-        // collect all the capacity types, sum allocated/used and sum total...get one capacity number for each
-        for (Capacity capacity : hostCapacities) {
-
-            // check if zone exist
-            DataCenter zone = ApiDBUtils.findZoneById(capacity.getDataCenterId());
-            if (zone == null) {
-                continue;
-            }
-
-            short capacityType = capacity.getCapacityType();
-
-            // If local storage then ignore
-            if ((capacityType == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED || capacityType == Capacity.CAPACITY_TYPE_STORAGE)
-                    && poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
-                continue;
-            }
-
-            String key = capacity.getCapacityType() + "_" + capacity.getDataCenterId();
-            String keyForPodTotal = key + "_-1";
-
-            boolean sumPodCapacity = false;
-            if (capacity.getPodId() != null) {
-                key += "_" + capacity.getPodId();
-                sumPodCapacity = true;
-            }
-
-            Long totalCapacity = totalCapacityMap.get(key);
-            Long usedCapacity = usedCapacityMap.get(key);
-
-            // reset overprovisioning factor to 1
-            float overprovisioningFactor = 1;
-            if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
-                overprovisioningFactor = cpuOverprovisioningFactor;
-            }
-
-            if (totalCapacity == null) {
-                totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor));
-            } else {
-                totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
-            }
-
-            if (usedCapacity == null) {
-                usedCapacity = new Long(capacity.getUsedCapacity());
-            } else {
-                usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
-            }
-
-            if (capacityType == Capacity.CAPACITY_TYPE_CPU || capacityType == Capacity.CAPACITY_TYPE_MEMORY) { // Reserved
-                // Capacity
-                // accounts
-                // for
-                // stopped
-                // vms
-                // that
-                // have been
-                // stopped
-                // within
-                // an
-                // interval
-                usedCapacity += capacity.getReservedCapacity();
-            }
-
-            totalCapacityMap.put(key, totalCapacity);
-            usedCapacityMap.put(key, usedCapacity);
-
-            if (sumPodCapacity) {
-                totalCapacity = totalCapacityMap.get(keyForPodTotal);
-                usedCapacity = usedCapacityMap.get(keyForPodTotal);
-
-                overprovisioningFactor = 1;
-                if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
-                    overprovisioningFactor = cpuOverprovisioningFactor;
-                }
-
-                if (totalCapacity == null) {
-                    totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor));
-                } else {
-                    totalCapacity = new Long((long) (capacity.getTotalCapacity() * overprovisioningFactor)) + totalCapacity;
-                }
-
-                if (usedCapacity == null) {
-                    usedCapacity = new Long(capacity.getUsedCapacity());
-                } else {
-                    usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
-                }
-
-                if (capacityType == Capacity.CAPACITY_TYPE_CPU || capacityType == Capacity.CAPACITY_TYPE_MEMORY) { // Reserved
-                    // Capacity
-                    // accounts
-                    // for
-                    // stopped
-                    // vms
-                    // that
-                    // have
-                    // been
-                    // stopped
-                    // within
-                    // an
-                    // interval
-                    usedCapacity += capacity.getReservedCapacity();
-                }
-
-                totalCapacityMap.put(keyForPodTotal, totalCapacity);
-                usedCapacityMap.put(keyForPodTotal, usedCapacity);
-            }
-        }
-
-        List<CapacityVO> summedCapacities = new ArrayList<CapacityVO>();
-        for (String key : totalCapacityMap.keySet()) {
-            CapacityVO summedCapacity = new CapacityVO();
-
-            StringTokenizer st = new StringTokenizer(key, "_");
-            summedCapacity.setCapacityType(Short.parseShort(st.nextToken()));
-            summedCapacity.setDataCenterId(Long.parseLong(st.nextToken()));
-            if (st.hasMoreTokens()) {
-                summedCapacity.setPodId(Long.parseLong(st.nextToken()));
-            }
-
-            summedCapacity.setTotalCapacity(totalCapacityMap.get(key));
-            summedCapacity.setUsedCapacity(usedCapacityMap.get(key));
-
-            summedCapacities.add(summedCapacity);
-        }
-        return summedCapacities;
-    }
 
     @Override
     public List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format) {
@@ -2271,8 +2124,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 CapabilityResponse eIp = new CapabilityResponse();
                 eIp.setName(Capability.ElasticIp.getName());
-                eIp.setValue(offering.getElasticLb() ? "true" : "false");
+                eIp.setValue(offering.getElasticIp() ? "true" : "false");
                 staticNatCapResponse.add(eIp);
+
+                CapabilityResponse associatePublicIp = new CapabilityResponse();
+                associatePublicIp.setName(Capability.AssociatePublicIP.getName());
+                associatePublicIp.setValue(offering.getAssociatePublicIP() ? "true" : "false");
+                staticNatCapResponse.add(associatePublicIp);
 
                 svcRsp.setCapabilities(staticNatCapResponse);
             }
@@ -2482,6 +2340,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setTags(tagResponses);
 
+        if(network.getNetworkACLId() != null){
+            NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
+            if(acl != null){
+                response.setAclId(acl.getUuid());
+            }
+        }
+
         response.setObjectName("network");
         return response;
     }
@@ -2613,6 +2478,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         hpvCapabilitiesResponse.setHypervisorVersion(hpvCapabilities.getHypervisorVersion());
         hpvCapabilitiesResponse.setIsSecurityGroupEnabled(hpvCapabilities.isSecurityGroupEnabled());
         hpvCapabilitiesResponse.setMaxGuestsLimit(hpvCapabilities.getMaxGuestsLimit());
+        hpvCapabilitiesResponse.setMaxDataVolumesLimit(hpvCapabilities.getMaxDataVolumesLimit());
+        hpvCapabilitiesResponse.setMaxHostsPerCluster(hpvCapabilities.getMaxHostsPerCluster());
+        hpvCapabilitiesResponse.setIsStorageMotionSupported(hpvCapabilities.isStorageMotionSupported());
         return hpvCapabilitiesResponse;
     }
 
@@ -3523,6 +3391,17 @@ public class ApiResponseHelper implements ResponseGenerator {
 			//Network ID
 			NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
 			usageRecResponse.setNetworkId(network.getUuid());
+
+        } else if(usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE ||
+                  usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE){
+            //Device Type
+            usageRecResponse.setType(usageRecord.getType());
+            //VM Instance Id
+            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(vm.getUuid());
+            //Volume ID
+            VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(volume.getUuid());
 
 		} else if(usageRecord.getUsageType() == UsageTypes.VOLUME){
 			//Volume ID

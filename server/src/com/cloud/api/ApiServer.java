@@ -201,7 +201,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public void init() {
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
-        sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
+        sc.addAnd("name", SearchCriteria.Op.EQ, Config.IntegrationAPIPort.key());
         List<ConfigurationVO> values = _configDao.search(sc, null);
         if ((values != null) && (values.size() > 0)) {
             ConfigurationVO apiPortConfig = values.get(0);
@@ -214,7 +214,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
         if (strSnapshotLimit != null) {
             Long snapshotLimit = NumbersUtil.parseLong(strSnapshotLimit, 1L);
-            if (snapshotLimit <= 0) {
+            if (snapshotLimit.longValue() <= 0) {
                 s_logger.debug("Global config parameter " + Config.ConcurrentSnapshotsThresholdPerHost.toString()
                         + " is less or equal 0; defaulting to unlimited");
             } else {
@@ -223,8 +223,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
-        for(PluggableService pluggableService: _pluggableServices)
+        for(PluggableService pluggableService: _pluggableServices) {
             cmdClasses.addAll(pluggableService.getCommands());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Discovered plugin " + pluggableService.getClass().getSimpleName());
+            }
+        }
 
         for(Class<?> cmdClass: cmdClasses) {
             APICommand at = cmdClass.getAnnotation(APICommand.class);
@@ -571,6 +575,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void buildAsyncListResponse(BaseListCmd command, Account account) {
         List<ResponseObject> responses = ((ListResponse) command.getResponseObject()).getResponses();
         if (responses != null && responses.size() > 0) {
@@ -861,7 +866,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public void logoutUser(long userId) {
-        _accountMgr.logoutUser(Long.valueOf(userId));
+        _accountMgr.logoutUser(userId);
         return;
     }
 

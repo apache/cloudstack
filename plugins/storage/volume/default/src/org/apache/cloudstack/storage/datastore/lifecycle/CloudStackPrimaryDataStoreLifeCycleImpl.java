@@ -441,18 +441,18 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements
     }
 
     @Override
-    public boolean attachZone(DataStore dataStore, ZoneScope scope) {
-    	List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.KVM, scope.getScopeId());
-    	for (HostVO host : hosts) {
-    		try {
-    			this.storageMgr.connectHostToSharedPool(host.getId(),
-    					dataStore.getId());
-    		} catch (Exception e) {
-    			s_logger.warn("Unable to establish a connection between " + host
-    					+ " and " + dataStore, e);
-    		}
-    	}
-    	this.dataStoreHelper.attachZone(dataStore);
+    public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
+        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
+        for (HostVO host : hosts) {
+            try {
+                this.storageMgr.connectHostToSharedPool(host.getId(),
+                        dataStore.getId());
+            } catch (Exception e) {
+                s_logger.warn("Unable to establish a connection between " + host
+                        + " and " + dataStore, e);
+            }
+        }
+        this.dataStoreHelper.attachZone(dataStore, hypervisorType);
         return true;
     }
 

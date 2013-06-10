@@ -87,6 +87,13 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName(ApiConstants.SCOPE) @Param(description="the scope of the storage pool")
     private String scope;
 
+    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor type of the storage pool")
+    private String hypervisor;
+
+    @SerializedName("suitableformigration") @Param(description="true if this pool is suitable to migrate a volume," +
+            " false otherwise")
+    private Boolean suitableForMigration;
+
     /**
      * @return the scope
      */
@@ -101,9 +108,17 @@ public class StoragePoolResponse extends BaseResponse {
         this.scope = scope;
     }
 
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
     @Override
     public String getObjectId() {
-        return this.getId();
+        return getId();
     }
 
     public String getId() {
@@ -248,5 +263,9 @@ public class StoragePoolResponse extends BaseResponse {
 
     public void setState(StoragePoolStatus state) {
         this.state = state;
+    }
+
+    public void setSuitableForMigration(Boolean suitableForMigration) {
+        this.suitableForMigration = suitableForMigration;
     }
 }

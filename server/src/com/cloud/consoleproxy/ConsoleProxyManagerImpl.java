@@ -559,7 +559,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             if (proxy.getState() == VirtualMachine.State.Stopped) {
                 _itMgr.start(proxy.getUuid(), null, systemUser, systemAcct);
-                return _consoleProxyDao.findById(proxyVmId);
+                proxy = _consoleProxyDao.findById(proxyVmId);
+                if (proxy.getState() == State.Running) {
+                    return null;
+                }
             }
 
             // For VMs that are in Stopping, Starting, Migrating state, let client to wait by returning null

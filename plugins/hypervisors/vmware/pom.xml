@@ -38,6 +38,12 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage</artifactId>
+      <version>4.2.0-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-vim25</artifactId>
       <version>${cs.vmware.api.version}</version>

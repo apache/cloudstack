@@ -203,7 +203,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                 Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
                 if (placeholderNic == null) {
                     s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " for the network " + network);
-                    _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), VirtualMachine.Type.DomainRouter);
+                    _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), null, VirtualMachine.Type.DomainRouter);
                 }
             }
             txn.commit();

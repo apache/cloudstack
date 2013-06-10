@@ -81,6 +81,10 @@ public class CreateStoragePoolCmd extends BaseCmd {
             required=false, description="the scope of the storage: cluster or zone")
     private String scope;
 
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=false,
+            description="hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.")
+    private String hypervisor;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -121,9 +125,9 @@ public class CreateStoragePoolCmd extends BaseCmd {
        return this.scope;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    public String getHypervisor() {
+        return hypervisor;
+    }
 
     @Override
     public String getCommandName() {

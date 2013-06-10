@@ -57,6 +57,10 @@ public class UserVmData {
     private String cpuUsed;
     private Long networkKbsRead;
     private Long networkKbsWrite;
+    private Long diskKbsRead;
+    private Long diskKbsWrite;
+    private Long diskIORead;
+    private Long diskIOWrite;
     private Long guestOsId;
     private Long rootDeviceId;
     private String rootDeviceType;
@@ -364,6 +368,38 @@ public class UserVmData {
         this.networkKbsWrite = networkKbsWrite;
     }
 
+    public Long getDiskKbsRead() {
+        return diskKbsRead;
+    }
+
+    public void setDiskKbsRead(Long diskKbsRead) {
+        this.diskKbsRead = diskKbsRead;
+    }
+    
+    public Long getDiskKbsWrite() {
+        return diskKbsWrite;
+    }
+
+    public void setDiskKbsWrite(Long diskKbsWrite) {
+        this.diskKbsWrite = diskKbsWrite;
+    }
+    
+    public Long getDiskIORead() {
+        return diskIORead;
+    }
+
+    public void setDiskIORead(Long diskIORead) {
+        this.diskIORead = diskIORead;
+    }
+    
+    public Long getDiskIOWrite() {
+        return diskIOWrite;
+    }
+
+    public void setDiskIOWrite(Long diskIOWrite) {
+        this.diskIOWrite = diskIOWrite;
+    }
+    
     public Long getGuestOsId() {
         return guestOsId;
     }

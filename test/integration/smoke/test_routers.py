@@ -107,7 +107,6 @@ class TestRouterServices(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.cleanup = [
-                       cls.vm_1,
                        cls.account,
                        cls.service_offering
                        ]

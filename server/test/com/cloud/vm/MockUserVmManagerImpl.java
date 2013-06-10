@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 
+import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.DataCenter;
@@ -96,6 +97,12 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
 
     @Override
     public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public HashMap<Long, List<VmDiskStatsEntry>> getVmDiskStatistics(long hostId, String hostName, List<Long> vmIds) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -370,4 +377,9 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+    @Override
+    public void collectVmDiskStatistics (UserVmVO userVm) {
+        // TODO Auto-generated method stub
+    }
 }

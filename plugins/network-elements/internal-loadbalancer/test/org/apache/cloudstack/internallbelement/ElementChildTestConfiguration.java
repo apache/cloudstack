@@ -46,7 +46,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 @Configuration
 @ComponentScan(
     basePackageClasses={
-            NetUtils.class,
+            NetUtils.class
     },
     includeFilters={@Filter(value=ElementChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
     useDefaultFilters=false

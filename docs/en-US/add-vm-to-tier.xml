@@ -33,13 +33,21 @@
     </listitem>
     <listitem>
       <para>Click the Configure button of the VPC to which you want to deploy the VMs.</para>
-      <para>The VPC page is displayed where all the tiers you created are listed.</para>
+      <para>The VPC page is displayed where all the tiers you have created are listed.</para>
     </listitem>
     <listitem>
-      <para>Click the Add VM button of the tier for which you want to add a VM.</para>
+      <para>Click Virtual Machines tab of the tier to which you want to add a VM.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="./images/add-vm-vpc.png"/>
+        </imageobject>
+        <textobject>
+          <phrase>add-vm-vpc.png: adding a VM to a vpc.</phrase>
+        </textobject>
+      </mediaobject>
       <para>The Add Instance page is displayed.</para>
       <para>Follow the on-screen instruction to add an instance. For information on adding an
-        instance, see Adding Instances section in the Installation Guide.</para>
+        instance, see the Installation Guide.</para>
     </listitem>
   </orderedlist>
 </section>

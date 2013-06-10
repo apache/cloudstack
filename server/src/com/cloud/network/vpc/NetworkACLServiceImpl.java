@@ -122,7 +122,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         if(vpcId != null){
-            sc.setParameters("vpcId", name);
+            sc.setParameters("vpcId", vpcId);
         }
 
         if(networkId != null){
@@ -304,6 +304,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         //Validate Protocol
+        if(protocol != null){
         //Check if protocol is a number
         if(StringUtils.isNumeric(protocol)){
             int protoNumber = Integer.parseInt(protocol);
@@ -326,6 +327,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (portStart != null || portEnd != null)) {
             throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
+        }
         }
 
         //validate icmp code and type

@@ -15,6 +15,7 @@
 
 package com.cloud.vpc;
 
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
@@ -78,6 +79,8 @@ public class NetworkACLManagerTest extends TestCase{
     NetworkACLItemDao _networkACLItemDao;
     @Inject
     NetworkDao _networkDao;
+    @Inject
+    ConfigurationManager _configMgr;
     @Inject
     NetworkModel _networkModel;
     @Inject
@@ -177,6 +180,11 @@ public class NetworkACLManagerTest extends TestCase{
         @Bean
         public NetworkDao networkDao() {
             return Mockito.mock(NetworkDao.class);
+        }
+
+        @Bean
+        public ConfigurationManager configMgr() {
+            return Mockito.mock(ConfigurationManager.class);
         }
 
         @Bean

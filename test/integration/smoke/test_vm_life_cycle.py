@@ -730,6 +730,15 @@ class TestVMLifeCycle(cloudstackTestCase):
         cmd.virtualmachineid = self.virtual_machine.id
         self.apiclient.attachIso(cmd)
 
+        #determine device type from hypervisor
+        hosts = Host.list(self.apiclient, id=self.virtual_machine.hostid)
+        self.assertTrue(isinstance(hosts, list))
+        self.assertTrue(len(hosts) > 0)
+        self.debug("Found %s host" % hosts[0].hypervisor)
+
+        if hosts[0].hypervisor.lower() == "kvm":
+            self.services["diskdevice"] = "/dev/vda"
+
         try:
             ssh_client = self.virtual_machine.get_ssh_client()
         except Exception as e:

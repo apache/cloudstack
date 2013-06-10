@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,14 +49,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ApiConstants;
-
-import com.cloud.event.ActionEventUtils;
-import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
-import org.apache.cloudstack.api.command.admin.region.*;
-import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -134,6 +127,12 @@ import org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.AddRegionCmd;
+import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
+import org.apache.cloudstack.api.command.admin.region.RemoveRegionCmd;
+import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
@@ -421,6 +420,7 @@ import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -601,79 +601,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
-import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
-import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
-import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
-import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
-import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
-import org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;
-import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
-import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
-import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
-import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
-import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
-import org.apache.cloudstack.api.command.admin.template.PrepareTemplateCmd;
-import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
-import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
-import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
-import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
-import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
-import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
-import org.apache.cloudstack.api.command.user.account.DeleteAccountFromProjectCmd;
-import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
-import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
-import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
-import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
-import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
-import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
-import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
-import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
-import org.apache.cloudstack.api.command.user.event.ListEventTypesCmd;
-import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
-import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
-import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
-import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
-import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
-import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
-import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
-import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
-import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.tag.CreateTagsCmd;
-import org.apache.cloudstack.api.command.user.tag.DeleteTagsCmd;
-import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
-import org.apache.cloudstack.context.CallContext;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -948,38 +875,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    @Override
-    public List<EventVO> getEvents(long userId, long accountId, Long domainId, String type, String level, Date startDate, Date endDate) {
-        SearchCriteria<EventVO> sc = _eventDao.createSearchCriteria();
-        if (userId > 0) {
-            sc.addAnd("userId", SearchCriteria.Op.EQ, userId);
-        }
-        if (accountId > 0) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
-        if (type != null) {
-            sc.addAnd("type", SearchCriteria.Op.EQ, type);
-        }
-        if (level != null) {
-            sc.addAnd("level", SearchCriteria.Op.EQ, level);
-        }
-        if (startDate != null && endDate != null) {
-            startDate = massageDate(startDate, 0, 0, 0);
-            endDate = massageDate(endDate, 23, 59, 59);
-            sc.addAnd("createDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
-        } else if (startDate != null) {
-            startDate = massageDate(startDate, 0, 0, 0);
-            sc.addAnd("createDate", SearchCriteria.Op.GTEQ, startDate);
-        } else if (endDate != null) {
-            endDate = massageDate(endDate, 23, 59, 59);
-            sc.addAnd("createDate", SearchCriteria.Op.LTEQ, endDate);
-        }
-
-        return _eventDao.search(sc, null);
-    }
 
     @Override
     public boolean archiveEvents(ArchiveEventsCmd cmd) {
@@ -1242,10 +1137,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             allHosts.remove(srcHost);
 
             // Check if the host has storage pools for all the volumes of the vm to be migrated.
-            for (Host host : allHosts) {
+            for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
+                Host host = iterator.next();
                 Map<Volume, List<StoragePool>> volumePools = findSuitablePoolsForVolumes(vmProfile, host);
                 if (volumePools.isEmpty()) {
-                    allHosts.remove(host);
+                    iterator.remove();
                 } else {
                     if (!host.getClusterId().equals(srcHost.getClusterId()) || usesLocal) {
                         requiresStorageMotion.put(host, true);
@@ -2255,8 +2151,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends GuestOsCategory>, Integer>(result.first(), result.second());
     }
 
-    @Override
-    public ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId) {
+
+    protected ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId) {
         return _consoleProxyMgr.assignProxy(dataCenterId, userVmId);
     }
 
@@ -4156,8 +4052,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     }
 
-    @Override
-    public void enableAdminUser(String password) {
+
+    private void enableAdminUser(String password) {
         String encodedPassword = null;
 
         UserVO adminUser = _userDao.getUser(2);

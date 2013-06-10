@@ -39,6 +39,7 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
     List<Long> orderClusters(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid)
             throws InsufficientServerCapacityException;
 
-    PlannerResourceUsage getResourceUsage();
+    PlannerResourceUsage getResourceUsage(VirtualMachineProfile vmProfile,
+            DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
 
 }
