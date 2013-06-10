@@ -61,7 +61,7 @@ public class Ternary<T, U, V> {
     
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof Pair)) {
+        if (!(obj instanceof Ternary)) {
             return false;
         }
         Ternary<?, ?, ?> that = (Ternary<?, ?, ?>)obj;
