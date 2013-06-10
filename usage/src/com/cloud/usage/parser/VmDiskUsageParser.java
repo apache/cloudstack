@@ -132,7 +132,7 @@ public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.g
                 usageRecords.add(usageRecord);
                 
                 // Create the usage record for bytes read
-                usageDesc = "disk bytes read";
+                usageDesc = "disk io requests read";
                 if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)){
                     usageDesc += " for Vm: " + vmId + " and Volume: " + volumeId;
                 }
@@ -141,7 +141,7 @@ public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.g
                 usageRecords.add(usageRecord);
 
                 // Create the usage record for bytes write
-                usageDesc = "disk bytes write";
+                usageDesc = "disk io requests write";
                 if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)){
                     usageDesc += " for Vm: " + vmId + " and Volume: " + volumeId;
                 }
