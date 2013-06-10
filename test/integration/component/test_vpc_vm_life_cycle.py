@@ -880,7 +880,6 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                          )
         return
 
-@unittest.skip("debugging")
 class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
     @classmethod
@@ -1681,7 +1680,6 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         return
 
 
-@unittest.skip("debugging")
 class TestVMLifeCycleBothIsolated(cloudstackTestCase):
 
     @classmethod
@@ -2014,7 +2012,6 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
         return
 
 
-@unittest.skip("debugging")
 class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
     @classmethod
