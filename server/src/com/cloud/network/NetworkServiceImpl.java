@@ -670,8 +670,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (network == null) {
             throw new InvalidParameterValueException("Invalid network id is given");
         }
-        accountId = network.getAccountId();
-        domainId = network.getDomainId();
+        accountId = ipOwner.getAccountId();
+        domainId = ipOwner.getDomainId();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
