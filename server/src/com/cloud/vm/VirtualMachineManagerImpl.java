@@ -282,15 +282,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
     
-    @Override
-    public Collection<VirtualMachineGuru> getRegisteredGurus() {
-    	synchronized(_vmGurus) {
-    		return _vmGurus.values();
-    	}
-    }
-
-    @Override
-    public VirtualMachineGuru getVmGuru(VirtualMachine vm) {
+    private VirtualMachineGuru getVmGuru(VirtualMachine vm) {
         return _vmGurus.get(vm.getType());
     }
 

@@ -17,7 +17,6 @@
 package com.cloud.vm;
 
 import java.net.URI;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -95,12 +94,6 @@ public interface VirtualMachineManager extends Manager {
     void expunge(String vmUuid);
 
     void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
-    
-    // FIXME: This method is added by VirtualMachinePowerStateSyncImpl
-    Collection<VirtualMachineGuru> getRegisteredGurus();
-
-    // FIXME: Apparently this method is added by Kelven for VmWorkJobDispatcher.  Should look into removing this.
-    VirtualMachineGuru getVmGuru(VirtualMachine vm);
     
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
