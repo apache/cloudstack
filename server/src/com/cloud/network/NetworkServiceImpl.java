@@ -2663,7 +2663,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                      existingRanges.get(i).second(-1);
                  }
                 value = vnetMap.get((existingRanges.get(i).second()));
-                if (value != null) {
+                if (value != null && ( (existingRanges.get(i).second()) != (existingRanges.get(i).first()) )) {
                     vnetMap.remove((existingRanges.get(i).second()));
                     vnetMap.remove(existingRanges.get(i).first());
                     vnetMap.put(existingRanges.get(i).first(),value);
