@@ -2399,11 +2399,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (fwRule.getTrafficType() == FirewallRule.TrafficType.Ingress) {
             IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
-            response.setPublicIpAddressId(ip.getId());
+            response.setPublicIpAddressId(ip.getUuid());
             response.setPublicIpAddress(ip.getAddress().addr());
         } else if (fwRule.getTrafficType() == FirewallRule.TrafficType.Egress) {
             response.setPublicIpAddress(null);
-            response.setNetworkId(fwRule.getNetworkId());
+            Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
+            response.setNetworkId(network.getUuid());
         }
 
         FirewallRule.State state = fwRule.getState();

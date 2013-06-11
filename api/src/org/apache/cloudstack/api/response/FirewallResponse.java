@@ -39,10 +39,10 @@ public class FirewallResponse extends BaseResponse {
     private String endPort;
 
     @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the firewall rule")
-    private Long publicIpAddressId;
+    private String publicIpAddressId;
 
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network id of the firewall rule")
-    private Long networkId;
+    private String networkId;
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the firewall rule")
     private String publicIpAddress;
@@ -78,7 +78,7 @@ public class FirewallResponse extends BaseResponse {
         this.endPort = endPort;
     }
 
-    public void setPublicIpAddressId(Long publicIpAddressId) {
+    public void setPublicIpAddressId(String publicIpAddressId) {
         this.publicIpAddressId = publicIpAddressId;
     }
 
@@ -86,7 +86,7 @@ public class FirewallResponse extends BaseResponse {
         this.publicIpAddress = publicIpAddress;
     }
 
-    public void setNetworkId(Long networkId) {
+    public void setNetworkId(String networkId) {
         this.networkId = networkId;
     }
 
