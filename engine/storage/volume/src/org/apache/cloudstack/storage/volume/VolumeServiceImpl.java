@@ -51,12 +51,10 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
@@ -75,14 +73,12 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -104,17 +100,11 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     ResourceLimitService _resourceLimitMgr;
     @Inject
-    DownloadMonitor downloadMonitor;
-    @Inject
     AccountManager _accountMgr;
     @Inject
     AlertManager _alertMgr;
     @Inject
-    VMInstanceDao vmDao;
-    @Inject
     ConfigurationDao configDao;
-    @Inject
-    AgentManager _agentMgr;
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
     @Inject

@@ -56,7 +56,6 @@ import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.manager.ImageDataManager;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -67,7 +66,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -81,8 +79,6 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.TemplateManager;
@@ -90,7 +86,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.dao.UserVmDao;
 
 @Component
 public class TemplateServiceImpl implements TemplateService {
@@ -114,21 +109,11 @@ public class TemplateServiceImpl implements TemplateService {
     @Inject
     TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
-    VolumeDataStoreDao _volumeStoreDao;
-    @Inject
-    DownloadMonitor _dlMonitor;
-    @Inject
     DataCenterDao _dcDao = null;
     @Inject
     VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
     ClusterDao _clusterDao;
-    @Inject
-    UserVmDao _userVmDao;
-    @Inject
-    UserVmJoinDao _userVmJoinDao;
-    @Inject
-    VolumeDao _volumeDao;
     @Inject
     TemplateDataFactory _templateFactory;
     @Inject
