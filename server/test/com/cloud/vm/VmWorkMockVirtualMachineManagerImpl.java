@@ -141,26 +141,22 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public void start(String vmUuid, Map<Param, Object> params,
-            User caller, Account account) {
+    public void start(String vmUuid, Map<Param, Object> params) {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-    public void start(String vmUuid, Map<Param, Object> params,
-            User caller, Account account, DeploymentPlan planToDeploy) {
+    public void start(String vmUuid, Map<Param, Object> params, DeploymentPlan planToDeploy) {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-    public void stop(String vmUuid, User caller,
-            Account account) {
+    public void stop(String vmUuid) {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-    public void expunge(String vmUuid, User caller,
-            Account account) {
+    public void expunge(String vmUuid) {
 		// TODO Auto-generated method stub
 	}
 
@@ -190,16 +186,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public void advanceStart(String vmUuid,
-			Map<Param, Object> params, User caller, Account account)
-			throws InsufficientCapacityException, ResourceUnavailableException,
-			ConcurrentOperationException, OperationTimedoutException {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-    public void advanceStart(String vmUuid,
-			Map<Param, Object> params, User caller, Account account,
+    public void advanceStart(String vmUuid, Map<Param, Object> params,
 			DeploymentPlan planToDeploy) throws InsufficientCapacityException,
 			ResourceUnavailableException, ConcurrentOperationException,
 			OperationTimedoutException {
@@ -207,22 +194,19 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public void advanceStop(String vmUuid, boolean forced,
-			User caller, Account account) throws ResourceUnavailableException,
+    public void advanceStop(String vmUuid, boolean forced) throws ResourceUnavailableException,
 			OperationTimedoutException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-    public void advanceExpunge(String vmUuid, User caller,
-			Account account) throws ResourceUnavailableException,
+    public void advanceExpunge(String vmUuid) throws ResourceUnavailableException,
 			OperationTimedoutException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-    public boolean destroy(String vmUuid, User caller,
-			Account account) throws AgentUnavailableException,
+    public boolean destroy(String vmUuid) throws AgentUnavailableException,
 			OperationTimedoutException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
 		return false;

@@ -364,9 +364,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void expunge(String vmUuid, User caller, Account account) {
+    public void expunge(String vmUuid) {
         try {
-            advanceExpunge(vmUuid, caller, account);
+            advanceExpunge(vmUuid);
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation timed out", e);
         } catch (ConcurrentOperationException e) {
@@ -377,7 +377,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void advanceExpunge(String vmUuid, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException,
+    public void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException,
             ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null || vm.getRemoved() != null) {
@@ -387,7 +387,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
 
-        advanceStop(vmUuid, false, caller, account);
+        advanceStop(vmUuid, false);
 
         vm = _vmDao.findByUuid(vmUuid);
         try {
@@ -493,14 +493,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) {
-        start(vmUuid, params, caller, account, null);
+    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) {
+        start(vmUuid, params, null);
     }
 
     @Override
-    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) {
+    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) {
         try {
-            advanceStart(vmUuid, params, caller, account, planToDeploy);
+            advanceStart(vmUuid, params, planToDeploy);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException(e).add(VirtualMachine.class, vmUuid);
         } catch (InsufficientCapacityException e) {
@@ -671,18 +671,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
-    	ConcurrentOperationException, ResourceUnavailableException {
-        advanceStart(vmUuid, params, caller, account, null);
-    }
-    
-    @Override
     @DB
-    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, User callingUser, Account callingAccount, DeploymentPlan planToDeploy)
+    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy)
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         CallContext context = CallContext.current();
-        callingUser = context.getCallingUser();
-        callingAccount = context.getCallingAccount();
+        User callingUser = context.getCallingUser();
+        Account callingAccount = context.getCallingAccount();
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
     	
@@ -1013,9 +1007,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
     
     @Override
-    public void stop(String vmUuid, User user, Account account) {
+    public void stop(String vmUuid) {
         try {
-            advanceStop(vmUuid, false, user, account);
+            advanceStop(vmUuid, false);
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException(e).add(VirtualMachine.class, vmUuid);
         } catch (ConcurrentOperationException e) {
@@ -1114,9 +1108,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
     
     @Override
-    public void advanceStop(final String vmUuid, boolean forced, User user, Account account) throws ResourceUnavailableException,
+    public void advanceStop(final String vmUuid, boolean forced) throws ResourceUnavailableException,
             OperationTimedoutException, ConcurrentOperationException {
-        CallContext context = CallContext.current();
+        CallContext cc = CallContext.current();
+        Account account = cc.getCallingAccount();
+        User user = cc.getCallingUser();
+
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
     	VmWorkJobVO workJob = null;
     	Transaction txn = Transaction.currentTxn();
@@ -1132,7 +1129,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         		assert(pendingWorkJobs.size() == 1);
         		workJob = pendingWorkJobs.get(0);
         	} else {
-                workJob = new VmWorkJobVO(context.getContextId());
+                workJob = new VmWorkJobVO(cc.getContextId());
         	
                 workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
                 workJob.setCmd(VmWorkJobDispatcher.Stop);
@@ -1534,7 +1531,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean destroy(String vmUuid, User user, Account caller) throws ResourceUnavailableException, OperationTimedoutException,
+    public boolean destroy(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException,
             ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (s_logger.isDebugEnabled()) {
@@ -1547,7 +1544,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return true;
         }
 
-        advanceStop(vmUuid, _forceStop, user, caller);
+        advanceStop(vmUuid, _forceStop);
         
         vm = _vmDao.findById(vm.getId());
 
@@ -2098,7 +2095,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return true;
             }
             try {
-                advanceStop(vm.getUuid(), true, cc.getCallingUser(), cc.getCallingAccount());
+                advanceStop(vm.getUuid(), true);
                 return true;
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Unable to stop VM due to " + e.getMessage());

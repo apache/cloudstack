@@ -526,7 +526,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         _accountMgr.checkAccess(caller, null, true, internalLbVm);
 
         try {
-            _itMgr.expunge(internalLbVm.getUuid(), _accountMgr.getActiveUser(callerUserId), caller);
+            _itMgr.expunge(internalLbVm.getUuid());
             return true;
         } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to expunge internal load balancer", e);
@@ -552,7 +552,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
     protected VirtualRouter stopInternalLbVm(DomainRouterVO internalLbVm, boolean forced, Account caller, long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
         s_logger.debug("Stopping internal lb vm " + internalLbVm);
         try {
-            _itMgr.advanceStop(internalLbVm.getUuid(), forced, _accountMgr.getActiveUser(callerUserId), caller);
+            _itMgr.advanceStop(internalLbVm.getUuid(), forced);
             return _internalLbVmDao.findById(internalLbVm.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + internalLbVm, e);
@@ -830,7 +830,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
         try {
-            _itMgr.start(internalLbVm.getUuid(), params, _accountMgr.getUserIncludingRemoved(callerUserId), caller, null);
+            _itMgr.start(internalLbVm.getUuid(), params, null);
             internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
             if (internalLbVm.isStopPending()) {
                 s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");

@@ -204,6 +204,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     static final private String _systemVmType = "elbvm";
     
     boolean _enabled;
+    long _gcIntervalMinutes;
     TrafficType _frontendTrafficType = TrafficType.Guest;
 
     Account _systemAcct;
@@ -386,6 +387,15 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     }
 
     @Override
+    public boolean start() {
+        if (_enabled) {
+            _gcThreadPool.scheduleAtFixedRate(new CleanupTask(), _gcIntervalMinutes, _gcIntervalMinutes, TimeUnit.MINUTES);
+        }
+        return true;
+
+    }
+
+    @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
@@ -420,12 +430,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
             } else
                 throw new ConfigurationException("ELB: Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
             s_logger.info("ELB: Elastic Load Balancer: will balance on " + traffType );
-            int gcIntervalMinutes =  NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmGcInterval.key()), 5);
-            if (gcIntervalMinutes < 5)
-                gcIntervalMinutes = 5;
-            s_logger.info("ELB: Elastic Load Balancer: scheduling GC to run every " + gcIntervalMinutes + " minutes" );
+            _gcIntervalMinutes = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmGcInterval.key()), 5);
+            if (_gcIntervalMinutes < 5)
+                _gcIntervalMinutes = 5;
+            s_logger.info("ELB: Elastic Load Balancer: scheduling GC to run every " + _gcIntervalMinutes + " minutes");
             _gcThreadPool = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ELBVM-GC"));
-            _gcThreadPool.scheduleAtFixedRate(new CleanupThread(), gcIntervalMinutes, gcIntervalMinutes, TimeUnit.MINUTES);
             _itMgr.registerGuru(VirtualMachine.Type.ElasticLoadBalancerVm, this);
         }
         
@@ -537,7 +546,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting ELB VM " + elbVm);
         try {
-            _itMgr.start(elbVm.getUuid(), params, user, caller);
+            _itMgr.start(elbVm.getUuid(), params);
             return _routerDao.findById(elbVm.getId());
         } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to start " + elbVm, e);
@@ -548,7 +557,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping ELB vm " + elbVm);
         try {
-            _itMgr.advanceStop(elbVm.getUuid(), forced, user, caller);
+            _itMgr.advanceStop(elbVm.getUuid(), forced);
             return _routerDao.findById(elbVm.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + elbVm, e);
@@ -739,7 +748,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
             if (gceed) {
                 try {
                     s_logger.info("Attempting to destroy ELB VM: " + elbVm);
-                    _itMgr.expunge(elbVm.getUuid(), user, _systemAcct);
+                    _itMgr.expunge(elbVm.getUuid());
                 } catch (CloudRuntimeException e) {
                     s_logger.warn("Unable to destroy unused ELB vm " + elbVm + " due to ", e);
                     gceed = false;
@@ -753,14 +762,21 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
         _gcCandidateElbVmIds = currentGcCandidates;
     }
     
-    public class CleanupThread implements Runnable {
+    public class CleanupTask implements Runnable {
         @Override
         public void run() {
+            try {
+                CallContext.registerSystemCallContextOnceOnly();
+            } catch (Exception e) {
+                s_logger.fatal("Unable to establish system context");
+                System.exit(1);
+            }
+            
             garbageCollectUnusedElbVms();
             
         }
 
-        CleanupThread() {
+        CleanupTask() {
 
         }
     }

@@ -87,13 +87,13 @@ public interface VirtualMachineManager extends Manager {
             HypervisorType hyperType,
             Account owner);
 
-    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, @Deprecated User caller, @Deprecated Account account);
+    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
-    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, @Deprecated User caller, @Deprecated Account account, DeploymentPlan planToDeploy);
+    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
 
-    void stop(String vmUuid, @Deprecated User caller, @Deprecated Account account);
+    void stop(String vmUuid);
 
-    void expunge(String vmUuid, @Deprecated User caller, @Deprecated Account account);
+    void expunge(String vmUuid);
 
     void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru);
     
@@ -105,19 +105,16 @@ public interface VirtualMachineManager extends Manager {
     
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
-    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, @Deprecated User caller, @Deprecated Account account) throws InsufficientCapacityException,
-            ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
-
-    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, @Deprecated User caller, @Deprecated Account account, DeploymentPlan planToDeploy)
+    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
-    void advanceStop(String vmUuid, boolean cleanup, @Deprecated User caller, @Deprecated Account account) throws ResourceUnavailableException, OperationTimedoutException,
+    void advanceStop(String vmUuid, boolean cleanup) throws ResourceUnavailableException, OperationTimedoutException,
             ConcurrentOperationException;
 
-    void advanceExpunge(String vmUuid, @Deprecated User caller, @Deprecated Account account) throws ResourceUnavailableException, OperationTimedoutException,
+    void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException,
             ConcurrentOperationException;
 
-    boolean destroy(String vmUuid, @Deprecated User caller, @Deprecated Account account) throws ResourceUnavailableException, OperationTimedoutException,
+    boolean destroy(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException,
             ConcurrentOperationException;
 
     boolean migrateAway(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException;

@@ -374,7 +374,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 @Override
                 public void run() {
                     try {
-                        CallContext.registerOnceOnly();
+                        CallContext.registerSystemCallContextOnceOnly();
                     } catch (Exception e) {
                         s_logger.error("Unable to register context", e);
                         return;

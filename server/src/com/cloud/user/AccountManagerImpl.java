@@ -815,7 +815,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean success = true;
         for (VMInstanceVO vm : vms) {
             try {
-                _itMgr.stop(vm.getUuid(), getSystemUser(), getSystemAccount());
+                _itMgr.stop(vm.getUuid());
             } catch (CloudRuntimeException ote) {
                 s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
                 success = false;
@@ -1452,7 +1452,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         @Override
         public void run() {
             try {
-                CallContext.registerOnceOnly();
+                CallContext.registerSystemCallContextOnceOnly();
             } catch (Exception e) {
                 s_logger.error("Unable to register the system user context", e);
                 return;

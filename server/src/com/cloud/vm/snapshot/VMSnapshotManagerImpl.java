@@ -673,7 +673,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         // start or stop VM first, if revert from stopped state to running state, or from running to stopped
         if(userVm.getState() == VirtualMachine.State.Stopped && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory){
             try {
-                _itMgr.start(userVm.getUuid(), new HashMap<VirtualMachineProfile.Param, Object>(), callerUser, owner);
+                _itMgr.start(userVm.getUuid(), new HashMap<VirtualMachineProfile.Param, Object>());
                 userVm = _userVMDao.findById(userVm.getId());
                 hostId = userVm.getHostId();
             } catch (CloudRuntimeException e) {
@@ -683,7 +683,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }else {
             if(userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk){
                 try {
-                    _itMgr.advanceStop(userVm.getUuid(), false, callerUser, owner);
+                    _itMgr.advanceStop(userVm.getUuid(), false);
                 } catch (Exception e) {
                     s_logger.error("Stop VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
     			    throw new CloudRuntimeException(e.getMessage());

@@ -1177,7 +1177,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         @Override
         public void run() {
             try {
-                CallContext.registerOnceOnly();
+                CallContext.registerSystemCallContextOnceOnly();
             } catch (Exception e) {
                 s_logger.error("Unable to register context", e);
                 return;

@@ -104,14 +104,19 @@ public class CallContext {
         return callingContext;
     }
 
-    public static CallContext registerOnceOnly() {
-        CallContext context = s_currentContext.get();
-        if (context == null) {
-            return register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
+    public static CallContext registerSystemCallContextOnceOnly() {
+        try {
+            CallContext context = s_currentContext.get();
+            if (context == null) {
+                return register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
+            }
+            assert context.getCallingUserId() == User.UID_SYSTEM : "You are calling a very specific method that registers a one time system context.  This method is meant for background threads that does processing.";
+            return context;
+        } catch (Exception e) {
+            s_logger.fatal("Exiting the system because we're unable to register the system call context.", e);
+            System.exit(1);
+            throw new CloudRuntimeException("Should never hit this");
         }
-
-        assert context.getCallingUserId() == User.UID_SYSTEM : "You are calling a very specific method that registers a one time system context.  This method is meant for background threads that does processing.";
-        return context;
     }
 
     public static CallContext register(String callingUserUuid, String callingAccountUuid, String contextId) {

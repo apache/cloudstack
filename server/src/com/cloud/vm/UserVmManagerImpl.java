@@ -1512,7 +1512,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         try {
             List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             // expunge the vm
-            _itMgr.advanceExpunge(vm.getUuid(), _accountMgr.getSystemUser(), caller);
+            _itMgr.advanceExpunge(vm.getUuid());
 
             // Update Resource count
             if (vm.getAccountId() != Account.ACCOUNT_ID_SYSTEM && !rootVol.isEmpty()) {
@@ -4554,7 +4554,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (needRestart) {
             try {
-                _itMgr.stop(vm.getUuid(), user, caller);
+                _itMgr.stop(vm.getUuid());
             } catch (CloudRuntimeException e) {
                 s_logger.debug("Stop vm " + vm.getUuid() + " failed");
                 CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
@@ -4614,7 +4614,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (needRestart) {
             try {
-                _itMgr.start(vm.getUuid(), null, user, caller);
+                _itMgr.start(vm.getUuid(), null);
             } catch (Exception e) {
                 s_logger.debug("Unable to start VM " + vm.getUuid(), e);
                 CloudRuntimeException ex = new CloudRuntimeException(

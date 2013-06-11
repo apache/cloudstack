@@ -418,7 +418,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         _accountMgr.checkAccess(caller, null, true, router);
 
         try {
-            _itMgr.expunge(router.getUuid(), _accountMgr.getActiveUser(callerUserId), _accountMgr.getAccount(router.getAccountId()));
+            _itMgr.expunge(router.getUuid());
             return router;
         } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to destroy " + router, e);
@@ -1281,7 +1281,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         @Override
         public void run() {
             try {
-                CallContext.registerOnceOnly();
+                CallContext.registerSystemCallContextOnceOnly();
                 while (true) {
                     try {
                         Long networkId = _vrUpdateQueue.take();
@@ -1756,7 +1756,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
                             defaultNetworkStartIp = startIp;
             			} else if (s_logger.isDebugEnabled()){
-            				s_logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId() + 
+            				s_logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId() +
                                     " is already allocated, can't use it for domain router; will get random ip address from the range");
                         }
                     }
@@ -1765,7 +1765,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 if (guestNetwork.getIp6Cidr() != null) {
             		if (placeholder != null && placeholder.getIp6Address() != null) {
             			s_logger.debug("Requesting ipv6 address " + placeholder.getIp6Address() + " stored in placeholder nic for the network " + guestNetwork);
-            			defaultNetworkStartIpv6 = placeholder.getIp6Address(); 
+            			defaultNetworkStartIpv6 = placeholder.getIp6Address();
             		} else {
                     String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
                     if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
@@ -2717,7 +2717,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
         try {
-            _itMgr.start(router.getUuid(), params, user, caller, planToDeploy);
+            _itMgr.start(router.getUuid(), params, planToDeploy);
             router = _routerDao.findById(router.getId());
             if (router.isStopPending()) {
                 s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after start router successfully!");
@@ -2741,7 +2741,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public DomainRouterVO stop(VirtualRouter router, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
-            _itMgr.advanceStop(router.getUuid(), forced, user, caller);
+            _itMgr.advanceStop(router.getUuid(), forced);
             return _routerDao.findById(router.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + router, e);
