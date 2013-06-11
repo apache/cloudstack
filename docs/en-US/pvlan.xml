@@ -111,19 +111,15 @@
             >Private VLAN Catalyst Switch Support Matrix</ulink>for more information.</para>
       </listitem>
       <listitem>
-        <para>Connect a switch to the gateway; connect additional switches to the gateway via a
-          trunk port: Only Cisco Catalyst 4500 has the PVLAN promiscuous trunk mode to connect both
-          normal VLAN and PVLAN to a PVLAN-unaware switch. For other Catalyst PVLAN support switch,
-          connect the switch to upper switch by using cables. The number of cables should be greater
-          than the number of PVLANs used.</para>
-      </listitem>
-      <listitem>
         <para>All the layer 2 switches, which are PVLAN-aware, are connected to each other, and one
           of them is connected to a router. All the ports connected to the host would be configured
-          in trunk mode. Allow Management VLAN, Primary VLAN (public) and secondary Isolated VLAN
+          in trunk mode. Open Management VLAN, Primary VLAN (public) and Secondary Isolated VLAN
           ports. Configure the switch port connected to the router in PVLAN promiscuous trunk mode,
-          which would translate an isolated VLAN to primary VLAN for router, which is PVLAN-unaware.
-        </para>
+          which would translate an isolated VLAN to primary VLAN for the PVLAN-unaware router. </para>
+        <para>Note that only Cisco Catalyst 4500 has the PVLAN promiscuous trunk mode to connect
+          both normal VLAN and PVLAN to a PVLAN-unaware switch. For other Catalyst PVLAN support
+          switch, connect the switch to upper switch by using cables. The number of cables should be
+          greater than the number of PVLANs used.</para>
       </listitem>
       <listitem>
         <para>If your Catalyst switch supports PVLAN, but not PVLAN promiscuous trunk mode, perform
@@ -137,15 +133,15 @@
             <para>For each PVLAN, perform the following:</para>
             <orderedlist numeration="lowerroman">
               <listitem>
-                <para>Connect one port of the Catalyst switch to the upper switch.</para>
+                <para>Connect a port of the Catalyst switch to the upper switch.</para>
               </listitem>
               <listitem>
                 <para>Set the port in the Catalyst Switch in promiscuous mode for one pair of
-                  PVLAN</para>
+                  PVLAN.</para>
               </listitem>
               <listitem>
-                <para>Set the port in upper switch to access mode, and allow only the traffic of
-                  primary VLAN of the PVLAN pair.</para>
+                <para>Set the port in the upper switch to access mode, and allow only the traffic of
+                  the primary VLAN of the PVLAN pair.</para>
               </listitem>
             </orderedlist>
           </listitem>
@@ -154,10 +150,90 @@
       <listitem>
         <para>Configure private VLAN on your physical switches out-of-band.</para>
       </listitem>
+      <listitem>
+        <para>Open vSwitch (OVS) used by XenServer and KVM does not support PVLAN. Therefore,
+          simulate PVLAN on OVS for XenServer and KVM by modifying the flow table to achieve the
+          following:</para>
+        <itemizedlist>
+          <listitem>
+            <para>For every traffic leaving user VMs, tag with the secondary isolated VLAN
+              ID.</para>
+          </listitem>
+          <listitem>
+            <para>Change the VLAN ID to primary VLAN ID.</para>
+            <para>This allows the traffic which is tagged with the secondary isolated VLAN ID reach
+              the DHCP server. </para>
+          </listitem>
+          <listitem>
+            <para>The gateway is PVLAN-unaware; therefore, the switch connected to the gateway
+              should translate all the secondary VLAN to primary VLAN for communicating with the
+              gateway.</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
     </itemizedlist>
   </section>
   <section id="ability-pvlan">
-    <title/>
-    <para/>
+    <title>Creating a PVLAN-Enabled Guest Network</title>
+    <orderedlist>
+      <listitem>
+        <para>Log in to the CloudPlatform UI as administrator.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation, choose Infrastructure.</para>
+      </listitem>
+      <listitem>
+        <para>On Zones, click View More.</para>
+      </listitem>
+      <listitem>
+        <para>Click the zone to which you want to add a guest network.</para>
+      </listitem>
+      <listitem>
+        <para>Click the Physical Network tab.</para>
+      </listitem>
+      <listitem>
+        <para>Click Add guest network.</para>
+        <para>The Add guest network window is displayed.</para>
+      </listitem>
+      <listitem>
+        <para>Specify the following:</para>
+        <itemizedlist>
+          <listitem>
+            <para>Name:</para>
+          </listitem>
+          <listitem>
+            <para>Description:</para>
+          </listitem>
+          <listitem>
+            <para>VLAN ID:</para>
+          </listitem>
+          <listitem>
+            <para>Private VLAN ID:</para>
+          </listitem>
+          <listitem>
+            <para>Scope:</para>
+          </listitem>
+          <listitem>
+            <para>Network Offering:</para>
+          </listitem>
+          <listitem>
+            <para>Gateway:</para>
+          </listitem>
+          <listitem>
+            <para>Netmask:</para>
+          </listitem>
+          <listitem>
+            <para>IP Range:</para>
+          </listitem>
+          <listitem>
+            <para>IPv6 CIDR:</para>
+          </listitem>
+          <listitem>
+            <para>Network Domain:</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem><para>Click OK to confirm.</para></listitem>
+    </orderedlist>
   </section>
 </section>
