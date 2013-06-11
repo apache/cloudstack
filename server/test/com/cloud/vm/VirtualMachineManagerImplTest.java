@@ -58,6 +58,7 @@ import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dao.EntityManager;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -75,8 +76,10 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -152,6 +155,9 @@ public class VirtualMachineManagerImplTest {
         @Mock
         ItWorkVO _work;
 
+    @Mock
+    EntityManager _entityMgr;
+
         @Mock ClusterDao _clusterDao;
         @Mock HostPodDao _podDao;
         @Mock DataCenterDao _dcDao;
@@ -168,31 +174,24 @@ public class VirtualMachineManagerImplTest {
         @Mock StoragePoolVO _destStoragePoolMock;
         @Mock HostVO _srcHostMock;
         @Mock HostVO _destHostMock;
-        @Mock Map<VolumeVO, StoragePoolVO> _volumeToPoolMock;
+    @Mock
+    Map<Volume, StoragePool> _volumeToPoolMock;
 
         @Before
         public void setup(){
             MockitoAnnotations.initMocks(this);
 
-            _vmMgr._templateDao = _templateDao;
+        _vmMgr._entityMgr = _entityMgr;
             _vmMgr._volsDao = _volsDao;
-            _vmMgr.volumeMgr = _storageMgr;
-            _vmMgr._accountDao = _accountDao;
-            _vmMgr._userDao = _userDao;
+            _vmMgr._volumeMgr = _storageMgr;
             _vmMgr._accountMgr = _accountMgr;
             _vmMgr._configMgr = _configMgr;
-            _vmMgr._capacityMgr = _capacityMgr;
             _vmMgr._hostDao = _hostDao;
             _vmMgr._nodeId = 1L;
 /*
             _vmMgr._workDao = _workDao;
 */
             _vmMgr._agentMgr = _agentMgr;
-            _vmMgr._podDao = _podDao;
-            _vmMgr._clusterDao = _clusterDao;
-            _vmMgr._dcDao = _dcDao;
-            _vmMgr._diskOfferingDao = _diskOfferingDao;
-            _vmMgr._storagePoolDao = _storagePoolDao;
             _vmMgr._poolHostDao= _poolHostDao;
             _vmMgr._networkMgr = _networkMgr;
             _vmMgr._hvGuruMgr = _hvGuruMgr;

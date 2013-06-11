@@ -347,7 +347,7 @@ public class VirtualMachineOrchestrator extends ManagerBase {
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
 
 //        ReservationContextImpl.setComponents(_userDao, _domainDao, _accountDao);
-        VirtualMachineProfileImpl.setComponents(_offeringDao, _templateDao, _accountDao);
+        VirtualMachineProfileImpl.setComponents(_entityMgr);
         VirtualMachineEntityImpl2.init(_entityMgr, this, _networkOrchestrator, _storageOrchestrator);
 
         return true;

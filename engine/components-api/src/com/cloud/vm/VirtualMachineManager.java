@@ -21,8 +21,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
@@ -42,7 +40,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -127,7 +125,7 @@ public interface VirtualMachineManager extends Manager {
     VirtualMachine migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
             VirtualMachineMigrationException;
 
-    VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException,
+    VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
             ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
     void reboot(String vmUuid, User caller, Account account);

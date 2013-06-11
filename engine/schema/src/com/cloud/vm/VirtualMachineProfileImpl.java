@@ -22,16 +22,15 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.dao.EntityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
+import com.cloud.user.AccountVO;
 
 /**
  * Implementation of VirtualMachineProfile.
@@ -59,6 +58,9 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
         _offering = offering;
         _params = params;
         _owner = owner;
+        if (_owner == null) {
+            _owner = s_entityMgr.findById(AccountVO.class, vm.getAccountId());
+        }
         if (_params == null) {
             _params = new HashMap<Param, Object>();
         }
@@ -68,10 +70,6 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     
     public VirtualMachineProfileImpl(VMInstanceVO vm) {
         this(vm, null, null, null, null);
-    }
-    
-    public VirtualMachineProfileImpl(VirtualMachine.Type type) {
-        _type = type;
     }
     
     @Override
@@ -87,7 +85,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     @Override
     public ServiceOffering getServiceOffering() {
         if (_offering == null) {
-            _offering = s_offeringDao.findByIdIncludingRemoved(_vm.getServiceOfferingId());
+            _offering = s_entityMgr.findByIdIncludingRemoved(ServiceOfferingVO.class, _vm.getServiceOfferingId());
         }
         return _offering;
     }
@@ -105,7 +103,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     @Override
     public VirtualMachineTemplate getTemplate() {
         if (_template == null && _vm != null) {
-            _template = s_templateDao.findByIdIncludingRemoved(_vm.getTemplateId());
+            _template = s_entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, _vm.getTemplateId());
         }
         return _template;
     }
@@ -182,9 +180,6 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     
     @Override
     public Account getOwner() {
-        if (_owner == null) {
-            _owner = s_accountDao.findByIdIncludingRemoved(_vm.getAccountId());
-        }
         return _owner;
     }
     
@@ -193,14 +188,10 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
         return _bootArgs.toString();
     }
     
-    static ServiceOfferingDao s_offeringDao;
-    static VMTemplateDao s_templateDao;
-    static AccountDao s_accountDao;
+    static EntityManager s_entityMgr;
 
-    public static void setComponents(ServiceOfferingDao offeringDao, VMTemplateDao templateDao, AccountDao accountDao) {
-        s_offeringDao = offeringDao;
-        s_templateDao = templateDao;
-        s_accountDao = accountDao;
+    public static void setComponents(EntityManager entityMgr) {
+        s_entityMgr = entityMgr;
     }
 
     @Override

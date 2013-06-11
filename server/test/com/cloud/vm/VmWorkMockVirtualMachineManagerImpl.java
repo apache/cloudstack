@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -51,7 +50,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -353,7 +352,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 	
     @Override
-    public VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<VolumeVO, StoragePoolVO> volumeToPool) throws ResourceUnavailableException,
+    public VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
             ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
         // TODO Auto-generated method stub
         return null;
