@@ -42,7 +42,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -125,9 +124,9 @@ public interface VirtualMachineManager extends Manager {
     VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
             ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
-    void reboot(String vmUuid, User caller, Account account);
+    void reboot(String vmUuid);
 
-    void advanceReboot(String vmUuid, User caller, Account account) throws InsufficientCapacityException,
+    void advanceReboot(String vmUuid) throws InsufficientCapacityException,
             ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
     VirtualMachine storageMigration(String vmUuid, StoragePool storagePoolId);

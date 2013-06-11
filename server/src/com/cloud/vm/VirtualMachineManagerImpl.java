@@ -2145,9 +2145,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void reboot(String vmUuid, User caller, Account account) {
+    public void reboot(String vmUuid) {
         try {
-            advanceReboot(vmUuid, caller, account);
+            advanceReboot(vmUuid);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Unable to reboot a VM due to concurrent operation", e).add(VirtualMachine.class, vmUuid);
         } catch (InsufficientCapacityException e) {
@@ -2160,7 +2160,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void advanceReboot(String vmUuid, User caller, Account account) throws InsufficientCapacityException,
+    public void advanceReboot(String vmUuid) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException, OperationTimedoutException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm.getHostId() == null) {

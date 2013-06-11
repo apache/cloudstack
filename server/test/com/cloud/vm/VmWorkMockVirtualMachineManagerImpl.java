@@ -52,7 +52,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VirtualMachine.Event;
@@ -230,13 +229,12 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public void reboot(String vmUuid,
-            User caller, Account account) {
+    public void reboot(String vmUuid) {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-    public void advanceReboot(String vmUuid, User caller, Account account)
+    public void advanceReboot(String vmUuid)
 			throws InsufficientCapacityException, ResourceUnavailableException,
 			ConcurrentOperationException, OperationTimedoutException {
 		// TODO Auto-generated method stub

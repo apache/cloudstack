@@ -740,8 +740,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     private UserVm rebootVirtualMachine(long userId, long vmId) {
         UserVmVO vm = _vmDao.findById(vmId);
-        User caller = _accountMgr.getActiveUser(userId);
-        Account owner = _accountMgr.getAccount(vm.getAccountId());
 
         if (vm == null || vm.getState() == State.Destroyed
                 || vm.getState() == State.Expunging || vm.getRemoved() != null) {
@@ -751,7 +749,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (vm.getState() == State.Running && vm.getHostId() != null) {
             collectVmDiskStatistics(vm);
-            _itMgr.reboot(vm.getUuid(), caller, owner);
+            _itMgr.reboot(vm.getUuid());
             return _vmDao.findById(vmId);
         } else {
             s_logger.error("Vm id=" + vmId
