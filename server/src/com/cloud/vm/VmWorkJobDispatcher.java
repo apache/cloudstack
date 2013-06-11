@@ -72,7 +72,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                 _vmMgr.orchestrateStart(vm.getUuid(), start.getParams(), start.getPlan());
             } else if (cmd.equals(Stop)) {
                 VmWorkStop stop = (VmWorkStop)work;
-                _vmMgr.processVmStopWork(vm.getUuid(), stop.isForceStop());
+                _vmMgr.orchestrateStop(vm.getUuid(), stop.isForceStop());
             }
             _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, null);
         } catch(Throwable e) {

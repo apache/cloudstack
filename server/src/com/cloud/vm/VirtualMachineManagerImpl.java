@@ -678,8 +678,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected Ternary<VMInstanceVO, ReservationContext, VmWorkJobVO> changeToStartState(VirtualMachineGuru vmGuru, VMInstanceVO vm, User caller, Account account)
         throws ConcurrentOperationException {
     	
-        long vmId = vm.getId();
-        
         Ternary<VMInstanceVO, ReservationContext, VmWorkJobVO> result = null;
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1251,7 +1249,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    public void processVmStopWork(String vmUuid, boolean forced) throws AgentUnavailableException,
+    public void orchestrateStop(String vmUuid, boolean forced) throws AgentUnavailableException,
             OperationTimedoutException, ConcurrentOperationException {
         CallContext context = CallContext.current();
         User user = context.getCallingUser();
@@ -1644,8 +1642,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public VirtualMachine storageMigration(String vmUuid, StoragePool destPool) {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-        long vmId = vm.getId();
-
         try {
             stateTransitTo(vm, VirtualMachine.Event.StorageMigrationRequested, null);
         } catch (NoTransitionException e) {
@@ -1969,8 +1965,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         DeployDestination destination = new DeployDestination(dc, pod, cluster, destHost);
 
         // Create a map of which volume should go in which storage pool.
-        long vmId = vm.getId();
-        VMInstanceVO vm2 = _vmDao.findById(vmId);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         volumeToPool = getPoolListForVolumesForMigration(profile, destHost, volumeToPool);
 
@@ -2101,7 +2095,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean migrateAway(VirtualMachine.Type vmType, long vmId, long srcHostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException {
-        VirtualMachineGuru vmGuru = _vmGurus.get(vmType);
         VMInstanceVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             s_logger.debug("Unable to find a VM for " + vmId);
@@ -3026,7 +3019,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public VMInstanceVO vm;
         public VirtualMachineGuru guru;
 
-        @SuppressWarnings("unchecked")
         public AgentVmInfo(String name, VirtualMachineGuru guru, VMInstanceVO vm, State state, String host) {
             this.name = name;
             this.state = state;
@@ -3221,9 +3213,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             //3) Convert nicProfile to NicTO
             NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
 
-            //4) plug the nic to the vm
-            VirtualMachineGuru vmGuru = getVmGuru(vmVO);
-
             s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
             
             boolean result = false;
@@ -3277,7 +3266,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
-        VirtualMachineGuru vmGuru = getVmGuru(vmVO);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
@@ -3341,7 +3329,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
-        VirtualMachineGuru vmGuru = getVmGuru(vmVO);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
