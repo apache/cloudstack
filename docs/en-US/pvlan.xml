@@ -192,6 +192,15 @@
         <para>Click the Physical Network tab.</para>
       </listitem>
       <listitem>
+        <para>Click the physical network you want to work with.</para>
+      </listitem>
+      <listitem>
+        <para>On the Guest node of the diagram, click Configure.</para>
+      </listitem>
+      <listitem>
+        <para>Click the Network tab.</para>
+      </listitem>
+      <listitem>
         <para>Click Add guest network.</para>
         <para>The Add guest network window is displayed.</para>
       </listitem>
