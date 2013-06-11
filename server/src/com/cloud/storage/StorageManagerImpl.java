@@ -65,8 +65,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -90,10 +92,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
-import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
@@ -112,11 +111,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
@@ -133,39 +129,28 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
-import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VMTemplateS3Dao;
-import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.listener.VolumeStateListener;
-import com.cloud.storage.s3.S3Manager;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -184,13 +169,10 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
-import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -199,8 +181,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private static final Logger s_logger = Logger.getLogger(StorageManagerImpl.class);
 
     protected String _name;
-    @Inject
-    protected UserVmManager _userVmMgr;
     @Inject
     protected AgentManager _agentMgr;
     @Inject
@@ -214,33 +194,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected HostDao _hostDao;
     @Inject
-    protected ConsoleProxyDao _consoleProxyDao;
-    @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
-    protected SnapshotManager _snapMgr;
-    @Inject
-    protected SnapshotPolicyDao _snapshotPolicyDao;
-    @Inject
     protected StoragePoolHostDao _storagePoolHostDao;
-    @Inject
-    protected AlertManager _alertMgr;
     @Inject
     protected VMTemplatePoolDao _vmTemplatePoolDao = null;
     @Inject
     protected VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
-    protected VMTemplateSwiftDao _vmTemplateSwiftDao = null;
-    @Inject
-    protected VMTemplateS3Dao _vmTemplateS3Dao;
-    @Inject
-    protected S3Manager _s3Mgr;
-    @Inject
     protected VMTemplateDao _vmTemplateDao = null;
-    @Inject
-    protected StoragePoolHostDao _poolHostDao = null;
-    @Inject
-    protected UserVmDao _userVmDao;
     @Inject
     protected VMInstanceDao _vmInstanceDao;
     @Inject
@@ -262,21 +224,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected CapacityManager _capacityMgr;
     @Inject
-    protected DiskOfferingDao _diskOfferingDao;
-    @Inject
-    protected AccountDao _accountDao;
-    @Inject
-    protected EventDao _eventDao = null;
-    @Inject
     protected DataCenterDao _dcDao = null;
     @Inject
-    protected HostPodDao _podDao = null;
-    @Inject
     protected VMTemplateDao _templateDao;
-    @Inject
-    protected ServiceOfferingDao _offeringDao;
-    @Inject
-    protected DomainDao _domainDao;
     @Inject
     protected UserDao _userDao;
     @Inject
@@ -287,8 +237,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected HypervisorGuruManager _hvGuruMgr;
     @Inject
     protected VolumeDao _volumeDao;
-    @Inject
-    protected SecondaryStorageVmManager _ssvmMgr;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -306,13 +254,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     SnapshotDataFactory snapshotFactory;
     @Inject
-    protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
-    @Inject
     ConfigurationServer _configServer;
-
-    @Inject
-    protected ResourceTagDao _resourceTagDao;
-
     @Inject
     DataStoreManager _dataStoreMgr;
     @Inject
@@ -514,7 +456,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
              * cmd
              */
         }
-        List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostStatus(poolVO.getId(), Status.Up);
+        List<StoragePoolHostVO> poolHosts = _storagePoolHostDao.listByHostStatus(poolVO.getId(), Status.Up);
         Collections.shuffle(poolHosts);
         if (poolHosts != null && poolHosts.size() > 0) {
             for (StoragePoolHostVO sphvo : poolHosts) {
@@ -1153,10 +1095,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
                         String installPath = destroyedTemplateStoreVO.getInstallPath();
 
+                        TemplateInfo tmpl = tmplFactory.getTemplate(destroyedTemplateStoreVO.getTemplateId(), store);
                         if (installPath != null) {
                             EndPoint ep = _epSelector.select(store);
-                            Command cmd = new DeleteTemplateCommand(store.getTO(), destroyedTemplateStoreVO.getInstallPath(),
-                                    destroyedTemplate.getId(), destroyedTemplate.getAccountId());
+                            Command cmd = new DeleteCommand(tmpl.getTO());
                             Answer answer = ep.sendMessage(cmd);
 
                             if (answer == null || !answer.getResult()) {
@@ -1230,10 +1172,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                         String installPath = destroyedStoreVO.getInstallPath();
 
+                        VolumeInfo vol = this.volFactory.getVolume(destroyedStoreVO.getVolumeId(), store);
+
                         if (installPath != null) {
                             EndPoint ep = _epSelector.select(store);
-                            DeleteVolumeCommand cmd = new DeleteVolumeCommand(store.getTO(), destroyedStoreVO.getVolumeId(),
-                                    destroyedStoreVO.getInstallPath());
+                            DeleteCommand cmd = new DeleteCommand(vol.getTO());
                             Answer answer = ep.sendMessage(cmd);
                             if (answer == null || !answer.getResult()) {
                                 s_logger.debug("Failed to delete " + destroyedStoreVO + " due to "

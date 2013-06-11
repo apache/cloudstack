@@ -85,6 +85,10 @@ public class TemplateObjectTO implements DataTO {
         return id;
     }
 
+    public void setId(long id){
+        this.id = id;
+    }
+
     public ImageFormat getFormat() {
         return format;
     }
@@ -113,9 +117,6 @@ public class TemplateObjectTO implements DataTO {
         this.displayText = desc;
     }
 
-    public DataStoreTO getImageDataStore() {
-        return this.imageDataStore;
-    }
 
     @Override
     public DataObjectType getObjectType() {
@@ -124,7 +125,11 @@ public class TemplateObjectTO implements DataTO {
 
     @Override
     public DataStoreTO getDataStore() {
-        return (DataStoreTO) this.imageDataStore;
+        return this.imageDataStore;
+    }
+
+    public void setDataStore(DataStoreTO store){
+        this.imageDataStore = store;
     }
 
     /**

@@ -44,18 +44,20 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -80,7 +82,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -1127,15 +1128,27 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         // Delete volumes which are not present on DB.
-        /*
-         * for (Long uniqueName : volumeInfos.keySet()) { TemplateProp vInfo =
-         * volumeInfos.get(uniqueName);
-         * expungeVolumeAsync(volFactory.getVolume(vInfo.getId(), store));
-         *
-         * String description = "Deleted volume " + vInfo.getTemplateName() +
-         * " on image store " + storeId; s_logger.info(description); }
-         */
+        for (Long uniqueName : volumeInfos.keySet()) {
+            TemplateProp tInfo = volumeInfos.get(uniqueName);
 
+            //we cannot directly call expungeVolumeAsync here to
+            // reuse delete logic since in this case, our db does not have
+            // this template at all.
+            VolumeObjectTO tmplTO = new VolumeObjectTO();
+            tmplTO.setDataStore(store.getTO());
+            tmplTO.setPath(tInfo.getInstallPath());
+            tmplTO.setId(tInfo.getId());
+            DeleteCommand dtCommand = new DeleteCommand(tmplTO);
+            EndPoint ep = _epSelector.select(store);
+            Answer answer = ep.sendMessage(dtCommand);
+            if (answer == null || !answer.getResult()) {
+                s_logger.info("Failed to deleted volume at store: " + store.getName());
+
+            } else {
+                String description = "Deleted volume " + tInfo.getTemplateName() + " on secondary storage " + storeId;
+                s_logger.info(description);
+            }
+        }
     }
 
     private Map<Long, TemplateProp> listVolume(DataStore store) {

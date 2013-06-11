@@ -79,6 +79,11 @@ public class VolumeObjectTO implements DataTO {
         return this.dataStore;
     }
 
+
+    public void setDataStore(DataStoreTO store){
+        this.dataStore = store;
+    }
+
     public void setDataStore(PrimaryDataStoreTO dataStore) {
         this.dataStore = dataStore;
     }

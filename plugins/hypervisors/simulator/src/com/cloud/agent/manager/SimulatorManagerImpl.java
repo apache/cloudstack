@@ -26,6 +26,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 
@@ -46,7 +47,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsCommand;
@@ -80,7 +80,6 @@ import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeCommand;
@@ -279,12 +278,10 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 return _mockStorageMgr.ManageSnapshot((ManageSnapshotCommand)cmd);
             } else if (cmd instanceof BackupSnapshotCommand) {
                 return _mockStorageMgr.BackupSnapshot((BackupSnapshotCommand)cmd, info);
-            } else if (cmd instanceof DeleteSnapshotBackupCommand) {
-                return _mockStorageMgr.DeleteSnapshotBackup((DeleteSnapshotBackupCommand)cmd);
             } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
                 return _mockStorageMgr.CreateVolumeFromSnapshot((CreateVolumeFromSnapshotCommand)cmd);
-            } else if (cmd instanceof DeleteTemplateCommand) {
-                return _mockStorageMgr.DeleteTemplate((DeleteTemplateCommand)cmd);
+            } else if (cmd instanceof DeleteCommand) {
+                return _mockStorageMgr.Delete((DeleteCommand)cmd);
             } else if (cmd instanceof SecStorageVMSetupCommand) {
                 return _mockStorageMgr.SecStorageVMSetup((SecStorageVMSetupCommand)cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {

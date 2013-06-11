@@ -28,7 +28,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -45,7 +44,6 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
@@ -54,7 +52,9 @@ import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.simulator.MockHost;
@@ -80,6 +80,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine.State;
 
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.log4j.Logger;
@@ -783,28 +784,6 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
     }
 
     @Override
-    public Answer DeleteSnapshotBackup(DeleteSnapshotBackupCommand cmd) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-        try {
-            txn.start();
-            MockVolumeVO backSnapshot = _mockVolumeDao.findByName(cmd.getSnapshotUuid());
-            if (backSnapshot == null) {
-                return new Answer(cmd, false, "can't find the backupsnapshot: " + cmd.getSnapshotUuid());
-            }
-            _mockVolumeDao.remove(backSnapshot.getId());
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-            throw new CloudRuntimeException("Error when deleting snapshot");
-        } finally {
-            txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
-            txn.close();
-        }
-        return new Answer(cmd);
-    }
-
-    @Override
     public CreateVolumeFromSnapshotAnswer CreateVolumeFromSnapshot(CreateVolumeFromSnapshotCommand cmd) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         MockVolumeVO backSnapshot = null;
@@ -858,20 +837,21 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
         return new CreateVolumeFromSnapshotAnswer(cmd, true, null, volume.getPath());
     }
 
+
     @Override
-    public Answer DeleteTemplate(DeleteTemplateCommand cmd) {
+    public Answer Delete(DeleteCommand cmd) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         try {
             txn.start();
-            MockVolumeVO template = _mockVolumeDao.findByStoragePathAndType(cmd.getTemplatePath());
+            MockVolumeVO template = _mockVolumeDao.findByStoragePathAndType(cmd.getData().getPath());
             if (template == null) {
-                return new Answer(cmd, false, "can't find template:" + cmd.getTemplatePath());
+                return new Answer(cmd, false, "can't find object to delete:" + cmd.getData().getPath());
             }
             _mockVolumeDao.remove(template.getId());
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when deleting template");
+            throw new CloudRuntimeException("Error when deleting object");
         } finally {
             txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
@@ -879,6 +859,9 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
         }
         return new Answer(cmd);
     }
+
+
+
 
     @Override
     public Answer SecStorageVMSetup(SecStorageVMSetupCommand cmd) {

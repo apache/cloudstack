@@ -51,6 +51,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -58,11 +59,11 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.manager.ImageDataManager;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
@@ -445,11 +446,14 @@ public class TemplateServiceImpl implements TemplateService {
         for (String uniqueName : templateInfos.keySet()) {
             TemplateProp tInfo = templateInfos.get(uniqueName);
             if (_tmpltMgr.templateIsDeleteable(tInfo.getId())) {
-                // TODO: we cannot directly call deleteTemplateSync here to
+                // we cannot directly call deleteTemplateSync here to
                 // reuse delete logic since in this case, our db does not have
                 // this template at all.
-                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(store.getTO(), tInfo.getInstallPath(),
-                        null, null);
+                TemplateObjectTO tmplTO = new TemplateObjectTO();
+                tmplTO.setDataStore(store.getTO());
+                tmplTO.setPath(tInfo.getInstallPath());
+                tmplTO.setId(tInfo.getId());
+                DeleteCommand dtCommand = new DeleteCommand(tmplTO);
                 EndPoint ep = _epSelector.select(store);
                 Answer answer = ep.sendMessage(dtCommand);
                 if (answer == null || !answer.getResult()) {
