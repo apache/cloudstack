@@ -56,6 +56,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
@@ -246,6 +247,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 params.put("ctxStartEventId", String.valueOf(eventId));
 
                 CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+                ComponentContext.inject(cmd);
                 ApiDispatcher.getInstance().dispatchCreateCmd(cmd, params);
                 params.put("id", ""+cmd.getEntityId());
                 params.put("ctxStartEventId", "1");
