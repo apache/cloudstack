@@ -35,7 +35,10 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.config.ConfigRepo;
+import org.apache.cloudstack.config.ConfigValue;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.config.Configs;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
@@ -79,8 +82,6 @@ import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.AsyncJobExecutionContext;
-import com.cloud.cluster.ManagementServerNode;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dao.EntityManager;
@@ -145,7 +146,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.Ternary;
@@ -174,7 +174,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Inject
     protected EntityManager _entityMgr;
-
+    @Inject
+    ConfigRepo _configRepo;
     @Inject
     protected StorageManager _storageMgr;
     @Inject
@@ -260,16 +261,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     ScheduledExecutorService _executor = null;
-    protected int _operationTimeout;
 
-    protected int _retry;
+    protected ConfigValue<Integer> _retry;
+    protected ConfigValue<Integer> _cancelWait;
+    protected ConfigValue<Long> _cleanupWait;
+    protected ConfigValue<Long> _cleanupInterval;
+    protected ConfigValue<Long> _opWaitInterval;
+    protected ConfigValue<Integer> _lockStateRetry;
+    protected ConfigValue<Integer> _operationTimeout;
+    protected ConfigValue<Boolean> _forceStop;
     protected long _nodeId;
-    protected long _cleanupWait;
-    protected long _cleanupInterval;
-    protected long _cancelWait;
-    protected long _opWaitInterval;
-    protected int _lockStateRetry;
-    protected boolean _forceStop;
 
     SearchBuilder<VolumeVO> RootVolumeSearch;
 
@@ -437,7 +438,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean start() {
-        _executor.scheduleAtFixedRate(new CleanupTask(), _cleanupInterval, _cleanupInterval, TimeUnit.SECONDS);
+        _executor.scheduleAtFixedRate(new CleanupTask(), _cleanupInterval.value(), _cleanupInterval.value(), TimeUnit.SECONDS);
         cancelWorkItems(_nodeId);
         
         return true;
@@ -452,21 +453,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {
         Map<String, String> params = _configDao.getConfiguration(xmlParams);
 
-        _retry = NumbersUtil.parseInt(params.get(Config.StartRetry.key()), 10);
+        _retry = _configRepo.get(Configs.StartRetry);
+
+        _cancelWait = _configRepo.get(Configs.VmOpCancelInterval);
+        _cleanupWait = _configRepo.get(Configs.VmOpCleanupWait);
+        _cleanupInterval = _configRepo.get(Configs.VmOpCleanupInterval).setMultiplier(1000);
+        _opWaitInterval = _configRepo.get(Configs.VmOpWaitInterval).setMultiplier(1000);
+        _lockStateRetry = _configRepo.get(Configs.VmOpLockStateRetry);
+        _operationTimeout = _configRepo.get(Configs.Wait).setMultiplier(2);
+        _forceStop = _configRepo.get(Configs.VmDestroyForcestop);
 
         ReservationContextImpl.setComponents(_entityMgr);
         VirtualMachineProfileImpl.setComponents(_entityMgr);
 
-        _cancelWait = NumbersUtil.parseLong(params.get(Config.VmOpCancelInterval.key()), 3600);
-        _cleanupWait = NumbersUtil.parseLong(params.get(Config.VmOpCleanupWait.key()), 3600);
-        _cleanupInterval = NumbersUtil.parseLong(params.get(Config.VmOpCleanupInterval.key()), 86400) * 1000;
-        _opWaitInterval = NumbersUtil.parseLong(params.get(Config.VmOpWaitInterval.key()), 120) * 1000;
-        _lockStateRetry = NumbersUtil.parseInt(params.get(Config.VmOpLockStateRetry.key()), 5);
-        _operationTimeout = NumbersUtil.parseInt(params.get(Config.Wait.key()), 1800) * 2;
-        _forceStop = Boolean.parseBoolean(params.get(Config.VmDestroyForcestop.key()));
-
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
-        _nodeId = ManagementServerNode.getManagementServerId();
 
         _agentMgr.registerForHostEvents(this, true, true, true);
         
@@ -862,7 +862,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             boolean reuseVolume = true;
             DeploymentPlan plan = planRequested;
 
-            int retry = _retry;
+            int retry = _retry.value();
             while (retry-- != 0) { // It's != so that it can match -1.
 
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, account, params);
@@ -1370,7 +1370,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return true;
         }
 
-        advanceStop(vmUuid, _forceStop);
+        advanceStop(vmUuid, _forceStop.value());
         
         vm = _vmDao.findById(vm.getId());
 
@@ -2759,7 +2759,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             try {
                 lock.addRef();
-                List<VMInstanceVO> instances = _vmDao.findVMInTransition(new Date(new Date().getTime() - (_operationTimeout * 1000)), State.Starting, State.Stopping);
+                List<VMInstanceVO> instances = _vmDao.findVMInTransition(new Date(new Date().getTime() - (_operationTimeout.value() * 1000)), State.Starting, State.Stopping);
                 for (VMInstanceVO instance : instances) {
                     State state = instance.getState();
                     if (state == State.Stopping) {
