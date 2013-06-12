@@ -77,34 +77,29 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
 
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.OperationFailed, State.Stopped);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.StorageMigrationRequested, State.Migrating);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationRetry, State.Starting);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationFailed, State.Stopped);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportRunning, State.Running);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportStopped, State.Stopped);
-            s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped);
             s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.MigrationRequested, State.Migrating);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportRunning, State.Running);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportStopped, State.Stopped);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.StopRequested, State.Stopping);
-            s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportMigrated, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportRunning, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportStopped, State.Stopped);
-            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.OperationSucceeded, State.Stopped);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.OperationFailed, State.Running);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportRunning, State.Running);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportStopped, State.Stopped);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.StopRequested, State.Stopping);
-            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging);
             s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
@@ -157,7 +152,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     }
 
     public enum Event {
-        CreateRequested,
         StartRequested,
         StopRequested,
         DestroyRequested,
@@ -171,10 +165,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         OperationFailed,
         OperationFailedToError,
         OperationRetry,
-        AgentReportShutdowned,
         AgentReportMigrated,
-        RevertRequested,
-        SnapshotRequested,
     };
 
     public enum Type {

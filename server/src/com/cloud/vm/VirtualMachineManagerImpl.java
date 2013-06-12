@@ -215,14 +215,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected List<DeploymentPlanner> _planners;
 
-    public List<DeploymentPlanner> getPlanners() {
-        return _planners;
-    }
-
-    public void setPlanners(List<DeploymentPlanner> planners) {
-        _planners = planners;
-    }
-
     protected List<HostAllocator> _hostAllocators;
 
     public List<HostAllocator> getHostAllocators() {
