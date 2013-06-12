@@ -664,6 +664,32 @@ class TestLoadBalancingRule(cloudstackTestCase):
         cleanup_resources(cls.api_client, cls._cleanup)
         return
 
+    def try_ssh(self, src_nat_ip_addr, hostnames):
+        try:
+            self.debug(
+                "SSH into VM (IPaddress: %s) & NAT Rule (Public IP: %s)" %
+                (self.vm_1.ipaddress, src_nat_ip_addr.ipaddress)
+                )
+
+            ssh_1 = remoteSSHClient(
+                                    src_nat_ip_addr.ipaddress,
+                                    self.services['lbrule']["publicport"],
+                                    self.vm_1.username,
+                                    self.vm_1.password
+                                    )
+
+            # If Round Robin Algorithm is chosen,
+            # each ssh command should alternate between VMs
+            # hostnames = [ssh_1.execute("hostname")[0]]
+            hostnames.append(ssh_1.execute("hostname")[0])
+
+        except Exception as e:
+            self.fail("%s: SSH failed for VM with IP Address: %s" %
+                                    (e, src_nat_ip_addr.ipaddress))
+
+        time.sleep(self.services["lb_switch_wait"])
+        return
+
     @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_01_create_lb_rule_src_nat(self):
         """Test to create Load balancing rule with source NAT"""
@@ -776,62 +802,33 @@ class TestLoadBalancingRule(cloudstackTestCase):
             [self.vm_1.id, self.vm_2.id],
             "Check List Load Balancer instances Rules returns valid VM ID"
             )
-        try:
-            self.debug(
-                "SSH into VM (IPaddress: %s) & NAT Rule (Public IP: %s)" %
-                (self.vm_1.ipaddress, src_nat_ip_addr.ipaddress)
-                )
-            ssh_1 = remoteSSHClient(
-                                        src_nat_ip_addr.ipaddress,
-                                        self.services['lbrule']["publicport"],
-                                        self.vm_1.username,
-                                        self.vm_1.password
-                                        )
 
-            # If Round Robin Algorithm is chosen,
-            # each ssh command should alternate between VMs
-            hostnames = [ssh_1.execute("hostname")[0]]
 
-        except Exception as e:
-            self.fail("%s: SSH failed for VM with IP Address: %s" %
-                                        (e, src_nat_ip_addr.ipaddress))
+	hostnames = []
+	self.try_ssh(src_nat_ip_addr, hostnames)
+	self.try_ssh(src_nat_ip_addr, hostnames)
+	self.try_ssh(src_nat_ip_addr, hostnames)
+	self.try_ssh(src_nat_ip_addr, hostnames)
+	self.try_ssh(src_nat_ip_addr, hostnames)
 
-        time.sleep(self.services["lb_switch_wait"])
-
-        try:
-            self.debug("SSHing into IP address: %s after adding VMs (ID: %s , %s)" %
-                                            (
-                                             src_nat_ip_addr.ipaddress,
-                                             self.vm_1.id,
-                                             self.vm_2.id
-                                             ))
-
-            ssh_2 = remoteSSHClient(
-                                        src_nat_ip_addr.ipaddress,
-                                        self.services['lbrule']["publicport"],
-                                        self.vm_1.username,
-                                        self.vm_1.password
-                                        )
-            hostnames.append(ssh_2.execute("hostname")[0])
-
-        except Exception as e:
-            self.fail("%s: SSH failed for VM with IP Address: %s" %
-                                        (e, src_nat_ip_addr.ipaddress))
-
-        self.debug("Hostnames: %s" % str(hostnames))
-        self.assertIn(
-                      self.vm_1.name,
-                      hostnames,
-                      "Check if ssh succeeded for server1"
-                    )
-        self.assertIn(
-                      self.vm_2.name,
-                      hostnames,
-                      "Check if ssh succeeded for server2"
-                      )
+	self.debug("Hostnames: %s" % str(hostnames))
+	self.assertIn(
+              self.vm_1.name,
+              hostnames,
+              "Check if ssh succeeded for server1"
+            )
+	self.assertIn(
+              self.vm_2.name,
+              hostnames,
+              "Check if ssh succeeded for server2"
+              )
 
         #SSH should pass till there is a last VM associated with LB rule
         lb_rule.remove(self.apiclient, [self.vm_2])
+
+	# making hostnames list empty
+	hostnames[:] = []
+
         try:
             self.debug("SSHing into IP address: %s after removing VM (ID: %s)" %
                                             (
@@ -839,24 +836,17 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                              self.vm_2.id
                                              ))
 
-            ssh_1 = remoteSSHClient(
-                                        src_nat_ip_addr.ipaddress,
-                                        self.services['lbrule']["publicport"],
-                                        self.vm_1.username,
-                                        self.vm_1.password
-                                        )
+            self.try_ssh(src_nat_ip_addr, hostnames)
 
-            hostnames.append(ssh_1.execute("hostname")[0])
-
-        except Exception as e:
-            self.fail("%s: SSH failed for VM with IP Address: %s" %
-                                        (e, src_nat_ip_addr.ipaddress))
-
-        self.assertIn(
+	    self.assertIn(
                       self.vm_1.name,
                       hostnames,
                       "Check if ssh succeeded for server1"
                       )
+
+        except Exception as e:
+            self.fail("%s: SSH failed for VM with IP Address: %s" %
+                                        (e, src_nat_ip_addr.ipaddress))
 
         lb_rule.remove(self.apiclient, [self.vm_1])
 
@@ -967,50 +957,24 @@ class TestLoadBalancingRule(cloudstackTestCase):
             "Check List Load Balancer instances Rules returns valid VM ID"
         )
         try:
-            self.debug("SSHing into IP address: %s after adding VMs (ID: %s , %s)" %
-                       (
-                           self.non_src_nat_ip.ipaddress.ipaddress,
-                           self.vm_1.id,
-                           self.vm_2.id
-                           ))
-            ssh_1 = remoteSSHClient(
-                self.non_src_nat_ip.ipaddress.ipaddress,
-                self.services['lbrule']["publicport"],
-                self.vm_1.username,
-                self.vm_1.password
-            )
+            hostnames = []
+	    self.try_ssh(self.non_src_nat_ip, hostnames)
+	    self.try_ssh(self.non_src_nat_ip, hostnames)
+	    self.try_ssh(self.non_src_nat_ip, hostnames)
+	    self.try_ssh(self.non_src_nat_ip, hostnames)
+	    self.try_ssh(self.non_src_nat_ip, hostnames)
 
-            # If Round Robin Algorithm is chosen,
-            # each ssh command should alternate between VMs
-            hostnames = [ssh_1.execute("hostname")[0]]
-
-            time.sleep(self.services["lb_switch_wait"])
-
-            self.debug("SSHing again into IP address: %s with VMs (ID: %s , %s) added to LB rule" %
-                       (
-                           self.non_src_nat_ip.ipaddress.ipaddress,
-                           self.vm_1.id,
-                           self.vm_2.id
-                           ))
-            ssh_2 = remoteSSHClient(
-                self.non_src_nat_ip.ipaddress.ipaddress,
-                self.services['lbrule']["publicport"],
-                self.vm_1.username,
-                self.vm_1.password
-            )
-
-            hostnames.append(ssh_2.execute("hostname")[0])
-            self.debug("Hostnames after adding 2 VMs to LB rule: %s" % str(hostnames))
-            self.assertIn(
+	    self.debug("Hostnames: %s" % str(hostnames))
+	    self.assertIn(
                 self.vm_1.name,
                 hostnames,
                 "Check if ssh succeeded for server1"
-            )
-            self.assertIn(
+                )
+	    self.assertIn(
                 self.vm_2.name,
                 hostnames,
                 "Check if ssh succeeded for server2"
-            )
+                )
 
             #SSH should pass till there is a last VM associated with LB rule
             lb_rule.remove(self.apiclient, [self.vm_2])
@@ -1020,24 +984,22 @@ class TestLoadBalancingRule(cloudstackTestCase):
                            self.non_src_nat_ip.ipaddress.ipaddress,
                            self.vm_2.id
                            ))
-            ssh_1 = remoteSSHClient(
-                self.non_src_nat_ip.ipaddress.ipaddress,
-                self.services['lbrule']["publicport"],
-                self.vm_1.username,
-                self.vm_1.password
-            )
+	    # Making host list empty
+            hostnames[:] = []
 
-            hostnames.append(ssh_1.execute("hostname")[0])
+	    self.try_ssh(self.non_src_nat_ip, hostnames)
+
+	    self.assertIn(
+		self.vm_1.name,
+		hostnames,
+		"Check if ssh succeeded for server1"
+		)
+
             self.debug("Hostnames after removing VM2: %s" % str(hostnames))
+
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" %
                       (e, self.non_src_nat_ip.ipaddress.ipaddress))
-
-        self.assertIn(
-            self.vm_1.name,
-            hostnames,
-            "Check if ssh succeeded for server1"
-        )
 
         lb_rule.remove(self.apiclient, [self.vm_1])
         with self.assertRaises(Exception):
@@ -1209,7 +1171,7 @@ class TestRebootRouter(cloudstackTestCase):
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
-                      (self.nat_rule.ipaddress.ipaddress, e))
+                      (self.vm_1.ipaddress, e))
         return
 
     def tearDown(self):
@@ -1275,6 +1237,36 @@ class TestAssignRemoveLB(cloudstackTestCase):
                         self.account,
                         self.service_offering
                         ]
+        return
+
+    def tearDown(self):
+        cleanup_resources(self.apiclient, self.cleanup)
+        return
+
+    def try_ssh(self, src_nat_ip_addr, hostnames):
+        try:
+            self.debug(
+                "SSH into VM (IPaddress: %s) & NAT Rule (Public IP: %s)" %
+                (self.vm_1.ipaddress, src_nat_ip_addr.ipaddress)
+                )
+
+            ssh_1 = remoteSSHClient(
+                                    src_nat_ip_addr.ipaddress,
+                                    self.services['lbrule']["publicport"],
+                                    self.vm_1.username,
+                                    self.vm_1.password
+                                    )
+
+            # If Round Robin Algorithm is chosen,
+            # each ssh command should alternate between VMs
+            # hostnames = [ssh_1.execute("hostname")[0]]
+            hostnames.append(ssh_1.execute("hostname")[0])
+
+        except Exception as e:
+            self.fail("%s: SSH failed for VM with IP Address: %s" %
+                                    (e, src_nat_ip_addr.ipaddress))
+
+        time.sleep(self.services["lb_switch_wait"])
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke"])
@@ -1344,65 +1336,31 @@ class TestAssignRemoveLB(cloudstackTestCase):
                               )
         lb_rule.assign(self.apiclient, [self.vm_1, self.vm_2])
 
-        try:
-            self.debug("SSHing into IP address: %s with VMs (ID: %s , %s) added to LB rule" %
-                                            (
-                                             self.non_src_nat_ip.ipaddress,
-                                             self.vm_1.id,
-                                             self.vm_2.id
-                                             ))
-            #Create SSH client for each VM
-            ssh_1 = remoteSSHClient(
-                                        self.non_src_nat_ip.ipaddress,
-                                        self.services["lbrule"]["publicport"],
-                                        self.vm_1.username,
-                                        self.vm_1.password
-                                        )
-        except Exception as e:
-            self.fail("SSH failed for VM with IP: %s" %
-                                    self.non_src_nat_ip.ipaddress)
+	hostnames = []
+	self.try_ssh(self.non_src_nat_ip, hostnames)
+	self.try_ssh(self.non_src_nat_ip, hostnames)
+	self.try_ssh(self.non_src_nat_ip, hostnames)
+	self.try_ssh(self.non_src_nat_ip, hostnames)
+	self.try_ssh(self.non_src_nat_ip, hostnames)
 
-        try:
-            self.debug("SSHing again into IP address: %s with VMs (ID: %s , %s) added to LB rule" %
-                                            (
-                                             self.non_src_nat_ip.ipaddress,
-                                             self.vm_1.id,
-                                             self.vm_2.id
-                                             ))
-            ssh_2 = remoteSSHClient(
-                                        self.non_src_nat_ip.ipaddress,
-                                        self.services["lbrule"]["publicport"],
-                                        self.vm_2.username,
-                                        self.vm_2.password
-                                        )
+	self.debug("Hostnames: %s" % str(hostnames))
+	self.assertIn(
+              self.vm_1.name,
+              hostnames,
+              "Check if ssh succeeded for server1"
+            )
+	self.assertIn(
+              self.vm_2.name,
+              hostnames,
+              "Check if ssh succeeded for server2"
+              )
 
-            # If Round Robin Algorithm is chosen,
-            # each ssh command should alternate between VMs
-            res_1 = ssh_1.execute("hostname")[0]
-            self.debug(res_1)
-
-            time.sleep(self.services["lb_switch_wait"])
-
-            res_2 = ssh_2.execute("hostname")[0]
-            self.debug(res_2)
-
-        except Exception as e:
-            self.fail("SSH failed for VM with IP: %s" %
-                                    self.non_src_nat_ip.ipaddress)
-
-        self.assertIn(
-                      self.vm_1.name,
-                      res_1,
-                      "Check if ssh succeeded for server1"
-                      )
-        self.assertIn(
-                      self.vm_2.name,
-                      res_2,
-                      "Check if ssh succeeded for server2"
-                      )
 
         #Removing VM and assigning another VM to LB rule
         lb_rule.remove(self.apiclient, [self.vm_2])
+
+	# making hostnames list empty
+	hostnames[:] = []
 
         try:
             self.debug("SSHing again into IP address: %s with VM (ID: %s) added to LB rule" %
@@ -1410,70 +1368,41 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                              self.non_src_nat_ip.ipaddress,
                                              self.vm_1.id,
                                              ))
-            # Again make a SSH connection, as previous is not used after LB remove
-            ssh_1 = remoteSSHClient(
-                                        self.non_src_nat_ip.ipaddress,
-                                        self.services["lbrule"]["publicport"],
-                                        self.vm_1.username,
-                                        self.vm_1.password
-                                        )
-            res_1 = ssh_1.execute("hostname")[0]
-            self.debug(res_1)
+            self.try_ssh(self.non_src_nat_ip, hostnames)
+
+	    self.assertIn(
+                      self.vm_1.name,
+                      hostnames,
+                      "Check if ssh succeeded for server1"
+                      )
 
         except Exception as e:
             self.fail("SSH failed for VM with IP: %s" %
                                     self.non_src_nat_ip.ipaddress)
-
-        self.assertIn(
-                      self.vm_1.name,
-                      res_1,
-                      "Check if ssh succeeded for server1"
-                      )
 
         lb_rule.assign(self.apiclient, [self.vm_3])
 
-        try:
-            ssh_1 = remoteSSHClient(
-                                        self.non_src_nat_ip.ipaddress,
-                                        self.services["lbrule"]["publicport"],
-                                        self.vm_1.username,
-                                        self.vm_1.password
-                                        )
-            ssh_3 = remoteSSHClient(
-                                        self.non_src_nat_ip.ipaddress,
-                                        self.services["lbrule"]["publicport"],
-                                        self.vm_3.username,
-                                        self.vm_3.password
-                                        )
+	# Making hostnames list empty
+        hostnames[:] = []
 
-            res_1 = ssh_1.execute("hostname")[0]
-            self.debug(res_1)
+	self.try_ssh(self.non_src_nat_ip, hostnames)
+	self.try_ssh(self.non_src_nat_ip, hostnames)
+	self.try_ssh(self.non_src_nat_ip, hostnames)
+	self.try_ssh(self.non_src_nat_ip, hostnames)
+	self.try_ssh(self.non_src_nat_ip, hostnames)
 
-            time.sleep(self.services["lb_switch_wait"])
-
-            res_3 = ssh_3.execute("hostname")[0]
-            self.debug(res_3)
-
-        except Exception as e:
-            self.fail("SSH failed for VM with IP: %s" %
-                                    self.non_src_nat_ip.ipaddress)
-
-        self.assertIn(
-                      self.vm_1.name,
-                      res_1,
-                      "Check if ssh succeeded for server1"
-                      )
-        self.assertIn(
-                      self.vm_3.name,
-                      res_3,
-                      "Check if ssh succeeded for server3"
-                      )
+	self.debug("Hostnames: %s" % str(hostnames))
+	self.assertIn(
+              self.vm_1.name,
+              hostnames,
+              "Check if ssh succeeded for server1"
+            )
+	self.assertIn(
+              self.vm_3.name,
+              hostnames,
+              "Check if ssh succeeded for server3"
+              )
         return
-
-    def tearDown(self):
-        cleanup_resources(self.apiclient, self.cleanup)
-        return
-
 
 class TestReleaseIP(cloudstackTestCase):
 
