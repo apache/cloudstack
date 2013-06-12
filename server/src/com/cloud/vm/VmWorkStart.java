@@ -17,14 +17,32 @@
 
 package com.cloud.vm;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.api.ApiSerializerHelper;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
+import org.apache.log4j.Logger;
+
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.utils.Journal;
 
 public class VmWorkStart extends VmWork {
-	private DeploymentPlan plan;
+    private static final Logger s_logger = Logger.getLogger(VmWorkStart.class);
+
+	long dcId;
+	Long podId;
+	Long clusterId;
+	Long hostId;
+	Long poolId;
+	ExcludeList avoids;
+	Long physicalNetworkId;
+	
+	String reservationId;
+	String journalName;
 	
 	// use serialization friendly map
 	private Map<String, String> rawParams;
@@ -33,11 +51,34 @@ public class VmWorkStart extends VmWork {
 	}
 
 	public DeploymentPlan getPlan() {
+		// this is ugly, to work with legacy code, we need to re-construct the DeploymentPlan hard-codely
+		// this has to be refactored together with migrating legacy code into the new way
+		
+		ReservationContext context = null;
+		if(reservationId != null) {
+	        Journal journal = new Journal.LogJournal("VmWorkStart", s_logger);
+			context = new ReservationContextImpl(reservationId, journal, CallContext.current().getCallingUser(), CallContext.current().getCallingAccount());
+		}
+		
+		DeploymentPlan plan = new DataCenterDeployment(
+				dcId, podId, clusterId, hostId, poolId, physicalNetworkId, 
+				context);
 		return plan;
 	}
 
 	public void setPlan(DeploymentPlan plan) {
-		this.plan = plan;
+		if(plan != null) {
+			dcId = plan.getDataCenterId();
+			podId = plan.getPodId();
+			clusterId = plan.getClusterId();
+			hostId = plan.getHostId();
+			poolId = plan.getPoolId();
+			physicalNetworkId = plan.getPhysicalNetworkId();
+			avoids = plan.getAvoids();
+			
+			if(plan.getReservationContext() != null)
+				reservationId = plan.getReservationContext().getReservationId();
+		}
 	}
 
 	public Map<String, String> getRawParams() {
@@ -55,7 +96,7 @@ public class VmWorkStart extends VmWork {
 			// Strong-typing for VirtualMachineProfile.Param is really over-kill, have to deal with it anyway
 			for(Map.Entry<String, String> entry : rawParams.entrySet()) {
 				VirtualMachineProfile.Param key = new VirtualMachineProfile.Param(entry.getKey());
-				Object val = ApiSerializerHelper.fromSerializedString(entry.getValue());
+				Object val = JobSerializerHelper.fromObjectSerializedString(entry.getValue());
 				map.put(key, val);
 			}
 		}
@@ -67,7 +108,8 @@ public class VmWorkStart extends VmWork {
 		if(params != null) {
 			rawParams = new HashMap<String, String>();
 			for(Map.Entry<VirtualMachineProfile.Param, Object> entry : params.entrySet()) {
-				rawParams.put(entry.getKey().getName(), ApiSerializerHelper.toSerializedString(entry.getValue()));
+				rawParams.put(entry.getKey().getName(), JobSerializerHelper.toObjectSerializedString(
+					entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
 			}
 		}
 	}
