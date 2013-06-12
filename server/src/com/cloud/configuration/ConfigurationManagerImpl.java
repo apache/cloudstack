@@ -2528,7 +2528,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        if (sameSubnet.first() == false) {
+        if (sameSubnet == null || sameSubnet.first() == false) {
             s_logger.info("adding a new subnet to the network "+network.getId());
         }
         else {
