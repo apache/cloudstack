@@ -32,6 +32,7 @@ import junit.framework.TestCase;
 
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -414,6 +415,10 @@ public class VmwareDatacenterApiUnitTest {
             return Mockito.mock(RemoveVmwareDcCmd.class);
         }
 
+        @Bean
+        public DataStoreManager dataStoreManager() {
+            return Mockito.mock(DataStoreManager.class);
+        }
         public static class Library implements TypeFilter {
 
             @Override
