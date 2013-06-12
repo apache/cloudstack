@@ -107,7 +107,7 @@ public class AsyncJobMonitor extends ManagerBase {
 		return true;
 	}
 	
-	public void registerActiveTask(long jobId) {
+	public void registerActiveTask(long runNumber, long jobId) {
 		synchronized(this) {
 			s_logger.info("Add job-" + jobId + " into job monitoring");
 			
@@ -116,7 +116,7 @@ public class AsyncJobMonitor extends ManagerBase {
 			long threadId = Thread.currentThread().getId();
 			boolean fromPoolThread = Thread.currentThread().getName().contains(AsyncJobConstants.JOB_POOL_THREAD_PREFIX);
             ActiveTaskRecord record = new ActiveTaskRecord(jobId, threadId, fromPoolThread);
-			_activeTasks.put(jobId, record);
+			_activeTasks.put(runNumber, record);
 			if(fromPoolThread)
 				_activePoolThreads++;
 			else
@@ -124,26 +124,20 @@ public class AsyncJobMonitor extends ManagerBase {
 		}
 	}
 	
-	public void unregisterActiveTask(long jobId) {
+	public void unregisterActiveTask(long runNumber) {
 		synchronized(this) {
-			s_logger.info("Remove job-" + jobId + " from job monitoring");
-
-			ActiveTaskRecord record = _activeTasks.get(jobId);
+			ActiveTaskRecord record = _activeTasks.get(runNumber);
 			assert(record != null);
 			if(record != null) {
+				s_logger.info("Remove job-" + record.getJobId() + " from job monitoring");
+				
 				if(record.isPoolThread())
 					_activePoolThreads--;
 				else
 					_activeInplaceThreads--;
 				
-				_activeTasks.remove(jobId);
+				_activeTasks.remove(runNumber);
 			}
-		}
-	}
-	
-	public boolean isJobActive(long jobId) {
-		synchronized(this) {
-			return _activeTasks.get(jobId) != null;
 		}
 	}
 	

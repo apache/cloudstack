@@ -217,7 +217,7 @@ public class TestAsyncJobManager extends TestCase {
 		});
 		thread.start();
     
-		jobMonitor.registerActiveTask(1);
+		jobMonitor.registerActiveTask(1, 1);
 		
     	asyncMgr.waitAndCheck(new String[] {"VM"}, 5000L, 10000L, new Predicate() {
     		public boolean checkCondition() {

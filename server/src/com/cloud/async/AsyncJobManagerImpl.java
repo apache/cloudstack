@@ -109,6 +109,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
 	private long _jobExpireSeconds = 86400;						// 1 day
     private long _jobCancelThresholdSeconds = 3600;         	// 1 hour (for cancelling the jobs blocking other jobs)
+    
+    private volatile long _executionRunNumber = 1;
 
     private final ScheduledExecutorService _heartbeatScheduler =
             Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
@@ -507,11 +509,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     	return null;
     }
     
+    private long getJobRunNumber() {
+    	synchronized(this) {
+    		return this._executionRunNumber++;
+    	}
+    }
+    
     private Runnable getExecutorRunnable(final AsyncJobManager mgr, final AsyncJob job) {
         return new Runnable() {
             @Override
             public void run() {
             	Transaction txn = null;
+            	long runNumber = getJobRunNumber();
+            	
             	try {
             		//
             		// setup execution environment
@@ -521,10 +531,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     try {
                         JmxUtil.registerMBean("AsyncJobManager", "Active Job " + job.getId(), new AsyncJobMBeanImpl(job));
                     } catch(Exception e) {
-                        s_logger.warn("Unable to register active job " + job.getId() + " to JMX monitoring due to exception " + ExceptionUtil.toString(e));
+                		// Due to co-existence of normal-dispatched-job/wakeup-dispatched-job, MBean register() call
+                		// is expected to fail under situations
+                    	if(s_logger.isTraceEnabled())
+                    		s_logger.trace("Unable to register active job " + job.getId() + " to JMX monitoring due to exception " + ExceptionUtil.toString(e));
                     }
                     
-                    _jobMonitor.registerActiveTask(job.getId());
+                    _jobMonitor.registerActiveTask(runNumber, job.getId());
                     AsyncJobExecutionContext.setCurrentExecutionContext(
                     	(AsyncJobExecutionContext)ComponentContext.inject(new AsyncJobExecutionContext(job))
                     );
@@ -535,17 +548,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
 
                     if((getAndResetPendingSignals(job) & AsyncJobConstants.SIGNAL_MASK_WAKEUP) != 0) {
-                    	if(!_jobMonitor.isJobActive(job.getId())) {
-	                    	AsyncJobDispatcher jobDispatcher = getWakeupDispatcher(job);
-	                    	if(jobDispatcher != null) {
-	                    		jobDispatcher.runJob(job);
-	                    	} else {
-	                    		s_logger.error("Unable to find a wakeup dispatcher from the joined job. job-" + job.getId());
-	                    	}
+                    	AsyncJobDispatcher jobDispatcher = getWakeupDispatcher(job);
+                    	if(jobDispatcher != null) {
+                    		jobDispatcher.runJob(job);
+                    	} else {
+                    		s_logger.error("Unable to find a wakeup dispatcher from the joined job. job-" + job.getId());
                     	}
                     } else {
-                    	assert(_jobMonitor.isJobActive(job.getId()));
-                    	
 	                    AsyncJobDispatcher jobDispatcher = getDispatcher(job.getDispatcher());
 	                    if(jobDispatcher != null) {
 	                    	jobDispatcher.runJob(job);
@@ -574,20 +583,23 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             checkQueue(job.getSyncSource().getQueueId());
                         }
 
-                    	//
-                    	// clean execution environment
-                    	//
-                        AsyncJobExecutionContext.setCurrentExecutionContext(null);
-                        _jobMonitor.unregisterActiveTask(job.getId());
-                   	
                     	try {
                     		JmxUtil.unregisterMBean("AsyncJobManager", "Active Job " + job.getId());
                     	} catch(Exception e) {
-                            s_logger.warn("Unable to unregister job " + job.getId() + " to JMX monitoring due to exception " + ExceptionUtil.toString(e));
+                    		// Due to co-existence of normal-dispatched-job/wakeup-dispatched-job, MBean unregister() call
+                    		// is expected to fail under situations
+                    		if(s_logger.isTraceEnabled())
+                    			s_logger.trace("Unable to unregister job " + job.getId() + " to JMX monitoring due to exception " + ExceptionUtil.toString(e));
                     	}
                     	
 	                    if(txn != null)
 	                    	txn.close();
+	                    
+                    	//
+                    	// clean execution environment
+                    	//
+                        AsyncJobExecutionContext.setCurrentExecutionContext(null);
+                        _jobMonitor.unregisterActiveTask(runNumber);
 	                    
                     } catch(Throwable e) {
                 		s_logger.error("Double exception", e);
