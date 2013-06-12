@@ -158,7 +158,7 @@ public class DiskProfile {
     public void setSize(long size) {
     	this.size = size;
     }
-    
+
     public void setBytesReadRate(long bytesReadRate) {
         this.bytesReadRate = bytesReadRate;
     }

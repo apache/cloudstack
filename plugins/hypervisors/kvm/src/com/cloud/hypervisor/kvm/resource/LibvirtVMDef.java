@@ -26,6 +26,8 @@ import com.cloud.utils.script.Script;
 
 public class LibvirtVMDef {
     private String _hvsType;
+    private static long _libvirtVersion;
+    private static long _qemuVersion;
     private String _domName;
     private String _domUUID;
     private String _desc;
@@ -650,30 +652,19 @@ public class LibvirtVMDef {
             }
             diskBuilder.append("/>\n");
 
-            String libvirtVersion = Script.runSimpleBashScript("virsh version |grep API | awk '{print $4}'");
-            String qemuVersion = Script.runSimpleBashScript("virsh version |grep hypervisor | awk '{print $4}'");
-            if ((_deviceType != deviceType.CDROM) && (libvirtVersion != null) && (qemuVersion != null) 
+            if ((_deviceType != deviceType.CDROM) && (_libvirtVersion >= 9008) && (_qemuVersion >= 1001000)
                     && (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
                     || ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)) )) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
-                String[] libvirtVersions = libvirtVersion.split("\\.");
-                String[] qemuVersions = qemuVersion.split("\\.");
-                if (((libvirtVersions != null) && (libvirtVersions.length == 3) && ((Integer.valueOf(libvirtVersions[0]) > 0)
-                        || ((Integer.valueOf(libvirtVersions[0]) == 0) && (Integer.valueOf(libvirtVersions[1]) > 9))
-                        || ((Integer.valueOf(libvirtVersions[0]) == 0) && (Integer.valueOf(libvirtVersions[1]) == 9) && (Integer.valueOf(libvirtVersions[1]) >= 8))))
-                        && ((qemuVersions != null) && (qemuVersions.length == 3) && ((Integer.valueOf(qemuVersions[0]) > 1)
-                        || ((Integer.valueOf(qemuVersions[0]) == 1) && (Integer.valueOf(qemuVersions[1]) > 1))
-                        || ((Integer.valueOf(qemuVersions[0]) == 1) && (Integer.valueOf(qemuVersions[1]) == 1) && (Integer.valueOf(qemuVersions[1]) >= 0))))) {
-                    diskBuilder.append("<iotune>\n");
-                    if ((_bytesReadRate != null) && (_bytesReadRate > 0))
-                        diskBuilder.append("<read_bytes_sec>" + _bytesReadRate + "</read_bytes_sec>\n");
-                    if ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
-                        diskBuilder.append("<write_bytes_sec>" + _bytesWriteRate + "</write_bytes_sec>\n");
-                    if ((_iopsReadRate != null) && (_iopsReadRate > 0))
-                        diskBuilder.append("<read_iops_sec>" + _iopsReadRate + "</read_iops_sec>\n");
-                    if ((_iopsWriteRate != null) && (_iopsWriteRate > 0))
-                        diskBuilder.append("<write_iops_sec>" + _iopsWriteRate + "</write_iops_sec>\n");
-                    diskBuilder.append("</iotune>\n");
-                }
+                diskBuilder.append("<iotune>\n");
+                if ((_bytesReadRate != null) && (_bytesReadRate > 0))
+                    diskBuilder.append("<read_bytes_sec>" + _bytesReadRate + "</read_bytes_sec>\n");
+                if ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
+                    diskBuilder.append("<write_bytes_sec>" + _bytesWriteRate + "</write_bytes_sec>\n");
+                if ((_iopsReadRate != null) && (_iopsReadRate > 0))
+                    diskBuilder.append("<read_iops_sec>" + _iopsReadRate + "</read_iops_sec>\n");
+                if ((_iopsWriteRate != null) && (_iopsWriteRate > 0))
+                    diskBuilder.append("<write_iops_sec>" + _iopsWriteRate + "</write_iops_sec>\n");
+                diskBuilder.append("</iotune>\n");
             }
 
             diskBuilder.append("</disk>\n");
@@ -1059,6 +1050,14 @@ public class LibvirtVMDef {
 
     public String getHvsType() {
         return _hvsType;
+    }
+
+    public void setLibvirtVersion(long libvirtVersion) {
+        _libvirtVersion = libvirtVersion;
+    }
+
+    public void setQemuVersion(long qemuVersion) {
+        _qemuVersion = qemuVersion;
     }
 
     public void setDomainName(String domainName) {

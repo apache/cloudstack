@@ -336,6 +336,8 @@ ServerResource {
 
     protected HypervisorType _hypervisorType;
     protected String _hypervisorURI;
+    protected long _hypervisorLibvirtVersion;
+    protected long _hypervisorQemuVersion;
     protected String _hypervisorPath;
     protected String _networkDirectSourceMode;
     protected String _networkDirectDevice;
@@ -735,6 +737,8 @@ ServerResource {
         try {
             _hvVersion = conn.getVersion();
             _hvVersion = (_hvVersion % 1000000) / 1000;
+            _hypervisorLibvirtVersion = conn.getLibVirVersion();
+            _hypervisorQemuVersion = conn.getVersion();
         } catch (LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
         }
@@ -3228,6 +3232,8 @@ ServerResource {
         } else {
             guest.setGuestType(GuestDef.guestType.KVM);
             vm.setHvsType(HypervisorType.KVM.toString().toLowerCase());
+            vm.setLibvirtVersion(_hypervisorLibvirtVersion);
+            vm.setQemuVersion(_hypervisorQemuVersion);
         }
         guest.setGuestArch(vmTO.getArch());
         guest.setMachineType("pc");
