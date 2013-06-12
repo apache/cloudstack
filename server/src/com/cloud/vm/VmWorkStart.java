@@ -51,19 +51,23 @@ public class VmWorkStart extends VmWork {
 	}
 
 	public DeploymentPlan getPlan() {
-		// this is ugly, to work with legacy code, we need to re-construct the DeploymentPlan hard-codely
-		// this has to be refactored together with migrating legacy code into the new way
 		
-		ReservationContext context = null;
-		if(reservationId != null) {
-	        Journal journal = new Journal.LogJournal("VmWorkStart", s_logger);
-			context = new ReservationContextImpl(reservationId, journal, CallContext.current().getCallingUser(), CallContext.current().getCallingAccount());
+		if(podId != null || clusterId != null || hostId != null || poolId != null || physicalNetworkId != null) {
+			// this is ugly, to work with legacy code, we need to re-construct the DeploymentPlan hard-codely
+			// this has to be refactored together with migrating legacy code into the new way
+			ReservationContext context = null;
+			if(reservationId != null) {
+		        Journal journal = new Journal.LogJournal("VmWorkStart", s_logger);
+				context = new ReservationContextImpl(reservationId, journal, CallContext.current().getCallingUser(), CallContext.current().getCallingAccount());
+			}
+			
+			DeploymentPlan plan = new DataCenterDeployment(
+					dcId, podId, clusterId, hostId, poolId, physicalNetworkId, 
+					context);
+			return plan;
 		}
 		
-		DeploymentPlan plan = new DataCenterDeployment(
-				dcId, podId, clusterId, hostId, poolId, physicalNetworkId, 
-				context);
-		return plan;
+		return null;
 	}
 
 	public void setPlan(DeploymentPlan plan) {

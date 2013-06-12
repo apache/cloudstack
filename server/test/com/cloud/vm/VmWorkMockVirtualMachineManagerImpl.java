@@ -17,7 +17,6 @@
 package com.cloud.vm;
 
 import java.net.URI;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -164,18 +163,6 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 		// TODO Auto-generated method stub
 		
 	}
-
-	@Override
-    public Collection<VirtualMachineGuru> getRegisteredGurus() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-    @Override
-    public VirtualMachineGuru getVmGuru(VirtualMachine vm) {
-		// TODO Auto-generated method stub
-    	return null;
-    }
 
 	@Override
 	public boolean stateTransitTo(VMInstanceVO vm, Event e, Long hostId)

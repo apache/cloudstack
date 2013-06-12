@@ -141,6 +141,12 @@ public class AsyncJobMonitor extends ManagerBase {
 		}
 	}
 	
+	public boolean isJobActive(long jobId) {
+		synchronized(this) {
+			return _activeTasks.get(jobId) != null;
+		}
+	}
+	
 	public int getActivePoolThreads() {
 		return _activePoolThreads;
 	}

@@ -535,13 +535,17 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
 
                     if((getAndResetPendingSignals(job) & AsyncJobConstants.SIGNAL_MASK_WAKEUP) != 0) {
-                    	AsyncJobDispatcher jobDispatcher = getWakeupDispatcher(job);
-                    	if(jobDispatcher != null) {
-                    		jobDispatcher.runJob(job);
-                    	} else {
-                    		s_logger.error("Unable to find a wakeup dispatcher from the joined job. job-" + job.getId());
+                    	if(!_jobMonitor.isJobActive(job.getId())) {
+	                    	AsyncJobDispatcher jobDispatcher = getWakeupDispatcher(job);
+	                    	if(jobDispatcher != null) {
+	                    		jobDispatcher.runJob(job);
+	                    	} else {
+	                    		s_logger.error("Unable to find a wakeup dispatcher from the joined job. job-" + job.getId());
+	                    	}
                     	}
                     } else {
+                    	assert(_jobMonitor.isJobActive(job.getId()));
+                    	
 	                    AsyncJobDispatcher jobDispatcher = getDispatcher(job.getDispatcher());
 	                    if(jobDispatcher != null) {
 	                    	jobDispatcher.runJob(job);
