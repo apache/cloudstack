@@ -57,7 +57,7 @@ public class DiskOfferingResponse extends BaseResponse {
 
     @SerializedName("storagetype") @Param(description="the storage type for this disk offering")
     private String storageType;
-    
+
     @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the disk offering")
     private Long bytesReadRate;
 
@@ -176,5 +176,5 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setIopsWriteRate(long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
-    }    
+    }
 }

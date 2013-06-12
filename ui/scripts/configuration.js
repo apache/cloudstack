@@ -110,28 +110,28 @@
                     }
                   },
                   diskBytesReadRate: {
-                	  label: 'label.disk.bytes.read.rate',
+                      label: 'label.disk.bytes.read.rate',
                       validation: {
                         required: false, //optional
                         number: true
                       }
                   },
                   diskBytesWriteRate: {
-                          label: 'label.disk.bytes.write.rate',
+                      label: 'label.disk.bytes.write.rate',
                       validation: {
                         required: false, //optional
                         number: true
                       }
                   },
                   diskIopsReadRate: {
-                	  label: 'label.disk.iops.read.rate',
+                      label: 'label.disk.iops.read.rate',
                       validation: {
                         required: false, //optional
                         number: true
                       }
                   },
                   diskIopsWriteRate: {
-                          label: 'label.disk.iops.write.rate',
+                      label: 'label.disk.iops.write.rate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -586,28 +586,28 @@
                     }
                   },
                   diskBytesReadRate: {
-                	  label: 'label.disk.bytes.read.rate',
+                      label: 'label.disk.bytes.read.rate',
                       validation: {
                         required: false, //optional
                         number: true
                       }
                   },
                   diskBytesWriteRate: {
-                          label: 'label.disk.bytes.write.rate',
+                      label: 'label.disk.bytes.write.rate',
                       validation: {
                         required: false, //optional
                         number: true
                       }
                   },
                   diskIopsReadRate: {
-                	  label: 'label.disk.iops.read.rate',
+                      label: 'label.disk.iops.read.rate',
                       validation: {
                         required: false, //optional
                         number: true
                       }
                   },
                   diskIopsWriteRate: {
-                          label: 'label.disk.iops.write.rate',
+                      label: 'label.disk.iops.write.rate',
                       validation: {
                         required: false, //optional
                         number: true
@@ -1043,28 +1043,28 @@
                     validation: { required: true, number: true }
                   },
                   diskBytesReadRate: {
-                          label: 'label.disk.bytes.read.rate',
+                      label: 'label.disk.bytes.read.rate',
                       validation: {
                         required: false, //optional
                         number: true
                       }
                   },
                   diskBytesWriteRate: {
-                          label: 'label.disk.bytes.write.rate',
+                      label: 'label.disk.bytes.write.rate',
                       validation: {
                         required: false, //optional
                         number: true
                       }
                   },
                   diskIopsReadRate: {
-                          label: 'label.disk.iops.read.rate',
+                      label: 'label.disk.iops.read.rate',
                       validation: {
                         required: false, //optional
                         number: true
                       }
                   },
                   diskIopsWriteRate: {
-                          label: 'label.disk.iops.write.rate',
+                      label: 'label.disk.iops.write.rate',
                       validation: {
                         required: false, //optional
                         number: true

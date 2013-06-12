@@ -137,7 +137,7 @@ public class VolumeTO implements InternalIdentity {
     public String toString() {
         return new StringBuilder("Vol[").append(id).append("|").append(type).append("|").append(path).append("|").append(size).append("]").toString();
     }
-    
+
     public void setBytesReadRate(long bytesReadRate) {
         this.bytesReadRate = bytesReadRate;
     }

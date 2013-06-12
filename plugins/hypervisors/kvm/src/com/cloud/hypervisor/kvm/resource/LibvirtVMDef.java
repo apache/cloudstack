@@ -589,7 +589,7 @@ public class LibvirtVMDef {
             char suffix = this._diskLabel.charAt(this._diskLabel.length() - 1);
             return suffix - 'a';
         }
-        
+
         public void setBytesReadRate(long bytesReadRate) {
             _bytesReadRate = bytesReadRate;
         }
@@ -649,7 +649,7 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
-            
+
             String libvirtVersion = Script.runSimpleBashScript("virsh version |grep API | awk '{print $4}'");
             String qemuVersion = Script.runSimpleBashScript("virsh version |grep hypervisor | awk '{print $4}'");
             if ((_deviceType != deviceType.CDROM) && (libvirtVersion != null) && (qemuVersion != null) 
@@ -675,7 +675,7 @@ public class LibvirtVMDef {
                     diskBuilder.append("</iotune>\n");
                 }
             }
-            
+
             diskBuilder.append("</disk>\n");
             return diskBuilder.toString();
         }

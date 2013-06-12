@@ -61,7 +61,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
-    
+
     @Parameter(name=ApiConstants.BYTES_READ_RATE, type=CommandType.LONG, required=false, description="bytes read rate of the disk offering")
     private Long bytesReadRate;
 
@@ -104,10 +104,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     public Long getDomainId(){
         return domainId;
     }
-    
+
     public long getBytesReadRate() {
-        return bytesReadRate;
-        //return (bytesReadRate == null) || (bytesReadRate < 0) ? 0 : bytesReadRate;
+        return (bytesReadRate == null) || (bytesReadRate < 0) ? 0 : bytesReadRate;
     }
 
     public long getBytesWriteRate() {
@@ -143,7 +142,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         DiskOffering offering = _configService.createDiskOffering(this);

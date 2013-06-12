@@ -99,7 +99,7 @@ public class DiskOfferingVO implements DiskOffering {
 
     @Column(name="sort_key")
     int sortKey;
-    
+
     @Column(name="bytes_read_rate")
     long bytesReadRate;
 

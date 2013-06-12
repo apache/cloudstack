@@ -2169,8 +2169,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             newDiskOffering.setIopsReadRate(iopsReadRate);
         if (iopsWriteRate != null && (iopsWriteRate > 0))
             newDiskOffering.setIopsWriteRate(iopsWriteRate);
-	s_logger.warn("bytesReadRate =" + bytesReadRate);
-	s_logger.warn("newDiskOffering.getBytesReadRate" + newDiskOffering.getBytesReadRate());
 
         UserContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);

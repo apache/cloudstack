@@ -105,7 +105,7 @@ public class LibvirtDomainXMLParser {
                                 DiskDef.diskBus.valueOf(bus.toUpperCase()));
                     }
                 }
-                
+
                 NodeList iotune = disk.getElementsByTagName("iotune");
                 if ((iotune != null) && (iotune.getLength() !=0)) {
                     String bytesReadRateStr = getTagValue("read_bytes_sec", (Element)iotune.item(0));

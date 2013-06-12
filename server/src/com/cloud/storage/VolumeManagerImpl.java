@@ -678,7 +678,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         dskCh.setHyperType(hyperType);
- 
+
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(
                 avoids);
 

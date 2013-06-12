@@ -100,7 +100,7 @@ public class AttachVolumeCommand extends Command {
     public String getChainInfo() {
     	return chainInfo;
     }
-    
+
     public void setBytesReadRate(long bytesReadRate) {
         this.bytesReadRate = bytesReadRate;
     }
