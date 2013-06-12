@@ -1311,7 +1311,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         return true;
     }
 
-    private boolean validateVolumeSizeRange(long size) {
+    @Override
+    public boolean validateVolumeSizeRange(long size) {
         if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
             throw new InvalidParameterValueException(
                     "Please specify a size of at least 1 Gb.");
