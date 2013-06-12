@@ -640,9 +640,14 @@
                       name: { label: 'label.name' },
                       type: { label: 'label.type' }
                     },
-                    dataProvider: function(args) {										  
+                    dataProvider: function(args) {				
+                      var data = {
+                        domainid: args.context.instances[0].domainid,
+                        account: args.context.instances[0].account
+                      };                    
 											$.ajax({
 												url: createURL('listAffinityGroups'),
+												data: data,
 												async: false, //make it sync to avoid dataProvider() being called twice which produces duplicate data
 												success: function(json) {	
                           var items = [];												
