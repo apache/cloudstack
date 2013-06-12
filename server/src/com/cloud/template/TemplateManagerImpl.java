@@ -1199,6 +1199,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // convert projectIds to accountNames
         if (projectIds != null) {
+            // CS-17842, initialize accountNames list
+            if (accountNames == null ){
+                accountNames = new ArrayList<String>();
+            }
             for (Long projectId : projectIds) {
                 Project project = _projectMgr.getProject(projectId);
                 if (project == null) {
