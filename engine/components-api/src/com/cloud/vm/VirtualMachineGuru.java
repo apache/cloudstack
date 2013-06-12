@@ -57,11 +57,4 @@ public interface VirtualMachineGuru {
      * @return
      */
     void prepareStop(VirtualMachineProfile profile);
-    
-    /**
-     * VM work handlers
-     * @param work
-     */
-//    void vmWorkStart(VmWork work);
-//    void vmWorkStop(VmWork work);
 }

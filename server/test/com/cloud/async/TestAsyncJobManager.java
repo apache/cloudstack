@@ -101,7 +101,7 @@ public class TestAsyncJobManager extends TestCase {
     @After                                                   
     public void tearDown() {                                 
     	Transaction.currentTxn().close();                    
-    }        
+    }
     
     @Test
     public void testJobJournal() {

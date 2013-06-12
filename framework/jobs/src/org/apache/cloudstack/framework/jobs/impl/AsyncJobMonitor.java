@@ -109,6 +109,8 @@ public class AsyncJobMonitor extends ManagerBase {
 	
 	public void registerActiveTask(long jobId) {
 		synchronized(this) {
+			s_logger.info("Add job-" + jobId + " into job monitoring");
+			
 			assert(_activeTasks.get(jobId) == null);
 			
 			long threadId = Thread.currentThread().getId();
@@ -124,6 +126,8 @@ public class AsyncJobMonitor extends ManagerBase {
 	
 	public void unregisterActiveTask(long jobId) {
 		synchronized(this) {
+			s_logger.info("Remove job-" + jobId + " from job monitoring");
+
 			ActiveTaskRecord record = _activeTasks.get(jobId);
 			assert(record != null);
 			if(record != null) {
