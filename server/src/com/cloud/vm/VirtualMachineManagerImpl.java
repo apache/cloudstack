@@ -213,6 +213,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
+    @Inject
     protected List<DeploymentPlanner> _planners;
 
     protected List<HostAllocator> _hostAllocators;
