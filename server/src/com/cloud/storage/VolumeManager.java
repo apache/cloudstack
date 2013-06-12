@@ -115,4 +115,7 @@ public interface VolumeManager extends VolumeApiService {
             Account owner);
 
 
+    String getVmNameFromVolumeId(long volumeId);
+
+    String getStoragePoolOfVolume(long volumeId);
 }

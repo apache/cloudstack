@@ -104,7 +104,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone, default template
         cls.zone = get_zone(cls.api_client, cls.services)
-   cls.services["mode"] = cls.zone.networktype
+        cls.services["mode"] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

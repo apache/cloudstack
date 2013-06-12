@@ -485,7 +485,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
         if (add && (!reservedIpAddressesForGuestNetwork.contains(network.getGateway()))) {
             // Insert a new NIC for this guest network to reserve the gateway address
-            _networkMgr.savePlaceholderNic(network,  network.getGateway(), null);
+            _networkMgr.savePlaceholderNic(network,  network.getGateway(), null, null);
         }
         
         // Delete any mappings used for inline external load balancers in this network
@@ -550,7 +550,9 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
                 ruleTO = new FirewallRuleTO(rule, guestVlanTag, rule.getTrafficType());
             } else {
                 IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-                ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
+                Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());
+
+                ruleTO = new FirewallRuleTO(rule, vlan.getVlanTag(), sourceIp.getAddress().addr());
             }
             rulesTO.add(ruleTO);
         }

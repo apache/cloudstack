@@ -946,23 +946,27 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 		if (volume.getInstanceId() != null) {
 			UserVmVO userVm = _vmDao.findById(volume.getInstanceId());
 			if (userVm != null) {
-				if (userVm.getState().equals(State.Destroyed) || userVm.getState().equals(State.Expunging)) {
-					throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volume.getId() + " is associated with vm:" + userVm.getInstanceName() + " is in "
-							+ userVm.getState().toString() + " state");
-				}
+                if (userVm.getState().equals(State.Destroyed) || userVm.getState().equals(State.Expunging)) {
+                    throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volume.getId()
+                            + " is associated with vm:" + userVm.getInstanceName() + " is in "
+                            + userVm.getState().toString() + " state");
+                }
 
-				if(userVm.getHypervisorType() == HypervisorType.VMware || userVm.getHypervisorType() == HypervisorType.KVM) {
-					List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.State.Creating,  Snapshot.State.CreatedOnPrimary,  Snapshot.State.BackingUp);
-					if(activeSnapshots.size() > 1)
-						throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
-				}
+                if (userVm.getHypervisorType() == HypervisorType.VMware
+                        || userVm.getHypervisorType() == HypervisorType.KVM) {
+                    List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(),
+                            Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
+                    if (activeSnapshots.size() > 1)
+                        throw new CloudRuntimeException(
+                                "There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
+                }
 
-				  List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(),
-			                VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
-			        if (activeVMSnapshots.size() > 0) {
-			            throw new CloudRuntimeException(
-			                    "There is other active vm snapshot tasks on the instance to which the volume is attached, please try again later");
-			        }
+                List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(),
+                        VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
+                if (activeVMSnapshots.size() > 0) {
+                    throw new CloudRuntimeException(
+                            "There is other active vm snapshot tasks on the instance to which the volume is attached, please try again later");
+                }
 			}
 		}
 

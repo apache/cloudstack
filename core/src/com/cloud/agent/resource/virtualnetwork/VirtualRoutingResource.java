@@ -642,7 +642,7 @@ public class VirtualRoutingResource implements Manager {
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
         }
-        args = args + " " ;
+        args = args + "- " ;
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";

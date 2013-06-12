@@ -40,7 +40,6 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
 import com.cloud.event.UsageEventUtils;
-import com.cloud.utils.db.*;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -70,7 +69,13 @@ import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.region.*;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpDao;
+import org.apache.cloudstack.region.PortableIpRange;
+import org.apache.cloudstack.region.PortableIpRangeDao;
+import org.apache.cloudstack.region.PortableIpRangeVO;
+import org.apache.cloudstack.region.PortableIpVO;
+import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -94,6 +99,7 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -106,6 +112,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -146,8 +153,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
@@ -188,6 +195,11 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
@@ -196,6 +208,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
+
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 @Component
@@ -299,9 +312,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     NicSecondaryIpDao _nicSecondaryIpDao;
     @Inject
     NicIpAliasDao _nicIpAliasDao;
-
     @Inject
     public ManagementService _mgr;
+    @Inject
+    DedicatedResourceDao _dedicatedDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao;
@@ -882,10 +896,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
              */
         }
 
-        Grouping.AllocationState allocationState = null;
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             try {
-                allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+                Grouping.AllocationState.valueOf(allocationStateStr);
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("Unable to resolve Allocation State '" + allocationStateStr + "' to a supported state");
             }
@@ -942,6 +955,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new CloudRuntimeException("Failed to delete pod " + podId);
         }
 
+        // remove from dedicated resources
+        DedicatedResourceVO dr = _dedicatedDao.findByPodId(podId);
+        if (dr != null) {
+            _dedicatedDao.remove(dr.getId());
+        }
         txn.commit();
 
         return true;
@@ -1307,10 +1325,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS2");
         }
 
-        Grouping.AllocationState allocationState = null;
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             try {
-                allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+                Grouping.AllocationState.valueOf(allocationStateStr);
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("Unable to resolve Allocation State '" + allocationStateStr + "' to a supported state");
             }
@@ -1403,6 +1420,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (success) {
             // delete all capacity records for the zone
             _capacityDao.removeBy(null, zoneId, null, null, null);
+            // remove from dedicated resources
+            DedicatedResourceVO dr = _dedicatedDao.findByZoneId(zoneId);
+            if (dr != null) {
+                _dedicatedDao.remove(dr.getId());
+            }
         }
 
         txn.commit();
@@ -1731,13 +1753,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // check if zone has necessary trafficTypes before enabling
                 try {
                     PhysicalNetwork mgmtPhyNetwork;
-                    if (NetworkType.Advanced == zone.getNetworkType()) {
-                        // zone should have a physical network with public and management traffiType
-                        _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
-                        mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
-                    } else {
                         // zone should have a physical network with management traffiType
                         mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
+                    if (NetworkType.Advanced == zone.getNetworkType() && ! zone.isSecurityGroupEnabled() ) {
+                        // advanced zone without SG should have a physical network with public Thpe
+                        _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
                     }
 
                     try {
@@ -1797,15 +1817,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, null, null, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
             } else {
-                // Zone will be disabled since 3.0. Admin shoul enable it after physical network and providers setup.
+                // Zone will be disabled since 3.0. Admin should enable it after physical network and providers setup.
                 zone.setAllocationState(Grouping.AllocationState.Disabled);
             }
             zone = _zoneDao.persist(zone);
+            if (domainId != null) {
+                //zone is explicitly dedicated to this domain
+                DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zone.getId(), null, null, null, domainId, null);
+                _dedicatedDao.persist(dedicatedResource);
+            }
 
             // Create default system networks
             createDefaultSystemNetworks(zone.getId());
@@ -2292,7 +2317,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIP = cmd.getEndIp();
         String newVlanGateway = cmd.getGateway();
         String newVlanNetmask = cmd.getNetmask();
-        Long userId = UserContext.current().getCallerUserId();
         String vlanId = cmd.getVlan();
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
@@ -3014,9 +3038,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
 
+            } else {
+                // when there is no dhcp support in the network.
+                if (!deletePublicIPRange(vlanDbId)) {
+                    return false;
             }
+                _vlanDao.expunge(vlanDbId);
+                return  true;
         }
-       throw new InvalidParameterValueException("One of the ips in the range is used to provide Dhcp service to this subnet. cannot delete this range as ");
+        }
+        return false;
     }
 
 
@@ -3290,42 +3321,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private void checkPrivateIpRangeErrors(Long podId, String startIP, String endIP) {
-        HostPodVO pod = _podDao.findById(podId);
-        if (pod == null) {
-            throw new InvalidParameterValueException("Please specify a valid pod.");
-        }
-
-        // Check that the start and end IPs are valid
-        if (!NetUtils.isValidIp(startIP)) {
-            throw new InvalidParameterValueException("Please specify a valid start IP");
-        }
-
-        if (endIP != null && !NetUtils.isValidIp(endIP)) {
-            throw new InvalidParameterValueException("Please specify a valid end IP");
-        }
-
-        if (endIP != null && !NetUtils.validIpRange(startIP, endIP)) {
-            throw new InvalidParameterValueException("Please specify a valid IP range.");
-        }
-
-        // Check that the IPs that are being added are compatible with the pod's
-        // CIDR
-        String cidrAddress = getCidrAddress(podId);
-        long cidrSize = getCidrSize(podId);
-
-        if (endIP != null && !NetUtils.sameSubnetCIDR(startIP, endIP, cidrSize)) {
-            throw new InvalidParameterValueException("Please ensure that your start IP and end IP are in the same subnet, as per the pod's CIDR size.");
-        }
-
-        if (!NetUtils.sameSubnetCIDR(startIP, cidrAddress, cidrSize)) {
-            throw new InvalidParameterValueException("Please ensure that your start IP is in the same subnet as the pod's CIDR address.");
-        }
-
-        if (endIP != null && !NetUtils.sameSubnetCIDR(endIP, cidrAddress, cidrSize)) {
-            throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as the pod's CIDR address.");
-        }
-    }
 
     private String getCidrAddress(String cidr) {
         String[] cidrPair = cidr.split("\\/");
@@ -3337,15 +3332,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return Integer.parseInt(cidrPair[1]);
     }
 
-    private String getCidrAddress(long podId) {
-        HostPodVO pod = _podDao.findById(podId);
-        return pod.getCidrAddress();
-    }
-
-    private long getCidrSize(long podId) {
-        HostPodVO pod = _podDao.findById(podId);
-        return pod.getCidrSize();
-    }
 
     @Override
     public void checkPodCidrSubnets(long dcId, Long podIdToBeSkipped, String cidr) {
@@ -4297,7 +4283,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public boolean isOfferingForVpc(NetworkOffering offering) {
         boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(),
                 Provider.VPCVirtualRouter);
-        boolean internalLb = offering.getInternalLb();
         return vpcProvider;
     }
 
@@ -4454,6 +4439,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     // Note: This method will be used for entity name validations in the coming
     // releases (place holder for now)
+    @SuppressWarnings("unused")
     private void validateEntityName(String str) {
         String forbidden = "~!@#$%^&*()+=";
         char[] searchChars = forbidden.toCharArray();
@@ -4679,7 +4665,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIP = cmd.getEndIp();
         String gateway = cmd.getGateway();
         String netmask = cmd.getNetmask();
-        Long userId = UserContext.current().getCallerUserId();
         String vlanId = cmd.getVlan();
 
         Region region = _regionDao.findById(regionId);

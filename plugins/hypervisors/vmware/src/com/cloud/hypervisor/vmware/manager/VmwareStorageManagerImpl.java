@@ -328,7 +328,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 						workerVm = vmMo;
 
 						// attach volume to worker VM
-						String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumePath);
+                        String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk");
 						vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
 					}
 				}
@@ -491,6 +491,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 						hyperHost, volumeId,
 						new DatastoreMO(context, morDatastore),
 						secondaryStorageURL, volumePath);
+                                deleteVolumeDirOnSecondaryStorage(volumeId, secondaryStorageURL);
 			}
 			return new CopyVolumeAnswer(cmd, true, null, result.first(), result.second());
 		} catch (Throwable e) {
@@ -1059,7 +1060,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
 
                 //attach volume to worker VM
-                String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumePath);
+                String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk");
                 workerVm.attachDisk(new String[] { datastoreVolumePath }, morDs);
                 vmMo = workerVm;
             }
@@ -1078,6 +1079,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 workerVm.destroy();
             }
         }
+    }
+
+    private String getVolumePathInDatastore(DatastoreMO dsMo, String volumeFileName) throws Exception {
+        String datastoreVolumePath = dsMo.searchFileInSubFolders(volumeFileName, true);
+        assert (datastoreVolumePath != null) : "Virtual disk file missing from datastore.";
+        return datastoreVolumePath;
     }
 
     private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, long volumeId,
@@ -1437,5 +1444,27 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         hyperHost.createVm(vmConfig);
         workingVM = hyperHost.findVmOnHyperHost(uniqueName);
         return workingVM;
+    }
+
+
+
+    private String deleteVolumeDirOnSecondaryStorage(long volumeId, String secStorageUrl) throws Exception {
+        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
+        String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStroage(volumeId);
+
+        return deleteDir(volumeMountRoot);
+    }
+
+    private String deleteDir(String dir) {
+        synchronized(dir.intern()) {
+            Script command = new Script(false, "rm", _timeout, s_logger);
+            command.add("-rf");
+            command.add(dir);
+            return command.execute();
+        }
+    }
+
+    private static String getVolumeRelativeDirInSecStroage(long volumeId) {
+        return "volumes/" + volumeId;
     }
 }

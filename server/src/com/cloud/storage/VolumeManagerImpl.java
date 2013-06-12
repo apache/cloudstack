@@ -152,9 +152,11 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
@@ -299,6 +301,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     @Inject
     protected ResourceTagDao _resourceTagDao;
     @Inject
+    protected VmDiskStatisticsDao _vmDiskStatsDao;
+    @Inject
     protected VMSnapshotDao _vmSnapshotDao;
     @Inject
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -383,6 +387,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             throws ResourceAllocationException {
         Account caller = UserContext.current().getCaller();
         long ownerId = cmd.getEntityOwnerId();
+        Account owner = _accountDao.findById(ownerId);
         Long zoneId = cmd.getZoneId();
         String volumeName = cmd.getVolumeName();
         String url = cmd.getUrl();
@@ -392,7 +397,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format);
 
-        VolumeVO volume = persistVolume(caller, ownerId, zoneId, volumeName,
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName,
                 url, cmd.getFormat());
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
@@ -720,7 +725,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         return UUID.randomUUID().toString();
     }
 
-    private VolumeVO persistVolume(Account caller, long ownerId, Long zoneId,
+    private VolumeVO persistVolume(Account owner, Long zoneId,
             String volumeName, String url, String format) {
 
         Transaction txn = Transaction.currentTxn();
@@ -728,12 +733,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         VolumeVO volume = new VolumeVO(volumeName, zoneId, -1L, -1L, -1,
                 new Long(-1), null, null, 0, Volume.Type.DATADISK);
-        Account owner = (caller.getId() == ownerId) ? caller : _accountMgr
-                          .getActiveAccountById(ownerId);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
         volume.setPodId(null);
-        volume.setAccountId(ownerId);
+        volume.setAccountId(owner.getAccountId());
+        volume.setDomainId(owner.getDomainId());
         long diskOfferingId = _diskOfferingDao.findByUniqueName(
                 "Cloud.com-Custom").getId();
         volume.setDiskOfferingId(diskOfferingId);
@@ -1573,6 +1577,13 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             } else {
                 _volsDao.attachVolume(volume.getId(), vm.getId(), deviceId);
             }
+            // insert record for disk I/O statistics
+            VmDiskStatisticsVO diskstats = _vmDiskStatsDao.findBy(vm.getAccountId(), vm.getDataCenterId(),vm.getId(), volume.getId());
+            if (diskstats == null) {
+               diskstats = new VmDiskStatisticsVO(vm.getAccountId(), vm.getDataCenterId(),vm.getId(), volume.getId());
+               _vmDiskStatsDao.persist(diskstats);
+            }
+
             return _volsDao.findById(volume.getId());
         } else {
             if (answer != null) {
@@ -1740,6 +1751,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
         }
 
+        // reload the volume from db
+        volumeOnPrimaryStorage = volFactory.getVolume(volumeOnPrimaryStorage.getId());
         boolean moveVolumeNeeded = needMoveVolume(rootVolumeOfVm, volumeOnPrimaryStorage);
 
         if (moveVolumeNeeded) {
@@ -2547,8 +2560,6 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     }
 
 
-
-
     @Override
     public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account) throws ResourceAllocationException {
         VolumeInfo volume = volFactory.getVolume(volumeId);
@@ -2620,7 +2631,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with specified volumeId");
-            ex.addProxyObject(volume, volumeId, "volumeId");
+            ex.addProxyObject(volumeId.toString(), "volumeId");
             throw ex;
         }
 
@@ -2640,7 +2651,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                     + ". It should be either detached or the VM should be in stopped state.");
             PermissionDeniedException ex = new PermissionDeniedException(
                     "Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
-            ex.addProxyObject(volume, volumeId, "volumeId");
+            ex.addProxyObject(volume.getUuid(), "volumeId");
             throw ex;
         }
 
@@ -2655,7 +2666,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                     // Global admins are always allowed to extract
                     PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
-                    ex.addProxyObject(volume, volumeId, "volumeId");
+                    ex.addProxyObject(volume.getUuid(), "volumeId");
                     throw ex;
                 }
             }
@@ -2729,5 +2740,18 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public String getVmNameFromVolumeId(long volumeId) {
+        Long instanceId;
+        VolumeVO volume = _volsDao.findById(volumeId);
+        return getVmNameOnVolume(volume);
+    }
+
+    @Override
+    public String getStoragePoolOfVolume(long volumeId) {
+        VolumeVO vol = _volsDao.findById(volumeId);
+        return dataStoreMgr.getPrimaryDataStore(vol.getPoolId()).getUuid();
     }
 }

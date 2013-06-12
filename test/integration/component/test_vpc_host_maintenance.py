@@ -186,7 +186,6 @@ class Services:
                     }
 
 
-@unittest.skip("No suitable setup available for testing")
 class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
 
     @classmethod
@@ -562,7 +561,6 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
         return
 
 
-@unittest.skip("No suitable setup available for testing")
 class TestVPCNetworkRules(cloudstackTestCase):
 
     @classmethod

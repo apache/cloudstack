@@ -22,7 +22,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -85,6 +84,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setPodName(pool.getPodName());
         poolResponse.setCreated(pool.getCreated());
         poolResponse.setScope(pool.getScope().toString());
+        if (pool.getHypervisor() != null) {
+            poolResponse.setHypervisor(pool.getHypervisor().toString());
+        }
 
 
         long allocatedSize = pool.getUsedCapacity() +  pool.getReservedCapacity();
@@ -127,8 +129,8 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public StoragePoolForMigrationResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO pool) {
-        StoragePoolForMigrationResponse poolResponse = new StoragePoolForMigrationResponse();
+    public StoragePoolResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO pool) {
+        StoragePoolResponse poolResponse = new StoragePoolResponse();
         poolResponse.setId(pool.getUuid());
         poolResponse.setName(pool.getName());
         poolResponse.setState(pool.getStatus());
@@ -143,6 +145,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setPodName(pool.getPodName());
         poolResponse.setCreated(pool.getCreated());
         poolResponse.setScope(pool.getScope().toString());
+        if (pool.getHypervisor() != null) {
+            poolResponse.setHypervisor(pool.getHypervisor().toString());
+        }
 
 
         long allocatedSize = pool.getUsedCapacity() +  pool.getReservedCapacity();
@@ -169,7 +174,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public StoragePoolForMigrationResponse setStoragePoolForMigrationResponse(StoragePoolForMigrationResponse response,
+    public StoragePoolResponse setStoragePoolForMigrationResponse(StoragePoolResponse response,
             StoragePoolJoinVO sp) {
         String tag = sp.getTag();
         if (tag != null) {

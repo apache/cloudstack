@@ -271,6 +271,10 @@ addSecondaryStorage=1
 updateHostPassword=1
 releaseHostReservation=1
 
+#### VmWare DC
+addVmwareDc=1
+removeVmwareDc=1
+
 #### volume commands
 attachVolume=15
 uploadVolume=15
@@ -282,10 +286,6 @@ extractVolume=15
 migrateVolume=15
 resizeVolume=15
 updateVolume=1
-addVolumeDetail=1
-updateVolumeDetail=1
-removeVolumeDetail=1
-listVolumeDetails=1
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
@@ -356,10 +356,6 @@ updateNetwork=15
 addNicToVirtualMachine=15
 removeNicFromVirtualMachine=15
 updateDefaultNicForVirtualMachine=15
-addNicDetail=1
-updateNicDetail=1
-removeNicDetail=1
-listNicDetails=1
 
 ####
 addIpToNic=15
@@ -647,3 +643,16 @@ listInternalLoadBalancerVMs=1
 ### Network Isolation methods listing
 listNetworkIsolationMethods=1
 
+#### Dedicated Resource commands
+dedicateZone=1
+dedicatePod=1
+dedicateCluster=1
+dedicateHost=1
+releaseDedicatedZone=1
+releaseDedicatedPod=1
+releaseDedicatedCluster=1
+releaseDedicatedHost=1
+listDedicatedZones=1
+listDedicatedPods=1
+listDedicatedClusters=1
+listDedicatedHosts=1

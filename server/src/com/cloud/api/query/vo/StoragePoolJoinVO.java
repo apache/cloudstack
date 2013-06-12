@@ -34,6 +34,8 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+
 /**
  * Storage Pool DB view.
  *
@@ -100,7 +102,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="data_center_type")
     private String zoneType;
-    
+
     @Column(name="pod_id")
     private long podId;
 
@@ -134,6 +136,11 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
 
+
+    @Column(name = "hypervisor")
+    @Enumerated(value = EnumType.STRING)
+    private HypervisorType hypervisor;
+
     /**
      * @return the scope
      */
@@ -146,6 +153,14 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
      */
     public void setScope(ScopeType scope) {
         this.scope = scope;
+    }
+
+    public HypervisorType getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(HypervisorType hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     @Override
@@ -294,7 +309,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     public void setZoneType(String zoneType) {
         this.zoneType = zoneType;
     }
-    
+
     public long getPodId() {
         return podId;
     }

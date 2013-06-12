@@ -320,6 +320,7 @@ class deployDataCenters():
             createzone.securitygroupenabled = zone.securitygroupenabled
             createzone.localstorageenabled = zone.localstorageenabled
             createzone.networktype = zone.networktype
+            if zone.securitygroupenabled != "true":
             createzone.guestcidraddress = zone.guestcidraddress
             
             zoneresponse = self.apiClient.createZone(createzone)
@@ -354,10 +355,37 @@ class deployDataCenters():
                     self.createVlanIpRanges(zone.networktype, zone.ipranges, \
                                         zoneId, forvirtualnetwork=True)
 
-            if zone.networktype == "Advanced":
+            if zone.networktype == "Advanced" and zone.securitygroupenabled != "true":
                 self.createpods(zone.pods, zoneId)
                 self.createVlanIpRanges(zone.networktype, zone.ipranges, \
                                         zoneId)
+            elif zone.networktype == "Advanced" and zone.securitygroupenabled == "true":
+                listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
+                listnetworkoffering.name = "DefaultSharedNetworkOfferingWithSGService"
+                if zone.networkofferingname  is not None:
+                   listnetworkoffering.name = zone.networkofferingname
+
+                listnetworkofferingresponse = \
+                    self.apiClient.listNetworkOfferings(listnetworkoffering)
+
+                networkcmd = createNetwork.createNetworkCmd()
+                networkcmd.displaytext = "Shared SG enabled network"
+                networkcmd.name = "Shared SG enabled network"
+                networkcmd.networkofferingid = listnetworkofferingresponse[0].id
+                networkcmd.zoneid = zoneId
+
+                ipranges = zone.ipranges
+                if ipranges:
+                    iprange = ipranges.pop()
+                    networkcmd.startip = iprange.startip
+                    networkcmd.endip = iprange.endip
+                    networkcmd.gateway = iprange.gateway
+                    networkcmd.netmask = iprange.netmask
+                    networkcmd.vlan = iprange.vlan
+
+                networkcmdresponse = self.apiClient.createNetwork(networkcmd)
+                networkId = networkcmdresponse.id
+                self.createpods(zone.pods, zoneId, networkId)
 
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
             self.createCacheStorages(zone.cacheStorages, zoneId)            

@@ -1697,14 +1697,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.findById(id);
         if (template == null || template.getRemoved() != null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("unable to find template/iso with specified id");
-            ex.addProxyObject(template, id, "templateId");
+            ex.addProxyObject(String.valueOf(id), "templateId");
             throw ex;
         }
 
         // Don't allow to modify system template
         if (id == Long.valueOf(1)) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
-            ex.addProxyObject(template, id, "templateId");
+            ex.addProxyObject(String.valueOf(id), "templateId");
             throw ex;
         }
 

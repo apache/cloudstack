@@ -65,7 +65,6 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -81,7 +80,6 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.region.RegionManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -123,6 +121,7 @@ import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -148,6 +147,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService {
@@ -165,8 +165,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Inject List<PluggableService> _pluggableServices;
     @Inject List<APIChecker> _apiAccessCheckers;
-
-    @Inject private final RegionManager _regionMgr = null;
 
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
@@ -197,7 +195,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public void init() {
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
-        sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
+        sc.addAnd("name", SearchCriteria.Op.EQ, Config.IntegrationAPIPort.key());
         List<ConfigurationVO> values = _configDao.search(sc, null);
         if ((values != null) && (values.size() > 0)) {
             ConfigurationVO apiPortConfig = values.get(0);
@@ -210,7 +208,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
         if (strSnapshotLimit != null) {
             Long snapshotLimit = NumbersUtil.parseLong(strSnapshotLimit, 1L);
-            if (snapshotLimit <= 0) {
+            if (snapshotLimit.longValue() <= 0) {
                 s_logger.debug("Global config parameter " + Config.ConcurrentSnapshotsThresholdPerHost.toString()
                         + " is less or equal 0; defaulting to unlimited");
             } else {
@@ -219,8 +217,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
-        for(PluggableService pluggableService: _pluggableServices)
+        for(PluggableService pluggableService: _pluggableServices) {
             cmdClasses.addAll(pluggableService.getCommands());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Discovered plugin " + pluggableService.getClass().getSimpleName());
+            }
+        }
 
         for(Class<?> cmdClass: cmdClasses) {
             APICommand at = cmdClass.getAnnotation(APICommand.class);
@@ -387,9 +389,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage(), ex);
         }
         catch (PermissionDeniedException ex){
-            ArrayList<String> idList = ex.getIdProxyList();
+            ArrayList<ExceptionProxyObject> idList = ex.getIdProxyList();
             if (idList != null) {
-                s_logger.info("PermissionDenied: " + ex.getMessage() + " on uuids: [" + StringUtils.listToCsvTags(idList) + "]");
+                StringBuffer buf = new StringBuffer();
+                for (ExceptionProxyObject obj : idList){
+                    buf.append(obj.getDescription());
+                    buf.append(":");
+                    buf.append(obj.getUuid());
+                    buf.append(" ");
+                }
+                s_logger.info("PermissionDenied: " + ex.getMessage() + " on objs: [" + buf.toString() + "]");
             } else {
                 s_logger.info("PermissionDenied: " + ex.getMessage());
             }
@@ -546,6 +555,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void buildAsyncListResponse(BaseListCmd command, Account account) {
         List<ResponseObject> responses = ((ListResponse) command.getResponseObject()).getResponses();
         if (responses != null && responses.size() > 0) {
@@ -840,7 +850,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public void logoutUser(long userId) {
-        _accountMgr.logoutUser(Long.valueOf(userId));
+        _accountMgr.logoutUser(userId);
         return;
     }
 
@@ -1067,7 +1077,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             apiResponse.setErrorCode(ex.getErrorCode().getHttpCode());
             apiResponse.setErrorText(ex.getDescription());
             apiResponse.setResponseName(responseName);
-            ArrayList<String> idList = ex.getIdProxyList();
+            ArrayList<ExceptionProxyObject> idList = ex.getIdProxyList();
             if (idList != null) {
                 for (int i=0; i < idList.size(); i++) {
                     apiResponse.addProxyObject(idList.get(i));

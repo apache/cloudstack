@@ -125,8 +125,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AFFINITY_GROUP_DELETE, eventDescription = "Deleting affinity group")
-    public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName)
-            throws ResourceInUseException {
+    public boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName) {
 
         Account caller = UserContext.current().getCaller();
         Account owner = _accountMgr.finalizeOwner(caller, account, domainId, null);
@@ -164,7 +163,15 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         List<AffinityGroupVMMapVO> affinityGroupVmMap = _affinityGroupVMMapDao.listByAffinityGroup(affinityGroupId);
         if (!affinityGroupVmMap.isEmpty()) {
-            throw new ResourceInUseException("Cannot delete affinity group when it's in use by virtual machines");
+            SearchBuilder<AffinityGroupVMMapVO> listByAffinityGroup = _affinityGroupVMMapDao.createSearchBuilder();
+            listByAffinityGroup.and("affinityGroupId", listByAffinityGroup.entity().getAffinityGroupId(),
+                    SearchCriteria.Op.EQ);
+            listByAffinityGroup.done();
+            SearchCriteria<AffinityGroupVMMapVO> sc = listByAffinityGroup.create();
+            sc.setParameters("affinityGroupId", affinityGroupId);
+
+            _affinityGroupVMMapDao.lockRows(sc, null, true);
+            _affinityGroupVMMapDao.remove(sc);
         }
 
         _affinityGroupDao.expunge(affinityGroupId);

@@ -52,6 +52,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> AvailHyperSearch;
     protected final SearchBuilder<ClusterVO> ZoneSearch;
     protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
+    protected final SearchBuilder<ClusterVO> ZoneClusterSearch;
 
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
     private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
@@ -85,12 +86,16 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         AvailHyperSearch.and("zoneId", AvailHyperSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AvailHyperSearch.select(null, Func.DISTINCT, AvailHyperSearch.entity().getHypervisorType());
         AvailHyperSearch.done();
+
+        ZoneClusterSearch = createSearchBuilder();
+        ZoneClusterSearch.and("dataCenterId", ZoneClusterSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneClusterSearch.done();
     }
 
     @Override
     public List<ClusterVO> listByZoneId(long zoneId) {
         SearchCriteria<ClusterVO> sc = ZoneSearch.create();
-        sc.setParameters("dataCenterId", zoneId);        
+        sc.setParameters("dataCenterId", zoneId);
         return listBy(sc);
     }
 
@@ -221,6 +226,13 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         sc.setJoinParameters("disabledPodIdSearch", "allocationState", Grouping.AllocationState.Disabled);
 
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<ClusterVO> listClustersByDcId(long zoneId) {
+        SearchCriteria<ClusterVO> sc = ZoneClusterSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        return listBy(sc);
     }
 
     @Override

@@ -21,6 +21,7 @@ import java.util.List;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchCriteria;
@@ -36,4 +37,7 @@ public interface UsageDao extends GenericDao<UsageVO, Long> {
     Long getLastAccountId();
     Long getLastUserStatsId();
     List<Long> listPublicTemplatesByAccount(long accountId);
+    Long getLastVmDiskStatsId();
+    void updateVmDiskStats(List<VmDiskStatisticsVO> vmNetStats);
+    void saveVmDiskStats(List<VmDiskStatisticsVO> vmNetStats);
 }

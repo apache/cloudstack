@@ -70,7 +70,7 @@
 								listAll: true
 							},
 							success: function(json) {
-								var zones = json.listzonesresponse.zone;
+								var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
 
 								args.response.success({
 									data: $.map(zones, function(zone) {
@@ -204,6 +204,14 @@
 					  affinitygroupid: args.context.affinityGroups[0].id
 					});		
 				}
+
+        if("vpc" in args.context &&
+           "networks" in args.context) {
+          $.extend(data, {
+            vpcid: args.context.vpc[0].id,
+            networkid: args.context.networks[0].id
+          });
+        }
               
         $.ajax({
           url: createURL('listVirtualMachines'),
@@ -1568,6 +1576,7 @@
             viewAll: {
               path: 'network.secondaryNicIps',
               attachTo: 'ipaddress',
+              label: 'label.view.secondary.ips',
               title: function(args) {
                 var title = _l('label.menu.ipaddresses') + ' - ' + args.context.nics[0].name;
                 
@@ -1640,7 +1649,11 @@
               totalCPU: { label: 'label.total.cpu' },
               cpuused: { label: 'label.cpu.utilized' },
               networkkbsread: { label: 'label.network.read' },
-              networkkbswrite: { label: 'label.network.write' }
+              networkkbswrite: { label: 'label.network.write' },
+              diskkbsread: { label: 'label.disk.read.bytes' },
+              diskkbswrite: { label: 'label.disk.write.bytes' },
+              diskioread: { label: 'label.disk.read.io' },
+              diskiowrite: { label: 'label.disk.write.io' }
             },
             dataProvider: function(args) {
               $.ajax({
@@ -1654,7 +1667,11 @@
                   totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
                   cpuused: jsonObj.cpuused,
                   networkkbsread: (jsonObj.networkkbsread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
-                  networkkbswrite: (jsonObj.networkkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)
+                  networkkbswrite: (jsonObj.networkkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024),
+                  diskkbsread: (jsonObj.diskkbsread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskkbsread * 1024),
+                  diskkbswrite: (jsonObj.diskkbswrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskkbswrite * 1024),
+                  diskioread: (jsonObj.diskioread == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskioread * 1024),
+                  diskiowrite: (jsonObj.diskiowrite == null)? "N/A": cloudStack.converters.convertBytes(jsonObj.diskiowrite * 1024)
                   }
                 });
               }

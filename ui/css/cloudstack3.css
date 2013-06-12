@@ -38,9 +38,9 @@ div.toolbar,
 div.toolbar,
 .multi-wizard .progress ul li,
 .multi-wizard.zone-wizard .select-container .field .select-array-item {
-/*\*/
+  /*\*/
   display: block;
-/**/
+  /**/
   -height: 1px;
 }
 
@@ -1762,20 +1762,49 @@ div.list-view td.state.off span {
 .detail-group .main-groups table td.value .view-all {
   cursor: pointer;
   /*[empty]height:;*/
-  border-left: 1px solid #9FA2A5;
   /*+border-radius:4px 0 0 4px;*/
   -moz-border-radius: 4px 0 0 4px;
   -webkit-border-radius: 4px 0 0 4px;
   -khtml-border-radius: 4px 0 0 4px;
   border-radius: 4px 0 0 4px;
-  background: url(../images/sprites.png) no-repeat 100% -398px;
   float: right;
-  margin: 1px 0 0;
-  padding: 8px 33px 6px 15px;
+  margin: 7px 0 0;
+  padding: 0px;
+}
+
+.detail-group .main-groups table td.value .view-all span {
+  display: block;
+  float: left;
+  padding: 5px 2px 8px 4px;
+  background: url(../images/gradients.png) repeat-x 0px -529px;
+  border-left: 1px solid #9FA2A6;
+  /*+border-radius:4px 0 0 4px;*/
+  -moz-border-radius: 4px 0 0 4px;
+  -webkit-border-radius: 4px 0 0 4px;
+  -khtml-border-radius: 4px 0 0 4px;
+  border-radius: 4px 0 0 4px;
+  margin-top: -5px;
+}
+
+.detail-group .main-groups table td.value .view-all .end {
+  background: url(../images/sprites.png) no-repeat 100% -397px;
+  float: right;
+  width: 22px;
+  height: 25px;
+  padding: 0px;
+  margin: -6px 0px 0px;
 }
 
 .detail-group .main-groups table td.value .view-all:hover {
   background-position: 100% -431px;
+}
+
+.detail-group .main-groups table td.value .view-all:hover span {
+  background-position: 0px -566px;
+}
+
+.detail-group .main-groups table td.value .view-all:hover div.end {
+  background-position: -618px -430px;
 }
 
 .detail-view .detail-group .button.add {
@@ -3461,7 +3490,7 @@ div.view table td.editable div.action.cancel {
 /*** Actions*/
 table td.actions {
   cursor: default;
-/*Make fixed*/
+  /*Make fixed*/
   width: 200px;
   min-width: 200px;
   max-width: 200px;
@@ -3746,6 +3775,10 @@ Dialogs*/
   text-align: left;
   padding: 0 0 23px 5px;
   font-size: 15px;
+}
+
+.ui-dialog div.form-container span.message br {
+  margin-bottom: 13px;
 }
 
 .ui-dialog div.form-container div.form-item {
@@ -4329,7 +4362,7 @@ Dialogs*/
   margin: 6px 9px 9px;
   padding: 9px;
   color: #FFFFFF;
-/*Adjusting the font size for proper display*/
+  /*Adjusting the font size for proper display*/
   font-size: 10px;
   border-left: 1px solid #6A6A6A;
   border-right: 1px solid #6A6A6A;
@@ -7857,6 +7890,13 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   font-weight: bold;
 }
 
+.multi-edit .data .data-body .data-item tr td.add-vm p {
+  text-indent: 0;
+  padding-left: 9px;
+  margin-top: 3px;
+  margin-bottom: 6px;
+}
+
 .multi-edit .data .data-body .data-item tr td.multi-actions .icon {
   /*+placement:shift -3px -2px;*/
   position: relative;
@@ -7925,6 +7965,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   width: 87px !important;
   min-width: 87px !important;
   max-width: 87px !important;
+  font-size: 10px;
 }
 
 /** Header fields*/
@@ -7972,6 +8013,14 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .multi-edit .header-fields input[type=submit] {
+}
+
+/*Sortable*/
+.multi-edit table tbody tr td.reorder,
+.multi-edit table thead tr th.reorder {
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
 }
 
 /*Security Rules*/
@@ -11715,24 +11764,28 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: 0px -613px;
 }
 
-.restart .icon {
+.restart .icon,
+.releaseDedicatedZone .icon {
   background-position: 0px -63px;
 }
 
-.restart:hover .icon {
+.restart:hover .icon,
+.releaseDedicatedZone:hover .icon {
   background-position: 0px -645px;
 }
 
 .destroy .icon,
 .remove .icon,
 .delete .icon,
-.decline .icon {
+.decline .icon,
+.deleteacllist .icon {
   background-position: 1px -92px;
 }
 
 .destroy:hover .icon,
 .remove:hover .icon,
-.delete:hover .icon {
+.delete:hover .icon,
+.deleteacllist:hover .icon {
   background-position: 1px -674px;
 }
 
@@ -11818,13 +11871,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .downloadVolume .icon,
 .downloadTemplate .icon,
-.downloadISO .icon {
+.downloadISO .icon,
+.replaceacllist .icon {
   background-position: -35px -125px;
 }
 
 .downloadVolume:hover .icon,
 .downloadTemplate:hover .icon,
-.downloadISO:hover .icon {
+.downloadISO:hover .icon,
+.replaceacllist:hover .icon {
   background-position: -35px -707px;
 }
 
@@ -11857,26 +11912,30 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .add .icon,
-.addNew .icon {
+.addNew .icon,
+.assignVm .icon {
   background-position: -37px -61px;
 }
 
 .add:hover .icon,
-.addNew:hover .icon {
+.addNew:hover .icon,
+.assignVm:hover .icon {
   background-position: -37px -643px;
 }
 
 .create .icon,
 .createTemplate .icon,
 .enableSwift .icon,
-.addVM .icon {
+.addVM .icon,
+.dedicateZone .icon {
   background-position: -69px -63px;
 }
 
 .create:hover .icon,
 .createTemplate:hover .icon,
 .enableSwift:hover .icon,
-.addVM:hover .icon {
+.addVM:hover .icon,
+.dedicateZone:hover .icon {
   background-position: -69px -645px;
 }
 

@@ -60,6 +60,9 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName("limitcpuuse") @Param(description="restrict the CPU usage to committed service offering")
     private Boolean limitCpuUse;
 
+    @SerializedName("isvolatile") @Param(description="true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
+    private Boolean isVolatile;
+
     @SerializedName("tags") @Param(description="the tags for the service offering")
     private String tags;
 
@@ -236,5 +239,13 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setDeploymentPlanner(String deploymentPlanner) {
         this.deploymentPlanner = deploymentPlanner;
+    }
+
+    public boolean getVolatileVm() {
+        return isVolatile;
+    }
+
+    public void setVolatileVm(boolean isVolatile) {
+        this.isVolatile = isVolatile;
     }
 }

@@ -114,7 +114,6 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
-import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
@@ -210,6 +209,7 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
+import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmProfile;
@@ -218,6 +218,7 @@ import com.cloud.network.as.Condition;
 import com.cloud.network.as.ConditionVO;
 import com.cloud.network.as.Counter;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
@@ -227,6 +228,7 @@ import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
@@ -956,9 +958,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public StoragePoolForMigrationResponse createStoragePoolForMigrationResponse(StoragePool pool) {
+    public StoragePoolResponse createStoragePoolForMigrationResponse(StoragePool pool) {
         List<StoragePoolJoinVO> viewPools = ApiDBUtils.newStoragePoolView(pool);
-        List<StoragePoolForMigrationResponse> listPools = ViewResponseHelper.createStoragePoolForMigrationResponse(
+        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolForMigrationResponse(
                 viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
         assert listPools != null && listPools.size() == 1 : "There should be one storage pool returned";
         return listPools.get(0);
@@ -1681,6 +1683,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ApiDBUtils.newEventResponse(vEvent);
     }
 
+
     private List<CapacityVO> sumCapacities(List<? extends Capacity> hostCapacities) {
         Map<String, Long> totalCapacityMap = new HashMap<String, Long>();
         Map<String, Long> usedCapacityMap = new HashMap<String, Long>();
@@ -1826,6 +1829,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         return summedCapacities;
     }
+
 
     @Override
     public List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format) {
@@ -2089,8 +2093,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 CapabilityResponse eIp = new CapabilityResponse();
                 eIp.setName(Capability.ElasticIp.getName());
-                eIp.setValue(offering.getElasticLb() ? "true" : "false");
+                eIp.setValue(offering.getElasticIp() ? "true" : "false");
                 staticNatCapResponse.add(eIp);
+
+                CapabilityResponse associatePublicIp = new CapabilityResponse();
+                associatePublicIp.setName(Capability.AssociatePublicIP.getName());
+                associatePublicIp.setValue(offering.getAssociatePublicIP() ? "true" : "false");
+                staticNatCapResponse.add(associatePublicIp);
 
                 svcRsp.setCapabilities(staticNatCapResponse);
             }
@@ -2304,6 +2313,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setTags(tagResponses);
 
+        if(network.getNetworkACLId() != null){
+            NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
+            if(acl != null){
+                response.setAclId(acl.getUuid());
+            }
+        }
+
         response.setObjectName("network");
         return response;
     }
@@ -2432,6 +2448,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         hpvCapabilitiesResponse.setHypervisorVersion(hpvCapabilities.getHypervisorVersion());
         hpvCapabilitiesResponse.setIsSecurityGroupEnabled(hpvCapabilities.isSecurityGroupEnabled());
         hpvCapabilitiesResponse.setMaxGuestsLimit(hpvCapabilities.getMaxGuestsLimit());
+        hpvCapabilitiesResponse.setMaxDataVolumesLimit(hpvCapabilities.getMaxDataVolumesLimit());
+        hpvCapabilitiesResponse.setMaxHostsPerCluster(hpvCapabilities.getMaxHostsPerCluster());
+        hpvCapabilitiesResponse.setIsStorageMotionSupported(hpvCapabilities.isStorageMotionSupported());
         return hpvCapabilitiesResponse;
     }
 
@@ -3328,6 +3347,17 @@ public class ApiResponseHelper implements ResponseGenerator {
 			NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
 			usageRecResponse.setNetworkId(network.getUuid());
 
+        } else if(usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE ||
+                  usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE){
+            //Device Type
+            usageRecResponse.setType(usageRecord.getType());
+            //VM Instance Id
+            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(vm.getUuid());
+            //Volume ID
+            VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(volume.getUuid());
+
 		} else if(usageRecord.getUsageType() == UsageTypes.VOLUME){
 			//Volume ID
 			VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
@@ -3356,11 +3386,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
 		} else if(usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY){
 			//Load Balancer Policy ID
-			usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
-
+            LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(lb.getUuid());
 		} else if(usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE){
 			//Port Forwarding Rule ID
-			usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
+            PortForwardingRuleVO pf = _entityMgr.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(pf.getUuid());
 
 		} else if(usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING){
 			//Network Offering Id
@@ -3371,7 +3402,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
 		} else if(usageRecord.getUsageType() == UsageTypes.VPN_USERS){
 			//VPN User ID
-			usageRecResponse.setUsageId(usageRecord.getUsageId().toString());
+            VpnUserVO vpnUser = _entityMgr.findByIdIncludingRemoved(VpnUserVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(vpnUser.getUuid());
 
 		} else if(usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP){
 			//Security Group Id

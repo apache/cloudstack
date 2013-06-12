@@ -138,6 +138,7 @@ public class NetworkACLServiceTest extends TestCase{
         Mockito.when(_networkAclMgr.getNetworkACL(Mockito.anyLong())).thenReturn(acl);
         Mockito.when(_networkAclMgr.createNetworkACLItem(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString(), Mockito.anyList(), Mockito.anyInt(), Mockito.anyInt(),
                 Mockito.any(NetworkACLItem.TrafficType.class), Mockito.anyLong(),  Mockito.anyString(), Mockito.anyInt())).thenReturn(new NetworkACLItemVO());
+        Mockito.when(_networkACLItemDao.findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt())).thenReturn(null);
         assertNotNull(_aclService.createNetworkACLItem(createACLItemCmd));
     }
 

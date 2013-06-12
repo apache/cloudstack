@@ -86,6 +86,7 @@ known_categories = {
     'Pod': 'Pod',
     'PublicIpRange': 'Network',
     'Zone': 'Zone',
+    'Vmware' : 'Zone',
     'NetworkOffering': 'Network Offering',
     'NetworkACL': 'Network ACL',
     'Network': 'Network',
@@ -147,7 +148,9 @@ known_categories = {
     'createCacheStore': 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
-    'PortableIp': 'Portable IP'
+    'PortableIp': 'Portable IP',
+    'dedicateHost': 'Dedicate Resources',
+    'releaseDedicatedHost': 'Dedicate Resources'
     }
 
 

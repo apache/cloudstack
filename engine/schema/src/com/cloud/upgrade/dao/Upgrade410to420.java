@@ -18,6 +18,7 @@
 package com.cloud.upgrade.dao;
 
 import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
@@ -28,6 +29,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import com.cloud.network.vpc.NetworkACL;
 
@@ -62,6 +65,7 @@ public class Upgrade410to420 implements DbUpgrade {
 	@Override
 	public void performDataMigration(Connection conn) {
         upgradeVmwareLabels(conn);
+        persistLegacyZones(conn);
         createPlaceHolderNics(conn);
         updateRemoteAccessVpn(conn);
         updateSystemVmTemplates(conn);
@@ -75,26 +79,254 @@ public class Upgrade410to420 implements DbUpgrade {
         updateNetworkACLs(conn);
         addHostDetailsIndex(conn);
         updateNetworksForPrivateGateways(conn);
+        correctExternalNetworkDevicesSetup(conn);
         removeFirewallServiceFromSharedNetworkOfferingWithSGService(conn);
+        fix22xKVMSnapshots(conn);
+        addIndexForAlert(conn);
+    }
+
+    private void addIndexForAlert(Connection conn) {
+
+        //First drop if it exists. (Due to patches shipped to customers some will have the index and some wont.)
+        List<String> indexList = new ArrayList<String>();
+        s_logger.debug("Dropping index i_alert__last_sent if it exists");
+        indexList.add("i_alert__last_sent");
+        DbUpgradeUtils.dropKeysIfExist(conn, "alert", indexList, false);
+
+        //Now add index.
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`alert` ADD INDEX `i_alert__last_sent`(`last_sent`)");
+            pstmt.executeUpdate();
+            s_logger.debug("Added index i_alert__last_sent for table alert");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to add index i_alert__last_sent to alert table for the column last_sent", e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
     }
 
 	private void updateSystemVmTemplates(Connection conn) {
-	    /* TODO: where should be system vm templates located?
-	    PreparedStatement sql = null;
+	    // TODO: system vm template migration after storage refactoring
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        boolean xenserver = false;
+        boolean kvm = false;
+        boolean VMware = false;
+        boolean Hyperv = false;
+        boolean LXC = false;
+        s_logger.debug("Updating System Vm template IDs");
+        try{
+            //Get all hypervisors in use
         try {
-            sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
-            sql.executeUpdate();
+                pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
+                rs = pstmt.executeQuery();
+                while(rs.next()){
+                    if("XenServer".equals(rs.getString(1))){
+                        xenserver = true;
+                    } else if("KVM".equals(rs.getString(1))){
+                        kvm = true;
+                    } else if("VMware".equals(rs.getString(1))){
+                        VMware = true;
+                    } else if("Hyperv".equals(rs.getString(1))) {
+                        Hyperv = true;
+                    } else if("LXC".equals(rs.getString(1))) {
+                        LXC = true;
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while listing hypervisors in use", e);
+            }
+
+            s_logger.debug("Updating XenSever System Vms");
+            //XenServer
+            try {
+                //Get 4.2.0 xenserer system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name like 'systemvm-xenserver-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'XenServer'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (xenserver){
+                        throw new CloudRuntimeException("4.2.0 XenServer SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 XenServer SystemVm template not found. XenServer hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating XenServer systemVm template", e);
+            }
+
+            //KVM
+            s_logger.debug("Updating KVM System Vms");
+            try {
+                //Get 4.2.0 KVM system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-kvm-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'KVM'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (kvm){
+                        throw new CloudRuntimeException("4.2.0 KVM SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 KVM SystemVm template not found. KVM hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating KVM systemVm template", e);
+            }
+
+            //VMware
+            s_logger.debug("Updating VMware System Vms");
+            try {
+                //Get 4.2.0 VMware system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-vmware-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'VMware'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (VMware){
+                        throw new CloudRuntimeException("4.2.0 VMware SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 VMware SystemVm template not found. VMware hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating VMware systemVm template", e);
+            }
+
+            //Hyperv
+            s_logger.debug("Updating Hyperv System Vms");
+            try {
+                //Get 4.2.0 Hyperv system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-hyperv-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'Hyperv'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (Hyperv){
+                        throw new CloudRuntimeException("4.2.0 HyperV SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 Hyperv SystemVm template not found. Hyperv hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating Hyperv systemVm template", e);
+            }
+
+            //LXC
+            s_logger.debug("Updating LXC System Vms");
+            try {
+                //Get 4.2.0 LXC system Vm template Id
+                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-lxc-4.2' and removed is null order by id desc limit 1");
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long templateId = rs.getLong(1);
+                    rs.close();
+                    pstmt.close();
+                    // change template type to SYSTEM
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                    // update templete ID of system Vms
+                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'LXC'");
+                    pstmt.setLong(1, templateId);
+                    pstmt.executeUpdate();
+                    pstmt.close();
+                } else {
+                    if (LXC){
+                        throw new CloudRuntimeException("4.2.0 LXC SystemVm template not found. Cannot upgrade system Vms");
+                    } else {
+                        s_logger.warn("4.2.0 LXC SystemVm template not found. LXC hypervisor is not used, so not failing upgrade");
+                    }
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Error while updating LXC systemVm template", e);
+            }
+            s_logger.debug("Updating System Vm Template IDs Complete");
+        }
+        finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to upgrade vm template data store uuid: " + e.toString());
         } finally {
-            if (sql != null) {
+            if (pstmt != null) {
                 try {
-                    sql.close();
+                    pstmt.close();
                 } catch (SQLException e) {
                 }
             }
         }
-        */
+
 	}
 
 	private void updatePrimaryStore(Connection conn) {
@@ -242,6 +474,180 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
                 if (pstmt != null) {
                     pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void persistLegacyZones(Connection conn) {
+        List<Long> listOfLegacyZones = new ArrayList<Long>();
+        PreparedStatement pstmt = null;
+        PreparedStatement clustersQuery = null;
+        PreparedStatement clusterDetailsQuery = null;
+        ResultSet rs = null;
+        ResultSet clusters = null;
+        ResultSet clusterDetails = null;
+        ResultSet dcInfo = null;
+        Long vmwareDcId = 1L;
+        Long zoneId;
+        Long clusterId;
+        String clusterHypervisorType;
+        boolean legacyZone;
+        boolean ignoreZone;
+        Long count;
+        String dcOfPreviousCluster = null;
+        String dcOfCurrentCluster = null;
+        String[] tokens;
+        String url;
+        String user = "";
+        String password = "";
+        String vc = "";
+        String dcName = "";
+        String guid;
+        String key;
+        String value;
+
+        try {
+            clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL");
+            pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where removed is NULL");
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                zoneId = rs.getLong("id");
+                legacyZone = false;
+                ignoreZone = true;
+                count = 0L;
+                // Legacy zone term is meant only for VMware
+                // Legacy zone is a zone with atleast 2 clusters & with multiple DCs or VCs
+                clusters = clustersQuery.executeQuery();
+                if (!clusters.next()) {
+                    continue; // Ignore the zone without any clusters
+                } else {
+                    dcOfPreviousCluster = null;
+                    dcOfCurrentCluster = null;
+                    do {
+                        clusterHypervisorType = clusters.getString("hypervisor_type");
+                        clusterId = clusters.getLong("id");
+                        if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
+                            ignoreZone = false;
+                            clusterDetailsQuery = conn.prepareStatement("select value from `cloud`.`cluster_details` where name='url' and cluster_id=?");
+                            clusterDetailsQuery.setLong(1, clusterId);
+                            clusterDetails = clusterDetailsQuery.executeQuery();
+                            clusterDetails.next();
+                            url = clusterDetails.getString("value");
+                            tokens = url.split("/"); // url format - http://vcenter/dc/cluster
+                            vc = tokens[2];
+                            dcName = tokens[3];
+                            if (count > 0) {
+                                dcOfPreviousCluster = dcOfCurrentCluster;
+                                dcOfCurrentCluster = dcName + "@" + vc;
+                                if (!dcOfPreviousCluster.equals(dcOfCurrentCluster)) {
+                                    legacyZone = true;
+                                    s_logger.debug("Marking the zone " + zoneId + " as legacy zone.");
+                                }
+                            }
+                        } else {
+                            s_logger.debug("Ignoring zone " + zoneId + " with hypervisor type " + clusterHypervisorType);
+                            break;
+                        }
+                        count++;
+                    } while (clusters.next());
+                    if (ignoreZone) {
+                        continue; // Ignore the zone with hypervisors other than VMware
+                    }
+                }
+                if (legacyZone) {
+                    listOfLegacyZones.add(zoneId);
+                } else {
+                    assert(clusterDetails != null) : "Couldn't retrieve details of cluster!";
+                    s_logger.debug("Discovered non-legacy zone " + zoneId + ". Processing the zone to associate with VMware datacenter.");
+
+                    clusterDetailsQuery = conn.prepareStatement("select name, value from `cloud`.`cluster_details` where cluster_id=?");
+                    clusterDetailsQuery.setLong(1, clusterId);
+                    clusterDetails = clusterDetailsQuery.executeQuery();
+                    while (clusterDetails.next()) {
+                        key = clusterDetails.getString(1);
+                        value = clusterDetails.getString(2);
+                        if (key.equalsIgnoreCase("username")) {
+                            user = value;
+                        } else if (key.equalsIgnoreCase("password")) {
+                            password = value;
+                        }
+                    }
+                    guid = dcName + "@" + vc;
+
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");
+                    pstmt.setString(1, UUID.randomUUID().toString());
+                    pstmt.setString(2, dcName);
+                    pstmt.setString(3, guid);
+                    pstmt.setString(4, vc);
+                    pstmt.setString(5, user);
+                    pstmt.setString(6, password);
+                    pstmt.executeUpdate();
+
+                    pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vmware_data_center` where guid=?");
+                    pstmt.setString(1, guid);
+                    dcInfo = pstmt.executeQuery();
+                    if(dcInfo.next()) {
+                        vmwareDcId = dcInfo.getLong("id");
+                    }
+
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center_zone_map` (zone_id, vmware_data_center_id) values(?, ?)");
+                    pstmt.setLong(1, zoneId);
+                    pstmt.setLong(2, vmwareDcId);
+                    pstmt.executeUpdate();
+                }
+            }
+            updateLegacyZones(conn, listOfLegacyZones);
+        } catch (SQLException e) {
+            String msg = "Unable to discover legacy zones." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+                if (dcInfo != null) {
+                    dcInfo.close();
+                }
+                if (clusters != null) {
+                    clusters.close();
+                }
+                if (clusterDetails != null) {
+                    clusterDetails.close();
+                }
+                if (clustersQuery != null) {
+                    clustersQuery.close();
+                }
+                if (clusterDetailsQuery != null) {
+                    clusterDetailsQuery.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    private void updateLegacyZones(Connection conn, List<Long> zones) {
+        PreparedStatement legacyZonesQuery = null;
+        //Insert legacy zones into table for legacy zones.
+        try {
+            legacyZonesQuery = conn.prepareStatement("INSERT INTO `cloud`.`legacy_zones` (zone_id) VALUES (?)");
+            for(Long zoneId : zones) {
+                legacyZonesQuery.setLong(1, zoneId);
+                legacyZonesQuery.executeUpdate();
+                s_logger.debug("Inserted zone " + zoneId + " into cloud.legacyzones table");
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable add zones to cloud.legacyzones table.", e);
+        } finally {
+            try {
+                if (legacyZonesQuery != null) {
+                    legacyZonesQuery.close();
                 }
             } catch (SQLException e) {
             }
@@ -725,8 +1131,8 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-    
-    
+
+
     private void updateNetworksForPrivateGateways(Connection conn) {
 
         PreparedStatement pstmt = null;
@@ -744,7 +1150,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 pstmt.setLong(1, vpcId);
                 pstmt.setLong(2, networkId);
                 pstmt.executeUpdate();
-                
+
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to update private networks with VPC id.", e);
@@ -761,7 +1167,7 @@ public class Upgrade410to420 implements DbUpgrade {
             while (rs.next()) {
                 long id = rs.getLong(1);
                 // remove Firewall service for SG shared network offering
-                pstmt = conn.prepareStatement("DELETE `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");
+                pstmt = conn.prepareStatement("DELETE from `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");
                 pstmt.setLong(1, id);
                 pstmt.executeUpdate();
             }
@@ -781,4 +1187,402 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
+    private void fix22xKVMSnapshots(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        s_logger.debug("Updating KVM snapshots");
+        try {
+            pstmt = conn.prepareStatement("select id, backup_snap_id from `cloud`.`snapshots` where hypervisor_type='KVM' and removed is null and backup_snap_id is not null");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String backUpPath = rs.getString(2);
+                // Update Backup Path. Remove anything before /snapshots/
+                // e.g 22x Path /mnt/0f14da63-7033-3ca5-bdbe-fa62f4e2f38a/snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
+                // Above path should change to /snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
+                int index = backUpPath.indexOf("snapshots"+File.separator);
+                if (index > 1){
+                    String correctedPath = File.separator + backUpPath.substring(index);
+                    s_logger.debug("Updating Snapshot with id: "+id+" original backup path: "+backUpPath+ " updated backup path: "+correctedPath);
+                    pstmt = conn.prepareStatement("UPDATE `cloud`.`snapshots` set backup_snap_id=? where id = ?");
+                    pstmt.setString(1, correctedPath);
+                    pstmt.setLong(2, id);
+                    pstmt.executeUpdate();
+                }
+            }
+            s_logger.debug("Done updating KVM snapshots");
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update backup id for KVM snapshots", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    // Corrects upgrade for deployment with F5 and SRX devices (pre 3.0) to network offering &
+    // network service provider paradigm
+    private void correctExternalNetworkDevicesSetup(Connection conn) {
+        PreparedStatement zoneSearchStmt = null, pNetworkStmt = null, f5DevicesStmt = null, srxDevicesStmt = null;
+        ResultSet zoneResults = null, pNetworksResults = null, f5DevicesResult = null, srxDevicesResult = null;
+
+        try {
+            zoneSearchStmt = conn.prepareStatement("SELECT id, networktype FROM `cloud`.`data_center`");
+            zoneResults = zoneSearchStmt.executeQuery();
+            while (zoneResults.next()) {
+                long zoneId = zoneResults.getLong(1);
+                String networkType = zoneResults.getString(2);
+
+                if (!com.cloud.dc.DataCenter.NetworkType.Advanced.toString().equalsIgnoreCase(networkType)) {
+                    continue;
+                }
+
+                pNetworkStmt = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network` where data_center_id=?");
+                pNetworkStmt.setLong(1, zoneId);
+                pNetworksResults = pNetworkStmt.executeQuery();
+                while (pNetworksResults.next()) {
+                    long physicalNetworkId = pNetworksResults.getLong(1);
+                    PreparedStatement fetchF5NspStmt = conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId
+                            + " and provider_name = 'F5BigIp'");
+                    ResultSet rsF5NSP = fetchF5NspStmt.executeQuery();
+                    boolean hasF5Nsp = rsF5NSP.next();
+                    fetchF5NspStmt.close();
+
+                    // if there is no 'F5BigIP' physical network service provider added into physical network then
+                    // add 'F5BigIP' as network service provider and add the entry in 'external_load_balancer_devices'
+                    if (!hasF5Nsp) {
+                        f5DevicesStmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer' AND removed IS NULL");
+                        f5DevicesStmt.setLong(1, zoneId);
+                        f5DevicesResult = f5DevicesStmt.executeQuery();
+                        // add F5BigIP provider and provider instance to physical network if there are any external load
+                        // balancers added in the zone
+                        while (f5DevicesResult.next()) {
+                            long f5HostId = f5DevicesResult.getLong(1);;
+                            addF5ServiceProvider(conn, physicalNetworkId, zoneId);
+                            addF5LoadBalancer(conn, f5HostId, physicalNetworkId);
+                        }
+                    }
+
+                    PreparedStatement fetchSRXNspStmt = conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId
+                            + " and provider_name = 'JuniperSRX'");
+                    ResultSet rsSRXNSP = fetchSRXNspStmt.executeQuery();
+                    boolean hasSrxNsp = rsSRXNSP.next();
+                    fetchSRXNspStmt.close();
+
+                    // if there is no 'JuniperSRX' physical network service provider added into physical network then
+                    // add 'JuniperSRX' as network service provider and add the entry in 'external_firewall_devices'
+                    if (!hasSrxNsp) {
+                        srxDevicesStmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalFirewall' AND removed IS NULL");
+                        srxDevicesStmt.setLong(1, zoneId);
+                        srxDevicesResult = srxDevicesStmt.executeQuery();
+                        // add JuniperSRX provider and provider instance to physical network if there are any external
+                        // firewall instances added in to the zone
+                        while (srxDevicesResult.next()) {
+                            long srxHostId = srxDevicesResult.getLong(1);
+                            // add SRX provider and provider instance to physical network
+                            addSrxServiceProvider(conn, physicalNetworkId, zoneId);
+                            addSrxFirewall(conn, srxHostId, physicalNetworkId);
+                        }
+                    }
+                }
+            }
+
+            // not the network service provider has been provisioned in to physical network, mark all guest network
+            // to be using network offering 'Isolated with external providers'
+            fixZoneUsingExternalDevices(conn);
+
+            if (zoneResults != null) {
+                try {
+                    zoneResults.close();
+                } catch (SQLException e) {
+                }
+            }
+
+            if (zoneSearchStmt != null) {
+                try {
+                    zoneSearchStmt.close();
+                } catch (SQLException e) {
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
+        } finally {
+
+        }
+    }
+
+    private void addF5LoadBalancer(Connection conn, long hostId, long physicalNetworkId){
+        PreparedStatement pstmtUpdate = null;
+        try{
+            s_logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
+            String insertF5 = "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, " +
+                    "device_name, capacity, is_dedicated, device_state, allocation_state, is_inline, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            pstmtUpdate = conn.prepareStatement(insertF5);
+            pstmtUpdate.setLong(1, physicalNetworkId);
+            pstmtUpdate.setLong(2, hostId);
+            pstmtUpdate.setString(3, "F5BigIp");
+            pstmtUpdate.setString(4, "F5BigIpLoadBalancer");
+            pstmtUpdate.setLong(5, 0);
+            pstmtUpdate.setBoolean(6, false);
+            pstmtUpdate.setString(7, "Enabled");
+            pstmtUpdate.setString(8, "Shared");
+            pstmtUpdate.setBoolean(9, false);
+            pstmtUpdate.setBoolean(10, false);
+            pstmtUpdate.setString(11, UUID.randomUUID().toString());
+            pstmtUpdate.executeUpdate();
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while adding F5 load balancer device" ,  e);
+        } finally {
+            if (pstmtUpdate != null) {
+                try {
+                    pstmtUpdate.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+    }
+
+    private void addSrxFirewall(Connection conn, long hostId, long physicalNetworkId){
+        PreparedStatement pstmtUpdate = null;
+        try{
+            s_logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
+            String insertSrx = "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, " +
+                    "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            pstmtUpdate = conn.prepareStatement(insertSrx);
+            pstmtUpdate.setLong(1, physicalNetworkId);
+            pstmtUpdate.setLong(2, hostId);
+            pstmtUpdate.setString(3, "JuniperSRX");
+            pstmtUpdate.setString(4, "JuniperSRXFirewall");
+            pstmtUpdate.setLong(5, 0);
+            pstmtUpdate.setBoolean(6, false);
+            pstmtUpdate.setString(7, "Enabled");
+            pstmtUpdate.setString(8, "Shared");
+            pstmtUpdate.setString(9, UUID.randomUUID().toString());
+            pstmtUpdate.executeUpdate();
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while adding SRX firewall device ",  e);
+        } finally {
+            if (pstmtUpdate != null) {
+                try {
+                    pstmtUpdate.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+    }
+
+    private void addF5ServiceProvider(Connection conn, long physicalNetworkId, long zoneId){
+        PreparedStatement pstmtUpdate = null;
+        try{
+            // add physical network service provider - F5BigIp
+            s_logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
+            String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
+                    "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
+                    "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
+                    "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,1,0,0,0,0)";
+
+            pstmtUpdate = conn.prepareStatement(insertPNSP);
+            pstmtUpdate.setString(1, UUID.randomUUID().toString());
+            pstmtUpdate.setLong(2, physicalNetworkId);
+            pstmtUpdate.setString(3, "F5BigIp");
+            pstmtUpdate.setString(4, "Enabled");
+            pstmtUpdate.executeUpdate();
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider F5BigIp", e);
+        } finally {
+            if (pstmtUpdate != null) {
+                try {
+                    pstmtUpdate.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+    }
+
+    private void addSrxServiceProvider(Connection conn, long physicalNetworkId, long zoneId){
+        PreparedStatement pstmtUpdate = null;
+        try{
+            // add physical network service provider - JuniperSRX
+            s_logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
+            String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
+                    "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
+                    "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
+                    "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,1,1,1,0,1,1,0,0)";
+
+            pstmtUpdate = conn.prepareStatement(insertPNSP);
+            pstmtUpdate.setString(1, UUID.randomUUID().toString());
+            pstmtUpdate.setLong(2, physicalNetworkId);
+            pstmtUpdate.setString(3, "JuniperSRX");
+            pstmtUpdate.setString(4, "Enabled");
+            pstmtUpdate.executeUpdate();
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider JuniperSRX" ,  e);
+        } finally {
+            if (pstmtUpdate != null) {
+                try {
+                    pstmtUpdate.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+    }
+
+    // This method does two things
+    //
+    // 1) ensure that networks using external load balancer/firewall in deployments prior to release 3.0
+    //    has entry in network_external_lb_device_map and network_external_firewall_device_map
+    //
+    // 2) Some keys of host details for F5 and SRX devices were stored in Camel Case in 2.x releases. From 3.0
+    //    they are made in lowercase. On upgrade change the host details name to lower case
+    private void fixZoneUsingExternalDevices(Connection conn) {
+        //Get zones to upgrade
+        List<Long> zoneIds = new ArrayList<Long>();
+        PreparedStatement pstmt = null;
+        PreparedStatement pstmtUpdate = null;
+        ResultSet rs = null;
+        long networkOfferingId, networkId;
+        long f5DeviceId, f5HostId;
+        long srxDevivceId,  srxHostId;
+
+        try {
+            pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where lb_provider='F5BigIp' or firewall_provider='JuniperSRX' or gateway_provider='JuniperSRX'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                zoneIds.add(rs.getLong(1));
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to create network to LB & firewall device mapping for networks  that use them", e);
+        }
+
+        if (zoneIds.size() == 0) {
+            return; // no zones using F5 and SRX devices so return
+        }
+
+        // find the default network offering created for external devices during upgrade from 2.2.14
+        try {
+            pstmt = conn.prepareStatement("select id from `cloud`.`network_offerings` where unique_name='Isolated with external providers' ");
+            rs = pstmt.executeQuery();
+            if (rs.first()) {
+                networkOfferingId = rs.getLong(1);
+            } else {
+                throw new CloudRuntimeException("Cannot upgrade as there is no 'Isolated with external providers' network offering crearted .");
+            }
+        } catch  (SQLException e) {
+            throw new CloudRuntimeException("Unable to create network to LB & firewalla device mapping for networks  that use them", e);
+        }
+
+        for (Long zoneId : zoneIds) {
+            try {
+                // find the F5 device id  in the zone
+                pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer' AND removed IS NULL");
+                pstmt.setLong(1, zoneId);
+                rs = pstmt.executeQuery();
+                if (rs.first()) {
+                    f5HostId  = rs.getLong(1);
+                } else {
+                    throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device found in data center " + zoneId);
+                }
+                pstmt = conn.prepareStatement("SELECT id FROM external_load_balancer_devices WHERE  host_id=?");
+                pstmt.setLong(1, f5HostId);
+                rs = pstmt.executeQuery();
+                if (rs.first()) {
+                    f5DeviceId = rs.getLong(1);
+                } else {
+                    throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device with host ID " + f5HostId + " found in external_load_balancer_device");
+                }
+
+                // find the SRX device id  in the zone
+                pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalFirewall' AND removed IS NULL");
+                pstmt.setLong(1, zoneId);
+                rs = pstmt.executeQuery();
+                if (rs.first()) {
+                    srxHostId = rs.getLong(1);
+                } else {
+                    throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found in data center " + zoneId);
+                }
+                pstmt = conn.prepareStatement("SELECT id FROM external_firewall_devices WHERE  host_id=?");
+                pstmt.setLong(1, srxHostId);
+                rs = pstmt.executeQuery();
+                if (rs.first()) {
+                    srxDevivceId = rs.getLong(1);
+                } else {
+                    throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found with host ID " + srxHostId + " found in external_firewall_devices");
+                }
+
+                // check if network any uses F5 or SRX devices  in the zone
+                pstmt = conn.prepareStatement("select id from `cloud`.`networks` where guest_type='Virtual' and data_center_id=? and network_offering_id=? and removed IS NULL");
+                pstmt.setLong(1, zoneId);
+                pstmt.setLong(2, networkOfferingId);
+                rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    // get the network Id
+                    networkId = rs.getLong(1);
+
+                    // add mapping for the network in network_external_lb_device_map
+                    String insertLbMapping = "INSERT INTO `cloud`.`network_external_lb_device_map` (uuid, network_id, external_load_balancer_device_id, created) VALUES ( ?, ?, ?, now())";
+                    pstmtUpdate = conn.prepareStatement(insertLbMapping);
+                    pstmtUpdate.setString(1, UUID.randomUUID().toString());
+                    pstmtUpdate.setLong(2, networkId);
+                    pstmtUpdate.setLong(3, f5DeviceId);
+                    pstmtUpdate.executeUpdate();
+                    s_logger.debug("Successfully added entry in network_external_lb_device_map for network " +  networkId + " and F5 device ID " +  f5DeviceId);
+
+                    // add mapping for the network in network_external_firewall_device_map
+                    String insertFwMapping = "INSERT INTO `cloud`.`network_external_firewall_device_map` (uuid, network_id, external_firewall_device_id, created) VALUES ( ?, ?, ?, now())";
+                    pstmtUpdate = conn.prepareStatement(insertFwMapping);
+                    pstmtUpdate.setString(1, UUID.randomUUID().toString());
+                    pstmtUpdate.setLong(2, networkId);
+                    pstmtUpdate.setLong(3, srxDevivceId);
+                    pstmtUpdate.executeUpdate();
+                    s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " +  networkId + " and SRX device ID " +  srxDevivceId);
+                }
+
+                // update host details for F5 and SRX devices
+                s_logger.debug("Updating the host details for F5 and SRX devices");
+                pstmt = conn.prepareStatement("SELECT host_id, name FROM `cloud`.`host_details` WHERE  host_id=? OR host_id=?");
+                pstmt.setLong(1, f5HostId);
+                pstmt.setLong(2, srxHostId);
+                rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    long hostId = rs.getLong(1);
+                    String camlCaseName = rs.getString(2);
+                    if (!(camlCaseName.equalsIgnoreCase("numRetries") ||
+                            camlCaseName.equalsIgnoreCase("publicZone") ||
+                            camlCaseName.equalsIgnoreCase("privateZone") ||
+                            camlCaseName.equalsIgnoreCase("publicInterface") ||
+                            camlCaseName.equalsIgnoreCase("privateInterface") ||
+                            camlCaseName.equalsIgnoreCase("usageInterface") )) {
+                        continue;
+                    }
+                    String lowerCaseName = camlCaseName.toLowerCase();
+                    pstmt = conn.prepareStatement("update `cloud`.`host_details` set name=? where host_id=? AND name=?");
+                    pstmt.setString(1, lowerCaseName);
+                    pstmt.setLong(2, hostId);
+                    pstmt.setString(3, camlCaseName);
+                    pstmt.executeUpdate();
+                }
+                s_logger.debug("Successfully updated host details for F5 and SRX devices");
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
+            }  finally {
+                try {
+                    if (rs != null) {
+                        rs.close();
+                    }
+                    if (pstmt != null) {
+                        pstmt.close();
+                    }
+                } catch (SQLException e) {
+                }
+            }
+            s_logger.info("Successfully upgraded network using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
+        }
+    }
 }

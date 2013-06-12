@@ -32,13 +32,16 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -282,7 +285,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                         } else {
                             CloudRuntimeException ex = new CloudRuntimeException("Multiple generic soure NAT IPs provided for network");
                             // see the IPAddressVO.java class.
-                            ex.addProxyObject("user_ip_address", ip.getAssociatedWithNetworkId(), "networkId");
+                            IPAddressVO ipAddr = ApiDBUtils.findIpAddressById(ip.getAssociatedWithNetworkId());
+                            String ipAddrUuid = ip.getAssociatedWithNetworkId().toString();
+                            if ( ipAddr != null){
+                                ipAddrUuid = ipAddr.getUuid();
+                            }
+                            ex.addProxyObject(ipAddrUuid, "networkId");
                             throw ex;
                         }
                     }
@@ -1128,17 +1136,21 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
     
         List<PhysicalNetworkVO> networkList = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
+        DataCenter dc = ApiDBUtils.findZoneById(zoneId);
+        String dcUuid = String.valueOf(zoneId);
+        if ( dc != null ){
+            dcUuid = dc.getUuid();
+        }
     
         if (networkList.isEmpty()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the default physical network with traffic=" + trafficType + " in the specified zone id");
-            // Since we don't have a DataCenterVO object at our disposal, we just set the table name that the zoneId's corresponding uuid is looked up from, manually.
-            ex.addProxyObject("data_center", zoneId, "zoneId");
+            ex.addProxyObject(dcUuid, "zoneId");
             throw ex;
         }
     
         if (networkList.size() > 1) {
             InvalidParameterValueException ex = new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " with traffic type=" + trafficType);
-            ex.addProxyObject("data_center", zoneId, "zoneId");
+            ex.addProxyObject(dcUuid, "zoneId");
             throw ex;
         }
     
@@ -1488,24 +1500,25 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public void checkNetworkPermissions(Account owner, Network network) {
         // Perform account permission check
-        if (network.getGuestType() != Network.GuestType.Shared) {
+        if (network.getGuestType() != Network.GuestType.Shared
+                || (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Account)) {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
             if(networkOwner == null)
-                throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", network does not have an owner");
+                throw new PermissionDeniedException("Unable to use network with id= " + ((network != null)? ((NetworkVO)network).getUuid() : "") + ", network does not have an owner");
             if(owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT){
                 if(!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())){
-                    throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null)? ((NetworkVO)network).getUuid() : "") + ", permission denied");
                 }
             }else{
                 List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
                 if (networkMap == null || networkMap.isEmpty()) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + network.getId() + ", permission denied");
+                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null)? ((NetworkVO)network).getUuid() : "") + ", permission denied");
                 }
             }
 
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                throw new PermissionDeniedException("Shared network id=" + network.getUuid() + " is not available in domain id=" + owner.getDomainId());
+                throw new PermissionDeniedException("Shared network id=" + ((network != null)? ((NetworkVO)network).getUuid() : "") + " is not available in domain id=" + owner.getDomainId());
             }
         }
     }
@@ -1660,7 +1673,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (networkDomainMap.subdomainAccess) {
             Set<Long> parentDomains = _domainMgr.getDomainParentIds(domainId);
 
-            if (parentDomains.contains(domainId)) {
+            if (parentDomains.contains(networkDomainId)) {
                 return true;
             }
         }
@@ -2052,17 +2065,24 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public NicVO getPlaceholderNicForRouter(Network network, Long podId) {
         List<NicVO> nics = _nicDao.listPlaceholderNicsByNetworkIdAndVmType(network.getId(), VirtualMachine.Type.DomainRouter);
         for (NicVO nic : nics) {
-            if (nic.getReserver() == null && nic.getIp4Address() != null) {
+            if (nic.getReserver() == null && (nic.getIp4Address() != null || nic.getIp6Address() != null)) {
                 if (podId == null) {
                     return nic;
                 } else {
                     //return nic only when its ip address belong to the pod range (for the Basic zone case)
                     List<? extends Vlan> vlans = _vlanDao.listVlansForPod(podId);
                     for (Vlan vlan : vlans) {
-                        IpAddress ip = _ipAddressDao.findByIpAndNetworkId(network.getId(), nic.getIp4Address());
-                        if (ip != null && ip.getVlanId() == vlan.getId()) {
-                            return nic;
-                        }
+                    	if (nic.getIp4Address() != null) {
+                    		IpAddress ip = _ipAddressDao.findByIpAndNetworkId(network.getId(), nic.getIp4Address());
+                    		if (ip != null && ip.getVlanId() == vlan.getId()) {
+                    			return nic;
+                    		}
+                    	} else {
+                    		UserIpv6AddressVO ipv6 = _ipv6Dao.findByNetworkIdAndIp(network.getId(), nic.getIp6Address());
+                    		if (ipv6 != null && ipv6.getVlanId() == vlan.getId()) {
+                    			return nic;
+                    		}
+                    	}
                     }
                 }
             }

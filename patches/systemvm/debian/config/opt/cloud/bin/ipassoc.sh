@@ -227,7 +227,8 @@ add_first_ip() {
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
-      sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   fi
   add_routing $1 
 
@@ -273,7 +274,8 @@ add_an_ip () {
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
-      sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   fi
   add_routing $1 
   return $?

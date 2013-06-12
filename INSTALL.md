@@ -1,5 +1,5 @@
-This document describes how to develop, build, package and install Apache CloudStack
-(Incubating). For more information please refer to the project's website:
+This document describes how to develop, build, package and install Apache
+CloudStack. For more information please refer to:
 
     http://cloudstack.apache.org
 
@@ -10,7 +10,7 @@ Refer to the [wiki](http://cwiki.apache.org/confluence/display/CLOUDSTACK/Index)
 for the latest information, especially:
 
   - [Setting up development environment](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Setting+up+CloudStack+Development+Environment) for Apache CloudStack.
-  - [Building](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Building) Apache CloudStack.
+  - [Building](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+to+build+on+master+branch) Apache CloudStack.
 
 ## Setting up Development Environment
 
@@ -21,12 +21,12 @@ Install tools and dependencies used for development:
     $ yum install git ant ant-devel java-1.6.0-openjdk java-1.6.0-openjdk-devel
     mysql mysql-server tomcat6 mkisofs gcc python MySQL-python openssh-clients wget
 
-Set up Maven (3.0.4):
+Set up Maven (3.0.5):
 
-    $ wget http://www.us.apache.org/dist/maven/maven-3/3.0.4/binaries/apache-maven-3.0.4-bin.tar.gz
+    $ wget http://www.us.apache.org/dist/maven/maven-3/3.0.5/binaries/apache-maven-3.0.5-bin.tar.gz
     $ cd /usr/local/ # or any path
-    $ tar -zxvf apache-maven-3.0.4-bin.tar.gz
-    $ echo export M2_HOME=/usr/local/apache-maven-3.0.4 >> ~/.bashrc # or .zshrc or .profile
+    $ tar -zxvf apache-maven-3.0.5-bin.tar.gz
+    $ echo export M2_HOME=/usr/local/apache-maven-3.0.5 >> ~/.bashrc # or .zshrc or .profile
     $ echo export PATH=${M2_HOME}/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
 
 Note: Tomcat 6.0.35 has some known issue with Apache CloudStack, please use Tomcat
@@ -77,10 +77,10 @@ Start the MySQL service:
 
 You may get the source code from the repository hosted on Apache:
 
-    $ git clone https://git-wip-us.apache.org/repos/asf/cloudstack.git
+    $ git clone git://git.apache.org/cloudstack.git
 
 Or, you may fork a repository from the official Apache CloudStack mirror by
-Apache on [Github](https://github.com/apache/incubator-cloudstack)
+Apache on [Github](https://github.com/apache/cloudstack)
 
 To keep yourself updated on a branch, do:
 
@@ -91,7 +91,6 @@ For example, for master:
     $ git pull origin master
 
 ## Building
-
 
 Clean and build:
 

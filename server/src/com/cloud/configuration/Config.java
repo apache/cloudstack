@@ -180,7 +180,8 @@ public enum Config {
     RouterTemplateLXC("Advanced", NetworkManager.class, String.class, "router.template.lxc", "SystemVM Template (LXC)", "Name of the default router template on LXC.", null, ConfigurationParameterScope.zone.toString()),
     RouterExtraPublicNics("Advanced", NetworkManager.class, Integer.class, "router.extra.public.nics", "2", "specify extra public nics used for virtual router(up to 5)", "0-5"),
 	StartRetry("Advanced", AgentManager.class, Integer.class, "start.retry", "10", "Number of times to retry create and start commands", null),
-    ScaleRetry("Advanced", AgentManager.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
+    EnableDynamicallyScaleVm("Advanced", ManagementServer.class, Boolean.class, "enable.dynamic.scale.vm", "false", "Enables/Diables dynamically scaling a vm", null, ConfigurationParameterScope.zone.toString()),
+    ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
     StopRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "stop.retry.interval", "600", "Time in seconds between retries to stop or destroy a vm" , null),
 	StorageCleanupInterval("Advanced", StorageManager.class, Integer.class, "storage.cleanup.interval", "86400", "The interval (in seconds) to wait before running the storage cleanup thread.", null),
 	StorageCleanupEnabled("Advanced", StorageManager.class, Boolean.class, "storage.cleanup.enabled", "true", "Enables/disables the storage cleanup thread.", null),
@@ -228,6 +229,7 @@ public enum Config {
 	NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),
 	CapacitySkipcountingHours("Advanced", ManagementServer.class, Integer.class, "capacity.skipcounting.hours", "3600", "Time (in seconds) to wait before release VM's cpu and memory when VM in stopped state", null),
 	VmStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.stats.interval", "60000", "The interval (in milliseconds) when vm stats are retrieved from agents.", null),
+	VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Time (in seconds) to wait before taking over a VM in transition state", null),
 	VmDestroyForcestop("Advanced", ManagementServer.class, Boolean.class, "vm.destroy.forcestop", "false", "On destroy, force-stop takes this value ", null),
 
@@ -408,7 +410,7 @@ public enum Config {
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
 
-    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", "default", " DNS name of the cloud", null),
+    CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", null, "DNS name of the cloud for the GSLB service", null),
 	
     BlacklistedRoutes("Advanced", VpcManager.class, String.class, "blacklisted.routes", null, "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
 	           "routes", ConfigurationParameterScope.zone.toString()),

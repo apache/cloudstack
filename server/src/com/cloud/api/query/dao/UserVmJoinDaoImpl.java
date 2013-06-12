@@ -178,6 +178,18 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
                 Double networkKbWrite = Double.valueOf(vmStats.getNetworkWriteKBs());
                 userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
+
+                Double diskKbsRead = Double.valueOf(vmStats.getDiskReadKBs());
+                userVmResponse.setDiskKbsRead(diskKbsRead.longValue());
+
+                Double diskKbsWrite = Double.valueOf(vmStats.getDiskWriteKBs());
+                userVmResponse.setDiskKbsWrite(diskKbsWrite.longValue());
+
+                Double diskIORead = Double.valueOf(vmStats.getDiskReadIOs());
+                userVmResponse.setDiskIORead(diskIORead.longValue());
+
+                Double diskIOWrite = Double.valueOf(vmStats.getDiskWriteIOs());
+                userVmResponse.setDiskIOWrite(diskIOWrite.longValue());
             }
         }
 

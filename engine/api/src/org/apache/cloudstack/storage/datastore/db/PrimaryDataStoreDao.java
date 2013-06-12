@@ -16,10 +16,10 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.db;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
@@ -43,7 +43,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     /**
      * Set capacity of storage pool in bytes
-     * 
+     *
      * @param id
      *            pool id.
      * @param capacity
@@ -53,7 +53,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     /**
      * Set available bytes of storage pool in bytes
-     * 
+     *
      * @param id
      *            pool id.
      * @param available
@@ -65,7 +65,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     /**
      * Find pool by name.
-     * 
+     *
      * @param name
      *            name of pool.
      * @return the single StoragePoolVO
@@ -74,7 +74,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     /**
      * Find pools by the pod that matches the details.
-     * 
+     *
      * @param podId
      *            pod id to find the pools in.
      * @param details
@@ -88,7 +88,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     /**
      * Find pool by UUID.
-     * 
+     *
      * @param uuid
      *            uuid of pool.
      * @return the single StoragePoolVO
@@ -120,4 +120,6 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags);
 
     List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags);
+
+    List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType);
 }

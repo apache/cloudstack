@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          cloud-early-config
 # Required-Start:    mountkernfs $local_fs
@@ -32,6 +32,9 @@ PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
 # Fix haproxy directory issue
 mkdir -p /var/lib/haproxy
+
+# Clear boot up flag, it would be created by rc.local after boot up done
+rm /var/cache/cloud/boot_up_done
 
 [ -x /sbin/ifup ] || exit 0
 
@@ -84,13 +87,12 @@ EOF
 
 hypervisor() {
   [ -d /proc/xen ] && mount -t xenfs none /proc/xen
+  [ -d /proc/xen ] && echo "xen-domU" && return 0
 
   local try=$([ -x /usr/sbin/virt-what ] && virt-what | tail -1)
   [ "$try" != "" ] && echo $try && return 0
 
   vmware-checkvm &> /dev/null && echo "vmware" && return 0
-
-  [ -d /proc/xen ] && echo "xen-domU" && return 0
 
   grep -q QEMU /proc/cpuinfo  && echo "kvm" && return 0
   grep -q QEMU /var/log/messages && echo "kvm" && return 0
@@ -337,6 +339,22 @@ enable_svc() {
 
   log_it "Enable service ${svc} = $enabled"
   local cfg=/etc/default/${svc}
+  [ -f $cfg ] && sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg && return
+}
+
+
+enable_irqbalance() {
+  local enabled=$1
+  local proc=0
+
+  proc=$(cat /proc/cpuinfo | grep "processor" | wc -l)
+  if [ $proc -le 1 ]  && [ $enabled -eq 1 ]
+  then
+    enabled=0
+  fi
+
+  log_it "Processors = $proc  Enable service ${svc} = $enabled"
+  local cfg=/etc/default/irqbalance
   [ -f $cfg ] && sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg && return
 }
 
@@ -696,6 +714,7 @@ setup_router() {
 
   enable_svc dnsmasq 1
   enable_svc haproxy 1
+  enable_irqbalance 1
   enable_svc cloud-passwd-srvr 1
   enable_svc cloud 0
   disable_rpfilter_domR
@@ -775,6 +794,7 @@ EOF
 
   enable_svc dnsmasq 1
   enable_svc haproxy 1
+  enable_irqbalance 1
   enable_svc cloud 0
   disable_rpfilter
   enable_fwding 1
@@ -801,6 +821,7 @@ setup_dhcpsrvr() {
 
   enable_svc dnsmasq 1
   enable_svc haproxy 0
+  enable_irqbalance 0
   enable_svc cloud-passwd-srvr 1
   enable_svc cloud 0
   enable_fwding 0
@@ -853,6 +874,7 @@ setup_secstorage() {
   disable_rpfilter
   enable_fwding 0
   enable_svc haproxy 0
+  enable_irqbalance 0
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
@@ -877,6 +899,7 @@ setup_console_proxy() {
   disable_rpfilter
   enable_fwding 0
   enable_svc haproxy 0
+  enable_irqbalance 0
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
@@ -903,6 +926,7 @@ setup_elbvm() {
   
   enable_fwding 0
   enable_svc haproxy 0
+  enable_irqbalance 0
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 0
@@ -925,6 +949,7 @@ setup_ilbvm() {
   
   enable_fwding 0
   enable_svc haproxy 1
+  enable_irqbalance 1
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 0

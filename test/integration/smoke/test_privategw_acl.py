@@ -22,6 +22,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
+from nose.plugins.attrib import attr
 
 
 class TestPrivateGwACL(cloudstackTestCase):
@@ -37,6 +38,8 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.templateId = 5
         self.privateGwId = None
 
+
+    @attr(tags=["advanced"])
     def test_privategw_acl(self):
 
         # 1) Create VPC

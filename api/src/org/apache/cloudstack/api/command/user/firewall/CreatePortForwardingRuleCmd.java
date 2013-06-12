@@ -198,7 +198,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                     _firewallService.revokeRelatedFirewallRule(getEntityId(), true);
                 }
 
-                _rulesService.revokePortForwardingRule(getEntityId(), true);
+                try {
+                    _rulesService.revokePortForwardingRule(getEntityId(), true);
+                } catch (Exception ex){
+                    //Ignore e.g. failed to apply rules to device error
+                }
 
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to apply port forwarding rule");
             }

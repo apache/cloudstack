@@ -27,7 +27,9 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.configuration.Config;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
@@ -45,6 +47,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject NicDao _nicDao;
     @Inject VMInstanceDao _virtualMachineDao;
     @Inject NicSecondaryIpDao _nicSecIpDao;
+    @Inject ConfigurationServer _configServer;
+
 
     protected HypervisorGuruBase() {
         super();
@@ -124,6 +128,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
         to.setUuid(vmInstance.getUuid());
         
+        //
+        to.setEnableDynamicallyScaleVm(Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vm.getDataCenterId())));
+
         return to;
     }
 

@@ -77,6 +77,10 @@
   </bean>
   <bean id="VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
   <bean id="vmwareContextFactory" class="com.cloud.hypervisor.vmware.resource.VmwareContextFactory" />
+  <bean id="VmwareDatacenterDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterDaoImpl" />
+  <bean id="VmwareDatacenterZoneMapDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDaoImpl" />
+  <bean id="LegacyZoneDaoImpl" class="com.cloud.hypervisor.vmware.dao.LegacyZoneDaoImpl" />
+  <bean id="vmwareStorageMotionStrategy" class="org.apache.cloudstack.storage.motion.VmwareStorageMotionStrategy"/>
 
   <!--
     Nicira support components
@@ -368,6 +372,16 @@
           <ref bean="HostAntiAffinityProcessor" />
       </list>
     </property>
+  </bean>
+
+  <!--
+    Dedicated Resources components
+  -->
+
+  <bean id="DedicatedResourceManagerImpl" class="org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl"/>
+  <bean id="ExplicitDedicationProcessor" class="org.apache.cloudstack.affinity.ExplicitDedicationProcessor">
+    <property name="name" value="ExplicitDedicationProcessor"/>
+    <property name="type" value="ExplicitDedication"/>
   </bean>
 
 </beans>

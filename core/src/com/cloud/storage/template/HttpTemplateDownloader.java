@@ -212,6 +212,13 @@ public class HttpTemplateDownloader implements TemplateDownloader {
             	}
             } else {
             	remoteSize2 = Long.parseLong(contentLengthHeader.getValue());
+                if ( remoteSize2 == 0 ) {
+                    status = TemplateDownloader.Status.DOWNLOAD_FINISHED;
+                    String downloaded = "(download complete remote=" + remoteSize + "bytes)";
+                    errorString = "Downloaded " + totalBytes + " bytes " + downloaded;
+                    downloadTime = 0;
+                    return 0;
+                }
             }
 
             if (remoteSize == 0) {

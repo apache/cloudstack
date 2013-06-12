@@ -164,7 +164,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_deployVM_InDefaultSecurityGroup(self):
         """Test deploy VM in default security group
         """
@@ -243,7 +243,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_02_listSecurityGroups(self):
         """Test list security groups for admin account
         """
@@ -278,7 +278,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_03_accessInDefaultSecurityGroup(self):
         """Test access in default security group
         """
@@ -435,7 +435,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_authorizeIngressRule(self):
         """Test authorize ingress rule
         """
@@ -571,7 +571,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_revokeIngressRule(self):
         """Test revoke ingress rule
         """
@@ -868,7 +868,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_deployVMWithUserData(self):
         """Test Deploy VM with User data"""
 
@@ -1044,7 +1044,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_delete_security_grp_running_vm(self):
         """Test delete security group with running VM"""
 
@@ -1128,7 +1128,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_02_delete_security_grp_withoout_running_vm(self):
         """Test delete security group without running VM"""
 
@@ -1290,7 +1290,7 @@ class TestIngressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_authorizeIngressRule_AfterDeployVM(self):
         """Test delete security group with running VM"""
 
@@ -1402,7 +1402,7 @@ class TestIngressRule(cloudstackTestCase):
                       % (ingress_rule_2["id"], e))
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_02_revokeIngressRule_AfterDeployVM(self):
         """Test Revoke ingress rule after deploy VM"""
 
@@ -1556,7 +1556,7 @@ class TestIngressRule(cloudstackTestCase):
                       % (icmp_rule["ruleid"], e))
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_03_stopStartVM_verifyIngressAccess(self):
         """Test Start/Stop VM and Verify ingress rule"""
 

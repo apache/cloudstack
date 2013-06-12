@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -50,9 +51,12 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 
+
 @Local(value=ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {
-	 private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
+    private final static Logger s_logger = Logger.getLogger(XcpOssResource.class);
+    private static final long mem_32m = 33554432L;
+
     @Override
     protected List<File> getPatchFiles() {
         List<File> files = new ArrayList<File>();
@@ -65,13 +69,13 @@ public class XcpOssResource extends CitrixResourceBase {
         files.add(file);
         return files;
     }
-    
+
     @Override
 	protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
     	super.fillHostInfo(conn, cmd);
     	cmd.setCaps(cmd.getCapabilities() + " , hvm");
     }
-    
+
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
     	if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
@@ -80,7 +84,7 @@ public class XcpOssResource extends CitrixResourceBase {
     		return CitrixHelper.getXcpGuestOsType(stdType);
     	}
     }
-    
+
     protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
     	if (_host.localSRuuid != null) {
     		//create an iso vdi on it
@@ -88,13 +92,13 @@ public class XcpOssResource extends CitrixResourceBase {
     		if (result == null || result.equalsIgnoreCase("Failed")) {
     			 throw new CloudRuntimeException("can not create systemvm vdi");
     		}
-    		
+
     		Set<VDI> vdis = VDI.getByNameLabel(conn, "systemvm-vdi");
     		if (vdis.size() != 1) {
     			throw new CloudRuntimeException("can not find systemvmiso");
     		}
     		VDI systemvmVDI = vdis.iterator().next();
-    		
+
     		VBD.Record cdromVBDR = new VBD.Record();
             cdromVBDR.VM = vm;
             cdromVBDR.empty = false;
@@ -109,7 +113,7 @@ public class XcpOssResource extends CitrixResourceBase {
     		 throw new CloudRuntimeException("can not find local sr");
     	}
     }
-    
+
 
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
         try {
@@ -124,10 +128,10 @@ public class XcpOssResource extends CitrixResourceBase {
             return answer;
         } catch (Exception ex) {
             s_logger.warn("Failed to get network usage stats due to ", ex);
-            return new NetworkUsageAnswer(cmd, ex); 
+            return new NetworkUsageAnswer(cmd, ex);
         }
     }
-    
+
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof NetworkUsageCommand) {
@@ -136,11 +140,11 @@ public class XcpOssResource extends CitrixResourceBase {
             return super.executeRequest(cmd);
         }
     }
-    
+
     @Override
     public StartAnswer execute(StartCommand cmd) {
     	StartAnswer answer = super.execute(cmd);
-    	
+
     	VirtualMachineTO vmSpec = cmd.getVirtualMachine();
     	if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy) {
     		Connection conn = getConnection();
@@ -152,10 +156,10 @@ public class XcpOssResource extends CitrixResourceBase {
     		}
     		callHostPlugin(conn, "vmops", "setDNATRule", "ip", publicIp, "port", "8443", "add", "true");
     	}
-    	
+
     	return answer;
     }
-    
+
     @Override
     public StopAnswer execute(StopCommand cmd) {
     	StopAnswer answer = super.execute(cmd);
@@ -165,5 +169,10 @@ public class XcpOssResource extends CitrixResourceBase {
     		callHostPlugin(conn, "vmops", "setDNATRule", "add", "false");
     	}
     	return answer;
+    }
+
+    @Override
+    protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
+        vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }
 }

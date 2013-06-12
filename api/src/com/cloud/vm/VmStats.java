@@ -23,5 +23,13 @@ public interface VmStats {
     public double getNetworkReadKBs();
 
     public double getNetworkWriteKBs();
+    
+    public double getDiskReadIOs();
+
+    public double getDiskWriteIOs();
+    
+    public double getDiskReadKBs();
+
+    public double getDiskWriteKBs();
 
 }

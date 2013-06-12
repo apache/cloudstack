@@ -210,20 +210,20 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         zoneId = pNetwork.getDataCenterId();
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
 
+        ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        if (ntwkSvcProvider == null) {
+            throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() +
+                    " is not enabled in the physical network: " + physicalNetworkId + "to add this device");
+        } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
+            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() +
+                    " is in shutdown state in the physical network: " + physicalNetworkId + "to add this device");
+        }
+
         if (gslbProvider) {
             ExternalLoadBalancerDeviceVO zoneGslbProvider = _externalLoadBalancerDeviceDao.findGslbServiceProvider(
                     physicalNetworkId, ntwkDevice.getNetworkServiceProvder());
             if (zoneGslbProvider != null) {
                 throw new CloudRuntimeException("There is a GSLB service provider configured in the zone alredy.");
-            }
-        } else {
-            ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
-            if (ntwkSvcProvider == null) {
-                throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() +
-                        " is not enabled in the physical network: " + physicalNetworkId + "to add this device");
-            } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-                throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() +
-                        " is in shutdown state in the physical network: " + physicalNetworkId + "to add this device");
             }
         }
 
@@ -774,7 +774,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 // If a NIC doesn't exist for the load balancing IP address, create one
                 loadBalancingIpNic = _nicDao.findByIp4AddressAndNetworkId(loadBalancingIpAddress, network.getId());
                 if (loadBalancingIpNic == null) {
-                    loadBalancingIpNic = _networkMgr.savePlaceholderNic(network, loadBalancingIpAddress, null);
+                    loadBalancingIpNic = _networkMgr.savePlaceholderNic(network, loadBalancingIpAddress, null, null);
                 }
 
                 // Save a mapping between the source IP address and the load balancing IP address NIC
@@ -1019,7 +1019,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         if (add) {
             // Insert a new NIC for this guest network to reserve the self IP
-            _networkMgr.savePlaceholderNic(guestConfig, selfIp, null);
+            _networkMgr.savePlaceholderNic(guestConfig, selfIp, null, null);
         } else {
             // release the self-ip obtained from guest network
             Nic selfipNic = getPlaceholderNic(guestConfig);

@@ -904,6 +904,27 @@ public class NetscalerResource implements ServerResource {
                             // Bind 'gslbservice' service object to GSLB virtual server
                             GSLB.createVserverServiceBinding(_netscalerService, serviceName, vserverName);
 
+                            // create a monitor for the service running on the site
+                            lbmonitor newmonitor = new lbmonitor();
+                            String monitorName =  GSLB.generateGslbServiceMonitorName(servicePublicIp);
+                            newmonitor.set_type("TCP");
+                            newmonitor.set_servicename(serviceName);
+                            newmonitor.set_monitorname(monitorName);
+                            newmonitor.set_state("ENABLED");
+                            lbmonitor.add(_netscalerService, newmonitor);
+
+                            // bind the monitor to the GSLB servie
+                            try {
+                                gslbservice_lbmonitor_binding monitorBinding = new gslbservice_lbmonitor_binding();
+                                monitorBinding.set_monitor_name(monitorName);
+                                monitorBinding.set_servicename(serviceName);
+                                gslbservice_lbmonitor_binding.add(_netscalerService, monitorBinding);
+                            } catch (Exception e) {
+                                // TODO: Nitro API version 10.* is not compatible for NetScalers 9.*, so may fail
+                                // against NetScaler version lesser than 10 hence ignore the exception
+                                s_logger.warn("Failed to bind monitor to GSLB service due to " + e.getMessage());
+                            }
+
                         } else {
                             // Unbind GSLB service with GSLB virtual server
                             GSLB.deleteVserverServiceBinding(_netscalerService, serviceName, vserverName);
@@ -911,6 +932,19 @@ public class NetscalerResource implements ServerResource {
                             // delete 'gslbservice' object
                             gslbservice service = GSLB.getServiceObject(_netscalerService, serviceName);
                             GSLB.deleteService(_netscalerService, serviceName);
+
+                            // delete the GSLB service monitor
+                            String monitorName =  GSLB.generateGslbServiceMonitorName(servicePublicIp);
+                            try {
+                                lbmonitor serviceMonitor = lbmonitor.get(_netscalerService, monitorName);
+                                if (serviceMonitor != null) {
+                                    lbmonitor.delete(_netscalerService, serviceMonitor);
+                                }
+                            } catch (nitro_exception ne) {
+                                if (ne.getErrorCode() != NitroError.NS_RESOURCE_NOT_EXISTS) {
+                                    s_logger.warn("Failed to delete monitor "+ monitorName + " for GSLB service due to " + ne.getMessage());
+                                }
+                            }
                         }
 
                         if (site.forRevoke()) { // delete the site if its for revoke
@@ -1467,6 +1501,10 @@ public class NetscalerResource implements ServerResource {
 
         private static String generateUniqueServiceName(String siteName, String publicIp, String publicPort) {
             return "cloud-gslb-service-" + siteName + "-" + publicIp + "-" + publicPort;
+        }
+
+        private static String generateGslbServiceMonitorName(String publicIp) {
+            return "cloud-monitor-" + publicIp;
         }
 
         private static boolean gslbServerExists(nitro_service client, String serverName) throws ExecutionException {

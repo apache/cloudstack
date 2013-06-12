@@ -17,16 +17,18 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.cloud.utils.exception.ExceptionProxyObject;
 import com.google.gson.annotations.SerializedName;
 
 public class ExceptionResponse extends BaseResponse {
 
     @SerializedName("uuidList") @Param(description="List of uuids associated with this error")
-    private ArrayList<String> idList;
+    private List<ExceptionProxyObject> idList;
 
     @SerializedName("errorcode") @Param(description="numeric code associated with this error")
     private Integer errorCode;
@@ -37,6 +39,10 @@ public class ExceptionResponse extends BaseResponse {
     @SerializedName("errortext") @Param(description="the text associated with this error")
     private String errorText = "Command failed due to Internal Server Error";
 
+    public ExceptionResponse(){
+        idList = new ArrayList<ExceptionProxyObject>();
+    }
+    
     public Integer getErrorCode() {
         return errorCode;
     }
@@ -53,12 +59,12 @@ public class ExceptionResponse extends BaseResponse {
         this.errorText = errorText;
     }
 
-    public void addProxyObject(String id) {
+    public void addProxyObject(ExceptionProxyObject id) {
         idList.add(id);
         return;
     }
 
-    public ArrayList<String> getIdProxyList() {
+    public List<ExceptionProxyObject> getIdProxyList() {
         return idList;
     }
 

@@ -38,6 +38,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
@@ -130,6 +131,15 @@ public class PrimaryDataStoreHelper {
     public DataStore attachZone(DataStore store) {
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
         pool.setScope(ScopeType.ZONE);
+        pool.setStatus(StoragePoolStatus.Up);
+        this.dataStoreDao.update(pool.getId(), pool);
+        return dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
+    }
+
+    public DataStore attachZone(DataStore store, HypervisorType hypervisor) {
+        StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
+        pool.setScope(ScopeType.ZONE);
+        pool.setHypervisor(hypervisor);
         pool.setStatus(StoragePoolStatus.Up);
         this.dataStoreDao.update(pool.getId(), pool);
         return dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);

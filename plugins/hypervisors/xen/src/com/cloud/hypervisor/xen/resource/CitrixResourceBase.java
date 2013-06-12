@@ -107,6 +107,8 @@ import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVmDiskStatsAnswer;
+import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -161,6 +163,7 @@ import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -288,6 +291,7 @@ import com.xensource.xenapi.Types.VmBadPowerState;
 import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VBDMetrics;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VLAN;
@@ -534,6 +538,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((GetHostStatsCommand) cmd);
         } else if (clazz == GetVmStatsCommand.class) {
             return execute((GetVmStatsCommand) cmd);
+        } else if (cmd instanceof GetVmDiskStatsCommand) {
+            return execute((GetVmDiskStatsCommand) cmd);
         } else if (clazz == CheckHealthCommand.class) {
             return execute((CheckHealthCommand) cmd);
         } else if (clazz == StopCommand.class) {
@@ -679,6 +685,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected void scaleVM(Connection conn, VM vm, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
 
+        Long staticMemoryMax = vm.getMemoryStaticMax(conn);
+        Long staticMemoryMin = vm.getMemoryStaticMin(conn);
+        Long newDynamicMemoryMin = vmSpec.getMinRam() * 1024 * 1024;
+        Long newDynamicMemoryMax = vmSpec.getMaxRam() * 1024 * 1024;
+        if (staticMemoryMin > newDynamicMemoryMin || newDynamicMemoryMax > staticMemoryMax) {
+            throw new CloudRuntimeException("Cannot scale up the vm because of memory constraint violation: 0 <= memory-static-min <= memory-dynamic-min <= memory-dynamic-max <= memory-static-max ");
+        }
+
         vm.setMemoryDynamicRange(conn, vmSpec.getMinRam() * 1024 * 1024, vmSpec.getMaxRam() * 1024 * 1024);
         vm.setVCPUsNumberLive(conn, (long)vmSpec.getCpus());
 
@@ -715,10 +729,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // If DMC is not enable then don't execute this command.
             if (!isDmcEnabled(conn, host)) {
-                String msg = "Unable to scale the vm: " + vmName + " as DMC - Dynamic memory control is not enabled for the XenServer:" + _host.uuid + " ,check your license and hypervisor version.";
-                s_logger.info(msg);
-                return new ScaleVmAnswer(cmd, false, msg);
+                throw new CloudRuntimeException("Unable to scale the vm: " + vmName + " as DMC - Dynamic memory control is not enabled for the XenServer:" + _host.uuid + " ,check your license and hypervisor version.");
             }
+
             // stop vm which is running on this host or is in halted state
             Iterator<VM> iter = vms.iterator();
             while ( iter.hasNext() ) {
@@ -738,13 +751,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (VM vm : vms) {
                 VM.Record vmr = vm.getRecord(conn);
                 try {
-                    Map<String, String> hostParams = new HashMap<String, String>();
-                    hostParams = host.getLicenseParams(conn);
-                    if (hostParams.get("restrict_dmc").equalsIgnoreCase("true")) {
-                        throw new CloudRuntimeException("Host "+ _host.uuid + " does not support Dynamic Memory Control, so we cannot scale up the vm");
-                    }
                     scaleVM(conn, vm, vmSpec, host);
-
                 } catch (Exception e) {
                     String msg = "Catch exception " + e.getClass().getName() + " when scaling VM:" + vmName + " due to " + e.toString();
                     s_logger.debug(msg);
@@ -2068,7 +2075,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
         }
-        args = args + " " ;
+        //this is to ensure that thre is some argument passed to the deleteipAlias script  when there are no revoked rules.
+        args = args + "- " ;
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
@@ -2652,6 +2660,80 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return hostStats;
     }
 
+    protected GetVmDiskStatsAnswer execute( GetVmDiskStatsCommand cmd) {
+        Connection conn = getConnection();
+        List<String> vmNames = cmd.getVmNames();
+        HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsNameMap = new HashMap<String, List<VmDiskStatsEntry>>();
+        if( vmNames.size() == 0 ) {
+            return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(),vmDiskStatsNameMap);
+        }
+        try {
+
+            // Determine the UUIDs of the requested VMs
+            List<String> vmUUIDs = new ArrayList<String>();
+
+            for (String vmName : vmNames) {
+                VM vm = getVM(conn, vmName);
+                vmUUIDs.add(vm.getUuid(conn));
+            }
+
+            HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsUUIDMap = getVmDiskStats(conn, cmd, vmUUIDs, cmd.getHostGuid());
+            if( vmDiskStatsUUIDMap == null ) {
+                return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(), vmDiskStatsNameMap);
+            }
+
+            for (String vmUUID : vmDiskStatsUUIDMap.keySet()) {
+                List<VmDiskStatsEntry> vmDiskStatsUUID = vmDiskStatsUUIDMap.get(vmUUID);
+                String vmName = vmNames.get(vmUUIDs.indexOf(vmUUID));
+                for (VmDiskStatsEntry vmDiskStat : vmDiskStatsUUID) {
+                    vmDiskStat.setVmName(vmName);
+                }
+                vmDiskStatsNameMap.put(vmName, vmDiskStatsUUID);
+            }
+
+            return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(),vmDiskStatsNameMap);
+        } catch (XenAPIException e) {
+            String msg = "Unable to get VM disk stats" + e.toString();
+            s_logger.warn(msg, e);
+            return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(),vmDiskStatsNameMap);
+        } catch (XmlRpcException e) {
+            String msg = "Unable to get VM disk stats" + e.getMessage();
+            s_logger.warn(msg, e);
+            return new GetVmDiskStatsAnswer(cmd, "", cmd.getHostName(),vmDiskStatsNameMap);
+        }
+    }
+    
+    private HashMap<String, List<VmDiskStatsEntry>> getVmDiskStats(Connection conn, GetVmDiskStatsCommand cmd, List<String> vmUUIDs, String hostGuid) {
+        HashMap<String, List<VmDiskStatsEntry>> vmResponseMap = new HashMap<String, List<VmDiskStatsEntry>>();
+
+        for (String vmUUID : vmUUIDs) {
+            vmResponseMap.put(vmUUID, new ArrayList<VmDiskStatsEntry>());
+        }
+        
+        try {
+            for (String vmUUID : vmUUIDs) {
+                VM vm = VM.getByUuid(conn, vmUUID);
+                List<VmDiskStatsEntry> vmDiskStats = new ArrayList<VmDiskStatsEntry>();
+                for (VBD vbd : vm.getVBDs(conn)) {
+                    if (!vbd.getType(conn).equals(Types.VbdType.CD)) {
+                        VmDiskStatsEntry stats = new VmDiskStatsEntry();
+                        VBDMetrics record = vbd.getMetrics(conn);
+                        stats.setPath(vbd.getVDI(conn).getUuid(conn));
+                        stats.setBytesRead((long)(record.getIoReadKbs(conn) * 1024));
+                        stats.setBytesWrite((long)(record.getIoWriteKbs(conn) * 1024));
+                        vmDiskStats.add(stats);
+                    }
+                }
+                vmResponseMap.put(vmUUID, vmDiskStats);
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error while collecting disk stats from : ", e);
+            return null;
+        }
+        
+        return vmResponseMap;
+    }
+
     protected GetVmStatsAnswer execute( GetVmStatsCommand cmd) {
         Connection conn = getConnection();
         List<String> vmNames = cmd.getVmNames();
@@ -2759,6 +2841,29 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if(s_logger.isDebugEnabled()) {
                 s_logger.debug("Vm cpu utilization " + vmStatsAnswer.getCPUUtilization());
             }
+        }
+
+        try {
+            for (String vmUUID : vmUUIDs) {
+                VM vm = VM.getByUuid(conn, vmUUID);
+                VmStatsEntry stats = vmResponseMap.get(vmUUID);
+                double diskReadKBs = 0;
+                double diskWriteKBs = 0;
+                for (VBD vbd : vm.getVBDs(conn)) {
+                    VBDMetrics record = vbd.getMetrics(conn);
+                    diskReadKBs += record.getIoReadKbs(conn);
+                    diskWriteKBs += record.getIoWriteKbs(conn);
+                }
+                if (stats == null) {
+                    stats = new VmStatsEntry();
+                }
+                stats.setDiskReadKBs(diskReadKBs);
+                stats.setDiskWriteKBs(diskWriteKBs);
+                vmResponseMap.put(vmUUID, stats);
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error while collecting disk stats from : ", e);
+            return null;
         }
 
         return vmResponseMap;
@@ -8088,7 +8193,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      */
     private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
         Connection conn = getConnection();
-        String vmName = cmd.getInstanceName();
+        String vmName = cmd.getVmName();
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if ( vms == null || vms.isEmpty() ) {

@@ -89,10 +89,9 @@ public class CloudOrchestrator implements OrchestrationService {
 
 	public CloudOrchestrator() {
 	}
-	
+
     public VirtualMachineEntity createFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> computeTags,
             Map<String, String> details, String owner) {
-        // TODO Auto-generated method stub
         return null;
     }
 

@@ -78,7 +78,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
         if (!isPortable(id)) {
             result = _networkService.releaseIpAddress(getIpAddressId());
         } else {
-            result = _networkService.releaseIpAddress(getIpAddressId());
+            result = _networkService.releasePortableIpAddress(getIpAddressId());
         }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -90,7 +90,11 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NET_IP_RELEASE;
+        if (!isPortable(id)) {
+            return EventTypes.EVENT_NET_IP_RELEASE;
+        } else {
+            return EventTypes.EVENT_PORTABLE_IP_RELEASE;
+        }
     }
 
     @Override

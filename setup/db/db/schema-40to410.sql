@@ -173,8 +173,6 @@ ALTER TABLE upload ADD uuid VARCHAR(40);
 ALTER TABLE async_job modify job_cmd VARCHAR(255);
 
 
-ALTER TABLE `cloud`.`alert` ADD INDEX `last_sent` (`last_sent` DESC) ;
-
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `is_persistent` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides an ability to create persistent networks';
 
 
@@ -1653,3 +1651,7 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'eip.use.multiple.netscalers' , 'false', 'Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone');
+
+UPDATE `cloud`.`configuration` set category='Advanced' where category='Advanced ';
+UPDATE `cloud`.`configuration` set category='Hidden' where category='Hidden ';
+

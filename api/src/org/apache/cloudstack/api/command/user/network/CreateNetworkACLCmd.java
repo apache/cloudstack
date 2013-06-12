@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncJob;
@@ -98,7 +99,15 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
 
     public String getProtocol() {
-        return protocol.trim();
+    	String p = protocol.trim();
+    	// Deal with ICMP(protocol number 1) specially because it need to be paired with icmp type and code
+        if(StringUtils.isNumeric(p)){
+            int protoNumber = Integer.parseInt(p);
+            if (protoNumber == 1) {
+            	p = "icmp";
+            }
+    	}
+    	return p;
     }
 
     public List<String> getSourceCidrList() {

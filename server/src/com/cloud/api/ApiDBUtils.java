@@ -60,7 +60,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolForMigrationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
@@ -177,8 +176,6 @@ import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
-import com.cloud.network.dao.AccountGuestVlanMapDao;
-import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -203,7 +200,6 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
@@ -217,7 +213,6 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
-import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
@@ -1564,11 +1559,11 @@ public class ApiDBUtils {
         return _poolJoinDao.setStoragePoolResponse(vrData, vr);
     }
 
-    public static StoragePoolForMigrationResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO vr) {
+    public static StoragePoolResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO vr) {
         return _poolJoinDao.newStoragePoolForMigrationResponse(vr);
     }
 
-    public static StoragePoolForMigrationResponse fillStoragePoolForMigrationDetails(StoragePoolForMigrationResponse
+    public static StoragePoolResponse fillStoragePoolForMigrationDetails(StoragePoolResponse
             vrData, StoragePoolJoinVO vr){
         return _poolJoinDao.setStoragePoolForMigrationResponse(vrData, vr);
     }

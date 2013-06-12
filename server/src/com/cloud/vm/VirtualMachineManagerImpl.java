@@ -2836,7 +2836,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
                     // insert nic's Id into DB as resource_name
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmVO.getAccountId(),
-                            vmVO.getDataCenterId(), vmVO.getId(), Long.toString(nic.getId()), nic.getNetworkId(),
+                            vmVO.getDataCenterId(), vmVO.getId(), Long.toString(nic.getId()), network.getNetworkOfferingId(),
                             null, isDefault, VirtualMachine.class.getName(), vmVO.getUuid());                     
                     return nic;
                 } else {

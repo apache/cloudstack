@@ -55,7 +55,7 @@ public interface NetworkService {
     IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId) throws ResourceAllocationException,
             InsufficientAddressCapacityException, ConcurrentOperationException;
 
-    boolean releasePortableIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
+    boolean releasePortableIpAddress(long ipAddressId);
 
     Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException,
     ResourceAllocationException;

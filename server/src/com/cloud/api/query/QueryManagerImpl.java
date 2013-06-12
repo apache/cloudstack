@@ -116,6 +116,8 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -295,6 +297,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     @Inject
     private AffinityGroupJoinDao _affinityGroupJoinDao;
 
+    @Inject
+    private DedicatedResourceDao _dedicatedDao;
     /* (non-Javadoc)
      * @see com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack.api.command.admin.user.ListUsersCmd)
      */
@@ -1032,7 +1036,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return response;
     }
 
-    
+
     @Override
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
@@ -1048,7 +1052,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
             String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role, String zoneType) {
-       
+
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1140,7 +1144,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (vpcId != null) {
             sc.setParameters("vpcId", vpcId);
         }
-        
+
         if (role != null) {
             sc.setParameters("role", role);
         }
@@ -2299,7 +2303,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             UserVmVO vmInstance = _userVmDao.findById(vmId);
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with specified id");
-                ex.addProxyObject(vmInstance, vmId, "vmId");
+                ex.addProxyObject(vmId.toString(), "vmId");
                 throw ex;
             }
 
@@ -2375,12 +2379,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 sc.addAnd("name", SearchCriteria.Op.SC, ssc);
             }
 
-            if (domainId != null) {
+            /*List all resources due to Explicit Dedication except the dedicated resources of other account
+             * if (domainId != null) {
                 // for domainId != null
                 // right now, we made the decision to only list zones associated
                 // with this domain, private zone
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-            }  else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            }  else */
+            if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                 // it was decided to return all zones for the user's domain, and
                 // everything above till root
                 // list all zones belonging to this domain, and all of its
@@ -2409,6 +2415,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
                 // remove disabled zones
                 sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
+
+                //remove Dedicated zones not dedicated to this domainId or subdomainId
+                List<Long> dedicatedZoneIds = removeDedicatedZoneNotSuitabe(domainIds);
+                if(!dedicatedZoneIds.isEmpty()){
+                    sdc.addAnd("id", SearchCriteria.Op.NIN, dedicatedZoneIds.toArray(new Object[dedicatedZoneIds.size()]));
+                }
 
             } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 // it was decided to return all zones for the domain admin, and
@@ -2439,6 +2451,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
                 // remove disabled zones
                 sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
+
+              //remove Dedicated zones not dedicated to this domainId or subdomainId
+                List<Long> dedicatedZoneIds = removeDedicatedZoneNotSuitabe(domainIds);
+                if(!dedicatedZoneIds.isEmpty()){
+                    sdc.addAnd("id", SearchCriteria.Op.NIN, dedicatedZoneIds.toArray(new Object[dedicatedZoneIds.size()]));
+                }
             }
 
             // handle available=FALSE option, only return zones with at least one VM running there
@@ -2464,6 +2482,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return _dcJoinDao.searchAndCount(sc, searchFilter);
     }
 
+    private List<Long> removeDedicatedZoneNotSuitabe(List<Long> domainIds) {
+      //remove dedicated zone of other domain
+        List<Long> dedicatedZoneIds = new ArrayList<Long>();
+        List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listZonesNotInDomainIds(domainIds);
+        for (DedicatedResourceVO dr : dedicatedResources) {
+            if(dr != null) {
+                dedicatedZoneIds.add(dr.getDataCenterId());
+            }
+        }
+        return dedicatedZoneIds;
+    }
 
     // This method is used for permissions check for both disk and service
     // offerings
@@ -2555,14 +2584,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (isIso && template.getFormat() != ImageFormat.ISO) {
                 s_logger.error("Template Id " + templateId + " is not an ISO");
                 InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
-                ex.addProxyObject(template, templateId, "templateId");
+                ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }// If ISO not requested then it shouldn't be an ISO.
             if (!isIso && template.getFormat() == ImageFormat.ISO) {
                 s_logger.error("Incorrect format of the template id " + templateId);
                 InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat()
                         + " of the specified template id");
-                ex.addProxyObject(template, templateId, "templateId");
+                ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }
 
@@ -2796,9 +2825,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
-            String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+            String affinityGroupType, Long vmId, String accountName, Long domainId, boolean isRecursive,
+            boolean listAll, Long startIndex, Long pageSize) {
         Pair<List<AffinityGroupJoinVO>, Integer> result = listAffinityGroupsInternal(affinityGroupId,
-                affinityGroupName, affinityGroupType, vmId, startIndex, pageSize);
+                affinityGroupName, affinityGroupType, vmId, accountName, domainId, isRecursive, listAll, startIndex, pageSize);
         ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();
         List<AffinityGroupResponse> agResponses = ViewResponseHelper.createAffinityGroupResponses(result.first());
         response.setResponses(agResponses, result.second());
@@ -2807,12 +2837,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
 
     public Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsInternal(Long affinityGroupId,
-            String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+            String affinityGroupName, String affinityGroupType, Long vmId, String accountName, Long domainId,
+            boolean isRecursive, boolean listAll, Long startIndex, Long pageSize) {
 
         Account caller = UserContext.current().getCaller();
 
         Long accountId = caller.getAccountId();
-        Long domainId = caller.getDomainId();
 
         if (vmId != null) {
             UserVmVO userVM = _userVmDao.findById(vmId);
@@ -2824,20 +2854,25 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             return listAffinityGroupsByVM(vmId.longValue(), startIndex, pageSize);
         }
 
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                domainId, isRecursive, null);
+        _accountMgr.buildACLSearchParameters(caller, affinityGroupId, accountName, null, permittedAccounts,
+                domainIdRecursiveListProject, listAll, true);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         Filter searchFilter = new Filter(AffinityGroupJoinVO.class, "id", true, startIndex, pageSize);
         SearchBuilder<AffinityGroupJoinVO> groupSearch = _affinityGroupJoinDao.createSearchBuilder();
+        _accountMgr.buildACLViewSearchBuilder(groupSearch, domainId, isRecursive, permittedAccounts,
+                listProjectResourcesCriteria);
+
         groupSearch.select(null, Func.DISTINCT, groupSearch.entity().getId()); // select
                                                                                // distinct
 
         SearchCriteria<AffinityGroupJoinVO> sc = groupSearch.create();
-
-        if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
+        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (affinityGroupId != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, affinityGroupId);
@@ -2852,8 +2887,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
 
-        Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc,
-                searchFilter);
+        Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc, searchFilter);
         // search group details by ids
         Integer count = uniqueGroupsPair.second();
         if (count.intValue() == 0) {

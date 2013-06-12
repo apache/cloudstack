@@ -101,7 +101,7 @@ def monkeycache(apis):
     cache['asyncapis'] = []
 
     apilist = getvalue(apis[responsekey], 'api')
-    if apilist == None:
+    if apilist is None:
         print "[monkeycache] Server response issue, no apis found"
 
     for api in apilist:

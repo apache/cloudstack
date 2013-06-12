@@ -16,19 +16,11 @@
 // under the License.
 package com.cloud.server;
 
-import java.util.Date;
 import java.util.List;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.VirtualMachineMigrationException;
-import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
-import com.cloud.event.EventVO;
 import com.cloud.host.HostVO;
-import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
@@ -59,30 +51,6 @@ public interface ManagementServer extends ManagementService, PluggableService  {
      */
     HostVO getHostBy(long hostId);
 
-    /**
-     * Retrieves all Events between the start and end date specified
-     * 
-     * @param userId
-     *            unique id of the user, pass in -1 to retrieve events for all users
-     * @param accountId
-     *            unique id of the account (which could be shared by many users), pass in -1 to retrieve events for all accounts
-     * @param domainId
-     *            the id of the domain in which to search for users (useful when -1 is passed in for userId)
-     * @param type
-     *            the type of the event.
-     * @param level
-     *            INFO, WARN, or ERROR
-     * @param startDate
-     *            inclusive.
-     * @param endDate
-     *            inclusive. If date specified is greater than the current time, the system will use the current time.
-     * @return List of events
-     */
-    List<EventVO> getEvents(long userId, long accountId, Long domainId, String type, String level, Date startDate, Date endDate);
-
-    //FIXME - move all console proxy related commands to corresponding managers
-    ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId);
-
     String getConsoleAccessUrlRoot(long vmId);
     
     GuestOSVO getGuestOs(Long guestOsId);
@@ -103,7 +71,5 @@ public interface ManagementServer extends ManagementService, PluggableService  {
     String getEncryptionKey();
     String getEncryptionIV();
     void resetEncryptionKeyIV();
-    
-    public void enableAdminUser(String password);
 
 }

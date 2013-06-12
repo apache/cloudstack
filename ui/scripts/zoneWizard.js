@@ -348,11 +348,18 @@
           
 	  }													
 										
-          setTimeout(function() {
+      /*    setTimeout(function() {
             if ($form.find('input[name=ispublic]').is(':checked')) {
-              $form.find('[rel=domain]').hide();
+              $form.find('[rel=domain]').show();
+              $form.find('[rel=accountId]').show();
             }
-          });
+ 
+            else{
+
+              $form.find('[rel=domain]').hide();
+              $form.find('[rel=accountId]').hide();
+            }
+          });*/
         },
         fields: {
           name: {
@@ -401,7 +408,6 @@
 									var nonSupportedHypervisors = {};									
 									if(args.context.zones[0]['network-model']	== "Advanced" && args.context.zones[0]['zone-advanced-sg-enabled'] ==	"on") {
 									  firstOption = "KVM";
-										nonSupportedHypervisors["XenServer"] = 1;  //to developers: comment this line if you need to test Advanced SG-enabled zone with XenServer hypervisor
 										nonSupportedHypervisors["VMware"] = 1;
 										nonSupportedHypervisors["BareMetal"] = 1;
 										nonSupportedHypervisors["Ovm"] = 1;
@@ -542,10 +548,10 @@
             validation: { required: false }
           },
           ispublic: {
-            isReverse: true,
+            //isReverse: true,
             isBoolean: true,
-            label: 'label.public',
-            isChecked: true //checked by default (public zone)
+            label: 'Dedicate',
+            isChecked: false //checked by default (public zone)
           },
           domain: {
             label: 'label.domain',
@@ -571,6 +577,16 @@
               });
             }
           },
+
+           accountId:{
+                     label:'Account',
+                     isHidden:true,
+                     dependsOn:'ispublic',
+                     //docID:'helpAccountForDedication',
+                     validation:{required:false}
+
+                  },
+
           localstorageenabled: {
             label: 'label.local.storage.enabled',
             isBoolean: true,
@@ -1218,24 +1234,19 @@
                 return;
               }
 
-                // ZWPS is supported only for KVM as the hypervisor
-             if(selectedHypervisorObj.hypervisortype != "KVM"){
+              //zone-wide-primary-storage is supported only for KVM and VMWare
+              if(selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware"){
                        var scope=[];
+                scope.push({ id: 'zone', description: _l('label.zone.wide') });
                        scope.push({ id: 'cluster', description: _l('label.cluster') });
-                       //scope.push({ id: 'host', description: _l('label.host') });
                        args.response.success({data: scope});
                     }
-
               else {
                        var scope=[];
-                       scope.push({ id: 'zone', description: _l('label.zone.wide') });
                        scope.push({ id: 'cluster', description: _l('label.cluster') });
-                      // scope.push({ id: 'host', description: _l('label.host') });
                        args.response.success({data: scope});
                     }
-
                 }
-
               },
 
           protocol: {
@@ -1750,12 +1761,16 @@
             array1.push("&internaldns2=" + todb(internaldns2));
 
 					if(args.data.pluginFrom == null) { //from zone wizard, not from quick instsaller(args.data.pluginFrom != null && args.data.pluginFrom.name == 'installWizard') who doesn't have public checkbox
-						if(args.data.zone.ispublic == null) //public checkbox in zone wizard is unchecked 
-							array1.push("&domainid=" + args.data.zone.domain);
+					//	if(args.data.zone.ispublic != null){ //public checkbox in zone wizard is unchecked 
+					//		array1.push("&domainid=" + args.data.zone.domain);
+                                                       
+                                              // }
           }
 					
           if(args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
             array1.push("&domain=" + todb(args.data.zone.networkdomain));
+
+          var dedicatedZoneId = null;
 
           $.ajax({
             url: createURL("createZone" + array1.join("")),
@@ -1767,6 +1782,35 @@
                   returnedZone: json.createzoneresponse.zone
                 })
               });
+
+               dedicatedZoneId = json.createzoneresponse.zone.id;
+                //EXPLICIT ZONE DEDICATION
+                if(args.data.pluginFrom == null && args.data.zone.ispublic != null){
+                      var array2 = [];
+                      if(args.data.zone.domain != null)
+                        array2.push("&domainid=" + args.data.zone.domain);
+                      if(args.data.zone.accountId != "")
+                        array2.push("&account=" +todb(args.data.zone.accountId));
+
+                      if(dedicatedZoneId != null){
+                      $.ajax({
+                         url:createURL("dedicateZone&ZoneId=" +dedicatedZoneId + array2.join("")),
+                         dataType:"json",
+                         success:function(json){
+                             var dedicatedObj = json.dedicatezoneresponse.jobid;
+                             //args.response.success({ data: $.extend(item, dedicatedObj)});
+
+                         },
+
+                         error:function(json){
+
+                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                         }
+                       });
+
+                     }
+                    }
+
             },
             error: function(XMLHttpResponse) {
               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -3479,31 +3523,58 @@
           }
           array1.push("&clustername=" + todb(clusterName));
 
+          if(args.data.cluster.hypervisor == "VMware"){
+            var vmwareData = {
+              zoneId: args.data.returnedZone.id,
+              username: args.data.cluster.vCenterUsername,
+              password: args.data.cluster.vCenterPassword,
+              name: args.data.cluster.vCenterDatacenter,
+              vcenter: args.data.cluster.vCenterHost
+            };
+            $.ajax({
+              url: createURL('addVmwareDc'),
+              data: vmwareData,
+              success: function(json) {
+                var item = json.addvmwaredcresponse.vmwaredc;
+                if(item.id != null){
           $.ajax({
             url: createURL("addCluster" + array1.join("")),
             dataType: "json",
             async: true,
             success: function(json) {
-              if(args.data.cluster.hypervisor != "VMware") {
-                stepFns.addHost({
+                    stepFns.addPrimaryStorage({ //skip "add host step" when hypervisor is VMware
                   data: $.extend(args.data, {
                     returnedCluster: json.addclusterresponse.cluster[0]
                   })
                 });
+                  },
+                  error: function(XMLHttpResponse) {
+                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                    error('addCluster', errorMsg, { fn: 'addCluster', args: args });
+                  }
+                });
               }
-              else { 
-                stepFns.addPrimaryStorage({
+            }
+          });
+         }
+         else{
+          $.ajax({
+            url: createURL("addCluster" + array1.join("")),
+            dataType: "json",
+            async: true,
+            success: function(json) {
+              stepFns.addHost({
                   data: $.extend(args.data, {
                     returnedCluster: json.addclusterresponse.cluster[0]
                   })
                 });
-              }
             },
             error: function(XMLHttpResponse) {
               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
               error('addCluster', errorMsg, { fn: 'addCluster', args: args });
             }
           });
+         }
         },
 
         addHost: function(args) {
@@ -3582,6 +3653,11 @@
           array1.push("&name=" + todb(args.data.primaryStorage.name));
           array1.push("&scope=" + todb(args.data.primaryStorage.scope));
 
+          //zone-wide-primary-storage is supported only for KVM and VMWare
+          if(args.data.primaryStorage.scope == "zone") {
+            array1.push("&hypervisor=" + todb(args.data.cluster.hypervisor)); //hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.
+          }
+          
 					var server = args.data.primaryStorage.server;
           var url = null;
           if (args.data.primaryStorage.protocol == "nfs") {

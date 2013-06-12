@@ -1,0 +1,384 @@
+/*[fmt]1C20-1C0D-E*/
+/*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*/
+.vpc-network-chart {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.vpc-network-chart .info-box {
+  font-size: 12px;
+  color: #6E6B6B;
+  padding: 9px 1px 10px 20px;
+  background: #FFFFFF;
+  border: 2px solid #CFCFCF;
+  position: absolute;
+  top: 42px;
+  left: 10px;
+  width: 737px;
+}
+
+.vpc-network-chart .info-box .color-key {
+  display: block;
+  background: #2983E3;
+  padding: 1px;
+  float: left;
+  width: 10px;
+  height: 10px;
+  margin: 0px 9px 1px 0px;
+}
+
+.vpc-network-chart .tiers {
+  margin: 66px 46px 0 0;
+  width: 362px;
+  float: right;
+}
+
+.vpc-network-chart .tier-item {
+  border: 1px solid #477FB4;
+  overflow: hidden;
+  width: 326px;
+  height: 182px;
+  margin: 18px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  background: #8DB1D3;
+}
+
+.vpc-network-chart .tier-item .header {
+  width: 100%;
+  float: left;
+  padding: 7px 0 6px;
+  position: relative;
+  /*+box-shadow:inset 0px 1px 1px #FFFFFF;*/
+  -moz-box-shadow: inset 0px 1px 1px #FFFFFF;
+  -webkit-box-shadow: inset 0px 1px 1px #FFFFFF;
+  -o-box-shadow: inset 0px 1px 1px #FFFFFF;
+  box-shadow: inset 0px 1px 1px #FFFFFF;
+  background: #69839D;
+  border-bottom: 1px solid #40639E;
+}
+
+.vpc-network-chart .tier-item .header .detail-link {
+  cursor: pointer;
+  background: #435667 url(../../images/sprites.png) -428px -83px;
+  /*+box-shadow:inset 0px 1px 4px #2F2F2F;*/
+  -moz-box-shadow: inset 0px 1px 4px #2F2F2F;
+  -webkit-box-shadow: inset 0px 1px 4px #2F2F2F;
+  -o-box-shadow: inset 0px 1px 4px #2F2F2F;
+  box-shadow: inset 0px 1px 4px #2F2F2F;
+  width: 16px;
+  height: 16px;
+  float: right;
+  /*+placement:shift -8px 2px;*/
+  position: relative;
+  left: -8px;
+  top: 2px;
+  /*+border-radius:10px;*/
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px;
+}
+
+.vpc-network-chart .tier-item .header .detail-link:hover {
+  background-color: #454545;
+}
+
+.vpc-network-chart .tier-item .header .title {
+  margin-left: 9px;
+  width: 268px;
+  height: 20px;
+  float: left;
+  overflow: hidden;
+}
+
+.vpc-network-chart .tier-item .header .title span {
+  font-size: 20px;
+  color: #FFFFFF;
+  /*+text-shadow:0px 1px 1px #000000;*/
+  -moz-text-shadow: 0px 1px 1px #000000;
+  -webkit-text-shadow: 0px 1px 1px #000000;
+  -o-text-shadow: 0px 1px 1px #000000;
+  text-shadow: 0px 1px 1px #000000;
+}
+
+.vpc-network-chart .tier-item .content {
+  width: 100%;
+  height: 100%;
+  /*+box-shadow:inset 0px 1px 1px #FFFFFF;*/
+  -moz-box-shadow: inset 0px 1px 1px #FFFFFF;
+  -webkit-box-shadow: inset 0px 1px 1px #FFFFFF;
+  -o-box-shadow: inset 0px 1px 1px #FFFFFF;
+  box-shadow: inset 0px 1px 1px #FFFFFF;
+  border-bottom: 1px solid #8DB1D3;
+}
+
+.vpc-network-chart .tier-item .content .dashboard {
+  display: inline-block;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item {
+  width: 145px;
+  height: 54px;
+  margin: 7px 9px 0;
+  background: #C1E0FE;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  float: left;
+  cursor: pointer;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item.disabled {
+  /*+opacity:50%;*/
+  filter: alpha(opacity=50);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+  -moz-opacity: 0.5;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item:hover {
+  background-color: #DBEDFE;
+  /*+box-shadow:inset 0px 1px 2px #000000;*/
+  -moz-box-shadow: inset 0px 1px 2px #000000;
+  -webkit-box-shadow: inset 0px 1px 2px #000000;
+  -o-box-shadow: inset 0px 1px 2px #000000;
+  box-shadow: inset 0px 1px 2px #000000;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item .total {
+  font-size: 30px;
+  /*+placement:shift 7px 5px;*/
+  position: relative;
+  left: 7px;
+  top: 5px;
+  color: #145CA1;
+  font-weight: 100;
+  /*+text-shadow:0px 1px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px 1px #FFFFFF;
+  text-shadow: 0px 1px 1px #FFFFFF;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item .total.multiline {
+  font-size: 14px;
+}
+
+.vpc-network-chart .tier-item .content .dashboard-item .name {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #0861B7;
+  /*+placement:shift 8px 7px;*/
+  position: relative;
+  left: 8px;
+  top: 7px;
+  /*+text-shadow:0px 1px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px 1px #FFFFFF;
+  text-shadow: 0px 1px 1px #FFFFFF;
+}
+
+.vpc-network-chart .tier-item .content .info {
+  /*+placement:shift 10px 5px;*/
+  position: relative;
+  left: 10px;
+  top: 5px;
+}
+
+.vpc-network-chart .tier-item .content .info .cidr-label {
+  font-size: 10px;
+  color: #1860A7;
+}
+
+.vpc-network-chart .tier-item .content .info .cidr {
+  color: #364553;
+  font-size: 10px;
+  /*+text-shadow:0px 1px #C7D8E9;*/
+  -moz-text-shadow: 0px 1px #C7D8E9;
+  -webkit-text-shadow: 0px 1px #C7D8E9;
+  -o-text-shadow: 0px 1px #C7D8E9;
+  text-shadow: 0px 1px #C7D8E9;
+}
+
+.vpc-network-chart .tier-placeholder {
+  cursor: pointer;
+  background: #EFEFEF;
+  border: 4px dotted #B1B1B1;
+  /*+border-radius:8px;*/
+  -moz-border-radius: 8px;
+  -webkit-border-radius: 8px;
+  -khtml-border-radius: 8px;
+  border-radius: 8px;
+  width: 325px;
+  text-align: center;
+  padding: 57px 0 55px;
+  margin: 0 0 0 18px;
+}
+
+.vpc-network-chart .tier-placeholder:hover {
+  background: #DCDCDC;
+  /*+border-radius:8px;*/
+  -moz-border-radius: 8px;
+  -webkit-border-radius: 8px;
+  -khtml-border-radius: 8px;
+  border-radius: 8px;
+  /*+box-shadow:inset 0px 1px 4px #000000;*/
+  -moz-box-shadow: inset 0px 1px 4px #000000;
+  -webkit-box-shadow: inset 0px 1px 4px #000000;
+  -o-box-shadow: inset 0px 1px 4px #000000;
+  box-shadow: inset 0px 1px 4px #000000;
+  /*+text-shadow:0px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
+}
+
+.vpc-network-chart .tier-placeholder:hover span {
+  color: #535353;
+}
+
+.vpc-network-chart .tier-placeholder span {
+  color: #AFAFAF;
+  font-size: 24px;
+  font-weight: 200;
+}
+
+.vpc-network-chart .tier-item.router {
+  width: 258px;
+  height: 224px;
+  background: #BDBDBD;
+  border: 1px solid #808080;
+  float: left;
+  /*+placement:shift 10px 176px;*/
+  position: relative;
+  left: 10px;
+  top: 176px;
+  left: 0px;
+  top: 237px;
+}
+
+.vpc-network-chart .tier-item.router .header {
+  padding: 15px 0 14px;
+  border-bottom: 1px solid #808080;
+  background: #C3C6C9;
+  /*Old browsers*/
+  background: -moz-linear-gradient(top, #c3c6c9 0%, #909497 100%);
+  /*FF3.6+*/
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#c3c6c9), color-stop(100%,#909497));
+  /*Chrome,Safari4+*/
+  background: -webkit-linear-gradient(top, #c3c6c9 0%,#909497 100%);
+  /*Chrome10+,Safari5.1+*/
+  background: -o-linear-gradient(top, #c3c6c9 0%,#909497 100%);
+  /*Opera 11.10+*/
+  background: -ms-linear-gradient(top, #c3c6c9 0%,#909497 100%);
+  /*IE10+*/
+  background: linear-gradient(to bottom, #c3c6c9 0%,#909497 100%);
+  /*W3C*/
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#c3c6c9', endColorstr='#909497',GradientType=0 );
+  /*IE6-8*/
+}
+
+.vpc-network-chart .tier-item.router .header .title {
+  width: 212px;
+  margin-top: 3px;
+}
+
+.vpc-network-chart .tier-item.router .header .title span {
+  padding: 0 0 0 50px;
+}
+
+.vpc-network-chart .tier-item.router .header span.icon {
+  background: url(../../images/sprites.png) -589px -1175px;
+  padding: 10px 10px 10px 20px;
+  float: left;
+  position: absolute;
+  top: 7px;
+  left: 10px;
+}
+
+.vpc-network-chart .tier-item.router .dashboard-item {
+  width: 100px;
+  /*[empty]margin:;*/
+  padding: 0px 2px 0px 6px;
+  height: 73px;
+  background: #A7A7A7;
+}
+
+.vpc-network-chart .tier-item.router .dashboard-item span {
+  padding-right: 10px;
+  color: #FFFFFF;
+  /*+text-shadow:0px 1px #000000;*/
+  -moz-text-shadow: 0px 1px #000000;
+  -webkit-text-shadow: 0px 1px #000000;
+  -o-text-shadow: 0px 1px #000000;
+  text-shadow: 0px 1px #000000;
+}
+
+.vpc-network-chart .tier-item.router .dashboard-item:hover {
+  background-color: #818181;
+}
+
+.vpc-network-chart .connector-line {
+}
+
+.vpc-network-chart .connector-line .connector-start,
+.vpc-network-chart .connector-line .connector-mid,
+.vpc-network-chart .connector-line .connector-end {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  background: #CCCCCC;
+}
+
+.vpc-network-chart .connector-line.highlighted .connector-start,
+.vpc-network-chart .connector-line.highlighted .connector-mid,
+.vpc-network-chart .connector-line.highlighted .connector-end {
+  background: #2983E3;
+}
+
+.vpc-network-chart .connector-line .connector-start,
+.vpc-network-chart .connector-line .connector-end {
+  height: 3px;
+}
+
+.vpc-network-chart .connector-line .connector-start {
+  width: 50px;
+  margin-left: 18px;
+}
+
+.vpc-network-chart .connector-line .connector-mid {
+  width: 3px;
+}
+
+.vpc-network-chart .connector-line .connector-end {
+}
+

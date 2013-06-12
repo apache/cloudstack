@@ -665,7 +665,7 @@ class TestTemplates(cloudstackTestCase):
         if len(self.zones) <= 1:
             self.skipTest("Not enough zones available to perform copy template")
 
-        self.services["destzoneid"] = filter(lambda z: z.id != self.services["sourcezoneid"], self.zones)[0]
+        self.services["destzoneid"] = filter(lambda z: z.id != self.services["sourcezoneid"], self.zones)[0].id
 
         self.debug("Copy template from Zone: %s to %s" % (
                                             self.services["sourcezoneid"],

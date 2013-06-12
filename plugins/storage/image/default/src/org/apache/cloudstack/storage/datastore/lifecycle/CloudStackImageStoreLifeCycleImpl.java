@@ -37,6 +37,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.DataStoreRole;
@@ -133,8 +134,9 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return false;
     }
 
+
     @Override
-    public boolean attachZone(DataStore dataStore, ZoneScope scope) {
+    public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
         // TODO Auto-generated method stub
         return false;
     }

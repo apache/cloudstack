@@ -577,8 +577,14 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         LoadBalancerVO lbRule1 = new LoadBalancerVO();
         lbRule1.setState(FirewallRule.State.Active);
         Field networkIdField1 = LoadBalancerVO.class.getSuperclass().getDeclaredField("networkId");
+        Field accountIdField1 = LoadBalancerVO.class.getSuperclass().getDeclaredField("accountId");
+        Field domainIdField1 = LoadBalancerVO.class.getSuperclass().getDeclaredField("domainId");
         networkIdField1.setAccessible(true);
+        accountIdField1.setAccessible(true);
+        domainIdField1.setAccessible(true);
         networkIdField1.set(lbRule1, new Long(1));
+        accountIdField1.set(lbRule1, new Long(3));
+        domainIdField1.set(lbRule1, new Long(1));
         Field idField1 = LoadBalancerVO.class.getSuperclass().getDeclaredField("id");
         idField1.setAccessible(true);
         idField1.set(lbRule1, new Long(1));
@@ -586,8 +592,14 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         LoadBalancerVO lbRule2 = new LoadBalancerVO();
         lbRule2.setState(FirewallRule.State.Active);
         Field networkIdField2 = LoadBalancerVO.class.getSuperclass().getDeclaredField("networkId");
+        Field accountIdField2 = LoadBalancerVO.class.getSuperclass().getDeclaredField("accountId");
+        Field domainIdField2 = LoadBalancerVO.class.getSuperclass().getDeclaredField("domainId");
         networkIdField2.setAccessible(true);
+        accountIdField2.setAccessible(true);
+        domainIdField2.setAccessible(true);
         networkIdField2.set(lbRule2, new Long(1));
+        accountIdField2.set(lbRule2, new Long(3));
+        domainIdField2.set(lbRule2, new Long(1));
         Field idField2 = LoadBalancerVO.class.getSuperclass().getDeclaredField("id");
         idField2.setAccessible(true);
         idField2.set(lbRule2, new Long(2));
@@ -611,6 +623,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         try {
             gslbServiceImpl.assignToGlobalLoadBalancerRule(assignCmd);
         } catch (InvalidParameterValueException e) {
+            s_logger.info(e.getMessage());
             Assert.assertTrue(e.getMessage().contains("Load balancer rule specified should be in unique zone"));
         }
     }

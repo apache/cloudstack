@@ -151,7 +151,7 @@
                            url:createURL('listDeploymentPlanners'),
                            dataType:'json',
                            success:function(json){
-                              var items=[];
+                              var items=[{id: '', description: ''}];
                                var plannerObjs = json.listdeploymentplannersresponse.deploymentPlanner;
                           $(plannerObjs).each(function(){
                             items.push({id: this.name, description: this.name});
@@ -164,14 +164,14 @@
                      }
                   },
 
-                  plannerKey:{label:'Planner Key' , docID:'helpImplicitPlannerKey'},
+                 // plannerKey:{label:'Planner Key' , docID:'helpImplicitPlannerKey'},
                   plannerMode:{
                     label:'Planner Mode',
                     select:function(args){
                        var items=[];
                        items.push({id:'',description:''});
                        items.push({id:'Strict', description:'Strict'});
-                       items.push({id:'Preffered', description:'Preffered'});
+                       items.push({id:'Preferred', description:'Preferred'});
                        args.response.success({data:items});
                     }
                   },
@@ -208,14 +208,19 @@
 									storageType: args.data.storageType,
 									cpuNumber: args.data.cpuNumber,
 									cpuSpeed: args.data.cpuSpeed,
-									memory: args.data.memory,
-                                                                        deploymentplanner: args.data.deploymentPlanner
-
-								};															
-                var array1 =[];
-                 if(args.data.plannerMode != null && args.data.plannerKey !=""){
-                   array1.push("&serviceofferingdetails[0]." + args.data.plannerKey + "=" + args.data.plannerMode);
+									memory: args.data.memory 
+								};	
+                
+                if(args.data.deploymentPlanner != null && args.data.deploymentPlanner.length > 0) {
+                  $.extend(data, {
+                    deploymentplanner: args.data.deploymentPlanner
+                  });
                 }
+                
+                var array1 =[];
+                   if(args.data.deploymentPlanner == "ImplicitDedicationPlanner" && args.data.plannerMode != ""){
+                       array1.push("&serviceofferingdetails[0].ImplicitDedicationMode" +  "=" + args.data.plannerMode);
+                 }
 
                 if(args.data.networkRate != null && args.data.networkRate.length > 0) {
 								  $.extend(data, {
@@ -1188,19 +1193,46 @@
                     var $sourceNATField = args.$form.find('input[name=\"service.SourceNat.isEnabled\"]');
                     var $guestTypeField = args.$form.find('select[name=guestIpType]');
                     
+                    //*** VPC checkbox ***
                     var $useVpc = args.$form.find('.form-item[rel=\"useVpc\"]');
                     var $useVpcCb = $useVpc.find("input[type=checkbox]");
                     if($guestTypeField.val() == 'Shared') { //Shared network offering
                       $useVpc.hide();											
-											if($useVpcCb.is(':checked')) { //if useVpc is checked,											  
-												$useVpcCb.removeAttr("checked");  //remove "checked" attribute in useVpc
-												$useVpcCb.trigger("click");  //trigger useVpc.onChange()
+											if($useVpcCb.is(':checked')) { //if useVpc is checked,												  
+												$useVpcCb.removeAttr("checked");  //remove "checked" attribute in useVpc												
 											}
 										}
 										else { //Isolated network offering 
 										  $useVpc.css('display', 'inline-block');
-										}
-										
+										}										                    
+                    var $providers = $useVpcCb.closest('form').find('.dynamic-input select');                     
+                    var $optionsOfProviders = $providers.find('option');                   
+                    //p.s. Netscaler is supported in both vpc and non-vpc                    
+                    if ($useVpc.is(':visible') && $useVpcCb.is(':checked')) { //*** vpc ***                      
+                      $optionsOfProviders.each(function(index) {                         
+                        if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler') {
+                          $(this).attr('disabled', false);
+                        }
+                        else {
+                          $(this).attr('disabled', true);
+                        }
+                      });     
+                    } 
+                    else { //*** non-vpc ***                      
+                      $optionsOfProviders.each(function(index) {                          
+                        if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter') { 
+                          $(this).attr('disabled', true);
+                        }
+                        else {
+                          $(this).attr('disabled', false);
+                        }
+                      });                                              
+                    }                    
+                    $providers.each(function() {
+                      $(this).val($(this).find('option:first'));
+                    });
+                                      
+                    
 											
                     if (!requiredNetworkOfferingExists &&
                         $sourceNATField.is(':checked') &&
@@ -1210,12 +1242,57 @@
                       $availability.hide();
                     }
 
+                    
+                    //*** LB providers ***
+                    var $lbProvider = args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select');
+                    var $lbProviderOptions = $lbProvider.find('option');
 										//when useVpc is checked and service.Lb.isEnabled is checked                    
                     if($useVpcCb.is(':checked') && $("input[name='service.Lb.isEnabled']").is(":checked") == true) {  
-                      $lbType.css('display', 'inline-block');    
+                      $lbType.css('display', 'inline-block');   
+                                                                                                         
+                      if($lbType.find('select').val() == 'publicLb') { //disable all providers except the ones in lbProviderMap.publicLb.vpc => ["VpcVirtualRouter", "Netscaler"] 
+                        for(var i = 0; i < $lbProviderOptions.length; i++ ) {
+                          var $option = $lbProviderOptions.eq(i);                           
+                          var supportedProviders = lbProviderMap.publicLb.vpc;                            
+                          var thisOpionIsSupported = false;
+                          for(var k = 0; k < supportedProviders.length; k++ ) {
+                            if($option.val() == supportedProviders[k]) {
+                              thisOpionIsSupported = true;
+                              break;
+                            }                               
+                          }   
+                          if(thisOpionIsSupported == true) {
+                            $option.attr('disabled', false);
+                          }
+                          else {
+                            $option.attr('disabled', true);
+                          }                            
+                        }                                                    
+                      }                          
+                      else if($lbType.find('select').val() == 'internalLb') { //disable all providers except the ones in lbProviderMap.internalLb.vpc => ["InternalLbVm"]
+                        for(var i = 0; i < $lbProviderOptions.length; i++ ) {
+                          var $option = $lbProviderOptions.eq(i);                           
+                          var supportedProviders = lbProviderMap.internalLb.vpc;                            
+                          var thisOpionIsSupported = false;                            
+                          for(var k = 0; k < supportedProviders.length; k++ ) {
+                            if($option.val() == supportedProviders[k]) {
+                              thisOpionIsSupported = true;
+                              break;
+                            }                               
+                          }  
+                          if(thisOpionIsSupported == true) {
+                            $option.attr('disabled', false);
+                          }
+                          else {
+                            $option.attr('disabled', true);
+                          }                            
+                        }                             
+                      }     
+                      
+                      $lbProvider.val($lbProvider.find('option:first'));     
                     }
                     else {
-                      $lbType.hide();
+                      $lbType.hide();                      
                     }
                     
 										//when service(s) has Virtual Router as provider.....							
@@ -1473,40 +1550,7 @@
                   useVpc: {
                     label: 'VPC',
                     docID: 'helpNetworkOfferingVPC',
-                    isBoolean: true,
-                    onChange: function(args) {                      
-                      var $vpc = args.$checkbox;
-                      var $providers = $vpc.closest('form').find('.dynamic-input select');                     
-                      var $optionsOfProviders = $providers.find('option');
-                     
-                      //p.s. Netscaler is supported in both vpc and non-vpc
-                      
-                      if ($vpc.is(':checked')) { //*** vpc ***
-                        $optionsOfProviders.each(function(index) {                         
-                          if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter' || $(this).val() == 'Netscaler') {
-                            $(this).attr('disabled', false);
-                          }
-                          else {
-                            $(this).attr('disabled', true);
-                          }
-                        });     
-                      } 
-                      else { //*** non-vpc ***
-                        $optionsOfProviders.each(function(index) {                          
-                          if($(this).val() == 'InternalLbVm' || $(this).val() == 'VpcVirtualRouter') { 
-                            $(this).attr('disabled', true);
-                          }
-                          else {
-                            $(this).attr('disabled', false);
-                          }
-                        });                                              
-                      }
-                      
-                      $providers.each(function() {
-                        $(this).val($(this).find('option:first'));
-                      });
-                      
-                    }
+                    isBoolean: true                    
                   },
 					                  
                   lbType: { //only shown when VPC is checked and LB service is checked
@@ -1516,56 +1560,7 @@
                       args.response.success({data: [
                         {id: 'publicLb', description: 'Public LB'}, 
                         {id: 'internalLb', description: 'Internal LB'}
-                      ]}); 
-                                                       
-                      args.$select.change(function() {  
-                        if($(this).is(':visible') == false) 
-                          return; //if lbType is not visible, do nothing.
-                        
-                        var $lbProvider = $(this).closest('form').find('.form-item[rel=\"service.Lb.provider\"]').find('select');
-                        var $lbProviderOptions = $lbProvider.find('option');
-                                                                        
-                        if($(this).val() == 'publicLb') { //disable all providers except the ones in lbProviderMap.publicLb.vpc => ["VpcVirtualRouter", "Netscaler"] 
-                          for(var i = 0; i < $lbProviderOptions.length; i++ ) {
-                            var $option = $lbProviderOptions.eq(i);                           
-                            var supportedProviders = lbProviderMap.publicLb.vpc;                            
-                            var thisOpionIsSupported = false;
-                            for(var k = 0; k < supportedProviders.length; k++ ) {
-                              if($option.val() == supportedProviders[k]) {
-                                thisOpionIsSupported = true;
-                                break;
-                              }                               
-                            }   
-                            if(thisOpionIsSupported == true) {
-                              $option.attr('disabled', false);
-                            }
-                            else {
-                              $option.attr('disabled', true);
-                            }                            
-                          }                                                    
-                        }                          
-                        else if($(this).val() == 'internalLb') { //disable all providers except the ones in lbProviderMap.internalLb.vpc => ["InternalLbVm"]
-                          for(var i = 0; i < $lbProviderOptions.length; i++ ) {
-                            var $option = $lbProviderOptions.eq(i);                           
-                            var supportedProviders = lbProviderMap.internalLb.vpc;                            
-                            var thisOpionIsSupported = false;                            
-                            for(var k = 0; k < supportedProviders.length; k++ ) {
-                              if($option.val() == supportedProviders[k]) {
-                                thisOpionIsSupported = true;
-                                break;
-                              }                               
-                            }  
-                            if(thisOpionIsSupported == true) {
-                              $option.attr('disabled', false);
-                            }
-                            else {
-                              $option.attr('disabled', true);
-                            }                            
-                          }                             
-                        }     
-                        
-                        $lbProvider.val($lbProvider.find('option:first'));                        
-                      });
+                      ]});                       
                     }
                   },
                                     

@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.*;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -40,16 +41,10 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -91,6 +86,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
@@ -123,12 +119,9 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.ImageStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.S3VO;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -171,6 +164,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.dc.DataCenter.NetworkType;
 
 @Component
 @Local({ ResourceManager.class, ResourceService.class })
@@ -227,6 +221,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected StorageService _storageSvr;
     @Inject
     PlannerHostReservationDao _plannerHostReserveDao;
+    @Inject
+    protected DedicatedResourceDao           _dedicatedDao;
 
     protected List<? extends Discoverer> _discoverers;
 
@@ -385,8 +381,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Check if the zone exists in the system
         DataCenterVO zone = _dcDao.findById(dcId);
         if (zone == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Can't find zone by the id specified");
-            ex.addProxyObject(zone, dcId, "dcId");
+			InvalidParameterValueException ex = new InvalidParameterValueException(
+					"Can't find zone by the id specified");
+            ex.addProxyObject(String.valueOf(dcId), "dcId");
             throw ex;
         }
 
@@ -394,7 +391,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
             PermissionDeniedException ex = new PermissionDeniedException(
                     "Cannot perform this operation, Zone with specified id is currently disabled");
-            ex.addProxyObject(zone, dcId, "dcId");
+            ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
 
@@ -409,9 +406,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         // check if pod belongs to the zone
         if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Pod with specified id doesn't belong to the zone " + dcId);
-            ex.addProxyObject(pod, podId, "podId");
-            ex.addProxyObject(zone, dcId, "dcId");
+			InvalidParameterValueException ex = new InvalidParameterValueException(
+					"Pod with specified id doesn't belong to the zone " + dcId);
+            ex.addProxyObject(pod.getUuid(), "podId");
+            ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
 
@@ -428,6 +426,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (hypervisorType == null) {
             s_logger.error("Unable to resolve " + cmd.getHypervisor() + " to a valid supported hypervisor type");
             throw new InvalidParameterValueException("Unable to resolve " + cmd.getHypervisor() + " to a supported ");
+        }
+
+        if (zone.isSecurityGroupEnabled() && zone.getNetworkType().equals(NetworkType.Advanced)) {
+            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer
+                    && hypervisorType != HypervisorType.Simulator) {
+                throw new InvalidParameterValueException("Don't support hypervisor type " + hypervisorType + " in advanced security enabled zone");
+            }
         }
 
         Cluster.ClusterType clusterType = null;
@@ -476,8 +481,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             CloudRuntimeException ex = new CloudRuntimeException("Unable to create cluster " + clusterName
                     + " in pod and data center with specified ids", e);
             // Get the pod VO object's table name.
-            ex.addProxyObject(pod, podId, "podId");
-            ex.addProxyObject(zone, dcId, "dcId");
+            ex.addProxyObject(pod.getUuid(), "podId");
+            ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
         clusterId = cluster.getId();
@@ -593,8 +598,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (clusterId != null) {
             ClusterVO cluster = _clusterDao.findById(clusterId);
             if (cluster == null) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("can not find cluster for specified clusterId");
-                ex.addProxyObject(cluster, clusterId, "clusterId");
+				InvalidParameterValueException ex = new InvalidParameterValueException(
+						"can not find cluster for specified clusterId");
+                ex.addProxyObject(clusterId.toString(), "clusterId");
                 throw ex;
             } else {
                 if (cluster.getGuid() == null) {
@@ -602,7 +608,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     if (!hosts.isEmpty()) {
                         CloudRuntimeException ex = new CloudRuntimeException(
                                 "Guid is not updated for cluster with specified cluster id; need to wait for hosts in this cluster to come up");
-                        ex.addProxyObject(cluster, clusterId, "clusterId");
+                        ex.addProxyObject(cluster.getUuid(), "clusterId");
                         throw ex;
                     }
                 }
@@ -658,7 +664,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
             PermissionDeniedException ex = new PermissionDeniedException(
                     "Cannot perform this operation, Zone with specified id is currently disabled");
-            ex.addProxyObject(zone, dcId, "dcId");
+            ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
 
@@ -670,10 +676,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
             // check if pod belongs to the zone
             if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Pod with specified podId" + podId
-                        + " doesn't belong to the zone with specified zoneId" + dcId);
-                ex.addProxyObject(pod, podId, "podId");
-                ex.addProxyObject(zone, dcId, "dcId");
+				InvalidParameterValueException ex = new InvalidParameterValueException(
+						"Pod with specified podId"
+								+ podId
+								+ " doesn't belong to the zone with specified zoneId"
+								+ dcId);
+                ex.addProxyObject(pod.getUuid(), "podId");
+                ex.addProxyObject(zone.getUuid(), "dcId");
                 throw ex;
             }
         }
@@ -730,10 +739,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             } catch (Exception e) {
                 cluster = _clusterDao.findBy(clusterName, podId);
                 if (cluster == null) {
-                    CloudRuntimeException ex = new CloudRuntimeException("Unable to create cluster " + clusterName
-                            + " in pod with specified podId and data center with specified dcID", e);
-                    ex.addProxyObject(pod, podId, "podId");
-                    ex.addProxyObject(zone, dcId, "dcId");
+					CloudRuntimeException ex = new CloudRuntimeException(
+							"Unable to create cluster "
+									+ clusterName
+									+ " in pod with specified podId and data center with specified dcID",
+							e);
+                    ex.addProxyObject(pod.getUuid(), "podId");
+                    ex.addProxyObject(zone.getUuid(), "dcId");
                     throw ex;
                 }
             }
@@ -932,6 +944,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
         hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
         _capacityDao.remove(hostCapacitySC);
+        // remove from dedicated resources
+        DedicatedResourceVO dr = _dedicatedDao.findByHostId(hostId);
+        if (dr != null) {
+            _dedicatedDao.remove(dr.getId());
+        }
         txn.commit();
         return true;
     }
@@ -995,6 +1012,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (hypervisorType == HypervisorType.VMware && Boolean.parseBoolean(_configDao.getValue(Config.VmwareUseNexusVSwitch.toString()))) {
                     _clusterVSMMapDao.removeByClusterId(cmd.getId());
                 }
+				// remove from dedicated resources
+				DedicatedResourceVO dr = _dedicatedDao.findByClusterId(cluster.getId());
+				if (dr != null) {
+				    _dedicatedDao.remove(dr.getId());
+				}
             }
 
             txn.commit();

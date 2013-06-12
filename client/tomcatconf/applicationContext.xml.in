@@ -158,6 +158,14 @@
       </map>
     </property>  
   </bean>
+  <bean id="dedicatedResourceDaoImpl" class="com.cloud.dc.dao.DedicatedResourceDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="30" />
+        <entry key="cache.time.to.live" value="3600" />
+      </map>
+    </property>
+  </bean>
   
   <!--
     DAOs with default configuration
@@ -338,11 +346,13 @@
   <bean id="usageVMInstanceDaoImpl" class="com.cloud.usage.dao.UsageVMInstanceDaoImpl" />
   <bean id="usageVPNUserDaoImpl" class="com.cloud.usage.dao.UsageVPNUserDaoImpl" />
   <bean id="usageVolumeDaoImpl" class="com.cloud.usage.dao.UsageVolumeDaoImpl" />
+  <bean id="usageVmDiskDaoImpl" class="com.cloud.usage.dao.UsageVmDiskDaoImpl" />
   <bean id="userAccountDaoImpl" class="com.cloud.user.dao.UserAccountDaoImpl" />
   <bean id="userAccountJoinDaoImpl" class="com.cloud.api.query.dao.UserAccountJoinDaoImpl" />
   <bean id="userIpv6AddressDaoImpl" class="com.cloud.network.dao.UserIpv6AddressDaoImpl" />
   <bean id="userStatisticsDaoImpl" class="com.cloud.user.dao.UserStatisticsDaoImpl" />
   <bean id="userStatsLogDaoImpl" class="com.cloud.user.dao.UserStatsLogDaoImpl" />
+  <bean id="userVmDiskStatsDaoImpl" class="com.cloud.user.dao.VmDiskStatisticsDaoImpl" />
   <bean id="userVmCloneSettingDaoImpl" class="com.cloud.vm.dao.UserVmCloneSettingDaoImpl" />
   <bean id="userVmDaoImpl" class="com.cloud.vm.dao.UserVmDaoImpl" />
   <bean id="userVmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
@@ -675,7 +685,6 @@
   <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
 
   <bean id="apiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
-
   <bean id="alertManagerImpl" class="com.cloud.alert.AlertManagerImpl" />
   <bean id="asyncJobExecutorContextImpl" class="com.cloud.async.AsyncJobExecutorContextImpl" />
   <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl" />
@@ -797,6 +806,7 @@
   <bean id="mockAgentManagerImpl" class="com.cloud.agent.manager.MockAgentManagerImpl" />
   <bean id="mockStorageManagerImpl" class="com.cloud.agent.manager.MockStorageManagerImpl" />
   <bean id="mockVmManagerImpl" class="com.cloud.agent.manager.MockVmManagerImpl" />
+  <bean id="mockNetworkManagerImpl" class="com.cloud.agent.manager.MockNetworkManagerImpl" />
   <bean id="simulatorManagerImpl" class="com.cloud.agent.manager.SimulatorManagerImpl" />
   <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
   <bean id="volumeManagerImpl" class="com.cloud.storage.VolumeManagerImpl" />

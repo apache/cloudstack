@@ -321,7 +321,7 @@
         listView: {
           actions: {
             add: { //add Isolated guest network (can't add Shared guest network here)
-              label: 'label.add.guest.network',
+              label: 'Add Isolated Guest Network',
 
               preFilter: function(args) { //Isolated networks is only supported in Advanced (SG-disabled) zone 
                 if(args.context.zoneType != 'Basic') 
@@ -331,8 +331,8 @@
               },
 
               createForm: {
-                title: 'label.add.guest.network',
-                desc: 'message.add.guest.network',
+                title: 'Add Isolated Guest Network',
+                desc: 'Add Isolated Guest Network with SourceNat',
                 fields: {
                   name: { label: 'label.name', validation: { required: true }, docID: 'helpGuestNetworkName' },
                   displayText: { label: 'label.display.text', validation: { required: true }, docID: 'helpGuestNetworkDisplayText'},
@@ -376,20 +376,41 @@
                           var items = json.listvpcsresponse.vpc;
                           var baseUrl = 'listNetworkOfferings&zoneid=' + args.zoneId;
                           var listUrl;
+                          var data = {
+                            guestiptype: 'Isolated',
+                            supportedServices: 'SourceNat',
+                            state: 'Enabled',
+                          };
+                          
                           if(items != null && items.length > 0) 
                             listUrl = baseUrl;
                           else
                             listUrl = baseUrl + '&forVpc=false';
+
+                          if (args.context.vpc) {
+                            data.forVpc = true;
+                          }
+                          
                           $.ajax({
                             url: createURL(listUrl),
-                            data: {
-                              guestiptype: 'Isolated',
-                              supportedServices: 'SourceNat',
-                              specifyvlan: false,
-                              state: 'Enabled'
-                            },
+                            data: data,
                             success: function(json) {
                               networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                              args.$select.change(function() {
+                                var $vlan = args.$select.closest('form').find('[rel=vlan]');
+                                var networkOffering = $.grep(
+                                  networkOfferingObjs, function(netoffer) {
+                                    return netoffer.id == args.$select.val();
+                                  }
+                                )[0];
+
+                                if (networkOffering.specifyvlan) {
+                                  $vlan.css('display', 'inline-block');
+                                } else {
+                                  $vlan.hide();
+                                }
+                              });
+                              
                               args.response.success({
                                 data: $.map(networkOfferingObjs, function(zone) {
                                   return {
@@ -405,26 +426,39 @@
                     }
                   },
 
+                  vlan: {
+                    label: 'VLAN',
+                    validation: { required: true },
+                    isHidden: true
+                  },
+
                   vpcid: {
                     label: 'label.vpc',
                     dependsOn: 'networkOfferingId',
                     select: function(args) {
                       var networkOfferingObj;
                       var $form = args.$select.closest('form');
+                      var data = {
+                        listAll: true,
+												details: 'min'
+                      };
+
+                      if (args.context.vpc) {
+                        data.id = args.context.vpc[0].id;
+                      }
+                      
                       $(networkOfferingObjs).each(function(key, value) {
                         if(value.id == args.networkOfferingId) {
                           networkOfferingObj = value;
                           return false; //break each loop
                         }
                       });
+                      
                       if(networkOfferingObj.forvpc == true) {
                         args.$select.closest('.form-item').css('display', 'inline-block');
                         $.ajax({
                           url: createURL('listVPCs'),
-                          data: {
-                            listAll: true,
-														details: 'min'
-                          },
+                          data: data,
                           success: function(json) {
                             var items = json.listvpcsresponse.vpc;
                             var data;
@@ -477,12 +511,17 @@
                     vpcid: args.data.vpcid
                   });
                 }
+
+                if (args.$form.find('.form-item[rel=vlan]').css('display') != 'none') {
+                  $.extend(dataObj, { vlan: args.data.vlan });
+                }
+
                 if(args.data.networkDomain != null && args.data.networkDomain.length > 0 && args.$form.find('.form-item[rel=vpcid]').css("display") == "none") {
                   $.extend(dataObj, {
                     networkDomain: args.data.networkDomain
                   });                
                 }
-															
+
                 $.ajax({
                   url: createURL('createNetwork'),
 									data: dataObj,
@@ -497,7 +536,7 @@
                 });
               },
               messages: {
-                notification: function() { return 'label.add.guest.network'; }
+                notification: function() { return 'Add Isolated Guest Network'; }
               }
             }
           },
@@ -519,7 +558,7 @@
 									  listAll: true
 									},
 									success: function(json) {									  
-										var zones = json.listzonesresponse.zone;
+										var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
 
 										args.response.success({
 											data: $.map(zones, function(zone) {
@@ -834,6 +873,7 @@
               var isVPC = false;
               var isAdvancedSGZone = false;
               var hiddenTabs = [];
+              var isSharedNetwork;
 
               // Get network offering data
               $.ajax({
@@ -845,6 +885,10 @@
 
                   if (networkoffering.forvpc) {
                     isVPC = true;
+                  }
+
+                  if (networkoffering.guestiptype == 'Shared') {
+                    isSharedNetwork = true;
                   }
 
                   $(networkoffering.service).each(function(){
@@ -893,7 +937,7 @@
                 hiddenTabs.push("addloadBalancer");
               }
 
-              if (isVPC || isAdvancedSGZone ) {
+              if (isVPC || isAdvancedSGZone || isSharedNetwork) {
                  hiddenTabs.push('egressRules');
                }
               
@@ -1503,24 +1547,32 @@
           },
           actions: {
             add: {
-              label: 'label.acquire.new.ip',
+              label: 'label.acquire.new.secondary.ip',
               addRow: 'true',
+              createForm: {
+                title: 'label.acquire.new.secondary.ip',
+                desc: 'message.acquire.ip.nic',
+                fields: {
+                  ipaddr: { label: 'label.ip.address' }
+                }
+              },
               messages: {
-                confirm: function(args) {
-                  return 'message.acquire.new.ip';
-                },
                 notification: function(args) {
-                  return 'label.acquire.new.ip';
+                  return 'label.acquire.new.secondary.ip';
                 }
               },
               action: function(args) {
-                var dataObj = {};
+                var dataObj = {
+                  nicId: args.context.nics[0].id
+                };
+
+                if (args.data.ipaddr) {
+                  dataObj.ipaddr = args.data.ipaddr;
+                }
 
                 $.ajax({
                   url: createURL('addIpToNic'),
-                  data: {
-                    nicId: args.context.nics[0].id
-                  },
+                  data: dataObj,
                   success: function(json) {
                     args.response.success({
                       _custom: {
@@ -1755,18 +1807,36 @@
                 }
               },
               messages: {
+                /*
                 confirm: function(args) {
                   if(args.context.vpc)
                     return 'message.acquire.new.ip.vpc';
                    else
                      return 'message.acquire.new.ip';
                 },
+                */
                 notification: function(args) {
                   return 'label.acquire.new.ip';
                 }
-              },	
+              },	              
+              createForm: {
+                title: 'label.acquire.new.ip',
+                fields: {
+                  isportable: {
+                    label: 'label.cross.zones',             
+                    select: function(args) {
+                      var items = [];
+                      items.push({ id: "false", description: _l('label.no') });
+                      items.push({ id: "true", description: _l('label.yes') });
+                      args.response.success({data: items});
+                    }
+                  }
+                }
+              },              
               action: function(args) {                
-								var dataObj = {};											
+								var dataObj = {
+								  isportable: args.data.isportable
+								};											
 								if('vpc' in args.context) { //from VPC section
 								  $.extend(dataObj, {
 									  vpcid: args.context.vpc[0].id
@@ -2299,6 +2369,12 @@
                     ipaddress: { label: 'label.ip' }
                   },
                   {
+                    isportable: { 
+                      label: 'label.cross.zones',
+                      converter: function(data) {                        
+                        return data ? _l('label.yes') : _l('label.no');
+                      }
+                    },
                     id: { label: 'label.id' },    
                     associatednetworkid: { label: 'label.associated.network.id' },
 										networkname: { label: 'label.associated.network' },
@@ -3616,9 +3692,7 @@
                                 $.extend(item, {
                                   _itemData: $.map(data.listvirtualmachinesresponse.virtualmachine, function(vm) {
                                     return $.extend(vm, {
-                                      _displayName: vm.id == vm.displayname ?
-                                        (vm.instancename ? vm.instancename : vm.name)
-                                      : vm.displayname
+                                      _displayName: '<p>VM: ' + vm.name + '</p>' + '<p>IP: ' + item.vmguestip + '</p>' // Also display attached IP
                                     });
                                   }),
                                   _context: {
@@ -4318,7 +4392,7 @@
 									  listAll: true
 									},
 									success: function(json) {									  
-										var zones = json.listzonesresponse.zone;
+										var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
 
 										args.response.success({
 											data: $.map(zones, function(zone) {
@@ -4433,7 +4507,7 @@
                         url: createURL('listZones'),
                         data: data,
                         success: function(json) {
-                          var zones = json.listzonesresponse.zone;
+                          var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
                           var advZones = $.grep(zones, function(zone) {
                             return zone.networktype == 'Advanced' && ! zone.securitygroupsenabled;
                           });
@@ -4457,11 +4531,34 @@
                   networkdomain: {
                     docID: 'helpVPCDomain',
                     label: 'label.DNS.domain.for.guest.networks'
-                  }
+                  },
+
+                  loadbalancer:{        //Support for Netscaler as an external device for load balancing
+                    label:'Load Balancer',
+                    select:function(args){
+                         $.ajax({
+                          url:createURL('listVPCOfferings&listall=true'),
+                          dataType:'json',
+                          success:function(json){
+                        var items=[];
+                        var vpcObj = json.listvpcofferingsresponse.vpcoffering;
+                        $(vpcObj).each(function(){
+                          items.push({id:this.id , description:this.name});
+                          });
+                        args.response.success({data:items});
+
+                         }
+
+                     });
+
+                   }
+
+                }
+
                 }
               },              
               action: function(args) {										
-								var defaultvpcofferingid;
+						/*		var defaultvpcofferingid;
 								$.ajax({
 								  url: createURL("listVPCOfferings"),
 									dataType: "json",
@@ -4472,14 +4569,14 @@
 									success: function(json) {
 									  defaultvpcofferingid = json.listvpcofferingsresponse.vpcoffering[0].id;
 									}
-								});
+								});*/
 								
 								var dataObj = {
 									name: args.data.name,
 									displaytext: args.data.displaytext,
 									zoneid: args.data.zoneid,
 									cidr: args.data.cidr,
-									vpcofferingid: defaultvpcofferingid
+									vpcofferingid: args.data.loadbalancer    // Support for external load balancer
 								};
 								
 								if(args.data.networkdomain != null && args.data.networkdomain.length > 0)

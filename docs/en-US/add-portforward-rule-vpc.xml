@@ -35,28 +35,42 @@
       <para>Click the Configure button of the VPC to which you want to deploy the VMs.</para>
       <para>The VPC page is displayed where all the tiers you created are listed in a
         diagram.</para>
-    </listitem>
-    <listitem>
-      <para>Click the Settings icon.</para>
-      <para>The following options are displayed.</para>
+      <para>For each tier, the following options are displayed:</para>
       <itemizedlist>
         <listitem>
-          <para>IP Addresses</para>
+          <para>Internal LB</para>
         </listitem>
         <listitem>
-          <para>Gateways</para>
+          <para>Public LB IP</para>
         </listitem>
         <listitem>
-          <para>Site-to-Site VPN</para>
+          <para>Static NAT</para>
         </listitem>
         <listitem>
-          <para>Network ACLs</para>
+          <para>Virtual Machines</para>
+        </listitem>
+        <listitem>
+          <para>CIDR</para>
+        </listitem>
+      </itemizedlist>
+      <para>The following router information is displayed:</para>
+      <itemizedlist>
+        <listitem>
+          <para>Private Gateways</para>
+        </listitem>
+        <listitem>
+          <para>Public IP Addresses</para>
+        </listitem>
+        <listitem>
+          <para>Site-to-Site VPNs</para>
+        </listitem>
+        <listitem>
+          <para>Network ACL Lists</para>
         </listitem>
       </itemizedlist>
     </listitem>
     <listitem>
-      <para>Choose an existing IP address or acquire a new IP address. Click the name of the IP
-        address in the list.</para>
+      <para>In the Router node, select Public IP Addresses.</para>
       <para>The IP Addresses page is displayed.</para>
     </listitem>
     <listitem>
@@ -95,7 +109,7 @@
         <listitem>
           <para><emphasis role="bold">Add VM</emphasis>: Click Add VM. Select the name of the
             instance to which this rule applies, and click Apply.</para>
-          <para>You can test the rule by opening an ssh session to the instance.</para>
+          <para>You can test the rule by opening an SSH session to the instance.</para>
         </listitem>
       </itemizedlist>
     </listitem>

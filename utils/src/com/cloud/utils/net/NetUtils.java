@@ -61,6 +61,8 @@ public class NetUtils {
     public final static String ALL_PROTO = "all";
 
     public final static String ALL_CIDRS = "0.0.0.0/0";
+    public final static int PORT_RANGE_MIN = 0;
+    public final static int PORT_RANGE_MAX = 65535;
 
     public final static int DEFAULT_AUTOSCALE_VM_DESTROY_TIME = 2 * 60; // Grace period before Vm is destroyed
     public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
@@ -1021,6 +1023,34 @@ public class NetUtils {
         return NetUtils.getIpRangeStartIpFromCidr(splitResult[0], size);
     }
 
+    // Check if 2 CIDRs have exactly same IP Range
+    public static boolean isSameIpRange (String cidrA, String cidrB) {
+
+        if(!NetUtils.isValidCIDR(cidrA)) {
+            s_logger.info("Invalid value of cidr " + cidrA);
+            return false;
+        }
+         if (!NetUtils.isValidCIDR(cidrB)) {
+            s_logger.info("Invalid value of cidr " + cidrB);
+            return false;
+        }
+        String[] cidrPairFirst = cidrA.split("\\/");
+        String[] cidrPairSecond = cidrB.split("\\/");
+
+        Long networkSizeFirst = Long.valueOf(cidrPairFirst[1]);
+        Long networkSizeSecond = Long.valueOf(cidrPairSecond[1]);
+        String ipRangeFirst [] = NetUtils.getIpRangeFromCidr(cidrPairFirst[0], networkSizeFirst);
+        String ipRangeSecond [] = NetUtils.getIpRangeFromCidr(cidrPairFirst[0], networkSizeSecond);
+
+        long startIpFirst = NetUtils.ip2Long(ipRangeFirst[0]);
+        long endIpFirst = NetUtils.ip2Long(ipRangeFirst[1]);
+        long startIpSecond = NetUtils.ip2Long(ipRangeSecond[0]);
+        long endIpSecond = NetUtils.ip2Long(ipRangeSecond[1]);
+        if(startIpFirst == startIpSecond && endIpFirst == endIpSecond) {
+            return true;
+        }
+        return false;
+    }
     public static boolean validateGuestCidr(String cidr) {
         // RFC 1918 - The Internet Assigned Numbers Authority (IANA) has reserved the
         // following three blocks of the IP address space for private internets:

@@ -333,8 +333,14 @@
           response: {
             success: function(args) {
               var project = args.data;
+              var $projectSwitcher = $('div.project-switcher');
 
               $(window).trigger('cloudStack.fullRefresh');
+
+              // dynamically add newly created project into project switcher
+              $projectSwitcher.find('select').append(
+                $('<option>').val(project.id).html(project.name)
+              );
 
               $loading.remove();
 
@@ -681,6 +687,20 @@
     }).closest('.ui-dialog').overlay();
   };
 
+  var deleteProject = function(args) {
+    var projectId = args.id;
+    var $projectSwitcher = $('div.project-switcher');
+    var contextProjectId = cloudStack.context.projects ? cloudStack.context.projects[0].id : -1;
+
+    $projectSwitcher.find('option[value="'+projectId+'"]').remove();
+
+    //return to default view if current project is deleted
+    if(contextProjectId == projectId) {
+      $projectSwitcher.find('select').trigger('change');
+    }
+    return false;
+  };
+
   /**
    * Show the dashboard, in panel
    */
@@ -740,5 +760,10 @@
    */
   $(window).bind('cloudStack.newProject', function() {
     addProject();
+  });
+
+
+  $(window).bind('cloudStack.deleteProject', function(event, args) {
+    deleteProject({id: args.data.id});
   });
 })(cloudStack, jQuery);

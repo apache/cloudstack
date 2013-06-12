@@ -29,6 +29,7 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
@@ -101,6 +102,10 @@ public class StoragePoolVO implements StoragePool {
     @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
+
+    @Column(name = "hypervisor")
+    @Enumerated(value = EnumType.STRING)
+    private HypervisorType hypervisor;
 
     public long getId() {
         return id;
@@ -274,6 +279,14 @@ public class StoragePoolVO implements StoragePool {
 
     public ScopeType getScope() {
         return this.scope;
+    }
+
+    public HypervisorType getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(HypervisorType hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     @Override

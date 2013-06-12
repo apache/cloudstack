@@ -621,11 +621,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                     // limit to 100 jobs per turn, this gives cleanup throughput as 600 jobs per minute
                     // hopefully this will be fast enough to balance potential growth of job table
-                    List<AsyncJobVO> l = _jobDao.getExpiredJobs(cutTime, 100);
-                    if(l != null && l.size() > 0) {
-                        for(AsyncJobVO job : l) {
-                            expungeAsyncJob(job);
-                        }
+                    //1) Expire unfinished jobs that weren't processed yet
+                    List<AsyncJobVO> l = _jobDao.getExpiredUnfinishedJobs(cutTime, 100);
+                    for(AsyncJobVO job : l) {
+                    	s_logger.trace("Expunging unfinished job " + job);
+                        expungeAsyncJob(job);
+                    }       
+                    
+                    //2) Expunge finished jobs
+                    List<AsyncJobVO> completedJobs = _jobDao.getExpiredCompletedJobs(cutTime, 100);
+                    for(AsyncJobVO job : completedJobs) {
+                    	s_logger.trace("Expunging completed job " + job);
+                        expungeAsyncJob(job);
                     }
 
                     // forcefully cancel blocking queue items if they've been staying there for too long

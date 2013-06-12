@@ -24,6 +24,10 @@
       <id>libvirt-org</id>
       <url>http://libvirt.org/maven2</url>
     </repository>
+    <repository>
+      <id>ceph-com</id>
+      <url>http://ceph.com/maven</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>
@@ -35,6 +39,11 @@
       <groupId>org.libvirt</groupId>
       <artifactId>libvirt</artifactId>
       <version>${cs.libvirt-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.ceph</groupId>
+      <artifactId>rados</artifactId>
+      <version>${cs.rados-java.version}</version>
     </dependency>
   </dependencies>
   <build>

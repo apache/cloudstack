@@ -115,7 +115,7 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
     }
 
     @Override
-    public boolean attachZone(DataStore dataStore, ZoneScope scope) {
+    public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
         // TODO Auto-generated method stub
         return false;
     }

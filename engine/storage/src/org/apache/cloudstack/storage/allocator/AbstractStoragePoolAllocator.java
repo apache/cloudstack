@@ -180,6 +180,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             return false;
         }
 
+
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(dskCh.getDiskOfferingId());
         if (diskOffering.getSystemUse() && pool.getPoolType() == StoragePoolType.RBD) {
             s_logger.debug("Skipping RBD pool " + pool.getName()

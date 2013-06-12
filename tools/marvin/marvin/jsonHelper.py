@@ -142,7 +142,7 @@ if __name__ == "__main__":
     nsp = getResultObj(result)
     print nsp[0].id
     
-    result = '{ "listzonesresponse" : { "count":1 ,"zone" : [  {"id":1,"name":"test0","dns1":"8.8.8.8","dns2":"4.4.4.4","internaldns1":"192.168.110.254","internaldns2":"192.168.110.253","networktype":"Basic","securitygroupsenabled":true,"allocationstate":"Enabled","zonetoken":"5e818a11-6b00-3429-9a07-e27511d3169a","dhcpprovider":"DhcpServer"} ] } }'
+    result = '{ "listzonesresponse" : { "count":1 ,"zone" : [  {"id":1,"name":"test0","dns1":"8.8.8.8","dns2":"8.8.4.4","internaldns1":"192.168.110.254","internaldns2":"192.168.110.253","networktype":"Basic","securitygroupsenabled":true,"allocationstate":"Enabled","zonetoken":"5e818a11-6b00-3429-9a07-e27511d3169a","dhcpprovider":"DhcpServer"} ] } }'
     zones = getResultObj(result)
     print zones[0].id
     res = authorizeSecurityGroupIngress.authorizeSecurityGroupIngressResponse()
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     asynJob = getResultObj(result)
     print asynJob
     
-    result = '{ "createzoneresponse" :  { "zone" : {"id":1,"name":"test0","dns1":"8.8.8.8","dns2":"4.4.4.4","internaldns1":"192.168.110.254","internaldns2":"192.168.110.253","networktype":"Basic","securitygroupsenabled":true,"allocationstate":"Enabled","zonetoken":"3442f287-e932-3111-960b-514d1f9c4610","dhcpprovider":"DhcpServer"} }  }'
+    result = '{ "createzoneresponse" :  { "zone" : {"id":1,"name":"test0","dns1":"8.8.8.8","dns2":"8.8.4.4","internaldns1":"192.168.110.254","internaldns2":"192.168.110.253","networktype":"Basic","securitygroupsenabled":true,"allocationstate":"Enabled","zonetoken":"3442f287-e932-3111-960b-514d1f9c4610","dhcpprovider":"DhcpServer"} }  }'
     res = createZone.createZoneResponse()
     zone = getResultObj(result, res)
     print zone.id

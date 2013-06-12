@@ -31,11 +31,16 @@ public class GlobalLoadBalancerDaoImpl extends GenericDaoBase<GlobalLoadBalancer
 
     private final SearchBuilder<GlobalLoadBalancerRuleVO> listByDomainSearch;
     private final SearchBuilder<GlobalLoadBalancerRuleVO> listByRegionIDSearch;
+    private final SearchBuilder<GlobalLoadBalancerRuleVO> AccountIdSearch;
 
     public GlobalLoadBalancerDaoImpl() {
         listByDomainSearch = createSearchBuilder();
         listByDomainSearch.and("gslbDomain", listByDomainSearch.entity().getGslbDomain(), SearchCriteria.Op.EQ);
         listByDomainSearch.done();
+
+        AccountIdSearch = createSearchBuilder();
+        AccountIdSearch.and("account", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountIdSearch.done();
 
         listByRegionIDSearch = createSearchBuilder();
         listByRegionIDSearch.and("region", listByRegionIDSearch.entity().getRegion(), SearchCriteria.Op.EQ);
@@ -47,6 +52,13 @@ public class GlobalLoadBalancerDaoImpl extends GenericDaoBase<GlobalLoadBalancer
         SearchCriteria<GlobalLoadBalancerRuleVO> sc = listByRegionIDSearch.create();
         sc.setParameters("region", regionId);
         return listBy(sc);
+    }
+
+    @Override
+    public List<GlobalLoadBalancerRuleVO> listByAccount(long accountId) {
+        SearchCriteria<GlobalLoadBalancerRuleVO> sc = AccountIdSearch.create();
+        sc.setParameters("account", accountId);
+        return listBy(sc, null);
     }
 
     @Override

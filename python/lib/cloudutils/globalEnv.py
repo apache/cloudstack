@@ -40,3 +40,5 @@ class globalEnv:
         self.privateNet = "cloudbr0"
         #distribution
         self.distribution = None
+        # bridgeType
+        self.bridgeType = "native"

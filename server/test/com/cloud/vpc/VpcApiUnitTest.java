@@ -87,7 +87,7 @@ public class VpcApiUnitTest extends TestCase{
         //1) correct network offering
         boolean result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 1, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 1, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (Exception ex) {
         } finally {
@@ -97,7 +97,7 @@ public class VpcApiUnitTest extends TestCase{
         //2) invalid offering - source nat is not included
         result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 2, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 2, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (InvalidParameterValueException ex) {
         } finally {
@@ -107,7 +107,7 @@ public class VpcApiUnitTest extends TestCase{
         //3) invalid offering - conserve mode is off
         result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 3, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 3, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (InvalidParameterValueException ex) {
         } finally {
@@ -117,7 +117,7 @@ public class VpcApiUnitTest extends TestCase{
         //4) invalid offering - guest type shared
         result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 4, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 4, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (InvalidParameterValueException ex) {
         } finally {
@@ -127,7 +127,7 @@ public class VpcApiUnitTest extends TestCase{
         //5) Invalid offering - no redundant router support
         result = false;
         try {
-            _vpcService.validateNtwkOffForNtwkInVpc(2L, 5, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO());
+            _vpcService.validateNtwkOffForNtwkInVpc(2L, 5, "0.0.0.0", "111-", _vpcService.getVpc(1), "10.1.1.1", new AccountVO(), null);
             result = true;
         } catch (InvalidParameterValueException ex) {
         } finally {

@@ -261,7 +261,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 }
 
                 txn.commit();
-            } finally {
+            } catch (CloudRuntimeException e){
+                s_logger.error("Unable to upgrade the database", e);
+                throw new CloudRuntimeException("Unable to upgrade the database", e);
+            }finally {
                 txn.close();
             }
         }
