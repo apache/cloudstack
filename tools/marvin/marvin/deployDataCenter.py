@@ -321,7 +321,7 @@ class deployDataCenters():
             createzone.localstorageenabled = zone.localstorageenabled
             createzone.networktype = zone.networktype
             if zone.securitygroupenabled != "true":
-            createzone.guestcidraddress = zone.guestcidraddress
+                createzone.guestcidraddress = zone.guestcidraddress
             
             zoneresponse = self.apiClient.createZone(createzone)
             zoneId = zoneresponse.id
