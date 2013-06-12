@@ -312,6 +312,7 @@ public class Upgrade410to420 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+        /*
         pstmt = null;
         try {
             pstmt = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
@@ -326,6 +327,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         }
+        */
 
 	}
 
