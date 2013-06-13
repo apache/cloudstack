@@ -761,7 +761,7 @@
                             }
                           });
                         },
-                        notificaton: {
+                        notification: {
                           poll: pollAsyncJobResult
                         }
                       }
