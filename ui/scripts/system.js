@@ -1340,7 +1340,7 @@
                             docID: 'helpGuestNetworkZoneVLANID'
                           },
                           isolatedpvlanId: {
-                            label: 'Private VLAN ID'                           
+                            label: 'Secondary Isolated VLAN ID'                           
                           },
                           
                           scope: {
