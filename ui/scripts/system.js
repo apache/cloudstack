@@ -7899,7 +7899,13 @@
                     lbdevicededicated: {
                       label: 'label.dedicated',
                       converter: cloudStack.converters.toBooleanText
-                    }
+                    },
+                    gslbprovider: {
+                      label: 'GSLB service',
+                      converter: cloudStack.converters.toBooleanText
+                    },
+                    gslbproviderpublicip: { label: 'GSLB service Public IP' },
+                    gslbproviderprivateip: { label: 'GSLB service Private IP' }
                   }
                 ],
                 dataProvider: function(args) {								  
