@@ -536,6 +536,11 @@ public class AncientSnapshotStrategy implements SnapshotStrategy {
 		Long snapshotId = snapInfo.getId();
 		SnapshotObject snapshot = (SnapshotObject)snapInfo;
 
+        if (Snapshot.State.Error.equals(snapshot.getState())) {
+            _snapshotDao.remove(snapshotId);
+            return true;
+        }
+
 		if (!Snapshot.State.BackedUp.equals(snapshot.getState())) {
 			throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is not in BackedUp Status");
 		}

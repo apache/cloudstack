@@ -635,16 +635,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         Long staticMemoryMax = vm.getMemoryStaticMax(conn);
         Long staticMemoryMin = vm.getMemoryStaticMin(conn);
-        Long newDynamicMemoryMin = vmSpec.getMinRam() * 1024 * 1024;
-        Long newDynamicMemoryMax = vmSpec.getMaxRam() * 1024 * 1024;
+        Long newDynamicMemoryMin = vmSpec.getMinRam();
+        Long newDynamicMemoryMax = vmSpec.getMaxRam();
         if (staticMemoryMin > newDynamicMemoryMin || newDynamicMemoryMax > staticMemoryMax) {
             throw new CloudRuntimeException("Cannot scale up the vm because of memory constraint violation: 0 <= memory-static-min <= memory-dynamic-min <= memory-dynamic-max <= memory-static-max ");
         }
 
-        vm.setMemoryDynamicRange(conn, vmSpec.getMinRam() * 1024 * 1024, vmSpec.getMaxRam() * 1024 * 1024);
+        vm.setMemoryDynamicRange(conn, newDynamicMemoryMin, newDynamicMemoryMax);
         vm.setVCPUsNumberLive(conn, (long)vmSpec.getCpus());
 
-        Integer speed = vmSpec.getSpeed();
+        Integer speed = vmSpec.getMinSpeed();
         if (speed != null) {
 
             int cpuWeight = _maxWeight; //cpu_weight

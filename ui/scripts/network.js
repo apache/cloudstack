@@ -544,7 +544,8 @@
             name: { label: 'label.name' },
             account: { label: 'label.account' },            
             type: { label: 'label.type' },            
-            cidr: { label: 'label.cidr' }           
+            cidr: { label: 'label.cidr' },
+            ip6cidr: { label: 'IPv6 CIDR' }
           },
           
 					advSearchFields: {					 

@@ -116,11 +116,27 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART2 = " GROUP BY cluster_id, capacity_type order by percent desc limit ";
     private static final String UPDATE_CAPACITY_STATE = "UPDATE `cloud`.`op_host_capacity` SET capacity_state = ? WHERE ";
 
+    /* In the below query"LIST_CLUSTERS_CROSSING_THRESHOLD" the threshold value is getting from the cluster_details table if not present then it gets from the global configuration
+    *
+    * CASE statement works like
+    * if (cluster_details table has thershold value)
+    * then
+    *     if (value from the cluster_details table is not null)
+    *     then
+    *         query from the cluster_details table
+    *     else
+    *         query from the configuration table
+    * else
+    *     query from the configuration table
+    *
+    *     */
     private static final String LIST_CLUSTERS_CROSSING_THRESHOLD = "SELECT clusterList.cluster_id " +
                        "FROM (	SELECT cluster.cluster_id cluster_id, ( (sum(cluster.used) + sum(cluster.reserved) + ?)/sum(cluster.total) ) ratio, cluster.configValue value " +
                                 "FROM (	SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity total, " +
                                             "CASE (SELECT count(*) FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) " +
-                                                "WHEN 1 THEN (	SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) " +
+                                                "WHEN 1 THEN (	CASE WHEN (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ?) is NULL " +
+                                                                    "THEN (SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?)" +
+                                                                    "ELSE (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) END )"  +
                                                 "ELSE (	SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?) " +
                                             "END configValue " +
                                         "FROM `cloud`.`op_host_capacity` capacity " +
@@ -168,8 +184,10 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
              pstmt.setString(2, configName);
              pstmt.setString(3, configName);
              pstmt.setString(4, configName);
-             pstmt.setLong(5,zoneId);
-             pstmt.setShort(6,capacityType);
+             pstmt.setString(5, configName);
+             pstmt.setString(6, configName);
+             pstmt.setLong(7,zoneId);
+             pstmt.setShort(8,capacityType);
 
              ResultSet rs = pstmt.executeQuery();
              while (rs.next()) {

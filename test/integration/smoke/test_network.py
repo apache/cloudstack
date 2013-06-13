@@ -1734,6 +1734,9 @@ class TestDeleteAccount(cloudstackTestCase):
                              None,
                              "Check routers are properly deleted."
                    )
+        except cloudstackAPIException:
+            self.debug("Router is deleted")
+
         except Exception as e:
             raise Exception(
                 "Encountered %s raised while fetching routers for account: %s" % (e,

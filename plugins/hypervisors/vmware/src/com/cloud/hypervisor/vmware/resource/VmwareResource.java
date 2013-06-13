@@ -1261,9 +1261,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (!result.first()) {
                     String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
                     s_logger.error(msg);
+                    return new SetNetworkACLAnswer(cmd, false, results);
                 }
-
-                return new SetNetworkACLAnswer(cmd, false, results);
             } else {
                 args="";
                 args += " -d " + "eth" + ethDeviceNum;
@@ -2331,9 +2330,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            int ramMb = (int) (vmSpec.getMinRam());
+            int ramMb = (int) (vmSpec.getMinRam()/(1024 * 1024));
 
-            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getSpeed(), vmSpec.getSpeed(),(int) (vmSpec.getMaxRam()), ramMb, vmSpec.getLimitCpuUse());
+            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024 * 1024)), ramMb, vmSpec.getLimitCpuUse());
 
             if(!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Unable to execute ScaleVmCommand");
@@ -3489,7 +3488,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             tgtHyperHost = new HostMO(getServiceContext(), morTgtHost);
             morDc = srcHyperHost.getHyperHostDatacenter();
             morDcOfTargetHost = tgtHyperHost.getHyperHostDatacenter();
-            if (morDc != morDcOfTargetHost) {
+            if (!morDc.getValue().equalsIgnoreCase(morDcOfTargetHost.getValue())) {
                 String msg = "Source host & target host are in different datacentesr";
                 throw new CloudRuntimeException(msg);
             }

@@ -574,6 +574,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         String intervalTypeStr = cmd.getIntervalType();
         String zoneType = cmd.getZoneType();
         Map<String, String> tags = cmd.getTags();
+        Long zoneId = cmd.getZoneId();
         
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -602,6 +603,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -640,6 +642,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         if(zoneType != null) {
             sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
+        }
+
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
         }
         
         if (name != null) {

@@ -3421,6 +3421,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Override
     public void collectVmDiskStatistics (UserVmVO userVm) {
+        // support KVM and XenServer only
+        if (!userVm.getHypervisorType().equals(HypervisorType.XenServer)
+                && !userVm.getHypervisorType().equals(HypervisorType.KVM))
+            return;        
     	// Collect vm disk statistics from host before stopping Vm
     	long hostId = userVm.getHostId();
     	List<String> vmNames = new ArrayList<String>();
