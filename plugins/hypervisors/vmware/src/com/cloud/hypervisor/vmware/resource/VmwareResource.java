@@ -1261,9 +1261,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (!result.first()) {
                     String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
                     s_logger.error(msg);
+                    return new SetNetworkACLAnswer(cmd, false, results);
                 }
-
-                return new SetNetworkACLAnswer(cmd, false, results);
             } else {
                 args="";
                 args += " -d " + "eth" + ethDeviceNum;
