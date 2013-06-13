@@ -3144,6 +3144,16 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             vlanIpMap.put(vlanTag, ipList);
         }
 
+        List<NicVO> nics = _nicDao.listByVmId(router.getId());
+        String baseMac = null;
+        for (NicVO nic : nics) {
+        	NetworkVO nw = _networkDao.findById(nic.getNetworkId());
+        	if (nw.getTrafficType() == TrafficType.Public) {
+        		baseMac = nic.getMacAddress();
+        		break;
+        	}
+        }
+
         for (Map.Entry<String, ArrayList<PublicIpAddress>> vlanAndIp : vlanIpMap.entrySet()) {
             List<PublicIpAddress> ipAddrList = vlanAndIp.getValue();
             // Source nat ip address should always be sent first
@@ -3175,7 +3185,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 String vlanId = ipAddr.getVlanTag();
                 String vlanGateway = ipAddr.getGateway();
                 String vlanNetmask = ipAddr.getNetmask();
-                String vifMacAddress = ipAddr.getMacAddress();
+                String vifMacAddress = null;
+                // For non-source nat IP, set the mac to be something based on first public nic's MAC
+                // We cannot depends on first ip because we need to deal with first ip of other nics
+                if (!ipAddr.isSourceNat() && ipAddr.getVlanId() != 0) {
+                	vifMacAddress = NetUtils.generateMacOnIncrease(baseMac, ipAddr.getVlanId());
+                } else {
+                	vifMacAddress = ipAddr.getMacAddress();
+                }
 
                 IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, 
                         sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, networkRate, ipAddr.isOneToOneNat());
