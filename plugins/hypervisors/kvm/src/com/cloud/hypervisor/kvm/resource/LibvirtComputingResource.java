@@ -3647,7 +3647,7 @@ ServerResource {
 
     protected synchronized String attachOrDetachDisk(Connect conn,
             boolean attach, String vmName, KVMPhysicalDisk attachingDisk,
-            int devId, long bytesReadRate, long bytesWriteRate, long iopsReadRate, long iopsWriteRate) throws LibvirtException, InternalErrorException {
+            int devId, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;

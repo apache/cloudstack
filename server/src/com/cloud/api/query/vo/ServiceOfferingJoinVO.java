@@ -91,16 +91,16 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     int sortKey;
 
     @Column(name="bytes_read_rate")
-    long bytesReadRate;
+    Long bytesReadRate;
 
     @Column(name="bytes_write_rate")
-    long bytesWriteRate;
+    Long bytesWriteRate;
 
     @Column(name="iops_read_rate")
-    long iopsReadRate;
+    Long iopsReadRate;
 
     @Column(name="iops_write_rate")
-    long iopsWriteRate;
+    Long iopsWriteRate;
 
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
@@ -340,35 +340,35 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
         this.volatileVm = volatileVm;
     }
 
-    public void setBytesReadRate(long bytesReadRate) {
+    public void setBytesReadRate(Long bytesReadRate) {
         this.bytesReadRate = bytesReadRate;
     }
 
-    public long getBytesReadRate() {
+    public Long getBytesReadRate() {
         return bytesReadRate;
     }
 
-    public void setBytesWriteRate(long bytesWriteRate) {
+    public void setBytesWriteRate(Long bytesWriteRate) {
         this.bytesWriteRate = bytesWriteRate;
     }
 
-    public long getBytesWriteRate() {
+    public Long getBytesWriteRate() {
         return bytesWriteRate;
     }
 
-    public void setIopsReadRate(long iopsReadRate) {
+    public void setIopsReadRate(Long iopsReadRate) {
         this.iopsReadRate = iopsReadRate;
     }
 
-    public long getIopsReadRate() {
+    public Long getIopsReadRate() {
         return iopsReadRate;
     }
 
-    public void setIopsWriteRate(long iopsWriteRate) {
+    public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
     }
 
-    public long getIopsWriteRate() {
+    public Long getIopsWriteRate() {
         return iopsWriteRate;
     }
 }

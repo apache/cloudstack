@@ -270,35 +270,35 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.storageType = storageType;
     }
 
-    public void setBytesReadRate(long bytesReadRate) {
+    public void setBytesReadRate(Long bytesReadRate) {
         this.bytesReadRate = bytesReadRate;
     }
 
-    public long getBytesReadRate() {
+    public Long getBytesReadRate() {
         return bytesReadRate;
     }
 
-    public void setBytesWriteRate(long bytesWriteRate) {
+    public void setBytesWriteRate(Long bytesWriteRate) {
         this.bytesWriteRate = bytesWriteRate;
     }
 
-    public long getBytesWriteRate() {
+    public Long getBytesWriteRate() {
         return bytesWriteRate;
     }
 
-    public void setIopsReadRate(long iopsReadRate) {
+    public void setIopsReadRate(Long iopsReadRate) {
         this.iopsReadRate = iopsReadRate;
     }
 
-    public long getIopsReadRate() {
+    public Long getIopsReadRate() {
         return iopsReadRate;
     }
 
-    public void setIopsWriteRate(long iopsWriteRate) {
+    public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
     }
 
-    public long getIopsWriteRate() {
+    public Long getIopsWriteRate() {
         return iopsWriteRate;
     }
 

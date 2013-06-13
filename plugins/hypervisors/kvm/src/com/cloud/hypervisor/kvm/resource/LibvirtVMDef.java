@@ -592,19 +592,19 @@ public class LibvirtVMDef {
             return suffix - 'a';
         }
 
-        public void setBytesReadRate(long bytesReadRate) {
+        public void setBytesReadRate(Long bytesReadRate) {
             _bytesReadRate = bytesReadRate;
         }
 
-        public void setBytesWriteRate(long bytesWriteRate) {
+        public void setBytesWriteRate(Long bytesWriteRate) {
             _bytesWriteRate = bytesWriteRate;
         }
 
-        public void setIopsReadRate(long iopsReadRate) {
+        public void setIopsReadRate(Long iopsReadRate) {
             _iopsReadRate = iopsReadRate;
         }
 
-        public void setIopsWriteRate(long iopsWriteRate) {
+        public void setIopsWriteRate(Long iopsWriteRate) {
             _iopsWriteRate = iopsWriteRate;
         }
 

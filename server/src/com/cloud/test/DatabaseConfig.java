@@ -920,16 +920,16 @@ public class DatabaseConfig {
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
 
         Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
-        if (bytesReadRate != null && (bytesReadRate > 0))
+        if ((bytesReadRate != null) && (bytesReadRate > 0))
             serviceOffering.setBytesReadRate(bytesReadRate);
         Long bytesWriteRate = Long.parseLong(_currentObjectParams.get("bytesWriteRate"));
-        if (bytesWriteRate != null && (bytesWriteRate > 0))
+        if ((bytesWriteRate != null) && (bytesWriteRate > 0))
             serviceOffering.setBytesWriteRate(bytesWriteRate);
         Long iopsReadRate = Long.parseLong(_currentObjectParams.get("iopsReadRate"));
-        if (iopsReadRate != null && (iopsReadRate > 0))
+        if ((iopsReadRate != null) && (iopsReadRate > 0))
             serviceOffering.setIopsReadRate(iopsReadRate);
         Long iopsWriteRate = Long.parseLong(_currentObjectParams.get("iopsWriteRate"));
-        if (iopsWriteRate != null && (iopsWriteRate > 0))
+        if ((iopsWriteRate != null) && (iopsWriteRate > 0))
             serviceOffering.setIopsWriteRate(iopsWriteRate);
 
         ServiceOfferingDaoImpl dao = ComponentContext.inject(ServiceOfferingDaoImpl.class);

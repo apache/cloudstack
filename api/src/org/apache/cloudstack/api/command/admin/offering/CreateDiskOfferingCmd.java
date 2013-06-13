@@ -105,19 +105,19 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return domainId;
     }
 
-    public long getBytesReadRate() {
+    public Long getBytesReadRate() {
         return (bytesReadRate == null) || (bytesReadRate < 0) ? 0 : bytesReadRate;
     }
 
-    public long getBytesWriteRate() {
+    public Long getBytesWriteRate() {
         return (bytesWriteRate == null) || (bytesWriteRate < 0) ? 0 : bytesWriteRate;
     }
 
-    public long getIopsReadRate() {
+    public Long getIopsReadRate() {
         return (iopsReadRate == null) || (iopsReadRate < 0) ? 0 : iopsReadRate;
     }
 
-    public long getIopsWriteRate() {
+    public Long getIopsWriteRate() {
         return (iopsWriteRate == null) || (iopsWriteRate < 0) ? 0 : iopsWriteRate;
     }
 
