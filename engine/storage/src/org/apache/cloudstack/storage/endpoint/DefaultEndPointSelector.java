@@ -55,8 +55,6 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
     HostDao hostDao;
-    private String findOneHostInaScope = "select id from host where "
-            + " status = 'Up' and type in ('Routing', 'SecondaryStorageVM') ";
     private String findOneHostOnPrimaryStorage = "select id from host where " + "status = 'Up' and type = 'Routing' ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
@@ -158,7 +156,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             // if both are zone scope
             selectedScope = srcScope;
         }
-        return findEndPointInScope(selectedScope, findOneHostInaScope);
+        return findEndPointInScope(selectedScope, findOneHostOnPrimaryStorage);
     }
 
     @Override
