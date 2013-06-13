@@ -2330,9 +2330,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            int ramMb = (int) (vmSpec.getMinRam());
+            int ramMb = (int) (vmSpec.getMinRam()/(1024 * 1024));
 
-            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getSpeed(), vmSpec.getSpeed(),(int) (vmSpec.getMaxRam()), ramMb, vmSpec.getLimitCpuUse());
+            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024 * 1024)), ramMb, vmSpec.getLimitCpuUse());
 
             if(!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Unable to execute ScaleVmCommand");

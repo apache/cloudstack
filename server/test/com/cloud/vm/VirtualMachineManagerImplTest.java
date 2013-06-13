@@ -22,11 +22,13 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeManager;
@@ -154,6 +156,10 @@ public class VirtualMachineManagerImplTest {
         List<VolumeVO> _rootVols;
         @Mock
         ItWorkVO _work;
+        @Mock
+        ConfigurationServer _configServer;
+        @Mock
+        HostVO hostVO;
 
         @Mock ClusterDao _clusterDao;
         @Mock HostPodDao _podDao;
@@ -199,6 +205,7 @@ public class VirtualMachineManagerImplTest {
             _vmMgr._hvGuruMgr = _hvGuruMgr;
             _vmMgr._vmSnapshotMgr = _vmSnapshotMgr;
             _vmMgr._vmDao = _vmInstanceDao;
+            _vmMgr._configServer = _configServer;
 
             when(_vmMock.getId()).thenReturn(314l);
             when(_vmInstance.getId()).thenReturn(1L);
@@ -239,8 +246,12 @@ public class VirtualMachineManagerImplTest {
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         ServiceOfferingVO newServiceOffering = getSvcoffering(512);
+        when(_hostDao.findById(_vmInstance.hostId)).thenReturn(hostVO);
+        doReturn(1L).when(hostVO).getClusterId();
+        when(_configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
+        when(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(),
-                newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
+                newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
         Answer answer = new ScaleVmAnswer(reconfigureCmd, true, "details");
         when(_agentMgr.send(2l, reconfigureCmd)).thenReturn(null);
         _vmMgr.reConfigureVm(_vmInstance, getSvcoffering(256), false);
