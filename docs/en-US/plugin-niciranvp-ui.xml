@@ -22,5 +22,5 @@
 -->
 <section id="plugin-niciranvp-ui">
     <title>Configuring the Nicira NVP plugin from the UI</title>
-    <para>In CloudStack 4.1.0-incubating the Nicira NVP plugin and its resources can be configured in the infrastructure tab of the UI. Navigate to the physical network with STT isolation and configure the network elements. The NiciraNvp is listed here. <!-- TODO add screenshot --></para>
+    <para>In CloudStack 4.1.1 the Nicira NVP plugin and its resources can be configured in the infrastructure tab of the UI. Navigate to the physical network with STT isolation and configure the network elements. The NiciraNvp is listed here. <!-- TODO add screenshot --></para>
 </section>

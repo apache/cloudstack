@@ -87,7 +87,7 @@ timeout = 3600
     <programlisting>
 <![CDATA[
 $ cloudmonkey
-☁ Apache CloudStack cloudmonkey 4.1.0-snapshot. Type help or ? to list commands.
+☁ Apache CloudStack cloudmonkey 4.1.1-snapshot. Type help or ? to list commands.
 
 > set prompt myprompt>
 myprompt> set host localhost

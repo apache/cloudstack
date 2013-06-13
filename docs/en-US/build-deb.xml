@@ -52,13 +52,13 @@ under the License.
         This command will build seven Debian packages. You should have the following:
     </para>
     <itemizedlist>
-        <listitem><para>cloudstack-agent_4.1.0_all.deb</para></listitem>
-        <listitem><para>cloudstack-awsapi_4.1.0_all.deb</para></listitem>
-        <listitem><para>cloudstack-cli_4.1.0_all.deb</para></listitem>
-        <listitem><para>cloudstack-common_4.1.0_all.deb</para></listitem>
-        <listitem><para>cloudstack-docs_4.1.0_all.deb</para></listitem>
-        <listitem><para>cloudstack-management_4.1.0_all.deb</para></listitem>
-        <listitem><para>cloudstack-usage_4.1.0_all.deb</para></listitem>
+        <listitem><para>cloudstack-agent_4.1.1_all.deb</para></listitem>
+        <listitem><para>cloudstack-awsapi_4.1.1_all.deb</para></listitem>
+        <listitem><para>cloudstack-cli_4.1.1_all.deb</para></listitem>
+        <listitem><para>cloudstack-common_4.1.1_all.deb</para></listitem>
+        <listitem><para>cloudstack-docs_4.1.1_all.deb</para></listitem>
+        <listitem><para>cloudstack-management_4.1.1_all.deb</para></listitem>
+        <listitem><para>cloudstack-usage_4.1.1_all.deb</para></listitem>
     </itemizedlist>
 
     <section id="sect-source-builddebs-repo">
