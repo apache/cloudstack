@@ -191,6 +191,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE) @Param(description="true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
     private Boolean isDynamicallyScalable;
+    @SerializedName(ApiConstants.SERVICE_STATE) @Param(description="State of the Service from LB rule")
+    private String serviceState;
 
     public UserVmResponse(){
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -437,6 +439,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setDynamicallyScalable(boolean isDynamicallyScalable) {
         this.isDynamicallyScalable = isDynamicallyScalable;
+    }
+
+    public void setServiceState(String state) {
+        this.serviceState = state;
     }
 
 }

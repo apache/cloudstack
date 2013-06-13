@@ -1832,7 +1832,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     @Override
-    public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd)
+    public Pair<List<? extends UserVm>, List<String>> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd)
             throws PermissionDeniedException {
         Account caller = UserContext.current().getCaller();
         Long loadBalancerId = cmd.getId();
@@ -1850,14 +1850,16 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         _accountMgr.checkAccess(caller, null, true, loadBalancer);
 
         List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
+        List<String> serviceStates = new ArrayList<String>();
         List<LoadBalancerVMMapVO> vmLoadBalancerMappings = null;
-
         vmLoadBalancerMappings = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
-
+        Map<Long, String> vmServiceState = new HashMap<Long, String>(vmLoadBalancerMappings.size());
         List<Long> appliedInstanceIdList = new ArrayList<Long>();
+
         if ((vmLoadBalancerMappings != null) && !vmLoadBalancerMappings.isEmpty()) {
             for (LoadBalancerVMMapVO vmLoadBalancerMapping : vmLoadBalancerMappings) {
                 appliedInstanceIdList.add(vmLoadBalancerMapping.getInstanceId());
+                vmServiceState.put(vmLoadBalancerMapping.getInstanceId(), vmLoadBalancerMapping.getState());
             }
         }
 
@@ -1878,10 +1880,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             boolean isApplied = appliedInstanceIdList.contains(userVm.getId());
             if ((isApplied && applied) || (!isApplied && !applied)) {
                 loadBalancerInstances.add(userVm);
+                serviceStates.add(vmServiceState.get(userVm.getId()));
             }
         }
-
-        return loadBalancerInstances;
+        return new Pair<List<? extends UserVm>, List<String>>(loadBalancerInstances,serviceStates);
     }
 
     @Override
