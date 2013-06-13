@@ -1518,6 +1518,7 @@
                       args.response.success({
                         _custom: { jobId: json.updatedefaultnicforvirtualmachineresponse.jobid }
                       });
+                      cloudStack.dialog.notice({message:_l('Please manually update the default NIC on the VM now.')});
                     }
                   });
                 },
