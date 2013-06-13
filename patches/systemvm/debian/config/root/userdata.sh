@@ -40,34 +40,51 @@ create_htaccess() {
   local vmIp=$1
   local folder=$2
   local file=$3
-  
+
   local result=0
-  
+
   entry="RewriteRule ^$file$ ../$folder/%{REMOTE_ADDR}/$file [L,NC,QSA]"
   htaccessFolder="/var/www/html/latest"
   htaccessFile=$htaccessFolder/.htaccess
   mkdir -p $htaccessFolder
   touch $htaccessFile
-  
-  #grep -w $file $htaccessFile
-  grep -F `echo $entry` $htaccessFile
-  
-  if [ $? -gt 0 ]; then 
-    echo -e $entry >> $htaccessFile; 
-  fi
-  result=$?
-  
-  if [ $result -eq 0 ]; then
-    entry="Options -Indexes\\nOrder Deny,Allow\\nDeny from all\\nAllow from $vmIp"
-    htaccessFolder="/var/www/html/$folder/$vmIp"
-    htaccessFile=$htaccessFolder/.htaccess
-    
-    mkdir -p $htaccessFolder
-    echo -e $entry > $htaccessFile
-    result=$?
+
+# Fixed the issue with checking if record exists, rewrote the else/if logic, reference issue CLOUDSTACK-2053
+
+  if ! grep -Fq "$entry" $htaccessFile
+        then
+                echo -e $entry >> $htaccessFile;
+                result=$?
   fi
 
-  return $result  
+  entry="Options -Indexes\\nOrder Deny,Allow\\nDeny from all\\nAllow from $vmIp"
+  testentry="Allow from $vmIp"
+  htaccessFolder="/var/www/html/$folder/$vmIp"
+  htaccessFile=$htaccessFolder/.htaccess
+  if ! grep -Fq "$testentry" $htaccessFile
+        then
+                mkdir -p $htaccessFolder
+                echo -e $entry > $htaccessFile
+                result=$?
+  fi
+
+
+# Please reference issue CLOUDSTACK-2053, added to fix boto/cloud-init integration
+
+  htaccessFileNoIP="/var/www/html/latest/.htaccess"
+  metadataentry1='RewriteRule ^meta-data/$ ../metadata/%{REMOTE_ADDR}/meta-data [L,NC,QSA]'
+  metadataentry2='RewriteRule ^meta-data/(.*)$ ../metadata/%{REMOTE_ADDR}/$1 [L,NC,QSA]'
+  if ! grep -Fq "$metadataentry1" $htaccessFileNoIP
+        then
+                echo -e "$metadataentry1" >> $htaccessFileNoIP;
+  fi
+
+  if ! grep -Fq "$metadataentry2" $htaccessFileNoIP
+        then
+                echo -e "$metadataentry2" >> $htaccessFileNoIP;
+  fi
+
+  return $result
 }
 
 copy_vm_data_file() {
