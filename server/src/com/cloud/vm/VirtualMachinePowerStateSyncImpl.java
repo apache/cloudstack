@@ -66,6 +66,8 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     }
     
     private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo) {
+    	
+    	
     	for(Map.Entry<Long, VirtualMachine.PowerState> entry : translatedInfo.entrySet()) {
     		
         	if(s_logger.isDebugEnabled())
@@ -79,6 +81,11 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     			_messageBus.publish(null, TopicConstants.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
     		}
     	}
+    	
+    	//
+    	// TODO
+    	// 	1) publish missing report (if VM is missing from host report) for KVM/XenServer
+    	//
     }
  
     private Map<Long, VirtualMachine.PowerState> convertHostPingInfos(Map<String, PowerState> states) {
@@ -121,20 +128,5 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     
     private VMInstanceVO findVM(String vmName) {
         return _instanceDao.findVMByInstanceName(vmName);
-//        Collection<VirtualMachineGuru> vmGurus = _vmMgr.getRegisteredGurus();
-//
-//        for (VirtualMachineGuru vmGuru : vmGurus) {
-//            VMInstanceVO vm = vmGuru.findByName(vmName);
-//            if (vm != null)
-//                return vm;
-//
-//            Long id = vmGuru.convertToId(vmName);
-//            if (id != null) {
-//            	vm = vmGuru.findById(id);
-//            	if(vm != null)
-//            		return vm;
-//            }
-//        }
-//        return null;
     }
 }

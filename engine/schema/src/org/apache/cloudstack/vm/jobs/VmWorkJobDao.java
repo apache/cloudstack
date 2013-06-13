@@ -23,7 +23,6 @@ import org.apache.cloudstack.vm.jobs.VmWorkJobVO.Step;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Type;
 
 public interface VmWorkJobDao extends GenericDao<VmWorkJobVO, Long> {
 	VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId);
