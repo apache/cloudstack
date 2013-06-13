@@ -951,7 +951,7 @@ public class LibvirtVMDef {
             if (_listenAddr != null) {
                 graphicBuilder.append(" listen='" + _listenAddr + "'");
             } else {
-                graphicBuilder.append(" listen='' ");
+                graphicBuilder.append(" listen=''");
             }
             if (_passwd != null) {
                 graphicBuilder.append(" passwd='" + _passwd + "'");
