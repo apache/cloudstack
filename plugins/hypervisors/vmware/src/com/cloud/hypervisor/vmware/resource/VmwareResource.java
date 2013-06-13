@@ -3489,7 +3489,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             tgtHyperHost = new HostMO(getServiceContext(), morTgtHost);
             morDc = srcHyperHost.getHyperHostDatacenter();
             morDcOfTargetHost = tgtHyperHost.getHyperHostDatacenter();
-            if (morDc != morDcOfTargetHost) {
+            if (!morDc.getValue().equalsIgnoreCase(morDcOfTargetHost.getValue())) {
                 String msg = "Source host & target host are in different datacentesr";
                 throw new CloudRuntimeException(msg);
             }
