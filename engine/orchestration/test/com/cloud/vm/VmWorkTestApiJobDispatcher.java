@@ -27,7 +27,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
 
-import com.cloud.api.ApiSerializerHelper;
 import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
@@ -72,7 +71,7 @@ public class VmWorkTestApiJobDispatcher extends AdapterBase implements AsyncJobD
 		workInfo.setVmId(1L);
 		workInfo.setPlan(null);
 		workInfo.setParams(null);
-		workJob.setCmdInfo(ApiSerializerHelper.toSerializedString(workInfo));
+        workJob.setCmdInfo(VmWorkJobDispatcher.serialize(workInfo));
 		
         _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, 1L);
 		

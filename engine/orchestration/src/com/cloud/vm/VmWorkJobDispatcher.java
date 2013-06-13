@@ -16,9 +16,14 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -26,6 +31,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 
+import com.cloud.api.StringMapTypeAdapter;
 import com.cloud.dao.EntityManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
@@ -33,6 +39,22 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
     private static final Logger s_logger = Logger.getLogger(VmWorkJobDispatcher.class);
+
+    protected static Gson s_gson;
+    static {
+        GsonBuilder gBuilder = new GsonBuilder();
+        gBuilder.setVersion(1.3);
+        gBuilder.registerTypeAdapter(Map.class, new StringMapTypeAdapter());
+        s_gson = gBuilder.create();
+    }
+
+    public static String serialize(VmWork work) {
+        return s_gson.toJson(work);
+    }
+
+    public static <T extends VmWork> T deserialize(Class<T> clazz, String work) {
+        return s_gson.fromJson(work, clazz);
+    }
 
     public static final String VM_WORK_QUEUE = "VmWorkJobQueue";
     public static final String VM_WORK_JOB_DISPATCHER = "VmWorkJobDispatcher";
@@ -56,9 +78,9 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         	assert(cmd != null);
         	
         	if (cmd.equals(Start)) {
-                work = _vmMgr.deserialize(VmWorkStart.class, job.getCmdInfo());
+                work = deserialize(VmWorkStart.class, job.getCmdInfo());
             } else {
-                work = _vmMgr.deserialize(VmWorkStop.class, job.getCmdInfo());
+                work = deserialize(VmWorkStop.class, job.getCmdInfo());
             }
         	assert(work != null);
         	

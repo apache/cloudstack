@@ -43,11 +43,11 @@ public class ClusterFenceManagerImpl extends ManagerBase implements ClusterFence
 	}
 
 	@Override
-	public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+    public void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
 	}
 
 	@Override
-	public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+    public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
 	}
 
 	@Override

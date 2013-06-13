@@ -86,7 +86,7 @@ import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.ManagementServerHost;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -152,6 +152,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -645,8 +646,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     
     @Override
     public String getStoragePoolTags(long poolId) {
-        return _configMgr.listToCsvTags(_storagePoolDao
-                .searchForStoragePoolDetails(poolId, "true"));
+        return StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolDetails(poolId, "true"));
     }
 
     @Override
@@ -1496,16 +1496,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList,
+    public void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList,
             long selfNodeId) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList,
+    public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList,
             long selfNodeId) {
-        for (ManagementServerHostVO vo : nodeList) {
+        for (ManagementServerHost vo : nodeList) {
             if (vo.getMsid() == _serverId) {
                 s_logger.info("Cleaning up storage maintenance jobs associated with Management server"
                         + vo.getMsid());
@@ -1513,8 +1513,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         .searchForPoolIdsForPendingWorkJobs(vo.getMsid());
                 if (poolIds.size() > 0) {
                     for (Long poolId : poolIds) {
-                        StoragePoolVO pool = _storagePoolDao
-                                .findById(poolId);
+                        StoragePoolVO pool = _storagePoolDao.findById(poolId);
                         // check if pool is in an inconsistent state
                         if (pool != null
                                 && (pool.getStatus().equals(

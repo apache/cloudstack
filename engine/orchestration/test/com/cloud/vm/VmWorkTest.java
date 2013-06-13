@@ -44,7 +44,6 @@ import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO.Step;
 
-import com.cloud.api.ApiSerializerHelper;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
@@ -135,7 +134,7 @@ public class VmWorkTest extends TestCase {
 		workJob.setVmInstanceId(1L);
 		
 		VmWorkStart workInfo = new VmWorkStart();
-		workJob.setCmdInfo(ApiSerializerHelper.toSerializedString(workInfo));
+        workJob.setCmdInfo(VmWorkJobDispatcher.serialize(workInfo));
 		
 		_jobMgr.submitAsyncJob(workJob, "VM", 1);
 		

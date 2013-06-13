@@ -22,7 +22,17 @@ import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
+
 import junit.framework.TestCase;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
@@ -38,15 +48,6 @@ import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.messagebus.TopicConstants;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.cluster.ClusterManager;
 import com.cloud.user.AccountManager;
@@ -70,7 +71,8 @@ public class TestAsyncJobManager extends TestCase {
     @Inject SyncQueueDao syncQueueDao;
     @Inject SyncQueueItemDao syncQueueItemDao;
     
-    @Before                                                  
+    @Override
+    @Before
     public void setUp() {
     	ComponentContext.initComponentsLifeCycle();
     	Mockito.when(clusterMgr.getManagementNodeId()).thenReturn(1L);
@@ -96,11 +98,12 @@ public class TestAsyncJobManager extends TestCase {
 				}
 			}
 		}
-    }                                                        
+    }
                                                              
-    @After                                                   
-    public void tearDown() {                                 
-    	Transaction.currentTxn().close();                    
+    @Override
+    @After
+    public void tearDown() {
+    	Transaction.currentTxn().close();
     }
     
     @Test
@@ -220,9 +223,10 @@ public class TestAsyncJobManager extends TestCase {
 		jobMonitor.registerActiveTask(1, 1);
 		
     	asyncMgr.waitAndCheck(new String[] {"VM"}, 5000L, 10000L, new Predicate() {
-    		public boolean checkCondition() {
+    		@Override
+            public boolean checkCondition() {
     			System.out.println("Check condition to exit");
-    			messageBus.publish(null, TopicConstants.JOB_HEARTBEAT, PublishScope.LOCAL, 1L);
+                messageBus.publish(null, AsyncJob.Topics.JOB_HEARTBEAT, PublishScope.LOCAL, 1L);
     			return false;
     		}
     	});

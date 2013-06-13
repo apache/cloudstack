@@ -33,10 +33,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.lf5.viewer.configure.ConfigurationManager;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.config.ConfigRepo;
@@ -84,9 +80,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.StringMapTypeAdapter;
 import com.cloud.async.AsyncJobExecutionContext;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dao.EntityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -200,15 +194,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected VolumeDao _volsDao;
     @Inject
-    protected ConfigurationManager _configMgr;
-    @Inject
     protected HighAvailabilityManager _haMgr;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
     @Inject
     protected StoragePoolHostDao _poolHostDao;
     @Inject
-    protected RulesManager rulesMgr;
+    protected RulesManager _rulesMgr;
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
@@ -239,11 +231,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected UserVmDetailsDao _uservmDetailsDao;
     
     @Inject
-    protected VMInstanceDao _instanceDao;
-
-    @Inject
-    protected ConfigurationDao _configDao;
-    @Inject
     VolumeManager _volumeMgr;
     
     @Inject protected MessageBus _messageBus;
@@ -267,7 +254,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected ConfigValue<Integer> _operationTimeout;
     protected ConfigValue<Boolean> _forceStop;
     protected long _nodeId;
-    protected Gson _gson;
 
     SearchBuilder<VolumeVO> RootVolumeSearch;
 
@@ -448,8 +434,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {
-        Map<String, String> params = _configDao.getConfiguration(xmlParams);
-
         _retry = _configRepo.get(Configs.StartRetry);
 
         _cancelWait = _configRepo.get(Configs.VmOpCancelInterval);
@@ -478,11 +462,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         
         _messageBus.subscribe(Topics.VM_POWER_STATE, MessageDispatcher.getDispatcher(this));
 
-        GsonBuilder gBuilder = new GsonBuilder();
-        gBuilder.setVersion(1.3);
-        gBuilder.registerTypeAdapter(Map.class, new StringMapTypeAdapter());
-        _gson = gBuilder.create();
-      
         return true;
     }
 
@@ -668,14 +647,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return false;
     }
 
-    public String serialize(VmWork work) {
-        return _gson.toJson(work);
-    }
-
-    public <T extends VmWork> T deserialize(Class<T> clazz, String work) {
-        return _gson.fromJson(work, clazz);
-    }
-
     @Override
     @DB
     public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy)
@@ -718,7 +689,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         		workInfo.setVmId(vm.getId());
         		workInfo.setPlan(planToDeploy);
         		workInfo.setParams(params);
-                workJob.setCmdInfo(serialize(workInfo));
+                workJob.setCmdInfo(VmWorkJobDispatcher.serialize(workInfo));
         		
                 _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
         	}
@@ -1151,7 +1122,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         		workInfo.setUserId(user.getId());
         		workInfo.setVmId(vm.getId());
         		workInfo.setForceStop(forced);
-                workJob.setCmdInfo(serialize(workInfo));
+                workJob.setCmdInfo(VmWorkJobDispatcher.serialize(workInfo));
         		
                 _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
         	}
@@ -3044,7 +3015,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         // if specified nic is associated with PF/LB/Static NAT
-        if(rulesMgr.listAssociatedRulesForGuestNic(nic).size() > 0){
+        if(_rulesMgr.listAssociatedRulesForGuestNic(nic).size() > 0){
             throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network
                     + ", nic has associated Port forwarding or Load balancer or Static NAT rules.");
         }
@@ -3437,7 +3408,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     		VirtualMachine.Type.Instance, vmId);
     	if(pendingWorkJobs.size() == 0) {
     		// there is no pending operation job
-    		VMInstanceVO vm = _instanceDao.findById(vmId);
+            VMInstanceVO vm = _vmDao.findById(vmId);
     		if(vm != null) {
     			switch(vm.getPowerState()) {
     			case PowerOn :

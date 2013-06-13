@@ -55,8 +55,6 @@ import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dao.EntityManager;
 import com.cloud.dc.dao.ClusterDao;
@@ -74,6 +72,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
@@ -87,7 +86,6 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
@@ -108,12 +106,6 @@ public class VirtualMachineManagerImplTest {
         VolumeManager _storageMgr;
         @Mock
         Account _account;
-        @Mock
-        AccountManager _accountMgr;
-        @Mock
-        ConfigurationManager _configMgr;
-        @Mock
-        CapacityManager _capacityMgr;
         @Mock
         AgentManager _agentMgr;
         @Mock
@@ -184,8 +176,6 @@ public class VirtualMachineManagerImplTest {
         _vmMgr._entityMgr = _entityMgr;
             _vmMgr._volsDao = _volsDao;
             _vmMgr._volumeMgr = _storageMgr;
-            _vmMgr._accountMgr = _accountMgr;
-            _vmMgr._configMgr = _configMgr;
             _vmMgr._hostDao = _hostDao;
             _vmMgr._nodeId = 1L;
 /*
@@ -206,7 +196,7 @@ public class VirtualMachineManagerImplTest {
             when(_vmInstance.getType()).thenReturn(VirtualMachine.Type.User);
             when(_host.getId()).thenReturn(1L);
             when(_hostDao.findById(anyLong())).thenReturn(null);
-            when(_configMgr.getServiceOffering(anyLong())).thenReturn(getSvcoffering(512));
+        when(_entityMgr.findById(ServiceOffering.class, anyLong())).thenReturn(getSvcoffering(512));
             when(_workDao.persist(_work)).thenReturn(_work);
             when(_workDao.update("1", _work)).thenReturn(true);
             when(_work.getId()).thenReturn("1");
@@ -310,9 +300,6 @@ public class VirtualMachineManagerImplTest {
 
         // Mock the vm guru and the user vm object that gets returned.
         _vmMgr._vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
-        UserVmManagerImpl userVmManager = mock(UserVmManagerImpl.class);
-        _vmMgr.registerGuru(VirtualMachine.Type.User, userVmManager);
-//        when(userVmManager.findById(anyLong())).thenReturn(_vmMock);
 
         // Mock the iteration over all the volumes of an instance.
         Iterator<VolumeVO> volumeIterator = mock(Iterator.class);
