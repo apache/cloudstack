@@ -26,7 +26,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 
-import com.cloud.api.ApiSerializerHelper;
 import com.cloud.dao.EntityManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
@@ -56,7 +55,11 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         	String cmd = job.getCmd();
         	assert(cmd != null);
         	
-            work = (VmWork)ApiSerializerHelper.fromSerializedString(job.getCmdInfo());
+        	if (cmd.equals(Start)) {
+                work = _vmMgr.deserialize(VmWorkStart.class, job.getCmdInfo());
+            } else {
+                work = _vmMgr.deserialize(VmWorkStop.class, job.getCmdInfo());
+            }
         	assert(work != null);
         	
             CallContext.register(work.getUserId(), work.getAccountId(), job.getRelated());

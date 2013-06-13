@@ -65,6 +65,9 @@ import com.cloud.utils.fsm.NoTransitionException;
  * 
  */
 public interface VirtualMachineManager extends Manager {
+    public interface Topics {
+        public static final String VM_POWER_STATE = "vm.powerstate";
+    }
 
     boolean allocate(String vmInstanceName,
             VMTemplateVO template,

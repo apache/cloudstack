@@ -58,7 +58,6 @@ import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.messagebus.TopicConstants;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.cluster.ClusterManager;
@@ -254,7 +253,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             	    scheduleExecution(jobToWakeup, false);
             }
              
-            _messageBus.publish(null, TopicConstants.JOB_STATE, PublishScope.GLOBAL, jobId);
+            _messageBus.publish(null, AsyncJob.Topics.JOB_STATE, PublishScope.GLOBAL, jobId);
         } catch(Exception e) {
             s_logger.error("Unexpected exception while completing async job-" + jobId, e);
             txn.rollback();
@@ -511,7 +510,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     
     private long getJobRunNumber() {
     	synchronized(this) {
-    		return this._executionRunNumber++;
+    		return _executionRunNumber++;
     	}
     }
     

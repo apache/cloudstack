@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.messagebus.TopicConstants;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -78,7 +77,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             	if(s_logger.isDebugEnabled())
             		s_logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
     			
-    			_messageBus.publish(null, TopicConstants.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
+                _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
     		}
     	}
     	

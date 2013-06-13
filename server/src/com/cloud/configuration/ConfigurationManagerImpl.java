@@ -3217,35 +3217,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    public List<String> csvTagsToList(String tags) {
-        List<String> tagsList = new ArrayList<String>();
-
-        if (tags != null) {
-            String[] tokens = tags.split(",");
-            for (int i = 0; i < tokens.length; i++) {
-                tagsList.add(tokens[i].trim());
-            }
-        }
-
-        return tagsList;
-    }
-
-    @Override
-    public String listToCsvTags(List<String> tagsList) {
-        String tags = "";
-        if (tagsList.size() > 0) {
-            for (int i = 0; i < tagsList.size(); i++) {
-                tags += tagsList.get(i);
-                if (i != tagsList.size() - 1) {
-                    tags += ",";
-                }
-            }
-        }
-
-        return tags;
-    }
-
-    @Override
     public String cleanupTags(String tags) {
         if (tags != null) {
             String[] tokens = tags.split(",");

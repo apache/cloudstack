@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -153,22 +152,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @return success/failure
      */
     boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
-
-    /**
-     * Converts a comma separated list of tags to a List
-     * 
-     * @param tags
-     * @return List of tags
-     */
-    List<String> csvTagsToList(String tags);
-
-    /**
-     * Converts a List of tags to a comma separated list
-     * 
-     * @param tags
-     * @return String containing a comma separated list of tags
-     */
-    String listToCsvTags(List<String> tags);
 
     void checkZoneAccess(Account caller, DataCenter zone);
 

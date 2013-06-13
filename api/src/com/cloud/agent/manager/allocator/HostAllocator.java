@@ -22,7 +22,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.host.HostVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachine;
@@ -78,7 +77,7 @@ public interface HostAllocator extends Adapter {
      * @param boolean considerReservedCapacity (default should be true, set to false if host capacity calculation should not look at reserved capacity)
      * @return List<Host> List of hosts that are suitable for VM allocation
      **/
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<HostVO> hosts, int returnUpTo,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
             boolean considerReservedCapacity);
 
      public static int RETURN_UPTO_ALL = -1;
