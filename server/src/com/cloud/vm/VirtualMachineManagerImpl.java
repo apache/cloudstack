@@ -2646,6 +2646,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 */
                     
                 }
+                
+                // take the chance to scan stalled VM
+                scanStalledVMInTransitionState(agentId);
                 processed = true;
             }
         }
@@ -3411,6 +3414,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     }
     
+    //
+    // PowerState report handling for out-of-band changes and handling of left-over transitional VM states
+    //
+    
     @MessageHandler(topic=TopicConstants.VM_POWER_STATE)
     private void HandlePownerStateReport(Object target, String subject, String senderAddress, Object args) {
     	assert(args != null);
@@ -3447,21 +3454,80 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
     
     private void HandlePowerOnReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
-
-    	// TODO :
+    	//
     	// 	1) handle left-over transitional VM states
     	//	2) handle out of band VM live migration
     	//	3) handle out of sync stationary states, marking VM from Stopped to Running with
     	//	   alert messages
-    	
+    	//
     	switch(vm.getState()) {
-    	case Starting:
+    	case Starting :
+    		try {
+    			stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
+    		} catch(NoTransitionException e) {
+    			s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
+    		}
+    		// TODO we need to alert admin or user about this risky state transition
+    		break;
+    		
+    	case Running :
+    		try {
+    			if(vm.getHostId() != null && vm.getHostId().longValue() != vm.getPowerHostId().longValue())
+    				s_logger.info("Detected out of band VM migration from host " + vm.getHostId() + " to host " + vm.getPowerHostId());
+    			stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
+    		} catch(NoTransitionException e) {
+    			s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
+    		}
+    		break;
+    		
+    	case Stopping :
+    	case Stopped :
+    		try {
+    			stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
+    		} catch(NoTransitionException e) {
+    			s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
+    		}
+    		// TODO we need to alert admin or user about this risky state transition
+    		break;
+    		
+    	case Destroyed :
+    	case Expunging :
+    		s_logger.info("Receive power on report when VM is in destroyed or expunging state. vm: " 
+        		    + vm.getId() + ", state: " + vm.getState());
+    		break;
+    		
+    	case Migrating :
+    		try {
+    			stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
+    		} catch(NoTransitionException e) {
+    			s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
+    		}
+    		break;
+    		
+    	case Error :
+    	default :
+    		s_logger.info("Receive power on report when VM is in error or unexpected state. vm: " 
+    		    + vm.getId() + ", state: " + vm.getState());
+    		break;
+    	}
+    }
+    
+    private void HandlePowerOffReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
+
+    	// TODO :
+    	// 	1) handle left-over transitional VM states
+    	//	2) handle out of sync stationary states, schedule force-stop to release resources
+    	//	  
+    	switch(vm.getState()) {
+    	case Starting :
     		break;
     		
     	case Running :
     		break;
     		
     	case Stopping :
+    		break;
+    		
     	case Stopped :
     		break;
     		
@@ -3478,33 +3544,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    private void HandlePowerOffReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
-
-    	// TODO :
-    	// 	1) handle left-over transitional VM states
-    	//	2) handle out of sync stationary states, schedule force-stop to release resources
-    	//	  
-    	switch(vm.getState()) {
-    	case Starting:
-    		break;
-    		
-    	case Running :
-    		break;
-    		
-    	case Stopping :
-    	case Stopped :
-    		break;
-    		
-    	case Destroyed :
-    	case Expunging :
-    		break;
-    		
-    	case Migrating :
-    		break;
-    		
-    	case Error :
-    	default :
-    		break;
-    	}
+    private void scanStalledVMInTransitionState(long hostId) {
+    	//
+    	// TODO check VM that is stuck in Starting, Stopping, Migrating states, we won't check 
+    	// VMs in expunging state (this need to be handled specially)
+    	//
+    	// checking condition
+    	//	1) no pending VmWork job
+    	//	2) no power state update for some time
+    	//	3) on hostId host
+    	
+    	
+    	
     }
 }

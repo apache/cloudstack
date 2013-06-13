@@ -104,6 +104,12 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
+         
+            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
+
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
         }
         
         public static boolean isVmStarted(State oldState, Event e, State newState) {
@@ -166,6 +172,10 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         OperationFailedToError,
         OperationRetry,
         AgentReportMigrated,
+    
+        // added for new VMSync logic
+        FollowAgentPowerOnReport,
+        FollowAgentPowerOffReport,
     };
 
     public enum Type {
