@@ -103,9 +103,10 @@ public interface LoadBalancingRulesService {
      * balancer.
      *
      * @param cmd
-     * @return list of vm instances that have been or can be applied to a load balancer
+     * @return list of vm instances that have been or can be applied to a load balancer along with service state,
+     * if the LB has health check policy created on it from cloudstack.
      */
-    List<? extends UserVm> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd);
+    Pair<List<? extends UserVm>, List<String>> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd);
 
     /**
      * List load balancer rules based on the given criteria

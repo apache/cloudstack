@@ -517,7 +517,7 @@ public class ApiConstants {
     public static final String IS_DYNAMICALLY_SCALABLE = "isdynamicallyscalable";
     public static final String ROUTING = "isrouting";
     public static final String MAX_CONNECTIONS = "maxconnections";
-
+    public static final String SERVICE_STATE = "servicestate";
     public enum HostDetails {
         all, capacity, events, stats, min;
     }
