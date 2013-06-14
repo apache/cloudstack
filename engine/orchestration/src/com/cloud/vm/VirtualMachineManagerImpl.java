@@ -47,6 +47,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
@@ -84,7 +85,6 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
-import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.dao.EntityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -186,11 +186,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected AgentManager _agentMgr;
     @Inject
     protected VMInstanceDao _vmDao;
-/*
-    @Inject
-    protected ItWorkDao _workDao;
-*/
-    
     @Inject
     protected NicDao _nicsDao;
     @Inject

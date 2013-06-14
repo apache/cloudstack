@@ -23,8 +23,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 
-import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;

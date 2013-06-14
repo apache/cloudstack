@@ -42,6 +42,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
@@ -51,6 +52,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobJournalVO;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobMBeanImpl;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobMonitor;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueItem;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueManager;
@@ -537,8 +539,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
                     
                     _jobMonitor.registerActiveTask(runNumber, job.getId());
-                    AsyncJobExecutionContext.setCurrentExecutionContext(
-                    	(AsyncJobExecutionContext)ComponentContext.inject(new AsyncJobExecutionContext(job))
+                    AsyncJobExecutionContext.setCurrentExecutionContext((AsyncJobExecutionContext)ComponentContext.inject(new AsyncJobExecutionContext(job))
                     );
                     
                     // execute the job
@@ -847,12 +848,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        int expireMinutes = NumbersUtil.parseInt(
-                _configDao.getValue(Config.JobExpireMinutes.key()), 24*60);
+        int expireMinutes = NumbersUtil.parseInt(_configDao.getValue(Config.JobExpireMinutes.key()), 24 * 60);
         _jobExpireSeconds = (long)expireMinutes*60;
 
-        _jobCancelThresholdSeconds = NumbersUtil.parseInt(
-                _configDao.getValue(Config.JobCancelThresholdMinutes.key()), 60);
+        _jobCancelThresholdSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.JobCancelThresholdMinutes.key()), 60);
         _jobCancelThresholdSeconds *= 60;
 
         try {
@@ -869,6 +868,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to load db.properties to configure AsyncJobManagerImpl");
         }
+
+        AsyncJobExecutionContext.init(this, _joinMapDao);
+        OutcomeImpl.init(this);
 
         return true;
     }

@@ -14,93 +14,52 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.framework.jobs;
+package org.apache.cloudstack.jobs;
 
 import java.util.Date;
 
-import org.apache.cloudstack.framework.jobs.impl.SyncQueueItem;
-import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface AsyncJob extends JobInfo {
+public interface JobInfo extends Identity, InternalIdentity {
 
-    public enum JournalType {
-        SUCCESS, FAILURE
-    };
-
-    public static interface Topics {
-        public static final String JOB_HEARTBEAT = "job.heartbeat";
-        public static final String JOB_STATE = "job.state";
-    }
-	
-    @Override
     String getType();
-    
-    @Override
+
     String getDispatcher();
 
-    @Override
     int getPendingSignals();
-    
-    @Override
+
     long getUserId();
 
-    @Override
     long getAccountId();
 
-    @Override
     String getCmd();
 
-    @Override
     int getCmdVersion();
 
-    @Override
     String getCmdInfo();
-    
-    @Override
+
     int getStatus();
 
-    @Override
     int getProcessStatus();
 
-    @Override
     int getResultCode();
 
-    @Override
     String getResult();
 
-    @Override
     Long getInitMsid();
 
-    void setInitMsid(Long msid);
-
-    @Override
     Long getExecutingMsid();
-    
-    @Override
+
     Long getCompleteMsid();
 
-    void setCompleteMsid(Long msid);
-
-    @Override
     Date getCreated();
 
-    @Override
     Date getLastUpdated();
 
-    @Override
     Date getLastPolled();
 
-    @Override
     String getInstanceType();
 
-    @Override
     Long getInstanceId();
-
-    String getShortUuid();
-
-    SyncQueueItem getSyncSource();
-
-    void setSyncSource(SyncQueueItem item);
-
-    String getRelated();
 }

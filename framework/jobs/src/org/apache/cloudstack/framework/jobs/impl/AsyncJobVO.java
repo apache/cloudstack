@@ -34,7 +34,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.jobs.Job;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.GenericDao;
@@ -43,7 +43,7 @@ import com.cloud.utils.db.GenericDao;
 @Table(name="async_job")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="job_type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class AsyncJobVO implements AsyncJob, Job {
+public class AsyncJobVO implements AsyncJob, JobInfo {
 	
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

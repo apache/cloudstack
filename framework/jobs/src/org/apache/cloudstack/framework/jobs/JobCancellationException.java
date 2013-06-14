@@ -14,54 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.jobs;
+package org.apache.cloudstack.framework.jobs;
 
-import java.util.Date;
+import com.cloud.utils.SerialVersionUID;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+/**
+ * This exception is fired when the job has been cancelled
+ *
+ */
+public class JobCancellationException extends CloudRuntimeException {
+    
+    private static final long serialVersionUID = SerialVersionUID.AffinityConflictException;
 
-public interface Job extends Identity, InternalIdentity {
+    public enum Reason {
+        RequestedByUser,
+        RequestedByCaller,
+        TimedOut;
+    }
 
 
+    Reason reason;
 
-    String getType();
+    public JobCancellationException(Reason reason) {
+        super("The job was cancelled due to " + reason.toString());
+        this.reason = reason;
+    }
 
-    String getDispatcher();
+    public Reason getReason() {
+        return reason;
+    }
 
-    int getPendingSignals();
-
-    long getUserId();
-
-    long getAccountId();
-
-    String getCmd();
-
-    int getCmdVersion();
-
-    String getCmdInfo();
-
-    int getStatus();
-
-    int getProcessStatus();
-
-    int getResultCode();
-
-    String getResult();
-
-    Long getInitMsid();
-
-    Long getExecutingMsid();
-
-    Long getCompleteMsid();
-
-    Date getCreated();
-
-    Date getLastUpdated();
-
-    Date getLastPolled();
-
-    String getInstanceType();
-
-    Long getInstanceId();
 }

@@ -14,15 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.async;
-
-import javax.inject.Inject;
+package org.apache.cloudstack.framework.jobs;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
@@ -36,8 +31,13 @@ import com.cloud.utils.component.ComponentContext;
 public class AsyncJobExecutionContext  {
     private AsyncJob _job;
 	
-	@Inject private AsyncJobManager _jobMgr;
-	@Inject private AsyncJobJoinMapDao _joinMapDao;
+    static private AsyncJobManager _jobMgr;
+    static private AsyncJobJoinMapDao _joinMapDao;
+
+    public static void init(AsyncJobManager jobMgr, AsyncJobJoinMapDao joinMapDao) {
+        _jobMgr = jobMgr;
+        _joinMapDao = joinMapDao;
+    }
 	
 	private static ThreadLocal<AsyncJobExecutionContext> s_currentExectionContext = new ThreadLocal<AsyncJobExecutionContext>();
 
@@ -158,7 +158,6 @@ public class AsyncJobExecutionContext  {
         AsyncJobExecutionContext context = s_currentExectionContext.get();
         if (context == null) {
             context = new AsyncJobExecutionContext();
-            context = ComponentContext.inject(context);
             context.getJob();
             setCurrentExecutionContext(context);
         }
@@ -166,8 +165,14 @@ public class AsyncJobExecutionContext  {
         return context;
     }
 
+    public static AsyncJobExecutionContext unregister() {
+        AsyncJobExecutionContext context = s_currentExectionContext.get();
+        setCurrentExecutionContext(null);
+        return context;
+    }
+
     // This is intended to be package level access for AsyncJobManagerImpl only.
-    static void setCurrentExecutionContext(AsyncJobExecutionContext currentContext) {
+    public static void setCurrentExecutionContext(AsyncJobExecutionContext currentContext) {
 		s_currentExectionContext.set(currentContext);
 	}
 }

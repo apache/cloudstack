@@ -24,11 +24,11 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.jobs.Job;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.serializer.Param;
 
-@EntityReference(value = Job.class)
+@EntityReference(value = JobInfo.class)
 public class AsyncJobResponse extends BaseResponse {
 
     @SerializedName("accountid") @Param(description="the account that executed the async command")

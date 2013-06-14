@@ -5,8 +5,8 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 
-import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.utils.component.AdapterBase;
 
 public class VmWorkTestWorkJobDispatcher extends AdapterBase implements AsyncJobDispatcher {

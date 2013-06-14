@@ -24,10 +24,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
 
-import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
 

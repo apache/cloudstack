@@ -26,11 +26,11 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.async.AsyncJobExecutionContext;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
