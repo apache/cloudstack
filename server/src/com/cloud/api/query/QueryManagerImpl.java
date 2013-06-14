@@ -636,8 +636,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         c.addCriteria(Criteria.ID, cmd.getId());
         c.addCriteria(Criteria.NAME, cmd.getInstanceName());
         c.addCriteria(Criteria.STATE, cmd.getState());
-        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
-        c.addCriteria(Criteria.DATACENTERTYPE, cmd.getZoneType());
+        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());        
         c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
         c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
         c.addCriteria(Criteria.NETWORKID, cmd.getNetworkId());
@@ -686,8 +685,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object name = c.getCriteria(Criteria.NAME);
         Object state = c.getCriteria(Criteria.STATE);
         Object notState = c.getCriteria(Criteria.NOTSTATE);
-        Object zoneId = c.getCriteria(Criteria.DATACENTERID);
-        Object zoneType = c.getCriteria(Criteria.DATACENTERTYPE);
+        Object zoneId = c.getCriteria(Criteria.DATACENTERID);        
         Object pod = c.getCriteria(Criteria.PODID);
         Object hostId = c.getCriteria(Criteria.HOSTID);
         Object hostName = c.getCriteria(Criteria.HOSTNAME);
@@ -709,8 +707,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterType", sb.entity().getDataCenterType(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);       
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -824,11 +821,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 sc.setParameters("stateNEQ", "Destroyed");
             }
         }
-        
-        if (zoneType != null) {
-        	sc.setParameters("dataCenterType", zoneType);
-        }
-        
+               
         if (pod != null) {
             sc.setParameters("podId", pod);
 
