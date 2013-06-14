@@ -1228,8 +1228,11 @@
                         }
                       });                                              
                     }                    
-                    $providers.each(function() {
-                      $(this).val($(this).find('option:first'));
+                    $providers.each(function() {  
+                      //if selected option is disabled, select the first enabled option instead
+                      if($(this).find('option:selected:disabled').length > 0) {                        
+                        $(this).val($(this).find('option:first'));
+                      }
                     });
                                       
                     
