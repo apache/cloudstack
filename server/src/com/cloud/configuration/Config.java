@@ -216,7 +216,14 @@ public enum Config {
     AlertPurgeInterval("Advanced", ManagementServer.class, Integer.class, "alert.purge.interval", "86400", "The interval (in seconds) to wait before running the alert purge thread", null),
     AlertPurgeDelay("Advanced", ManagementServer.class, Integer.class, "alert.purge.delay", "0", "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts", null),
     HostReservationReleasePeriod("Advanced", ManagementServer.class, Integer.class, "host.reservation.release.period", "300000", "The interval in milliseconds between host reservation release checks", null),
-    
+    UseSystemPublicIps("Advanced", ManagementServer.class, Boolean.class, "use.system.public.ips", "true",
+            "If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been" +
+            " consumed ips will be acquired from the system pool",
+            null, ConfigurationParameterScope.account.toString()),
+    UseSystemGuestVlans("Advanced", ManagementServer.class, Boolean.class, "use.system.guest.vlans", "true",
+                "If true, when account has dedicated guest vlan range(s), once the vlans dedicated to the account have been" +
+                " consumed vlans will be allocated from the system pool",
+                null, ConfigurationParameterScope.account.toString()),
 
     // LB HealthCheck Interval.
     LBHealthCheck("Advanced", ManagementServer.class, String.class, "healthcheck.update.interval", "600",

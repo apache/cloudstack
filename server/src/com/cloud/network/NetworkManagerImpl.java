@@ -445,7 +445,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         // If all the dedicated IPs of the owner are in use fetch an IP from the system pool
         if (addrs.size() == 0 && fetchFromDedicatedRange) {
-            if (nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
+            // Verify if account is allowed to acquire IPs from the system
+            boolean useSystemIps = Boolean.parseBoolean(_configServer.getConfigValue(Config.UseSystemPublicIps.key(),
+                    Config.ConfigurationParameterScope.account.toString(), owner.getId()));
+            if(useSystemIps && nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
                 fetchFromDedicatedRange = false;
                 sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
                 errorMessage.append(", vlanId id=" + nonDedicatedVlanDbIds.toArray());

@@ -192,22 +192,27 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public String allocateVnet(long dataCenterId, long physicalNetworkId, long accountId, String reservationId) {
+    public String allocateVnet(long dataCenterId, long physicalNetworkId, long accountId, String reservationId,
+            boolean canUseSystemGuestVlans) {
         ArrayList<Long> dedicatedVlanDbIds = new ArrayList<Long>();
+        boolean useDedicatedGuestVlans = false;
         List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(accountId);
         for (AccountGuestVlanMapVO map : maps) {
             dedicatedVlanDbIds.add(map.getId());
         }
         if (dedicatedVlanDbIds != null && !dedicatedVlanDbIds.isEmpty()) {
+            useDedicatedGuestVlans = true;
             DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId, dedicatedVlanDbIds);
             if (vo != null)
                 return vo.getVnet();
         }
-        DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId, null);
-        if (vo == null) {
-            return null;
+        if (!useDedicatedGuestVlans || (useDedicatedGuestVlans && canUseSystemGuestVlans)) {
+            DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId, null);
+            if (vo != null) {
+                return vo.getVnet();
+            }
         }
-        return vo.getVnet();
+        return null;
     }
 
     @Override

@@ -1854,3 +1854,6 @@ SET foreign_key_checks = 1;
 UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;
 #update shared sg enabled network with not null name in Advance Security Group enabled network
 UPDATE `cloud`.`networks` set name='Shared SG enabled network', display_text='Shared SG enabled network' WHERE name IS null AND traffic_type='Guest' AND data_center_id IN (select id from data_center where networktype='Advanced' and is_security_group_enabled=1) AND acl_type='Domain';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'use.system.public.ips', 'true', 'If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been consumed ips will be acquired from the system pool');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'use.system.guest.vlans', 'true', 'If true, when account has dedicated guest vlan range(s), once the vlans dedicated to the account have been consumed vlans will be allocated from the system pool');
