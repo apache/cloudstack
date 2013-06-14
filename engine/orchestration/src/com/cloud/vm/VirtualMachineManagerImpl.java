@@ -18,12 +18,16 @@
 package com.cloud.vm;
 
 import java.net.URI;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -3412,11 +3416,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     		if(vm != null) {
     			switch(vm.getPowerState()) {
     			case PowerOn :
-    				HandlePowerOnReportWithNoPendingJobsOnVM(vm);
+    				handlePowerOnReportWithNoPendingJobsOnVM(vm);
     				break;
     				
     			case PowerOff :
-    				HandlePowerOffReportWithNoPendingJobsOnVM(vm);
+    				handlePowerOffReportWithNoPendingJobsOnVM(vm);
     				break;
 
     			// PowerUnknown shouldn't be reported, it is a derived
@@ -3434,7 +3438,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    private void HandlePowerOnReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
+    private void handlePowerOnReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
     	//
     	// 	1) handle left-over transitional VM states
     	//	2) handle out of band VM live migration
@@ -3493,7 +3497,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    private void HandlePowerOffReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
+    private void handlePowerOffReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
 
     	// TODO :
     	// 	1) handle left-over transitional VM states
@@ -3527,15 +3531,69 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     
     private void scanStalledVMInTransitionState(long hostId) {
     	//
-    	// TODO check VM that is stuck in Starting, Stopping, Migrating states, we won't check
+    	// Check VM that is stuck in Starting, Stopping, Migrating states, we won't check
     	// VMs in expunging state (this need to be handled specially)
     	//
     	// checking condition
     	//	1) no pending VmWork job
-    	//	2) no power state update for some time
-    	//	3) on hostId host
+    	//	2) on hostId host and host is UP
+    	//
+    	// When host is UP, soon or later we will get a report from the host about the VM, 
+    	// however, if VM is missing from the host report (it may happen in out of band changes
+    	// or from designed behave of XS/KVM)
+    	//
     	
     	
+    }
+    
+    // TODO, use sql query directly for quick prototype, need to refactor to use joins and search builders
+    // if it supports
+    @DB
+    private List<Long> listStalledVMInTransitionStateOnUpHost(long hostId, Date cutTime) {
+    	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " + 
+                     "AND h.id = ? AND i.power_state_update_time < ? AND i.host_id = h.id " +
+    			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " + 
+    			     "AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job)";
     	
+    	List<Long> l = new ArrayList<Long>();
+        Transaction txn = Transaction.currentTxn();;
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            
+            pstmt.setLong(1, hostId);
+ 	        pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
+            ResultSet rs = pstmt.executeQuery();
+            while(rs.next()) {
+            	l.add(rs.getLong(1));
+            }
+        } catch (SQLException e) {
+        } catch (Throwable e) {
+        }
+        return l;
+    }
+    
+    @DB
+    private List<Long> listStalledVMInTransitionStateOnDisconnectedHosts(Date cutTime) {
+    	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status != 'UP' " + 
+                 "AND i.power_state_update_time < ? AND i.host_id = h.id " +
+			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " + 
+			     "AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job)";
+	
+    	List<Long> l = new ArrayList<Long>();
+    	Transaction txn = Transaction.currentTxn();;
+    	PreparedStatement pstmt = null;
+    	try {
+	       pstmt = txn.prepareAutoCloseStatement(sql);
+	       
+	       pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
+	       ResultSet rs = pstmt.executeQuery();
+	       while(rs.next()) {
+	       	l.add(rs.getLong(1));
+	       }
+    	} catch (SQLException e) {
+    	} catch (Throwable e) {
+    	}
+    	return l;
     }
 }

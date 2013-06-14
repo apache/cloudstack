@@ -66,7 +66,6 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     
     private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo) {
     	
-    	
     	for(Map.Entry<Long, VirtualMachine.PowerState> entry : translatedInfo.entrySet()) {
     		
         	if(s_logger.isDebugEnabled())
@@ -80,11 +79,6 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
     		}
     	}
-    	
-    	//
-    	// TODO
-    	// 	1) publish missing report (if VM is missing from host report) for KVM/XenServer
-    	//
     }
  
     private Map<Long, VirtualMachine.PowerState> convertHostPingInfos(Map<String, PowerState> states) {
