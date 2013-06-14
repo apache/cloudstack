@@ -97,6 +97,13 @@
                      name != 'icmpcode' &&
                      name != 'cidrlist';
             });
+            var $portFields = $inputs.filter(function() {
+              var name = $(this).attr('name');
+              return $.inArray(name, [
+                'startport',
+                'endport'
+              ]) > -1;
+            });
 
             var $protocolinput = args.$form.find('td input');
             var $protocolFields = $protocolinput.filter(function(){
@@ -124,6 +131,10 @@
               $icmpFields.hide();
               $icmpFields.parent().find('label.error').hide();
               $protocolFields.hide().removeClass('required');
+              if ($(this).val() == 'all'){
+                $portFields.attr('disabled', 'disabled');
+                $portFields.hide();
+              }
             }
           });
 
@@ -216,11 +227,11 @@
 
 
        
-        if((args.data.protocol == 'tcp' || args.data.protocol == 'udp' || args.data.protocol == 'all') && (args.data.startport=="" || args.data.startport == undefined)){
+        if((args.data.protocol == 'tcp' || args.data.protocol == 'udp') && (args.data.startport=="" || args.data.startport == undefined)){
          cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
           $(window).trigger('cloudStack.fullRefresh');
         }
-        else if((args.data.protocol == 'tcp' || args.data.protocol == 'udp' || args.data.protocol == 'all')  && (args.data.endport=="" || args.data.endport == undefined)){
+        else if((args.data.protocol == 'tcp' || args.data.protocol == 'udp')  && (args.data.endport=="" || args.data.endport == undefined)){
          cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
           $(window).trigger('cloudStack.fullRefresh');
         }
