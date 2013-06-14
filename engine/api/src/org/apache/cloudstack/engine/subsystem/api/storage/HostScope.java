@@ -25,6 +25,7 @@ public class HostScope extends AbstractScope {
     private Long zoneId;
 
     public HostScope(Long hostId, Long zoneId) {
+        super();
         this.hostId = hostId;
         this.zoneId = zoneId;
     }

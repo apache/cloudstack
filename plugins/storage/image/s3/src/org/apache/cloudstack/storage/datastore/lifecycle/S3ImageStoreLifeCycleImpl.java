@@ -53,8 +53,6 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     ImageStoreHelper imageStoreHelper;
     @Inject
     ImageStoreProviderManager imageStoreMgr;
-    @Inject
-    S3Manager _s3Mgr;
 
     protected List<? extends Discoverer> _discoverers;
 
@@ -83,12 +81,6 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         s_logger.info("Trying to add a S3 store in data center " + dcId);
 
-        /*
-         * try{ // verify S3 parameters _s3Mgr.verifyS3Fields(details); } catch
-         * (DiscoveryException ex){ throw new
-         * InvalidParameterValueException("failed to verify S3 parameters!"); }
-         */
-
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();
         imageStoreParameters.put("name", name);
         imageStoreParameters.put("zoneId", dcId);
@@ -113,51 +105,31 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
-        // TODO Auto-generated method stub
         return false;
     }
-
-
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean dettach() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean unmanaged() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean maintain(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean deleteDataStore(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 }

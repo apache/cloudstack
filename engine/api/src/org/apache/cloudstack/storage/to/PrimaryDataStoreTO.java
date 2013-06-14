@@ -94,4 +94,10 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     public void setPort(int port) {
         this.port = port;
     }
+
+    @Override
+    public String toString() {
+        return new StringBuilder("PrimaryDataStoreTO[uuid=").append(uuid).append("|name=").append(name)
+                .append("|id=").append(id).append("|pooltype=").append(poolType).append("]").toString();
+    }
 }

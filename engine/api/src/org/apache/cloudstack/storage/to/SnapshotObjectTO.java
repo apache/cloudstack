@@ -117,4 +117,10 @@ public class SnapshotObjectTO implements DataTO {
     public void setHypervisorType(HypervisorType hypervisorType) {
         this.hypervisorType = hypervisorType;
     }
+
+    @Override
+    public String toString() {
+        return new StringBuilder("SnapshotTO[datastore=").append(dataStore).append("|volume=").append(volume).append("|path")
+                .append(path).append("]").toString();
+    }
 }

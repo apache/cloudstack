@@ -166,4 +166,10 @@ public class VolumeObjectTO implements DataTO {
         this.format = format;
     }
 
+    @Override
+    public String toString() {
+        return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path)
+                .append("|datastore=").append(dataStore).append("]").toString();
+    }
+
 }

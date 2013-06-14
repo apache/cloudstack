@@ -18,18 +18,12 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.StoragePoolStatus;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
@@ -37,11 +31,9 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.StoragePoolStatus;
+import javax.inject.Inject;
+import java.util.List;
+import java.util.Map;
 
 public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
@@ -103,44 +95,27 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
     }
 
     @Override
-    public boolean dettach() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean unmanaged() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean maintain(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean deleteDataStore(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 

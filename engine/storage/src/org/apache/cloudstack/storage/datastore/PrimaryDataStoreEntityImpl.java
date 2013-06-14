@@ -170,7 +170,7 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
     }
 
     @Override
-    public long getAvailableBytes() {
+    public long getUsedBytes() {
         // TODO Auto-generated method stub
         return 0;
     }

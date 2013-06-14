@@ -128,7 +128,7 @@ public class StorageAllocatorTest {
         storage.setClusterId(clusterId);
         storage.setStatus(StoragePoolStatus.Up);
         storage.setScope(ScopeType.CLUSTER);
-        storage.setAvailableBytes(1000);
+        storage.setUsedBytes(1000);
         storage.setCapacityBytes(20000);
         storage.setHostAddress(UUID.randomUUID().toString());
         storage.setPath(UUID.randomUUID().toString());
@@ -170,7 +170,7 @@ public class StorageAllocatorTest {
             storage.setClusterId(clusterId);
             storage.setStatus(StoragePoolStatus.Up);
             storage.setScope(ScopeType.CLUSTER);
-            storage.setAvailableBytes(1000);
+            storage.setUsedBytes(1000);
             storage.setCapacityBytes(20000);
             storage.setHostAddress(UUID.randomUUID().toString());
             storage.setPath(UUID.randomUUID().toString());

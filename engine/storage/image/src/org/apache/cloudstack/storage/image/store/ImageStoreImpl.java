@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.capacity.dao.CapacityDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
@@ -52,10 +53,11 @@ public class ImageStoreImpl implements ImageStoreEntity {
     VMTemplateDao imageDao;
     @Inject
     private ObjectInDataStoreManager objectInStoreMgr;
+    @Inject
+    private CapacityDao capacityDao;
     protected ImageStoreDriver driver;
     protected ImageStoreVO imageDataStoreVO;
     protected ImageStoreProvider provider;
-    boolean needDownloadToCacheStorage = false;
 
     public ImageStoreImpl() {
         super();
@@ -77,13 +79,11 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public Set<TemplateInfo> listTemplates() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public DataStoreDriver getDriver() {
-        // TODO Auto-generated method stub
         return this.driver;
     }
 
@@ -94,7 +94,6 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
         return this.imageDataStoreVO.getId();
     }
 
@@ -110,19 +109,16 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public TemplateInfo getTemplate(long templateId) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public VolumeInfo getVolume(long volumeId) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public SnapshotInfo getSnapshot(long snapshotId) {
-        // TODO Auto-generated method stub
         return null;
     }
 

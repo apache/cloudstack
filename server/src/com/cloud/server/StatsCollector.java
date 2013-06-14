@@ -185,13 +185,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
              _executor.scheduleAtFixedRate(new VmDiskStatsTask(), vmDiskStatsInterval, vmDiskStatsInterval, TimeUnit.SECONDS);
          }
 
-		// -1 means we don't even start this thread to pick up any data.
-		if (volumeStatsInterval > 0) {
-			_executor.scheduleWithFixedDelay(new VolumeCollector(), 15000L, volumeStatsInterval, TimeUnit.MILLISECONDS);
-		} else {
-			s_logger.info("Disabling volume stats collector");
-		}
-
         //Schedule disk stats update task
         _diskStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DiskStatsUpdater"));
         String aggregationRange = configs.get("usage.stats.job.aggregation.range");
@@ -548,13 +541,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     if (answer != null && answer.getResult()) {
                         storageStats.put(storeId, (StorageStats)answer);
                         s_logger.trace("HostId: "+storeId+ " Used: " + ((StorageStats)answer).getByteUsed() + " Total Available: " + ((StorageStats)answer).getCapacityBytes());
-                        //Seems like we have dynamically updated the sec. storage as prev. size and the current do not match
-                        if (_storageStats.get(storeId)!=null &&
-                        		_storageStats.get(storeId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()){
-                            ImageStoreVO imgStore = _imageStoreDao.findById(storeId);
-	                       	imgStore.setTotalSize(((StorageStats)answer).getCapacityBytes());
-	                        _imageStoreDao.update(storeId, imgStore);
-	                    }
                     }
                 }
                 _storageStats = storageStats;
@@ -602,80 +588,5 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
 	public StorageStats getStoragePoolStats(long id) {
 		return _storagePoolStats.get(id);
-	}
-
-	class VolumeCollector implements Runnable {
-		@Override
-        public void run() {
-			try {
-				List<VolumeVO> volumes = _volsDao.listAll();
-				Map<Long, List<VolumeCommand>> commandsByPool = new HashMap<Long, List<VolumeCommand>>();
-
-				for (VolumeVO volume : volumes) {
-					List<VolumeCommand> commands = commandsByPool.get(volume.getPoolId());
-					if (commands == null) {
-						commands = new ArrayList<VolumeCommand>();
-						commandsByPool.put(volume.getPoolId(), commands);
-					}
-					VolumeCommand vCommand = new VolumeCommand();
-					vCommand.volumeId = volume.getId();
-					vCommand.command = new GetFileStatsCommand(volume);
-					commands.add(vCommand);
-				}
-				ConcurrentHashMap<Long, VolumeStats> volumeStats = new ConcurrentHashMap<Long, VolumeStats>();
-				for (Iterator<Long> iter = commandsByPool.keySet().iterator(); iter.hasNext();) {
-					Long poolId = iter.next();
-					if(poolId != null) {
-						List<VolumeCommand> commandsList = commandsByPool.get(poolId);
-
-						long[] volumeIdArray = new long[commandsList.size()];
-						Commands commands = new Commands(OnError.Continue);
-						for (int i = 0; i < commandsList.size(); i++) {
-							VolumeCommand vCommand = commandsList.get(i);
-							volumeIdArray[i] = vCommand.volumeId;
-							commands.addCommand(vCommand.command);
-						}
-
-			            List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(poolId);
-			            for(StoragePoolHostVO poolhost : poolhosts) {
-	    					Answer[] answers = _agentMgr.send(poolhost.getHostId(), commands);
-	    					if (answers != null) {
-	    					    long totalBytes = 0L;
-	    						for (int i = 0; i < answers.length; i++) {
-	    							if (answers[i].getResult()) {
-	    							    VolumeStats vStats = (VolumeStats)answers[i];
-	    								volumeStats.put(volumeIdArray[i], vStats);
-	    								totalBytes += vStats.getBytesUsed();
-	    							}
-	    						}
-	    						break;
-	                        }
-			            }
-					}
-				}
-
-				// We replace the existing volumeStats so that it does not grow with no bounds
-				_volumeStats = volumeStats;
-			} catch (AgentUnavailableException e) {
-			    s_logger.debug(e.getMessage());
-			} catch (Throwable t) {
-				s_logger.error("Error trying to retrieve volume stats", t);
-			}
-		}
-	}
-
-	private class VolumeCommand {
-		public long volumeId;
-		public GetFileStatsCommand command;
-	}
-
-	public VolumeStats[] getVolumeStats(long[] ids) {
-		VolumeStats[] stats = new VolumeStats[ids.length];
-		if (volumeStatsInterval > 0) {
-			for (int i = 0; i < ids.length; i++) {
-				stats[i] = _volumeStats.get(ids[i]);
-			}
-		}
-		return stats;
 	}
 }

@@ -30,13 +30,13 @@ import com.cloud.utils.fsm.StateDao;
 public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Long>,
         StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 
-    public List<TemplateDataStoreVO> listByStoreId(long id);
+    List<TemplateDataStoreVO> listByStoreId(long id);
 
-    public List<TemplateDataStoreVO> listDestroyed(long storeId);
+    List<TemplateDataStoreVO> listDestroyed(long storeId);
 
-    public void deletePrimaryRecordsForStore(long id);
+    void deletePrimaryRecordsForStore(long id);
 
-    public void deletePrimaryRecordsForTemplate(long templateId);
+    void deletePrimaryRecordsForTemplate(long templateId);
 
     List<TemplateDataStoreVO> listByTemplateStore(long templateId, long storeId);
 

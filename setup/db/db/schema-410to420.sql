@@ -37,6 +37,7 @@ ALTER TABLE `cloud`.`load_balancer_vm_map` ADD state VARCHAR(40) NULL COMMENT 's
 
 alter table storage_pool add hypervisor varchar(32);
 alter table storage_pool change storage_provider_id storage_provider_name varchar(255);
+alter table storage_pool change available_bytes used_bytes bigint unsigned;
 -- alter table template_host_ref add state varchar(255);
 -- alter table template_host_ref add update_count bigint unsigned;
 -- alter table template_host_ref add updated datetime;
@@ -88,7 +89,8 @@ CREATE TABLE `cloud`.`image_store` (
   `parent` varchar(255) COMMENT 'parent path for the storage server',
   `created` datetime COMMENT 'date the image store first signed on',
   `removed` datetime COMMENT 'date removed if not null',  
-  `total_size` bigint unsigned COMMENT 'storage statistics',
+  `total_size` bigint unsigned COMMENT 'storage total size statistics',
+  `used_bytes` bigint unsigned COMMENT 'storage available bytes statistics',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -149,6 +151,7 @@ CREATE TABLE  `cloud`.`template_store_ref` (
   `destroyed` tinyint(1) COMMENT 'indicates whether the template_store entry was destroyed by the user or not',
   `is_copy` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates whether this was copied ',
   `update_count` bigint unsigned,
+  `ref_cnt` bigint unsigned,
   `updated` datetime, 
   PRIMARY KEY  (`id`),
 --  CONSTRAINT `fk_template_store_ref__store_id` FOREIGN KEY `fk_template_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
@@ -183,6 +186,7 @@ CREATE TABLE  `cloud`.`snapshot_store_ref` (
   `state` varchar(255) NOT NULL,  
   -- `removed` datetime COMMENT 'date removed if not null',  
   `update_count` bigint unsigned,
+  `ref_cnt` bigint unsigned,
   `updated` datetime,   
   PRIMARY KEY  (`id`),
   INDEX `i_snapshot_store_ref__store_id`(`store_id`),
@@ -210,6 +214,7 @@ CREATE TABLE  `cloud`.`volume_store_ref` (
   `state` varchar(255) NOT NULL,  
   `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
   `update_count` bigint unsigned,
+  `ref_cnt` bigint unsigned,
   `updated` datetime,   
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_volume_store_ref__store_id` FOREIGN KEY `fk_volume_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,

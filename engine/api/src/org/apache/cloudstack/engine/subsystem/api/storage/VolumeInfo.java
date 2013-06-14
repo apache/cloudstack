@@ -23,21 +23,21 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 
 public interface VolumeInfo extends DataObject, Volume {
-    public boolean isAttachedVM();
+    boolean isAttachedVM();
 
-    public void addPayload(Object data);
+    void addPayload(Object data);
 
-    public Object getpayload();
+    Object getpayload();
 
-    public HypervisorType getHypervisorType();
+    HypervisorType getHypervisorType();
 
-    public Long getLastPoolId();
+    Long getLastPoolId();
 
-    public String getAttachedVmName();
+    String getAttachedVmName();
 
-    public void processEventOnly(ObjectInDataStoreStateMachine.Event event);
+    void processEventOnly(ObjectInDataStoreStateMachine.Event event);
 
-    public void processEventOnly(ObjectInDataStoreStateMachine.Event event, Answer answer);
+    void processEventOnly(ObjectInDataStoreStateMachine.Event event, Answer answer);
 
-    public boolean stateTransit(Volume.Event event);
+    boolean stateTransit(Volume.Event event);
 }

@@ -194,7 +194,6 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     @Override
     public SnapshotInfo takeSnapshot(SnapshotInfo snapshot) {
         snapshot = snapshotSvr.takeSnapshot(snapshot).getSnashot();
-        // TODO: add async
         return this.backupSnapshot(snapshot);
     }
 

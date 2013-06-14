@@ -418,18 +418,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     }
 
     @Override
-    public boolean dettach() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean unmanaged() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public boolean maintain(DataStore dataStore) {
         storagePoolAutmation.maintain(dataStore);
         this.dataStoreHelper.maintain(dataStore);

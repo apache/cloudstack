@@ -27,15 +27,15 @@ import com.cloud.utils.fsm.StateDao;
 public interface VolumeDataStoreDao extends GenericDao<VolumeDataStoreVO, Long>,
         StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 
-    public List<VolumeDataStoreVO> listByStoreId(long id);
+    List<VolumeDataStoreVO> listByStoreId(long id);
 
-    public void deletePrimaryRecordsForStore(long id);
+    void deletePrimaryRecordsForStore(long id);
 
-    public VolumeDataStoreVO findByVolume(long volumeId);
+    VolumeDataStoreVO findByVolume(long volumeId);
 
-    public VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId);
+    VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId);
 
-    public VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId, boolean lock);
+    VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId, boolean lock);
 
-    public List<VolumeDataStoreVO> listDestroyed(long storeId);
+    List<VolumeDataStoreVO> listDestroyed(long storeId);
 }

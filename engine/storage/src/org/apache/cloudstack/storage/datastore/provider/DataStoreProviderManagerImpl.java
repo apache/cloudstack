@@ -57,12 +57,6 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         return providerMap.get(name);
     }
 
-    @Override
-    public List<DataStoreProvider> getDataStoreProviders() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     public List<StorageProviderResponse> getPrimaryDataStoreProviders() {
         List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
         for (DataStoreProvider provider : providerMap.values()) {

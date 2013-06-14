@@ -23,27 +23,26 @@ import java.util.Set;
 
 public interface DataStoreProvider {
     // constants for provider names
-    public static final String NFS_IMAGE = "NFS";
-    public static final String S3_IMAGE = "S3";
-    public static final String SWIFT_IMAGE = "Swift";
-    public static final String SAMPLE_IMAGE = "Sample";
+    static final String NFS_IMAGE = "NFS";
+    static final String S3_IMAGE = "S3";
+    static final String SWIFT_IMAGE = "Swift";
+    static final String SAMPLE_IMAGE = "Sample";
 
-    public static final String DEFAULT_PRIMARY = "DefaultPrimary";
+    static final String DEFAULT_PRIMARY = "DefaultPrimary";
 
-    public static enum DataStoreProviderType {
+    static enum DataStoreProviderType {
         PRIMARY, IMAGE, ImageCache
     }
 
-    public DataStoreLifeCycle getDataStoreLifeCycle();
+    DataStoreLifeCycle getDataStoreLifeCycle();
 
-    public DataStoreDriver getDataStoreDriver();
+    DataStoreDriver getDataStoreDriver();
 
-    public HypervisorHostListener getHostListener();
+    HypervisorHostListener getHostListener();
 
-    public String getName();
+    String getName();
 
-    public boolean configure(Map<String, Object> params);
+    boolean configure(Map<String, Object> params);
 
-    public Set<DataStoreProviderType> getTypes();
-
+    Set<DataStoreProviderType> getTypes();
 }

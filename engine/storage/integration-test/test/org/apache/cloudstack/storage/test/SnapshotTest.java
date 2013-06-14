@@ -26,6 +26,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import junit.framework.Assert;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -43,6 +45,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
@@ -351,7 +354,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         return volume;
     }
 
-    public VolumeInfo createCopyBaseImage() {
+    public VolumeInfo createCopyBaseImage() throws InterruptedException, ExecutionException {
         DataStore primaryStore = createPrimaryDataStore();
         primaryStoreId = primaryStore.getId();
         primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
@@ -361,45 +364,13 @@ public class SnapshotTest extends CloudStackTestNGBase {
                 this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
 
         VolumeApiResult result;
-        try {
-            result = future.get();
-            return result.getVolume();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
+        result = future.get();
+        Assert.assertTrue(result.isSuccess());
+        return result.getVolume();
+        
     }
 
-    @Test
-    public void createSnapshot() {
-        VolumeInfo vol = createCopyBaseImage();
-        SnapshotVO snapshotVO = createSnapshotInDb(vol);
-        SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
-        SnapshotInfo newSnapshot = null;
-        for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
-                newSnapshot = strategy.takeSnapshot(snapshot);
-            }
-        }
-        AssertJUnit.assertNotNull(newSnapshot);
-
-        LocalHostEndpoint ep = new MockLocalHostEndPoint();
-        ep.setResource(new MockLocalNfsSecondaryStorageResource());
-        Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(ep);
-
-        // delete snapshot
-        for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
-                strategy.deleteSnapshot(newSnapshot.getId());
-            }
-        }
-
-        Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(remoteEp);
-    }
+   
 
     private VMTemplateVO createTemplateInDb() {
         VMTemplateVO image = new VMTemplateVO();
@@ -424,7 +395,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
     }
 
     @Test
-    public void createVolumeFromSnapshot() {
+    public void createVolumeFromSnapshot() throws InterruptedException, ExecutionException {
         VolumeInfo vol = createCopyBaseImage();
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
@@ -440,11 +411,13 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
         VolumeVO volVO = createVolume(vol.getTemplateId(), vol.getPoolId());
         VolumeInfo newVol = this.volFactory.getVolume(volVO.getId());
-        this.volumeService.createVolumeFromSnapshot(newVol, newVol.getDataStore(), snapshot);
+        AsyncCallFuture<VolumeApiResult> volFuture = this.volumeService.createVolumeFromSnapshot(newVol, newVol.getDataStore(), snapshot);
+        VolumeApiResult apiResult = volFuture.get();
+        Assert.assertTrue(apiResult.isSuccess());
     }
 
     @Test
-    public void deleteSnapshot() {
+    public void deleteSnapshot() throws InterruptedException, ExecutionException {
         VolumeInfo vol = createCopyBaseImage();
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
@@ -466,7 +439,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
     }
 
     @Test
-    public void createTemplateFromSnapshot() {
+    public void createTemplateFromSnapshot() throws InterruptedException, ExecutionException {
         VolumeInfo vol = createCopyBaseImage();
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
@@ -482,10 +455,46 @@ public class SnapshotTest extends CloudStackTestNGBase {
         LocalHostEndpoint ep = new LocalHostEndpoint();
         ep.setResource(new MockLocalNfsSecondaryStorageResource());
         Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(ep);
-        VMTemplateVO templateVO = createTemplateInDb();
-        TemplateInfo tmpl = this.templateFactory.getTemplate(templateVO.getId(), DataStoreRole.Image);
-        DataStore imageStore = this.dataStoreMgr.getImageStore(this.dcId);
-        this.imageService.createTemplateFromSnapshotAsync(snapshot, tmpl, imageStore);
+
+        try {
+            VMTemplateVO templateVO = createTemplateInDb();
+            TemplateInfo tmpl = this.templateFactory.getTemplate(templateVO.getId(), DataStoreRole.Image);
+            DataStore imageStore = this.dataStoreMgr.getImageStore(this.dcId);
+            AsyncCallFuture<TemplateApiResult> templateFuture = this.imageService.createTemplateFromSnapshotAsync(snapshot, tmpl, imageStore);
+            TemplateApiResult apiResult = templateFuture.get();
+            Assert.assertTrue(apiResult.isSuccess());
+        } finally {
+            Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(remoteEp);
+        }
+    }
+    
+    @Test
+    public void createSnapshot() throws InterruptedException, ExecutionException {
+        VolumeInfo vol = createCopyBaseImage();
+        SnapshotVO snapshotVO = createSnapshotInDb(vol);
+        SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
+        SnapshotInfo newSnapshot = null;
+        for (SnapshotStrategy strategy : this.snapshotStrategies) {
+            if (strategy.canHandle(snapshot)) {
+                newSnapshot = strategy.takeSnapshot(snapshot);
+            }
+        }
+        AssertJUnit.assertNotNull(newSnapshot);
+
+        LocalHostEndpoint ep = new MockLocalHostEndPoint();
+        ep.setResource(new MockLocalNfsSecondaryStorageResource());
+        Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(ep);
+
+        try {
+            for (SnapshotStrategy strategy : this.snapshotStrategies) {
+                if (strategy.canHandle(snapshot)) {
+                    boolean res = strategy.deleteSnapshot(newSnapshot.getId());
+                    Assert.assertTrue(res);
+                }
+            }
+        } finally {
+            Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(remoteEp);
+        }
     }
 
 }

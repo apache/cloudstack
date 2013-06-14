@@ -23,24 +23,29 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 
 public interface DataObject {
-    public long getId();
+    long getId();
 
-    public String getUri();
+    String getUri();
 
-    public DataTO getTO();
+    DataTO getTO();
 
-    public DataStore getDataStore();
+    DataStore getDataStore();
 
-    public Long getSize();
+    Long getSize();
 
-    public DataObjectType getType();
+    DataObjectType getType();
 
-    // public DiskFormat getFormat();
-    public String getUuid();
+    String getUuid();
 
     boolean delete();
 
-    public void processEvent(ObjectInDataStoreStateMachine.Event event);
+    void processEvent(ObjectInDataStoreStateMachine.Event event);
 
-    public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer);
+    void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer);
+
+    void incRefCount();
+
+    void decRefCount();
+
+    Long getRefCount();
 }

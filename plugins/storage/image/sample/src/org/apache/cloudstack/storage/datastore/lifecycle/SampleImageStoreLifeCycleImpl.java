@@ -52,49 +52,31 @@ public class SampleImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisor) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean dettach() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean unmanaged() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean maintain(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean deleteDataStore(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 }

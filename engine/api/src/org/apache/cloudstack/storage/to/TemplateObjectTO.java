@@ -190,4 +190,10 @@ public class TemplateObjectTO implements DataTO {
     public void setSize(Long size) {
         this.size = size;
     }
+
+    @Override
+    public String toString() {
+        return new StringBuilder("TemplateTO[id=").append(id).append("|origUrl=").append(origUrl)
+                .append("|name").append(name).append("]").toString();
+    }
 }

@@ -39,7 +39,6 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
 
-
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
         ImageStoreImpl imgStore = (ImageStoreImpl) store;
@@ -48,11 +47,9 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
                 details.get(ApiConstants.USERNAME), details.get(ApiConstants.KEY));
     }
 
-
     @Override
     public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
         throw new UnsupportedServiceException("Extract entity url is not yet supported for Swift image store provider");
     }
-
 
 }

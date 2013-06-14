@@ -451,6 +451,47 @@ public class VolumeObject implements VolumeInfo {
 
     }
 
+    public void incRefCount() {
+        if (this.dataStore == null) {
+            return;
+        }
+
+        if (this.dataStore.getRole() == DataStoreRole.Image ||
+                this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            VolumeDataStoreVO store = volumeStoreDao.findById(this.dataStore.getId());
+            store.incrRefCnt();
+            store.setLastUpdated(new Date());
+            volumeStoreDao.update(store.getId(), store);
+        }
+    }
+
+    @Override
+    public void decRefCount() {
+        if (this.dataStore == null) {
+            return;
+        }
+        if (this.dataStore.getRole() == DataStoreRole.Image ||
+                this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            VolumeDataStoreVO store = volumeStoreDao.findById(this.dataStore.getId());
+            store.decrRefCnt();
+            store.setLastUpdated(new Date());
+            volumeStoreDao.update(store.getId(), store);
+        }
+    }
+
+    @Override
+    public Long getRefCount() {
+        if (this.dataStore == null) {
+            return null;
+        }
+        if (this.dataStore.getRole() == DataStoreRole.Image ||
+                this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            VolumeDataStoreVO store = volumeStoreDao.findById(this.dataStore.getId());
+            return store.getRefCnt();
+        }
+        return null;
+    }
+
     @Override
     public void processEventOnly(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {

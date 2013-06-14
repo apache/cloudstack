@@ -19,9 +19,9 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 public interface StorageCacheManager {
-    public DataStore getCacheStorage(Scope scope);
+    DataStore getCacheStorage(Scope scope);
 
-    public DataObject createCacheObject(DataObject data, Scope scope);
+    DataObject createCacheObject(DataObject data, Scope scope);
 
     /**
      * only create cache object in db
@@ -33,4 +33,8 @@ public interface StorageCacheManager {
     DataObject getCacheObject(DataObject data, Scope scope);
 
     boolean deleteCacheObject(DataObject data);
+
+    boolean releaseCacheObject(DataObject data);
+
+    DataObject createCacheObject(DataObject data, DataStore store);
 }

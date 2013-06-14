@@ -80,6 +80,9 @@ public class ImageStoreVO implements ImageStore {
     @Column(name = "total_size")
     private Long totalSize;
 
+    @Column(name = "used_bytes")
+    private Long usedBytes;
+
     public DataStoreRole getRole() {
         return role;
     }
@@ -180,4 +183,11 @@ public class ImageStoreVO implements ImageStore {
         this.totalSize = totalSize;
     }
 
+    public Long getUsedBytes() {
+        return usedBytes;
+    }
+
+    public void setUsedBytes(Long usedBytes) {
+        this.usedBytes = usedBytes;
+    }
 }

@@ -172,10 +172,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 EndPoint ep = selector.select(srcData, destData);
                 answer = ep.sendMessage(cmd);
             }
-            // clean up cache entry in case of failure
-            if (answer == null || !answer.getResult()) {
-                if (cacheData != null) {
+            if (cacheData != null) {
+                if (answer == null || !answer.getResult()) {
                     cacheMgr.deleteCacheObject(cacheData);
+                } else {
+                    cacheMgr.releaseCacheObject(cacheData);
                 }
             }
             return answer;
@@ -191,8 +192,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected DataObject cacheSnapshotChain(SnapshotInfo snapshot) {
         DataObject leafData = null;
+        DataStore store = cacheMgr.getCacheStorage(snapshot.getDataStore().getScope());
         while (snapshot != null) {
-            DataObject cacheData = cacheMgr.createCacheObject(snapshot, snapshot.getDataStore().getScope());
+            DataObject cacheData = cacheMgr.createCacheObject(snapshot, store);
             if (leafData == null) {
                 leafData = cacheData;
             }
@@ -202,7 +204,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected void deleteSnapshotCacheChain(SnapshotInfo snapshot) {
-
+       while (snapshot != null) {
+           cacheMgr.deleteCacheObject(snapshot);
+           snapshot = snapshot.getParent();
+       }
     }
 
     protected Answer copyVolumeFromSnapshot(DataObject snapObj, DataObject volObj) {

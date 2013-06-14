@@ -29,11 +29,6 @@ import org.springframework.stereotype.Component;
 public class SolidfirePrimaryDataStoreProvider implements PrimaryDataStoreProvider {
     private final String name = "Solidfire Primary Data Store Provider";
 
-    public SolidfirePrimaryDataStoreProvider() {
-
-        // TODO Auto-generated constructor stub
-    }
-
     @Override
     public String getName() {
         return name;
@@ -41,31 +36,26 @@ public class SolidfirePrimaryDataStoreProvider implements PrimaryDataStoreProvid
 
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public DataStoreDriver getDataStoreDriver() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public HypervisorHostListener getHostListener() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        // TODO Auto-generated method stub
         return null;
     }
 

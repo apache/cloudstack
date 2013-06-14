@@ -22,7 +22,7 @@ import com.cloud.storage.ScopeType;
 
 public interface ImageStoreProvider extends DataStoreProvider {
 
-    public boolean isScopeSupported(ScopeType scope);
+    boolean isScopeSupported(ScopeType scope);
 
-    public boolean needDownloadSysTemplate();
+    boolean needDownloadSysTemplate();
 }

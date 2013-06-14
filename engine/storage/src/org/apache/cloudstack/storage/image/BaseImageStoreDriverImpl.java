@@ -67,26 +67,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     EndPointSelector _epSelector;
 
     @Override
-    public String grantAccess(DataObject data, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public DataTO getTO(DataObject data) {
-        return null;
-    }
-
-
-    @Override
-    public boolean revokeAccess(DataObject data, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public Set<DataObject> listObjects(DataStore store) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -202,8 +183,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-
-
     @Override
     public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
         DeleteCommand cmd = new DeleteCommand(data.getTO());
@@ -224,21 +203,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        // TODO Auto-generated method stub
-
     }
-
-
 }

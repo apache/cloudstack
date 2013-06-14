@@ -576,8 +576,6 @@ public class TemplateServiceImpl implements TemplateService {
             if (result.isFailed()) {
                 res.setResult(result.getResult());
                 destTemplate.processEvent(Event.OperationFailed);
-                // remove entry from template_store_ref
-                destTemplate.getDataStore().delete(destTemplate);
             } else {
                 destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
             }

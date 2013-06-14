@@ -44,8 +44,6 @@ public class SampleImageStoreProviderImpl implements ImageStoreProvider {
     protected ImageStoreDriver driver;
     @Inject
     ImageStoreProviderManager storeMgr;
-    long id;
-    String uuid;
 
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {

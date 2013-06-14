@@ -40,8 +40,6 @@ public class SamplePrimaryDatastoreProviderImpl implements PrimaryDataStoreProvi
     PrimaryDataStoreProviderManager storeMgr;
 
     protected DataStoreLifeCycle lifecycle;
-    protected String uuid;
-    protected long id;
 
     @Override
     public String getName() {

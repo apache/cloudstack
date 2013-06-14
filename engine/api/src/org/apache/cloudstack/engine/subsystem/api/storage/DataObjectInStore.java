@@ -21,13 +21,13 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import com.cloud.utils.fsm.StateObject;
 
 public interface DataObjectInStore extends StateObject<ObjectInDataStoreStateMachine.State> {
-    public String getInstallPath();
+    String getInstallPath();
 
-    public void setInstallPath(String path);
+    void setInstallPath(String path);
 
-    public long getObjectId();
+    long getObjectId();
 
-    public long getDataStoreId();
+    long getDataStoreId();
 
-    public ObjectInDataStoreStateMachine.State getObjectInStoreState();
+    ObjectInDataStoreStateMachine.State getObjectInStoreState();
 }

@@ -47,5 +47,5 @@ public interface StoragePoolAllocator extends Adapter {
     List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
             DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
 
-    public static int RETURN_UPTO_ALL = -1;
+    static int RETURN_UPTO_ALL = -1;
 }

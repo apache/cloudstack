@@ -35,7 +35,6 @@ public final class CreateObjectCommand extends Command implements StorageSubSyst
 
     @Override
     public boolean executeInSequence() {
-        // TODO Auto-generated method stub
         return false;
     }
 

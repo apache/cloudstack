@@ -25,6 +25,7 @@ public class ZoneScope extends AbstractScope {
     private Long zoneId;
 
     public ZoneScope(Long zoneId) {
+        super();
         this.zoneId = zoneId;
     }
 

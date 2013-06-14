@@ -168,19 +168,16 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public boolean isHypervisorSupported(HypervisorType hypervisor) {
-        // TODO Auto-generated method stub
         return true;
     }
 
     @Override
     public boolean isLocalStorageSupported() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean isVolumeDiskTypeSupported(DiskFormat diskType) {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -216,13 +213,11 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public SnapshotInfo getSnapshot(long snapshotId) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public DiskFormat getDefaultDiskType() {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -288,8 +283,8 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     }
 
     @Override
-    public long getAvailableBytes() {
-        return this.pdsv.getAvailableBytes();
+    public long getUsedBytes() {
+        return this.pdsv.getUsedBytes();
     }
 
     @Override

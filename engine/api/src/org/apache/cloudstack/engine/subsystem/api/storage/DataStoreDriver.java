@@ -18,32 +18,23 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import java.util.Set;
-
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-
 public interface DataStoreDriver {
-    public String grantAccess(DataObject data, EndPoint ep);
+    void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
 
-    public boolean revokeAccess(DataObject data, EndPoint ep);
+    void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback);
 
-    public Set<DataObject> listObjects(DataStore store);
+    void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
 
-    public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
+    boolean canCopy(DataObject srcData, DataObject destData);
 
-    public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback);
+    void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
 
-    public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
+    DataTO getTO(DataObject data);
 
-    public boolean canCopy(DataObject srcData, DataObject destData);
-
-    public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
-
-    public DataTO getTO(DataObject data);
-
-    public DataStoreTO getStoreTO(DataStore store);
+    DataStoreTO getStoreTO(DataStore store);
 }

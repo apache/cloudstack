@@ -82,6 +82,7 @@ public class AgentShell implements IAgentShell, Daemon {
     private int _pingRetries;
     private final List<Agent> _agents = new ArrayList<Agent>();
 
+
     public AgentShell() {
     }
 

@@ -66,7 +66,6 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
         ImageStoreProvider provider = (ImageStoreProvider) providerManager.getDataStoreProvider(providerName);
         ImageStoreEntity imgStore = ImageStoreImpl
                 .getDataStore(dataStore, driverMaps.get(provider.getName()), provider);
-        // TODO Auto-generated method stub
         return imgStore;
     }
 

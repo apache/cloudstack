@@ -259,6 +259,48 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public void incRefCount() {
+        if (this.dataStore == null) {
+            return;
+        }
+
+        if (this.dataStore.getRole() == DataStoreRole.Image ||
+                this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO store = templateStoreDao.findById(this.dataStore.getId());
+            store.incrRefCnt();
+            store.setLastUpdated(new Date());
+            templateStoreDao.update(store.getId(), store);
+        }
+    }
+
+    @Override
+    public void decRefCount() {
+        if (this.dataStore == null) {
+            return;
+        }
+        if (this.dataStore.getRole() == DataStoreRole.Image ||
+                this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO store = templateStoreDao.findById(this.dataStore.getId());
+            store.decrRefCnt();
+            store.setLastUpdated(new Date());
+            templateStoreDao.update(store.getId(), store);
+        }
+    }
+
+    @Override
+    public Long getRefCount() {
+        if (this.dataStore == null) {
+            return null;
+        }
+        if (this.dataStore.getRole() == DataStoreRole.Image ||
+                this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO store = templateStoreDao.findById(this.dataStore.getId());
+            return store.getRefCnt();
+        }
+        return null;
+    }
+
+    @Override
     public DataTO getTO() {
         DataTO to = null;
         if (this.dataStore == null) {

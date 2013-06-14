@@ -27,6 +27,7 @@ public class ClusterScope extends AbstractScope {
     private Long zoneId;
 
     public ClusterScope(Long clusterId, Long podId, Long zoneId) {
+        super();
         this.clusterId = clusterId;
         this.podId = podId;
         this.zoneId = zoneId;

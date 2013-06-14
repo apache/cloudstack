@@ -92,6 +92,9 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
+    @Column(name = "ref_cnt")
+    Long refCnt;
+
     public String getInstallPath() {
         return installPath;
     }
@@ -241,5 +244,17 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public void setParentSnapshotId(long parentSnapshotId) {
         this.parentSnapshotId = parentSnapshotId;
+    }
+
+    public Long getRefCnt() {
+        return refCnt;
+    }
+
+    public void incrRefCnt() {
+        this.refCnt++;
+    }
+
+    public void decrRefCnt() {
+        this.refCnt--;
     }
 }

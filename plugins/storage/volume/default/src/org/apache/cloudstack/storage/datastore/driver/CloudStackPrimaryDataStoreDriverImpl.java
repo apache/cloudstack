@@ -18,27 +18,6 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.util.Set;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
@@ -58,6 +37,16 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
 
 public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(CloudStackPrimaryDataStoreDriverImpl.class);
@@ -85,31 +74,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     EndPointSelector epSelector;
 
     @Override
-    public String grantAccess(DataObject data, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public DataTO getTO(DataObject data) {
         return null;
     }
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean revokeAccess(DataObject data, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public Set<DataObject> listObjects(DataStore store) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -126,7 +96,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        // TODO Auto-generated method stub
         String errMsg = null;
         Answer answer = null;
         if (data.getType() == DataObjectType.VOLUME) {
@@ -168,13 +137,10 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -205,8 +171,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

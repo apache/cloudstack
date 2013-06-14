@@ -25,15 +25,15 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 
 public interface PrimaryDataStoreInfo extends StoragePool {
-    public boolean isHypervisorSupported(HypervisorType hypervisor);
+    boolean isHypervisorSupported(HypervisorType hypervisor);
 
-    public boolean isLocalStorageSupported();
+    boolean isLocalStorageSupported();
 
-    public boolean isVolumeDiskTypeSupported(DiskFormat diskType);
+    boolean isVolumeDiskTypeSupported(DiskFormat diskType);
 
-    public String getUuid();
+    String getUuid();
 
-    public StoragePoolType getPoolType();
+    StoragePoolType getPoolType();
 
-    public PrimaryDataStoreLifeCycle getLifeCycle();
+    PrimaryDataStoreLifeCycle getLifeCycle();
 }

@@ -111,6 +111,9 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
+    @Column(name = "ref_cnt")
+    Long refCnt;
+
     public String getInstallPath() {
         return installPath;
     }
@@ -189,6 +192,7 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
         this.dataStoreId = hostId;
         this.volumeId = volumeId;
         this.state = ObjectInDataStoreStateMachine.State.Allocated;
+        this.refCnt = 0L;
     }
 
     public VolumeDataStoreVO(long hostId, long volumeId, Date lastUpdated, int downloadPercent, Status downloadState,
@@ -207,10 +211,11 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
         this.installPath = installPath;
         this.setDownloadUrl(downloadUrl);
         this.checksum = checksum;
+        this.refCnt = 0L;
     }
 
     public VolumeDataStoreVO() {
-
+        this.refCnt = 0L;
     }
 
     public void setLocalDownloadPath(String localPath) {
@@ -326,6 +331,18 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     @Override
     public State getObjectInStoreState() {
         return this.state;
+    }
+
+    public Long getRefCnt() {
+        return refCnt;
+    }
+
+    public void incrRefCnt() {
+        this.refCnt++;
+    }
+
+    public void decrRefCnt() {
+        this.refCnt--;
     }
 
 }

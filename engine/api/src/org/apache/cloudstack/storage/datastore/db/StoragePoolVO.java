@@ -71,8 +71,8 @@ public class StoragePoolVO implements StoragePool {
     @Column(name = "pod_id", updatable = true)
     private Long podId;
 
-    @Column(name = "available_bytes", updatable = true, nullable = true)
-    private long availableBytes;
+    @Column(name = "used_bytes", updatable = true, nullable = true)
+    private long usedBytes;
 
     @Column(name = "capacity_bytes", updatable = true, nullable = true)
     private long capacityBytes;
@@ -126,7 +126,7 @@ public class StoragePoolVO implements StoragePool {
         this.uuid = uuid;
         this.poolType = type;
         this.dataCenterId = dataCenterId;
-        this.availableBytes = availableBytes;
+        this.usedBytes = availableBytes;
         this.capacityBytes = capacityBytes;
         this.hostAddress = hostAddress;
         this.path = hostPath;
@@ -136,7 +136,7 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public StoragePoolVO(StoragePoolVO that) {
-        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.availableBytes,
+        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.usedBytes,
                 that.capacityBytes, that.hostAddress, that.port, that.path);
     }
 
@@ -181,8 +181,8 @@ public class StoragePoolVO implements StoragePool {
         return dataCenterId;
     }
 
-    public long getAvailableBytes() {
-        return availableBytes;
+    public long getUsedBytes() {
+        return usedBytes;
     }
 
     public String getStorageProviderName() {
@@ -197,8 +197,8 @@ public class StoragePoolVO implements StoragePool {
         return capacityBytes;
     }
 
-    public void setAvailableBytes(long available) {
-        availableBytes = available;
+    public void setUsedBytes(long available) {
+        usedBytes = available;
     }
 
     public void setCapacityBytes(long capacity) {

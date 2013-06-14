@@ -71,7 +71,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     private int downloadPercent;
 
     @Column(name = "size")
-    private long size;
+    private Long size;
 
     @Column(name = "physical_size")
     private long physicalSize;
@@ -112,11 +112,15 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
+    @Column(name = "ref_cnt")
+    Long refCnt;
+
     public TemplateDataStoreVO(Long hostId, long templateId) {
         super();
         this.dataStoreId = hostId;
         this.templateId = templateId;
         this.state = ObjectInDataStoreStateMachine.State.Allocated;
+        this.refCnt = 0L;
     }
 
     public TemplateDataStoreVO(Long hostId, long templateId, Date lastUpdated, int downloadPercent,
@@ -131,6 +135,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         this.localDownloadPath = localDownloadPath;
         this.errorString = errorString;
         this.jobId = jobId;
+        this.refCnt = 0L;
         this.installPath = installPath;
         this.setDownloadUrl(downloadUrl);
         switch (downloadState) {
@@ -156,7 +161,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public TemplateDataStoreVO() {
-
+        this.refCnt = 0L;
     }
 
     @Override
@@ -350,6 +355,18 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public void setDataStoreRole(DataStoreRole dataStoreRole) {
         this.dataStoreRole = dataStoreRole;
+    }
+
+    public Long getRefCnt() {
+        return refCnt;
+    }
+
+    public void incrRefCnt() {
+        this.refCnt++;
+    }
+
+    public void decrRefCnt() {
+        this.refCnt--;
     }
 
 }

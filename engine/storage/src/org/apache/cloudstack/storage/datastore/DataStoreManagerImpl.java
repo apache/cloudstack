@@ -55,11 +55,6 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
-    public DataStore registerDataStore(Map<String, String> params, String providerUuid) {
-        return null;
-    }
-
-    @Override
     public DataStore getDataStore(String uuid, DataStoreRole role) {
         if (role == DataStoreRole.Primary) {
             return primaryStorMgr.getPrimaryDataStore(uuid);
@@ -82,11 +77,6 @@ public class DataStoreManagerImpl implements DataStoreManager {
         }
         Collections.shuffle(stores);
         return stores.get(0);
-    }
-
-    @Override
-    public List<DataStore> getImageStoresByProvider(String provider) {
-        return imageDataStoreMgr.listImageStoreByProvider(provider);
     }
 
     @Override

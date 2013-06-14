@@ -120,9 +120,6 @@ public class VolumeServiceImpl implements VolumeService {
         private final DataObject volume;
         private final AsyncCallFuture<VolumeApiResult> future;
 
-        /**
-         * @param callback
-         */
         public CreateVolumeContext(AsyncCompletionCallback<T> callback, DataObject volume,
                 AsyncCallFuture<VolumeApiResult> future) {
             super(callback);
@@ -178,9 +175,6 @@ public class VolumeServiceImpl implements VolumeService {
         private final VolumeObject volume;
         private final AsyncCallFuture<VolumeApiResult> future;
 
-        /**
-         * @param callback
-         */
         public DeleteVolumeContext(AsyncCompletionCallback<T> callback, VolumeObject volume,
                 AsyncCallFuture<VolumeApiResult> future) {
             super(callback);
@@ -266,17 +260,7 @@ public class VolumeServiceImpl implements VolumeService {
 
     @Override
     public VolumeEntity getVolumeEntity(long volumeId) {
-        VolumeVO vo = volDao.findById(volumeId);
-        if (vo == null) {
-            return null;
-        }
-
-        if (vo.getPoolId() == null) {
-            return new VolumeEntityImpl(VolumeObject.getVolumeObject(null, vo), this);
-        } else {
-            PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(vo.getPoolId());
-            return new VolumeEntityImpl(dataStore.getVolume(volumeId), this);
-        }
+        return null;
     }
 
     class CreateBaseImageContext<T> extends AsyncRpcConext<T> {
@@ -313,15 +297,6 @@ public class VolumeServiceImpl implements VolumeService {
             return this.future;
         }
 
-    }
-
-    static class CreateBaseImageResult extends CommandResult {
-        final TemplateInfo template;
-
-        public CreateBaseImageResult(TemplateInfo template) {
-            super();
-            this.template = template;
-        }
     }
 
     private TemplateInfo waitForTemplateDownloaded(PrimaryDataStore store, TemplateInfo template) {
@@ -571,9 +546,6 @@ public class VolumeServiceImpl implements VolumeService {
         final VolumeInfo destVolume;
         final AsyncCallFuture<VolumeApiResult> future;
 
-        /**
-         * @param callback
-         */
         public CopyVolumeContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<VolumeApiResult> future,
                 VolumeInfo srcVolume, VolumeInfo destVolume, DataStore destStore) {
             super(callback);
@@ -845,9 +817,6 @@ public class VolumeServiceImpl implements VolumeService {
         final Map<VolumeInfo, DataStore> volumeToPool;
         final AsyncCallFuture<CommandResult> future;
 
-        /**
-         * @param callback
-         */
         public MigrateVmWithVolumesContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CommandResult> future,
                 Map<VolumeInfo, DataStore> volumeToPool) {
             super(callback);

@@ -74,7 +74,7 @@ public class SnapshotCommandTest {
             return 0L;
         };
 
-        public long getAvailableBytes() {
+        public long getUsedBytes() {
             return 0L;
         };
 

@@ -16,10 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.motion;
+package org.apache.cloudstack.storage.cache.manager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
-public interface DataMotionDriver {
-    public void copy(DataObject srcObj, DataObject destObj);
+public interface StorageCacheReplacementAlgorithm {
+    DataObject chooseOneToBeReplaced(DataStore store);
 }

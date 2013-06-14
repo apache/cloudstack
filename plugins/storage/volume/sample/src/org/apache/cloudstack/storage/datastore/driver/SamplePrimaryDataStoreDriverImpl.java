@@ -16,35 +16,20 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.net.URISyntaxException;
-import java.util.Set;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcConext;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.datastore.DataObjectManager;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.storage.encoding.DecodedDataObject;
-import com.cloud.utils.storage.encoding.Decoder;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.datastore.DataObjectManager;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
 
 public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(SamplePrimaryDataStoreDriverImpl.class);
@@ -66,25 +51,15 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     private class CreateVolumeContext<T> extends AsyncRpcConext<T> {
         private final DataObject volume;
-
-        /**
-         * @param callback
-         */
         public CreateVolumeContext(AsyncCompletionCallback<T> callback, DataObject volume) {
             super(callback);
             this.volume = volume;
         }
-
-        public DataObject getVolume() {
-            return this.volume;
-        }
-
     }
 
     public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback,
@@ -183,74 +158,24 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     }
 
     @Override
-    public String grantAccess(DataObject object, EndPoint ep) {
-        // StoragePoolHostVO poolHost =
-        // storeHostDao.findByPoolHost(object.getDataStore().getId(),
-        // ep.getId());
-
-        String uri = object.getUri();
-        try {
-            DecodedDataObject obj = Decoder.decode(uri);
-            if (obj.getPath() == null) {
-                // create an obj
-                EndPoint newEp = selector.select(object);
-                CreateObjectCommand createCmd = new CreateObjectCommand(null);
-                CreateObjectAnswer answer = (CreateObjectAnswer) ep.sendMessage(createCmd);
-                if (answer.getResult()) {
-                    // dataObjMgr.update(object, answer.getPath(),
-                    // answer.getSize());
-                } else {
-                    s_logger.debug("failed to create object" + answer.getDetails());
-                    throw new CloudRuntimeException("failed to create object" + answer.getDetails());
-                }
-            }
-
-            return object.getUri();
-        } catch (URISyntaxException e) {
-            throw new CloudRuntimeException("uri parsed error", e);
-        }
-    }
-
-    @Override
-    public boolean revokeAccess(DataObject vol, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public Set<DataObject> listObjects(DataStore store) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
-        // TODO Auto-generated method stub
-
     }
 
 }

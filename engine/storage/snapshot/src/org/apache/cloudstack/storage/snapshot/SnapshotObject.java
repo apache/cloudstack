@@ -22,6 +22,7 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -273,6 +274,47 @@ public class SnapshotObject implements SnapshotInfo {
         this.processEvent(event);
     }
 
+    public void incRefCount() {
+        if (this.store == null) {
+            return;
+        }
+
+        if (this.store.getRole() == DataStoreRole.Image ||
+                this.store.getRole() == DataStoreRole.ImageCache) {
+            SnapshotDataStoreVO store = snapshotStoreDao.findById(this.store.getId());
+            store.incrRefCnt();
+            store.setLastUpdated(new Date());
+            snapshotStoreDao.update(store.getId(), store);
+        }
+    }
+
+    @Override
+    public void decRefCount() {
+        if (this.store == null) {
+            return;
+        }
+        if (this.store.getRole() == DataStoreRole.Image ||
+                this.store.getRole() == DataStoreRole.ImageCache) {
+            SnapshotDataStoreVO store = snapshotStoreDao.findById(this.store.getId());
+            store.decrRefCnt();
+            store.setLastUpdated(new Date());
+            snapshotStoreDao.update(store.getId(), store);
+        }
+    }
+
+    @Override
+    public Long getRefCount() {
+        if (this.store == null) {
+            return null;
+        }
+        if (this.store.getRole() == DataStoreRole.Image ||
+                this.store.getRole() == DataStoreRole.ImageCache) {
+            SnapshotDataStoreVO store = snapshotStoreDao.findById(this.store.getId());
+            return store.getRefCnt();
+        }
+        return null;
+    }
+
     @Override
     public ObjectInDataStoreStateMachine.State getStatus() {
         return this.objectInStoreMgr.findObject(this, store).getObjectInStoreState();
@@ -280,8 +322,6 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public void addPayload(Object data) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

@@ -26,13 +26,13 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 
 public interface DataMotionStrategy {
-    public boolean canHandle(DataObject srcData, DataObject destData);
+    boolean canHandle(DataObject srcData, DataObject destData);
 
-    public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
+    boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
 
-    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
+    Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
 
-    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
+    Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
             AsyncCompletionCallback<CopyCommandResult> callback);
 
 }

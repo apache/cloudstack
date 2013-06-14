@@ -29,8 +29,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.host.Host;
 
 public interface VolumeService {
-
-    public class VolumeApiResult extends CommandResult {
+    class VolumeApiResult extends CommandResult {
         private final VolumeInfo volume;
 
         public VolumeApiResult(VolumeInfo volume) {

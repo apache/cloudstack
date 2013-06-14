@@ -16,12 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -33,12 +32,9 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageStoreLifeCycle;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.Discoverer;
-import com.cloud.resource.ResourceManager;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
+import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
@@ -51,16 +47,6 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     ImageStoreHelper imageStoreHelper;
     @Inject
     ImageStoreProviderManager imageStoreMgr;
-
-    protected List<? extends Discoverer> _discoverers;
-
-    public List<? extends Discoverer> getDiscoverers() {
-        return _discoverers;
-    }
-
-    public void setDiscoverers(List<? extends Discoverer> _discoverers) {
-        this._discoverers = _discoverers;
-    }
 
     public SwiftImageStoreLifeCycleImpl() {
     }
@@ -99,50 +85,32 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
-        // TODO Auto-generated method stub
         return false;
     }
 
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean dettach() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean unmanaged() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean maintain(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean deleteDataStore(DataStore store) {
-        // TODO Auto-generated method stub
         return false;
     }
 }

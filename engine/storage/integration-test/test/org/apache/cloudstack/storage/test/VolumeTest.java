@@ -26,6 +26,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import junit.framework.Assert;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -39,6 +41,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
@@ -237,6 +240,7 @@ public class VolumeTest extends CloudStackTestNGBase {
         TemplateObjectTO to = new TemplateObjectTO();
         to.setPath(this.getImageInstallPath());
         to.setFormat(ImageFormat.VHD);
+        to.setSize(100L);
         CopyCmdAnswer answer = new CopyCmdAnswer(to);
         templateOnStore.processEvent(Event.CreateOnlyRequested);
         templateOnStore.processEvent(Event.OperationSuccessed, answer);
@@ -335,57 +339,52 @@ public class VolumeTest extends CloudStackTestNGBase {
             AssertJUnit.assertTrue(result.isSuccess());
 
             VolumeInfo newVol = result.getVolume();
-            this.volumeService.destroyVolume(newVol.getId());
+            boolean res = this.volumeService.destroyVolume(newVol.getId());
+            Assert.assertTrue(res);
             VolumeInfo vol = this.volFactory.getVolume(volume.getId());
-            this.volumeService.expungeVolumeAsync(vol);
+            future = this.volumeService.expungeVolumeAsync(vol);
+            result = future.get();
+            Assert.assertTrue(result.isSuccess());
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Assert.fail(e.toString());
         } catch (ExecutionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Assert.fail(e.toString());
         } catch (ConcurrentOperationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Assert.fail(e.toString());
         }
     }
 
     @Test
-    public void testCreateDataDisk() {
-        DataStore primaryStore = createPrimaryDataStore();
-        primaryStoreId = primaryStore.getId();
-        primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
-        VolumeVO volume = createVolume(null, primaryStore.getId());
-        VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
-        this.volumeService.createVolumeAsync(volInfo, primaryStore);
-    }
-
-    @Test
-    public void testDeleteDisk() {
+    public void testCreateDataDisk() throws InterruptedException, ExecutionException {
         DataStore primaryStore = createPrimaryDataStore();
         primaryStoreId = primaryStore.getId();
         primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
         VolumeVO volume = createVolume(null, primaryStore.getId());
         VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeAsync(volInfo, primaryStore);
-        try {
-            VolumeApiResult result = future.get();
-            VolumeInfo vol = result.getVolume();
+        VolumeApiResult result = future.get();
+        Assert.assertTrue(result.isSuccess());
+    }
 
-            this.volumeService.destroyVolume(volInfo.getId());
-            volInfo = this.volFactory.getVolume(vol.getId());
-            this.volumeService.expungeVolumeAsync(volInfo);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ConcurrentOperationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    @Test
+    public void testDeleteDisk() throws InterruptedException, ExecutionException, ConcurrentOperationException {
+        DataStore primaryStore = createPrimaryDataStore();
+        primaryStoreId = primaryStore.getId();
+        primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
+        VolumeVO volume = createVolume(null, primaryStore.getId());
+        VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
+        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeAsync(volInfo, primaryStore);
 
+        VolumeApiResult result = future.get();
+        Assert.assertTrue(result.isSuccess());
+        VolumeInfo vol = result.getVolume();
+
+        boolean res = this.volumeService.destroyVolume(volInfo.getId());
+        Assert.assertTrue(res);
+        volInfo = this.volFactory.getVolume(vol.getId());
+        future = this.volumeService.expungeVolumeAsync(volInfo);
+        result = future.get();
+        Assert.assertTrue(result.isSuccess());
     }
 
     private VMTemplateVO createTemplateInDb() {
@@ -411,30 +410,24 @@ public class VolumeTest extends CloudStackTestNGBase {
     }
 
     @Test
-    public void testCreateTemplateFromVolume() {
+    public void testCreateTemplateFromVolume() throws InterruptedException, ExecutionException {
         DataStore primaryStore = createPrimaryDataStore();
         primaryStoreId = primaryStore.getId();
         primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
         VolumeVO volume = createVolume(null, primaryStore.getId());
         VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeAsync(volInfo, primaryStore);
-        try {
-            VolumeApiResult result = future.get();
 
-            AssertJUnit.assertTrue(result.isSuccess());
-            volInfo = result.getVolume();
-            VMTemplateVO templateVO = createTemplateInDb();
-            TemplateInfo tmpl = this.templateFactory.getTemplate(templateVO.getId(), DataStoreRole.Image);
-            DataStore imageStore = this.dataStoreMgr.getImageStore(this.dcId);
+        VolumeApiResult result = future.get();
 
-            this.imageService.createTemplateFromVolumeAsync(volInfo, tmpl, imageStore);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        AssertJUnit.assertTrue(result.isSuccess());
+        volInfo = result.getVolume();
+        VMTemplateVO templateVO = createTemplateInDb();
+        TemplateInfo tmpl = this.templateFactory.getTemplate(templateVO.getId(), DataStoreRole.Image);
+        DataStore imageStore = this.dataStoreMgr.getImageStore(this.dcId);
 
+        AsyncCallFuture<TemplateApiResult> templateResult = this.imageService.createTemplateFromVolumeAsync(volInfo, tmpl, imageStore);
+        TemplateApiResult templateApiResult = templateResult.get();
+        Assert.assertTrue(templateApiResult.isSuccess());
     }
 }

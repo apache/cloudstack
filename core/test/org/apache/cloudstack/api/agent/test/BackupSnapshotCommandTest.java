@@ -83,7 +83,7 @@ public class BackupSnapshotCommandTest {
         };
 
         @Override
-        public long getAvailableBytes() {
+        public long getUsedBytes() {
             return 0L;
         };
 

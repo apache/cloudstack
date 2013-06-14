@@ -27,7 +27,7 @@ import com.cloud.storage.StoragePool;
 
 public interface TemplateService {
 
-    public class TemplateApiResult extends CommandResult {
+    class TemplateApiResult extends CommandResult {
         private final TemplateInfo template;
 
         public TemplateApiResult(TemplateInfo template) {

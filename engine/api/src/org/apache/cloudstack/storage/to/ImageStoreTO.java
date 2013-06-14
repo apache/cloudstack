@@ -46,9 +46,6 @@ public class ImageStoreTO implements DataStoreTO {
         return this.uri;
     }
 
-    /**
-     * @return the providerName
-     */
     public String getProviderName() {
         return providerName;
     }
@@ -72,5 +69,11 @@ public class ImageStoreTO implements DataStoreTO {
     @Override
     public DataStoreRole getRole() {
         return this.role;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder("ImageStoreTO[type=").append(type).append("|provider=").append(providerName)
+                .append("|role=").append(role).append("|uri=").append(uri).append("]").toString();
     }
 }
