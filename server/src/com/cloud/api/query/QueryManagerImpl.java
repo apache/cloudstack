@@ -1881,8 +1881,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<StoragePoolJoinVO>, Integer> searchForStoragePoolsInternal(ListStoragePoolsCmd cmd) {
 
-        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
-        String zoneType = cmd.getZoneType();
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());       
         Object id = cmd.getId();
         Object name = cmd.getStoragePoolName();
         Object path = cmd.getPath();
@@ -1901,8 +1900,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("path", sb.entity().getPath(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterType", sb.entity().getZoneType(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);        
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
@@ -1932,10 +1930,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
-        }
-        if (zoneType != null) {
-        	sc.setParameters("dataCenterType", zoneType);
-        }
+        }        
         if (pod != null) {
             sc.setParameters("podId", pod);
         }
