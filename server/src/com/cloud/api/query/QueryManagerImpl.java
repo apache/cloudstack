@@ -1544,8 +1544,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String type = cmd.getType();
         Map<String, String> tags = cmd.getTags();
 
-        Long zoneId = cmd.getZoneId();
-        String zoneType = cmd.getZoneType();
+        Long zoneId = cmd.getZoneId();        
         Long podId = null;
         if (_accountMgr.isAdmin(caller.getType())) {
             podId = cmd.getPodId();
@@ -1572,8 +1571,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterType", sb.entity().getDataCenterType(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);       
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
@@ -1632,10 +1630,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
-        }
-        if (zoneType != null) {
-        	sc.setParameters("dataCenterType", zoneType);
-        }
+        }        
         if (podId != null) {
             sc.setParameters("podId", podId);
         }
