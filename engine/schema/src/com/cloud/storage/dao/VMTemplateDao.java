@@ -30,8 +30,7 @@ import com.cloud.utils.fsm.StateDao;
 /*
  * Data Access Object for vm_templates table
  */
-public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>,
-        StateDao<TemplateState, TemplateEvent, VMTemplateVO> {
+public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 
     public List<VMTemplateVO> listByPublic();
 

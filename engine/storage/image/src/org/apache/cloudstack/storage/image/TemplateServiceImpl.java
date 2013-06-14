@@ -56,7 +56,6 @@ import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.image.manager.ImageDataManager;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
@@ -120,8 +119,6 @@ public class TemplateServiceImpl implements TemplateService {
     VMTemplatePoolDao _tmpltPoolDao;
     @Inject
     EndPointSelector _epSelector;
-    @Inject
-    ImageDataManager imageMgr;
     @Inject
     TemplateManager _tmpltMgr;
 
@@ -324,19 +321,6 @@ public class TemplateServiceImpl implements TemplateService {
                         VMTemplateVO tmlpt = _templateDao.findById(tmplt.getId());
                         tmlpt.setSize(tmpltInfo.getSize());
                         _templateDao.update(tmplt.getId(), tmlpt);
-                        // set template to ready state
-                        if (tmplt.getState() != TemplateState.Ready) {
-                            try {
-                                imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null,
-                                        _templateDao);
-                                imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null,
-                                        _templateDao);
-                            } catch (NoTransitionException e) {
-                                // non fatal though
-                                s_logger.debug(
-                                        "failed to update template " + tmplt.getUniqueName() + " state to Ready", e);
-                            }
-                        }
 
                         if (tmpltInfo.getSize() > 0 && tmplt.getUrl() != null) {
                             long accountId = tmplt.getAccountId();
@@ -370,18 +354,7 @@ public class TemplateServiceImpl implements TemplateService {
                     _templateDao.update(tmplt.getId(), tmlpt);
                     associateTemplateToZone(tmplt.getId(), zoneId);
 
-                    // set template to ready state
-                    if (tmplt.getState() != TemplateState.Ready) {
-                        try {
-                            imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null,
-                                    _templateDao);
-                            imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null,
-                                    _templateDao);
-                        } catch (NoTransitionException e) {
-                            // non fatal though
-                            s_logger.debug("failed to update template " + tmplt.getUniqueName() + " state to Ready", e);
-                        }
-                    }
+
                 }
             } else {
                 if (tmpltStore != null) {
@@ -623,16 +596,6 @@ public class TemplateServiceImpl implements TemplateService {
         long storeId = store.getId();
         List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
         for (VMTemplateVO tmplt : rtngTmplts) {
-            // set template ready state
-            if (tmplt.getState() != TemplateState.Ready) {
-                try {
-                    imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.CreateRequested, null, _templateDao);
-                    imageMgr.getStateMachine().transitTo(tmplt, TemplateEvent.OperationSucceeded, null, _templateDao);
-                } catch (NoTransitionException e) {
-                    // non fatal though
-                    s_logger.debug("failed to update system vm template state to Ready", e);
-                }
-            }
             TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
             if (tmpltStore == null) {
                 tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null,

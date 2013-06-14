@@ -42,7 +42,7 @@ import com.cloud.utils.fsm.StateObject;
 
 @Entity
 @Table(name = "vm_template")
-public class VMTemplateVO implements VirtualMachineTemplate, StateObject<TemplateState> {
+public class VMTemplateVO implements VirtualMachineTemplate {
     @Id
     @TableGenerator(name = "vm_template_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value",
             pkColumnValue = "vm_template_seq", allocationSize = 1)
@@ -133,9 +133,6 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
     @Column(name = "size")
     private Long size;
 
-    @Column(name = "state")
-    private TemplateState state;
-
     @Column(name = "update_count", updatable = true)
     protected long updatedCount;
 
@@ -157,7 +154,6 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
 
     public VMTemplateVO() {
         this.uuid = UUID.randomUUID().toString();
-        this.state = TemplateState.Allocated;
     }
 
     /**
@@ -171,7 +167,6 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
                 null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType,
                 details);
         this.uuid = UUID.randomUUID().toString();
-        this.state = TemplateState.Allocated;
     }
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured,
@@ -182,7 +177,6 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
                 displayText, enablePassword, guestOSId, bootable, hyperType, details);
         this.templateTag = templateTag;
         this.uuid = UUID.randomUUID().toString();
-        this.state = TemplateState.Allocated;
         this.enableSshKey = sshKeyEnabled;
     }
 
@@ -192,7 +186,6 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
             boolean bootable, HypervisorType hyperType) {
         VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, type, url, created,
                 requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType);
-        template.state = TemplateState.Ready;
         return template;
     }
 
@@ -219,7 +212,6 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
         this.bootable = bootable;
         this.hypervisorType = hyperType;
         this.uuid = UUID.randomUUID().toString();
-        this.state = TemplateState.Allocated;
     }
 
     // Has an extra attribute - isExtractable
@@ -530,10 +522,6 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
 
     public Long getSize() {
         return this.size;
-    }
-
-    public TemplateState getState() {
-        return this.state;
     }
 
     public long getUpdatedCount() {

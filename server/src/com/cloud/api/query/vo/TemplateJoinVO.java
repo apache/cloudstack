@@ -26,17 +26,12 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
-
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine;
 
 @Entity
 @Table(name="template_view")
@@ -240,9 +235,9 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="tag_customer")
     private String tagCustomer;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
-    private TemplateState state;
+    @Column(name = "state")
+    @Enumerated(EnumType.STRING)
+    ObjectInDataStoreStateMachine.State state;
 
     public TemplateJoinVO() {
     }
@@ -1021,16 +1016,15 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
 
-	public TemplateState getState() {
-		return state;
-	}
+    public ObjectInDataStoreStateMachine.State getState() {
+        return state;
+    }
 
 
 
-	public void setState(TemplateState state) {
-		this.state = state;
-	}
-
+    public void setState(ObjectInDataStoreStateMachine.State state) {
+        this.state = state;
+    }
 
 
 }

@@ -33,7 +33,6 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.image.manager.ImageDataManager;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 
@@ -57,8 +56,6 @@ public class TemplateObject implements TemplateInfo {
     private static final Logger s_logger = Logger.getLogger(TemplateObject.class);
     private VMTemplateVO imageVO;
     private DataStore dataStore;
-    @Inject
-    ImageDataManager imageMgr;
     @Inject
     VMTemplateDao imageDao;
     @Inject
@@ -155,12 +152,12 @@ public class TemplateObject implements TemplateInfo {
         return this.imageVO.getFormat();
     }
 
-    public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
-        this.imageVO = imageDao.findById(this.imageVO.getId());
-        boolean result = imageMgr.getStateMachine().transitTo(this.imageVO, e, null, imageDao);
-        this.imageVO = imageDao.findById(this.imageVO.getId());
-        return result;
-    }
+//    public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
+//        this.imageVO = imageDao.findById(this.imageVO.getId());
+//        boolean result = imageMgr.getStateMachine().transitTo(this.imageVO, e, null, imageDao);
+//        this.imageVO = imageDao.findById(this.imageVO.getId());
+//        return result;
+//    }
 
     @Override
     public void processEvent(Event event) {
@@ -178,9 +175,9 @@ public class TemplateObject implements TemplateInfo {
                     templEvent = TemplateEvent.OperationFailed;
                 }
 
-                if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
-                    this.stateTransit(templEvent);
-                }
+//                if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
+//                    this.stateTransit(templEvent);
+//                }
             }
 
             objectInStoreMgr.update(this, event);
@@ -241,9 +238,9 @@ public class TemplateObject implements TemplateInfo {
                     templEvent = TemplateEvent.OperationFailed;
                 }
 
-                if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
-                    this.stateTransit(templEvent);
-                }
+//                if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
+//                    this.stateTransit(templEvent);
+//                }
             }
             objectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {

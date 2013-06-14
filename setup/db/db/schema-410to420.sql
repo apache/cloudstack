@@ -1830,7 +1830,7 @@ CREATE VIEW `cloud`.`template_view` AS
         vm_template.display_text,
         vm_template.enable_password,
         vm_template.guest_os_id,
-        vm_template.state,
+        -- vm_template.state,
         guest_os.uuid guest_os_uuid,
         guest_os.display_name guest_os_name,
         vm_template.bootable,
@@ -1860,6 +1860,7 @@ CREATE VIEW `cloud`.`template_view` AS
         data_center.name data_center_name,
         launch_permission.account_id lp_account_id,
         template_store_ref.store_id,
+        template_store_ref.state,
         template_store_ref.download_state,
         template_store_ref.download_pct,
         template_store_ref.error_str,
@@ -1898,7 +1899,7 @@ CREATE VIEW `cloud`.`template_view` AS
             left join
         `cloud`.`data_center` ON template_zone_ref.zone_id = data_center.id
             left join
-        `cloud`.`image_store` ON image_store.data_center_id = data_center.id OR image_store.scope = 'REGION'
+        `cloud`.`image_store` ON image_store.removed is NULL AND (image_store.data_center_id = data_center.id OR image_store.scope = 'REGION')
             left join
         `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id AND template_store_ref.store_id = image_store.id
             left join

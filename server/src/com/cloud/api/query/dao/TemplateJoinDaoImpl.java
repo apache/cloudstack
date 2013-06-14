@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.TemplateZoneResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -103,7 +104,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         templateResponse.setDisplayText(template.getDisplayText());
         templateResponse.setPublic(template.isPublicTemplate());
         templateResponse.setCreated(template.getCreatedOnStore());
-        templateResponse.setReady(template.getState() == TemplateState.Ready);
+        templateResponse.setReady(template.getState() == ObjectInDataStoreStateMachine.State.Ready);
         templateResponse.setFeatured(template.isFeatured());
         templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM));
         templateResponse.setPasswordEnabled(template.isEnablePassword());
@@ -293,7 +294,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
         isoResponse.setCreated(iso.getCreatedOnStore());
-        isoResponse.setReady(iso.getState() == TemplateState.Ready);
+        if ( iso.getTemplateType() == TemplateType.PERHOST ){
+            // for xs-tools.iso and vmware-tools.iso, we didn't download, but is ready to use.
+            isoResponse.setReady(true);
+        }
+        else{
+            isoResponse.setReady(iso.getState() == ObjectInDataStoreStateMachine.State.Ready);
+        }
         isoResponse.setBootable(iso.isBootable());
         isoResponse.setFeatured(iso.isFeatured());
         isoResponse.setCrossZones(iso.isCrossZones());
