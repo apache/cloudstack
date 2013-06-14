@@ -159,7 +159,7 @@ public class TemplateLocation {
     public TemplateProp getTemplateInfo() {
         TemplateProp tmplInfo = new TemplateProp();
         tmplInfo.id = Long.parseLong(_props.getProperty("id"));
-        tmplInfo.installPath = _templatePath + File.separator + _props.getProperty("filename");
+        tmplInfo.installPath = _templatePath  + _props.getProperty("filename"); // _templatePath endsWith /
         if (_resourceType == ResourceType.VOLUME){
         	tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("volumes"));
         }else {
