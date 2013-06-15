@@ -3145,6 +3145,16 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             vlanIpMap.put(vlanTag, ipList);
         }
 
+        List<NicVO> nics = _nicDao.listByVmId(router.getId());
+        String baseMac = null;
+        for (NicVO nic : nics) {
+        	NetworkVO nw = _networkDao.findById(nic.getNetworkId());
+        	if (nw.getTrafficType() == TrafficType.Public) {
+        		baseMac = nic.getMacAddress();
+        		break;
+        	}
+        }
+
         for (Map.Entry<String, ArrayList<PublicIpAddress>> vlanAndIp : vlanIpMap.entrySet()) {
             List<PublicIpAddress> ipAddrList = vlanAndIp.getValue();
             // Source nat ip address should always be sent first
@@ -3176,7 +3186,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 String vlanId = ipAddr.getVlanTag();
                 String vlanGateway = ipAddr.getGateway();
                 String vlanNetmask = ipAddr.getNetmask();
-                String vifMacAddress = ipAddr.getMacAddress();
+                String vifMacAddress = null;
+                // For non-source nat IP, set the mac to be something based on first public nic's MAC
+                // We cannot depends on first ip because we need to deal with first ip of other nics
+                if (!ipAddr.isSourceNat() && ipAddr.getVlanId() != 0) {
+                	vifMacAddress = NetUtils.generateMacOnIncrease(baseMac, ipAddr.getVlanId());
+                } else {
+                	vifMacAddress = ipAddr.getMacAddress();
+                }
 
                 IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, 
                         sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, networkRate, ipAddr.isOneToOneNat());
@@ -3337,7 +3354,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         // password should be set only on default network element
         if (password != null && nic.isDefaultNic()) {
-            final String encodedPassword = PasswordGenerator.rot13(password);
+            String encodedPassword = PasswordGenerator.rot13(password);
+            // We would unset password for BACKUP router in the RvR, to prevent user from accidently reset the 
+            // password again after BACKUP become MASTER
+            if (router.getIsRedundantRouter() && router.getRedundantState() != RedundantState.MASTER) {
+            	encodedPassword = PasswordGenerator.rot13("saved_password");
+            }
             SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(nic.getNetworkId(), router.getId()));

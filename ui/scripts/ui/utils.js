@@ -23,7 +23,7 @@
 
     $($form.serializeArray()).each(function() {
       var dataItem = data[this.name];
-      var value = this.value.toString();
+      var value = _s(this.value.toString());
 
       if (options.escapeSlashes) {
         value = value.replace(/\//g, '__forwardSlash__');

@@ -99,7 +99,6 @@ class Services:
                      }
 
 
-@unittest.skip("Open questions")
 class TestCreateTemplate(cloudstackTestCase):
 
     def setUp(self):

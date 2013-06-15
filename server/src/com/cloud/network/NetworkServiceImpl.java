@@ -670,8 +670,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (network == null) {
             throw new InvalidParameterValueException("Invalid network id is given");
         }
-        accountId = network.getAccountId();
-        domainId = network.getDomainId();
+        accountId = ipOwner.getAccountId();
+        domainId = ipOwner.getDomainId();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
@@ -789,10 +789,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (dc.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Isolated) {
             //check PF or static NAT is configured on this ip address
             String secondaryIp = secIpVO.getIp4Address();
-            List<PortForwardingRuleVO> pfRuleList = _portForwardingDao.listByDestIpAddr(secondaryIp);
-            if (pfRuleList.size() != 0) {
-                s_logger.debug("VM nic IP " + secondaryIp + " is associated with the port forwarding rule");
-                throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is associate with the port forwarding rule");
+            List<FirewallRuleVO> fwRulesList =  _firewallDao.listByNetworkAndPurpose(network.getId(), Purpose.PortForwarding);
+
+            if (fwRulesList.size() != 0) {
+                for (FirewallRuleVO rule: fwRulesList) {
+                    if (_portForwardingDao.findByIdAndIp(rule.getId(), secondaryIp) != null) {
+                        s_logger.debug("VM nic IP " + secondaryIp + " is associated with the port forwarding rule");
+                        throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is associate with the port forwarding rule");
+                    }
+                }
             }
             //check if the secondary ip associated with any static nat rule
             IPAddressVO publicIpVO = _ipAddressDao.findByVmIp(secondaryIp);
@@ -1197,9 +1202,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     + Network.GuestType.Isolated + " with a service " + Service.SourceNat.getName() + " enabled");
         }
 
-        // Don't allow to specify vlan if the caller is a regular user
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (ntwkOff.getSpecifyVlan() || vlanId != null)) {
-            throw new InvalidParameterValueException("Regular user is not allowed to specify vlanId");
+        // Don't allow to specify vlan if the caller is not ROOT admin
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && (ntwkOff.getSpecifyVlan() || vlanId != null)) {
+            throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId");
         }
 
         if (ipv4) {
@@ -2658,7 +2663,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                      existingRanges.get(i).second(-1);
                  }
                 value = vnetMap.get((existingRanges.get(i).second()));
-                if (value != null) {
+                if (value != null && ( (existingRanges.get(i).second()) != (existingRanges.get(i).first()) )) {
                     vnetMap.remove((existingRanges.get(i).second()));
                     vnetMap.remove(existingRanges.get(i).first());
                     vnetMap.put(existingRanges.get(i).first(),value);
@@ -2680,9 +2685,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         vnetString = vnetString+vnetRange.first().toString()+"-"+value.toString()+";";
                     }
                }
-                vnetString = vnetString+"*";
-                vnetString = vnetString.replace(";*","");
-                network.setVnet(vnetString);
+               if (vnetString.length() > 0 && vnetString.charAt(vnetString.length()-1)==';') {
+                   vnetString = vnetString.substring(0, vnetString.length()-1);
+               }
+               network.setVnet(vnetString);
             }
 
             for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
@@ -2788,12 +2794,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         _datacneter_vnet.deleteRange(txn, network.getDataCenterId(), network.getId(), start, end);
 
         String vnetString="";
-        for (Pair<Integer,Integer> vnetRange : existingRanges ){
-            vnetString=vnetString+vnetRange.first().toString()+"-"+vnetRange.second().toString()+";";
+        if (existingRanges.isEmpty()) {
+            network.setVnet(null);
+        } else {
+            for (Pair<Integer,Integer> vnetRange : existingRanges ) {
+                vnetString=vnetString+vnetRange.first().toString()+"-"+vnetRange.second().toString()+";";
+            }
+            vnetString = vnetString.substring(0, vnetString.length()-1);
+            network.setVnet(vnetString);
         }
-        vnetString = vnetString+"*";
-        vnetString = vnetString.replace(";*","");
-        network.setVnet(vnetString);
         _physicalNetworkDao.update(network.getId(), network);
         txn.commit();
         _physicalNetworkDao.releaseFromLockTable(network.getId());

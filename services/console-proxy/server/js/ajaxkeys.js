@@ -146,6 +146,17 @@ X11_KEY_TILDE = 0x7e;				// ~
 X11_KEY_CIRCUMFLEX_ACCENT = 0x5e;	// ^
 X11_KEY_YEN_MARK = 0xa5;				// Japanese YEN mark
 X11_KEY_ASTERISK = 0x2a;
+X11_KEY_KP_0 = 0xFFB0;
+X11_KEY_KP_1 = 0xFFB1;
+X11_KEY_KP_2 = 0xFFB2;
+X11_KEY_KP_3 = 0xFFB3;
+X11_KEY_KP_4 = 0xFFB4;
+X11_KEY_KP_5 = 0xFFB5;
+X11_KEY_KP_6 = 0xFFB6;
+X11_KEY_KP_7 = 0xFFB7;
+X11_KEY_KP_8 = 0xFFB8;
+X11_KEY_KP_9 = 0xFFB9;
+X11_KEY_KP_Decimal = 0xFFAE;
 
 KEY_DOWN = 5;
 KEY_UP = 6;
@@ -248,17 +259,17 @@ var	keyboardTables = [
                   {keycode: JS_KEY_FORWARD_SLASH,		entry : X11_KEY_FORWARD_SLASH},
                   {keycode: JS_KEY_DASH,				entry : X11_KEY_DASH},
                   {keycode: JS_KEY_SEMI_COLON,			entry : X11_KEY_SEMI_COLON},
-                  {keycode: JS_KEY_NUMPAD0,				entry : X11_KEY_NUMPAD0},
-                  {keycode: JS_KEY_NUMPAD1,				entry : X11_KEY_NUMPAD1},
-                  {keycode: JS_KEY_NUMPAD2,				entry : X11_KEY_NUMPAD2},
-                  {keycode: JS_KEY_NUMPAD3,				entry : X11_KEY_NUMPAD3},
-                  {keycode: JS_KEY_NUMPAD4,				entry : X11_KEY_NUMPAD4},
-                  {keycode: JS_KEY_NUMPAD5,				entry : X11_KEY_NUMPAD5},
-                  {keycode: JS_KEY_NUMPAD6,				entry : X11_KEY_NUMPAD6},
-                  {keycode: JS_KEY_NUMPAD7,				entry : X11_KEY_NUMPAD7},
-                  {keycode: JS_KEY_NUMPAD8,				entry : X11_KEY_NUMPAD8},
-                  {keycode: JS_KEY_NUMPAD9,				entry : X11_KEY_NUMPAD9},
-                  {keycode: JS_KEY_DECIMAL_POINT,		entry : X11_KEY_DECIMAL_POINT},
+                  {keycode: JS_KEY_NUMPAD0,				entry : X11_KEY_KP_0},
+                  {keycode: JS_KEY_NUMPAD1,				entry : X11_KEY_KP_1},
+                  {keycode: JS_KEY_NUMPAD2,				entry : X11_KEY_KP_2},
+                  {keycode: JS_KEY_NUMPAD3,				entry : X11_KEY_KP_3},
+                  {keycode: JS_KEY_NUMPAD4,				entry : X11_KEY_KP_4},
+                  {keycode: JS_KEY_NUMPAD5,				entry : X11_KEY_KP_5},
+                  {keycode: JS_KEY_NUMPAD6,				entry : X11_KEY_KP_6},
+                  {keycode: JS_KEY_NUMPAD7,				entry : X11_KEY_KP_7},
+                  {keycode: JS_KEY_NUMPAD8,				entry : X11_KEY_KP_8},
+                  {keycode: JS_KEY_NUMPAD9,				entry : X11_KEY_KP_9},
+                  {keycode: JS_KEY_DECIMAL_POINT,		entry : X11_KEY_KP_Decimal},
                   {keycode: JS_KEY_DIVIDE,				entry : 0xffaf},
                   {keycode: JS_KEY_MULTIPLY,			entry : 0xffaa},
                   {keycode: JS_KEY_ADD,					entry : 0xffab},
@@ -289,9 +300,12 @@ var	keyboardTables = [
                                                          ]
            }
            }, {tindex: 2, keyboardType: KEYBOARD_TYPE_UK, mappingTable:
-           {X11: [],
-               keyPress: [
-                          //[34 = "]
+                 {X11: [
+                          //[223 = `¬¦]
+                          {keycode: 223,		entry : 0x60, 	browser: "IE"},
+                          ],
+                  keyPress: [
+                             //[34 = "]
                           {keycode: 34, entry:
                               [{type : KEY_DOWN, code : 0x40, modifiers : 64, shift : true}]
                           },

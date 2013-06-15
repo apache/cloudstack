@@ -187,7 +187,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 dl.setCurrState(vmTemplateStore.getDownloadState());
             }
 
-
             DownloadListener old = null;
             synchronized (_listenerTemplateMap) {
                 old = _listenerTemplateMap.put(vmTemplateStore, dl);

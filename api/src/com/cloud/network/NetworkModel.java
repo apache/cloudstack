@@ -272,4 +272,6 @@ public interface NetworkModel {
     Map<Detail, String> getNtwkOffDetails(long offId);
 
     Networks.IsolationType[] listNetworkIsolationMethods();
+
+    Nic getNicInNetworkIncludingRemoved(long vmId, long networkId);
 }

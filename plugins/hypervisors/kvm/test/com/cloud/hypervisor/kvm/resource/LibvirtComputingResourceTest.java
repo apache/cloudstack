@@ -80,7 +80,7 @@ public class LibvirtComputingResourceTest {
         vmStr += "<serial type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' />\n";
+        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
         vmStr += "<console type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</console>\n";
@@ -156,7 +156,7 @@ public class LibvirtComputingResourceTest {
         vmStr += "<serial type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' />\n";
+        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
         vmStr += "<console type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</console>\n";

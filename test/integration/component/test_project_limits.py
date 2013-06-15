@@ -328,7 +328,6 @@ class TestProjectLimits(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
-    @unittest.skip("No provision for updating resource limits from account through API")
     def test_02_project_limits_normal_user(self):
         """ Test project limits
         """

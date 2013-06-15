@@ -795,6 +795,37 @@ public class NetUtils {
         return new Pair<String, Integer>(tokens[0], Integer.parseInt(tokens[1]));
     }
 
+    public static int isNetowrkASubsetOrSupersetOfNetworkB (String cidrA, String cidrB) {
+        Long[] cidrALong = cidrToLong(cidrA);
+        Long[] cidrBLong = cidrToLong(cidrB);
+        long shift =0;
+        if (cidrALong == null || cidrBLong == null) {
+            //implies error in the cidr format
+            return -1;
+        }
+        if (cidrALong[1] >= cidrBLong[1]) {
+            shift = 32 - cidrBLong[1];
+        }
+        else {
+            shift = 32 - cidrALong[1];
+        }
+        long result = (cidrALong[0] >> shift) - (cidrBLong[0] >> shift);
+        if (result == 0) {
+            if (cidrALong[1] < cidrBLong[1]) {
+                //this implies cidrA is super set of cidrB
+                return 1;
+            }
+            else if (cidrALong[1] == cidrBLong[1]) {
+             //this implies both the cidrs are equal
+                return 3;
+            }
+            // implies cidrA is subset of cidrB
+            return 2;
+        }
+        //this implies no overlap.
+        return 0;
+    }
+
     public static boolean isNetworkAWithinNetworkB(String cidrA, String cidrB) {
         Long[] cidrALong = cidrToLong(cidrA);
         Long[] cidrBLong = cidrToLong(cidrB);
@@ -1363,4 +1394,13 @@ public class NetUtils {
 		return null;
 	}
 
+	public static String generateMacOnIncrease(String baseMac, long l) {
+		long mac = mac2Long(baseMac);
+		if (l > 0xFFFFl) {
+			return null;
+		}
+		mac = mac + (l << 24);
+		mac = mac & 0x06FFFFFFFFFFl;
+		return long2Mac(mac);
+	}
 }

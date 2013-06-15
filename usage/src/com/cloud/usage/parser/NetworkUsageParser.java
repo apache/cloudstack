@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.usage.parser;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -89,6 +90,7 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
             networkUsageByZone.put(key, new NetworkInfo(zoneId, usageNetwork.getHostId(), usageNetwork.getHostType(), usageNetwork.getNetworkId(), bytesSent, bytesReceived));
         }
 
+        List<UsageVO> usageRecords = new ArrayList<UsageVO>();
         for (String key : networkUsageByZone.keySet()) {
             NetworkInfo networkInfo = networkUsageByZone.get(key);
             long totalBytesSent = networkInfo.getBytesSent();
@@ -110,7 +112,7 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
                 }
                 UsageVO usageRecord = new UsageVO(networkInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, totalBytesSent + " bytes sent",
                         UsageTypes.NETWORK_BYTES_SENT, new Double(totalBytesSent), hostId, networkInfo.getHostType(), networkInfo.getNetworkId(), startDate, endDate);
-                m_usageDao.persist(usageRecord);
+                usageRecords.add(usageRecord);
 
                 // Create the usage record for bytes received
                 usageDesc = "network bytes received";
@@ -119,13 +121,18 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
                 }
                 usageRecord = new UsageVO(networkInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, totalBytesReceived + " bytes received",
                         UsageTypes.NETWORK_BYTES_RECEIVED, new Double(totalBytesReceived), hostId, networkInfo.getHostType(), networkInfo.getNetworkId(), startDate, endDate);
-                m_usageDao.persist(usageRecord);
+                usageRecords.add(usageRecord);
             } else {
                 // Don't charge anything if there were zero bytes processed
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("No usage record (0 bytes used) generated for account: " + account.getId());
                 }
             }
+        }
+        try {
+            m_usageDao.saveUsageRecords(usageRecords);
+        } catch (Exception ex) {
+            s_logger.error("Exception in usage manager", ex);
         }
 
         return true;

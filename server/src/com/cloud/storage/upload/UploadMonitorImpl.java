@@ -111,6 +111,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
+	private String _ssvmUrlDomain;
     private ScheduledExecutorService _executor = null;
 
 	Timer _timer;
@@ -330,8 +331,14 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 	        String scheme = "http";
 	        if (_sslCopy) {
 	            hostname = ipAddress.replace(".", "-");
-	            hostname = hostname + ".realhostip.com";
 	            scheme = "https";
+	            
+	            // Code for putting in custom certificates.
+	            if(_ssvmUrlDomain != null && _ssvmUrlDomain.length() > 0){
+	            	hostname = hostname + "." + _ssvmUrlDomain;
+	            }else{
+	            	hostname = hostname + ".realhostip.com";
+	            }	            
 	        }
 	        return scheme + "://" + hostname + "/userdata/" + uuid;
 	    }
@@ -350,6 +357,8 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
         	s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
 
+        _ssvmUrlDomain = configs.get("secstorage.ssl.cert.domain");      
+        
         _agentMgr.registerForHostEvents(new UploadListener(this), true, false, false);
         String cleanupInterval = configs.get("extract.url.cleanup.interval");
         _cleanupInterval = NumbersUtil.parseInt(cleanupInterval, 7200);

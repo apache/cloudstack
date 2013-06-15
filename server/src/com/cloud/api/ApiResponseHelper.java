@@ -438,6 +438,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (zone != null) {
             	snapshotResponse.setZoneName(zone.getName());
             	snapshotResponse.setZoneType(zone.getNetworkType().toString());
+                snapshotResponse.setZoneId(zone.getUuid());
             }
         }
         snapshotResponse.setCreated(snapshot.getCreated());
@@ -2361,11 +2362,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (fwRule.getTrafficType() == FirewallRule.TrafficType.Ingress) {
             IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
-            response.setPublicIpAddressId(ip.getId());
+            response.setPublicIpAddressId(ip.getUuid());
             response.setPublicIpAddress(ip.getAddress().addr());
         } else if (fwRule.getTrafficType() == FirewallRule.TrafficType.Egress) {
             response.setPublicIpAddress(null);
-            response.setNetworkId(fwRule.getNetworkId());
+            Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
+            response.setNetworkId(network.getUuid());
         }
 
         FirewallRule.State state = fwRule.getState();
@@ -3352,8 +3354,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             //Device Type
             usageRecResponse.setType(usageRecord.getType());
             //VM Instance Id
-            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(vm.getUuid());
+            VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
+            usageRecResponse.setVirtualMachineId(vm.getUuid());
             //Volume ID
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
             usageRecResponse.setUsageId(volume.getUuid());

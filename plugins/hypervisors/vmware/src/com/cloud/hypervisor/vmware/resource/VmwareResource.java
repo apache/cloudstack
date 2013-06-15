@@ -832,7 +832,53 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new SetFirewallRulesAnswer(cmd, true, results);
     }
 
+    protected SetStaticNatRulesAnswer SetVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetVPCStaticNatRulesCommand: " + _gson.toJson(cmd));
+        }
+
+        String[] results = new String[cmd.getRules().length];
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        String controlIp = getRouterSshControlIp(cmd);
+
+        int i = 0;
+        boolean endResult = true;
+        for (StaticNatRuleTO rule : cmd.getRules()) {
+            // Prepare command to be send to VPC VR
+            String args = "";
+            args += rule.revoked() ? " -D" : " -A";
+            args += " -l " + rule.getSrcIp();
+            args += " -r " + rule.getDstIp();
+
+            // Invoke command on VPC VR.
+            try {
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_staticnat.sh " + args);
+
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/vpc_staticnat.sh " + args);
+
+                if (!result.first()) {
+                    s_logger.error("SetVPCStaticNatRulesCommand failure on setting one rule. args: " + args);
+                    results[i++] = "Failed";
+                    endResult = false;
+                } else {
+                    results[i++] = null;
+                }
+            } catch (Throwable e) {
+                s_logger.error("SetVPCStaticNatRulesCommand (args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
+                results[i++] = "Failed";
+                endResult = false;
+            }
+        }
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
+    }
+
     protected Answer execute(SetStaticNatRulesCommand cmd) {
+
+        if (cmd.getVpcId() != null) {
+            return SetVPCStaticNatRules(cmd);
+        }
+
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource SetFirewallRuleCommand: " + _gson.toJson(cmd));
         }
@@ -1236,9 +1282,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (!result.first()) {
                     String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
                     s_logger.error(msg);
+                    return new SetNetworkACLAnswer(cmd, false, results);
                 }
-
-                return new SetNetworkACLAnswer(cmd, false, results);
             } else {
                 args="";
                 args += " -d " + "eth" + ethDeviceNum;
@@ -1283,7 +1328,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += rule.revoked() ? " -D" : " -A";
             args += " -P " + rule.getProtocol().toLowerCase();
             args += " -l " + rule.getSrcIp();
-            args += " -p " + rule.getStringSrcPortRange().replace(":", "-");
+            args += " -p " + rule.getStringSrcPortRange();
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 
@@ -2313,9 +2358,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            int ramMb = (int) (vmSpec.getMinRam());
+            int ramMb = (int) (vmSpec.getMinRam()/(1024 * 1024));
 
-            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getSpeed(), vmSpec.getSpeed(),(int) (vmSpec.getMaxRam()), ramMb, vmSpec.getLimitCpuUse());
+            VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024 * 1024)), ramMb, vmSpec.getLimitCpuUse());
 
             if(!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Unable to execute ScaleVmCommand");
@@ -3486,7 +3531,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             tgtHyperHost = new HostMO(getServiceContext(), morTgtHost);
             morDc = srcHyperHost.getHyperHostDatacenter();
             morDcOfTargetHost = tgtHyperHost.getHyperHostDatacenter();
-            if (morDc != morDcOfTargetHost) {
+            if (!morDc.getValue().equalsIgnoreCase(morDcOfTargetHost.getValue())) {
                 String msg = "Source host & target host are in different datacentesr";
                 throw new CloudRuntimeException(msg);
             }

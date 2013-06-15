@@ -69,7 +69,6 @@ class Services:
             # CentOS 5.3 (64-bit)
         }
 
-@unittest.skip("Additional test")
 class TestVMPasswordEnabled(cloudstackTestCase):
 
     @classmethod

@@ -278,7 +278,6 @@ class TestVPCOffering(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Skipping - Issue: Deleting account doesn't clean VPC")
     def test_02_deploy_vms_in_vpc_nw(self):
         """Test deploy virtual machines in VPC networks"""
 
@@ -897,7 +896,6 @@ class TestVPCOffering(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Skipping - API should not allow to create VPC offering without SourceNAT, Firewall")
     def test_06_vpc_off_invalid_services(self):
         """Test VPC offering with invalid services"""
 

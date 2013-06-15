@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeManager;
 import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
@@ -86,6 +87,9 @@ public class CloudOrchestrator implements OrchestrationService {
 
 	@Inject
 	protected AccountDao _accountDao = null;
+
+    @Inject
+    VolumeManager _volumeMgr;
 
 	public CloudOrchestrator() {
 	}
@@ -200,6 +204,7 @@ public class CloudOrchestrator implements OrchestrationService {
     						"Disk offering " + diskOffering
     								+ " requires size parameter.");
     			}
+                _volumeMgr.validateVolumeSizeRange(size * 1024 * 1024 * 1024);
     		}
     		dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
 		}
@@ -246,7 +251,8 @@ public class CloudOrchestrator implements OrchestrationService {
 				throw new InvalidParameterValueException("Disk offering "
 						+ diskOffering + " requires size parameter.");
 			}
-		}
+            _volumeMgr.validateVolumeSizeRange(size * 1024 * 1024 * 1024);
+        }
 		rootDiskOffering.first(diskOffering);
 		rootDiskOffering.second(size);
 

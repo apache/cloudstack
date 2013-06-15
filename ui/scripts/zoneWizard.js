@@ -3444,6 +3444,8 @@
                             }
                             else if(result.jobstatus == 2){
                               alert("error: " + _s(result.jobresult.errortext));
+                              error('configureGuestTraffic', result.jobresult.errortext, { fn: 'configureGuestTraffic', args: args });
+
                             }
                           }
                         },

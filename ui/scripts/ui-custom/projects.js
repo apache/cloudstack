@@ -304,14 +304,14 @@
       var $formDesc = $('<div>').addClass('form-desc');
       var $projectName = $('<div>').addClass('field name')
             .append($('<label>').attr('for', 'project-name').html(_l('label.project.name')))
-            .append($('<input>').addClass('required').attr({
+            .append($('<input>').addClass('required disallowSpecialCharacters').attr({
               type: 'text',
               name: 'project-name',
               id: 'project-name'
             }));
       var $projectDesc = $('<div>').addClass('field desc')
             .append($('<label>').attr('for', 'project-desc').html(_l('label.display.text')))
-            .append($('<input>').attr({
+            .append($('<input>').addClass('disallowSpecialCharacters').attr({
               type: 'text',
               name: 'project-display-text',
               id: 'project-desc'

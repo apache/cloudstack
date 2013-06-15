@@ -46,7 +46,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
     
     private VncClient client;
     private Thread worker;
-    private boolean workerDone = false;
+    private volatile boolean workerDone = false;
     
     private int lastModifierStates = 0;
     private int lastPointerMask = 0;
@@ -80,7 +80,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
                 String tunnelUrl = getClientParam().getClientTunnelUrl();
                 String tunnelSession = getClientParam().getClientTunnelSession();
                 
-                for(int i = 0; i < 15; i++) {
+                for(int i = 0; i < 15 && !workerDone; i++) {
                     try {
                         if(tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
                             URI uri = new URI(tunnelUrl);
@@ -136,6 +136,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
     
     @Override
     public void closeClient() {
+    	workerDone = true;
         if(client != null)
             client.shutdown();
     }

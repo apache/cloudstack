@@ -49,6 +49,6 @@
     <xi:include href="gsoc-tuna.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="gsoc-imduffy15.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="gsoc-dharmesh.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
+    <xi:include href="gsoc-meng.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </book>
 

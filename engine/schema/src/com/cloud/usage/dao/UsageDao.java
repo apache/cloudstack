@@ -38,6 +38,7 @@ public interface UsageDao extends GenericDao<UsageVO, Long> {
     Long getLastUserStatsId();
     List<Long> listPublicTemplatesByAccount(long accountId);
     Long getLastVmDiskStatsId();
-    void updateVmDiskStats(List<VmDiskStatisticsVO> vmNetStats);
-    void saveVmDiskStats(List<VmDiskStatisticsVO> vmNetStats);
+    void updateVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats);
+    void saveVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats);
+    void saveUsageRecords(List<UsageVO> usageRecords);
 }

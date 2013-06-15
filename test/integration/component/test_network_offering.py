@@ -1816,7 +1816,6 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
 
-@unittest.skip("Skipped since shared network requires StartIp/endIp/gateway/netmask")
 class TestSharedNetworkWithoutIp(cloudstackTestCase):
 
     @classmethod

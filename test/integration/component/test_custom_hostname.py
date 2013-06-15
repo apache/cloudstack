@@ -169,13 +169,13 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         # 2. Give the user provided user name. Internal name should be
         #    i-<userid>-<vmid>-display name
 
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   )
         self.debug(
@@ -208,11 +208,11 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
 
         # Fetch account ID and VMID from database to check internal name
         self.debug("select id from account where uuid = '%s';" \
-                                            % self.account.account.id)
+                                            % self.account.id)
 
         qresultset = self.dbclient.execute(
                                 "select id from account where uuid = '%s';" \
-                                % self.account.account.id
+                                % self.account.id
                                 )
         self.assertEqual(
                          isinstance(qresultset, list),
@@ -273,12 +273,12 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
 
         # Removing display name from config
         del self.services["virtual_machine"]["displayname"]
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
         virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   )
         self.debug(
@@ -307,11 +307,11 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
                          )
         # Fetch account ID and VMID from database to check internal name
         self.debug("select id from account where uuid = '%s';" \
-                                            % self.account.account.id)
+                                            % self.account.id)
 
         qresultset = self.dbclient.execute(
                                 "select id from account where uuid = '%s';" \
-                                % self.account.account.id
+                                % self.account.id
                                 )
         self.assertEqual(
                          isinstance(qresultset, list),

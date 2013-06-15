@@ -32,9 +32,9 @@
           var projects = args.data;
 
           $(projects).map(function(index, project) {
-            var $option = $('<option>').val(project.id);
+            var $option = $('<option>').val(_s(project.id));
 
-            $option.html(project.displaytext ? project.displaytext : project.name);
+            $option.html(_s(project.displaytext ? project.displaytext : project.name));
             $option.appendTo($projectSelect);
           });
         },

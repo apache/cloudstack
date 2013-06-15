@@ -343,7 +343,6 @@ class TestProjectCreationNegative(cloudstackTestCase):
 
     @attr(configuration = "allow.user.create.projects")
     @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
-    @unittest.skip("Known bug-able to create project as a domain user")
     def test_user_project_creation(self):
         """Test create project as a domain admin and domain user
         """
@@ -1299,7 +1298,6 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                             )
         return
 
-    @unittest.skip("Requires SMPT configs")
     def test_09_invite_to_project_by_email(self):
         """Test invite user to project by email"""
         
