@@ -22,6 +22,12 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface JobInfo extends Identity, InternalIdentity {
+    public enum Status {
+        IN_PROGRESS,
+        SUCCEEDED,
+        FAILED,
+        CANCELLED;
+    }
 
     String getType();
 
@@ -39,7 +45,7 @@ public interface JobInfo extends Identity, InternalIdentity {
 
     String getCmdInfo();
 
-    int getStatus();
+    Status getStatus();
 
     int getProcessStatus();
 

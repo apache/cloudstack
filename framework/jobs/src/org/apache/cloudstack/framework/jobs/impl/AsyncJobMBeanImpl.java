@@ -22,13 +22,12 @@ import java.util.TimeZone;
 import javax.management.StandardMBean;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobMBean;
 
 import com.cloud.utils.DateUtil;
 
 public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
-	private AsyncJob _job;
+	private final AsyncJob _job;
 	
 	public AsyncJobMBeanImpl(AsyncJob job) {
 		super(AsyncJobMBean.class, false);
@@ -36,84 +35,100 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
 		_job = job;
 	}
 	
-	public long getAccountId() {
+	@Override
+    public long getAccountId() {
 		return _job.getAccountId();
 	}
 	
-	public long getUserId() {
+	@Override
+    public long getUserId() {
 		return _job.getUserId();
 	}
 	
-	public String getCmd() {
+	@Override
+    public String getCmd() {
 		return _job.getCmd();
 	}
 	
-	public String getCmdInfo() {
+	@Override
+    public String getCmdInfo() {
 		return _job.getCmdInfo();
 	}
 	
-	public String getStatus() {
-		int jobStatus = _job.getStatus();
-		switch(jobStatus) {
-		case AsyncJobConstants.STATUS_SUCCEEDED :
+	@Override
+    public String getStatus() {
+        switch (_job.getStatus()) {
+        case SUCCEEDED:
 			return "Completed";
 		
-		case AsyncJobConstants.STATUS_IN_PROGRESS:
+        case IN_PROGRESS:
 			return "In preogress";
 			
-		case AsyncJobConstants.STATUS_FAILED:
+        case FAILED:
 			return "failed";
+			
+        case CANCELLED:
+            return "cancelled";
 		}
 		
 		return "Unknow";
 	}
 	
-	public int getProcessStatus() {
+	@Override
+    public int getProcessStatus() {
 		return _job.getProcessStatus();
 	}
 	
-	public int getResultCode() {
+	@Override
+    public int getResultCode() {
 		return _job.getResultCode();
 	}
 	
-	public String getResult() {
+	@Override
+    public String getResult() {
 		return _job.getResult();
 	}
 	
-	public String getInstanceType() {
+	@Override
+    public String getInstanceType() {
 		if(_job.getInstanceType() != null)
 			return _job.getInstanceType().toString();
 		return "N/A";
 	}
 	
-	public String getInstanceId() {
+	@Override
+    public String getInstanceId() {
 		if(_job.getInstanceId() != null)
 			return String.valueOf(_job.getInstanceId());
 		return "N/A";
 	}
 	
-	public String getInitMsid() {
+	@Override
+    public String getInitMsid() {
 		if(_job.getInitMsid() != null) {
 			return String.valueOf(_job.getInitMsid());
 		}
 		return "N/A";
 	}
 	
-	public String getCreateTime() {
+	@Override
+    public String getCreateTime() {
 		Date time = _job.getCreated();
 		if(time != null)
 			return DateUtil.getDateDisplayString(TimeZone.getDefault(), time);
 		return "N/A";
 	}
 	
-	public String getLastUpdateTime() {
+	@Override
+    public String getLastUpdateTime() {
 		Date time = _job.getLastUpdated();
 		if(time != null)
 			return DateUtil.getDateDisplayString(TimeZone.getDefault(), time);
 		return "N/A";
 	}
 	
-	public String getLastPollTime() {
+	@Override
+    public String getLastPollTime() {
 		Date time = _job.getLastPolled();
 	
 		if(time != null)
@@ -121,7 +136,8 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
 		return "N/A";
 	}
 	
-	public String getSyncQueueId() {
+	@Override
+    public String getSyncQueueId() {
 		SyncQueueItem item = _job.getSyncSource();
 		if(item != null && item.getQueueId() != null) {
 			return String.valueOf(item.getQueueId());
@@ -129,7 +145,8 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
 		return "N/A";
 	}
 	
-	public String getSyncQueueContentType() {
+	@Override
+    public String getSyncQueueContentType() {
 		SyncQueueItem item = _job.getSyncSource();
 		if(item != null) {
 			return item.getContentType();
@@ -137,7 +154,8 @@ public class AsyncJobMBeanImpl extends StandardMBean implements AsyncJobMBean {
 		return "N/A";
 	}
 	
-	public String getSyncQueueContentId() {
+	@Override
+    public String getSyncQueueContentId() {
 		SyncQueueItem item = _job.getSyncSource();
 		if(item != null && item.getContentId() != null) {
 			return String.valueOf(item.getContentId());

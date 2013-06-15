@@ -20,7 +20,7 @@ public class VmWorkTestWorkJobDispatcher extends AdapterBase implements AsyncJob
 		} catch (InterruptedException e) {
 		}
 		
-		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
+		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(JobInfo.Status.SUCCEEDED, null);
 		s_logger.info("End work job execution. job-" + job.getId());
 	}
 }

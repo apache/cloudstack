@@ -316,7 +316,7 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 		if(wakeupCount++ < 3) {
 			AsyncJobExecutionContext.getCurrentExecutionContext().resetSyncSource();
 		} else {
-			AsyncJobExecutionContext.getCurrentExecutionContext().completeAsyncJob(AsyncJobConstants.STATUS_SUCCEEDED, 0, null);
+			AsyncJobExecutionContext.getCurrentExecutionContext().completeAsyncJob(JobInfo.Status.SUCCEEDED, 0, null);
 		}
 	}
 	

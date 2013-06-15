@@ -48,10 +48,13 @@ import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.cluster.ClusterManager;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.ComponentContext;
@@ -142,21 +145,21 @@ public class TestAsyncJobManager extends TestCase {
     	AsyncJobJoinMapVO record = joinMapDao.getJoinRecord(2, 1);
     	Assert.assertTrue(record != null);
     	Assert.assertTrue(record.getJoinMsid() == 100);
-    	Assert.assertTrue(record.getJoinStatus() == AsyncJobConstants.STATUS_IN_PROGRESS);
+    	Assert.assertTrue(record.getJoinStatus() == JobInfo.Status.IN_PROGRESS);
     	
-    	joinMapDao.completeJoin(1, AsyncJobConstants.STATUS_SUCCEEDED, "Done", 101);
+    	joinMapDao.completeJoin(1, JobInfo.Status.SUCCEEDED, "Done", 101);
     	
     	record = joinMapDao.getJoinRecord(2, 1);
     	Assert.assertTrue(record != null);
     	Assert.assertTrue(record.getJoinMsid() == 100);
-    	Assert.assertTrue(record.getJoinStatus() == AsyncJobConstants.STATUS_SUCCEEDED);
+    	Assert.assertTrue(record.getJoinStatus() == JobInfo.Status.SUCCEEDED);
     	Assert.assertTrue(record.getJoinResult().equals("Done"));
     	Assert.assertTrue(record.getCompleteMsid() == 101);
     	
     	record = joinMapDao.getJoinRecord(3, 1);
     	Assert.assertTrue(record != null);
     	Assert.assertTrue(record.getJoinMsid() == 100);
-    	Assert.assertTrue(record.getJoinStatus() == AsyncJobConstants.STATUS_SUCCEEDED);
+    	Assert.assertTrue(record.getJoinStatus() == JobInfo.Status.SUCCEEDED);
     	Assert.assertTrue(record.getJoinResult().equals("Done"));
     	Assert.assertTrue(record.getCompleteMsid() == 101);
     	
@@ -198,7 +201,7 @@ public class TestAsyncJobManager extends TestCase {
     
     @Test
     public void testPseudoJob() {
-    	AsyncJob job = asyncMgr.getPseudoJob();
+        AsyncJob job = asyncMgr.getPseudoJob(Account.ACCOUNT_ID_SYSTEM, User.UID_SYSTEM);
     	Assert.assertTrue(job.getInstanceType().equals(AsyncJobConstants.PSEUDO_JOB_INSTANCE_TYPE));
     	Assert.assertTrue(job.getInstanceId().longValue() == Thread.currentThread().getId());
     }

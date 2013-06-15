@@ -605,7 +605,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (response.getObjectId() != null && objectJobMap.containsKey(response.getObjectId())) {
                     AsyncJob job = objectJobMap.get(response.getObjectId());
                     response.setJobId(job.getUuid());
-                    response.setJobStatus(job.getStatus());
+                    response.setJobStatus(job.getStatus().ordinal());
                 }
             }
         }

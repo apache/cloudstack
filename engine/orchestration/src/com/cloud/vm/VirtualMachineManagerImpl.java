@@ -725,7 +725,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 						return true;
 			
 					VmWorkJobVO workJob = _workJobDao.findById(jobId);
-					if(workJob.getStatus() != AsyncJobConstants.STATUS_IN_PROGRESS)
+					if(workJob.getStatus() != JobInfo.Status.IN_PROGRESS)
 						return true;
 					
 					return false;
@@ -1152,7 +1152,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 						return true;
 			
 					VmWorkJobVO workJob = _workJobDao.findById(jobId);
-					if(workJob.getStatus() != AsyncJobConstants.STATUS_IN_PROGRESS)
+					if(workJob.getStatus() != JobInfo.Status.IN_PROGRESS)
 						return true;
 					
 					return false;

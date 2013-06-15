@@ -23,6 +23,8 @@ import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -44,11 +46,14 @@ import com.cloud.utils.db.GenericDao;
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="job_type", discriminatorType=DiscriminatorType.STRING, length=32)
 public class AsyncJobVO implements AsyncJob, JobInfo {
+
+    public static final String JOB_DISPATCHER_PSEUDO = "pseudoJobDispatcher";
+    public static final String PSEUDO_JOB_INSTANCE_TYPE = "Thread";
 	
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id = null;
+    private long id;
 	
     @Column(name="job_type", length=32)
     protected String type;
@@ -78,7 +83,8 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
     private String cmdInfo;
   
     @Column(name="job_status")
-    private int status;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Status status;
     
     @Column(name="job_process_status")
     private int processStatus;
@@ -145,7 +151,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 		return id;
 	}
 
-	public void setId(Long id) {
+    public void setId(long id) {
 		this.id = id;
 	}
 	
@@ -236,11 +242,11 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 	}
 	
 	@Override
-    public int getStatus() {
+    public Status getStatus() {
 		return status;
 	}
 
-	public void setStatus(int status) {
+    public void setStatus(Status status) {
 		this.status = status;
 	}
 	

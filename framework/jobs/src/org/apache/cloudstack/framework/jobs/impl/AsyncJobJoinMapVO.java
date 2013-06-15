@@ -20,12 +20,16 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDao;
@@ -45,7 +49,8 @@ public class AsyncJobJoinMapVO {
 	private long joinJobId;
 
     @Column(name="join_status")
-    private int joinStatus;
+    @Enumerated(EnumType.ORDINAL)
+    private JobInfo.Status joinStatus;
     
     @Column(name="join_result", length=1024)
     private String joinResult;
@@ -112,11 +117,11 @@ public class AsyncJobJoinMapVO {
 		this.joinJobId = joinJobId;
 	}
 
-	public int getJoinStatus() {
+    public JobInfo.Status getJoinStatus() {
 		return joinStatus;
 	}
 
-	public void setJoinStatus(int joinStatus) {
+    public void setJoinStatus(JobInfo.Status joinStatus) {
 		this.joinStatus = joinStatus;
 	}
 

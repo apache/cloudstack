@@ -26,23 +26,23 @@ import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
-import com.cloud.utils.db.SearchCriteria.Op;
 
 public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Long> implements AsyncJobJoinMapDao {
     public static final Logger s_logger = Logger.getLogger(AsyncJobJoinMapDaoImpl.class);
 	
-	private final SearchBuilder<AsyncJobJoinMapVO> RecordSearch;	
-	private final SearchBuilder<AsyncJobJoinMapVO> RecordSearchByOwner;	
-	private final SearchBuilder<AsyncJobJoinMapVO> CompleteJoinSearch;	
+	private final SearchBuilder<AsyncJobJoinMapVO> RecordSearch;
+	private final SearchBuilder<AsyncJobJoinMapVO> RecordSearchByOwner;
+	private final SearchBuilder<AsyncJobJoinMapVO> CompleteJoinSearch;
 	private final SearchBuilder<AsyncJobJoinMapVO> WakeupSearch;
 	
 	public AsyncJobJoinMapDaoImpl() {
@@ -66,7 +66,8 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		WakeupSearch.done();
 	}
 	
-	public Long joinJob(long jobId, long joinJobId, long joinMsid, 
+	@Override
+    public Long joinJob(long jobId, long joinJobId, long joinMsid,
 		long wakeupIntervalMs, long expirationMs,
 		Long syncSourceId, String wakeupHandler, String wakeupDispatcher) {
 		
@@ -74,7 +75,7 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		record.setJobId(jobId);
 		record.setJoinJobId(joinJobId);
 		record.setJoinMsid(joinMsid);
-		record.setJoinStatus(AsyncJobConstants.STATUS_IN_PROGRESS);
+		record.setJoinStatus(JobInfo.Status.IN_PROGRESS);
 		record.setSyncSourceId(syncSourceId);
 		record.setWakeupInterval(wakeupIntervalMs / 1000);		// convert millisecond to second
 		record.setWakeupHandler(wakeupHandler);
@@ -84,11 +85,12 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 			record.setExpiration(new Date(DateUtil.currentGMTTime().getTime() + expirationMs));
 		}
 		
-		this.persist(record);
+		persist(record);
 		return record.getId();
 	}
 	
-	public void disjoinJob(long jobId, long joinedJobId) {
+	@Override
+    public void disjoinJob(long jobId, long joinedJobId) {
 		SearchCriteria<AsyncJobJoinMapVO> sc = RecordSearch.create();
 		sc.setParameters("jobId", jobId);
 		sc.setParameters("joinJobId", joinedJobId);
@@ -96,14 +98,16 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		this.expunge(sc);
 	}
 	
-	public void disjoinAllJobs(long jobId) {
+	@Override
+    public void disjoinAllJobs(long jobId) {
 		SearchCriteria<AsyncJobJoinMapVO> sc = RecordSearchByOwner.create();
 		sc.setParameters("jobId", jobId);
 		
 		this.expunge(sc);
 	}
 	
-	public AsyncJobJoinMapVO getJoinRecord(long jobId, long joinJobId) {
+	@Override
+    public AsyncJobJoinMapVO getJoinRecord(long jobId, long joinJobId) {
 		SearchCriteria<AsyncJobJoinMapVO> sc = RecordSearch.create();
 		sc.setParameters("jobId", jobId);
 		sc.setParameters("joinJobId", joinJobId);
@@ -117,14 +121,16 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		return null;
 	}
 	
-	public List<AsyncJobJoinMapVO> listJoinRecords(long jobId) {
+	@Override
+    public List<AsyncJobJoinMapVO> listJoinRecords(long jobId) {
 		SearchCriteria<AsyncJobJoinMapVO> sc = RecordSearchByOwner.create();
 		sc.setParameters("jobId", jobId);
 		
 		return this.listBy(sc);
 	}
 	
-	public void completeJoin(long joinJobId, int joinStatus, String joinResult, long completeMsid) {
+    @Override
+    public void completeJoin(long joinJobId, JobInfo.Status joinStatus, String joinResult, long completeMsid) {
         AsyncJobJoinMapVO record = createForUpdate();
         record.setJoinStatus(joinStatus);
         record.setJoinResult(joinResult);
@@ -138,7 +144,8 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
         update(ub, sc, null);
 	}
 
-	public List<Long> wakeupScan() {
+	@Override
+    public List<Long> wakeupScan() {
 		List<Long> standaloneList = new ArrayList<Long>();
 		
 		Date cutDate = DateUtil.currentGMTTime();
@@ -149,9 +156,9 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 			txn.start();
 			
 			//
-			// performance sensitive processing, do it in plain SQL 
+			// performance sensitive processing, do it in plain SQL
 			//
-			String sql = "UPDATE async_job SET job_pending_signals=1 WHERE id IN " +  
+			String sql = "UPDATE async_job SET job_pending_signals=1 WHERE id IN " +
 					"(SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ?)";
 			pstmt = txn.prepareStatement(sql);
 	        pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
@@ -159,7 +166,7 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 	        pstmt.executeUpdate();
 	        pstmt.close();
 			
-			sql = "UPDATE sync_queue_item SET queue_proc_msid=NULL, queue_proc_number=NULL WHERE content_id IN " + 
+			sql = "UPDATE sync_queue_item SET queue_proc_msid=NULL, queue_proc_number=NULL WHERE content_id IN " +
 					"(SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ?)";
 			pstmt = txn.prepareStatement(sql);
 	        pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
@@ -194,7 +201,8 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
         return standaloneList;
 	}
 	
-	public List<Long> wakeupByJoinedJobCompletion(long joinedJobId) {
+	@Override
+    public List<Long> wakeupByJoinedJobCompletion(long joinedJobId) {
 		List<Long> standaloneList = new ArrayList<Long>();
 		
 		Transaction txn = Transaction.currentTxn();
@@ -203,16 +211,16 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 			txn.start();
 			
 			//
-			// performance sensitive processing, do it in plain SQL 
+			// performance sensitive processing, do it in plain SQL
 			//
-			String sql = "UPDATE async_job SET job_pending_signals=1 WHERE id IN " +  
+			String sql = "UPDATE async_job SET job_pending_signals=1 WHERE id IN " +
 					"(SELECT job_id FROM async_job_join_map WHERE join_job_id = ?)";
 			pstmt = txn.prepareStatement(sql);
 	        pstmt.setLong(1, joinedJobId);
 	        pstmt.executeUpdate();
 	        pstmt.close();
 			
-			sql = "UPDATE sync_queue_item SET queue_proc_msid=NULL, queue_proc_number=NULL WHERE content_id IN " + 
+			sql = "UPDATE sync_queue_item SET queue_proc_msid=NULL, queue_proc_number=NULL WHERE content_id IN " +
 					"(SELECT job_id FROM async_job_join_map WHERE join_job_id = ?)";
 			pstmt = txn.prepareStatement(sql);
 	        pstmt.setLong(1, joinedJobId);

@@ -3469,7 +3469,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (asyncExecutionContext != null) {
                 job = asyncExecutionContext.getJob();
                 _asyncMgr.updateAsyncJobAttachment(job.getId(), Upload.Type.VOLUME.toString(), volumeId);
-                _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobConstants.STATUS_IN_PROGRESS, resultObj);
+                _asyncMgr.updateAsyncJobStatus(job.getId(), JobInfo.Status.IN_PROGRESS, resultObj);
             }
             String value = _configs.get(Config.CopyVolumeWait.toString());
             int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
@@ -3490,7 +3490,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 resultObj.setResultString(errorString);
                 resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
                 if (asyncExecutionContext != null) {
-                    _asyncMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, 0, resultObj);
+                    _asyncMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, resultObj);
                 }
 
                 // Update the DB that volume couldn't be copied

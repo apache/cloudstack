@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.utils.Predicate;
 import com.cloud.utils.component.Manager;
@@ -31,12 +32,9 @@ public interface AsyncJobManager extends Manager {
 	List<? extends AsyncJob> findInstancePendingAsyncJobs(String instanceType, Long accountId);
 	
 	long submitAsyncJob(AsyncJob job);
-	long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext);
 	long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId);
 
-//	AsyncJobResult queryAsyncJobResult(long jobId);
-
-    void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject);
+    void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, Object resultObject);
     void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject);
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
     void logJobJournal(long jobId, AsyncJob.JournalType journalType, String
@@ -50,7 +48,7 @@ public interface AsyncJobManager extends Manager {
 	 *
 	 * @return pseudo job for the thread
 	 */
-	AsyncJob getPseudoJob();
+    AsyncJob getPseudoJob(long accountId, long userId);
 
     /**
      * Used by upper level job to wait for completion of a down-level job (usually VmWork jobs)
@@ -101,7 +99,7 @@ public interface AsyncJobManager extends Manager {
      * 					for legacy code to work. To help pass exception object easier, we use
      * 					object-stream based serialization instead of GSON
      */
-    void completeJoin(long joinJobId, int joinStatus, String joinResult);
+    void completeJoin(long joinJobId, JobInfo.Status joinStatus, String joinResult);
    
     void releaseSyncSource();
     void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit);

@@ -99,10 +99,10 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                 VmWorkStop stop = (VmWorkStop)work;
                 _vmMgr.orchestrateStop(vm.getUuid(), stop.isForceStop());
             }
-            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_SUCCEEDED, 0, null);
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
         } catch(Throwable e) {
             s_logger.error("Unable to complete " + job, e);
-            _asyncJobMgr.completeAsyncJob(job.getId(), AsyncJobConstants.STATUS_FAILED, 0, e.getMessage());
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, e.getMessage());
         } finally {
             CallContext.unregister();
         }

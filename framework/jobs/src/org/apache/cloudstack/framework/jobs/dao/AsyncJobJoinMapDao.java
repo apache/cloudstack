@@ -19,12 +19,13 @@ package org.apache.cloudstack.framework.jobs.dao;
 import java.util.List;
 
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.utils.db.GenericDao;
 
 public interface AsyncJobJoinMapDao extends GenericDao<AsyncJobJoinMapVO, Long> {
 	
-	Long joinJob(long jobId, long joinJobId, long joinMsid, 
+	Long joinJob(long jobId, long joinJobId, long joinMsid,
 		long wakeupIntervalMs, long expirationMs,
 		Long syncSourceId, String wakeupHandler, String wakeupDispatcher);
 	void disjoinJob(long jobId, long joinedJobId);
@@ -33,7 +34,7 @@ public interface AsyncJobJoinMapDao extends GenericDao<AsyncJobJoinMapVO, Long> 
 	AsyncJobJoinMapVO getJoinRecord(long jobId, long joinJobId);
 	List<AsyncJobJoinMapVO> listJoinRecords(long jobId);
 	
-	void completeJoin(long joinJobId, int joinStatus, String joinResult, long completeMsid);
+    void completeJoin(long joinJobId, JobInfo.Status joinStatus, String joinResult, long completeMsid);
 	
 	List<Long> wakeupScan();
 	List<Long> wakeupByJoinedJobCompletion(long joinedJobId);

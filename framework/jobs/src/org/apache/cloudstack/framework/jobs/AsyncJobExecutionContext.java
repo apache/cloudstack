@@ -22,11 +22,11 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueItem;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.component.ComponentContext;
 
 public class AsyncJobExecutionContext  {
     private AsyncJob _job;
@@ -57,10 +57,6 @@ public class AsyncJobExecutionContext  {
 	}
 	
     public AsyncJob getJob() {
-		if(_job == null) {
-			_job = _jobMgr.getPseudoJob();
-		}
-		
 		return _job;
 	}
 	
@@ -68,7 +64,7 @@ public class AsyncJobExecutionContext  {
 		_job = job;
 	}
 	
-    public void completeAsyncJob(int jobStatus, int resultCode, Object resultObject) {
+    public void completeAsyncJob(JobInfo.Status jobStatus, int resultCode, Object resultObject) {
     	assert(_job != null);
     	_jobMgr.completeAsyncJob(_job.getId(), jobStatus, resultCode, resultObject);
     }
@@ -114,7 +110,7 @@ public class AsyncJobExecutionContext  {
     	assert(_job != null);
     	
     	AsyncJobJoinMapVO record = _joinMapDao.getJoinRecord(_job.getId(), joinedJobId);
-    	if(record.getJoinStatus() == AsyncJobConstants.STATUS_FAILED && record.getJoinResult() != null) {
+    	if(record.getJoinStatus() == JobInfo.Status.FAILED && record.getJoinResult() != null) {
     		Object exception = JobSerializerHelper.fromObjectSerializedString(record.getJoinResult());
     		if(exception != null && exception instanceof Exception) {
     			if(exception instanceof InsufficientCapacityException)
@@ -131,12 +127,12 @@ public class AsyncJobExecutionContext  {
     	_jobMgr.disjoinJob(_job.getId(), joinedJobId);
     }
     
-    public void completeJoin(int joinStatus, String joinResult) {
+    public void completeJoin(JobInfo.Status joinStatus, String joinResult) {
     	assert(_job != null);
     	_jobMgr.completeJoin(_job.getId(), joinStatus, joinResult);
     }
     
-    public void completeJobAndJoin(int joinStatus, String joinResult) {
+    public void completeJobAndJoin(JobInfo.Status joinStatus, String joinResult) {
     	assert(_job != null);
     	_jobMgr.completeJoin(_job.getId(), joinStatus, joinResult);
     	_jobMgr.completeAsyncJob(_job.getId(), joinStatus, 0, null);
@@ -144,21 +140,14 @@ public class AsyncJobExecutionContext  {
 
 	public static AsyncJobExecutionContext getCurrentExecutionContext() {
 		AsyncJobExecutionContext context = s_currentExectionContext.get();
-		if(context == null) {
-			context = new AsyncJobExecutionContext();
-			context = ComponentContext.inject(context);
-			context.getJob();
-			setCurrentExecutionContext(context);
-		}
-		
 		return context;
 	}
 	
-    public static AsyncJobExecutionContext registerPseudoExecutionContext() {
+    public static AsyncJobExecutionContext registerPseudoExecutionContext(long accountId, long userId) {
         AsyncJobExecutionContext context = s_currentExectionContext.get();
         if (context == null) {
             context = new AsyncJobExecutionContext();
-            context.getJob();
+            context.setJob(_jobMgr.getPseudoJob(accountId, userId));
             setCurrentExecutionContext(context);
         }
 

@@ -71,8 +71,8 @@ public class SystemVmLoadScanner<T> {
             @Override
             public void run() {
                 try {
-                    CallContext.registerSystemCallContextOnceOnly();
-                    AsyncJobExecutionContext.registerPseudoExecutionContext();
+                    CallContext cc = CallContext.registerSystemCallContextOnceOnly();
+                    AsyncJobExecutionContext.registerPseudoExecutionContext(cc.getCallingAccountId(), cc.getCallingUserId());
                 } catch (Exception e) {
                     s_logger.fatal("Unable to start the capacity scan task", e);
                     System.exit(1);

@@ -16,14 +16,14 @@
 // under the License.
 package com.cloud.async;
 
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.api.ApiSerializerHelper;
 
 public class AsyncJobResult {
 	
 	private long jobId;
-	private int jobStatus;
+    private JobInfo.Status jobStatus;
 	private int processStatus;
 	private int resultCode;
 	private String result;
@@ -31,7 +31,7 @@ public class AsyncJobResult {
 
 	public AsyncJobResult(long jobId) {
 		this.jobId = jobId;
-		jobStatus = AsyncJobConstants.STATUS_IN_PROGRESS;
+		jobStatus = JobInfo.Status.IN_PROGRESS;
 		processStatus = 0;
 		resultCode = 0;
 		result = "";
@@ -46,18 +46,18 @@ public class AsyncJobResult {
 	}
 	
 	public String getUuid() {
-		return this.uuid;
+		return uuid;
 	}
 	
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
 	
-	public int getJobStatus() {
+    public JobInfo.Status getJobStatus() {
 		return jobStatus;
 	}
 	
-	public void setJobStatus(int jobStatus) {
+    public void setJobStatus(JobInfo.Status jobStatus) {
 		this.jobStatus = jobStatus;
 	}
 	
@@ -97,7 +97,7 @@ public class AsyncJobResult {
     public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("AsyncJobResult {jobId:").append(getJobId());
-		sb.append(", jobStatus: ").append(getJobStatus());
+        sb.append(", jobStatus: ").append(getJobStatus().ordinal());
 		sb.append(", processStatus: ").append(getProcessStatus());
 		sb.append(", resultCode: ").append(getResultCode());
 		sb.append(", result: ").append(result);

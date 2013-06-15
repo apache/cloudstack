@@ -1462,11 +1462,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 //	    	_itMgr.processVmStartWork(vm, ((VmWorkStart)work).getParams(),
 //	    		user, account,  ((VmWorkStart)work).getPlan());
 //
-//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(JobInfo.Status.SUCCEEDED, null);
 //    	} catch(Exception e) {
 //    		s_logger.error("Exception in process VM-start work", e);
 //    		String result = SerializerHelper.toObjectSerializedString(e);
-//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(JobInfo.Status.FAILED, result);
 //    	}
 //    }
 //
@@ -1482,11 +1482,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 //    	try {
 //	    	_itMgr.processVmStopWork(vm, ((VmWorkStop)work).isForceStop(), user, account);
 //
-//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_SUCCEEDED, null);
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(JobInfo.Status.SUCCEEDED, null);
 //    	} catch(Exception e) {
 //    		s_logger.error("Exception in process VM-stop work", e);
 //    		String result = SerializerHelper.toObjectSerializedString(e);
-//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(AsyncJobConstants.STATUS_FAILED, result);
+//    		AsyncJobExecutionContext.getCurrentExecutionContext().completeJobAndJoin(JobInfo.Status.FAILED, result);
 //    	}
 //    }
 }

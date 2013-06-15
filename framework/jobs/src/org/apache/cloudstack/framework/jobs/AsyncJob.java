@@ -57,7 +57,7 @@ public interface AsyncJob extends JobInfo {
     String getCmdInfo();
     
     @Override
-    int getStatus();
+    Status getStatus();
 
     @Override
     int getProcessStatus();
