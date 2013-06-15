@@ -84,6 +84,7 @@ class Services:
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
+                                "ostype": 'CentOS 5.3 (64-bit)',
                         },
                         "natrule": {
                                     "publicport": 22,
