@@ -560,6 +560,29 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new Answer(cmd);
     }
 
+    @Override
+    public Answer dettachIso(DettachCommand cmd) {
+        DiskTO disk = cmd.getDisk();
+        TemplateObjectTO isoTO = (TemplateObjectTO) disk.getData();
+        DataStoreTO store = isoTO.getDataStore();
+        if (!(store instanceof NfsTO)) {
+            return new AttachAnswer("unsupported protocol");
+        }
+        NfsTO nfsStore = (NfsTO) store;
+        try {
+            Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
+            attachOrDetachISO(conn, cmd.getVmName(), nfsStore.getUrl() + File.separator + isoTO.getPath(), false);
+        } catch (LibvirtException e) {
+            return new Answer(cmd, false, e.toString());
+        } catch (URISyntaxException e) {
+            return new Answer(cmd, false, e.toString());
+        } catch (InternalErrorException e) {
+            return new Answer(cmd, false, e.toString());
+        }
+
+        return new Answer(cmd);
+    }
+
     protected synchronized String attachOrDetachDevice(Connect conn, boolean attach, String vmName, String xml)
             throws LibvirtException, InternalErrorException {
         Domain dm = null;
@@ -656,12 +679,6 @@ public class KVMStorageProcessor implements StorageProcessor {
             s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
             return new AttachAnswer(e.toString());
         }
-    }
-
-    @Override
-    public Answer dettachIso(DettachCommand cmd) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
