@@ -54,10 +54,10 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
+import org.apache.cloudstack.config.Configuration;
 
 import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
-import com.cloud.configuration.Configuration;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;

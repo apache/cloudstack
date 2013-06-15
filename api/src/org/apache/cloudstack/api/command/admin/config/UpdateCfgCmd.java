@@ -29,8 +29,8 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.config.Configuration;
 
-import com.cloud.configuration.Configuration;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateConfiguration", description="Updates a configuration.", responseObject=ConfigurationResponse.class)

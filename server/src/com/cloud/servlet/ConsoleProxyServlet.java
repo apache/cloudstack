@@ -45,7 +45,6 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.api.IdentityService;
 
-import com.cloud.dao.EntityManager;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
@@ -56,6 +55,7 @@ import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;

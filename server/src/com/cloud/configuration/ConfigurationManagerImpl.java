@@ -72,6 +72,7 @@ import org.apache.cloudstack.config.ConfigDepot;
 import org.apache.cloudstack.config.ConfigKey;
 import org.apache.cloudstack.config.ConfigValue;
 import org.apache.cloudstack.config.Configurable;
+import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -200,6 +201,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
@@ -319,6 +321,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public ManagementService _mgr;
     @Inject
     DedicatedResourceDao _dedicatedDao;
+    @Inject
+    EntityManager _entityMgr;
 
     @Inject
     List<Configurable> _configurables;
@@ -4636,7 +4640,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public <T> ConfigValue<T> get(ConfigKey<T> config) {
-        return new ConfigValue<T>(_configDao, config);
+        return new ConfigValue<T>(_entityMgr, config);
     }
     
     @Override

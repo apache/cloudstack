@@ -32,9 +32,9 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.api.StringMapTypeAdapter;
-import com.cloud.dao.EntityManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatcher {

@@ -37,9 +37,9 @@ import com.cloud.api.ApiDispatcher;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dao.EntityManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachineManager;
 
 @Configuration

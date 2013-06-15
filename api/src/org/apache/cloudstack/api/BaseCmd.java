@@ -36,7 +36,6 @@ import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
 
 import com.cloud.configuration.ConfigurationService;
-import com.cloud.dao.EntityManager;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -75,6 +74,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.snapshot.VMSnapshotService;
 

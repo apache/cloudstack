@@ -17,7 +17,7 @@
 package org.apache.cloudstack.config;
 
 /**
- * ConfigRepo is a repository of configurations.
+ * ConfigDepot is a repository of configurations.
  *
  */
 public interface ConfigDepot {

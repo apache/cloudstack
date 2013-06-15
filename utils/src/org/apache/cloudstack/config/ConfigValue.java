@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.config;
 
-import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -29,11 +28,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ConfigValue<T> {
 
     ConfigKey<T> _config;
-    ConfigurationDao _dao;
+    EntityManager _entityMgr;
     Number _multiplier;
+    T _value;
 
-    public ConfigValue(ConfigurationDao dao, ConfigKey<T> config) {
-        _dao = dao;
+    public ConfigValue(EntityManager entityMgr, ConfigKey<T> config) {
+        _entityMgr = entityMgr;
         _config = config;
         _multiplier = 1;
     }
@@ -49,24 +49,27 @@ public class ConfigValue<T> {
 
     @SuppressWarnings("unchecked")
     public T value() {
-        ConfigurationVO vo = _dao.findByName(_config.key());
-        String value = vo != null ? vo.getValue() : _config.defaultValue();
-        
-        Class<T> type = _config.type();
-        if (type.isAssignableFrom(Boolean.class)) {
-            return (T)Boolean.valueOf(value);
-        } else if (type.isAssignableFrom(Integer.class)) {
-            return (T)new Integer((Integer.parseInt(value) * _multiplier.intValue()));
-        } else if (type.isAssignableFrom(Long.class)) {
-            return (T)new Long(Long.parseLong(value) * _multiplier.longValue());
-        } else if (type.isAssignableFrom(Short.class)) {
-            return (T)new Short(Short.parseShort(value));
-        } else if (type.isAssignableFrom(String.class)) {
-            return (T)value;
-        } else if (type.isAssignableFrom(Float.class)) {
-            return (T)new Float(Float.parseFloat(value) * _multiplier.floatValue());
+        if (_config.isDynamic()) {
+            Configuration vo = _entityMgr.findById(Configuration.class, _config.key());
+            String value = vo != null ? vo.getValue() : _config.defaultValue();
+
+            Class<T> type = _config.type();
+            if (type.isAssignableFrom(Boolean.class)) {
+                _value = (T)Boolean.valueOf(value);
+            } else if (type.isAssignableFrom(Integer.class)) {
+                _value = (T)new Integer((Integer.parseInt(value) * _multiplier.intValue()));
+            } else if (type.isAssignableFrom(Long.class)) {
+                _value = (T)new Long(Long.parseLong(value) * _multiplier.longValue());
+            } else if (type.isAssignableFrom(Short.class)) {
+                _value = (T)new Short(Short.parseShort(value));
+            } else if (type.isAssignableFrom(String.class)) {
+                _value = (T)value;
+            } else if (type.isAssignableFrom(Float.class)) {
+                _value = (T)new Float(Float.parseFloat(value) * _multiplier.floatValue());
+            }
+            throw new CloudRuntimeException("Unsupported data type for config values: " + type);
         }
 
-        throw new CloudRuntimeException("Unsupported data type for config values: " + type);
+        return _value;
     }
 }

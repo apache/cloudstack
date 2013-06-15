@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.resource.ResourceService;
@@ -26,6 +25,8 @@ import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.config.Configuration;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

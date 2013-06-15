@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.dao.EntityManager;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Journal;
+import com.cloud.utils.db.EntityManager;
 
 public class ReservationContextImpl implements ReservationContext {
     User _caller;

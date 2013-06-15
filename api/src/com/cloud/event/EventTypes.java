@@ -19,7 +19,8 @@ package com.cloud.event;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.configuration.Configuration;
+import org.apache.cloudstack.config.Configuration;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;

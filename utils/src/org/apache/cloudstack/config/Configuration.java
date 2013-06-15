@@ -4,9 +4,9 @@
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,18 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.utils.db;
+package org.apache.cloudstack.config;
 
-/**
- * JoinQueryBuilder builds queries for joins between multiple tables.
- *
- */
-public interface JoinQueryBuilder<S, T> {
-    Select<S, T> selectField(Object column);
+public interface Configuration {
 
-    <J> On<S, J, T> innerJoin(Class<J> entityClazz);
-    
-    <J> J entity(Class<J> entityClazz);
-    
-    FirstWhere<S, T> where();
+    public String getCategory();
+
+    public String getInstance();
+
+    public String getComponent();
+
+    public String getName();
+
+    public String getValue();
+
+    public String getDescription();
+
 }

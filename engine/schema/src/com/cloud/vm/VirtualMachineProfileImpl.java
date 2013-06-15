@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.dao.EntityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -31,6 +30,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
+import com.cloud.utils.db.EntityManager;
 
 /**
  * Implementation of VirtualMachineProfile.
