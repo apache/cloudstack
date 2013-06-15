@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.async;
+package org.apache.cloudstack.framework.jobs.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,16 +47,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobJournalVO;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobMBeanImpl;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobMonitor;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
-import org.apache.cloudstack.framework.jobs.impl.SyncQueueItem;
-import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
-import org.apache.cloudstack.framework.jobs.impl.SyncQueueManager;
-import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.PublishScope;

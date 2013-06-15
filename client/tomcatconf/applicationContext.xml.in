@@ -817,7 +817,7 @@
   <bean id="asyncJobJoinDaoImpl" class="com.cloud.api.query.dao.AsyncJobJoinDaoImpl" />
   <bean id="asyncJobJournalDaoImpl" class="org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDaoImpl" />
   <bean id="asyncJobJoinMapDaoImpl" class="org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDaoImpl" />
-  <bean id="asyncJobManagerImpl" class="com.cloud.async.AsyncJobManagerImpl"/>
+  <bean id="asyncJobManagerImpl" class="org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl"/>
   <bean id="asyncJobMonitor" class="org.apache.cloudstack.framework.jobs.impl.AsyncJobMonitor"/>
   <bean id="syncQueueDaoImpl" class="org.apache.cloudstack.framework.jobs.dao.SyncQueueDaoImpl" />
   <bean id="syncQueueItemDaoImpl" class="org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDaoImpl" />
