@@ -4,6 +4,15 @@ Apache CloudStack CHANGES
 Full release notes for each release are located in the project's documentation website:  
 http://cloudstack.apache.org/docs
 
+Version 4.1.1
+------------------------
+
+This is the first bug-fix release of CloudStack for the 4.1.x line.
+
+Bug Fixes:
+
+
+
 Version 4.1.0
 ------------------------
 

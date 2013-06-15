@@ -25,7 +25,7 @@ HOSTNAME=systemvm
 SIZE=2048
 DEBIAN_MIRROR=ftp.us.debian.org/debian
 MINIMIZE=true
-CLOUDSTACK_RELEASE=4.1.0
+CLOUDSTACK_RELEASE=4.1.1
 
 init() {
     # Update the box

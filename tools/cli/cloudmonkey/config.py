@@ -18,7 +18,7 @@
 
 # Use following rules for versioning:
 # <cloudstack version>-<cli increment, starts from 0>
-__version__ = "4.1.0-0"
+__version__ = "4.1.1-0"
 
 try:
     import os
