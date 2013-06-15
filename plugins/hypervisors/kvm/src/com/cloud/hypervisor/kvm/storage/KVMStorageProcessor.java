@@ -329,7 +329,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             String templateName = UUID.randomUUID().toString();
 
             if (primary.getType() != StoragePoolType.RBD) {
-                Script command = new Script(_createTmplPath, wait, s_logger);
+                Script command = new Script(_createTmplPath, wait * 1000, s_logger);
                 command.add("-f", disk.getPath());
                 command.add("-t", tmpltPath);
                 command.add("-n", templateName + ".qcow2");
@@ -407,7 +407,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer backupSnasphot(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        int wait = cmd.getWait();
         SnapshotObjectTO snapshot = (SnapshotObjectTO) srcData;
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) snapshot.getDataStore();
         SnapshotObjectTO destSnapshot = (SnapshotObjectTO) destData;
@@ -440,7 +439,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(),
                     primaryStore.getUuid());
             KVMPhysicalDisk snapshotDisk = primaryPool.getPhysicalDisk(volumePath);
-            Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
+            Script command = new Script(_manageSnapshotPath, cmd.getWait() * 1000, s_logger);
             command.add("-b", snapshotDisk.getPath());
             command.add("-n", snapshotName);
             command.add("-p", snapshotDestPath);
