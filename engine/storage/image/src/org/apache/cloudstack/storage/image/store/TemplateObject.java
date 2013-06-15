@@ -44,8 +44,8 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.component.ComponentContext;
@@ -122,12 +122,12 @@ public class TemplateObject implements TemplateInfo {
         }
 
         /*
-         *
+         * 
          * // If the template that was passed into this allocator is not
          * installed in the storage pool, // add 3 * (template size on secondary
          * storage) to the running total VMTemplateHostVO templateHostVO =
          * _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), null);
-         *
+         * 
          * if (templateHostVO == null) { VMTemplateSwiftVO templateSwiftVO =
          * _swiftMgr.findByTmpltId(templateForVmCreation.getId()); if
          * (templateSwiftVO != null) { long templateSize =
@@ -152,12 +152,14 @@ public class TemplateObject implements TemplateInfo {
         return this.imageVO.getFormat();
     }
 
-//    public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
-//        this.imageVO = imageDao.findById(this.imageVO.getId());
-//        boolean result = imageMgr.getStateMachine().transitTo(this.imageVO, e, null, imageDao);
-//        this.imageVO = imageDao.findById(this.imageVO.getId());
-//        return result;
-//    }
+    // public boolean stateTransit(TemplateEvent e) throws NoTransitionException
+    // {
+    // this.imageVO = imageDao.findById(this.imageVO.getId());
+    // boolean result = imageMgr.getStateMachine().transitTo(this.imageVO, e,
+    // null, imageDao);
+    // this.imageVO = imageDao.findById(this.imageVO.getId());
+    // return result;
+    // }
 
     @Override
     public void processEvent(Event event) {
@@ -175,9 +177,10 @@ public class TemplateObject implements TemplateInfo {
                     templEvent = TemplateEvent.OperationFailed;
                 }
 
-//                if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
-//                    this.stateTransit(templEvent);
-//                }
+                // if (templEvent != null && this.getDataStore().getRole() ==
+                // DataStoreRole.Image) {
+                // this.stateTransit(templEvent);
+                // }
             }
 
             objectInStoreMgr.update(this, event);
@@ -238,9 +241,10 @@ public class TemplateObject implements TemplateInfo {
                     templEvent = TemplateEvent.OperationFailed;
                 }
 
-//                if (templEvent != null && this.getDataStore().getRole() == DataStoreRole.Image) {
-//                    this.stateTransit(templEvent);
-//                }
+                // if (templEvent != null && this.getDataStore().getRole() ==
+                // DataStoreRole.Image) {
+                // this.stateTransit(templEvent);
+                // }
             }
             objectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
@@ -264,9 +268,8 @@ public class TemplateObject implements TemplateInfo {
             return;
         }
 
-        if (this.dataStore.getRole() == DataStoreRole.Image ||
-                this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            TemplateDataStoreVO store = templateStoreDao.findById(this.dataStore.getId());
+        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO store = templateStoreDao.findByStoreTemplate(dataStore.getId(), this.getId());
             store.incrRefCnt();
             store.setLastUpdated(new Date());
             templateStoreDao.update(store.getId(), store);
@@ -278,9 +281,8 @@ public class TemplateObject implements TemplateInfo {
         if (this.dataStore == null) {
             return;
         }
-        if (this.dataStore.getRole() == DataStoreRole.Image ||
-                this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            TemplateDataStoreVO store = templateStoreDao.findById(this.dataStore.getId());
+        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO store = templateStoreDao.findByStoreTemplate(dataStore.getId(), this.getId());
             store.decrRefCnt();
             store.setLastUpdated(new Date());
             templateStoreDao.update(store.getId(), store);
@@ -292,9 +294,8 @@ public class TemplateObject implements TemplateInfo {
         if (this.dataStore == null) {
             return null;
         }
-        if (this.dataStore.getRole() == DataStoreRole.Image ||
-                this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            TemplateDataStoreVO store = templateStoreDao.findById(this.dataStore.getId());
+        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO store = templateStoreDao.findByStoreTemplate(dataStore.getId(), this.getId());
             return store.getRefCnt();
         }
         return null;
@@ -441,6 +442,5 @@ public class TemplateObject implements TemplateInfo {
         }
         return true;
     }
-
 
 }

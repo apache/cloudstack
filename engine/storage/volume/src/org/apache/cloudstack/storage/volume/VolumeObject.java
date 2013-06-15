@@ -252,7 +252,6 @@ public class VolumeObject implements VolumeInfo {
         }
     }
 
-
     @Override
     public String getName() {
         return this.volumeVO.getName();
@@ -456,9 +455,8 @@ public class VolumeObject implements VolumeInfo {
             return;
         }
 
-        if (this.dataStore.getRole() == DataStoreRole.Image ||
-                this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            VolumeDataStoreVO store = volumeStoreDao.findById(this.dataStore.getId());
+        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
             store.incrRefCnt();
             store.setLastUpdated(new Date());
             volumeStoreDao.update(store.getId(), store);
@@ -470,9 +468,8 @@ public class VolumeObject implements VolumeInfo {
         if (this.dataStore == null) {
             return;
         }
-        if (this.dataStore.getRole() == DataStoreRole.Image ||
-                this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            VolumeDataStoreVO store = volumeStoreDao.findById(this.dataStore.getId());
+        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
             store.decrRefCnt();
             store.setLastUpdated(new Date());
             volumeStoreDao.update(store.getId(), store);
@@ -484,9 +481,8 @@ public class VolumeObject implements VolumeInfo {
         if (this.dataStore == null) {
             return null;
         }
-        if (this.dataStore.getRole() == DataStoreRole.Image ||
-                this.dataStore.getRole() == DataStoreRole.ImageCache) {
-            VolumeDataStoreVO store = volumeStoreDao.findById(this.dataStore.getId());
+        if (this.dataStore.getRole() == DataStoreRole.Image || this.dataStore.getRole() == DataStoreRole.ImageCache) {
+            VolumeDataStoreVO store = volumeStoreDao.findByStoreVolume(this.dataStore.getId(), this.getId());
             return store.getRefCnt();
         }
         return null;

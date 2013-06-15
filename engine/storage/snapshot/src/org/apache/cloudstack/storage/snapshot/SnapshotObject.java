@@ -22,7 +22,6 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -41,6 +40,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -279,9 +279,9 @@ public class SnapshotObject implements SnapshotInfo {
             return;
         }
 
-        if (this.store.getRole() == DataStoreRole.Image ||
-                this.store.getRole() == DataStoreRole.ImageCache) {
-            SnapshotDataStoreVO store = snapshotStoreDao.findById(this.store.getId());
+        if (this.store.getRole() == DataStoreRole.Image || this.store.getRole() == DataStoreRole.ImageCache) {
+            SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(),
+                    this.getId());
             store.incrRefCnt();
             store.setLastUpdated(new Date());
             snapshotStoreDao.update(store.getId(), store);
@@ -293,9 +293,9 @@ public class SnapshotObject implements SnapshotInfo {
         if (this.store == null) {
             return;
         }
-        if (this.store.getRole() == DataStoreRole.Image ||
-                this.store.getRole() == DataStoreRole.ImageCache) {
-            SnapshotDataStoreVO store = snapshotStoreDao.findById(this.store.getId());
+        if (this.store.getRole() == DataStoreRole.Image || this.store.getRole() == DataStoreRole.ImageCache) {
+            SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(),
+                    this.getId());
             store.decrRefCnt();
             store.setLastUpdated(new Date());
             snapshotStoreDao.update(store.getId(), store);
@@ -307,9 +307,9 @@ public class SnapshotObject implements SnapshotInfo {
         if (this.store == null) {
             return null;
         }
-        if (this.store.getRole() == DataStoreRole.Image ||
-                this.store.getRole() == DataStoreRole.ImageCache) {
-            SnapshotDataStoreVO store = snapshotStoreDao.findById(this.store.getId());
+        if (this.store.getRole() == DataStoreRole.Image || this.store.getRole() == DataStoreRole.ImageCache) {
+            SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(),
+                    this.getId());
             return store.getRefCnt();
         }
         return null;

@@ -699,8 +699,6 @@ public class KVMStorageProcessor implements StorageProcessor {
             s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to " + e.toString());
             return new AttachAnswer(e.toString());
         }
-
-        
     }
 
     @Override
