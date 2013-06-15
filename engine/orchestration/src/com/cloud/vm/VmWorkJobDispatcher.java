@@ -27,9 +27,9 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.api.StringMapTypeAdapter;
 import com.cloud.dao.EntityManager;

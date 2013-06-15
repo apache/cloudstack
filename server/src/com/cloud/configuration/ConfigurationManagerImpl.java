@@ -68,9 +68,10 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.config.ConfigDepot;
 import org.apache.cloudstack.config.ConfigKey;
-import org.apache.cloudstack.config.ConfigRepo;
 import org.apache.cloudstack.config.ConfigValue;
+import org.apache.cloudstack.config.Configurable;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -215,7 +216,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
-public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, ConfigRepo {
+public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, ConfigDepot {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class.getName());
 
     @Inject
@@ -318,6 +319,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public ManagementService _mgr;
     @Inject
     DedicatedResourceDao _dedicatedDao;
+
+    @Inject
+    List<Configurable> _configurables;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao;

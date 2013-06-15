@@ -61,6 +61,10 @@ public class ConfigKey<T> {
         return _scope;
     }
 
+    public boolean isDynamic() {
+        return _isDynamic;
+    }
+
     @Override
     public String toString() {
         return _name;
@@ -73,8 +77,10 @@ public class ConfigKey<T> {
     private final String _description;
     private final String _range;
     private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
+    private final boolean _isDynamic;
 
-    public ConfigKey(Class<T> type, String name, String category, Class<?> componentClass, String defaultValue, String description, String range, String scope) {
+    public ConfigKey(Class<T> type, String name, String category, Class<?> componentClass, String defaultValue, String description, boolean isDynamic, String range,
+            String scope) {
         _category = category;
         _componentClass = componentClass;
         _type = type;
@@ -83,9 +89,10 @@ public class ConfigKey<T> {
         _description = description;
         _range = range;
         _scope = scope;
+        _isDynamic = isDynamic;
     }
 
-    public ConfigKey(Class<T> type, String name, String category, Class<?> componentClass, String defaultValue, String description, String range) {
-        this(type, name, category, componentClass, defaultValue, description, range, null);
+    public ConfigKey(Class<T> type, String name, String category, Class<?> componentClass, String defaultValue, String description, boolean isDynamic, String range) {
+        this(type, name, category, componentClass, defaultValue, description, isDynamic, range, null);
     }
 }

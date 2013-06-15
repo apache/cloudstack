@@ -1797,8 +1797,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
 
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(),
-                    BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
+            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, Long.toString(volumeId));
         }
 
         VolumeVO newVol = _volumeDao.findById(volumeOnPrimaryStorage.getId());
@@ -1896,8 +1895,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             }
 
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(),
-                    BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
+            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId.toString());
         }
 
         String errorMsg = "Failed to detach volume: " + volume.getName()

@@ -22,24 +22,24 @@ import org.apache.cloudstack.engine.service.api.OrchestrationService;
 public interface Configs {
     
     public static final ConfigKey<Integer> StartRetry = new ConfigKey<Integer>(
-            Integer.class, "start.retry", "Advanced", OrchestrationService.class, "10", "Number of times to retry create and start commands", null);
+            Integer.class, "start.retry", "Advanced", OrchestrationService.class, "10", "Number of times to retry create and start commands", true, null);
     public static final ConfigKey<Long> VmOpWaitInterval = new ConfigKey<Long>(
             Long.class, "vm.op.wait.interval", "Advanced", OrchestrationService.class, "120", "Time (in seconds) to wait before checking if a previous operation has succeeded",
-            null);
+            true, null);
     public static final ConfigKey<Integer> VmOpLockStateRetry = new ConfigKey<Integer>(
-            Integer.class, "vm.op.lock.state.retry", "Advanced", OrchestrationService.class, "5", "Times to retry locking the state of a VM for operations", "-1 means try forever");
+            Integer.class, "vm.op.lock.state.retry", "Advanced", OrchestrationService.class, "5", "Times to retry locking the state of a VM for operations",
+            true, "-1 means try forever");
     public static final ConfigKey<Long> VmOpCleanupInterval = new ConfigKey<Long>(
             Long.class, "vm.op.cleanup.interval", "Advanced", OrchestrationService.class, "86400", "Interval to run the thread that cleans up the vm operations (in seconds)",
-            "Seconds");
+            false, "Seconds");
     public static final ConfigKey<Long> VmOpCleanupWait = new ConfigKey<Long>(
-            Long.class, "vm.op.cleanup.wait", "Advanced", OrchestrationService.class, "3600", "Time (in seconds) to wait before cleanuping up any vm work items", "Seconds");
+            Long.class, "vm.op.cleanup.wait", "Advanced", OrchestrationService.class, "3600", "Time (in seconds) to wait before cleanuping up any vm work items", false, "Seconds");
     public static final ConfigKey<Integer> VmOpCancelInterval = new ConfigKey<Integer>(
-            Integer.class, "vm.op.cancel.interval", "Advanced", OrchestrationService.class, "3600", "Time (in seconds) to wait before cancelling a operation", "Seconds");
-
+            Integer.class, "vm.op.cancel.interval", "Advanced", OrchestrationService.class, "3600", "Time (in seconds) to wait before cancelling a operation", false, "Seconds");
     public static final ConfigKey<Integer> Wait = new ConfigKey<Integer>(
-            Integer.class, "wait", "Advanced", OrchestrationService.class, "1800", "Time in seconds to wait for control commands to return", null);
+            Integer.class, "wait", "Advanced", OrchestrationService.class, "1800", "Time in seconds to wait for control commands to return", false, null);
     public static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>(
-            Boolean.class, "vm.destroy.forcestop", "Advanced", OrchestrationService.class, "false", "On destroy, force-stop takes this value ", null);
+            Boolean.class, "vm.destroy.forcestop", "Advanced", OrchestrationService.class, "false", "On destroy, force-stop takes this value ", true, null);
 
     public static final ConfigKey<Long> PingInterval = new ConfigKey<Long>(
             Long.class, "ping.interval", "Advanced", OrchestrationService.class, "60", "Ping interval in seconds", null);

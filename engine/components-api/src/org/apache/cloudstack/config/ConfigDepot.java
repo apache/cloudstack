@@ -20,7 +20,6 @@ package org.apache.cloudstack.config;
  * ConfigRepo is a repository of configurations.
  *
  */
-public interface ConfigRepo {
+public interface ConfigDepot {
     <T> ConfigValue<T> get(ConfigKey<T> key);
-
 }

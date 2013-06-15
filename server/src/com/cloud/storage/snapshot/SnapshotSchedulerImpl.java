@@ -34,7 +34,6 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -143,14 +142,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             Long asyncJobId = snapshotSchedule.getAsyncJobId();
             AsyncJobVO asyncJob = _asyncJobDao.findById(asyncJobId);
             switch (asyncJob.getStatus()) {
-            case JobInfo.Status.SUCCEEDED:
+            case SUCCEEDED:
                 // The snapshot has been successfully backed up.
                 // The snapshot state has also been cleaned up.
                 // We can schedule the next job for this snapshot.
                 // Remove the existing entry in the snapshot_schedule table.
                 scheduleNextSnapshotJob(snapshotSchedule);
                 break;
-            case JobInfo.Status.FAILED:
+            case FAILED:
                 // Check the snapshot status.
                 Long snapshotId = snapshotSchedule.getSnapshotId();
                 if (snapshotId == null) {
@@ -188,7 +187,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 }
 
                 break;
-            case JobInfo.Status.IN_PROGRESS:
+            case IN_PROGRESS:
                 // There is no way of knowing from here whether
                 // 1) Another management server is processing this snapshot job
                 // 2) The management server has crashed and this snapshot is lying

@@ -36,10 +36,10 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.response.ExceptionResponse;
-import org.apache.cloudstack.config.ConfigRepo;
-import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.config.ConfigDepot;
+import org.apache.cloudstack.config.ConfigKey;
+import org.apache.cloudstack.config.ConfigValue;
+import org.apache.cloudstack.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
@@ -63,20 +63,10 @@ import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 
-import com.cloud.api.ApiSerializerHelper;
-import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.ManagementServerNode;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ManagerBase;
@@ -90,10 +80,15 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 
-public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener {
+public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
+    // Advanced
+    private static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>(Long.class, "job.expire.minutes", "Advanced", AsyncJobManager.class, "1440",
+            "Time (in minutes) for async-jobs to be kept in system", true, null);
+    private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>(Long.class, "job.cancel.threshold.minutes", "Advanced", AsyncJobManager.class,
+            "60", "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, null);
+
     private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
-    private static final String JOB_POOL_THREAD_PREFIX = "Job-Executor";
     // Although we may have detailed masks for each individual wakeup event, i.e.
     // periodical timer, matched topic from message bus, it seems that we don't
     // need to distinguish them to such level. Therefore, only one wakeup signal
@@ -105,26 +100,27 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private static final int GC_INTERVAL = 10000;				// 10 seconds
 
     @Inject private SyncQueueManager _queueMgr;
-    @Inject private ClusterManager _clusterMgr;
-    @Inject private AccountManager _accountMgr;
     @Inject private AsyncJobDao _jobDao;
     @Inject private AsyncJobJournalDao _journalDao;
-    @Inject private ConfigurationDao _configDao;
     @Inject private AsyncJobJoinMapDao _joinMapDao;
     @Inject private List<AsyncJobDispatcher> _jobDispatchers;
     @Inject private MessageBus _messageBus;
     @Inject private AsyncJobMonitor _jobMonitor;
     @Inject
-    private ConfigRepo _configRepo;
+    private ConfigDepot _configDepot;
 
-	private long _jobExpireSeconds = 86400;						// 1 day
-    private long _jobCancelThresholdSeconds = 3600;         	// 1 hour (for cancelling the jobs blocking other jobs)
+    private ConfigValue<Long> _jobExpireSeconds;						// 1 day
+    private ConfigValue<Long> _jobCancelThresholdSeconds;         	// 1 hour (for cancelling the jobs blocking other jobs)
     
     private volatile long _executionRunNumber = 1;
 
-    private final ScheduledExecutorService _heartbeatScheduler =
-            Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
+    private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
     private ExecutorService _executor;
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes};
+    }
 
     @Override
     public AsyncJobVO getAsyncJob(long jobId) {
@@ -196,7 +192,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 	}
     
     @Override @DB
-    public void completeAsyncJob(long jobId, Status jobStatus, int resultCode, Object resultObject) {
+    public void completeAsyncJob(long jobId, Status jobStatus, int resultCode, String resultObject) {
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("Complete async job-" + jobId + ", jobStatus: " + jobStatus +
                     ", resultCode: " + resultCode + ", result: " + resultObject);
@@ -234,7 +230,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             job.setInstanceId(null);
 
             if (resultObject != null) {
-                job.setResult(ApiSerializerHelper.toSerializedString(resultObject));
+                job.setResult(resultObject);
             }
 
             job.setLastUpdated(DateUtil.currentGMTTime());
@@ -260,7 +256,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     @Override @DB
-    public void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject) {
+    public void updateAsyncJobStatus(long jobId, int processStatus, String resultObject) {
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("Update async-job progress, job-" + jobId + ", processStatus: " + processStatus +
                     ", result: " + resultObject);
@@ -281,7 +277,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
             job.setProcessStatus(processStatus);
             if(resultObject != null) {
-                job.setResult(ApiSerializerHelper.toSerializedString(resultObject));
+                job.setResult(resultObject);
             }
             job.setLastUpdated(DateUtil.currentGMTTime());
             _jobDao.update(jobId, job);
@@ -388,84 +384,16 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     @Override
-    public AsyncJob queryAsyncJobResult(QueryAsyncJobResultCmd cmd) {
-        Account caller = CallContext.current().getCallingAccount();
-
-        AsyncJobVO job = _jobDao.findById(cmd.getId());
-        if (job == null) {
-            throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
+    public AsyncJob queryJob(long jobId, boolean updatePollTime) {
+        AsyncJobVO job = _jobDao.findById(jobId);
+        
+        if (updatePollTime) {
+            job.setLastPolled(DateUtil.currentGMTTime());
+            _jobDao.update(jobId, job);
         }
-
-        User userJobOwner = _accountMgr.getUserIncludingRemoved(job.getUserId());
-        Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
-
-        //check permissions
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-            //regular user can see only jobs he owns
-            if (caller.getId() != jobOwner.getId()) {
-                throw new PermissionDeniedException("Account " + caller + " is not authorized to see job id=" + job.getId());
-            }
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            _accountMgr.checkAccess(caller, null, true, jobOwner);
-        }
-
-        //poll the job
-        queryAsyncJobResult(cmd.getId());
-        return _jobDao.findById(cmd.getId());
+        return job;
     }
 
-    @DB
-    public AsyncJobResult queryAsyncJobResult(long jobId) {
-        if(s_logger.isTraceEnabled()) {
-            s_logger.trace("Query async-job status, job-" + jobId);
-        }
-
-        Transaction txt = Transaction.currentTxn();
-        AsyncJobResult jobResult = new AsyncJobResult(jobId);
-
-        try {
-            txt.start();
-            AsyncJobVO job = _jobDao.findById(jobId);
-            if(job != null) {
-                jobResult.setJobStatus(job.getStatus());
-                jobResult.setProcessStatus(job.getProcessStatus());
-                jobResult.setResult(job.getResult());
-                jobResult.setResultCode(job.getResultCode());
-                jobResult.setUuid(job.getUuid());
-
-                if(job.getStatus() == JobInfo.Status.SUCCEEDED ||
-                        job.getStatus() == JobInfo.Status.FAILED) {
-
-                    if(s_logger.isDebugEnabled()) {
-                        s_logger.debug("Async job-" + jobId + " completed");
-                    }
-                } else {
-                    job.setLastPolled(DateUtil.currentGMTTime());
-                    _jobDao.update(jobId, job);
-                }
-            } else {
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("Async job-" + jobId + " does not exist, invalid job id?");
-                }
-
-                jobResult.setJobStatus(JobInfo.Status.FAILED);
-                jobResult.setResult("job-" + jobId + " does not exist");
-            }
-            txt.commit();
-        } catch(Exception e) {
-            s_logger.error("Unexpected exception while querying async job-" + jobId + " status: ", e);
-
-            jobResult.setJobStatus(JobInfo.Status.FAILED);
-            jobResult.setResult("Exception: " + e.toString());
-            txt.rollback();
-        }
-
-        if(s_logger.isTraceEnabled()) {
-            s_logger.trace("Job status: " + jobResult.toString());
-        }
-
-        return jobResult;
-    }
 
     private void scheduleExecution(final AsyncJobVO job) {
         scheduleExecution(job, false);
@@ -762,7 +690,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 try {
                     s_logger.trace("Begin cleanup expired async-jobs");
 
-                    Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - _jobExpireSeconds*1000);
+                    Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - _jobExpireSeconds.value() * 1000);
 
                     // limit to 100 jobs per turn, this gives cleanup throughput as 600 jobs per minute
                     // hopefully this will be fast enough to balance potential growth of job table
@@ -781,12 +709,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
 
                     // forcefully cancel blocking queue items if they've been staying there for too long
-                    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(_jobCancelThresholdSeconds*1000, false);
+                    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(_jobCancelThresholdSeconds.value()
+                            * 1000, false);
                     if(blockItems != null && blockItems.size() > 0) {
                         for(SyncQueueItemVO item : blockItems) {
                             if(item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
-                                completeAsyncJob(item.getContentId(), JobInfo.Status.FAILED, 0,
-                                        getResetResultResponse("Job is cancelled as it has been blocking others for too long"));
+                                completeAsyncJob(item.getContentId(), JobInfo.Status.FAILED, 0, "Job is cancelled as it has been blocking others for too long");
                             }
 
                             // purge the item and resume queue processing
@@ -799,8 +727,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     s_logger.error("Unexpected exception when trying to execute queue item, ", e);
                 }
             }
-
-
         };
     }
 
@@ -819,32 +745,27 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private void cleanupPendingJobs(List<SyncQueueItemVO> l) {
-        if(l != null && l.size() > 0) {
-            for(SyncQueueItemVO item: l) {
-                if(s_logger.isInfoEnabled()) {
-                    s_logger.info("Discard left-over queue item: " + item.toString());
-                }
-
-                String contentType = item.getContentType();
-                if(contentType != null && contentType.equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
-                    Long jobId = item.getContentId();
-                    if(jobId != null) {
-                        s_logger.warn("Mark job as failed as its correspoding queue-item has been discarded. job id: " + jobId);
-                        completeAsyncJob(jobId, JobInfo.Status.FAILED, 0, getResetResultResponse("Execution was cancelled because of server shutdown"));
-                    }
-                }
-                _queueMgr.purgeItem(item.getId());
+        for (SyncQueueItemVO item : l) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Discard left-over queue item: " + item.toString());
             }
+
+            String contentType = item.getContentType();
+            if (contentType != null && contentType.equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
+                Long jobId = item.getContentId();
+                if (jobId != null) {
+                    s_logger.warn("Mark job as failed as its correspoding queue-item has been discarded. job id: " + jobId);
+                    completeAsyncJob(jobId, JobInfo.Status.FAILED, 0, "Execution was cancelled because of server shutdown");
+                }
+            }
+            _queueMgr.purgeItem(item.getId());
         }
     }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        int expireMinutes = NumbersUtil.parseInt(_configDao.getValue(Config.JobExpireMinutes.key()), 24 * 60);
-        _jobExpireSeconds = (long)expireMinutes*60;
-
-        _jobCancelThresholdSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.JobCancelThresholdMinutes.key()), 60);
-        _jobCancelThresholdSeconds *= 60;
+        _jobExpireSeconds = _configDepot.get(JobExpireMinutes).setMultiplier(60);
+        _jobCancelThresholdSeconds = _configDepot.get(JobCancelThresholdMinutes).setMultiplier(60);
 
         try {
             final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
@@ -856,7 +777,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             int poolSize = (cloudMaxActive * 2) / 3;
 
             s_logger.info("Start AsyncJobManager thread pool in size " + poolSize);
-            _executor = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory(JOB_POOL_THREAD_PREFIX));
+            _executor = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory(AsyncJobManager.JOB_POOL_THREAD_PREFIX));
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to load db.properties to configure AsyncJobManagerImpl");
         }
@@ -879,11 +800,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 txn.start();
                 List<SyncQueueItemVO> items = _queueMgr.getActiveQueueItems(msHost.getId(), true);
                 cleanupPendingJobs(items);
-                _jobDao.resetJobProcess(msHost.getId(), ApiErrorCode.INTERNAL_ERROR.getHttpCode(), getSerializedErrorMessage("job cancelled because of management server restart"));
+                _jobDao.resetJobProcess(msHost.getId(), ApiErrorCode.INTERNAL_ERROR.getHttpCode(), "job cancelled because of management server restart");
                 txn.commit();
             } catch(Throwable e) {
                 s_logger.warn("Unexpected exception ", e);
-                txn.rollback();
             } finally {
                 txn.close();
             }
@@ -901,28 +821,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         	
             List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
             cleanupPendingJobs(l);
-            _jobDao.resetJobProcess(getMsid(), ApiErrorCode.INTERNAL_ERROR.getHttpCode(), getSerializedErrorMessage("job cancelled because of management server restart"));
+            _jobDao.resetJobProcess(getMsid(), ApiErrorCode.INTERNAL_ERROR.getHttpCode(), "job cancelled because of management server restart");
         } catch(Throwable e) {
             s_logger.error("Unexpected exception " + e.getMessage(), e);
         }
 
-        _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), HEARTBEAT_INTERVAL,
-                HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
-        _heartbeatScheduler.scheduleAtFixedRate(getGCTask(), GC_INTERVAL,
-                GC_INTERVAL, TimeUnit.MILLISECONDS);
+        _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), HEARTBEAT_INTERVAL, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
+        _heartbeatScheduler.scheduleAtFixedRate(getGCTask(), GC_INTERVAL, GC_INTERVAL, TimeUnit.MILLISECONDS);
 
         return true;
-    }
-
-    private static ExceptionResponse getResetResultResponse(String errorMessage) {
-        ExceptionResponse resultObject = new ExceptionResponse();
-        resultObject.setErrorCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
-        resultObject.setErrorText(errorMessage);
-        return resultObject;
-    }
-
-    private static String getSerializedErrorMessage(String errorMessage) {
-        return ApiSerializerHelper.toSerializedString(getResetResultResponse(errorMessage));
     }
 
     @Override

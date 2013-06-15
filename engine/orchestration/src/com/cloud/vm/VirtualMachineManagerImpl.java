@@ -39,19 +39,19 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.config.ConfigRepo;
+import org.apache.cloudstack.config.ConfigDepot;
 import org.apache.cloudstack.config.ConfigValue;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.config.Configs;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
@@ -175,7 +175,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected EntityManager _entityMgr;
     @Inject
-    ConfigRepo _configRepo;
+    ConfigDepot _configRepo;
     @Inject
     DataStoreManager _dataStoreMgr;
     @Inject
@@ -3536,7 +3536,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	//	1) no pending VmWork job
     	//	2) on hostId host and host is UP
     	//
-    	// When host is UP, soon or later we will get a report from the host about the VM, 
+    	// When host is UP, soon or later we will get a report from the host about the VM,
     	// however, if VM is missing from the host report (it may happen in out of band changes
     	// or from designed behave of XS/KVM), the VM may not get a chance to run the state-sync logic
     	//
@@ -3580,9 +3580,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     // VMs that in transitional state without recent power state report
     @DB
     private List<Long> listStalledVMInTransitionStateOnUpHost(long hostId, Date cutTime) {
-    	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " + 
+    	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
                      "AND h.id = ? AND i.power_state_update_time < ? AND i.host_id = h.id " +
-    			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " + 
+    			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
     			     "AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job)";
     	
     	List<Long> l = new ArrayList<Long>();
@@ -3631,9 +3631,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     
     @DB
     private List<Long> listStalledVMInTransitionStateOnDisconnectedHosts(Date cutTime) {
-    	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status != 'UP' " + 
+    	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status != 'UP' " +
                  "AND i.power_state_update_time < ? AND i.host_id = h.id " +
-			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " + 
+			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
 			     "AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job)";
 	
     	List<Long> l = new ArrayList<Long>();

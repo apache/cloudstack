@@ -35,7 +35,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDao;
@@ -44,6 +43,7 @@ import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobJournalVO;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobMonitor;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -202,7 +202,7 @@ public class TestAsyncJobManager extends TestCase {
     @Test
     public void testPseudoJob() {
         AsyncJob job = asyncMgr.getPseudoJob(Account.ACCOUNT_ID_SYSTEM, User.UID_SYSTEM);
-    	Assert.assertTrue(job.getInstanceType().equals(AsyncJobConstants.PSEUDO_JOB_INSTANCE_TYPE));
+        Assert.assertTrue(job.getInstanceType().equals(AsyncJobVO.PSEUDO_JOB_INSTANCE_TYPE));
     	Assert.assertTrue(job.getInstanceId().longValue() == Thread.currentThread().getId());
     }
     

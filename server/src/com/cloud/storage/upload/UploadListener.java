@@ -24,10 +24,15 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
-import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
+import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
+import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
+import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -40,13 +45,8 @@ import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
-import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
-import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.AsyncJobResult;
+import com.cloud.api.ApiSerializerHelper;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
@@ -65,7 +65,7 @@ public class UploadListener implements Listener {
 		private final RequestType reqType;
 
 		public StatusTask( UploadListener ul,  RequestType req) {
-			this.reqType = req;
+			reqType = req;
 			this.ul = ul;
 		}
 
@@ -165,19 +165,19 @@ public class UploadListener implements Listener {
 	public UploadListener(HostVO host, Timer _timer, UploadDao uploadDao,
 			UploadVO uploadObj, UploadMonitorImpl uploadMonitor, UploadCommand cmd,
 			Long accountId, String typeName, Type type, long eventId, long asyncJobId, AsyncJobManager asyncMgr) {
-		this.sserver = host;
+		sserver = host;
 		this.uploadDao = uploadDao;
 		this.uploadMonitor = uploadMonitor;
 		this.cmd = cmd;
-		this.uploadId = uploadObj.getId();
+		uploadId = uploadObj.getId();
 		this.accountId = accountId;
 		this.typeName = typeName;
 		this.type = type;
 		initStateMachine();
-		this.currState = getState(Status.NOT_UPLOADED.toString());
-		this.timer = _timer;
-		this.timeoutTask = new TimeoutTask(this);
-		this.timer.schedule(timeoutTask, 3*STATUS_POLL_INTERVAL);
+		currState = getState(Status.NOT_UPLOADED.toString());
+		timer = _timer;
+		timeoutTask = new TimeoutTask(this);
+		timer.schedule(timeoutTask, 3*STATUS_POLL_INTERVAL);
 		this.eventId = eventId;
 		this.asyncJobId = asyncJobId;
 		this.asyncMgr = asyncMgr;
@@ -188,7 +188,7 @@ public class UploadListener implements Listener {
 		else{
 		    extractId = ApiDBUtils.findTemplateById(uploadObj.getTypeId()).getUuid();
 		}
-		this.resultObj = new ExtractResponse(extractId, typeName, ApiDBUtils.findAccountById(accountId).getUuid(), Status.NOT_UPLOADED.toString(),
+		resultObj = new ExtractResponse(extractId, typeName, ApiDBUtils.findAccountById(accountId).getUuid(), Status.NOT_UPLOADED.toString(),
 		        ApiDBUtils.findUploadById(uploadId).getUuid());
 		resultObj.setResponseName(responseNameMap.get(type.toString()));
 		updateDatabase(Status.NOT_UPLOADED, cmd.getUrl(),"");
@@ -213,11 +213,11 @@ public class UploadListener implements Listener {
 	}
 
 	public void setCommand(UploadCommand _cmd) {
-		this.cmd = _cmd;
+		cmd = _cmd;
 	}
 
 	public void setJobId(String _jobId) {
-		this.jobId = _jobId;
+		jobId = _jobId;
 	}
 
 	public String getJobId() {
@@ -365,7 +365,7 @@ public class UploadListener implements Listener {
 		resultObj.setResultString(uploadErrorString);
 		resultObj.setState(state.toString());
 		asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
-		asyncMgr.updateAsyncJobStatus(asyncJobId, JobInfo.Status.IN_PROGRESS, resultObj);
+        asyncMgr.updateAsyncJobStatus(asyncJobId, JobInfo.Status.IN_PROGRESS.ordinal(), ApiSerializerHelper.toSerializedString(resultObj));
 
 		UploadVO vo = uploadDao.createForUpdate();
 		vo.setUploadState(state);
@@ -378,7 +378,7 @@ public class UploadListener implements Listener {
 		resultObj.setResultString(uploadErrorString);
 		resultObj.setState(state.toString());
 		asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
-		asyncMgr.updateAsyncJobStatus(asyncJobId, JobInfo.Status.IN_PROGRESS, resultObj);
+        asyncMgr.updateAsyncJobStatus(asyncJobId, JobInfo.Status.IN_PROGRESS.ordinal(), ApiSerializerHelper.toSerializedString(resultObj));
 
 
 		UploadVO vo = uploadDao.createForUpdate();
@@ -407,12 +407,12 @@ public class UploadListener implements Listener {
 
 		if (answer.getUploadStatus() == Status.UPLOAD_IN_PROGRESS){
 			asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
-			asyncMgr.updateAsyncJobStatus(asyncJobId, JobInfo.Status.IN_PROGRESS, resultObj);
+            asyncMgr.updateAsyncJobStatus(asyncJobId, JobInfo.Status.IN_PROGRESS.ordinal(), ApiSerializerHelper.toSerializedString(resultObj));
 		}else if(answer.getUploadStatus() == Status.UPLOADED){
 		    resultObj.setResultString("Success");
-			asyncMgr.completeAsyncJob(asyncJobId, JobInfo.Status.SUCCEEDED, 1, resultObj);
+            asyncMgr.completeAsyncJob(asyncJobId, JobInfo.Status.SUCCEEDED, 1, ApiSerializerHelper.toSerializedString(resultObj));
 		}else{
-			asyncMgr.completeAsyncJob(asyncJobId, JobInfo.Status.FAILED, 2, resultObj);
+            asyncMgr.completeAsyncJob(asyncJobId, JobInfo.Status.FAILED, 2, ApiSerializerHelper.toSerializedString(resultObj));
 		}
         UploadVO updateBuilder = uploadDao.createForUpdate();
 		updateBuilder.setUploadPercent(answer.getUploadPct());
@@ -454,6 +454,6 @@ public class UploadListener implements Listener {
 	}
 
 	public void setCurrState(Status uploadState) {
-		this.currState = getState(currState.toString());
+		currState = getState(currState.toString());
 	}
 }

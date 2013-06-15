@@ -64,12 +64,12 @@ public class AsyncJobExecutionContext  {
 		_job = job;
 	}
 	
-    public void completeAsyncJob(JobInfo.Status jobStatus, int resultCode, Object resultObject) {
+    public void completeAsyncJob(JobInfo.Status jobStatus, int resultCode, String resultObject) {
     	assert(_job != null);
     	_jobMgr.completeAsyncJob(_job.getId(), jobStatus, resultCode, resultObject);
     }
     
-    public void updateAsyncJobStatus(int processStatus, Object resultObject) {
+    public void updateAsyncJobStatus(int processStatus, String resultObject) {
     	assert(_job != null);
     	_jobMgr.updateAsyncJobStatus(_job.getId(), processStatus, resultObject);
     }

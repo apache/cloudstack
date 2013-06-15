@@ -21,7 +21,7 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO.Step;
 
 import com.cloud.utils.DateUtil;
@@ -31,7 +31,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Type;
 
 public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implements VmWorkJobDao {
 
@@ -63,7 +62,8 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		ExpungeWorkJobSearch.done();
 	}
 	
-	public VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId) {
+	@Override
+    public VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId) {
 		
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobSearch.create();
 		sc.setParameters("vmType", type);
@@ -78,7 +78,8 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		return null;
 	}
 	
-	public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId) {
+	@Override
+    public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId) {
 		
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobSearch.create();
 		sc.setParameters("vmType", type);
@@ -89,7 +90,8 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		return this.listBy(sc, filter);
 	}
 
-	public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd) {
+	@Override
+    public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd) {
 		
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobByCommandSearch.create();
 		sc.setParameters("vmType", type);
@@ -101,17 +103,19 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		return this.listBy(sc, filter);
 	}
 	
-	public void updateStep(long workJobId, Step step) {
+	@Override
+    public void updateStep(long workJobId, Step step) {
 		VmWorkJobVO jobVo = findById(workJobId);
 		jobVo.setStep(step);
 		jobVo.setLastUpdated(DateUtil.currentGMTTime());
 		update(workJobId, jobVo);
 	}
 	
-	public void expungeCompletedWorkJobs(Date cutDate) {
+	@Override
+    public void expungeCompletedWorkJobs(Date cutDate) {
 		SearchCriteria<VmWorkJobVO> sc = ExpungeWorkJobSearch.create();
 		sc.setParameters("lastUpdated",cutDate);
-		sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
+        sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
 		
 		expunge(sc);
 	}

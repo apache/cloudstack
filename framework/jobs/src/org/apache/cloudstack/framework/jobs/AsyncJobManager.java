@@ -18,7 +18,6 @@ package org.apache.cloudstack.framework.jobs;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 
@@ -27,15 +26,18 @@ import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
     
-	AsyncJobVO getAsyncJob(long jobId);
+	public static final String JOB_POOL_THREAD_PREFIX = "Job-Executor";
+
+    AsyncJobVO getAsyncJob(long jobId);
 	
 	List<? extends AsyncJob> findInstancePendingAsyncJobs(String instanceType, Long accountId);
 	
 	long submitAsyncJob(AsyncJob job);
 	long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId);
 
-    void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, Object resultObject);
-    void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject);
+    void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
+
+    void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
     void logJobJournal(long jobId, AsyncJob.JournalType journalType, String
     	journalText, String journalObjJson);
@@ -118,11 +120,7 @@ public interface AsyncJobManager extends Manager {
     @Deprecated
     boolean waitAndCheck(String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds,
     	long timeoutInMiliseconds, Predicate predicate);
-    
-    /**
-     * Queries for the status or final result of an async job.
-     * @param cmd the command that specifies the job id
-     * @return an async-call result object
-     */
-    AsyncJob queryAsyncJobResult(QueryAsyncJobResultCmd cmd);
+
+    AsyncJob queryJob(long jobId, boolean updatePollTime);
+
 }

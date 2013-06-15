@@ -93,7 +93,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 _dispatcher.dispatch(cmdObj, params, true);
 
                 // serialize this to the async job table
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, cmdObj.getResponseObject());
+                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, ApiSerializerHelper.toSerializedString(cmdObj.getResponseObject()));
             } finally {
                 CallContext.unregister();
             }
@@ -116,7 +116,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
 
             // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
             //         and we need to preserve that as much as possible here
-            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), response);
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), ApiSerializerHelper.toSerializedString(response));
         }
 	}
 }

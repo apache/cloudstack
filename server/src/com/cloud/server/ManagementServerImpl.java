@@ -424,9 +424,9 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobConstants;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -443,6 +443,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiSerializerHelper;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -3469,7 +3470,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (asyncExecutionContext != null) {
                 job = asyncExecutionContext.getJob();
                 _asyncMgr.updateAsyncJobAttachment(job.getId(), Upload.Type.VOLUME.toString(), volumeId);
-                _asyncMgr.updateAsyncJobStatus(job.getId(), JobInfo.Status.IN_PROGRESS, resultObj);
+                _asyncMgr.updateAsyncJobStatus(job.getId(), JobInfo.Status.IN_PROGRESS.ordinal(), ApiSerializerHelper.toSerializedString(resultObj));
             }
             String value = _configs.get(Config.CopyVolumeWait.toString());
             int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
@@ -3490,7 +3491,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 resultObj.setResultString(errorString);
                 resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
                 if (asyncExecutionContext != null) {
-                    _asyncMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, resultObj);
+                    _asyncMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, ApiSerializerHelper.toSerializedString(resultObj));
                 }
 
                 // Update the DB that volume couldn't be copied
