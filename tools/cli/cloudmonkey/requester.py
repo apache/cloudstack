@@ -125,61 +125,36 @@ def monkeyrequest(command, args, isasync, asyncblock, logger, host, port,
         command = "queryAsyncJobResult"
         request = {'jobid': jobid}
         timeout = int(timeout)
-        pollperiod = 3
+        pollperiod = 2
         progress = 1
         while timeout > 0:
             print '\r' + '.' * progress,
             sys.stdout.flush()
-            progress += 1
+            time.sleep(pollperiod)
             timeout = timeout - pollperiod
+            progress += 1
             logger_debug(logger, "Job %s to timeout in %ds" % (jobid, timeout))
-            sys.stdout.flush()
-            if re.match("queryAsyncJobResult", command):
-                time.sleep(pollperiod)
-            else:
-                response, error = monkeyrequest(command, request, isasync,
-                                                asyncblock, logger,
-                                                host, port,  apikey, secretkey,
-                                                timeout, protocol, path)
+            response, error = make_request(command, request, logger,
+                                           host, port, apikey, secretkey,
+                                           protocol, path)
+            if error is not None:
+                return response, error
 
+            response = process_json(response)
             responsekeys = filter(lambda x: 'response' in x, response.keys())
 
             if len(responsekeys) < 1:
-                time.sleep(pollperiod)
                 continue
 
             result = response[responsekeys[0]]
             jobstatus = result['jobstatus']
-            jobresultcode = result['jobresultcode']
-            try:
-                jobresult = result["jobresult"]
-                logger_debug(logger, "jobresult %s" % (jobresult))
-                sys.stdout.flush()
-                return response, None
-            except KeyError:
-                logger_debug(logger, "No jobresult yet %s" % (result))
-                sys.stdout.flush()
-
-            if jobresultcode != 0:
-                error = "Error: resultcode %d for jobid %s" % (jobresultcode,
-                                                               jobid)
-                logger_debug(logger, "%s" % (error))
-                return response, error
-            else:
-                # if we get a valid respons resultcode give back results
-                response, error = monkeyrequest(command, request, isasync,
-                                                asyncblock, logger,
-                                                host, port,  apikey, secretkey,
-                                                timeout, protocol, path)
-                logger_debug(logger, "Ok: %s" % (jobid))
-                return response, error
-
             if jobstatus == 2:
+                jobresult = result["jobresult"]
                 error = "\rAsync job %s failed\nError %s, %s" % (jobid,
                         jobresult["errorcode"], jobresult["errortext"])
                 return response, error
             elif jobstatus == 1:
-                print '\r',
+                print "\r" + " " * progress,
                 return response, error
             else:
                 logger_debug(logger, "We should not arrive here!")
