@@ -1327,6 +1327,12 @@
             });
             $table.dataTable(null, { noSelect: uiCustom });
 
+            if(args.data &&
+               args.data.length < pageSize &&
+               options.setEndTable) {
+                options.setEndTable();
+            }
+
             setTimeout(function() {
               $table.dataTable('refresh');
             });
@@ -1467,6 +1473,12 @@
     var page = 1;
     var actions = listViewData.actions;
     var reorder = listViewData.reorder;
+    var tableHeight = $table.height();
+    var endTable = false;
+    var setEndTable = function() {
+      endTable = true;
+    }
+
 
     var $switcher;
     if (args.sections) {
@@ -1572,7 +1584,8 @@
       {
         context: args.context,
         reorder: reorder,
-        detailView: listViewData.detailView
+        detailView: listViewData.detailView,
+        setEndTable: setEndTable
       }
     );
 
@@ -1625,7 +1638,8 @@
         {
           context: $listView.data('view-args').context,
           reorder: listViewData.reorder,
-          detailView: listViewData.detailView
+          detailView: listViewData.detailView,
+          setEndTable: setEndTable
         }
       );
     };
@@ -1675,7 +1689,8 @@
         {
           context: $listView.data('view-args').context,
           reorder: listViewData.reorder,
-          detailView: listViewData.detailView
+          detailView: listViewData.detailView,
+          setEndTable: setEndTable 
         }
       );
     };
@@ -1728,8 +1743,6 @@
       return false;
     });		
 				
-    var tableHeight = $table.height();
-    var endTable = false;
 
     // Infinite scrolling event
     $listView.bind('scroll', function(event) {
@@ -1767,7 +1780,8 @@
             filterBy: filterBy
           }, actions, {
             reorder: listViewData.reorder,
-            detailView: listViewData.detailView
+            detailView: listViewData.detailView,
+            setEndTable: setEndTable
           });
           $table.height() == tableHeight ? endTable = true : tableHeight = $table.height();
         }
