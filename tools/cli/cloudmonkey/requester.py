@@ -60,11 +60,11 @@ def make_request(command, args, logger, host, port,
     args["apiKey"] = apikey
     args["response"] = "json"
     request = zip(args.keys(), args.values())
-    request.sort(key=lambda x: str.lower(x[0]))
+    request.sort(key=lambda x: x[0].lower())
 
     request_url = "&".join(["=".join([r[0], urllib.quote_plus(str(r[1]))])
                            for r in request])
-    hashStr = "&".join(["=".join([str.lower(r[0]),
+    hashStr = "&".join(["=".join([r[0].lower(),
                        str.lower(urllib.quote_plus(str(r[1]))).replace("+",
                        "%20")]) for r in request])
 
@@ -130,14 +130,18 @@ def monkeyrequest(command, args, isasync, asyncblock, logger, host, port,
             progress += 1
             logger_debug(logger, "Job %s to timeout in %ds" % (jobid, timeout))
             sys.stdout.flush()
-            response, error = monkeyrequest(command, request, isasync,
-                                            asyncblock, logger,
-                                            host, port,  apikey, secretkey,
-                                            timeout, protocol, path)
+            response, error = make_request(command, request, logger,
+                                           host, port, apikey, secretkey,
+                                           protocol, path)
+            if error is not None:
+                return response, error
+
             response = process_json(response)
             responsekeys = filter(lambda x: 'response' in x, response.keys())
+
             if len(responsekeys) < 1:
                 continue
+
             result = response[responsekeys[0]]
             jobstatus = result['jobstatus']
             if jobstatus == 2:
