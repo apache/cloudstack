@@ -4007,7 +4007,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         
-        if (serviceProviderMap.containsKey(Service.Lb) && !internalLb && !publicLb) {
+        if (serviceProviderMap != null && serviceProviderMap.containsKey(Service.Lb) && !internalLb && !publicLb) {
             //if not specified, default public lb to true
             publicLb = true;
         }
