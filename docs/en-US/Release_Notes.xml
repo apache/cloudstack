@@ -398,7 +398,7 @@ under the License.
           SSH keypair assigned to a virtual machine.</para>
       </section>
     </section>
-    <section id="issues-fixed-4.0">
+    <section id="issues-fixed-4.1">
       <title>Issues Fixed in 4.1.0</title>
       <para>Apache CloudStack uses <ulink url="https://issues.apache.org/jira/browse/CLOUDSTACK"
           >Jira</ulink> to track its issues. All new features and bugs for 4.1.0 have been tracked
@@ -4775,7 +4775,7 @@ service cloudstack-agent restart
               <programlisting language="Bash">
 [apache-cloudstack]
 name=Apache CloudStack
-baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
+baseurl=http://cloudstack.apt-get.eu/rhel/4.1/
 enabled=1
 gpgcheck=0
                             </programlisting>
@@ -5067,7 +5067,7 @@ service cloudstack-agent restart
               <programlisting language="Bash">
 [apache-cloudstack]
 name=Apache CloudStack
-baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
+baseurl=http://cloudstack.apt-get.eu/rhel/4.1/
 enabled=1
 gpgcheck=0
                             </programlisting>
@@ -5663,7 +5663,7 @@ service cloudstack-agent restart
               <programlisting language="Bash">
 [apache-cloudstack]
 name=Apache CloudStack
-baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
+baseurl=http://cloudstack.apt-get.eu/rhel/4.1/
 enabled=1
 gpgcheck=0
                             </programlisting>

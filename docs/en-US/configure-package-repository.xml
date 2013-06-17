@@ -44,7 +44,7 @@
         <title>DEB package repository</title>
         <para>You can add a DEB package repository to your apt sources with the following commands. Please note that only packages for Ubuntu 12.04 LTS (precise) are being built at this time.</para>
         <para>Use your preferred editor and open (or create) <filename>/etc/apt/sources.list.d/cloudstack.list</filename>. Add the community provided repository to the file:</para>
-<programlisting>deb http://cloudstack.apt-get.eu/ubuntu precise 4.0</programlisting>
+<programlisting>deb http://cloudstack.apt-get.eu/ubuntu precise 4.1</programlisting>
         <para>We now have to add the public key to the trusted keys.</para>
         <programlisting language="Bash"><prompt>$</prompt> <command>wget</command> -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
         <para>Now update your local apt cache.</para>
@@ -60,7 +60,7 @@
         <programlisting>
 [cloudstack]
 name=cloudstack
-baseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.0/</replaceable>
+baseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.1/</replaceable>
 enabled=1
 gpgcheck=0
         </programlisting>

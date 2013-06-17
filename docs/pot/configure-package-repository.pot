@@ -60,7 +60,7 @@ msgstr ""
 
 #. Tag: programlisting
 #, no-c-format
-msgid "deb http://cloudstack.apt-get.eu/ubuntu precise 4.0"
+msgid "deb http://cloudstack.apt-get.eu/ubuntu precise 4.1"
 msgstr ""
 
 #. Tag: para
@@ -118,7 +118,7 @@ msgstr ""
 msgid "\n"
 "[cloudstack]\n"
 "name=cloudstack\n"
-"baseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.0/</replaceable>\n"
+"baseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.1/</replaceable>\n"
 "enabled=1\n"
 "gpgcheck=0\n"
 "        "
