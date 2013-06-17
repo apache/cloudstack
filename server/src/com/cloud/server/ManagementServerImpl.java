@@ -996,67 +996,46 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Cluster>, Integer> searchForClusters(ListClustersCmd cmd) {
-    	Object id = cmd.getId();
+        Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
+
+        Object id = cmd.getId();
         Object name = cmd.getClusterName();
         Object podId = cmd.getPodId();
         Long zoneId = cmd.getZoneId();
         Object hypervisorType = cmd.getHypervisorType();
         Object clusterType = cmd.getClusterType();
         Object allocationState = cmd.getAllocationState();
-        String zoneType = cmd.getZoneType();
         String keyword = cmd.getKeyword();
+
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
-
-    	Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
-        sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
-        sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
-
-        SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
-            sc.setParameters("id", id);
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
 
         if (podId != null) {
-            sc.setParameters("podId", podId);
+            sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         }
 
         if (zoneId != null) {
-            sc.setParameters("dataCenterId", zoneId);
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
 
         if (hypervisorType != null) {
-            sc.setParameters("hypervisorType", hypervisorType);
+            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
         }
 
         if (clusterType != null) {
-            sc.setParameters("clusterType", clusterType);
+            sc.addAnd("clusterType", SearchCriteria.Op.EQ, clusterType);
         }
 
         if (allocationState != null) {
-            sc.setParameters("allocationState", allocationState);
-        }
-
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
+            sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
         }
 
         if (keyword != null) {
