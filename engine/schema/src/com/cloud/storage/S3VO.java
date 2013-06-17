@@ -30,6 +30,7 @@ import javax.persistence.Table;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.db.GenericDao;
 
+//TODO: this will be removed after object_store merge.
 @Entity
 @Table(name = "s3")
 public class S3VO implements S3 {
@@ -109,7 +110,7 @@ public class S3VO implements S3 {
         }
 
         return new S3TO(this.id, this.uuid, this.accessKey, this.secretKey, this.endPoint, this.bucketName, httpsFlag,
-                this.connectionTimeout, this.maxErrorRetry, this.socketTimeout, this.created);
+                this.connectionTimeout, this.maxErrorRetry, this.socketTimeout, this.created, false);
 
     }
 
