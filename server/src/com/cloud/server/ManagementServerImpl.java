@@ -3078,7 +3078,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends VirtualMachine>, Integer> searchForSystemVm(ListSystemVMsCmd cmd) {
         String type = cmd.getSystemVmType();
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
-        String zoneType = cmd.getZoneType();
         Long id = cmd.getId();
         String name = cmd.getSystemVmName();
         String state = cmd.getState();
@@ -3103,12 +3102,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
             volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
             sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
-        }
-
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<VMInstanceVO> sc = sb.create();
@@ -3149,10 +3142,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (storageId != null) {
             sc.setJoinParameters("volumeSearch", "poolId", storageId);
-        }
-
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
 
         Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
