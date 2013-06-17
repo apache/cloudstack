@@ -26,6 +26,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.jobs.JobInfo;
 
@@ -139,17 +140,17 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public void start(String vmUuid, Map<Param, Object> params) {
+    public void easyStart(String vmUuid, Map<Param, Object> params) {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-    public void start(String vmUuid, Map<Param, Object> params, DeploymentPlan planToDeploy) {
+    public void easyStart(String vmUuid, Map<Param, Object> params, DeploymentPlan planToDeploy) {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-    public void stop(String vmUuid) {
+    public void easyStop(String vmUuid) {
 		// TODO Auto-generated method stub
 	}
 
@@ -172,11 +173,9 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public void advanceStart(String vmUuid, Map<Param, Object> params,
-			DeploymentPlan planToDeploy) throws InsufficientCapacityException,
-			ResourceUnavailableException, ConcurrentOperationException,
-			OperationTimedoutException {
-		// TODO Auto-generated method stub
+    public Outcome<VirtualMachine> start(String vmUuid, Map<Param, Object> params,
+            DeploymentPlan planToDeploy) {
+        return null;
 	}
 
 	@Override

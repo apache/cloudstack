@@ -815,7 +815,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean success = true;
         for (VMInstanceVO vm : vms) {
             try {
-                _itMgr.stop(vm.getUuid());
+                _itMgr.easyStop(vm.getUuid());
             } catch (CloudRuntimeException ote) {
                 s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
                 success = false;

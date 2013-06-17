@@ -4552,7 +4552,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (needRestart) {
             try {
-                _itMgr.stop(vm.getUuid());
+                _itMgr.easyStop(vm.getUuid());
             } catch (CloudRuntimeException e) {
                 s_logger.debug("Stop vm " + vm.getUuid() + " failed");
                 CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
@@ -4612,7 +4612,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         if (needRestart) {
             try {
-                _itMgr.start(vm.getUuid(), null);
+                _itMgr.easyStart(vm.getUuid(), null);
             } catch (Exception e) {
                 s_logger.debug("Unable to start VM " + vm.getUuid(), e);
                 CloudRuntimeException ex = new CloudRuntimeException(

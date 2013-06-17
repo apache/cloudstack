@@ -830,7 +830,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
         try {
-            _itMgr.start(internalLbVm.getUuid(), params, null);
+            _itMgr.easyStart(internalLbVm.getUuid(), params, null);
             internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
             if (internalLbVm.isStopPending()) {
                 s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");

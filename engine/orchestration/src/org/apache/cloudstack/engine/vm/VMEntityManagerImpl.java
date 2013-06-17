@@ -242,14 +242,14 @@ public class VMEntityManagerImpl implements VMEntityManager {
             DataCenterDeployment reservedPlan = new DataCenterDeployment(vm.getDataCenterId(),
                     vmReservation.getPodId(), vmReservation.getClusterId(), vmReservation.getHostId(), null, null);
             try {
-                _itMgr.start(vm.getUuid(), params, reservedPlan);
+                _itMgr.easyStart(vm.getUuid(), params, reservedPlan);
             } catch (CloudRuntimeException ex) {
                 // Retry the deployment without using the reservation plan
-                _itMgr.start(vm.getUuid(), params, null);
+                _itMgr.easyStart(vm.getUuid(), params, null);
             }
         } else {
             // no reservation found. Let VirtualMachineManager retry
-            _itMgr.start(vm.getUuid(), params, null);
+            _itMgr.easyStart(vm.getUuid(), params, null);
         }
 
     }
@@ -257,7 +257,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     @Override
     public boolean stop(VMEntityVO vm, String caller) throws ResourceUnavailableException {
         try {
-            _itMgr.stop(vm.getUuid());
+            _itMgr.easyStop(vm.getUuid());
             return true;
         } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to stop " + vm, e);

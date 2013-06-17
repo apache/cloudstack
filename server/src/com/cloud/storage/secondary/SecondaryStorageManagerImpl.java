@@ -258,7 +258,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
             Account systemAcct = _accountMgr.getSystemAccount();
             User systemUser = _accountMgr.getSystemUser();
-            _itMgr.start(secStorageVm.getUuid(), null);
+            _itMgr.easyStart(secStorageVm.getUuid(), null);
             return _secStorageVmDao.findById(secStorageVmId);
         } catch (Exception e) {
             s_logger.warn("Exception while trying to start secondary storage vm", e);
@@ -921,7 +921,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             try {
                 if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                     try {
-                        _itMgr.stop(secStorageVm.getUuid());
+                        _itMgr.easyStop(secStorageVm.getUuid());
                         return true;
                     } catch (Exception e) {
                         s_logger.warn("Unable to stop " + secStorageVm, e);

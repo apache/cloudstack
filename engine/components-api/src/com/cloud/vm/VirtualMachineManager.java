@@ -20,6 +20,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.jobs.Outcome;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
@@ -88,11 +90,11 @@ public interface VirtualMachineManager extends Manager {
             HypervisorType hyperType,
             Account owner);
 
-    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
+    void easyStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
-    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
+    void easyStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
 
-    void stop(String vmUuid);
+    void easyStop(String vmUuid);
 
     void expunge(String vmUuid);
 
@@ -100,8 +102,29 @@ public interface VirtualMachineManager extends Manager {
     
     boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
-    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy)
-            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+    /**
+     * Files a start job to start the virtual machine.  The caller can use
+     * the Outcome object to wait for the result.  The Outcome throws
+     * ExecutionException if there's a problem with the job execution.
+     * The cause of the ExecutionException carries the reason to why
+     * there is a problem.
+     *   - ConcurrentOperationException: There are multiple operations happening on the same objects.
+     *   - InsufficientCapacityException: Insufficient capacity to start a VM.  The exception carries the cause.
+     *   - ResourceUnavailableException: The resource needed to start a VM is not available.
+     *   - OperationTimedoutException: The operation has been sent to the physical resource but we timed out waiting for results.
+     * 
+     * Most callers should use this method to start VMs.  Of the various
+     * possible exceptions, the worst is OperationTimedoutException.  This
+     * indicates that the operation was sent to the physical resource but
+     * there was no response.  Under these situations, we do not know if the
+     * operation succeeded or failed and require manual intervention.
+     * 
+     * @param vmUuid uuid to the VM to start
+     * @param params parameters passed to be passed down
+     * @param planToDeploy plan on where to deploy the vm.
+     * @return Outcome to wait for the result.
+     */
+    Outcome<VirtualMachine> start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
 
     void advanceStop(String vmUuid, boolean cleanup) throws ResourceUnavailableException, OperationTimedoutException,
             ConcurrentOperationException;
@@ -191,4 +214,5 @@ public interface VirtualMachineManager extends Manager {
             ManagementServerException, VirtualMachineMigrationException;
 
     NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType);
+
 }

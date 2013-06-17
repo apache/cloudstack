@@ -16,14 +16,16 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs;
 
+import java.util.concurrent.CancellationException;
+
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.CloudRuntimeException;
+
 
 /**
  * This exception is fired when the job has been cancelled
  *
  */
-public class JobCancellationException extends CloudRuntimeException {
+public class JobCancellationException extends CancellationException {
     
     private static final long serialVersionUID = SerialVersionUID.AffinityConflictException;
 
@@ -32,7 +34,6 @@ public class JobCancellationException extends CloudRuntimeException {
         RequestedByCaller,
         TimedOut;
     }
-
 
     Reason reason;
 

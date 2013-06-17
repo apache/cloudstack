@@ -558,7 +558,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (proxy.getState() == VirtualMachine.State.Stopped) {
-                _itMgr.start(proxy.getUuid(), null);
+                _itMgr.easyStart(proxy.getUuid(), null);
                 proxy = _consoleProxyDao.findById(proxyVmId);
                 if (proxy.getState() == State.Running) {
                     return null;
@@ -1036,7 +1036,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         try {
-            _itMgr.stop(proxy.getUuid());
+            _itMgr.easyStop(proxy.getUuid());
             return true;
         } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to stop " + proxy, e);

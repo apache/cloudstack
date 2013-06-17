@@ -2375,7 +2375,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 									+ " as a part of deleteHost id="
 									+ host.getId());
                             try {
-                                _vmMgr.stop(vm.getUuid());
+                                _vmMgr.easyStop(vm.getUuid());
                             } catch (Exception e) {
 								String errorMsg = "There was an error stopping the vm: "
 										+ vm

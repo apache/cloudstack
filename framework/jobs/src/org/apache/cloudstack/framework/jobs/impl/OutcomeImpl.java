@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.Outcome;
 
@@ -62,12 +63,19 @@ public class OutcomeImpl<T> implements Outcome<T> {
     @Override
     public T get() throws InterruptedException, ExecutionException {
         s_jobMgr.waitAndCheck(_topics, _checkIntervalInMs, -1, _predicate);
+        s_jobMgr.disjoinJob(AsyncJobExecutionContext.getCurrentExecutionContext().getJob().getId(), _job.getId());
+
         return retrieve();
     }
 
     @Override
     public T get(long timeToWait, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         s_jobMgr.waitAndCheck(_topics, _checkIntervalInMs, unit.toMillis(timeToWait), _predicate);
+        try {
+            AsyncJobExecutionContext.getCurrentExecutionContext().disjoinJob(_job.getId());
+        } catch (Throwable e) {
+            throw new ExecutionException("Job task has trouble executing", e);
+        }
         return retrieve();
     }
 

@@ -203,32 +203,32 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     // call the consoleproxymanager
                     ConsoleProxyVO consoleProxy = _consoleProxyDao
                             .findById(vmInstance.getId());
-                    vmMgr.stop(consoleProxy.getUuid());
+                    vmMgr.easyStop(consoleProxy.getUuid());
                         // update work status
                     work.setStoppedForMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
 
                     if (restart) {
 
-                        vmMgr.start(consoleProxy.getUuid(), null);
+                        vmMgr.easyStart(consoleProxy.getUuid(), null);
                         work.setStartedAfterMaintenance(true);
                         _storagePoolWorkDao.update(work.getId(), work);
                     }
                 } else if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
                     UserVmVO userVm = userVmDao.findById(vmInstance.getId());
-                    vmMgr.stop(userVm.getUuid());
+                    vmMgr.easyStop(userVm.getUuid());
                     // update work status
                     work.setStoppedForMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
                 } else if (vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm)) {
                     SecondaryStorageVmVO secStrgVm = _secStrgDao
                             .findById(vmInstance.getId());
-                    vmMgr.stop(secStrgVm.getUuid());
+                    vmMgr.easyStop(secStrgVm.getUuid());
                     work.setStoppedForMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
 
                     if (restart) {
-                        vmMgr.start(secStrgVm.getUuid(), null);
+                        vmMgr.easyStart(secStrgVm.getUuid(), null);
                         work.setStartedAfterMaintenance(true);
                         _storagePoolWorkDao.update(work.getId(), work);
                     }
@@ -238,7 +238,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     work.setStoppedForMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
                     if (restart) {
-                        vmMgr.start(domR.getUuid(), null);
+                        vmMgr.easyStart(domR.getUuid(), null);
                         work.setStartedAfterMaintenance(true);
                         _storagePoolWorkDao.update(work.getId(), work);
                     }
@@ -302,23 +302,23 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
                 if (vmInstance.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
                     ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(vmInstance.getId());
-                    vmMgr.start(consoleProxy.getUuid(), null);
+                    vmMgr.easyStart(consoleProxy.getUuid(), null);
                     work.setStartedAfterMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
                 } else if (vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm)) {
                     SecondaryStorageVmVO ssVm = _secStrgDao.findById(vmInstance.getId());
-                    vmMgr.advanceStart(ssVm.getUuid(), null, null);
+                    vmMgr.start(ssVm.getUuid(), null, null);
                     work.setStartedAfterMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
                 } else if (vmInstance.getType().equals(VirtualMachine.Type.DomainRouter)) {
                     DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
-                    vmMgr.start(domR.getUuid(), null);
+                    vmMgr.easyStart(domR.getUuid(), null);
                     work.setStartedAfterMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
                 } else if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
                     UserVmVO userVm = userVmDao.findById(vmInstance.getId());
 
-                    vmMgr.start(userVm.getUuid(), null);
+                    vmMgr.easyStart(userVm.getUuid(), null);
                     work.setStartedAfterMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
                 }

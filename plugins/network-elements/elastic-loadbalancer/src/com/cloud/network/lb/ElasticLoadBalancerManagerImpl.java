@@ -546,7 +546,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting ELB VM " + elbVm);
         try {
-            _itMgr.start(elbVm.getUuid(), params);
+            _itMgr.easyStart(elbVm.getUuid(), params);
             return _routerDao.findById(elbVm.getId());
         } catch (CloudRuntimeException e) {
             s_logger.warn("Unable to start " + elbVm, e);

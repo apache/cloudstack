@@ -2717,7 +2717,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
         try {
-            _itMgr.start(router.getUuid(), params, planToDeploy);
+            _itMgr.easyStart(router.getUuid(), params, planToDeploy);
             router = _routerDao.findById(router.getId());
             if (router.isStopPending()) {
                 s_logger.info("Clear the stop pending flag of router " + router.getHostName() + " after start router successfully!");

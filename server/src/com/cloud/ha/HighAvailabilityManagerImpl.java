@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +35,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.Outcome;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -97,7 +100,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  *         ha.retry.wait | time to wait before retrying the work item | seconds | 120 || || stop.retry.wait | time to wait
  *         before retrying the stop | seconds | 120 || * }
  **/
-@Local(value = { HighAvailabilityManager.class })
+@Local(value = {HighAvailabilityManager.class})
 public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener {
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
     WorkerThread[] _workers;
@@ -118,22 +121,26 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     long _serverId;
 
     List<Investigator> _investigators;
+
     public List<Investigator> getInvestigators() {
-		return _investigators;
-	}
-	public void setInvestigators(List<Investigator> _investigators) {
-		this._investigators = _investigators;
-	}
+        return _investigators;
+    }
 
-	List<FenceBuilder> _fenceBuilders;
+    public void setInvestigators(List<Investigator> _investigators) {
+        this._investigators = _investigators;
+    }
+
+    List<FenceBuilder> _fenceBuilders;
+
     public List<FenceBuilder> getFenceBuilders() {
-		return _fenceBuilders;
-	}
-	public void setFenceBuilders(List<FenceBuilder> _fenceBuilders) {
-		this._fenceBuilders = _fenceBuilders;
-	}
+        return _fenceBuilders;
+    }
 
-	@Inject
+    public void setFenceBuilders(List<FenceBuilder> _fenceBuilders) {
+        this._fenceBuilders = _fenceBuilders;
+    }
+
+    @Inject
     AgentManager _agentMgr;
     @Inject
     AlertManager _alertMgr;
@@ -180,7 +187,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         }
 
         Status hostState = null;
-        for(Investigator investigator : _investigators) {
+        for (Investigator investigator : _investigators) {
             hostState = investigator.isAgentAlive(host);
             if (hostState != null) {
                 if (s_logger.isDebugEnabled()) {
@@ -203,7 +210,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             return;
         }
 
-        if(host.getHypervisorType() == HypervisorType.VMware) {
+        if (host.getHypervisorType() == HypervisorType.VMware) {
             s_logger.info("Don't restart for VMs on host " + host.getId() + " as the host is VMware host");
             return;
         }
@@ -288,18 +295,18 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 _itMgr.advanceStop(vm.getUuid(), true);
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
-            throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             } catch (OperationTimedoutException e) {
                 assert false : "How do we hit this when force is true?";
-            throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             } catch (ConcurrentOperationException e) {
                 assert false : "How do we hit this when force is true?";
-            throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             }
             return;
         }
 
-        if(vm.getHypervisorType() == HypervisorType.VMware) {
+        if (vm.getHypervisorType() == HypervisorType.VMware) {
             s_logger.info("Skip HA for VMware VM " + vm.getInstanceName());
             return;
         }
@@ -320,7 +327,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
             if (!(_forceHA || vm.isHaEnabled())) {
                 String hostDesc = "id:" + vm.getHostId() + ", availability zone id:" + vm.getDataCenterId() + ", pod id:" + vm.getPodIdToDeployIn();
-                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getHostName() + ", id: " + vm.getId() + ") stopped unexpectedly on host " + hostDesc,
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getHostName() + ", id: " + vm.getId()
+                        + ") stopped unexpectedly on host " + hostDesc,
                         "Virtual Machine " + vm.getHostName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped unexpectedly.");
 
                 if (s_logger.isDebugEnabled()) {
@@ -332,13 +340,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 _itMgr.advanceStop(vm.getUuid(), true);
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
-            throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             } catch (OperationTimedoutException e) {
                 assert false : "How do we hit this when force is true?";
-            throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             } catch (ConcurrentOperationException e) {
                 assert false : "How do we hit this when force is true?";
-            throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             }
         }
 
@@ -351,7 +359,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
         }
 
-        HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled, hostId, vm.getState(), maxRetries + 1, vm.getUpdated());
+        HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled, hostId, vm.getState(), maxRetries + 1,
+                vm.getUpdated());
         _haDao.persist(work);
 
         if (s_logger.isInfoEnabled()) {
@@ -395,7 +404,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
         s_logger.info("HA on " + vm);
         if (vm.getState() != work.getPreviousState() || vm.getUpdated() != work.getUpdateTime()) {
-            s_logger.info("VM " + vm + " has been changed.  Current State = " + vm.getState() + " Previous State = " + work.getPreviousState() + " last updated = " + vm.getUpdated()
+            s_logger.info("VM " + vm + " has been changed.  Current State = " + vm.getState() + " Previous State = " + work.getPreviousState() + " last updated = "
+                    + vm.getUpdated()
                     + " previous updated = " + work.getUpdateTime());
             return null;
         }
@@ -432,7 +442,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 }
 
                 Investigator investigator = null;
-                for(Investigator it : _investigators) {
+                for (Investigator it : _investigators) {
                     investigator = it;
                     alive = investigator.isVmAlive(vm, host);
                     s_logger.info(investigator.getName() + " found " + vm + "to be alive? " + alive);
@@ -444,7 +454,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 boolean fenced = false;
                 if (alive == null) {
                     s_logger.debug("Fencing off VM that we don't know the state of");
-                    for(FenceBuilder fb : _fenceBuilders) {
+                    for (FenceBuilder fb : _fenceBuilders) {
                         Boolean result = fb.fenceOff(vm, host);
                         s_logger.info("Fencer " + fb.getName() + " returned " + result);
                         if (result != null && result) {
@@ -468,7 +478,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
                 if (!fenced) {
                     s_logger.debug("We were unable to fence off the VM " + vm);
-                    _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
+                    _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host "
+                            + hostDesc,
                             "Insufficient capacity to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
                     return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
                 }
@@ -477,13 +488,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                     _itMgr.advanceStop(vm.getUuid(), true);
                 } catch (ResourceUnavailableException e) {
                     assert false : "How do we hit this when force is true?";
-                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                    throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
                 } catch (OperationTimedoutException e) {
                     assert false : "How do we hit this when force is true?";
-                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                    throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
                 } catch (ConcurrentOperationException e) {
                     assert false : "How do we hit this when force is true?";
-                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                    throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
                 }
 
                 work.setStep(Step.Scheduled);
@@ -494,13 +505,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                     _itMgr.advanceStop(vm.getUuid(), true);
                 } catch (ResourceUnavailableException e) {
                     assert false : "How do we hit this when force is true?";
-                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                    throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
                 } catch (OperationTimedoutException e) {
                     assert false : "How do we hit this when force is true?";
-                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                    throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
                 } catch (ConcurrentOperationException e) {
                     assert false : "How do we hit this when force is true?";
-                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                    throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
                 }
             }
         }
@@ -526,44 +537,58 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             return null;
         }
 
-        try {
-            HashMap<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
-            if (_haTag != null) {
-                params.put(VirtualMachineProfile.Param.HaTag, _haTag);
-            }
-            _itMgr.advanceStart(vm.getUuid(), params, null);
-            
-            VMInstanceVO started = _instanceDao.findById(vm.getId());
+        HashMap<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
+        if (_haTag != null) {
+            params.put(VirtualMachineProfile.Param.HaTag, _haTag);
+        }
+        Outcome<VirtualMachine> outcome = _itMgr.start(vm.getUuid(), params, null);
 
-            if (started.getState() == State.Running) {
-                s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
+        VirtualMachine started = null;
+        try {
+            started = outcome.get();
+        } catch (InterruptedException e) {
+            s_logger.warn("Received interrupted exception ", e);
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
+                    "Interrupted while attempting to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            return null;
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof InsufficientCapacityException) {
+                s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
+                        "Insufficient capacity to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            } else if (cause instanceof ResourceUnavailableException) {
+                s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
+                        "Resource is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            } else if (cause instanceof ConcurrentOperationException) {
+                s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
+                        "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            } else if (cause instanceof OperationTimedoutException) {
+                s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
+                        "Operations on the resource timed out for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            } else {
+                s_logger.warn("Unable to restart " + vm, e);
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
+                        "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
                 return null;
             }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Rescheduling VM " + vm.toString() + " to try again in " + _restartRetryInterval);
-            }
-        } catch (final InsufficientCapacityException e) {
-            s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
+        } catch (CancellationException e) {
+            s_logger.warn("Received interrupted exception ", e);
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
-                    "Insufficient capacity to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
-        } catch (final ResourceUnavailableException e) {
-            s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
-                    "Resource is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
-        } catch (ConcurrentOperationException e) {
-            s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
-                    "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
-        } catch (OperationTimedoutException e) {
-            s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
-                    "Operations on the resource timed out for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
-        } catch (Exception e) {
-            s_logger.warn("Unable to restart " + vm, e);
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
-                    "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+                    "Interrupted while attempting to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
             return null;
+        }
+
+        if (started != null && started.getState() == State.Running) {
+            s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
+            return null;
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Rescheduling VM " + vm.toString() + " to try again in " + _restartRetryInterval);
         }
         vm = _instanceDao.findById(vm.getId());
         work.setUpdateTime(vm.getUpdated());
@@ -650,16 +675,20 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 s_logger.info("Successfully stopped " + vm);
                 return null;
             } else if (work.getWorkType() == WorkType.CheckStop) {
-                if ((vm.getState() != work.getPreviousState()) || vm.getUpdated() != work.getUpdateTime() || vm.getHostId() == null || vm.getHostId().longValue() != work.getHostId()) {
-                    s_logger.info(vm + " is different now.  Scheduled Host: " + work.getHostId() + " Current Host: " + (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
+                if ((vm.getState() != work.getPreviousState()) || vm.getUpdated() != work.getUpdateTime() || vm.getHostId() == null
+                        || vm.getHostId().longValue() != work.getHostId()) {
+                    s_logger.info(vm + " is different now.  Scheduled Host: " + work.getHostId() + " Current Host: " + (vm.getHostId() != null ? vm.getHostId() : "none")
+                            + " State: " + vm.getState());
                     return null;
                 }
                 _itMgr.advanceStop(vm.getUuid(), false);
                 s_logger.info("Stop for " + vm + " was successful");
                 return null;
             } else if (work.getWorkType() == WorkType.ForceStop) {
-                if ((vm.getState() != work.getPreviousState()) || vm.getUpdated() != work.getUpdateTime() || vm.getHostId() == null || vm.getHostId().longValue() != work.getHostId()) {
-                    s_logger.info(vm + " is different now.  Scheduled Host: " + work.getHostId() + " Current Host: " + (vm.getHostId() != null ? vm.getHostId() : "none") + " State: " + vm.getState());
+                if ((vm.getState() != work.getPreviousState()) || vm.getUpdated() != work.getUpdateTime() || vm.getHostId() == null
+                        || vm.getHostId().longValue() != work.getHostId()) {
+                    s_logger.info(vm + " is different now.  Scheduled Host: " + work.getHostId() + " Current Host: " + (vm.getHostId() != null ? vm.getHostId() : "none")
+                            + " State: " + vm.getState());
                     return null;
                 }
                 _itMgr.advanceStop(vm.getUuid(), true);
@@ -834,7 +863,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                             nextTime = destroyVM(work);
                         } else {
                             assert false : "How did we get here with " + wt.toString();
-                        continue;
+                            continue;
                         }
 
                         if (nextTime == null) {
