@@ -1869,8 +1869,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Trying to attaching volume " + volumeId
                         + " to vm instance:" + vm.getId()
-                        + ", update async job-" + job.getId()
-                        + " progress status");
+                        + ", update async job-" + job.getId() + " = [ " + job.getUuid()
+                        + " ] progress status");
             }
 
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
@@ -1976,8 +1976,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Trying to attaching volume " + volumeId
                         + "to vm instance:" + vm.getId()
-                        + ", update async job-" + job.getId()
-                        + " progress status");
+                        + ", update async job-" + job.getId() + " = [ " + job.getUuid()
+                        + " ] progress status");
             }
 
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
