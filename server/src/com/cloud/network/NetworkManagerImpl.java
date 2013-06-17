@@ -1239,9 +1239,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         _networkLockTimeout = NumbersUtil.parseInt(_configs.get(Config.NetworkLockTimeout.key()), 600);
 
-        
-
-
         // populate providers
         Map<Network.Service, Set<Network.Provider>> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
@@ -1252,6 +1249,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         defaultSharedNetworkOfferingProviders.put(Service.UserData, defaultProviders);
 
         Map<Network.Service, Set<Network.Provider>> defaultIsolatedNetworkOfferingProviders = defaultSharedNetworkOfferingProviders;
+        defaultIsolatedNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Dns, defaultProviders);
+        defaultIsolatedNetworkOfferingProviders.put(Service.UserData, defaultProviders);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Firewall, defaultProviders);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Gateway, defaultProviders);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Lb, defaultProviders);
+        defaultIsolatedNetworkOfferingProviders.put(Service.StaticNat, defaultProviders);
+        defaultIsolatedNetworkOfferingProviders.put(Service.PortForwarding, defaultProviders);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Vpn, defaultProviders);
 
         Map<Network.Service, Set<Network.Provider>> defaultSharedSGEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
@@ -1294,9 +1300,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        // diff between offering #1 and #2 - securityGroup is enabled for the first, and disabled for the third
 
         NetworkOfferingVO offering = null;
+        //#1 - quick cloud network offering
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.QuickCloudNoServices) == null) {
             offering =
                     _configMgr.createNetworkOffering(NetworkOffering.QuickCloudNoServices,
@@ -1306,6 +1312,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
+        
+        //#2 - SG enabled network offering
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
             offering =
                     _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOfferingWithSGService,
@@ -1316,36 +1324,26 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
+        //#3 - shared network offering with no SG service
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true, Availability.Optional, null,
                     defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false, null);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
+        
 
-        Map<Network.Service, Set<Network.Provider>> defaultINetworkOfferingProvidersForVpcNetwork = new HashMap<Network.Service, Set<Network.Provider>>();
-        defaultProviders.clear();
-        defaultProviders.add(Network.Provider.VPCVirtualRouter);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.Dhcp, defaultProviders);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.Dns, defaultProviders);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.UserData, defaultProviders);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.Firewall, defaultProviders);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.Gateway, defaultProviders);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.Lb, defaultProviders);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.SourceNat, defaultProviders);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.StaticNat, defaultProviders);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.PortForwarding, defaultProviders);
-        defaultINetworkOfferingProvidersForVpcNetwork.put(Service.Vpn, defaultProviders);
-
+        //#4 - default isolated offering with Source nat service
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
                     "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest,
-                    null, false, Availability.Required, null, defaultINetworkOfferingProvidersForVpcNetwork,
+                    null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders,
                     true, Network.GuestType.Isolated, false, null, true, null, false, false, null);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
+        //#5 - default vpc offering with LB service
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                     "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest,
@@ -1355,6 +1353,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
+        //#6 - default vpc offering with no LB service
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB) == null) {
             //remove LB service
             defaultVPCOffProviders.remove(Service.Lb);
@@ -1366,12 +1365,40 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
+        //#7 - isolated offering with source nat disabled
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOffering,
                     "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, true,
                     Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated,
                     false, null, true, null, true, false, null);
             offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
+        
+        //#8 - network offering with internal lb service
+        Map<Network.Service, Set<Network.Provider>> internalLbOffProviders =
+                new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> defaultVpcProvider = new HashSet<Network.Provider>();
+        defaultVpcProvider.add(Network.Provider.VPCVirtualRouter);
+        
+        Set<Network.Provider> defaultInternalLbProvider = new HashSet<Network.Provider>();
+        defaultInternalLbProvider.add(Network.Provider.InternalLbVm);
+
+        internalLbOffProviders.put(Service.Dhcp, defaultVpcProvider);
+        internalLbOffProviders.put(Service.Dns, defaultVpcProvider);
+        internalLbOffProviders.put(Service.UserData, defaultVpcProvider);
+        internalLbOffProviders.put(Service.NetworkACL, defaultVpcProvider);
+        internalLbOffProviders.put(Service.Gateway, defaultVpcProvider);
+        internalLbOffProviders.put(Service.Lb, defaultInternalLbProvider);
+        internalLbOffProviders.put(Service.SourceNat, defaultVpcProvider);
+        
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB) == null) {
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB,
+                    "Offering for Isolated VPC networks with Internal Lb support", TrafficType.Guest,
+                    null, false, Availability.Optional, null, internalLbOffProviders,
+                    true, Network.GuestType.Isolated, false, null, false, null, false, false, null);
+            offering.setState(NetworkOffering.State.Enabled);
+            offering.setInternalLb(true);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
