@@ -1651,7 +1651,7 @@ class TestVPC(cloudstackTestCase):
     
     @attr(tags=["advanced", "intervlan"])
     def test_11_deploy_vm_wo_network_netdomain(self):
-        """ Test deployment of vm in a VPC without network netdomain
+        """ Test deployment of vm in a VPC without network domain
         """
 
         # 1. Create VPC without providing networkDomain.
@@ -2410,7 +2410,7 @@ class TestVPC(cloudstackTestCase):
 
         vpc_networks = VPC.list(
                                     self.apiclient,
-                                    id=network.id
+                                    id=vpc.id
                           )
         
         self.assertEqual(
