@@ -3804,7 +3804,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
 
-        UserVmVO vm = _vmDao.findById(vmId);
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException(
                     "Unable to find the VM by id=" + vmId);
@@ -3895,7 +3895,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + " already has max Running VMs(count includes system VMs), cannot migrate to this host");
         }
 
-        collectVmDiskStatistics(vm);
+        UserVmVO uservm = _vmDao.findById(vmId);
+        if (uservm != null) {
+            collectVmDiskStatistics(uservm);
+        }
         VMInstanceVO migratedVm = _itMgr.migrate(vm, srcHostId, dest);
         return migratedVm;
     }
