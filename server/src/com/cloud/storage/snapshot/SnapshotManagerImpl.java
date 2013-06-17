@@ -58,7 +58,6 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -572,7 +571,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         String keyword = cmd.getKeyword();
         String snapshotTypeStr = cmd.getSnapshotType();
         String intervalTypeStr = cmd.getIntervalType();
-        String zoneType = cmd.getZoneType();
         Map<String, String> tags = cmd.getTags();
         Long zoneId = cmd.getZoneId();
         
@@ -606,23 +604,17 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         
         if (tags != null && !tags.isEmpty()) {
-            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-            for (int count=0; count < tags.size(); count++) {
-                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
-                tagSearch.cp();
-            }
-            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-            sb.groupBy(sb.entity().getId());
-            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+        for (int count=0; count < tags.size(); count++) {
+            tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+            tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+            tagSearch.cp();
         }
+        tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        sb.groupBy(sb.entity().getId());
+        sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+    }
 
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);    
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-        
         SearchCriteria<SnapshotVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -640,14 +632,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
         }
 
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);          
-        }
-
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
         }
-        
+
         if (name != null) {
             sc.setParameters("name", "%" + name + "%");
         }
