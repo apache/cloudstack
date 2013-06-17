@@ -170,6 +170,8 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
 
+    private static final String VM_SYNC_ALERT_SUBJECT = "VM state sync alert";
+    
     @Inject
     protected EntityManager _entityMgr;
     @Inject
@@ -257,6 +259,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected ConfigValue<Integer> _lockStateRetry;
     protected ConfigValue<Integer> _operationTimeout;
     protected ConfigValue<Boolean> _forceStop;
+    protected ConfigValue<Long> _pingInterval;
     protected long _nodeId;
 
     SearchBuilder<VolumeVO> RootVolumeSearch;
@@ -425,7 +428,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean start() {
-        _executor.scheduleAtFixedRate(new CleanupTask(), _cleanupInterval.value(), _cleanupInterval.value(), TimeUnit.SECONDS);
+        _executor.scheduleAtFixedRate(new TransitionTask(), _pingInterval.value(), _pingInterval.value(), TimeUnit.SECONDS);
+        _executor.scheduleAtFixedRate(new CleanupTask(), _pingInterval.value()*2, _pingInterval.value()*2, TimeUnit.SECONDS);
         cancelWorkItems(_nodeId);
         
         return true;
@@ -447,6 +451,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _lockStateRetry = _configRepo.get(Configs.VmOpLockStateRetry);
         _operationTimeout = _configRepo.get(Configs.Wait).setMultiplier(2);
         _forceStop = _configRepo.get(Configs.VmDestroyForcestop);
+        _pingInterval = _configRepo.get(Configs.PingInterval).setMultiplier(1000);
 
         ReservationContextImpl.setComponents(_entityMgr);
         VirtualMachineProfileImpl.setComponents(_entityMgr);
@@ -2616,22 +2621,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 PingRoutingCommand ping = (PingRoutingCommand) cmd;
                 if (ping.getNewStates() != null && ping.getNewStates().size() > 0) {
                 	_syncMgr.processHostVmStatePingReport(agentId, ping.getNewStates());
-
-/* TODO
-                    Commands commands = deltaHostSync(agentId, ping.getNewStates());
-                    if (commands.size() > 0) {
-                        try {
-                            _agentMgr.send(agentId, commands, this);
-                        } catch (final AgentUnavailableException e) {
-                            s_logger.warn("Agent is now unavailable", e);
-                        }
-                    }
-*/
-                    
                 }
                 
-                // take the chance to scan stalled VM
-                scanStalledVMInTransitionState(agentId);
+                // take the chance to scan VMs that are stuck in transitional states and are missing from the report
+                scanStalledVMInTransitionStateOnUpHost(agentId);
                 processed = true;
             }
         }
@@ -2740,7 +2733,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.debug("Couldn't lock the db");
                 return;
             }
+            
             try {
+/*            	
                 lock.addRef();
                 List<VMInstanceVO> instances = _vmDao.findVMInTransition(new Date(new Date().getTime() - (_operationTimeout.value() * 1000)), State.Starting, State.Stopping);
                 for (VMInstanceVO instance : instances) {
@@ -2751,6 +2746,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         _haMgr.scheduleRestart(instance, true);
                     }
                 }
+*/               
+            	scanStalledVMInTransitionStateOnDisconnectedHosts();
+                
             } catch (Exception e) {
                 s_logger.warn("Caught the following exception on transition checking", e);
             } finally {
@@ -3452,7 +3450,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     		} catch(NoTransitionException e) {
     			s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
     		}
-    		// TODO we need to alert admin or user about this risky state transition
+    		
+    		// we need to alert admin or user about this risky state transition
+    		_alertMgr.sendAlert(AlertManager.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(), 
+    			VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (Starting -> Running) from out-of-context transition. VM network environment may need to be reset");
     		break;
     		
     	case Running :
@@ -3472,8 +3473,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     		} catch(NoTransitionException e) {
     			s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
     		}
-    		// TODO we need to alert admin or user about this risky state transition
-    		break;
+      		_alertMgr.sendAlert(AlertManager.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(), 
+        			VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState() + " -> Running) from out-of-context transition. VM network environment may need to be reset");
+          		break;
     		
     	case Destroyed :
     	case Expunging :
@@ -3529,7 +3531,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    private void scanStalledVMInTransitionState(long hostId) {
+    private void scanStalledVMInTransitionStateOnUpHost(long hostId) {
     	//
     	// Check VM that is stuck in Starting, Stopping, Migrating states, we won't check
     	// VMs in expunging state (this need to be handled specially)
@@ -3540,10 +3542,32 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	//
     	// When host is UP, soon or later we will get a report from the host about the VM, 
     	// however, if VM is missing from the host report (it may happen in out of band changes
-    	// or from designed behave of XS/KVM)
+    	// or from designed behave of XS/KVM), the VM may not get a chance to run the state-sync logic
     	//
+    	// Therefor, we will scan thoses VMs on UP host based on last update timestamp, if the host is UP
+    	// and a VM stalls for status update, we will consider them to be powered off 
+    	// (which is relatively safe to do so) 
     	
-    	
+    	long stallThresholdInMs = _pingInterval.value() + (_pingInterval.value() >> 1);
+    	Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - stallThresholdInMs);
+    	List<Long> mostlikelyStoppedVMs = listStalledVMInTransitionStateOnUpHost(hostId, cutTime);
+    	for(Long vmId : mostlikelyStoppedVMs) {
+    		VMInstanceVO vm = _vmDao.findById(vmId);
+    		assert(vm != null);
+    		handlePowerOffReportWithNoPendingJobsOnVM(vm);
+    	}
+    }
+    
+    private void scanStalledVMInTransitionStateOnDisconnectedHosts() {
+    	Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - this._operationTimeout.value()*1000);
+    	List<Long> stuckAndUncontrollableVMs = listStalledVMInTransitionStateOnDisconnectedHosts(cutTime);
+    	for(Long vmId : stuckAndUncontrollableVMs) {
+    		VMInstanceVO vm = _vmDao.findById(vmId);
+    		
+    		// We now only alert administrator about this situation
+      		_alertMgr.sendAlert(AlertManager.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(), 
+        		VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") is stuck in " + vm.getState() + " state and its host is unreachable for too long");
+    	}
     }
     
     // TODO, use sql query directly for quick prototype, need to refactor to use joins and search builders

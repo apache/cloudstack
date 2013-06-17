@@ -48,7 +48,7 @@ public interface AlertManager extends Manager {
     public static final short ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 24;
     public static final short ALERT_TYPE_LOCAL_STORAGE = 25;
     public static final short ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED = 26; // Generated when the resource limit exceeds the limit. Currently used for recurring snapshots only
-
+    public static final short ALERT_TYPE_SYNC = 27;
 
     void clearAlert(short alertType, long dataCenterId, long podId);
 

@@ -41,4 +41,6 @@ public interface Configs {
     public static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>(
             Boolean.class, "vm.destroy.forcestop", "Advanced", OrchestrationService.class, "false", "On destroy, force-stop takes this value ", null);
 
+    public static final ConfigKey<Long> PingInterval = new ConfigKey<Long>(
+            Long.class, "ping.interval", "Advanced", OrchestrationService.class, "60", "Ping interval in seconds", null);
 }
