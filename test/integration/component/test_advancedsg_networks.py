@@ -246,6 +246,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
             raise Exception("Warning: Exception during network cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedsg"])
     def test_createIsolatedNetwork(self):
         """ Test Isolated Network """
         
@@ -423,8 +424,9 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         except Exception as e:
             self.debug("Network creation failed because create isolated network is invalid in advanced zone with security groups.")
 
+    @attr(tags = ["advancedsg"])
     def test_createSharedNetwork_withoutSG(self):
-        """ Test Shared Network with used vlan 01 """
+        """ Test Shared Network with without SecurityProvider """
         
         # Steps,
         #  1. create an Admin account
@@ -574,6 +576,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         except Exception as e:
             self.debug("Network creation failed because there is no SecurityProvider in the network offering.")
     
+    @attr(tags = ["advancedsg"])
     def test_deployVM_SharedwithSG(self):
         """ Test VM deployment in shared networks with SecurityProvider """
         
