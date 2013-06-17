@@ -3310,7 +3310,9 @@ ServerResource {
         ConsoleDef console = new ConsoleDef("pty", null, null, (short) 0);
         devices.addDevice(console);
 
-        GraphicDef grap = new GraphicDef("vnc", (short) 0, true, null, null,
+         //add the VNC port passwd here, get the passwd from the vmInstance.
+        String passwd = vmTO.getVncPassword();
+        GraphicDef grap = new GraphicDef("vnc", (short) 0, true, null, passwd,
                 null);
         devices.addDevice(grap);
 

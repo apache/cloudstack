@@ -300,7 +300,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
                          "Running",
                          "Vm state should be running after deployment"
                          )
-        self.assertEqual(
+        self.assertNotEqual(
                          vm.displayname,
                          vm.id,
                          "Vm display name should not match the given name"

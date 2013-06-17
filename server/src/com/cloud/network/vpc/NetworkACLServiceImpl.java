@@ -294,6 +294,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Start port can't be bigger than end port");
         }
 
+        // start port and end port must be null for protocol = 'all'
+        if ((portStart != null || portEnd != null ) && protocol != null && protocol.equalsIgnoreCase("all"))
+            throw new InvalidParameterValueException("start port and end port must be null if protocol = 'all'");
+
         if (sourceCidrList != null) {
             for (String cidr: sourceCidrList){
                 if (!NetUtils.isValidCIDR(cidr)){

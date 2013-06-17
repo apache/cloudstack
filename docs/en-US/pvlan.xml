@@ -32,14 +32,10 @@
       <para>Isolate VMs in a shared networks by using Private VLANs.</para>
     </listitem>
     <listitem>
-      <para>Supported in both VPC and non-VPC deployments.</para>
+      <para>Supported on KVM, XenServer, and VMware hypervisors</para>
     </listitem>
     <listitem>
-      <para>Supported on all hypervisors.</para>
-    </listitem>
-    <listitem>
-      <para>Allow end users to deploy VMs in an isolated networks, or a VPC, or a Private
-        VLAN-enabled shared network.</para>
+      <para>PVLAN-enabled shared network can be a part of multiple networks of a guest VM.</para>
     </listitem>
   </itemizedlist>
   <section id="about-pvlan">
@@ -122,54 +118,15 @@
           greater than the number of PVLANs used.</para>
       </listitem>
       <listitem>
-        <para>If your Catalyst switch supports PVLAN, but not PVLAN promiscuous trunk mode, perform
-          the following: </para>
-        <orderedlist numeration="loweralpha">
-          <listitem>
-            <para>Configure one of the switch port as trunk for management network (management
-              VLAN).</para>
-          </listitem>
-          <listitem>
-            <para>For each PVLAN, perform the following:</para>
-            <orderedlist numeration="lowerroman">
-              <listitem>
-                <para>Connect a port of the Catalyst switch to the upper switch.</para>
-              </listitem>
-              <listitem>
-                <para>Set the port in the Catalyst Switch in promiscuous mode for one pair of
-                  PVLAN.</para>
-              </listitem>
-              <listitem>
-                <para>Set the port in the upper switch to access mode, and allow only the traffic of
-                  the primary VLAN of the PVLAN pair.</para>
-              </listitem>
-            </orderedlist>
-          </listitem>
-        </orderedlist>
-      </listitem>
-      <listitem>
         <para>Configure private VLAN on your physical switches out-of-band.</para>
       </listitem>
       <listitem>
-        <para>Open vSwitch (OVS) used by XenServer and KVM does not support PVLAN. Therefore,
-          simulate PVLAN on OVS for XenServer and KVM by modifying the flow table to achieve the
-          following:</para>
-        <itemizedlist>
-          <listitem>
-            <para>For every traffic leaving user VMs, tag with the secondary isolated VLAN
-              ID.</para>
-          </listitem>
-          <listitem>
-            <para>Change the VLAN ID to primary VLAN ID.</para>
-            <para>This allows the traffic which is tagged with the secondary isolated VLAN ID reach
-              the DHCP server. </para>
-          </listitem>
-          <listitem>
-            <para>The gateway is PVLAN-unaware; therefore, the switch connected to the gateway
-              should translate all the secondary VLAN to primary VLAN for communicating with the
-              gateway.</para>
-          </listitem>
-        </itemizedlist>
+        <para>Before you use PVLAN on XenServer and KVM, enable Open vSwitch (OVS) .</para>
+        <note>
+          <para>OVS on XenServer and KVM does not support PVLAN. Therefore, simulate PVLAN on OVS
+            for XenServer and KVM by modifying the flow table and tagging every traffic leaving
+            guest VMs with the secondary VLAN ID.</para>
+        </note>
       </listitem>
     </itemizedlist>
   </section>
@@ -208,41 +165,83 @@
         <para>Specify the following:</para>
         <itemizedlist>
           <listitem>
-            <para>Name:</para>
+            <para><emphasis role="bold">Name</emphasis>: The name of the network. This will be
+              visible to the user.</para>
           </listitem>
           <listitem>
-            <para>Description:</para>
+            <para><emphasis role="bold">Description</emphasis>: The short description of the network
+              that can be displayed to users.</para>
           </listitem>
           <listitem>
-            <para>VLAN ID:</para>
+            <para><emphasis role="bold">VLAN ID</emphasis>: The unique ID of the VLAN.</para>
           </listitem>
           <listitem>
-            <para>Private VLAN ID:</para>
+            <para><emphasis role="bold">Isolated VLAN ID</emphasis>: The unique ID of the Secondary
+              Isolated VLAN. </para>
+            <para>For the description on Secondary Isolated VLAN, see <xref linkend="about-pvlan"
+              />.</para>
           </listitem>
           <listitem>
-            <para>Scope:</para>
+            <para><emphasis role="bold">Scope</emphasis>: The available scopes are Domain, Account,
+              Project, and All.</para>
+            <itemizedlist>
+              <listitem>
+                <para><emphasis role="bold">Domain</emphasis>: Selecting Domain limits the scope of
+                  this guest network to the domain you specify. The network will not be available
+                  for other domains. If you select Subdomain Access, the guest network is available
+                  to all the sub domains within the selected domain.</para>
+              </listitem>
+              <listitem>
+                <para><emphasis role="bold">Account</emphasis>: The account for which the guest
+                  network is being created for. You must specify the domain the account belongs
+                  to.</para>
+              </listitem>
+              <listitem>
+                <para><emphasis role="bold">Project</emphasis>: The project for which the guest
+                  network is being created for. You must specify the domain the project belongs
+                  to.</para>
+              </listitem>
+              <listitem>
+                <para><emphasis role="bold">All</emphasis>: The guest network is available for all
+                  the domains, account, projects within the selected zone. </para>
+              </listitem>
+            </itemizedlist>
           </listitem>
           <listitem>
-            <para>Network Offering:</para>
+            <para><emphasis role="bold">Network Offering</emphasis>: If the administrator has
+              configured multiple network offerings, select the one you want to use for this
+              network.</para>
           </listitem>
           <listitem>
-            <para>Gateway:</para>
+            <para><emphasis role="bold">Gateway</emphasis>: The gateway that the guests should
+              use.</para>
           </listitem>
           <listitem>
-            <para>Netmask:</para>
+            <para><emphasis role="bold">Netmask</emphasis>: The netmask in use on the subnet the
+              guests will use.</para>
           </listitem>
           <listitem>
-            <para>IP Range:</para>
+            <para><emphasis role="bold">IP Range</emphasis>: A range of IP addresses that are
+              accessible from the Internet and are assigned to the guest VMs.</para>
+            <para>If one NIC is used, these IPs should be in the same CIDR in the case of
+              IPv6.</para>
           </listitem>
           <listitem>
-            <para>IPv6 CIDR:</para>
+            <para><emphasis role="bold">IPv6 CIDR</emphasis>: The network prefix that defines the
+              guest network subnet. This is the CIDR that describes the IPv6 addresses in use in the
+              guest networks in this zone. To allot IP addresses from within a particular address
+              block, enter a CIDR.</para>
           </listitem>
           <listitem>
-            <para>Network Domain:</para>
+            <para><emphasis role="bold">Network Domain</emphasis>: A custom DNS suffix at the level
+              of a network. If you want to assign a special domain name to the guest VM network,
+              specify a DNS suffix.</para>
           </listitem>
         </itemizedlist>
       </listitem>
-      <listitem><para>Click OK to confirm.</para></listitem>
+      <listitem>
+        <para>Click OK to confirm.</para>
+      </listitem>
     </orderedlist>
   </section>
 </section>

@@ -1394,4 +1394,13 @@ public class NetUtils {
 		return null;
 	}
 
+	public static String generateMacOnIncrease(String baseMac, long l) {
+		long mac = mac2Long(baseMac);
+		if (l > 0xFFFFl) {
+			return null;
+		}
+		mac = mac + (l << 24);
+		mac = mac & 0x06FFFFFFFFFFl;
+		return long2Mac(mac);
+	}
 }

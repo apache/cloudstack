@@ -43,10 +43,9 @@ public class LDAPConfigCmd extends BaseCmd  {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.LIST_ALL, type=CommandType.STRING,  description="Hostname or ip address of the ldap server eg: my.ldap.com")
-    private String listall;
-
+    @Parameter(name=ApiConstants.LIST_ALL, type=CommandType.BOOLEAN,  description="If true return current LDAP configuration")
+    private Boolean listAll;
+    
     @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING,  description="Hostname or ip address of the ldap server eg: my.ldap.com")
     private String hostname;
 
@@ -78,10 +77,10 @@ public class LDAPConfigCmd extends BaseCmd  {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getListAll() {
-        return listall == null ? "false" : listall;
+    public Boolean getListAll() {
+    	return listAll == null ? Boolean.FALSE : listAll;
     }
-
+    
     public String getBindPassword() {
         return bindPassword;
     }
@@ -156,16 +155,15 @@ public class LDAPConfigCmd extends BaseCmd  {
             InsufficientCapacityException, ServerApiException,
             ConcurrentOperationException, ResourceAllocationException {
           try {
-              if ("true".equalsIgnoreCase(getListAll())){
+              if (getListAll()){
                   // return the existing conf
                   LDAPConfigCmd cmd = _configService.listLDAPConfig(this);
-                  LDAPConfigResponse lr = _responseGenerator.createLDAPConfigResponse(cmd.getHostname(), cmd.getPort(), cmd.getUseSSL(),
-                          cmd.getQueryFilter(), cmd.getSearchBase(), cmd.getBindDN());
+                  LDAPConfigResponse lr = _responseGenerator.createLDAPConfigResponse(cmd.getHostname(), cmd.getPort(), cmd.getUseSSL(), cmd.getQueryFilter(), cmd.getSearchBase(), cmd.getBindDN());
                   lr.setResponseName(getCommandName());
                   this.setResponseObject(lr);
               }
               else if (getHostname()==null || getSearchBase() == null || getQueryFilter() == null) {
-                  throw new InvalidParameterValueException("You need to provide hostname, serachbase and queryfilter to configure your LDAP server");
+                  throw new InvalidParameterValueException("You need to provide hostname, searchbase and queryfilter to configure your LDAP server");
               }
               else {
                   boolean result = _configService.updateLDAP(this);
