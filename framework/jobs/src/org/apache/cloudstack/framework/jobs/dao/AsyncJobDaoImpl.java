@@ -161,7 +161,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 	public List<AsyncJobVO> getExpiredUnfinishedJobs(Date cutTime, int limit) {
 		SearchCriteria<AsyncJobVO> sc = expiringUnfinishedAsyncJobSearch.create();
 		sc.setParameters("created", cutTime);
-		sc.setParameters("jobStatus", 0);
+        sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
 		Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);
 		return listIncludingRemovedBy(sc, filter);
 	}
@@ -170,7 +170,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 	public List<AsyncJobVO> getExpiredCompletedJobs(Date cutTime, int limit) {
 		SearchCriteria<AsyncJobVO> sc = expiringCompletedAsyncJobSearch.create();
 		sc.setParameters("created", cutTime);
-		sc.setParameters("jobStatus", 0);
+        sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
 		Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);
 		return listIncludingRemovedBy(sc, filter);
 	}
@@ -178,8 +178,9 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 	@Override
     @DB
 	public void resetJobProcess(long msid, int jobResultCode, String jobResultMessage) {
-		String sql = "UPDATE async_job SET job_status=" + JobInfo.Status.FAILED + ", job_result_code=" + jobResultCode
-			+ ", job_result='" + jobResultMessage + "' where job_status=0 AND (job_complete_msid=? OR (job_complete_msid IS NULL AND job_init_msid=?))";
+        String sql = "UPDATE async_job SET job_status=" + JobInfo.Status.FAILED.ordinal() + ", job_result_code=" + jobResultCode
+                + ", job_result='" + jobResultMessage + "' where job_status=" + JobInfo.Status.IN_PROGRESS.ordinal()
+                + " AND (job_complete_msid=? OR (job_complete_msid IS NULL AND job_init_msid=?))";
 		
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;

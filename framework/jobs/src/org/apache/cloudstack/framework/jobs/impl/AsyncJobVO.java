@@ -133,6 +133,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
     public AsyncJobVO() {
         uuid = UUID.randomUUID().toString();
         related = UUID.randomUUID().toString();
+        status = Status.IN_PROGRESS;
     }
 
     public AsyncJobVO(String related, long userId, long accountId, String cmd, String cmdInfo, Long instanceId, String instanceType) {
@@ -144,6 +145,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
         this.related = related;
 	    this.instanceId = instanceId;
 	    this.instanceType = instanceType;
+        status = Status.IN_PROGRESS;
     }
 
     @Override

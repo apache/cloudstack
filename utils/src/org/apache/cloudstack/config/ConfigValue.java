@@ -49,7 +49,7 @@ public class ConfigValue<T> {
 
     @SuppressWarnings("unchecked")
     public T value() {
-        if (_config.isDynamic()) {
+        if (_value == null || _config.isDynamic()) {
             Configuration vo = _entityMgr.findById(Configuration.class, _config.key());
             String value = vo != null ? vo.getValue() : _config.defaultValue();
 
@@ -66,8 +66,9 @@ public class ConfigValue<T> {
                 _value = (T)value;
             } else if (type.isAssignableFrom(Float.class)) {
                 _value = (T)new Float(Float.parseFloat(value) * _multiplier.floatValue());
+            } else {
+                throw new CloudRuntimeException("Unsupported data type for config values: " + type);
             }
-            throw new CloudRuntimeException("Unsupported data type for config values: " + type);
         }
 
         return _value;

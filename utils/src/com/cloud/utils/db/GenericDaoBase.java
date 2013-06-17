@@ -1485,7 +1485,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             if (type == EnumType.STRING) {
                 pstmt.setString(j, value == null ? null :  value.toString());
             } else if (type == EnumType.ORDINAL) {
-                pstmt.setInt(j, value == null ? null : ((Enum<?>)value).ordinal());
+                if (value == null) {
+                    pstmt.setObject(j, null);
+                } else {
+                    pstmt.setInt(j, ((Enum<?>)value).ordinal());
+                }
             }
         } else if (attr.field.getType() == URI.class) {
             pstmt.setString(j, value == null ? null : value.toString());
@@ -1499,7 +1503,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             if (type == EnumType.STRING) {
                 pstmt.setString(j, value == null ? null : value.toString());
             } else if (type == EnumType.ORDINAL) {
-                pstmt.setLong(j, value == null ? null : (value instanceof Ip) ? ((Ip)value).longValue() : NetUtils.ip2Long((String)value));
+                if (value == null) {
+                    pstmt.setObject(j, null);
+                } else {
+                    pstmt.setLong(j, (value instanceof Ip) ? ((Ip)value).longValue() : NetUtils.ip2Long((String)value));
+                }
             }
         } else {
             pstmt.setObject(j, value);
