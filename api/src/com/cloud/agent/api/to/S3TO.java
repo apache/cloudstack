@@ -34,6 +34,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private Integer maxErrorRetry;
     private Integer socketTimeout;
     private Date created;
+    private boolean enableRRS;
 
     public S3TO() {
 
@@ -45,7 +46,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
             final String secretKey, final String endPoint,
             final String bucketName, final Boolean httpsFlag,
             final Integer connectionTimeout, final Integer maxErrorRetry,
-            final Integer socketTimeout, final Date created) {
+            final Integer socketTimeout, final Date created, final boolean enableRRS) {
 
         super();
 
@@ -60,6 +61,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         this.maxErrorRetry = maxErrorRetry;
         this.socketTimeout = socketTimeout;
         this.created = created;
+        this.enableRRS = enableRRS;
 
     }
 
@@ -126,6 +128,10 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
 
         if (created != null ? !created.equals(thatS3TO.created)
                 : thatS3TO.created != null) {
+            return false;
+        }
+
+        if (enableRRS != thatS3TO.enableRRS) {
             return false;
         }
 
@@ -253,6 +259,16 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     @Override
     public DataStoreRole getRole() {
         return DataStoreRole.Image;
+    }
+
+
+
+    public boolean getEnableRRS() {
+        return enableRRS;
+    }
+
+    public void setEnableRRS(boolean enableRRS) {
+        this.enableRRS = enableRRS;
     }
 
 

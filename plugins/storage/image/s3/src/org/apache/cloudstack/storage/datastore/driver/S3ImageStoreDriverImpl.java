@@ -31,6 +31,8 @@ import org.apache.log4j.Logger;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -40,6 +42,9 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
 
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
+
+    @Inject
+    ConfigurationDao _configDao;
 
 
     @Override
@@ -55,7 +60,9 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
                 details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(details
                         .get(ApiConstants.S3_MAX_ERROR_RETRY)),
                 details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(details
-                        .get(ApiConstants.S3_SOCKET_TIMEOUT)), imgStore.getCreated());
+                        .get(ApiConstants.S3_SOCKET_TIMEOUT)), imgStore.getCreated(),
+                _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false : Boolean.parseBoolean(_configDao
+                        .getValue(Config.S3EnableRRS.toString())));
 
     }
 
