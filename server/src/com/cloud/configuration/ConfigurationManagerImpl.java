@@ -3968,9 +3968,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.LbSchemes, publicLbStr);
                         internalLb = publicLbStr.contains("internal");
                         publicLb = publicLbStr.contains("public");
-                    } else {
-                        //if not specified, default public lb to true
-                        publicLb = true;
                     }
                 }
             }
@@ -4008,6 +4005,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
             }
+        }
+        
+        if (serviceProviderMap.containsKey(Service.Lb) && !internalLb && !publicLb) {
+            //if not specified, default public lb to true
+            publicLb = true;
         }
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan,
