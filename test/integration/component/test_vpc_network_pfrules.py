@@ -406,7 +406,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 self.services["vpc_offering"]
                                                 )
 
-        self._cleanup.append(self.vpc_off)
+        self._cleanup.append(vpc_off)
         self.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
 
