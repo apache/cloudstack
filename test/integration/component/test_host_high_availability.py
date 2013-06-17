@@ -142,7 +142,6 @@ class TestHostHighAvailability(cloudstackTestCase):
         try:
             #Clean up, terminate the created accounts, domains etc
             cleanup_resources(self.apiclient, self.cleanup)
-            self.testClient.close()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
