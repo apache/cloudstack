@@ -111,7 +111,7 @@ public class AsyncJobMonitor extends ManagerBase {
 		synchronized(this) {
 			s_logger.info("Add job-" + jobId + " into job monitoring");
 			
-			assert(_activeTasks.get(jobId) == null);
+			assert(_activeTasks.get(runNumber) == null);
 			
 			long threadId = Thread.currentThread().getId();
 			boolean fromPoolThread = Thread.currentThread().getName().contains(AsyncJobConstants.JOB_POOL_THREAD_PREFIX);
