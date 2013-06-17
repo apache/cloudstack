@@ -795,16 +795,16 @@ class TestVPC(cloudstackTestCase):
                          self.services["vpc"],
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
-                         account=self.user.account.name,
-                         domainid=self.user.account.domainid
+                         account=self.user.name,
+                         domainid=self.user.domainid
                          )
         self.validate_vpc_network(vpc_2)
 
         self.debug("Validating list VPCs call by passing account and domain")
         vpcs = VPC.list(
                         self.apiclient,
-                        account=self.user.account.name,
-                        domainid=self.user.account.domainid,
+                        account=self.user.name,
+                        domainid=self.user.domainid,
                         listall=True
                     )
         self.assertEqual(
