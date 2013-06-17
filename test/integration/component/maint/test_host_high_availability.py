@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-""" P1 tests for dedicated Host high availability 
+""" P1 tests for dedicated Host high availability
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
@@ -157,7 +157,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         # Validations,
         #1. Ensure that the offering is created and that in the UI the 'Offer HA' field is enabled (Yes)
         #The listServiceOffering API should list 'offerha' as true.
-        #2. Select the newly created VM and ensure that the Compute offering field value lists the compute service offering that was selected. 
+        #2. Select the newly created VM and ensure that the Compute offering field value lists the compute service offering that was selected.
         #    Also, check that the HA Enabled field is enabled 'Yes'.
 
         #list and validate above created service offering with Ha enabled
@@ -257,7 +257,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         self.debug("Deployed VM on host: %s" % vm.hostid)
 
-        #validate the virtual machine created is host Ha enabled 
+        #validate the virtual machine created is host Ha enabled
         list_hosts_response = list_hosts(
             self.apiclient,
             id=vm.hostid
@@ -593,7 +593,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         vm_with_ha_enabled = vms[0]
 
-        #Verify the virtual machine got created on non HA host 
+        #Verify the virtual machine got created on non HA host
         list_hosts_response = list_hosts(
             self.apiclient,
             id=vm_with_ha_enabled.hostid
@@ -725,7 +725,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         vm_with_ha_disabled = vms[0]
 
-        #Verify the virtual machine got created on non HA host 
+        #Verify the virtual machine got created on non HA host
         list_hosts_response = list_hosts(
             self.apiclient,
             id=vm_with_ha_disabled.hostid
