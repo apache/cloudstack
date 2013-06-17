@@ -27,6 +27,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -2949,6 +2951,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String updatedVlanRange = null;
         long guestVlanMapId = 0;
         long guestVlanMapAccountId = 0;
+        long vlanOwnerId = 0;
 
         // Verify account is valid
         Account vlanOwner = null;
@@ -2969,6 +2972,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Unable to find account by name " + accountName);
             }
         }
+        vlanOwnerId = vlanOwner.getAccountId();
 
         // Verify physical network isolation type is VLAN
         PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
@@ -3024,40 +3028,59 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         List<AccountGuestVlanMapVO> guestVlanMaps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByPhysicalNetwork(physicalNetworkId);
+        // Verify if vlan range is already dedicated
         for (AccountGuestVlanMapVO guestVlanMap : guestVlanMaps) {
             List<Integer> vlanTokens = getVlanFromRange(guestVlanMap.getGuestVlanRange());
             int dedicatedStartVlan = vlanTokens.get(0).intValue();
             int dedicatedEndVlan = vlanTokens.get(1).intValue();
-            guestVlanMapId = guestVlanMap.getId();
-            guestVlanMapAccountId = guestVlanMap.getAccountId();
-
-            // Verify if range is already dedicated
-            if (startVlan >= dedicatedStartVlan && endVlan <= dedicatedEndVlan) {
-                if (guestVlanMap.getAccountId() != vlanOwner.getAccountId()) {
-                    throw new InvalidParameterValueException("Vlan range is already dedicated to another account. Cannot dedicate guest vlan range " + vlan);
-                } else {
-                    s_logger.debug("Vlan range " + vlan +" is already dedicated to the specified account" + accountName);
-                    return guestVlanMap;
-                }
-            }
-            // Verify if range overlaps with an existing range
-            if (startVlan < dedicatedStartVlan & endVlan+1 >= dedicatedStartVlan & endVlan <= dedicatedEndVlan) { // extend to the left
-                updatedVlanRange = startVlan + "-" + dedicatedEndVlan;
-                break;
-            } else if (startVlan >= dedicatedStartVlan & startVlan-1 <= dedicatedEndVlan & endVlan > dedicatedEndVlan) { // extend to right
-                updatedVlanRange = dedicatedStartVlan + "-" +  endVlan;
-                break;
-            } else if (startVlan < dedicatedStartVlan & endVlan > dedicatedEndVlan){ // extend to the left and right
-                updatedVlanRange = startVlan + "-" +  endVlan;
-                break;
+            if ((startVlan < dedicatedStartVlan & endVlan >= dedicatedStartVlan) ||
+                    (startVlan >= dedicatedStartVlan & startVlan <= dedicatedEndVlan)) {
+                throw new InvalidParameterValueException("Vlan range is already dedicated. Cannot" +
+                        " dedicate guest vlan range " + vlan);
             }
         }
 
+        // Sort the existing dedicated vlan ranges
+        Collections.sort(guestVlanMaps, new Comparator<AccountGuestVlanMapVO>() {
+            @Override
+            public int compare( AccountGuestVlanMapVO obj1 , AccountGuestVlanMapVO obj2) {
+                List<Integer> vlanTokens1 = getVlanFromRange(obj1.getGuestVlanRange());
+                List<Integer> vlanTokens2 = getVlanFromRange(obj2.getGuestVlanRange());
+                return vlanTokens1.get(0).compareTo(vlanTokens2.get(0));
+            }
+        });
+
+        // Verify if vlan range extends an already dedicated range
+        for (int i=0; i < guestVlanMaps.size(); i++) {
+            guestVlanMapId = guestVlanMaps.get(i).getId();
+            guestVlanMapAccountId = guestVlanMaps.get(i).getAccountId();
+            List<Integer> vlanTokens1 = getVlanFromRange(guestVlanMaps.get(i).getGuestVlanRange());
+            // Range extends a dedicated vlan range to the left
+            if (endVlan == (vlanTokens1.get(0).intValue()-1)) {
+                if(guestVlanMapAccountId == vlanOwnerId) {
+                    updatedVlanRange = startVlan + "-" + vlanTokens1.get(1).intValue();
+                }
+                break;
+            }
+            // Range extends a dedicated vlan range to the right
+            if (startVlan == (vlanTokens1.get(1).intValue()+1) & guestVlanMapAccountId == vlanOwnerId) {
+                if (i != (guestVlanMaps.size()-1)) {
+                    List<Integer> vlanTokens2 = getVlanFromRange(guestVlanMaps.get(i+1).getGuestVlanRange());
+                    // Range extends 2 vlan ranges, both to the right and left
+                    if (endVlan == (vlanTokens2.get(0).intValue()-1) & guestVlanMaps.get(i+1).getAccountId() == vlanOwnerId) {
+                        _datacneter_vnet.releaseDedicatedGuestVlans(guestVlanMaps.get(i+1).getId());
+                        _accountGuestVlanMapDao.remove(guestVlanMaps.get(i+1).getId());
+                        updatedVlanRange = vlanTokens1.get(0).intValue() + "-" + vlanTokens2.get(1).intValue();
+                        break;
+                    }
+                }
+                updatedVlanRange = vlanTokens1.get(0).intValue() + "-" + endVlan;
+                break;
+            }
+        }
+        // Dedicate vlan range
         AccountGuestVlanMapVO accountGuestVlanMapVO;
         if (updatedVlanRange != null) {
-            if (guestVlanMapAccountId != vlanOwner.getAccountId()) {
-                throw new InvalidParameterValueException("Vlan range is partially dedicated to another account. Cannot dedicate guest vlan range " + vlan);
-            }
             accountGuestVlanMapVO = _accountGuestVlanMapDao.findById(guestVlanMapId);
             accountGuestVlanMapVO.setGuestVlanRange(updatedVlanRange);
             _accountGuestVlanMapDao.update(guestVlanMapId, accountGuestVlanMapVO);
@@ -3070,7 +3093,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             txn.commit();
         }
         // For every guest vlan set the corresponding account guest vlan map id
-        for (int i = startVlan; i <= endVlan; i++) {
+        List<Integer> finaVlanTokens = getVlanFromRange(accountGuestVlanMapVO.getGuestVlanRange());
+        for (int i = finaVlanTokens.get(0).intValue(); i <= finaVlanTokens.get(1).intValue(); i++) {
             List<DataCenterVnetVO> dataCenterVnet = _datacneter_vnet.findVnet(physicalNetwork.getDataCenterId(),((Integer)i).toString());
             dataCenterVnet.get(0).setAccountGuestVlanMapId(accountGuestVlanMapVO.getId());
             _datacneter_vnet.update(dataCenterVnet.get(0).getId(), dataCenterVnet.get(0));

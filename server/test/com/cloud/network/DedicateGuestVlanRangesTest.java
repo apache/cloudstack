@@ -291,7 +291,7 @@ public class DedicateGuestVlanRangesTest {
         try {
             networkService.dedicateGuestVlanRange(dedicateGuestVlanRangesCmd);
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("Vlan range is already dedicated to another account"));
+            Assert.assertTrue(e.getMessage().contains("Vlan range is already dedicated"));
         } finally {
             txn.close("runDedicateGuestVlanRangeDedicatedRange");
         }
@@ -320,7 +320,7 @@ public class DedicateGuestVlanRangesTest {
         try {
             networkService.dedicateGuestVlanRange(dedicateGuestVlanRangesCmd);
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("Vlan range is partially dedicated to another account"));
+            Assert.assertTrue(e.getMessage().contains("Vlan range is already dedicated"));
         } finally {
             txn.close("runDedicateGuestVlanRangePartiallyDedicated");
         }
