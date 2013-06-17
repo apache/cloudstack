@@ -777,6 +777,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         HypervisorType hypervisorType = HypervisorType.KVM;
         if (scopeType == ScopeType.ZONE) {
+            // ignore passed clusterId and podId
+            clusterId = null;
+            podId = null;
             String hypervisor = cmd.getHypervisor();
             if (hypervisor != null) {
                 try {
