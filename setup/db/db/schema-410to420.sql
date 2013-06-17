@@ -290,13 +290,13 @@ ALTER TABLE `cloud`.`nics` ADD COLUMN `display_nic` tinyint(1) NOT NULL DEFAULT 
 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `display_offering` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should disk offering be displayed to the end user';
 
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_read_rate` bigint(20) unsigned DEFAULT 0;
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_read_rate` bigint(20);
 
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_write_rate` bigint(20) unsigned DEFAULT 0;
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_write_rate` bigint(20);
 
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `iops_read_rate` bigint(20) unsigned DEFAULT 0;
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `iops_read_rate` bigint(20);
 
-ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `iops_write_rate` bigint(20) unsigned DEFAULT 0;
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `iops_write_rate` bigint(20);
 
 CREATE TABLE `cloud`.`volume_details` (
   `id` bigint unsigned NOT NULL auto_increment,

@@ -106,19 +106,19 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     }
 
     public Long getBytesReadRate() {
-        return (bytesReadRate == null) || (bytesReadRate < 0) ? 0 : bytesReadRate;
+        return bytesReadRate;
     }
 
     public Long getBytesWriteRate() {
-        return (bytesWriteRate == null) || (bytesWriteRate < 0) ? 0 : bytesWriteRate;
+        return bytesWriteRate;
     }
 
     public Long getIopsReadRate() {
-        return (iopsReadRate == null) || (iopsReadRate < 0) ? 0 : iopsReadRate;
+        return iopsReadRate;
     }
 
     public Long getIopsWriteRate() {
-        return (iopsWriteRate == null) || (iopsWriteRate < 0) ? 0 : iopsWriteRate;
+        return iopsWriteRate;
     }
 
     public String getStorageType() {

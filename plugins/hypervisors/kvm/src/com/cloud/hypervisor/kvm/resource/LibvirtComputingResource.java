@@ -3507,13 +3507,13 @@ ServerResource {
 
             }
 
-            if (volume.getBytesReadRate() > 0)
+            if ((volume.getBytesReadRate() != null) && (volume.getBytesReadRate()  > 0))
                 disk.setBytesReadRate(volume.getBytesReadRate());
-            if (volume.getBytesWriteRate() > 0)
+            if ((volume.getBytesWriteRate() != null) && (volume.getBytesWriteRate() > 0))
                 disk.setBytesWriteRate(volume.getBytesWriteRate());
-            if (volume.getIopsReadRate() > 0)
+            if ((volume.getIopsReadRate() != null) && (volume.getIopsReadRate() > 0))
                 disk.setIopsReadRate(volume.getIopsReadRate());
-            if (volume.getIopsWriteRate() > 0)
+            if ((volume.getIopsWriteRate() != null) && (volume.getIopsWriteRate() > 0))
                 disk.setIopsWriteRate(volume.getIopsWriteRate());
 
             vm.getDevices().addDevice(disk);
@@ -3689,13 +3689,13 @@ ServerResource {
                     diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId,
                             DiskDef.diskBus.VIRTIO);
                 }
-                if (bytesReadRate > 0)
+                if ((bytesReadRate != null) && (bytesReadRate > 0))
                     diskdef.setBytesReadRate(bytesReadRate);
-                if (bytesWriteRate > 0)
+                if ((bytesWriteRate != null) && (bytesWriteRate > 0))
                     diskdef.setBytesWriteRate(bytesWriteRate);
-                if (iopsReadRate > 0)
+                if ((iopsReadRate != null) && (iopsReadRate > 0))
                     diskdef.setIopsReadRate(iopsReadRate);
-                if (iopsWriteRate > 0)
+                if ((iopsWriteRate != null) && (iopsWriteRate > 0))
                     diskdef.setIopsWriteRate(iopsWriteRate);
             }
 

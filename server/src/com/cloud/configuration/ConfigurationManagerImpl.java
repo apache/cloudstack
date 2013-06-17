@@ -2046,13 +2046,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag, deploymentPlanner);
 
-        if (bytesReadRate != null && (bytesReadRate > 0))
+        if ((bytesReadRate != null) && (bytesReadRate > 0))
             offering.setBytesReadRate(bytesReadRate);
-        if (bytesWriteRate != null && (bytesWriteRate > 0))
+        if ((bytesWriteRate != null) && (bytesWriteRate > 0))
             offering.setBytesWriteRate(bytesWriteRate);
-        if (iopsReadRate != null && (iopsReadRate > 0))
+        if ((iopsReadRate != null) && (iopsReadRate > 0))
             offering.setIopsReadRate(iopsReadRate);
-        if (iopsWriteRate != null && (iopsWriteRate > 0))
+        if ((iopsWriteRate != null) && (iopsWriteRate > 0))
             offering.setIopsWriteRate(iopsWriteRate);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
