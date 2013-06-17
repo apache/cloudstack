@@ -1355,7 +1355,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
         Long zoneId = cmd.getZoneId();
-        String zoneType = cmd.getZoneType();
         Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -1503,40 +1502,40 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             if (!permittedAccounts.isEmpty()) {
                 //get account level networks
                 networksToReturn.addAll(listAccountSpecificNetworks(
-                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                         permittedAccounts));
                 //get domain level networks
                 if (domainId != null) {
                     networksToReturn
                     .addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
+                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                                     domainId, false));
                 }
             } else {
                 //add account specific networks
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
-                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter, path,
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
                         isRecursive));
                 //add domain specific networks of domain + parent domains
                 networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(
-                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter, path,
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
                                 isRecursive));
                 //add networks of subdomains
                 if (domainId == null) {
                     networksToReturn
                     .addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
+                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                                     caller.getDomainId(), true));
                 }
             }
         } else {
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId,
-                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType),
+                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags),
                     searchFilter);
         }
 
@@ -1581,7 +1580,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id,
             Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
-            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, String zoneType) {
+            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags) {
 
         SearchCriteria<NetworkVO> sc = sb.create();
 
@@ -1601,10 +1600,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (zoneId != null) {
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
-        }
-
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSearch", "networkType", zoneType);
         }
 
         if (guestIpType != null) {
