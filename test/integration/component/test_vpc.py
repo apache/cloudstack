@@ -20,6 +20,7 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
+from marvin.cloudstackException import cloudstackAPIException
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
@@ -820,7 +821,7 @@ class TestVPC(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "multiple"])
     def test_07_restart_network_vm_running(self):
         """ Test Restart VPC when there are multiple networks associated
         """
@@ -1923,8 +1924,7 @@ class TestVPC(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_14_deploy_vm_1(self):
-        """ Test deployment of vm in a network from user account. But the VPC is created
-            without account/domain ID
+        """ Test vm deploy in network by a user where VPC was created without account/domain ID
         """
 
         # 1. Create VPC without providing account/domain ID.
@@ -1935,17 +1935,18 @@ class TestVPC(cloudstackTestCase):
                             self.apiclient,
                             self.services["account"]
                             )
-        self.debug("Created account: %s" % user.account.name)
+        self.debug("Created account: %s" % user.name)
         self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    user.account.name)
+                                                    user.name)
 
-        userapiclient = self.testClient.createNewApiClient(
-                                        UserName=user.account.name,
-                                        DomainName=user.account.domain,
+        userapiclient = self.testClient.createUserApiClient(
+                                        UserName=user.name,
+                                        DomainName=user.domain,
                                         acctType=0)
+
 
         vpc = VPC.create(
                          userapiclient,
@@ -1999,8 +2000,7 @@ class TestVPC(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_15_deploy_vm_2(self):
-        """ Test deployment of vm in a network from domain admin account. But the VPC is created
-            without account/domain ID
+        """ Test deployment of vm in a network in a domain admin account where VPC is created without account/domain ID
         """
 
         # 1. Create VPC without providing account/domain ID.
@@ -2016,18 +2016,18 @@ class TestVPC(cloudstackTestCase):
                             self.apiclient,
                             self.services["account"]
                             )
-        self.debug("Created account: %s" % user.account.name)
+        self.debug("Created account: %s" % user.name)
         self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    user.account.name)
+                                                    user.name)
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
-        userapiclient = self.testClient.createNewApiClient(
-                                UserName=user.account.name,
-                                DomainName=self.services["domain"]["name"],
-                                acctType=2)
+        userapiclient = self.testClient.getUserApiClient(
+                                account=user.name,
+                                domain=self.services["domain"]["name"],
+                                type=2)
 
         vpc = VPC.create(
                          userapiclient,
@@ -2092,23 +2092,23 @@ class TestVPC(cloudstackTestCase):
                             self.apiclient,
                             self.services["account"]
                             )
-        self.debug("Created account: %s" % user.account.name)
+        self.debug("Created account: %s" % user.name)
         self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    user.account.name)
+                                                    user.name)
 
-        userapiclient = self.testClient.createNewApiClient(
-                                        UserName=user.account.name,
-                                        DomainName=user.account.domain,
-                                        acctType=0)
+        userapiclient = self.testClient.getUserApiClient(
+                                        account=user.name,
+                                        domain=user.domain,
+                                        type=0)
 
         vpc = VPC.create(
                          self.apiclient,
                          self.services["vpc"],
-                         account=user.account.name,
-                         domainid=user.account.domainid,
+                         account=user.name,
+                         domainid=user.domainid,
                          vpcofferingid=self.vpc_off.id,
                          zoneid=self.zone.id,
                          )
@@ -2176,82 +2176,39 @@ class TestVPC(cloudstackTestCase):
                             self.apiclient,
                             self.services["domain_admin"]
                             )
-        self.debug("Created account: %s" % domain_admin.account.name)
+        self.debug("Created account: %s" % domain_admin.name)
         self.cleanup.append(domain_admin)
-        da_apiclient = self.testClient.createNewApiClient(
-                                        UserName=domain_admin.account.name,
-                                        #DomainName=self.services["domain"]["name"],
-                                        DomainName=domain_admin.account.domain,
-                                        acctType=2)
+        da_apiclient = self.testClient.getUserApiClient(
+                                        account=domain_admin.name,
+                                        domain=domain_admin.domain,
+                                        type=2)
 
         user = Account.create(
                             self.apiclient,
                             self.services["account"]
                             )
-        self.debug("Created account: %s" % user.account.name)
+        self.debug("Created account: %s" % user.name)
         self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    user.account.name)
+                                                    user.name)
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
-        userapiclient = self.testClient.createNewApiClient(
-                                        UserName=user.account.name,
-                                        DomainName=user.account.domain,
-                                        acctType=0)
+        userapiclient = self.testClient.getUserApiClient(
+                                        account=user.name,
+                                        domain=user.domain,
+                                        type=0)
 
-        vpc = VPC.create(
-                         da_apiclient,
-                         self.services["vpc"],
-                         account=user.account.name,
-                         domainid=user.account.domainid,
-                         vpcofferingid=self.vpc_off.id,
-                         zoneid=self.zone.id,
-                         )
-        self.validate_vpc_network(vpc)
-
-        self.network_offering = NetworkOffering.create(
-                                            self.apiclient,
-                                            self.services["network_offering"],
-                                            conservemode=False
-                                            )
-        # Enable Network offering
-        self.network_offering.update(self.apiclient, state='Enabled')
-        self._cleanup.append(self.network_offering)
-
-        gateway = vpc.cidr.split('/')[0]
-        # Split the cidr to retrieve gateway
-        # for eg. cidr = 10.0.0.1/24
-        # Gateway = 10.0.0.1
-
-        # Creating network using the network offering created
-        self.debug("Creating network with network offering: %s" %
-                                                    self.network_offering.id)
-        network = Network.create(
-                                userapiclient,
-                                self.services["network"],
-                                networkofferingid=self.network_offering.id,
-                                zoneid=self.zone.id,
-                                gateway=gateway,
-                                vpcid=vpc.id
-                                )
-        self.debug("Created network with ID: %s" % network.id)
-
-        # Spawn an instance in that network
-        virtual_machine = VirtualMachine.create(
-                                  userapiclient,
-                                  self.services["virtual_machine"],
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(network.id)]
-                                  )
-        self.debug("Deployed VM in network: %s" % network.id)
-
-        self.assertNotEqual(virtual_machine,
-                None,
-                "VM creation in the network failed")
-
-        return
+        with self.assertRaises(cloudstackAPIException):
+            vpc = VPC.create(
+                             da_apiclient,
+                             self.services["vpc"],
+                             account=user.name,
+                             domainid=user.domainid,
+                             vpcofferingid=self.vpc_off.id,
+                             zoneid=self.zone.id,
+                             )
 
     @attr(tags=["advanced", "intervlan"])
     def test_18_create_net_for_user_diff_domain_by_doadmin(self):
@@ -2271,29 +2228,29 @@ class TestVPC(cloudstackTestCase):
                             self.apiclient,
                             self.services["domain_admin"]
                             )
-        self.debug("Created account: %s" % domain_admin.account.name)
+        self.debug("Created account: %s" % domain_admin.name)
         self.cleanup.append(domain_admin)
-        da_apiclient = self.testClient.createNewApiClient(
-                                        UserName=domain_admin.account.name,
-                                        DomainName=self.services["domain"]["name"],
-                                        acctType=2)
+        da_apiclient = self.testClient.getUserApiClient(
+                                        account=domain_admin.name,
+                                        domain=self.services["domain"]["name"],
+                                        type=2)
 
         user = Account.create(
                             self.apiclient,
                             self.services["account"]
                             )
-        self.debug("Created account: %s" % user.account.name)
+        self.debug("Created account: %s" % user.name)
         self.cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
-                                                    user.account.name)
+                                                    user.name)
 
         #0 - User, 1 - Root Admin, 2 - Domain Admin
-        userapiclient = self.testClient.createNewApiClient(
-                                        UserName=user.account.name,
-                                        DomainName=user.account.domain,
-                                        acctType=0)
+        userapiclient = self.testClient.getUserApiClient(
+                                        account=user.name,
+                                        domain=user.domain,
+                                        type=0)
 
         vpc = VPC.create(
                          da_apiclient,
@@ -2468,6 +2425,3 @@ class TestVPC(cloudstackTestCase):
         self.assertEqual(vpc_networks[0].displaytext,
              new_display_text,
              "Updation of VPC display text failed.")
-
-
-
