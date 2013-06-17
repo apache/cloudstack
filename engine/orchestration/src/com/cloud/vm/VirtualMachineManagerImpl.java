@@ -3432,7 +3432,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     			s_logger.warn("VM " + vmId + " no longer exists when processing VM state report");
     		}
     	} else {
-    		// TODO, wake-up signalling
+    		// TODO, do job wake-up signalling, since currently async job wake-up is not in use
+    		// we will skip it for nows
     	}
     }
     
@@ -3546,7 +3547,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	//
     	// Therefor, we will scan thoses VMs on UP host based on last update timestamp, if the host is UP
     	// and a VM stalls for status update, we will consider them to be powered off 
-    	// (which is relatively safe to do so) 
+    	// (which is relatively safe to do so)
     	
     	long stallThresholdInMs = _pingInterval.value() + (_pingInterval.value() >> 1);
     	Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - stallThresholdInMs);
@@ -3555,6 +3556,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     		VMInstanceVO vm = _vmDao.findById(vmId);
     		assert(vm != null);
     		handlePowerOffReportWithNoPendingJobsOnVM(vm);
+    	}
+    	
+    	List<Long> vmsWithRecentReport = listVMInTransitionStateWithRecentReportOnUpHost(hostId, cutTime);
+    	for(Long vmId : vmsWithRecentReport) {
+    		VMInstanceVO vm = _vmDao.findById(vmId);
+    		assert(vm != null);
+    		if(vm.getPowerState() == PowerState.PowerOn)
+    			handlePowerOnReportWithNoPendingJobsOnVM(vm);
+    		else
+    			handlePowerOffReportWithNoPendingJobsOnVM(vm);
     	}
     }
     
@@ -3570,12 +3581,38 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    // TODO, use sql query directly for quick prototype, need to refactor to use joins and search builders
-    // if it supports
+    
+    // VMs that in transitional state without recent power state report
     @DB
     private List<Long> listStalledVMInTransitionStateOnUpHost(long hostId, Date cutTime) {
     	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " + 
                      "AND h.id = ? AND i.power_state_update_time < ? AND i.host_id = h.id " +
+    			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " + 
+    			     "AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job)";
+    	
+    	List<Long> l = new ArrayList<Long>();
+        Transaction txn = Transaction.currentTxn();;
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            
+            pstmt.setLong(1, hostId);
+ 	        pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
+            ResultSet rs = pstmt.executeQuery();
+            while(rs.next()) {
+            	l.add(rs.getLong(1));
+            }
+        } catch (SQLException e) {
+        } catch (Throwable e) {
+        }
+        return l;
+    }
+    
+    // VMs that in transitional state and recently have power state update
+    @DB
+    private List<Long> listVMInTransitionStateWithRecentReportOnUpHost(long hostId, Date cutTime) {
+    	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " + 
+                     "AND h.id = ? AND i.power_state_update_time > ? AND i.host_id = h.id " +
     			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " + 
     			     "AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job)";
     	
