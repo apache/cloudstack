@@ -2766,7 +2766,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         //Asuming we have only one router per network For Now.
         DomainRouterVO router = routers.get(0);
         if (router.getState() != State.Running) {
-            s_logger.warn("Failed to add/remove VPN users: router not in running state");
+            s_logger.warn("Failed to configure dhcp: router not in running state");
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " +
                     router.getState(), DataCenter.class, network.getDataCenterId());
         }
@@ -2876,6 +2876,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             if (result) {
                 for (NicIpAliasVO revokedAliasVO : revokedIpAliasVOs) {
                     _nicIpAliasDao.expunge(revokedAliasVO.getId());
+                    return true;
                 }
             }
         }
