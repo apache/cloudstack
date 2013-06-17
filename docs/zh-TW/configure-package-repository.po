@@ -82,8 +82,8 @@ msgstr "使用您管用的編輯器開啟(或新增)<filename>/etc/apt/sources.l
 
 #. Tag: programlisting
 #, no-c-format
-msgid "deb http://cloudstack.apt-get.eu/ubuntu precise 4.0"
-msgstr "deb http://cloudstack.apt-get.eu/ubuntu precise 4.0"
+msgid "deb http://cloudstack.apt-get.eu/ubuntu precise 4.1"
+msgstr "deb http://cloudstack.apt-get.eu/ubuntu precise 4.1"
 
 #. Tag: para
 #, no-c-format
@@ -155,11 +155,11 @@ msgid ""
 "\n"
 "[cloudstack]\n"
 "name=cloudstack\n"
-"baseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.0/</replaceable>\n"
+"baseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.1/</replaceable>\n"
 "enabled=1\n"
 "gpgcheck=0\n"
 "        "
-msgstr "\n[cloudstack]\nname=cloudstack\nbaseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.0/</replaceable>\nenabled=1\ngpgcheck=0\n        "
+msgstr "\n[cloudstack]\nname=cloudstack\nbaseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.1/</replaceable>\nenabled=1\ngpgcheck=0\n        "
 
 #. Tag: para
 #, no-c-format
