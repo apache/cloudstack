@@ -117,9 +117,6 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="data_center_name")
     private String dataCenterName;
-    
-    @Column(name="data_center_type")
-    private String dataCenterType;
 
     @Column(name="vm_id")
     private long vmId;
@@ -1060,19 +1057,7 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.dataCenterName = dataCenterName;
     }
 
-       
-        
-    public String getDataCenterType() {
-        return dataCenterType;
-    }
 
-
-
-    public void setDataCenterType(String dataCenterType) {
-        this.dataCenterType = dataCenterType;
-    }
-    
-    
 
     public long getPodId() {
         return podId;
