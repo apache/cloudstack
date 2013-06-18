@@ -2351,7 +2351,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         // Network usage command to create iptables rules
         boolean forVpc = profile.getVirtualMachine().getVpcId() != null;
-        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create", forVpc));
+        if (!forVpc)
+            cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create", forVpc));
     }
 
     protected void finalizeUserDataAndDhcpOnStart(Commands cmds, DomainRouterVO router, Provider provider, Long guestNetworkId) {
