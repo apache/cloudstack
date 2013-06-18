@@ -1163,7 +1163,7 @@ class TestRebootRouter(cloudstackTestCase):
             self.debug("SSH into VM (ID : %s ) after reboot" % self.vm_1.id)
 
             remoteSSHClient(
-                                    self.nat_rule.ipaddress.ipaddress,
+                                    self.nat_rule.ipaddress,
                                     self.services["natrule"]["publicport"],
                                     self.vm_1.username,
                                     self.vm_1.password
