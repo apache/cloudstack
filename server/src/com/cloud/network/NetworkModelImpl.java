@@ -208,11 +208,16 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     private boolean _allowSubdomainNetworkAccess;
 
     private Map<String, String> _configs;
+    
+    protected boolean _executeInSequenceNtwkElmtCmd;
 
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
     static HashMap<Service, List<Provider>> s_serviceToImplementedProvidersMap = new HashMap<Service, List<Provider>>();
     static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
+    
+    
+    
     /**
      * 
      */
@@ -1869,6 +1874,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         _configs = _configDao.getConfiguration("Network", params);
         _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
+        _executeInSequenceNtwkElmtCmd = Boolean.valueOf(_configs.get(Config.ExecuteInSequenceNetworkElementCommands.key()));
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, true);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -2111,5 +2117,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public Networks.IsolationType[] listNetworkIsolationMethods() {
         return Networks.IsolationType.values();
+    }
+    
+    @Override
+    public boolean getExecuteInSeqNtwkElmtCmd() {
+        return _executeInSequenceNtwkElmtCmd;
     }
 }

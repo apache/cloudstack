@@ -49,11 +49,12 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ResizeVolumePayload;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateHostVO;
@@ -85,6 +86,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 	@Inject SnapshotDao snapshotDao;
 	@Inject PrimaryDataStoreDao primaryStoreDao;
 	@Inject SnapshotManager snapshotMgr;
+	@Inject ManagementServer _mgmtSrvr;
 	@Override
 	public String grantAccess(DataObject data, EndPoint ep) {
 		// TODO Auto-generated method stub
@@ -152,7 +154,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 						String fullTmpltUrl = tmpltHostUrl + "/"
 								+ tmpltHostOn.getInstallPath();
 						cmd = new CreateCommand(diskProfile, fullTmpltUrl,
-								new StorageFilerTO(pool));
+								new StorageFilerTO(pool), _mgmtSrvr.getExecuteInSequence());
 					} else {
 						tmpltStoredOn = templateMgr.prepareTemplateForCreate(
 								template, pool);
@@ -166,7 +168,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 						}
 						cmd = new CreateCommand(diskProfile,
 								tmpltStoredOn.getLocalDownloadPath(),
-								new StorageFilerTO(pool));
+								new StorageFilerTO(pool), _mgmtSrvr.getExecuteInSequence());
 					}
 				} else {
 					if (template != null
@@ -180,7 +182,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 						}
 					}
 					cmd = new CreateCommand(diskProfile, new StorageFilerTO(
-							pool));
+							pool), _mgmtSrvr.getExecuteInSequence());
 				}
 
 				Answer answer = storageMgr.sendToPool(pool, null, cmd);

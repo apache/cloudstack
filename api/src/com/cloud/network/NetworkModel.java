@@ -274,4 +274,6 @@ public interface NetworkModel {
     Networks.IsolationType[] listNetworkIsolationMethods();
 
     Nic getNicInNetworkIncludingRemoved(long vmId, long networkId);
+
+    boolean getExecuteInSeqNtwkElmtCmd();
 }
