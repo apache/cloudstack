@@ -85,10 +85,6 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 			}
 		}
 
-        // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
-                ResourceType.secondary_storage, UriUtils.getRemoteSize(profile.getUrl()));
-
 		return profile;
 	}
 
@@ -125,8 +121,6 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 		}
 
 		_resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
-        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage,
-                UriUtils.getRemoteSize(profile.getUrl()));
 		return template;
 	}
 

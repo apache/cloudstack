@@ -168,12 +168,14 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
 
     @Override
     public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    	//TODO Add support for baremetal
+        return true;
     }
 
     @Override
     public boolean removeDhcpSupportForSubnet(Network network) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    	//TODO Add support for baremetal
+        return true;
     }
 
 }
