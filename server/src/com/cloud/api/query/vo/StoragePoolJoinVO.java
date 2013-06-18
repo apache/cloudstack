@@ -99,9 +99,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name="data_center_name")
     private String zoneName;
 
-    @Column(name="data_center_type")
-    private String zoneType;
-
     @Column(name="pod_id")
     private long podId;
 
@@ -299,14 +296,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
-    }
-
-    public String getZoneType() {
-        return zoneType;
-    }
-
-    public void setZoneType(String zoneType) {
-        this.zoneType = zoneType;
     }
 
     public long getPodId() {

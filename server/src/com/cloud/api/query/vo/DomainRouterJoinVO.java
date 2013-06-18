@@ -102,9 +102,6 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name="data_center_name")
     private String dataCenterName = null;
 
-    @Column(name="data_center_type")
-    private String dataCenterType;
-    
     @Column(name="dns1")
     private String dns1 = null;
 
@@ -453,15 +450,6 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
         this.dataCenterName = zoneName;
     }
 
-    
-    public String getDataCenterType() {
-        return dataCenterType;
-    }
-
-    public void setDataCenterType(String dataCenterType) {
-        this.dataCenterType = dataCenterType;
-    }
-        
 
     public Long getHostId() {
         return hostId;
