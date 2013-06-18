@@ -77,8 +77,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setPath(pool.getPath());
         poolResponse.setIpAddress(pool.getHostAddress());
         poolResponse.setZoneId(pool.getZoneUuid());
-        poolResponse.setZoneName(pool.getZoneName());
-        poolResponse.setZoneType(pool.getZoneType());
+        poolResponse.setZoneName(pool.getZoneName());        
         if (pool.getPoolType() != null) {
             poolResponse.setType(pool.getPoolType().toString());
         }
