@@ -766,6 +766,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     ConfigurationServer _configServer;
     @Inject
     UserVmManager _userVmMgr;
+    @Inject ClusterManager _clusterMgr;
+    
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -788,10 +790,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         this._planners = _planners;
     }
 
-    @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
     private String _encryptionKey = null;
     private String _encryptionIV = null;
+    protected boolean _executeInSequence;
 
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -860,6 +862,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (String id : availableIds) {
             _availableIdsMap.put(id, true);
         }
+
+        _executeInSequence = Boolean.parseBoolean(_configDao.getValue(Config.ExecuteInSequence.key()));
 
 		return true;
 	}
@@ -3469,7 +3473,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             String value = _configs.get(Config.CopyVolumeWait.toString());
             int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
             // Copy the volume from the source storage pool to secondary storage
-            CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true, copyvolumewait);
+            CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true, copyvolumewait, _executeInSequence);
             CopyVolumeAnswer cvAnswer = null;
             try {
                 cvAnswer = (CopyVolumeAnswer) _storageMgr.sendToPool(srcPool, cvCmd);
@@ -4080,5 +4084,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         return plannersAvailable;
     }
-
+    
+    @Override
+    public boolean getExecuteInSequence() {
+        return _executeInSequence;
+    }
 }

@@ -1234,7 +1234,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         _configs = _configDao.getConfiguration("AgentManager", params);
         _networkGcWait = NumbersUtil.parseInt(_configs.get(Config.NetworkGcWait.key()), 600);
         _networkGcInterval = NumbersUtil.parseInt(_configs.get(Config.NetworkGcInterval.key()), 600);
-
+        
         _configs = _configDao.getConfiguration("Network", params);
 
         _networkLockTimeout = NumbersUtil.parseInt(_configs.get(Config.NetworkLockTimeout.key()), 600);
@@ -4364,5 +4364,5 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         nic.setVmType(vmType);
         return _nicDao.persist(nic);
     }
-        
+    
  }

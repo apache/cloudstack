@@ -53,6 +53,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
@@ -100,6 +101,8 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
     PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
     @Inject
     BaremetalDhcpDao _extDhcpDao;
+    @Inject
+    NetworkModel _ntwkModel;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -147,7 +150,7 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
             dns = nic.getDns2();
         }
         DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName(), null, dns,
-                nic.getGateway(), null);
+                nic.getGateway(), null, _ntwkModel.getExecuteInSeqNtwkElmtCmd());
         String errMsg = String.format("Set dhcp entry on external DHCP %1$s failed(ip=%2$s, mac=%3$s, vmname=%4$s)", h.getPrivateIpAddress(),
                 nic.getIp4Address(), nic.getMacAddress(), profile.getVirtualMachine().getHostName());
         // prepareBareMetalDhcpEntry(nic, dhcpCommand);

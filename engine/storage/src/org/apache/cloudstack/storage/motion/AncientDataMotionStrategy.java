@@ -50,11 +50,11 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.MigrateVolumeAnswer;
-import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
@@ -67,6 +67,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
@@ -138,6 +139,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     private SwiftManager _swiftMgr;
     @Inject 
     private S3Manager _s3Mgr;
+    @Inject
+    private ManagementServer _mgmtServer;
+    
+    protected boolean _executeInSequence;
+
 
     @Override
     public boolean canHandle(DataObject srcData, DataObject destData) {
@@ -165,7 +171,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         StoragePool destPool = (StoragePool) destData.getDataStore();
         CopyVolumeCommand cvCmd = new CopyVolumeCommand(srcData.getId(),
                 volumeUUID, destPool, secondaryStorageURL, false,
-                _copyvolumewait);
+                _copyvolumewait, _mgmtServer.getExecuteInSequence());
         CopyVolumeAnswer cvAnswer = null;
         String errMsg = null;
         try {
@@ -321,7 +327,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 null);
         CreateCommand cmd = new CreateCommand(diskProfile,
                 tmpltStoredOn.getLocalDownloadPath(),
-                new StorageFilerTO((StoragePool)template.getDataStore()));
+                new StorageFilerTO((StoragePool)template.getDataStore()), _mgmtServer.getExecuteInSequence());
         Answer answer = null;
         StoragePool pool = (StoragePool)volume.getDataStore();
         String errMsg = null;
@@ -375,7 +381,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
         CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(),
                 volume.getPath(), srcPool, secondaryStorageURL, true,
-                _copyvolumewait);
+                _copyvolumewait, _mgmtServer.getExecuteInSequence());
         CopyVolumeAnswer cvAnswer;
         try {
             cvAnswer = (CopyVolumeAnswer) this.storageMgr.sendToPool(srcPool, cvCmd);
@@ -394,7 +400,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         
         cvCmd = new CopyVolumeCommand(volume.getId(),
                 secondaryStorageVolumePath, destPool,
-                secondaryStorageURL, false, _copyvolumewait);
+                secondaryStorageURL, false, _copyvolumewait, _mgmtServer.getExecuteInSequence());
         try {
             cvAnswer = (CopyVolumeAnswer) this.storageMgr.sendToPool(destPool, cvCmd);
         } catch (StorageUnavailableException e1) {

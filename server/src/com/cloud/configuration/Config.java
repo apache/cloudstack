@@ -426,9 +426,11 @@ public enum Config {
     BlacklistedRoutes("Advanced", VpcManager.class, String.class, "blacklisted.routes", null, "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
 	           "routes", ConfigurationParameterScope.zone.toString()),
 	
-    InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, Long.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null);
- 
-    
+    InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, Long.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null),
+    ExecuteInSequence("Advanced", ManagementServer.class, Boolean.class, "execute.in.sequence.hypervisor.commands", "false", "If set to true, StartCommand, StopCommand, CopyVolumeCommand, CreateCommand will be synchronized on the agent side." +
+    		" If set to false, these commands become asynchronous. Default value is false.", null),
+    ExecuteInSequenceNetworkElementCommands("Advanced", NetworkManager.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." + 
+            " If set to false, these commands become asynchronous. Default value is false.", null);
 	
 	private final String _category;
 	private final Class<?> _componentClass;
