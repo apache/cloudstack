@@ -435,13 +435,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotResponse.setVolumeId(volume.getUuid());
             snapshotResponse.setVolumeName(volume.getName());
             snapshotResponse.setVolumeType(volume.getVolumeType().name());
-        
-            DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
-            if (zone != null) {
-            	snapshotResponse.setZoneName(zone.getName());
-            	snapshotResponse.setZoneType(zone.getNetworkType().toString());
-                snapshotResponse.setZoneId(zone.getUuid());
-            }
         }
         snapshotResponse.setCreated(snapshot.getCreated());
         snapshotResponse.setName(snapshot.getName());
@@ -1462,7 +1455,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             // Add the zone ID
             templateResponse.setZoneId(datacenter.getUuid());
             templateResponse.setZoneName(datacenter.getName());
-            templateResponse.setZoneType(datacenter.getNetworkType().toString());
         }
 
         boolean isAdmin = false;
@@ -1751,7 +1743,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (datacenter != null) {
             isoResponse.setZoneId(datacenter.getUuid());
             isoResponse.setZoneName(datacenter.getName());
-            isoResponse.setZoneType(datacenter.getNetworkType().toString());
         }
 
         // If the user is an admin, add the template download status
@@ -2239,7 +2230,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (zone != null) {
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
-            response.setZoneType(zone.getNetworkType().toString());
         }
         if (network.getPhysicalNetworkId() != null) {
             PhysicalNetworkVO pnet = ApiDBUtils.findPhysicalNetworkById(network.getPhysicalNetworkId());
