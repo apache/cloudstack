@@ -80,9 +80,6 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the availability zone for the virtual machine")
     private String zoneName;
 
-    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description="the network type of the availability zone for the virtual machine")
-    private String zoneType;
-    
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the host for the virtual machine")
     private String hostId;
 
@@ -273,10 +270,6 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.zoneName = zoneName;
     }
 
-    public void setZoneType(String zoneType) {
-        this.zoneType = zoneType;
-    }
-    
     public void setHostId(String hostId) {
         this.hostId = hostId;
     }
