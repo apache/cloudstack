@@ -215,9 +215,7 @@
           <ref bean="XcpServerDiscoverer"/>
           <ref bean="SecondaryStorageDiscoverer"/>
           <ref bean="KvmServerDiscoverer"/>
-<!--          
           <ref bean="BareMetalDiscoverer"/>
--->
           <ref bean="OvmDiscoverer"/>
           <ref bean="vmwareServerDiscoverer"/>
       </list>
@@ -256,9 +254,7 @@
           <ref bean="UserDispersingPlanner" />
           <ref bean="UserConcentratedPodPlanner" />
           <ref bean="ImplicitDedicationPlanner" />
-<!--
           <ref bean="BareMetalPlanner" />
--->
       </list>
     </property>
   </bean>
@@ -308,9 +304,7 @@
       <list>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
-<!--          
           <ref bean="BareMetalDhcp"/>
--->    
       </list>
     </property>
   </bean>
@@ -349,11 +343,9 @@
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
           <ref bean="InternalLbVm"/>
-<!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
           <ref bean="BareMetalUserdata"/>
--->    
       </list>
     </property>
   </bean>
