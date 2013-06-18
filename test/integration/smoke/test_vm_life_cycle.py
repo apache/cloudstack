@@ -739,7 +739,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.debug("Found %s host" % hosts[0].hypervisor)
 
         if hosts[0].hypervisor.lower() == "kvm":
-            self.services["diskdevice"] = "/dev/vda"
+            self.services["diskdevice"] = "/dev/vdb"
 
         try:
             ssh_client = self.virtual_machine.get_ssh_client()

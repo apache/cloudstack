@@ -65,13 +65,6 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                         },
-                        "volume": {
-                                   "diskname": "APP Data Volume",
-                                   "size": 1,
-                                   # in GBs
-                                   "diskdevice": "/dev/xvdb",
-                                   # Data Disk
-                        },
                         "static_nat": {
                                     "startport": 22,
                                     "endport": 22,
