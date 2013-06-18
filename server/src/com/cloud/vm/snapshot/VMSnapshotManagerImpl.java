@@ -683,7 +683,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }else {
             if(userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk){
                 try {
-                    _itMgr.advanceStop(userVm.getUuid(), false);
+                    _itMgr.stop(userVm.getUuid(), false);
                 } catch (Exception e) {
                     s_logger.error("Stop VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
     			    throw new CloudRuntimeException(e.getMessage());

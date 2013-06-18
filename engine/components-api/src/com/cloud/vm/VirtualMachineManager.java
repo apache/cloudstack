@@ -126,7 +126,7 @@ public interface VirtualMachineManager extends Manager {
      */
     Outcome<VirtualMachine> start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
 
-    void advanceStop(String vmUuid, boolean cleanup) throws ResourceUnavailableException, OperationTimedoutException,
+    Outcome<VirtualMachine> stop(String vmUuid, boolean cleanup) throws ResourceUnavailableException, OperationTimedoutException,
             ConcurrentOperationException;
 
     void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException,

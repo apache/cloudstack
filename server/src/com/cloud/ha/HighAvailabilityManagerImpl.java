@@ -292,7 +292,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         if (hostId == null) {
             try {
                 s_logger.debug("Found a vm that is scheduled to be restarted but has no host id: " + vm);
-                _itMgr.advanceStop(vm.getUuid(), true);
+                _itMgr.stop(vm.getUuid(), true);
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
                 throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -337,7 +337,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
 
             try {
-                _itMgr.advanceStop(vm.getUuid(), true);
+                _itMgr.stop(vm.getUuid(), true);
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
                 throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -485,7 +485,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 }
 
                 try {
-                    _itMgr.advanceStop(vm.getUuid(), true);
+                    _itMgr.stop(vm.getUuid(), true);
                 } catch (ResourceUnavailableException e) {
                     assert false : "How do we hit this when force is true?";
                     throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -502,7 +502,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             } else {
                 s_logger.debug("How come that HA step is Investigating and the host is removed? Calling forced Stop on Vm anyways");
                 try {
-                    _itMgr.advanceStop(vm.getUuid(), true);
+                    _itMgr.stop(vm.getUuid(), true);
                 } catch (ResourceUnavailableException e) {
                     assert false : "How do we hit this when force is true?";
                     throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -671,7 +671,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         s_logger.info("Stopping " + vm);
         try {
             if (work.getWorkType() == WorkType.Stop) {
-                _itMgr.advanceStop(vm.getUuid(), false);
+                _itMgr.stop(vm.getUuid(), false);
                 s_logger.info("Successfully stopped " + vm);
                 return null;
             } else if (work.getWorkType() == WorkType.CheckStop) {
@@ -681,7 +681,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                             + " State: " + vm.getState());
                     return null;
                 }
-                _itMgr.advanceStop(vm.getUuid(), false);
+                _itMgr.stop(vm.getUuid(), false);
                 s_logger.info("Stop for " + vm + " was successful");
                 return null;
             } else if (work.getWorkType() == WorkType.ForceStop) {
@@ -691,7 +691,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                             + " State: " + vm.getState());
                     return null;
                 }
-                _itMgr.advanceStop(vm.getUuid(), true);
+                _itMgr.stop(vm.getUuid(), true);
                 s_logger.info("Stop for " + vm + " was successful");
                 return null;
             } else {

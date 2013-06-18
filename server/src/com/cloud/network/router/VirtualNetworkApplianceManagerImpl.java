@@ -2741,7 +2741,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     public DomainRouterVO stop(VirtualRouter router, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
         try {
-            _itMgr.advanceStop(router.getUuid(), forced);
+            _itMgr.stop(router.getUuid(), forced);
             return _routerDao.findById(router.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + router, e);

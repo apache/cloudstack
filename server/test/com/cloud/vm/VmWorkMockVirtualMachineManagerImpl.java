@@ -179,9 +179,8 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public void advanceStop(String vmUuid, boolean forced) throws ResourceUnavailableException,
-			OperationTimedoutException, ConcurrentOperationException {
-		// TODO Auto-generated method stub
+    public Outcome<VirtualMachine> stop(String vmUuid, boolean forced) {
+        return null;
 	}
 
 	@Override

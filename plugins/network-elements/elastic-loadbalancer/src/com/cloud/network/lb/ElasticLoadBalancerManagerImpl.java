@@ -557,7 +557,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping ELB vm " + elbVm);
         try {
-            _itMgr.advanceStop(elbVm.getUuid(), forced);
+            _itMgr.stop(elbVm.getUuid(), forced);
             return _routerDao.findById(elbVm.getId());
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to stop " + elbVm, e);

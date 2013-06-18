@@ -234,7 +234,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
                 } else if (vmInstance.getType().equals(VirtualMachine.Type.DomainRouter)) {
                     DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
-                    vmMgr.advanceStop(domR.getUuid(), false);
+                    vmMgr.stop(domR.getUuid(), false);
                     work.setStoppedForMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
                     if (restart) {
