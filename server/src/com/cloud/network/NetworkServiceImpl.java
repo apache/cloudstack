@@ -2493,11 +2493,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             addDefaultVpcVirtualRouterToPhysicalNetwork(pNetwork.getId());
 
             // add baremetal as the defualt network service provider
-            /* addDefaultBaremetalProvidersToPhysicalNetwork(pNetwork.getId()); */
-            
+            addDefaultBaremetalProvidersToPhysicalNetwork(pNetwork.getId());
+
             //Add Internal Load Balancer element as a default network service provider
             addDefaultInternalLbProviderToPhysicalNetwork(pNetwork.getId());
-            
+
             txn.commit();
             return pNetwork;
         } catch (Exception ex) {
@@ -3776,12 +3776,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
         if (dvo.getNetworkType() == NetworkType.Basic) {
 
-        	// Baremetal is currently disabled
-/*
             addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalDhcpProvider", null, null);
             addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalPxeProvider", null, null);
             addProviderToPhysicalNetwork(physicalNetworkId, "BaremetaUserdataProvider", null, null);
-*/
         }
         return null;
     }
