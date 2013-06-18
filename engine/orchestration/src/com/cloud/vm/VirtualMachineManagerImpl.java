@@ -739,7 +739,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         txn.commit();
     	final long jobId = workJob.getId();
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-        return new VmOutcome(workJob, VirtualMachine.PowerState.PowerOn);
+        return new VmOutcome(workJob, VirtualMachine.PowerState.PowerOn, vm.getId());
     }
 
     private Pair<DeploymentPlan, DeployDestination> findDestination(VirtualMachineProfileImpl profile, DeploymentPlan planRequested, boolean reuseVolume,
@@ -3664,11 +3664,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public class VmOutcome extends OutcomeImpl<VirtualMachine> {
-        public VmOutcome(final AsyncJob job, final PowerState desiredPowerState) {
+        private long _vmId;
+
+        public VmOutcome(final AsyncJob job, final PowerState desiredPowerState, final long vmId) {
             super(VirtualMachine.class, job, _jobCheckInterval.value(), new Predicate() {
                 @Override
                 public boolean checkCondition() {
-                    VMInstanceVO instance = _vmDao.findById(job.getInstanceId());
+                    VMInstanceVO instance = _vmDao.findById(vmId);
                     if (instance.getPowerState() == desiredPowerState)
                         return true;
 
@@ -3679,11 +3681,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     return false;
                 }
             }, Topics.VM_POWER_STATE, AsyncJob.Topics.JOB_STATE);
+            _vmId = vmId;
         }
 
         @Override
         protected VirtualMachine retrieve() {
-            return _vmDao.findById(_job.getInstanceId());
+            return _vmDao.findById(_vmId);
         }
     }
 }

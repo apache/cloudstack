@@ -63,7 +63,11 @@ public class OutcomeImpl<T> implements Outcome<T> {
     @Override
     public T get() throws InterruptedException, ExecutionException {
         s_jobMgr.waitAndCheck(_topics, _checkIntervalInMs, -1, _predicate);
-        s_jobMgr.disjoinJob(AsyncJobExecutionContext.getCurrentExecutionContext().getJob().getId(), _job.getId());
+        try {
+            AsyncJobExecutionContext.getCurrentExecutionContext().disjoinJob(_job.getId());
+        } catch (Throwable e) {
+            throw new ExecutionException("Job task has trouble executing", e);
+        }
 
         return retrieve();
     }
