@@ -1721,7 +1721,6 @@ class TestVMDeployVPC(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "intervlan"])
-    @unittest.skip("Not tested")
     def test_07_delete_network_with_rules(self):
         """ Test delete network that has PF/staticNat/LB rules/Network Acl
         """

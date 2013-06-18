@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.storage.Snapshot;
 import com.cloud.utils.Pair;
@@ -60,8 +61,9 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
             description="the ID of the disk volume")
     private Long volumeId;
 
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
+    private Long zoneId;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -87,8 +89,8 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         return volumeId;
     }
 
-    public String getZoneType() {
-        return zoneType;
+    public Long getZoneId() {
+        return zoneId;
     }
     
     /////////////////////////////////////////////////////
@@ -100,6 +102,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Snapshot;
     }
@@ -117,6 +120,6 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         response.setResponses(snapshotResponses, result.second());
         response.setResponseName(getCommandName());
 
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

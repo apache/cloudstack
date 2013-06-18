@@ -45,6 +45,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.VolumeManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.dao.AccountDao;
@@ -87,6 +88,9 @@ public class CloudOrchestrator implements OrchestrationService {
 
 	@Inject
 	protected AccountDao _accountDao = null;
+
+    @Inject
+    VolumeManager _volumeMgr;
 
 	public CloudOrchestrator() {
 	}
@@ -201,6 +205,7 @@ public class CloudOrchestrator implements OrchestrationService {
     						"Disk offering " + diskOffering
     								+ " requires size parameter.");
     			}
+                _volumeMgr.validateVolumeSizeRange(size * 1024 * 1024 * 1024);
     		}
     		dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
 		}
@@ -250,6 +255,7 @@ public class CloudOrchestrator implements OrchestrationService {
 				throw new InvalidParameterValueException("Disk offering "
 						+ diskOffering + " requires size parameter.");
 			}
+            _volumeMgr.validateVolumeSizeRange(size * 1024 * 1024 * 1024);
 		}
 		rootDiskOffering.first(diskOffering);
 		rootDiskOffering.second(size);

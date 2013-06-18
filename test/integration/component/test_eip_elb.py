@@ -182,7 +182,6 @@ class TestEIP(cloudstackTestCase):
     
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped - Framework DB Exception")
     def test_01_eip_by_deploying_instance(self):
         """Test EIP by deploying an instance
         """
@@ -350,7 +349,6 @@ class TestEIP(cloudstackTestCase):
         return
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped - Framework DB Exception")
     def test_02_acquire_ip_enable_static_nat(self):
         """Test associate new IP and enable static NAT for new IP and the VM
         """
@@ -495,7 +493,6 @@ class TestEIP(cloudstackTestCase):
         return
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped - Framework DB Exception")
     def test_03_disable_static_nat(self):
         """Test disable static NAT and release EIP acquired
         """
@@ -695,7 +692,6 @@ class TestEIP(cloudstackTestCase):
         return
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped - Framework DB Exception")
     def test_04_disable_static_nat_system(self):
         """Test disable static NAT with system = True
         """
@@ -765,7 +761,6 @@ class TestEIP(cloudstackTestCase):
         return
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped - Framework DB Exception")
     def test_05_destroy_instance(self):
         """Test EIO after destroying instance
         """
@@ -1406,7 +1401,6 @@ class TestELB(cloudstackTestCase):
         return
     
     @attr(tags = ["eip"])
-    @unittest.skip("valid bug : http://bugs.cloudstack.org/browse/CS-15077 : ListPublicIPAddress failing")
     def test_04_delete_lb_on_eip(self):
         """Test delete LB rule generated on EIP
         """

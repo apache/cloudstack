@@ -770,7 +770,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public Nic getNicInNetwork(long vmId, long networkId) {
-        return _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
+        return _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
     }
 
     @Override
@@ -1761,7 +1761,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         return true;
     }
 
-    Nic getNicInNetworkIncludingRemoved(long vmId, long networkId) {
+    @Override
+    public Nic getNicInNetworkIncludingRemoved(long vmId, long networkId) {
         return _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
     }
 

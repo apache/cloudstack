@@ -116,4 +116,6 @@ public interface VolumeManager extends VolumeApiService {
     String getVmNameFromVolumeId(long volumeId);
 
     String getStoragePoolOfVolume(long volumeId);
+
+    boolean validateVolumeSizeRange(long size);
 }

@@ -958,6 +958,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Cluster>, Integer> searchForClusters(ListClustersCmd cmd) {
+        Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
+
         Object id = cmd.getId();
         Object name = cmd.getClusterName();
         Object podId = cmd.getPodId();
@@ -965,60 +968,36 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object hypervisorType = cmd.getHypervisorType();
         Object clusterType = cmd.getClusterType();
         Object allocationState = cmd.getAllocationState();
-        String zoneType = cmd.getZoneType();
         String keyword = cmd.getKeyword();
+        
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
-
         
-    	Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        
-        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
-        sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
-        sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-        
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        
-        SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
-            sc.setParameters("id", id);
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
 
         if (podId != null) {
-            sc.setParameters("podId", podId);
+            sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         }
 
         if (zoneId != null) {
-            sc.setParameters("dataCenterId", zoneId);
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
 
         if (hypervisorType != null) {
-            sc.setParameters("hypervisorType", hypervisorType);
+            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
         }
 
         if (clusterType != null) {
-            sc.setParameters("clusterType", clusterType);
+            sc.addAnd("clusterType", SearchCriteria.Op.EQ, clusterType);
         }
 
         if (allocationState != null) {
-            sc.setParameters("allocationState", allocationState);
-        }
-
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
+            sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
         }
 
         if (keyword != null) {
@@ -1431,29 +1410,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd) {
+        Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<HostPodVO> sc = _hostPodDao.createSearchCriteria();
+
         String podName = cmd.getPodName();
         Long id = cmd.getId();
         Long zoneId = cmd.getZoneId();
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
-        String zoneType = cmd.getZoneType();
-        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
-    	
-    	Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-        
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
                
-        SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1463,23 +1430,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (id != null) {
-            sc.setParameters("id", id);
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
         if (podName != null) {
-            sc.setParameters("name", "%" + podName + "%");
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + podName + "%");
         }
 
         if (zoneId != null) {
-            sc.setParameters("dataCenterId", zoneId);
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
 
         if (allocationState != null) {
-            sc.setParameters("allocationState", allocationState);
-        }
-    
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
+            sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
         }
 
         Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
@@ -1718,7 +1681,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(),
                 cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller,
-                listProjectResourcesCriteria, tags, cmd.getZoneType());
+                listProjectResourcesCriteria, tags);
     }
 
     @Override
@@ -1751,12 +1714,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return listTemplates(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(),
-                cmd.getZoneId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, cmd.getZoneType());
+                cmd.getZoneId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
     }
 
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso,
             Boolean bootable, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
-            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, String zoneType) {
+            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
 
         VMTemplateVO template = null;
         if (templateId != null) {
@@ -1797,7 +1760,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                         startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, tags);
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
                 templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
+                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags);
 
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
@@ -1821,7 +1784,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
                 templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers,
                         bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
+                        permittedAccounts, caller, listProjectResourcesCriteria, tags);
 
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
@@ -1839,7 +1802,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else {
             if (template == null) {
                 templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
+                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags);
             } else {
                 // if template is not public, perform permission check here
                 if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -3073,7 +3036,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends VirtualMachine>, Integer> searchForSystemVm(ListSystemVMsCmd cmd) {
         String type = cmd.getSystemVmType();
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
-        String zoneType = cmd.getZoneType();
         Long id = cmd.getId();
         String name = cmd.getSystemVmName();
         String state = cmd.getState();
@@ -3100,12 +3062,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
 
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-        
         SearchCriteria<VMInstanceVO> sc = sb.create();
 
         if (keyword != null) {
@@ -3146,10 +3102,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setJoinParameters("volumeSearch", "poolId", storageId);
         }
 
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
-        }
-        
         Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends VirtualMachine>, Integer>(result.first(), result.second());
     }

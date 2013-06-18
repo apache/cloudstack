@@ -121,6 +121,7 @@ class cloudstackTestClient(object):
             apiKey, securityKey, self.connection.asyncTimeout, self.connection.logging)
         self.userApiClient = cloudstackAPIClient.CloudStackAPIClient(newUserConnection)
         self.userApiClient.connection = newUserConnection
+        self.userApiClient.hypervisor = self.apiClient.hypervisor
         return self.userApiClient
 
     def close(self):

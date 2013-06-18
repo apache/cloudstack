@@ -76,9 +76,6 @@ public class ListHostsCmd extends BaseListCmd {
             description="the Zone ID for the host")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
-    
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
             required=false, description="lists hosts in the same cluster as this VM and flag hosts with enough CPU/RAm to host this VM")
     private Long virtualMachineId;
@@ -128,10 +125,6 @@ public class ListHostsCmd extends BaseListCmd {
         return zoneId;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-    
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }

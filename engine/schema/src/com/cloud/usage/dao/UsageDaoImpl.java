@@ -18,6 +18,7 @@ package com.cloud.usage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
@@ -63,6 +64,8 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                        " VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?, ?,?, ?, ?)";
     private static final String UPDATE_VM_DISK_STATS = "UPDATE cloud_usage.vm_disk_statistics SET net_io_read=?, net_io_write=?, current_io_read=?, current_io_write=?, agg_io_read=?, agg_io_write=?, " +
                "net_bytes_read=?, net_bytes_write=?, current_bytes_read=?, current_bytes_write=?, agg_bytes_read=?, agg_bytes_write=?  WHERE id=?";
+    private static final String INSERT_USGAE_RECORDS = "INSERT INTO cloud_usage.cloud_usage (zone_id, account_id, domain_id, description, usage_display, usage_type, raw_usage, vm_instance_id, vm_name, offering_id, template_id, " +
+    		"usage_id, type, size, network_id, start_date, end_date) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?)";
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
@@ -375,4 +378,65 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         }
 
        }
+
+    @Override
+    public void saveUsageRecords(List<UsageVO> usageRecords) {
+       Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            String sql = INSERT_USGAE_RECORDS;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
+            for (UsageVO usageRecord : usageRecords) {
+                pstmt.setLong(1, usageRecord.getZoneId());
+                pstmt.setLong(2, usageRecord.getAccountId());
+                pstmt.setLong(3, usageRecord.getDomainId());
+                pstmt.setString(4, usageRecord.getDescription());
+                pstmt.setString(5, usageRecord.getUsageDisplay());
+                pstmt.setInt(6, usageRecord.getUsageType());
+                pstmt.setDouble(7, usageRecord.getRawUsage());
+                if(usageRecord.getVmInstanceId() != null){
+                    pstmt.setLong(8, usageRecord.getVmInstanceId());
+                } else {
+                    pstmt.setNull(8, Types.BIGINT);
+                }
+                pstmt.setString(9, usageRecord.getVmName());
+                if(usageRecord.getOfferingId() != null){
+                    pstmt.setLong(10, usageRecord.getOfferingId());
+                } else {
+                    pstmt.setNull(10, Types.BIGINT);
+                }
+                if(usageRecord.getTemplateId() != null){
+                    pstmt.setLong(11, usageRecord.getTemplateId());
+                } else {
+                    pstmt.setNull(11, Types.BIGINT);
+                }
+                if(usageRecord.getUsageId() != null){
+                    pstmt.setLong(12, usageRecord.getUsageId());
+                } else {
+                    pstmt.setNull(12, Types.BIGINT);
+                }
+                pstmt.setString(13, usageRecord.getType());
+                if(usageRecord.getSize() != null){
+                    pstmt.setLong(14, usageRecord.getSize());
+                } else {
+                    pstmt.setNull(14, Types.BIGINT);
+                }
+                if(usageRecord.getNetworkId() != null){
+                    pstmt.setLong(15, usageRecord.getNetworkId());
+                } else {
+                    pstmt.setNull(15, Types.BIGINT);
+                }
+                pstmt.setTimestamp(16, new Timestamp(usageRecord.getStartDate().getTime()));
+                pstmt.setTimestamp(17, new Timestamp(usageRecord.getEndDate().getTime()));
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error saving usage records to cloud_usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+    }
 }

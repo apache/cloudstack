@@ -52,11 +52,11 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
@@ -232,7 +232,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
 
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
-                Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(),
                         EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" + volumeId, 0);
 
                 Map<String, String> params = new HashMap<String, String>();
@@ -243,6 +243,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 params.put("ctxStartEventId", String.valueOf(eventId));
 
                 CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+                ComponentContext.inject(cmd);
                 ApiDispatcher.getInstance().dispatchCreateCmd(cmd, params);
                 params.put("id", ""+cmd.getEntityId());
                 params.put("ctxStartEventId", "1");

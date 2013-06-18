@@ -111,7 +111,7 @@ public class VirtualRoutingResource implements Manager {
     private String _routerProxyPath;
     private String _createIpAliasPath;
     private String _deleteIpAliasPath;
-    private String _configDhcpPath;
+    private String _callDnsMasqPath;
 
     private int _timeout;
     private int _startTimeout;
@@ -625,7 +625,8 @@ public class VirtualRoutingResource implements Manager {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final Script command  = new Script(_createIpAliasPath, _timeout, s_logger);
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
-        String args=routerIp+" ";
+        String args = "";
+        command.add(routerIp);
         for (IpAliasTO ipaliasto : ipAliasTOs) {
             args = args + ipaliasto.getAlias_count()+":"+ipaliasto.getRouterip()+":"+ipaliasto.getNetmask()+"-";
         }
@@ -637,7 +638,8 @@ public class VirtualRoutingResource implements Manager {
     protected Answer execute(final DeleteIpAliasCommand cmd) {
         final Script command  = new Script(_deleteIpAliasPath, _timeout, s_logger);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String args = "";
+        String args ="";
+        command.add(routerIp);
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
@@ -653,32 +655,26 @@ public class VirtualRoutingResource implements Manager {
     }
 
     protected Answer execute(final DnsMasqConfigCommand cmd) {
-        final Script command  = new Script(_configDhcpPath, _timeout, s_logger);
+        final Script command  = new Script(_callDnsMasqPath, _timeout, s_logger);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         DnsMasqConfigurator configurator = new DnsMasqConfigurator();
         String [] config = configurator.generateConfiguration(cmd);
-        File tmpCfgFile = null;
+        String cfgFileName = routerIp.replace(".","-")+"dns.cgf";
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+        File permKey = new File("/root/.ssh/id_rsa.cloud");
+        String cfgFilePath = "/tmp/"+cfgFileName;
         try {
-            String cfgFilePath = "";
-            if (routerIp != null) {
-                tmpCfgFile = File.createTempFile(routerIp.replace('.', '_'), "cfg");
-                final PrintWriter out
-                        = new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
-                for (int i=0; i < config.length; i++) {
-                    out.println(config[i]);
-                }
-                out.close();
-                cfgFilePath = tmpCfgFile.getAbsolutePath();
-            }
+            SshHelper.scpTo(routerIp, 3922, "root", permKey, null, "/tmp/", tmpCfgFileContents.getBytes(), cfgFileName, null);
+            command.add(routerIp);
             command.add(cfgFilePath);
             final String result = command.execute();
             return new Answer(cmd, result == null, result);
-        } catch (final IOException e) {
+        } catch (Exception e) {
             return new Answer(cmd, false, e.getMessage());
-        } finally {
-            if (tmpCfgFile != null) {
-                tmpCfgFile.delete();
-            }
         }
     }
 
@@ -1208,6 +1204,18 @@ public class VirtualRoutingResource implements Manager {
         _routerProxyPath = findScript("router_proxy.sh");
         if (_routerProxyPath == null) {
             throw new ConfigurationException("Unable to find router_proxy.sh");
+        }
+        _createIpAliasPath = findScript("createipAlias.sh");
+        if (_createIpAliasPath == null) {
+            throw new ConfigurationException("unable to find createipAlias.sh");
+        }
+        _deleteIpAliasPath = findScript("deleteipAlias.sh");
+        if (_deleteIpAliasPath == null) {
+            throw  new ConfigurationException("unable to find deleteipAlias.sh");
+        }
+        _callDnsMasqPath = findScript("call_dnsmasq.sh");
+        if (_callDnsMasqPath == null) {
+            throw  new ConfigurationException("unable to find call_dnsmasq.sh");
         }
         
         return true;

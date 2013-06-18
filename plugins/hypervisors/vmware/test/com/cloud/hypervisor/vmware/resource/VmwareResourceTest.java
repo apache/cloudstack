@@ -68,10 +68,11 @@ public class VmwareResourceTest {
         when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
         doReturn("i-2-3-VM").when(cmd).getVmName();
         when(hyperHost.findVmOnHyperHost("i-2-3-VM")).thenReturn(vmMo);
-        doReturn(1024L).when(vmSpec).getMinRam();
+        doReturn(536870912L).when(vmSpec).getMinRam();
         doReturn(1).when(vmSpec).getCpus();
-        doReturn(1000).when(vmSpec).getSpeed();
-        doReturn(1024L).when(vmSpec).getMaxRam();
+        doReturn(1000).when(vmSpec).getMinSpeed();
+        doReturn(1000).when(vmSpec).getMaxSpeed();
+        doReturn(536870912L).when(vmSpec).getMaxRam();
         doReturn(false).when(vmSpec).getLimitCpuUse();
         when(vmMo.configureVm(vmConfigSpec)).thenReturn(true);
 

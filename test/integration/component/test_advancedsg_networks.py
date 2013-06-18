@@ -246,6 +246,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
             raise Exception("Warning: Exception during network cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedsg"])
     def test_createIsolatedNetwork(self):
         """ Test Isolated Network """
         
@@ -274,7 +275,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -308,7 +309,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.user_account.account.id,
+                                        id=self.user_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -423,8 +424,9 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         except Exception as e:
             self.debug("Network creation failed because create isolated network is invalid in advanced zone with security groups.")
 
+    @attr(tags = ["advancedsg"])
     def test_createSharedNetwork_withoutSG(self):
-        """ Test Shared Network with used vlan 01 """
+        """ Test Shared Network with without SecurityProvider """
         
         # Steps,
         #  1. create an Admin account
@@ -452,7 +454,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         listall=True
                                         )
         self.assertEqual(
@@ -471,7 +473,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
             "The admin account created is not enabled."
             )
         
-        self.debug("Domain admin account created: %s" % self.admin_account.account.id)
+        self.debug("Domain admin account created: %s" % self.admin_account.id)
         
         #Verify that there should be at least one physical network present in zone.
         list_physical_networks_response = PhysicalNetwork.list(
@@ -574,6 +576,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         except Exception as e:
             self.debug("Network creation failed because there is no SecurityProvider in the network offering.")
     
+    @attr(tags = ["advancedsg"])
     def test_deployVM_SharedwithSG(self):
         """ Test VM deployment in shared networks with SecurityProvider """
         
@@ -599,7 +602,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         #verify that the account got created with state enabled
         list_accounts_response = Account.list(
                                         self.api_client,
-                                        id=self.admin_account.account.id,
+                                        id=self.admin_account.id,
                                         liistall=True
                                         )
         self.assertEqual(
@@ -693,7 +696,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         self.shared_network_sg = Network.create(
                          self.api_client,
                          self.services["shared_network_sg"],
-                         domainid=self.admin_account.account.domainid,
+                         domainid=self.admin_account.domainid,
                          networkofferingid=self.shared_network_offering_sg.id,
                          zoneid=self.zone.id
                          )
@@ -726,10 +729,11 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
                                                                      self.api_client,
                                                                      self.services["virtual_machine"],
                                                                      accountid=self.admin_account.name,
-                                                                     domainid=self.admin_account.account.domainid,
+                                                                     domainid=self.admin_account.domainid,
                                                                      networkids=self.shared_network_sg.id,
 								     serviceofferingid=self.service_offering.id
                                                                      )
+        self.cleanup_vms.append(self.shared_network_admin_account_virtual_machine)
         vms = VirtualMachine.list(
                             self.api_client,
                             id=self.shared_network_admin_account_virtual_machine.id,

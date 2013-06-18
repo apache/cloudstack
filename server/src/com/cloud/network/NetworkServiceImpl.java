@@ -118,7 +118,6 @@ import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACL;
@@ -658,8 +657,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (network == null) {
             throw new InvalidParameterValueException("Invalid network id is given");
         }
-        accountId = network.getAccountId();
-        domainId = network.getDomainId();
+        accountId = ipOwner.getAccountId();
+        domainId = ipOwner.getDomainId();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
@@ -777,10 +776,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (dc.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Isolated) {
             //check PF or static NAT is configured on this ip address
             String secondaryIp = secIpVO.getIp4Address();
-            List<PortForwardingRuleVO> pfRuleList = _portForwardingDao.listByDestIpAddr(secondaryIp);
-            if (pfRuleList.size() != 0) {
+            List<FirewallRuleVO> fwRulesList =  _firewallDao.listByNetworkAndPurpose(network.getId(), Purpose.PortForwarding);
+
+            if (fwRulesList.size() != 0) {
+                for (FirewallRuleVO rule: fwRulesList) {
+                    if (_portForwardingDao.findByIdAndIp(rule.getId(), secondaryIp) != null) {
                 s_logger.debug("VM nic IP " + secondaryIp + " is associated with the port forwarding rule");
                 throw new InvalidParameterValueException("Can't remove the secondary ip " + secondaryIp + " is associate with the port forwarding rule");
+            }
+                }
             }
             //check if the secondary ip associated with any static nat rule
             IPAddressVO publicIpVO = _ipAddressDao.findByVmIp(secondaryIp);
@@ -1183,9 +1187,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     + Network.GuestType.Isolated + " with a service " + Service.SourceNat.getName() + " enabled");
         }
 
-        // Don't allow to specify vlan if the caller is a regular user
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (ntwkOff.getSpecifyVlan() || vlanId != null)) {
-            throw new InvalidParameterValueException("Regular user is not allowed to specify vlanId");
+        // Don't allow to specify vlan if the caller is not ROOT admin
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && (ntwkOff.getSpecifyVlan() || vlanId != null)) {
+            throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId");
         }
 
         if (ipv4) {
@@ -1336,7 +1340,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
         Long zoneId = cmd.getZoneId();
-        String zoneType = cmd.getZoneType();
         Account caller = CallContext.current().getCallingAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -1485,39 +1488,39 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 //get account level networks
                 networksToReturn.addAll(listAccountSpecificNetworks(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                         permittedAccounts));
                 //get domain level networks
                 if (domainId != null) {
                     networksToReturn
                     .addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
+                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                                     domainId, false));
                 }
             } else {
                 //add account specific networks
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter, path,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
                         isRecursive));
                 //add domain specific networks of domain + parent domains
                 networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter, path,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
                                 isRecursive));
                 //add networks of subdomains
                 if (domainId == null) {
                     networksToReturn
                     .addAll(listDomainLevelNetworks(
                             buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags, zoneType), searchFilter,
+                                    physicalNetworkId, aclType, true, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                                     caller.getDomainId(), true));
                 }
             }
         } else {
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId,
-                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, zoneType),
+                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags),
                     searchFilter);
         }
 
@@ -1562,7 +1565,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id,
             Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
-            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, String zoneType) {
+            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags) {
 
         SearchCriteria<NetworkVO> sc = sb.create();
 
@@ -1582,10 +1585,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (zoneId != null) {
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
-        }
-
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSearch", "networkType", zoneType);
         }
 
         if (guestIpType != null) {
@@ -2644,7 +2643,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                      existingRanges.get(i).second(-1);
                  }
                 value = vnetMap.get((existingRanges.get(i).second()));
-                if (value != null) {
+                if (value != null && ( (existingRanges.get(i).second()) != (existingRanges.get(i).first()) )) {
                     vnetMap.remove((existingRanges.get(i).second()));
                     vnetMap.remove(existingRanges.get(i).first());
                     vnetMap.put(existingRanges.get(i).first(),value);
@@ -2666,8 +2665,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         vnetString = vnetString+vnetRange.first().toString()+"-"+value.toString()+";";
                     }
                }
-                vnetString = vnetString+"*";
-                vnetString = vnetString.replace(";*","");
+               if (vnetString.length() > 0 && vnetString.charAt(vnetString.length()-1)==';') {
+                   vnetString = vnetString.substring(0, vnetString.length()-1);
+               }
                 network.setVnet(vnetString);
             }
 
@@ -2774,12 +2774,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         _datacneter_vnet.deleteRange(txn, network.getDataCenterId(), network.getId(), start, end);
 
         String vnetString="";
-        for (Pair<Integer,Integer> vnetRange : existingRanges ){
+        if (existingRanges.isEmpty()) {
+            network.setVnet(null);
+        } else {
+            for (Pair<Integer,Integer> vnetRange : existingRanges ) {
             vnetString=vnetString+vnetRange.first().toString()+"-"+vnetRange.second().toString()+";";
         }
-        vnetString = vnetString+"*";
-        vnetString = vnetString.replace(";*","");
+            vnetString = vnetString.substring(0, vnetString.length()-1);
         network.setVnet(vnetString);
+        }
         _physicalNetworkDao.update(network.getId(), network);
         txn.commit();
         _physicalNetworkDao.releaseFromLockTable(network.getId());

@@ -370,6 +370,7 @@
     <property name="Adapters">
       <list>
           <ref bean="HostAntiAffinityProcessor" />
+          <ref bean="ExplicitDedicationProcessor"/>
       </list>
     </property>
   </bean>

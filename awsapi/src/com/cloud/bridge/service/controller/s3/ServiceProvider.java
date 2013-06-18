@@ -91,8 +91,6 @@ public class ServiceProvider extends ManagerBase {
         // register service implementation object
         Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
         txn.close();
-        serviceMap.put(AmazonS3SkeletonInterface.class, new S3SerializableServiceImplementation(engine));
-        serviceMap.put(AmazonEC2SkeletonInterface.class, new EC2SoapServiceImpl(EC2_engine));
     }
 
     public synchronized static ServiceProvider getInstance() {
@@ -101,7 +99,9 @@ public class ServiceProvider extends ManagerBase {
 
     @PostConstruct
     void initComponent() {
-    	instance = this;
+        serviceMap.put(AmazonS3SkeletonInterface.class, new S3SerializableServiceImplementation(engine));
+        serviceMap.put(AmazonEC2SkeletonInterface.class, new EC2SoapServiceImpl(EC2_engine));
+        instance = this;
     }
     
 	public boolean configure(String name, Map<String, Object> params)

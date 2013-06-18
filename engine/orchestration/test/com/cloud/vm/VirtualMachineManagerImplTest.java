@@ -36,6 +36,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.config.ConfigDepot;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -146,6 +147,10 @@ public class VirtualMachineManagerImplTest {
         List<VolumeVO> _rootVols;
         @Mock
         ItWorkVO _work;
+        @Mock
+    ConfigDepot _configDepot;
+        @Mock
+        HostVO hostVO;
 
     @Mock
     EntityManager _entityMgr;
@@ -187,6 +192,7 @@ public class VirtualMachineManagerImplTest {
             _vmMgr._hvGuruMgr = _hvGuruMgr;
             _vmMgr._vmSnapshotMgr = _vmSnapshotMgr;
             _vmMgr._vmDao = _vmInstanceDao;
+        _vmMgr._configDepot = _configDepot;
 
             when(_vmMock.getId()).thenReturn(314l);
             when(_vmInstance.getId()).thenReturn(1L);
@@ -227,8 +233,12 @@ public class VirtualMachineManagerImplTest {
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         ServiceOfferingVO newServiceOffering = getSvcoffering(512);
+        when(_hostDao.findById(_vmInstance.hostId)).thenReturn(hostVO);
+        when(hostVO.getClusterId()).thenReturn(1L);
+//        when(_configDepot.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
+//        when(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(),
-                newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
+                newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
         Answer answer = new ScaleVmAnswer(reconfigureCmd, true, "details");
         when(_agentMgr.send(2l, reconfigureCmd)).thenReturn(null);
         _vmMgr.reConfigureVm(_vmInstance, getSvcoffering(256), false);

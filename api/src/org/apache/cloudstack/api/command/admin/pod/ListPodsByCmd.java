@@ -56,9 +56,6 @@ public class ListPodsByCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list pods by allocation state")
     private String allocationState;
 
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
-    
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the pods")
     private Boolean showCapacities;
 
@@ -82,10 +79,6 @@ public class ListPodsByCmd extends BaseListCmd {
         return allocationState;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-    
     public Boolean getShowCapacities() {
         return showCapacities;
     }

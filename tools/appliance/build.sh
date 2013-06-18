@@ -46,7 +46,7 @@ done
 # Get appliance uuids
 machine_uuid=`vboxmanage showvminfo $appliance | grep UUID | head -1 | awk '{print $2}'`
 hdd_uuid=`vboxmanage showvminfo $appliance | grep vdi | head -1 | awk '{print $8}' | cut -d ')' -f 1`
-hdd_path=`vboxmanage list hdds | grep $appliance | grep vdi | cut -c 14-`
+hdd_path=`vboxmanage list hdds | grep "$appliance\/" | grep vdi | cut -c 14-`
 
 # Remove any shared folder
 shared_folders=`vboxmanage showvminfo $appliance | grep Name | grep Host`
@@ -67,7 +67,7 @@ mkdir dist
 set -e
 
 # Export for Xen
-vboxmanage internalcommands converttoraw "$hdd_path" img.raw
+vboxmanage internalcommands converttoraw -format vdi "$hdd_path" img.raw
 faketime '2010-01-01' vhd-util convert -s 0 -t 1 -i img.raw -o stagefixed.vhd
 faketime '2010-01-01' vhd-util convert -s 1 -t 2 -i stagefixed.vhd -o $appliance-$build_date-$branch-xen.vhd
 rm *.bak
@@ -75,7 +75,7 @@ bzip2 $appliance-$build_date-$branch-xen.vhd
 echo "$appliance exported for Xen: dist/$appliance-$build_date-$branch-xen.vhd.bz2"
 
 # Export for KVM
-vboxmanage internalcommands converttoraw "$hdd_path" raw.img
+vboxmanage internalcommands converttoraw -format vdi "$hdd_path" raw.img
 qemu-img convert -f raw -c -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
 rm raw.img
 bzip2 $appliance-$build_date-$branch-kvm.qcow2

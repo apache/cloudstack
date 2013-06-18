@@ -687,10 +687,12 @@ class TestVMLifeCycle(cloudstackTestCase):
             else:
                 break
 
+        self.debug("listVirtualMachines response: %s" % list_vm_response)
+
         self.assertEqual(
                         list_vm_response,
                         None,
-                        "Check Expunged virtual machine is listVirtualMachines"
+                        "Check Expunged virtual machine is in listVirtualMachines response"
                     )
         return
 

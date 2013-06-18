@@ -90,6 +90,7 @@ public class Upgrade410to420 implements DbUpgrade {
         //First drop if it exists. (Due to patches shipped to customers some will have the index and some wont.)
         List<String> indexList = new ArrayList<String>();
         s_logger.debug("Dropping index i_alert__last_sent if it exists");
+        indexList.add("last_sent"); // in 4.1, we created this index that is not in convention.
         indexList.add("i_alert__last_sent");
         DbUpgradeUtils.dropKeysIfExist(conn, "alert", indexList, false);
 

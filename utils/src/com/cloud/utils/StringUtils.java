@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.utils;
 
-import static java.util.Arrays.asList;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -25,8 +23,6 @@ import java.util.regex.Pattern;
 
 import org.owasp.esapi.StringUtilities;
 
-// StringUtils exists in Apache Commons Lang, but rather than import the entire JAR to our system, for now
-// just implement the method needed
 public class StringUtils {
     private static final char[] hexChar = {
         '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
@@ -50,7 +46,7 @@ public class StringUtils {
 
     public static String join(final String delimiter,
             final Object... components) {
-        return join(asList(components), delimiter);
+        return org.apache.commons.lang.StringUtils.join(components, delimiter);
     }
 
     /**

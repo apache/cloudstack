@@ -46,7 +46,7 @@ public class HypervisorHostEndPointRpcServer implements HostEndpointRpcServer {
     }
     
     public HypervisorHostEndPointRpcServer(RpcProvider rpcProvider) {
-        rpcProvider = rpcProvider;
+        this.rpcProvider = rpcProvider;
         rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
     }
     
