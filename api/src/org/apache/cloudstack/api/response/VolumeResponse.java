@@ -110,6 +110,18 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "shared or local storage")
     private String storageType;
 
+    @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the disk volume")
+    private Long bytesReadRate;
+
+    @SerializedName("diskBytesWriteRate") @Param(description="bytes write rate of the disk volume")
+    private Long bytesWriteRate;
+
+    @SerializedName("diskIopsReadRate") @Param(description="io requests read rate of the disk volume")
+    private Long iopsReadRate;
+
+    @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the disk volume")
+    private Long iopsWriteRate;
+
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "Hypervisor the volume belongs to")
     private String hypervisor;
@@ -256,6 +268,38 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
+    }
+
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
     }
 
     public void setHypervisor(String hypervisor) {

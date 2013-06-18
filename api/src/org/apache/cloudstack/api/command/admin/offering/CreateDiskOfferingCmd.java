@@ -62,6 +62,18 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
 
+    @Parameter(name=ApiConstants.BYTES_READ_RATE, type=CommandType.LONG, required=false, description="bytes read rate of the disk offering")
+    private Long bytesReadRate;
+
+    @Parameter(name=ApiConstants.BYTES_WRITE_RATE, type=CommandType.LONG, required=false, description="bytes write rate of the disk offering")
+    private Long bytesWriteRate;
+
+    @Parameter(name=ApiConstants.IOPS_READ_RATE, type=CommandType.LONG, required=false, description="io requests read rate of the disk offering")
+    private Long iopsReadRate;
+
+    @Parameter(name=ApiConstants.IOPS_WRITE_RATE, type=CommandType.LONG, required=false, description="io requests write rate of the disk offering")
+    private Long iopsWriteRate;
+
     @Parameter(name=ApiConstants.DISPLAY_OFFERING, type=CommandType.BOOLEAN, description="an optional field, whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
@@ -91,6 +103,22 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public Long getDomainId(){
         return domainId;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
     }
 
     public String getStorageType() {

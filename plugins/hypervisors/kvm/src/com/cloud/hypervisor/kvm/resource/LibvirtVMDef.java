@@ -22,8 +22,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.utils.script.Script;
+
 public class LibvirtVMDef {
     private String _hvsType;
+    private static long _libvirtVersion;
+    private static long _qemuVersion;
     private String _domName;
     private String _domUUID;
     private String _desc;
@@ -439,6 +443,10 @@ public class LibvirtVMDef {
         private boolean _readonly = false;
         private boolean _shareable = false;
         private boolean _deferAttach = false;
+        private Long _bytesReadRate;
+        private Long _bytesWriteRate;
+        private Long _iopsReadRate;
+        private Long _iopsWriteRate;
 
         public void setDeviceType(deviceType deviceType) {
             _deviceType = deviceType;
@@ -584,6 +592,22 @@ public class LibvirtVMDef {
             return suffix - 'a';
         }
 
+        public void setBytesReadRate(Long bytesReadRate) {
+            _bytesReadRate = bytesReadRate;
+        }
+
+        public void setBytesWriteRate(Long bytesWriteRate) {
+            _bytesWriteRate = bytesWriteRate;
+        }
+
+        public void setIopsReadRate(Long iopsReadRate) {
+            _iopsReadRate = iopsReadRate;
+        }
+
+        public void setIopsWriteRate(Long iopsWriteRate) {
+            _iopsWriteRate = iopsWriteRate;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -627,6 +651,22 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
+
+            if ((_deviceType != deviceType.CDROM) && (_libvirtVersion >= 9008) && (_qemuVersion >= 1001000)
+                    && (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
+                    || ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)) )) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
+                diskBuilder.append("<iotune>\n");
+                if ((_bytesReadRate != null) && (_bytesReadRate > 0))
+                    diskBuilder.append("<read_bytes_sec>" + _bytesReadRate + "</read_bytes_sec>\n");
+                if ((_bytesWriteRate != null) && (_bytesWriteRate > 0))
+                    diskBuilder.append("<write_bytes_sec>" + _bytesWriteRate + "</write_bytes_sec>\n");
+                if ((_iopsReadRate != null) && (_iopsReadRate > 0))
+                    diskBuilder.append("<read_iops_sec>" + _iopsReadRate + "</read_iops_sec>\n");
+                if ((_iopsWriteRate != null) && (_iopsWriteRate > 0))
+                    diskBuilder.append("<write_iops_sec>" + _iopsWriteRate + "</write_iops_sec>\n");
+                diskBuilder.append("</iotune>\n");
+            }
+
             diskBuilder.append("</disk>\n");
             return diskBuilder.toString();
         }
@@ -1010,6 +1050,14 @@ public class LibvirtVMDef {
 
     public String getHvsType() {
         return _hvsType;
+    }
+
+    public void setLibvirtVersion(long libvirtVersion) {
+        _libvirtVersion = libvirtVersion;
+    }
+
+    public void setQemuVersion(long qemuVersion) {
+        _qemuVersion = qemuVersion;
     }
 
     public void setDomainName(String domainName) {

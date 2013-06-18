@@ -29,6 +29,10 @@ public class AttachVolumeCommand extends Command {
 	String volumeName;
 	Long deviceId;
 	String chainInfo;
+    Long bytesReadRate;
+    Long bytesWriteRate;
+    Long iopsReadRate;
+    Long iopsWriteRate;
 
 	protected AttachVolumeCommand() {
 	}
@@ -95,5 +99,37 @@ public class AttachVolumeCommand extends Command {
 
     public String getChainInfo() {
     	return chainInfo;
+    }
+
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
     }
 }

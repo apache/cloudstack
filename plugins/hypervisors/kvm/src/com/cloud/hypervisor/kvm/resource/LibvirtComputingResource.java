@@ -336,6 +336,8 @@ ServerResource {
 
     protected HypervisorType _hypervisorType;
     protected String _hypervisorURI;
+    protected long _hypervisorLibvirtVersion;
+    protected long _hypervisorQemuVersion;
     protected String _hypervisorPath;
     protected String _networkDirectSourceMode;
     protected String _networkDirectDevice;
@@ -735,6 +737,8 @@ ServerResource {
         try {
             _hvVersion = conn.getVersion();
             _hvVersion = (_hvVersion % 1000000) / 1000;
+            _hypervisorLibvirtVersion = conn.getLibVirVersion();
+            _hypervisorQemuVersion = conn.getVersion();
         } catch (LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
         }
@@ -1411,6 +1415,10 @@ ServerResource {
             VolumeTO volume = new VolumeTO(cmd.getVolumeId(), dskch.getType(),
                     pool.getType(), pool.getUuid(), pool.getPath(),
                     vol.getName(), vol.getName(), disksize, null);
+            volume.setBytesReadRate(dskch.getBytesReadRate());
+            volume.setBytesWriteRate(dskch.getBytesWriteRate());
+            volume.setIopsReadRate(dskch.getIopsReadRate());
+            volume.setIopsWriteRate(dskch.getIopsWriteRate());
             return new CreateAnswer(cmd, volume);
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to create volume: " + e.toString());
@@ -2626,7 +2634,7 @@ ServerResource {
                     cmd.getPoolUuid());
             KVMPhysicalDisk disk = primary.getPhysicalDisk(cmd.getVolumePath());
             attachOrDetachDisk(conn, cmd.getAttach(), cmd.getVmName(), disk,
-                    cmd.getDeviceId().intValue());
+                    cmd.getDeviceId().intValue(), cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate());
         } catch (LibvirtException e) {
             return new AttachVolumeAnswer(cmd, e.toString());
         } catch (InternalErrorException e) {
@@ -3224,6 +3232,8 @@ ServerResource {
         } else {
             guest.setGuestType(GuestDef.guestType.KVM);
             vm.setHvsType(HypervisorType.KVM.toString().toLowerCase());
+            vm.setLibvirtVersion(_hypervisorLibvirtVersion);
+            vm.setQemuVersion(_hypervisorQemuVersion);
         }
         guest.setGuestArch(vmTO.getArch());
         guest.setMachineType("pc");
@@ -3497,6 +3507,15 @@ ServerResource {
 
             }
 
+            if ((volume.getBytesReadRate() != null) && (volume.getBytesReadRate()  > 0))
+                disk.setBytesReadRate(volume.getBytesReadRate());
+            if ((volume.getBytesWriteRate() != null) && (volume.getBytesWriteRate() > 0))
+                disk.setBytesWriteRate(volume.getBytesWriteRate());
+            if ((volume.getIopsReadRate() != null) && (volume.getIopsReadRate() > 0))
+                disk.setIopsReadRate(volume.getIopsReadRate());
+            if ((volume.getIopsWriteRate() != null) && (volume.getIopsWriteRate() > 0))
+                disk.setIopsWriteRate(volume.getIopsWriteRate());
+
             vm.getDevices().addDevice(disk);
         }
 
@@ -3630,7 +3649,7 @@ ServerResource {
 
     protected synchronized String attachOrDetachDisk(Connect conn,
             boolean attach, String vmName, KVMPhysicalDisk attachingDisk,
-            int devId) throws LibvirtException, InternalErrorException {
+            int devId, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -3670,6 +3689,14 @@ ServerResource {
                     diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId,
                             DiskDef.diskBus.VIRTIO);
                 }
+                if ((bytesReadRate != null) && (bytesReadRate > 0))
+                    diskdef.setBytesReadRate(bytesReadRate);
+                if ((bytesWriteRate != null) && (bytesWriteRate > 0))
+                    diskdef.setBytesWriteRate(bytesWriteRate);
+                if ((iopsReadRate != null) && (iopsReadRate > 0))
+                    diskdef.setIopsReadRate(iopsReadRate);
+                if ((iopsWriteRate != null) && (iopsWriteRate > 0))
+                    diskdef.setIopsWriteRate(iopsWriteRate);
             }
 
             String xml = diskdef.toString();
