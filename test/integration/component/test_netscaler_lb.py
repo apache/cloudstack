@@ -1085,7 +1085,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         # 3. Acquire Ip address and create LB rule on it. Add multiple VMs to
         #    this rule. LB rule should be
         # In Netscaler: For every Vm added to the LB rule:
-        # 1. A server and service instance is created using guest VM’s IP and
+        # 1. A server and service instance is created using guest VMs IP and
         #    port number on the Netscaler LB device,
         # 2. This service is bound to lb virtual server corresponding to lb
         #    rule.
