@@ -949,6 +949,10 @@
               .appendTo($tr);
         var content = dataItem[key];
 
+        if (field.truncate) {
+          $td.addClass('truncated');
+        }
+
         if (field.indicator) {
           $td.addClass('state').addClass(field.indicator[content]);
 

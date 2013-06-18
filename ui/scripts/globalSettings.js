@@ -57,7 +57,7 @@
           fields: {
             name: { label: 'label.name', id: true },
             description: { label: 'label.description' },
-            value: { label: 'label.value', editable: true }
+            value: { label: 'label.value', editable: true, truncate: true }
           },
           dataProvider: function(args) {
             var data = {

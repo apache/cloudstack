@@ -140,6 +140,17 @@ table tbody td.loading {
   border-top: 1px solid #FBFBFB;
 }
 
+table tbody td.truncated {
+  overflow: visible;
+  max-width: 88px;
+}
+
+table tbody td.truncated > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /** Actions table cell*/
 table tbody td.actions {
   width: 130px;
@@ -441,7 +452,7 @@ body.login {
 div.list-view table tbody td span {
   display: block;
   float: left;
-  max-width: 100%;
+  max-width: 89%;
   word-wrap: break-word;
   text-indent: 0;
   margin-left: 12px;
@@ -3455,6 +3466,12 @@ div.view table td.editable div.edit {
   position: relative;
   left: 6px;
   top: 0px;
+}
+
+div.view table td.truncated.editable div.edit {
+  top: 1px;
+  width: 285px;
+  left: 1px;
 }
 
 div.view table td.editable div.edit input {
