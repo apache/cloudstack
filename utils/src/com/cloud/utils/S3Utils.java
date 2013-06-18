@@ -38,7 +38,9 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,6 +49,7 @@ import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.HttpMethod;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
@@ -175,6 +178,17 @@ public final class S3Utils {
         assert acl != null;
 
         acquireClient(clientOptions).setObjectAcl(bucketName, key, acl);
+
+    }
+
+    public static URL generatePresignedUrl(final ClientOptions clientOptions, final String bucketName, final String key,
+            final Date expiration) {
+
+        assert clientOptions != null;
+        assert !isBlank(bucketName);
+        assert !isBlank(key);
+
+        return acquireClient(clientOptions).generatePresignedUrl(bucketName, key, expiration, HttpMethod.GET);
 
     }
 
