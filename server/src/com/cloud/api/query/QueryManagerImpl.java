@@ -981,7 +981,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
                 cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
-                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getZoneType());
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
@@ -994,17 +994,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
                 cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
-                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getZoneType());
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         response.setResponses(routerResponses, result.second());
         return response;
     }
-
+    
 
     private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
-            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role, String zoneType) {
+            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role) {
        
 
         Account caller = UserContext.current().getCaller();
@@ -1032,7 +1032,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterType", sb.entity().getDataCenterType(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
@@ -1081,11 +1080,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (podId != null) {
             sc.setParameters("podId", podId);
         }
-
-        if (zoneType != null) {
-            sc.setParameters("dataCenterType", zoneType);
-        }
-        
 
         if (hostId != null) {
             sc.setParameters("hostId", hostId);
