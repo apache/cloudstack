@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import com.cloud.capacity.Capacity;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -79,17 +80,12 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setZoneId(pool.getZoneUuid());
         poolResponse.setZoneName(pool.getZoneName());
         poolResponse.setZoneType(pool.getZoneType());
-        if (pool.getPoolType() != null) {
-            poolResponse.setType(pool.getPoolType().toString());
-        }
+        poolResponse.setType(ObjectUtils.toString(pool.getPoolType(), null));
         poolResponse.setPodId(pool.getPodUuid());
         poolResponse.setPodName(pool.getPodName());
         poolResponse.setCreated(pool.getCreated());
-        poolResponse.setScope(pool.getScope().toString());
-        if (pool.getHypervisor() != null) {
-            poolResponse.setHypervisor(pool.getHypervisor().toString());
-        }
-
+        poolResponse.setScope(ObjectUtils.toString(pool.getScope(), null));
+        poolResponse.setHypervisor(ObjectUtils.toString(pool.getHypervisor(), null));
 
         long allocatedSize = pool.getUsedCapacity() +  pool.getReservedCapacity();
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());

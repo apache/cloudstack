@@ -1151,8 +1151,33 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
+        
+        //offering #8 - network offering with internal lb service
+        NetworkOfferingVO internalLbOff = new NetworkOfferingVO(
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB,
+                "Offering for Isolated Vpc networks with Internal LB support",
+                TrafficType.Guest,
+                false, false, null, null, true, Availability.Optional,
+                null, Network.GuestType.Isolated, false, false, false, true, false);
 
+        internalLbOff.setState(NetworkOffering.State.Enabled);
+        internalLbOff = _networkOfferingDao.persistDefaultNetworkOffering(internalLbOff);
 
+        Map<Network.Service, Network.Provider> internalLbOffProviders = new HashMap<Network.Service, Network.Provider>();
+        internalLbOffProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
+        internalLbOffProviders.put(Service.Dns, Provider.VPCVirtualRouter);
+        internalLbOffProviders.put(Service.UserData, Provider.VPCVirtualRouter);
+        internalLbOffProviders.put(Service.NetworkACL, Provider.VPCVirtualRouter);
+        internalLbOffProviders.put(Service.Gateway, Provider.VPCVirtualRouter);
+        internalLbOffProviders.put(Service.Lb, Provider.InternalLbVm);
+        internalLbOffProviders.put(Service.SourceNat, Provider.VPCVirtualRouter);
+
+        for (Service service : internalLbOffProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                    (internalLbOff.getId(), service, internalLbOffProviders.get(service));
+            _ntwkOfferingServiceMapDao.persist(offService);
+            s_logger.trace("Added service for the network offering: " + offService);
+        }
 
         txn.commit();
     }

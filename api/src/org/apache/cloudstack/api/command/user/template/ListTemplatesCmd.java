@@ -68,10 +68,6 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             description="list templates by zoneId")
     private Long zoneId;
-    
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -96,10 +92,6 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-    
     public boolean listInReadyState() {
 
         Account account = UserContext.current().getCaller();
@@ -133,8 +125,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
         List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
         for (Pair<Long, Long> template : templateZonePairSet) {
-            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            responses = _responseGenerator.createTemplateResponses(template.first().longValue(), template.second(), listInReadyState());
+            List<TemplateResponse> responses = _responseGenerator.createTemplateResponses(template.first().longValue(), template.second(), listInReadyState());
             templateResponses.addAll(responses);
         }
 

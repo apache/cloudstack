@@ -70,13 +70,12 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
     public void execute() {
         ListResponse<HostForMigrationResponse> response = null;
         Pair<List<? extends Host>,Integer> result;
-        List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
         Map<Host, Boolean> hostsRequiringStorageMotion;
 
         Ternary<Pair<List<? extends Host>,Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
                 _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
         result = hostsForMigration.first();
-        hostsWithCapacity = hostsForMigration.second();
+        List<? extends Host> hostsWithCapacity = hostsForMigration.second();
         hostsRequiringStorageMotion = hostsForMigration.third();
 
         response = new ListResponse<HostForMigrationResponse>();

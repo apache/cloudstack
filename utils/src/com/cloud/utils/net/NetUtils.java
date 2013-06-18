@@ -257,7 +257,7 @@ public class NetUtils {
             return ipFromInetAddress(addr);
         }
 
-        return new String("127.0.0.1");
+        return "127.0.0.1";
     }
 
     public static String ipFromInetAddress(InetAddress addr) {

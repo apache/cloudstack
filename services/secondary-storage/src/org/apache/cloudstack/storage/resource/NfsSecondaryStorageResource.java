@@ -22,7 +22,6 @@ import static com.cloud.utils.S3Utils.putDirectory;
 import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 import java.io.BufferedWriter;
@@ -217,19 +216,16 @@ SecondaryStorageResource {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private String determineS3TemplateDirectory(final Long accountId,
+    static String determineS3TemplateDirectory(final Long accountId,
             final Long templateId) {
-        return join(asList(TEMPLATE_ROOT_DIR, accountId, templateId),
-                S3Utils.SEPARATOR);
+        return join(S3Utils.SEPARATOR, TEMPLATE_ROOT_DIR, accountId, templateId);
     }
 
-    @SuppressWarnings("unchecked")
     private String determineStorageTemplatePath(final String storagePath,
             final Long accountId, final Long templateId) {
-        return join(
-                asList(getRootDir(storagePath), TEMPLATE_ROOT_DIR, accountId,
-                        templateId), File.separator);
+        return join(File.separator, 
+                getRootDir(storagePath), TEMPLATE_ROOT_DIR, accountId,
+                        templateId);
     }
 
     private Answer execute(
@@ -405,10 +401,7 @@ SecondaryStorageResource {
                     s_logger.debug(String
                             .format("Determining key using account id %1$s and template id %2$s",
                                     accountId, templateId));
-                    return join(
-                            asList(determineS3TemplateDirectory(
-                                    accountId, templateId), file
-                                    .getName()), S3Utils.SEPARATOR);
+                    return join(S3Utils.SEPARATOR, determineS3TemplateDirectory(accountId, templateId), file.getName());
                 }
             });
 

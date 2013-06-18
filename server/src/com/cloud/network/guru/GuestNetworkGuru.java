@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.event.ActionEventUtils;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 
@@ -98,6 +99,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     IPAddressDao _ipAddressDao;
     @Inject 
     protected PhysicalNetworkDao _physicalNetworkDao;    
+    @Inject
+    ConfigurationServer _configServer;
     Random _rand = new Random(System.currentTimeMillis());
 
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
@@ -153,6 +156,11 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     
     public IsolationMethod[] getIsolationMethods() {
         return _isolationMethods;
+    }
+
+    public boolean canUseSystemGuestVlan(long accountId) {
+        return Boolean.parseBoolean(_configServer.getConfigValue(Config.UseSystemGuestVlans.key(),
+            Config.ConfigurationParameterScope.account.toString(), accountId));
     }
 
     protected abstract boolean canHandle(NetworkOffering offering, final NetworkType networkType, PhysicalNetwork physicalNetwork);
@@ -260,7 +268,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     protected void allocateVnet(Network network, NetworkVO implemented, long dcId,
     		long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
         if (network.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId);
+            String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId,
+                    canUseSystemGuestVlan(network.getAccountId()));
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " +
                 		"part of network " + network + " implement ", DataCenter.class, dcId);

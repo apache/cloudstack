@@ -414,4 +414,8 @@ public class NetworkOfferingVO implements NetworkOffering {
         return publicLb;
     }
 
+    public void setInternalLb(boolean internalLb) {
+        this.internalLb = internalLb;
+    }
+
 }
