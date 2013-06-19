@@ -602,6 +602,9 @@ revertToVMSnapshot=15
 
 #### Baremetal commands
 addBaremetalHost=1
+addBaremetalPxeKickStartServer=1
+addBaremetalPxePingServer=1
+addBaremetalDhcp=1
 
 #### New Load Balancer commands
 createLoadBalancer=15

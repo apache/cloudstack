@@ -24,6 +24,8 @@ package com.cloud.baremetal.networkservice;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.AddBaremetalPxeCmd;
+
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
