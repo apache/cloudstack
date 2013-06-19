@@ -3430,7 +3430,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     private void configDnsMasq(VirtualRouter router, Network network, Commands cmds) {
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-        List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.getAliasIpForVm(router.getId());
+        List<NicIpAliasVO> ipAliasVOList = _nicIpAliasDao.listByNetworkIdAndState(network.getId(), NicIpAlias.state.active);
         List<DnsmasqTO> ipList = new ArrayList<DnsmasqTO>();
 
         NicVO router_guest_nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());
@@ -3444,6 +3444,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         for (NicIpAliasVO ipAliasVO : ipAliasVOList) {
              DnsmasqTO dnsmasqTO = new DnsmasqTO(ipAliasVO.getIp4Address(), ipAliasVO.getGateway(), ipAliasVO.getNetmask(), ipAliasVO.getStartIpOfSubnet());
              ipList.add(dnsmasqTO);
+             ipAliasVO.setVmId(router.getId());
         }
         DataCenterVO dcvo = _dcDao.findById(router.getDataCenterId());
         DnsMasqConfigCommand dnsMasqConfigCmd = new DnsMasqConfigCommand(network.getNetworkDomain(),ipList, dcvo.getDns1(), dcvo.getDns2(), dcvo.getInternalDns1(), dcvo.getInternalDns2());
