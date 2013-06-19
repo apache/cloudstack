@@ -223,15 +223,6 @@ public class VMEntityManagerImpl implements VMEntityManager {
 
         VMReservationVO vmReservation = _reservationDao.findByReservationId(reservationId);
         if(vmReservation != null){
-            // Pass it down
-            Long poolId = null;
-            Map<Long, Long> storage = vmReservation.getVolumeReservation();
-            if (storage != null) {
-                List<Long> volIdList = new ArrayList<Long>(storage.keySet());
-                if (volIdList != null && !volIdList.isEmpty()) {
-                    poolId = storage.get(volIdList.get(0));
-                }
-            }
 
             DataCenterDeployment reservedPlan = new DataCenterDeployment(vm.getDataCenterId(),
                     vmReservation.getPodId(), vmReservation.getClusterId(), vmReservation.getHostId(), null, null);
