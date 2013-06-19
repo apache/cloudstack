@@ -64,6 +64,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.log4j.Logger;
+import org.apache.commons.io.FileUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockStats;
@@ -229,7 +230,6 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.TemplateProp;
-import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
@@ -4847,24 +4847,18 @@ ServerResource {
         }
     }
 
-    private Pair<Double, Double> getNicStats(String nicName) {
-        double rx = 0.0;
-        String rxFile = "/sys/class/net/" + nicName + "/statistics/rx_bytes";
-        String rxContent = FileUtil.readFileAsString(rxFile);
-        if (rxContent == null) {
-            s_logger.warn("Failed to read the rx_bytes for " + nicName + " from " + rxFile);
-        }
-        rx = Double.parseDouble(rxContent);
+    static Pair<Double, Double> getNicStats(String nicName) {
+        return new Pair<Double, Double>(readDouble(nicName, "rx_bytes"), readDouble(nicName, "tx_bytes"));
+    }
 
-        double tx = 0.0;
-        String txFile = "/sys/class/net/" + nicName + "/statistics/tx_bytes";
-        String txContent = FileUtil.readFileAsString(txFile);
-        if (txContent == null) {
-            s_logger.warn("Failed to read the tx_bytes for " + nicName + " from " + txFile);
+    static double readDouble(String nicName, String fileName) {
+        final String path = "/sys/class/net/" + nicName + "/statistics/" + fileName;
+        try {
+            return Double.parseDouble(FileUtils.readFileToString(new File(path)));
+        } catch (IOException ioe) {
+            s_logger.warn("Failed to read the " + fileName + " for " + nicName + " from " + path, ioe);
+            return 0.0;
         }
-        tx = Double.parseDouble(txContent);
-
-        return new Pair<Double, Double>(rx, tx);
     }
 
     private Answer execute(NetworkRulesSystemVmCommand cmd) {
