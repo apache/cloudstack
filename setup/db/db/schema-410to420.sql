@@ -974,15 +974,11 @@ CREATE VIEW `cloud`.`domain_router_view` AS
             left join
         `cloud`.`disk_offering` ON vm_instance.service_offering_id = disk_offering.id
             left join
-        `cloud`.`volumes` ON vm_instance.id = volumes.instance_id
-            left join
-        `cloud`.`storage_pool` ON volumes.pool_id = storage_pool.id
-            left join
-        `cloud`.`nics` ON vm_instance.id = nics.instance_id
+        `cloud`.`nics` ON vm_instance.id = nics.instance_id and nics.removed is null
             left join
         `cloud`.`networks` ON nics.network_id = networks.id
             left join
-        `cloud`.`vpc` ON domain_router.vpc_id = vpc.id
+        `cloud`.`vpc` ON domain_router.vpc_id = vpc.id and vpc.removed is null
             left join
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
@@ -1452,7 +1448,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
         data_center.is_security_group_enabled security_group_enabled,
-	data_center.networktype data_center_type,
+		data_center.networktype data_center_type,
         host.id host_id,
         host.uuid host_uuid,
         host.name host_name,
@@ -1564,11 +1560,11 @@ CREATE VIEW `cloud`.`user_vm_view` AS
             left join
         `cloud`.`security_group` ON security_group_vm_map.security_group_id = security_group.id
             left join
-        `cloud`.`nics` ON vm_instance.id = nics.instance_id
+        `cloud`.`nics` ON vm_instance.id = nics.instance_id and nics.removed is null
             left join
         `cloud`.`networks` ON nics.network_id = networks.id
             left join
-        `cloud`.`vpc` ON networks.vpc_id = vpc.id
+        `cloud`.`vpc` ON networks.vpc_id = vpc.id and vpc.removed is null
             left join
         `cloud`.`user_ip_address` ON user_ip_address.vm_id = vm_instance.id
             left join
