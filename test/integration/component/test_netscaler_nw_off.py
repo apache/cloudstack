@@ -117,7 +117,7 @@ class Services:
                                             "UserData": 'VirtualRouter',
                                             "StaticNat": 'VirtualRouter',
                                     },
-                                    "servicecapabilitylist": {
+                                    "serviceCapabilityList": {
                                         "SourceNat": {
                                             "SupportedSourceNatTypes": "peraccount"
                                         },
@@ -157,11 +157,10 @@ class Services:
                                     "publicport": 22,
                                     "openfirewall": False,
                          },
-                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                         "ostype": 'Cent OS 5.3 (64 bit)',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
-                         "mode": 'advanced'
                     }
 
 
