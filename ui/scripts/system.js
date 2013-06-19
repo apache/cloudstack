@@ -1321,13 +1321,6 @@
                         }
                       },
 
-                      preFilter: function(args) { //Isolated networks is only supported in Advanced (SG-disabled) zone
-                      if(selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled != true)
-                          return false;
-                      else
-                          return true;
-                      },
-
                       preFilter: function(args) { //Shared networks is only supported in Basic zone and Advanced zone with SG
                           if(selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled != true)
                               return false;
