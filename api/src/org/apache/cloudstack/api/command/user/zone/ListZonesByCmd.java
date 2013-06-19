@@ -57,8 +57,8 @@ public class ListZonesByCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the zone")
     private String name;
 
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
+    @Parameter(name=ApiConstants.NETWORK_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
+    private String networkType;
     
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the zones")
     private Boolean showCapacities;
@@ -83,8 +83,8 @@ public class ListZonesByCmd extends BaseListCmd {
         return name;
     }
 
-    public String getZoneType() {
-        return zoneType;
+    public String getNetworkType() {
+        return networkType;
     }
     
     public Boolean getShowCapacities() {
