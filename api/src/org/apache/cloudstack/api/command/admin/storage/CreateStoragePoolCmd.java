@@ -182,6 +182,8 @@ public class CreateStoragePoolCmd extends BaseCmd {
         } catch (UnknownHostException ex3) {
             s_logger.warn("Exception: ", ex3);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex3.getMessage());
+        } catch (Exception ex4) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex4.getMessage());
         }
     }
 }

@@ -60,6 +60,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.storage.StoragePoolDiscoverer;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -396,7 +397,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             s_logger.warn("No host can access storage pool " + primarystore + " on cluster "
                     + primarystore.getClusterId());
             primaryDataStoreDao.expunge(primarystore.getId());
-            return false;
+            throw new CloudRuntimeException("Failed to access storage pool");
         }
 
         this.dataStoreHelper.attachCluster(store);
@@ -437,6 +438,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         List<StoragePoolHostVO> hostPoolRecords = this._storagePoolHostDao.listByPoolId(store.getId());
         StoragePool pool = (StoragePool) store;
         boolean deleteFlag = false;
+        // If datastore is not in ready state, simply delete its db entry.
+        if (pool.getStatus() != StoragePoolStatus.Up) {
+            return this.dataStoreHelper.deletePrimaryDataStore(store);
+        }
         // Remove the SR associated with the Xenserver
         for (StoragePoolHostVO host : hostPoolRecords) {
             DeleteStoragePoolCommand deleteCmd = new DeleteStoragePoolCommand(pool);

@@ -717,7 +717,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("capacityIops", cmd.getCapacityIops());
 
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
-        DataStore store;
+        DataStore store = null;
         try {
             store = lifeCycle.initialize(params);
             if (scopeType == ScopeType.CLUSTER) {
@@ -729,6 +729,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         } catch (Exception e) {
             s_logger.debug("Failed to add data store", e);
+            // clean up the db
+            if (store != null) {
+                lifeCycle.deleteDataStore(store);
+            }
             throw new CloudRuntimeException("Failed to add data store", e);
         }
 

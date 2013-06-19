@@ -128,7 +128,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     private StoragePool createNfsStoragePool(Connect conn, String uuid,
-            String host, String path) {
+            String host, String path) throws LibvirtException {
         String targetPath = _mountPoint + File.separator + uuid;
         LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NETFS,
                 uuid, uuid, host, path, targetPath);
@@ -156,6 +156,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 } else {
                     s_logger.error("Failed in unmounting and redefining storage");
                 }
+            } else {
+                s_logger.error("Internal error occurred when attempting to mount: specified path may be invalid");
+                throw e;
             }
             if (sp != null) {
                 try {
@@ -496,7 +499,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             s_logger.debug("Attempting to create storage pool " + name);
 
             if (type == StoragePoolType.NetworkFilesystem) {
-                sp = createNfsStoragePool(conn, name, host, path);
+                try {
+                        sp = createNfsStoragePool(conn, name, host, path);
+                } catch (LibvirtException e) {
+                        s_logger.error("Failed to create mount");
+                        s_logger.error(e.getStackTrace());
+                        throw new CloudRuntimeException(e.toString());
+                }
             } else if (type == StoragePoolType.SharedMountPoint
                     || type == StoragePoolType.Filesystem) {
                 sp = createSharedStoragePool(conn, name, host, path);
