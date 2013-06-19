@@ -21,7 +21,10 @@ import static java.util.Collections.singletonList;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -2583,7 +2586,25 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setZoneId(zone.getUuid());
         }
         response.setNetworkSpeed(result.getSpeed());
-        response.setVlan(result.getVnetString());
+        //Create vlan ranges response
+        String vlanRanges = null;
+        vlanRanges = result.getVnetString();
+        if(vlanRanges != null) {
+            String [] vlan = vlanRanges.split(";");
+
+            //Sort the vlan ranges
+            Arrays.sort(vlan, new Comparator<String>() {
+                public int compare (String first, String second) {
+                    return Integer.valueOf(first.split("-")[0]).compareTo(Integer.valueOf(second.split("-")[0]));
+                }
+            });
+            List<String> vlanList = new ArrayList<String>();
+            Collections.addAll(vlanList, vlan);
+            vlanRanges = StringUtils.join(vlanList,";");
+        }
+        //Set the final String response
+        response.setVlan(vlanRanges);
+
         if (result.getDomainId() != null) {
             Domain domain = ApiDBUtils.findDomainById(result.getDomainId());
             if (domain != null) {
