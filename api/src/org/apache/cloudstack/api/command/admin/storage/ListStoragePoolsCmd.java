@@ -64,6 +64,10 @@ public class ListStoragePoolsCmd extends BaseListCmd {
             description="the ID of the storage pool")
     private Long id;
 
+    @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING, entityType = StoragePoolResponse.class,
+            description="the ID of the storage pool")
+    private String scope;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -114,5 +118,9 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         ListResponse<StoragePoolResponse> response = _queryService.searchForStoragePools(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+    }
+
+    public String getScope() {
+        return scope;
     }
 }
