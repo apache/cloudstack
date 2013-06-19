@@ -24,7 +24,7 @@
   var configurationUseLocalStorage = false;
 	var skipGuestTrafficStep = false;
   var selectedNetworkOfferingObj = {};
-	var baremetalProviders = ["BaremetalDhcpProvider", "BaremetalPxeProvider", "BaremetaUserdataProvider"];
+	var baremetalProviders = ["BaremetalDhcpProvider", "BaremetalPxeProvider", "BaremetalUserdataProvider"];
 	var selectedBaremetalProviders = [];
 	
   // Makes URL string for traffic label
