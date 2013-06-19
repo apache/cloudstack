@@ -57,5 +57,4 @@ public interface NicIpAliasDao extends GenericDao<NicIpAliasVO, Long> {
 
     List<NicIpAliasVO> listByNetworkIdAndState(long networkId, NicIpAlias.state state);
 
-    List<NicIpAliasVO> listByNetworkIdAndAliasIpAndState(long networkId, String aliasIpOfSubnet, NicIpAlias.state state);
 }
