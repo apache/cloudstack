@@ -334,7 +334,19 @@ class TestSSVMs(cloudstackTestCase):
 
         self.debug("Running SSVM check script")
 
-        result = get_process_status(
+        if self.apiclient.hypervisor.lower() == 'vmware':
+            #SSH into SSVMs is done via management server for Vmware
+            result = get_process_status(
+                                self.apiclient.connection.mgtSvr,
+                                22,
+                                self.apiclient.connection.user,
+                                self.apiclient.connection.passwd,
+                                ssvm.privateip,
+                                "/usr/local/cloud/systemvm/ssvm-check.sh |grep -e ERROR -e WARNING -e FAIL",
+                                hypervisor=self.apiclient.hypervisor
+                                )
+        else:
+            result = get_process_status(
                                 host.ipaddress,
                                 self.services['host']["publicport"],
                                 self.services['host']["username"],
@@ -358,7 +370,19 @@ class TestSSVMs(cloudstackTestCase):
                         )
 
         #Check status of cloud service
-        result = get_process_status(
+        if self.apiclient.hypervisor.lower() == 'vmware':
+            #SSH into SSVMs is done via management server for Vmware
+            result = get_process_status(
+                                self.apiclient.connection.mgtSvr,
+                                22,
+                                self.apiclient.connection.user,
+                                self.apiclient.connection.passwd,
+                                ssvm.privateip,
+                                "service cloud status",
+                                hypervisor=self.apiclient.hypervisor
+                                )
+        else:
+            result = get_process_status(
                                 host.ipaddress,
                                 self.services['host']["publicport"],
                                 self.services['host']["username"],
@@ -426,7 +450,19 @@ class TestSSVMs(cloudstackTestCase):
 
         self.debug("Checking cloud process status")
 
-        result = get_process_status(
+        if self.apiclient.hypervisor.lower() == 'vmware':
+            #SSH into SSVMs is done via management server for vmware
+            result = get_process_status(
+                                self.apiclient.connection.mgtSvr,
+                                22,
+                                self.apiclient.connection.user,
+                                self.apiclient.connection.passwd,
+                                cpvm.privateip,
+                                "service cloud status",
+                                hypervisor=self.apiclient.hypervisor
+                                )
+        else:
+            result = get_process_status(
                                 host.ipaddress,
                                 self.services['host']["publicport"],
                                 self.services['host']["username"],
