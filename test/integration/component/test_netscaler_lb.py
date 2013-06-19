@@ -93,7 +93,7 @@ class Services:
                                             "UserData": 'VirtualRouter',
                                             "StaticNat": 'VirtualRouter',
                                     },
-                                    "servicecapabilitylist": {
+                                    "serviceCapabilityList": {
                                         "SourceNat": {
                                             "SupportedSourceNatTypes": "peraccount"
                                         },

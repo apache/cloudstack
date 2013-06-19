@@ -752,7 +752,7 @@ class TestVPCNetwork(cloudstackTestCase):
         self.validate_vpc_network(vpc)
 
         # Enable redundant router capability for the network offering
-        self.services["network"]["servicecapabilitylist"] = {
+        self.services["network"]["serviceCapabilityList"] = {
                                                 "SourceNat": {
                                                     "RedundantRouter": "true",
                                                     },
