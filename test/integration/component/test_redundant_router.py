@@ -23,10 +23,8 @@ from marvin.integration.lib.utils import *
 from marvin.integration.lib.common import *
 
 #Import Local Modules
-from marvin.cloudstackTestCase import *
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import *
-from marvin import remoteSSHClient
-
 
 class Services:
     """Test Services for customer defects
@@ -88,10 +86,10 @@ class Services:
                                             "UserData": 'VirtualRouter',
                                             "StaticNat": 'VirtualRouter',
                                         },
-                                    "servicecapabilitylist": {
+                                    "serviceCapabilityList": {
                                         "SourceNat": {
                                             "SupportedSourceNatTypes": "peraccount",
-                                            "RedundantRouter": 'true',
+                                            "RedundantRouter": "true",
                                         },
                                         "lb": {
                                                "SupportedLbIsolation": "dedicated"
@@ -190,6 +188,7 @@ class TestCreateRvRNetworkOffering(cloudstackTestCase):
         # Validate the following
         # 1. Redundant Router offering should be created successfully and
         #    listed in listNetworkOfferings response
+        # assert if RvR capability is enabled
 
         self.debug("Creating network offering with redundant VR capability")
         try:
@@ -281,22 +280,7 @@ class TestCreateRvRNetwork(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -487,22 +471,7 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -701,22 +670,7 @@ class TestRVRInternals(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -1029,22 +983,7 @@ class TestRedundancy(cloudstackTestCase):
                                   networkids=[str(self.network.id)]
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -1100,9 +1039,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Stopping the MASTER router")
         try:
-            cmd = stopRouter.stopRouterCmd()
-            cmd.id = master_router.id
-            self.apiclient.stopRouter(cmd)
+            Router.stop(self.apiclient, id=master_router.id)
         except Exception as e:
             self.fail("Failed to stop master router: %s" % e)
 
@@ -1144,9 +1081,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Starting the old MASTER router")
         try:
-            cmd = startRouter.startRouter(cmd)
-            cmd.id = master_router.id
-            self.apiclient.startRouter(cmd)
+            Router.start(self.apiclient, id=master_router.id)
             self.debug("old MASTER router started")
         except Exception as e:
             self.fail("Failed to stop master router: %s" % e)
@@ -1227,9 +1162,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Stopping the BACKUP router")
         try:
-            cmd = stopRouter.stopRouterCmd()
-            cmd.id = backup_router.id
-            self.apiclient.stopRouter(cmd)
+            Router.stop(self.apiclient, id=backup_router.id)
         except Exception as e:
             self.fail("Failed to stop backup router: %s" % e)
 
@@ -1271,9 +1204,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Starting the old BACKUP router")
         try:
-            cmd = startRouter.startRouter(cmd)
-            cmd.id = backup_router.id
-            self.apiclient.startRouter(cmd)
+            Router.start(self.apiclient, id=backup_router.id)
             self.debug("old BACKUP router started")
         except Exception as e:
             self.fail("Failed to stop master router: %s" % e)
@@ -1348,9 +1279,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Rebooting the master router")
         try:
-            cmd = rebootRouter.rebootRouterCmd()
-            cmd.id = master_router.id
-            self.apiclient.rebootRouter(cmd)
+            Router.reboot(self.apiclient, id=master_router.id)
         except Exception as e:
             self.fail("Failed to reboot MASTER router: %s" % e)
 
@@ -1442,9 +1371,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Rebooting the backuo router")
         try:
-            cmd = rebootRouter.rebootRouterCmd()
-            cmd.id = backup_router.id
-            self.apiclient.rebootRouter(cmd)
+            Router.reboot(self.apiclient, id=backup_router.id)
         except Exception as e:
             self.fail("Failed to reboot BACKUP router: %s" % e)
 
@@ -1536,9 +1463,7 @@ class TestRedundancy(cloudstackTestCase):
 
         self.debug("Stopping the backup router")
         try:
-            cmd = stopRouter.stopRouterCmd()
-            cmd.id = backup_router.id
-            self.apiclient.stopRouter(cmd)
+            Router.stop(self.apiclient, id=backup_router.id)
         except Exception as e:
             self.fail("Failed to stop BACKUP router: %s" % e)
 
@@ -1665,21 +1590,7 @@ class TestApplyAndDeleteNetworkRulesOnRvR(cloudstackTestCase):
                                      domainid=self.domain.id
                                      )
         self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self.cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -1989,22 +1900,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -2245,22 +2141,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -2393,10 +2274,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
         self.debug("Stopping router ID: %s" % master_router.id)
 
         try:
-            #Stop the router
-            cmd = stopRouter.stopRouterCmd()
-            cmd.id = master_router.id
-            self.apiclient.stopRouter(cmd)
+            Router.stop(self.apiclient, id=master_router.id)
         except Exception as e:
             self.fail("Failed to stop master router..")
 
@@ -2545,10 +2423,7 @@ class TestNetworkRulesMasterDownDeleteNetworkRules(cloudstackTestCase):
         self.debug("Starting router ID: %s" % master_router.id)
 
         try:
-            #Stop the router
-            cmd = startRouter.startRouterCmd()
-            cmd.id = master_router.id
-            self.apiclient.startRouter(cmd)
+            Router.start(self.apiclient, id=master_router.id)
         except Exception as e:
             self.fail("Failed to start master router..")
 
@@ -2633,22 +2508,7 @@ class TestApplyDeleteNetworkRulesRebootRouter(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._clean.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -3013,22 +2873,7 @@ class TestRestartRvRNetworkWithoutCleanup(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -3234,22 +3079,7 @@ class TestRestartRvRNetworkWithCleanup(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -3455,22 +3285,7 @@ class TestDeleteRvRNetwork(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -3671,22 +3486,7 @@ class TestNetworkGCRvR(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -3936,22 +3736,7 @@ class TestApplyRulesRestartRvRNetwork(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -4373,22 +4158,7 @@ class TestUpgradeDowngradeRVR(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -4741,22 +4511,7 @@ class TestRVRWithDiffEnvs(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
