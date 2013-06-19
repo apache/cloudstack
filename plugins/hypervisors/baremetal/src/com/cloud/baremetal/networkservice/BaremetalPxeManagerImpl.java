@@ -31,6 +31,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
+import org.apache.cloudstack.api.AddBaremetalPxeCmd;
+import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;

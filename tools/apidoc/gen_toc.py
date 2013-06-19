@@ -146,7 +146,8 @@ known_categories = {
 	'DeploymentPlanners': 'Configuration',
     'PortableIp': 'Portable IP',
     'dedicateHost': 'Dedicate Resources',
-    'releaseDedicatedHost': 'Dedicate Resources'
+    'releaseDedicatedHost': 'Dedicate Resources',
+    'Baremetal' : 'Baremetal'
     }
 
 
