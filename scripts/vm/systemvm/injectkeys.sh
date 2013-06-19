@@ -65,7 +65,7 @@ copy_priv_key() {
   local newprivkey=$1
   diff -q $newprivkey $(dirname $0)/id_rsa.cloud && return 0
   $SUDO cp -fb $newprivkey $(dirname $0)/id_rsa.cloud
-  $SUDO chmod 600 $(dirname $0)/id_rsa.cloud
+  $SUDO chmod 644 $(dirname $0)/id_rsa.cloud
   return $?
 }
 
