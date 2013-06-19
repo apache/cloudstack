@@ -55,6 +55,7 @@ import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -1862,6 +1863,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     private Pair<List<StoragePoolJoinVO>, Integer> searchForStoragePoolsInternal(ListStoragePoolsCmd cmd) {
+        ScopeType scopeType = null;
+        if (cmd.getScope() != null) {
+            try {
+                scopeType = Enum.valueOf(ScopeType.class, cmd.getScope().toUpperCase());
+            } catch (Exception e) {
+                throw new InvalidParameterValueException("Invalid scope type: " + cmd.getScope());
+            }
+        }
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());       
         Object id = cmd.getId();
@@ -1921,6 +1930,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (cluster != null) {
             sc.setParameters("clusterId", cluster);
+        }
+        if (scopeType != null) {
+            sc.setParameters("scope", scopeType.toString());
         }
 
         // search Pool details by ids
