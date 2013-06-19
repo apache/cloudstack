@@ -274,40 +274,46 @@
     }
   };
 
-	var networkOfferingObjs = [];
-        var checkVpc=0; 	
+	var networkOfferingObjs = [];  	        
+  var advZoneObjs;
+  
   cloudStack.sections.network = {
     title: 'label.network',
     id: 'network',
     sectionSelect: {
       preFilter: function(args) {
-        var havingSecurityGroupNetwork = false;           
-        
+        var sectionsToShow = ['networks'];
+
+        $.ajax({
+          url: createURL('listZones'),
+          data: {
+            networktype: 'Advanced'
+          },
+          async: false,
+          success: function(json) {            
+            advZoneObjs = json.listzonesresponse.zone;
+            if(advZoneObjs != null && advZoneObjs.length > 0) {
+              sectionsToShow.push('vpc');
+              sectionsToShow.push('vpnCustomerGateway');
+            }
+          }
+        });
+                           
         $.ajax({
           url: createURL('listNetworks', { ignoreProject: true }),
           data: {
             supportedServices: 'SecurityGroup',
             listAll: true,
-						details: 'min'
+            details: 'min'
           },
           async: false,
-          success: function(data) {
-            if (data.listnetworksresponse.network != null && data.listnetworksresponse.network.length > 0) {
-              havingSecurityGroupNetwork = true;
+          success: function(json) {
+            if(json.listnetworksresponse.network != null && json.listnetworksresponse.network.length > 0) {
+              sectionsToShow.push('securityGroups');
             }
           }
         });
-
-        var sectionsToShow = ['networks'];
-
-        if(args.context.zoneType != 'Basic') { //Advanced type or all types				
-          sectionsToShow.push('vpc');
-          sectionsToShow.push('vpnCustomerGateway');
-        }
-        
-        if(havingSecurityGroupNetwork == true)
-          sectionsToShow.push('securityGroups');
-
+       
         return sectionsToShow;
       },
 
@@ -323,11 +329,18 @@
             add: { 
               label: 'Add Isolated Guest Network with SourceNat',
 
-              preFilter: function(args) { //Isolated networks is only supported in Advanced (SG-disabled) zone 
-                if(args.context.zoneType != 'Basic') 
-								  return true;
-								else
-								  return false;								
+              preFilter: function(args) { 
+                if(advZoneObjs != null && advZoneObjs.length > 0) {
+                  for(var i = 0; i < advZoneObjs.length; i++) {
+                    if(advZoneObjs[i].securitygroupsenabled != true) { //'Add Isolated Guest Network with SourceNat' is only supported in Advanced SG-disabled zone 
+                      return true;
+                    }
+                  }   
+                  return false;
+                }
+                else{
+                  return false;     
+                }  			
               },
 
               createForm: {
