@@ -11385,14 +11385,14 @@
 
                     if(hostId != null){
                       $.ajax({
-                        url:createURL("dedicateHost&hostId=" +hostId +"&domainId=" +args.data.domainId + array2.join("")),
-                        dataType:"json",
-                        success:function(json){
-                          var jid = json.dedicatehostresponse.jobid;
-                          args.response.success({
-                            _custom:
-                            {      jobId: jid
-                            },
+                         url:createURL("dedicateHost&hostId=" +hostId +"&domainId=" +args.data.domainId + array2.join("")),
+                         dataType:"json",
+                         success:function(json){
+                             var jid = json.dedicatehostresponse.jobid;
+                              args.response.success({
+                                 _custom:
+                           {      jobId: jid
+                             },
                             notification: {
                               poll: pollAsyncJobResult
                             },
