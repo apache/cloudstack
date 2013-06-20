@@ -44,12 +44,14 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 	@PostConstruct
 	public void init() {
 		PendingWorkJobSearch = createSearchBuilder();
+		PendingWorkJobSearch.and("jobStatus", PendingWorkJobSearch.entity().getStatus(), Op.EQ);
 		PendingWorkJobSearch.and("vmType", PendingWorkJobSearch.entity().getVmType(), Op.EQ);
 		PendingWorkJobSearch.and("vmInstanceId", PendingWorkJobSearch.entity().getVmInstanceId(), Op.EQ);
 		PendingWorkJobSearch.and("step", PendingWorkJobSearch.entity().getStep(), Op.NEQ);
 		PendingWorkJobSearch.done();
 
 		PendingWorkJobByCommandSearch = createSearchBuilder();
+		PendingWorkJobByCommandSearch.and("jobStatus", PendingWorkJobByCommandSearch.entity().getStatus(), Op.EQ);
 		PendingWorkJobByCommandSearch.and("vmType", PendingWorkJobByCommandSearch.entity().getVmType(), Op.EQ);
 		PendingWorkJobByCommandSearch.and("vmInstanceId", PendingWorkJobByCommandSearch.entity().getVmInstanceId(), Op.EQ);
 		PendingWorkJobByCommandSearch.and("step", PendingWorkJobByCommandSearch.entity().getStep(), Op.NEQ);
@@ -58,7 +60,7 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		
 		ExpungeWorkJobSearch = createSearchBuilder();
 		ExpungeWorkJobSearch.and("lastUpdated", ExpungeWorkJobSearch.entity().getLastUpdated(), Op.LT);
-		ExpungeWorkJobSearch.and("status", ExpungeWorkJobSearch.entity().getStatus(), Op.NEQ);
+		ExpungeWorkJobSearch.and("jobStatus", ExpungeWorkJobSearch.entity().getStatus(), Op.NEQ);
 		ExpungeWorkJobSearch.done();
 	}
 	
@@ -66,9 +68,9 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
     public VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId) {
 		
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobSearch.create();
+		sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
 		sc.setParameters("vmType", type);
 		sc.setParameters("vmInstanceId", instanceId);
-		sc.setParameters("step", Step.Done);
 		
 		Filter filter = new Filter(VmWorkJobVO.class, "created", true, null, null);
 		List<VmWorkJobVO> result = this.listBy(sc, filter);
@@ -82,9 +84,9 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
     public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId) {
 		
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobSearch.create();
+		sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
 		sc.setParameters("vmType", type);
 		sc.setParameters("vmInstanceId", instanceId);
-		sc.setParameters("step", Step.Done);
 		
 		Filter filter = new Filter(VmWorkJobVO.class, "created", true, null, null);
 		return this.listBy(sc, filter);
@@ -94,9 +96,9 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
     public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd) {
 		
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobByCommandSearch.create();
+		sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
 		sc.setParameters("vmType", type);
 		sc.setParameters("vmInstanceId", instanceId);
-		sc.setParameters("step", Step.Done);
 		sc.setParameters("cmd", jobCmd);
 		
 		Filter filter = new Filter(VmWorkJobVO.class, "created", true, null, null);
@@ -115,7 +117,7 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
     public void expungeCompletedWorkJobs(Date cutDate) {
 		SearchCriteria<VmWorkJobVO> sc = ExpungeWorkJobSearch.create();
 		sc.setParameters("lastUpdated",cutDate);
-        sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
+        sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
 		
 		expunge(sc);
 	}

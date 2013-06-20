@@ -457,12 +457,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _vmDao.remove(vm.getId());
     }
     
-    
-
     @Override
     public boolean start() {
         _executor.scheduleAtFixedRate(new TransitionTask(), _pingInterval.value(), _pingInterval.value(), TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new CleanupTask(), _pingInterval.value()*2, _pingInterval.value()*2, TimeUnit.SECONDS);
+
+        // cancel jobs left-over from last run
         cancelWorkItems(_nodeId);
         
         return true;
@@ -1801,42 +1801,42 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected void cancelWorkItems(long nodeId) {
         /*
-                GlobalLock scanLock = GlobalLock.getInternLock("vmmgr.cancel.workitem");
+            GlobalLock scanLock = GlobalLock.getInternLock("vmmgr.cancel.workitem");
 
-                try {
-                    if (scanLock.lock(3)) {
-                        try {
-                            List<VmWorkJobVO> works = _workDao.listWorkInProgressFor(nodeId);
-                            for (VmWorkJobVO work : works) {
-                                s_logger.info("Handling unfinished work item: " + work);
-                                try {
-                                    VMInstanceVO vm = _vmDao.findById(work.getInstanceId());
-                                    if (vm != null) {
-                                        if (work.getType() == State.Starting) {
-                                            _haMgr.scheduleRestart(vm, true);
-                                            work.setManagementServerId(_nodeId);
-                                            _workDao.update(work.getId(), work);
-                                        } else if (work.getType() == State.Stopping) {
-                                            _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.CheckStop);
-                                            work.setManagementServerId(_nodeId);
-                                            _workDao.update(work.getId(), work);
-                                        } else if (work.getType() == State.Migrating) {
-                                            _haMgr.scheduleMigration(vm);
-                                            work.setStep(Step.Done);
-                                            _workDao.update(work.getId(), work);
-                                        }
+            try {
+                if (scanLock.lock(3)) {
+                    try {
+                        List<VmWorkJobVO> works = _workDao.listWorkInProgressFor(nodeId);
+                        for (VmWorkJobVO work : works) {
+                            s_logger.info("Handling unfinished work item: " + work);
+                            try {
+                                VMInstanceVO vm = _vmDao.findById(work.getInstanceId());
+                                if (vm != null) {
+                                    if (work.getType() == State.Starting) {
+                                        _haMgr.scheduleRestart(vm, true);
+                                        work.setManagementServerId(_nodeId);
+                                        _workDao.update(work.getId(), work);
+                                    } else if (work.getType() == State.Stopping) {
+                                        _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.CheckStop);
+                                        work.setManagementServerId(_nodeId);
+                                        _workDao.update(work.getId(), work);
+                                    } else if (work.getType() == State.Migrating) {
+                                        _haMgr.scheduleMigration(vm);
+                                        work.setStep(Step.Done);
+                                        _workDao.update(work.getId(), work);
                                     }
-                                } catch (Exception e) {
-                                    s_logger.error("Error while handling " + work, e);
                                 }
+                            } catch (Exception e) {
+                                s_logger.error("Error while handling " + work, e);
                             }
-                        } finally {
-                            scanLock.unlock();
                         }
+                    } finally {
+                        scanLock.unlock();
                     }
-                } finally {
-                    scanLock.releaseRef();
                 }
+            } finally {
+                scanLock.releaseRef();
+            }
         */
     }
 
@@ -3475,7 +3475,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     		}
       		_alertMgr.sendAlert(AlertManager.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
         			VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState() + " -> Running) from out-of-context transition. VM network environment may need to be reset");
-          		break;
+          	break;
     		
     	case Destroyed :
     	case Expunging :
@@ -3501,28 +3501,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     
     private void handlePowerOffReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
 
-    	// TODO :
     	// 	1) handle left-over transitional VM states
     	//	2) handle out of sync stationary states, schedule force-stop to release resources
     	//
     	switch(vm.getState()) {
     	case Starting :
-    		break;
+    	case Stopping :
+    	case Stopped :
+    	case Migrating :
+    		try {
+    			stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, vm.getPowerHostId());
+    		} catch(NoTransitionException e) {
+    			s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
+    		}
+      		_alertMgr.sendAlert(AlertManager.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+        			VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState() + " -> Stopped) from out-of-context transition.");
+      		// TODO: we need to forcely release all resource allocation
+          	break;
     		
     	case Running :
-    		break;
-    		
-    	case Stopping :
-    		break;
-    		
-    	case Stopped :
-    		break;
-    		
     	case Destroyed :
     	case Expunging :
-    		break;
-    		
-    	case Migrating :
     		break;
     		
     	case Error :
@@ -3582,79 +3581,99 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     
     
     // VMs that in transitional state without recent power state report
-    @DB
     private List<Long> listStalledVMInTransitionStateOnUpHost(long hostId, Date cutTime) {
     	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
                      "AND h.id = ? AND i.power_state_update_time < ? AND i.host_id = h.id " +
     			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
-    			     "AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job)";
+    			     "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)";
     	
     	List<Long> l = new ArrayList<Long>();
-        Transaction txn = Transaction.currentTxn();;
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            
-            pstmt.setLong(1, hostId);
- 	        pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
-            ResultSet rs = pstmt.executeQuery();
-            while(rs.next()) {
-            	l.add(rs.getLong(1));
-            }
-        } catch (SQLException e) {
-        } catch (Throwable e) {
-        }
+    	Transaction txn = null;
+    	try {
+    		txn = Transaction.open(Transaction.CLOUD_DB);
+    	
+	        PreparedStatement pstmt = null;
+	        try {
+	            pstmt = txn.prepareAutoCloseStatement(sql);
+	            
+	            pstmt.setLong(1, hostId);
+	 	        pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
+	 	        pstmt.setInt(3, JobInfo.Status.IN_PROGRESS.ordinal());
+	            ResultSet rs = pstmt.executeQuery();
+	            while(rs.next()) {
+	            	l.add(rs.getLong(1));
+	            }
+	        } catch (SQLException e) {
+	        } catch (Throwable e) {
+	        }
+        
+    	} finally {
+    		if(txn != null)
+    			txn.close();
+    	}
         return l;
     }
     
     // VMs that in transitional state and recently have power state update
-    @DB
     private List<Long> listVMInTransitionStateWithRecentReportOnUpHost(long hostId, Date cutTime) {
     	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
                      "AND h.id = ? AND i.power_state_update_time > ? AND i.host_id = h.id " +
     			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
-    			     "AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job)";
+    			     "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)";
     	
     	List<Long> l = new ArrayList<Long>();
-        Transaction txn = Transaction.currentTxn();;
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            
-            pstmt.setLong(1, hostId);
- 	        pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
-            ResultSet rs = pstmt.executeQuery();
-            while(rs.next()) {
-            	l.add(rs.getLong(1));
-            }
-        } catch (SQLException e) {
-        } catch (Throwable e) {
-        }
-        return l;
+    	Transaction txn = null;
+    	try {
+    		txn = Transaction.open(Transaction.CLOUD_DB);
+	        PreparedStatement pstmt = null;
+	        try {
+	            pstmt = txn.prepareAutoCloseStatement(sql);
+	            
+	            pstmt.setLong(1, hostId);
+	 	        pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
+	 	        pstmt.setInt(3, JobInfo.Status.IN_PROGRESS.ordinal());
+	            ResultSet rs = pstmt.executeQuery();
+	            while(rs.next()) {
+	            	l.add(rs.getLong(1));
+	            }
+	        } catch (SQLException e) {
+	        } catch (Throwable e) {
+	        }
+	        return l;
+    	} finally {
+    		if(txn != null)
+    			txn.close();
+    	}
     }
     
-    @DB
     private List<Long> listStalledVMInTransitionStateOnDisconnectedHosts(Date cutTime) {
     	String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status != 'UP' " +
                  "AND i.power_state_update_time < ? AND i.host_id = h.id " +
 			     "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
-			     "AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job)";
+			     "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)";
 	
     	List<Long> l = new ArrayList<Long>();
-    	Transaction txn = Transaction.currentTxn();;
-    	PreparedStatement pstmt = null;
+    	Transaction txn = null;
     	try {
-	       pstmt = txn.prepareAutoCloseStatement(sql);
-	       
-	       pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
-	       ResultSet rs = pstmt.executeQuery();
-	       while(rs.next()) {
-	       	l.add(rs.getLong(1));
-	       }
-    	} catch (SQLException e) {
-    	} catch (Throwable e) {
+    		txn = Transaction.open(Transaction.CLOUD_DB);
+	    	PreparedStatement pstmt = null;
+	    	try {
+		       pstmt = txn.prepareAutoCloseStatement(sql);
+		       
+		       pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
+		       pstmt.setInt(2, JobInfo.Status.IN_PROGRESS.ordinal());
+		       ResultSet rs = pstmt.executeQuery();
+		       while(rs.next()) {
+		       	l.add(rs.getLong(1));
+		       }
+	    	} catch (SQLException e) {
+	    	} catch (Throwable e) {
+	    	}
+	    	return l;
+    	} finally {
+    		if(txn != null)
+    			txn.close();
     	}
-    	return l;
     }
 
     @Override
