@@ -289,7 +289,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack
      * .api.command.admin.user.ListUsersCmd)
@@ -499,7 +499,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
              * calMin.add(Calendar.SECOND, -entryTime);
              * calMax.add(Calendar.SECOND, -duration); Date minTime =
              * calMin.getTime(); Date maxTime = calMax.getTime();
-             * 
+             *
              * sc.setParameters("state", com.cloud.event.Event.State.Completed);
              * sc.setParameters("startId", 0); sc.setParameters("createDate",
              * minTime, maxTime); List<EventJoinVO> startedEvents =
@@ -770,14 +770,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
         }
 
-        if (tags != null && !tags.isEmpty()) {
-            for (int count = 0; count < tags.size(); count++) {
-                sb.or().op("key" + String.valueOf(count), sb.entity().getTagKey(), SearchCriteria.Op.EQ);
-                sb.and("value" + String.valueOf(count), sb.entity().getTagValue(), SearchCriteria.Op.EQ);
-                sb.cp();
-            }
-        }
-
         if (networkId != null) {
             sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
         }
@@ -802,12 +794,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 listProjectResourcesCriteria);
 
         if (tags != null && !tags.isEmpty()) {
-            int count = 0;
+            SearchCriteria<UserVmJoinVO> tagSc = _userVmJoinDao.createSearchCriteria();
             for (String key : tags.keySet()) {
-                sc.setParameters("key" + String.valueOf(count), key);
-                sc.setParameters("value" + String.valueOf(count), tags.get(key));
-                count++;
+                SearchCriteria<UserVmJoinVO> tsc = _userVmJoinDao.createSearchCriteria();
+                tsc.addAnd("tagKey", SearchCriteria.Op.EQ, key);
+                tsc.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
+                tagSc.addOr("tagKey", SearchCriteria.Op.SC, tsc);
             }
+            sc.addAnd("tagKey", SearchCriteria.Op.SC, tagSc);
         }
 
         if (groupId != null && (Long) groupId != -1) {
@@ -962,13 +956,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
 
-        if (tags != null && !tags.isEmpty()) {
-            for (int count = 0; count < tags.size(); count++) {
-                sb.or().op("key" + String.valueOf(count), sb.entity().getTagKey(), SearchCriteria.Op.EQ);
-                sb.and("value" + String.valueOf(count), sb.entity().getTagValue(), SearchCriteria.Op.EQ);
-                sb.cp();
-            }
-        }
 
         SearchCriteria<SecurityGroupJoinVO> sc = sb.create();
         _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
@@ -979,12 +966,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (tags != null && !tags.isEmpty()) {
-            int count = 0;
+            SearchCriteria<SecurityGroupJoinVO> tagSc = _securityGroupJoinDao.createSearchCriteria();
             for (String key : tags.keySet()) {
-                sc.setParameters("key" + String.valueOf(count), key);
-                sc.setParameters("value" + String.valueOf(count), tags.get(key));
-                count++;
+                SearchCriteria<SecurityGroupJoinVO> tsc = _securityGroupJoinDao.createSearchCriteria();
+                tsc.addAnd("tagKey", SearchCriteria.Op.EQ, key);
+                tsc.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
+                tagSc.addOr("tagKey", SearchCriteria.Op.SC, tsc);
             }
+            sc.addAnd("tagKey", SearchCriteria.Op.SC, tagSc);
         }
 
         if (securityGroup != null) {
@@ -1062,7 +1051,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
             String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role) {
-       
+
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -1259,13 +1248,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         }
 
-        if (tags != null && !tags.isEmpty()) {
-            for (int count = 0; count < tags.size(); count++) {
-                sb.or().op("key" + String.valueOf(count), sb.entity().getTagKey(), SearchCriteria.Op.EQ);
-                sb.and("value" + String.valueOf(count), sb.entity().getTagValue(), SearchCriteria.Op.EQ);
-                sb.cp();
-            }
-        }
+
 
         SearchCriteria<ProjectJoinVO> sc = sb.create();
 
@@ -1304,14 +1287,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("domainPath", path);
         }
 
-        if (tags != null && !tags.isEmpty()) {
-            int count = 0;
-            for (String key : tags.keySet()) {
-                sc.setParameters("key" + String.valueOf(count), key);
-                sc.setParameters("value" + String.valueOf(count), tags.get(key));
-                count++;
-            }
-        }
+
 
         // search distinct projects to get count
         Pair<List<ProjectJoinVO>, Integer> uniquePrjPair = _projectJoinDao.searchAndCount(sc, searchFilter);
@@ -1643,13 +1619,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
         sb.cp();
 
-        if (tags != null && !tags.isEmpty()) {
-            for (int count = 0; count < tags.size(); count++) {
-                sb.or().op("key" + String.valueOf(count), sb.entity().getTagKey(), SearchCriteria.Op.EQ);
-                sb.and("value" + String.valueOf(count), sb.entity().getTagValue(), SearchCriteria.Op.EQ);
-                sb.cp();
-            }
-        }
 
         // now set the SC criteria...
         SearchCriteria<VolumeJoinVO> sc = sb.create();
@@ -1671,12 +1640,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sc.setParameters("systemUse", 1);
 
         if (tags != null && !tags.isEmpty()) {
-            int count = 0;
+            SearchCriteria<VolumeJoinVO> tagSc = _volumeJoinDao.createSearchCriteria();
             for (String key : tags.keySet()) {
-                sc.setParameters("key" + String.valueOf(count), key);
-                sc.setParameters("value" + String.valueOf(count), tags.get(key));
-                count++;
+                SearchCriteria<VolumeJoinVO> tsc = _volumeJoinDao.createSearchCriteria();
+                tsc.addAnd("tagKey", SearchCriteria.Op.EQ, key);
+                tsc.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
+                tagSc.addOr("tagKey", SearchCriteria.Op.SC, tsc);
             }
+            sc.addAnd("tagKey", SearchCriteria.Op.SC, tagSc);
         }
 
         if (id != null) {
