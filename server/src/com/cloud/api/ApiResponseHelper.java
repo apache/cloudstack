@@ -1306,6 +1306,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(tagResponses);
 
         response.setObjectName("iso");
+        response.setDynamicallyScalable(result.isDynamicallyScalable());
         return response;
     }
 
@@ -1520,6 +1521,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setTags(tagResponses);
 
         templateResponse.setObjectName("template");
+        templateResponse.setDynamicallyScalable(template.isDynamicallyScalable());
         responses.add(templateResponse);
         return responses;
     }
@@ -1545,6 +1547,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setChecksum(iso.getChecksum());
             isoResponse.setPasswordEnabled(false);
             isoResponse.setDetails(iso.getDetails());
+            isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
 
             // add account ID and name
             Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
@@ -1721,6 +1724,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setChecksum(iso.getChecksum());
         isoResponse.setDetails(iso.getDetails());
+        isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
 
         // TODO: implement
         GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());

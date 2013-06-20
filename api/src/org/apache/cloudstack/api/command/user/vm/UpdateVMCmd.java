@@ -67,6 +67,9 @@ public class UpdateVMCmd extends BaseCmd{
     @Parameter(name=ApiConstants.DISPLAY_VM, type=CommandType.BOOLEAN, description="an optional field, whether to the display the vm to the end user or not.")
     private Boolean displayVm;
 
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if VM contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    protected Boolean isDynamicallyScalable;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +96,10 @@ public class UpdateVMCmd extends BaseCmd{
 
     public Boolean getDisplayVm() {
         return displayVm;
+    }
+
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable;
     }
 
     /////////////////////////////////////////////////////

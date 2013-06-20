@@ -168,6 +168,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
@@ -3230,14 +3231,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public VMInstanceVO reConfigureVm(VMInstanceVO vm , ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException, ConcurrentOperationException {
 
+        UserVmDetailVO vmDetailVO = _uservmDetailsDao.findDetail(vm.getId(), VirtualMachine.IsDynamicScalingEnabled);
+        Boolean isDynamicallyScalable;
+        if (vmDetailVO == null) {
+            isDynamicallyScalable = false;
+        } else {
+            isDynamicallyScalable = (vmDetailVO.getValue()).equals("true");
+        }
+
         long newServiceofferingId = vm.getServiceOfferingId();
         ServiceOffering newServiceOffering = _configMgr.getServiceOffering(newServiceofferingId);
-        HostVO hostVo = _hostDao.findById(vm.hostId);
+        HostVO hostVo = _hostDao.findById(vm.getHostId());
+
         Float memoryOvercommitRatio = Float.parseFloat(_configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), hostVo.getClusterId()));
         Float cpuOvercommitRatio = Float.parseFloat(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), hostVo.getClusterId()));
         long minMemory = (long) (newServiceOffering.getRamSize()/memoryOvercommitRatio);
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(),
-                (int) (newServiceOffering.getSpeed()/cpuOvercommitRatio), newServiceOffering.getSpeed(), minMemory * 1024 * 1024, newServiceOffering.getRamSize() * 1024 * 1024, newServiceOffering.getLimitCpuUse());
+                (int) (newServiceOffering.getSpeed()/cpuOvercommitRatio), newServiceOffering.getSpeed(), minMemory * 1024 * 1024, newServiceOffering.getRamSize() * 1024 * 1024, newServiceOffering.getLimitCpuUse(), isDynamicallyScalable);
 
         Long dstHostId = vm.getHostId();
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Running, vm.getType(), vm.getId());

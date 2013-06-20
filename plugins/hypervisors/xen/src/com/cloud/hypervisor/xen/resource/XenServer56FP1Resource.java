@@ -137,6 +137,7 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         vmr.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
         vmr.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
 
+        Map<String, String> details = vmSpec.getDetails();
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
             //scaling is allowed
             vmr.memoryStaticMin = mem_128m; //128MB

@@ -93,6 +93,9 @@ public class RegisterIsoCmd extends BaseCmd {
             description="Image store uuid")
     private String imageStoreUuid;
 
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if iso contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    protected Boolean isDynamicallyScalable;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -147,6 +150,10 @@ public class RegisterIsoCmd extends BaseCmd {
     
     public String getImageStoreUuid() {
         return this.imageStoreUuid;
+    }
+
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable ==  null ? false : isDynamicallyScalable;
     }
 
     /////////////////////////////////////////////////////

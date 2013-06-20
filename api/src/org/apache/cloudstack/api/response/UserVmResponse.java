@@ -189,6 +189,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.DISPLAY_VM) @Param(description="an optional field whether to the display the vm to the end user or not.")
     private Boolean displayVm;
 
+    @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE) @Param(description="true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
+    private Boolean isDynamicallyScalable;
+
     public UserVmResponse(){
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
@@ -430,6 +433,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void addAffinityGroup(AffinityGroupResponse affinityGroup) {
         this.affinityGroupList.add(affinityGroup);
+    }
+
+    public void setDynamicallyScalable(boolean isDynamicallyScalable) {
+        this.isDynamicallyScalable = isDynamicallyScalable;
     }
 
 }

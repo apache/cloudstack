@@ -1518,7 +1518,8 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         affinity_group.id affinity_group_id,
         affinity_group.uuid affinity_group_uuid,
         affinity_group.name affinity_group_name,
-        affinity_group.description affinity_group_description
+        affinity_group.description affinity_group_description,
+        vm_details.value dynamically_scalable
 
     from
         `cloud`.`user_vm`
@@ -1579,10 +1580,13 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'VirtualMachine'
             and async_job.job_status = 0
-	left join 
-	`cloud`.`affinity_group_vm_map` ON vm_instance.id = affinity_group_vm_map.instance_id
-	left join 
-	`cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id;
+            left join
+        `cloud`.`affinity_group_vm_map` ON vm_instance.id = affinity_group_vm_map.instance_id
+            left join
+        `cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id
+            left join
+        `cloud`.`user_vm_details` vm_details ON vm_details.vm_id = vm_instance.id
+            and vm_details.name = 'enable.dynamic.scaling';
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
@@ -1884,3 +1888,4 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'execute.in.sequence.hypervisor.commands', 'false', 'If set to true, StartCommand, StopCommand, CopyVolumeCommand, CreateCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is false.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'execute.in.sequence.network.element.commands', 'false', 'If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is false.');
 
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `dynamically_scalable` tinyint(1) unsigned NOT NULL DEFAULT 0  COMMENT 'true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory';

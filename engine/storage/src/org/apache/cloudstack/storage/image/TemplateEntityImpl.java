@@ -101,6 +101,12 @@ public class TemplateEntityImpl implements TemplateEntity {
         return null;
     }
 
+    @Override
+    public Boolean isDynamicallyScalable() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 
     @Override
     public void addDetail(String name, String value) {

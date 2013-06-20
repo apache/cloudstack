@@ -1709,6 +1709,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         Long id = cmd.getId();
         Long osTypeId = cmd.getOsTypeId();
         String userData = cmd.getUserData();
+        Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         Account caller = UserContext.current().getCaller();
 
         // Input validation
@@ -1793,6 +1794,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (group != null) {
             if (addInstanceToGroup(id, group)) {
                 description += "Added to group: " + group + ".";
+            }
+        }
+
+        if (isDynamicallyScalable != null) {
+            UserVmDetailVO vmDetailVO = _vmDetailsDao.findDetail(vm.getId(), VirtualMachine.IsDynamicScalingEnabled);
+            if (vmDetailVO == null) {
+                vmDetailVO = new UserVmDetailVO(vm.getId(), VirtualMachine.IsDynamicScalingEnabled, isDynamicallyScalable.toString());
+                _vmDetailsDao.persist(vmDetailVO);
+            } else {
+                vmDetailVO.setValue(isDynamicallyScalable.toString());
+                _vmDetailsDao.update(vmDetailVO.getId(), vmDetailVO);
             }
         }
 
@@ -2684,6 +2696,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 owner.getDomainId(), owner.getId(), offering.getId(), userData,
                 hostName, diskOfferingId);
         vm.setUuid(uuidName);
+        vm.setDetail(VirtualMachine.IsDynamicScalingEnabled, template.isDynamicallyScalable().toString());
 
         if (sshPublicKey != null) {
             vm.setDetail("SSH.PublicKey", sshPublicKey);
