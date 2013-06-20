@@ -2009,6 +2009,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAvailability(offering.getAvailability().toString());
         response.setIsPersistent(offering.getIsPersistent());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
+        response.setEgressDefaultPolicy(offering.getEgressDefaultPolicy());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();

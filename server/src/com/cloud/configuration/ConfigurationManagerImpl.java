@@ -3824,6 +3824,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean specifyIpRanges = cmd.getSpecifyIpRanges();
         boolean isPersistent = cmd.getIsPersistent();
         Map<String, String> detailsStr = cmd.getDetails();
+        Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -4011,6 +4012,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Set<Provider> firewallProviderSet = new HashSet<Provider>();
             firewallProviderSet.add(firewallProvider);
             serviceProviderMap.put(Service.Firewall, firewallProviderSet);
+            if (!(firewallProvider.getName().equals(Provider.JuniperSRX.getName()) || firewallProvider.getName().equals(Provider.VirtualRouter.getName())) && egressDefaultPolicy == false) {
+                throw new InvalidParameterValueException("Firewall egress with default policy " +  egressDefaultPolicy + "is not supported by the provider "+ firewallProvider.getName());
+            }
         }
 
         Map<NetworkOffering.Detail, String> details = new HashMap<NetworkOffering.Detail, String>();
@@ -4032,7 +4036,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate,
                 serviceProviderMap, false, guestType, false, serviceOfferingId, conserveMode, serviceCapabilityMap,
-                specifyIpRanges, isPersistent, details);
+                specifyIpRanges, isPersistent, details, egressDefaultPolicy);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
@@ -4167,7 +4171,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type,
             boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
             Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
-            Map<NetworkOffering.Detail, String> details) {
+            Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -4310,7 +4314,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan,
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
                 sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent,
-                associatePublicIp, publicLb, internalLb);
+                associatePublicIp, publicLb, internalLb, egressDefaultPolicy);
 
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);

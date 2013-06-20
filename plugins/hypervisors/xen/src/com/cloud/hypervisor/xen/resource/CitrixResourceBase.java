@@ -7994,6 +7994,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String callResult;
         Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
         FirewallRuleTO[] allrules = cmd.getRules();
         FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
         if (routerIp == null) {
@@ -8005,6 +8006,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         args += routerIp + " -F";
         if (trafficType == FirewallRule.TrafficType.Egress){
             args+= " -E";
+            if (egressDefault.equals("true")) {
+                args+= " -P 1";
+            } else if (egressDefault.equals("System")) {
+                args+= " -P 2";
+            } else {
+                args+= " -P 0";
+            }
         }
         StringBuilder sb = new StringBuilder();
         String[] fwRules = rules[0];
