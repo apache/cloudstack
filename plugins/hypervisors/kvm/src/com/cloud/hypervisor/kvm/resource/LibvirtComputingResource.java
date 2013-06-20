@@ -722,8 +722,8 @@ ServerResource {
             conn = LibvirtConnection.getConnection();
 
             if (_bridgeType == BridgeType.OPENVSWITCH) {
-                if (conn.getLibVirVersion() < (9 * 1000 + 11)) {
-                    throw new ConfigurationException("LibVirt version 0.9.11 required for openvswitch support, but version "
+                if (conn.getLibVirVersion() < (10 * 1000 + 0)) {
+                    throw new ConfigurationException("LibVirt version 0.10.0 required for openvswitch support, but version "
                             + conn.getLibVirVersion() + " detected");
                 }
             }
