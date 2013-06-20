@@ -1321,13 +1321,6 @@
                         }
                       },
 
-                      preFilter: function(args) { //Shared networks is only supported in Basic zone and Advanced zone with SG
-                          if(selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled != true)
-                              return false;
-                          else
-                              return true;
-                      },
-
                       createForm: {
                         title: 'label.add.guest.network',  //Add guest network in advanced zone
 
@@ -9627,18 +9620,14 @@
 
                 dataProvider: function(args) {								  
                 
-									$.ajax({
-										url: createURL("listPods&id=" + args.context.pods[0].id),
-										dataType: "json",
-                                                                                async: false,
-										success: function(json) {										  
-											var item = json.listpodsresponse.pod[0];
+                                                                        $.ajax({
+                                                                                url: createURL("listPods&id=" + args.context.pods[0].id),
+                                                                                success: function(json) {
+                                                                                     var  item = json.listpodsresponse.pod[0];
 
 
                                                                                        $.ajax({
                                                     url:createURL("listDedicatedPods&podid=" +args.context.pods[0].id),
-                                                    dataType:"json",
-                                                    async:false,
                                                     success:function(json){
                                                          if(json.listdedicatedpodsresponse.dedicatedpod != undefined){
                                                             var podItem = json.listdedicatedpodsresponse.dedicatedpod[0];
@@ -9647,17 +9636,22 @@
                                                         }
                                                     }
                                                       else
-                                                         $.extend(item ,{ isdedicated: 'No' })
+                                                         $.extend(item ,{ isdedicated: 'No' });
+
+                                                    args.response.success({
+                                                      actionFilter: podActionfilter,
+                                                      data: item
+                                                    });
                                                  },
                                                  error:function(json){
                                                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
 
                                                  }
                                            });
-                                             args.response.success({
-                                                actionFilter: podActionfilter,
-                                                data: item
-                                            });
+                                            //  args.response.success({
+                                            //     actionFilter: podActionfilter,
+                                            //     data: item
+                                            // });
 
                                          }
                                                                         });

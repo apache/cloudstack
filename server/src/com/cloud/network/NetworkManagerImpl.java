@@ -3298,7 +3298,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     public DhcpServiceProvider getDhcpServiceProvider(Network network) {
-        String DhcpProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+        String DhcpProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
 
         if (DhcpProvider == null) {
             s_logger.debug("Network " + network + " doesn't support service " + Service.Dhcp.getName());
