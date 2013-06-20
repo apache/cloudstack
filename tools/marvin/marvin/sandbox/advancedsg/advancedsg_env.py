@@ -97,6 +97,7 @@ def describeResources(config):
 
     secondary = secondaryStorage()
     secondary.url = config.get('cloudstack', 'secondary.pool')
+    secondary.provider = "NFS"
     z.secondaryStorages.append(secondary)
 
     '''Add zone'''

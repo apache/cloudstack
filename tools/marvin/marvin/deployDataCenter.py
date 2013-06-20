@@ -140,7 +140,7 @@ class deployDataCenters():
         for secondary in secondaryStorages:
             secondarycmd = addImageStore.addImageStoreCmd()
             secondarycmd.url = secondary.url
-            secondarycmd.provider = secondary.providerName
+            secondarycmd.provider = secondary.provider
             secondarycmd.details = []
             
             if isinstance(secondary.details, list): 
@@ -156,7 +156,7 @@ class deployDataCenters():
         for cache in cacheStorages:
             cachecmd = createCacheStore.createCacheStoreCmd()
             cachecmd.url = cache.url
-            cachecmd.provider = cache.providerName
+            cachecmd.provider = cache.provider
             cachecmd.zoneid = zoneId
             cachecmd.details = []
             for item in cache.details:
@@ -507,14 +507,11 @@ class deployDataCenters():
 
 
     def configureS3(self, s3):
-
         if s3 is None:
             return
 
         command = addS3.addS3Cmd()
-
         self.copyAttributesToCommand(s3, command)
-
         self.apiClient.addS3(command)
 
     def deploy(self):

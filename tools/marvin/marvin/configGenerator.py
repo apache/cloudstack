@@ -181,13 +181,13 @@ class primaryStorage():
 class secondaryStorage():
     def __init__(self):
         self.url = None
-        self.providerName = None
+        self.provider = None
         self.details = None
 
 class cacheStorage():
     def __init__(self):
         self.url = None
-        self.providerName = None
+        self.provider = None
         self.details = None
         
 class s3():
