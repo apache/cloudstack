@@ -165,30 +165,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
             return true;
         }
         
-        //1) Get all the Ips from the network having LB rules assigned
-        List<String> ips = _appLbDao.listLbIpsBySourceIpNetworkIdAndScheme(network.getId(), Scheme.Internal);
-        
-        //2) Start those vms
-        for (String ip : ips) {
-            Ip sourceIp = new Ip(ip);
-            List<? extends VirtualRouter> internalLbVms;
-            try {
-                internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
-            } catch (InsufficientCapacityException e) {
-                s_logger.warn("Failed to deploy element " + this.getName() + " for ip " + sourceIp + " due to:", e);
-                return false;
-            } catch (ConcurrentOperationException e) {
-                s_logger.warn("Failed to deploy element " + this.getName() + " for ip " + sourceIp + " due to:", e);
-                return false;
-            }
-            
-            if (internalLbVms == null || internalLbVms.isEmpty()) {
-                throw new ResourceUnavailableException("Can't deploy " + this.getName() + " to handle LB rules",
-                        DataCenter.class, network.getDataCenterId());
-            }
-        }
-       
-        return true;
+        return implementInternalLbVms(network, dest);
     }
 
     
@@ -202,12 +179,23 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         }
         
         if (vm.getType() == VirtualMachine.Type.User) {
-          //1) Get all the Ips from the network having LB rules assigned
-            List<String> ips = _appLbDao.listLbIpsBySourceIpNetworkIdAndScheme(network.getId(), Scheme.Internal);
-            
-            //2) Start those vms
-            for (String ip : ips) {
-                Ip sourceIp = new Ip(ip);
+            return implementInternalLbVms(network, dest);
+        }
+        return true;
+    }
+
+
+    protected boolean implementInternalLbVms(Network network, DeployDestination dest) throws ResourceUnavailableException {
+        //1) Get all the Ips from the network having LB rules assigned
+        List<String> ips = _appLbDao.listLbIpsBySourceIpNetworkIdAndScheme(network.getId(), Scheme.Internal);
+        
+        //2) Start internal lb vms for the ips having active rules
+        for (String ip : ips) {
+            Ip sourceIp = new Ip(ip);
+            long active = _appLbDao.countActiveBySourceIp(sourceIp, network.getId());
+            if (active > 0) {
+                s_logger.debug("Have to implement internal lb vm for source ip " + sourceIp + " as a part of network " + network
+                        + " implement as there are " + active + " internal lb rules exist for this ip");
                 List<? extends VirtualRouter> internalLbVms;
                 try {
                     internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
@@ -223,7 +211,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                     throw new ResourceUnavailableException("Can't deploy " + this.getName() + " to handle LB rules",
                             DataCenter.class, network.getDataCenterId());
                 }
-            }
+            }  
         }
         
         return true;
@@ -410,17 +398,21 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     protected Map<Ip, List<LoadBalancingRule>> groupBySourceIp(List<LoadBalancingRule> rules) {
         Map<Ip, List<LoadBalancingRule>> groupedRules = new HashMap<Ip, List<LoadBalancingRule>>();
         for (LoadBalancingRule rule : rules) {
-            Ip sourceIp = rule.getSourceIp();
-            if (!groupedRules.containsKey(sourceIp)) {
-                groupedRules.put(sourceIp, null);
+            if (rule.getDestinations() != null && !rule.getDestinations().isEmpty()) {
+                Ip sourceIp = rule.getSourceIp();
+                if (!groupedRules.containsKey(sourceIp)) {
+                    groupedRules.put(sourceIp, null);
+                }
+                
+                List<LoadBalancingRule> rulesToApply = groupedRules.get(sourceIp);
+                if (rulesToApply == null) {
+                    rulesToApply = new ArrayList<LoadBalancingRule>();
+                }
+                rulesToApply.add(rule);
+                groupedRules.put(sourceIp, rulesToApply);
+            } else {
+                s_logger.debug("Internal lb rule " + rule + " doesn't have any vms assigned, skipping");
             }
-            
-            List<LoadBalancingRule> rulesToApply = groupedRules.get(sourceIp);
-            if (rulesToApply == null) {
-                rulesToApply = new ArrayList<LoadBalancingRule>();
-            }
-            rulesToApply.add(rule);
-            groupedRules.put(sourceIp, rulesToApply);
         }
         return groupedRules;
     }
