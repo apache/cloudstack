@@ -400,7 +400,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public StoragePool findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, Long hostId, VMInstanceVO vm,
-            final Set<StoragePool> avoid) {
+                                       final Set<StoragePool> avoid) {
 
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
@@ -637,7 +637,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     @SuppressWarnings("rawtypes")
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException,
-    ResourceUnavailableException {
+            ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
         DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -1181,29 +1181,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     @DB
     public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException,
-    InsufficientCapacityException {
+            InsufficientCapacityException {
         Long userId = UserContext.current().getCallerUserId();
         User user = _userDao.findById(userId);
         Account account = UserContext.current().getCaller();
 
         boolean restart = true;
         StoragePoolVO primaryStorage = null;
-
         primaryStorage = _storagePoolDao.findById(primaryStorageId);
 
         if (primaryStorage == null) {
             String msg = "Unable to obtain lock on the storage pool record in preparePrimaryStorageForMaintenance()";
             s_logger.error(msg);
             throw new InvalidParameterValueException(msg);
-        }
-
-        List<StoragePoolVO> spes = _storagePoolDao.listBy(primaryStorage.getDataCenterId(), primaryStorage.getPodId(), primaryStorage.getClusterId(),
-                ScopeType.CLUSTER);
-        for (StoragePoolVO sp : spes) {
-            if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
-                throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId()
-                        + " is already in  PrepareForMaintenance mode ");
-            }
         }
 
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up) && !primaryStorage.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)) {
@@ -1285,8 +1275,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         // check if pool is in an inconsistent state
                         if (pool != null
                                 && (pool.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)
-                                        || pool.getStatus().equals(StoragePoolStatus.PrepareForMaintenance) || pool.getStatus().equals(
-                                                StoragePoolStatus.CancelMaintenance))) {
+                                || pool.getStatus().equals(StoragePoolStatus.PrepareForMaintenance) || pool.getStatus().equals(
+                                StoragePoolStatus.CancelMaintenance))) {
                             _storagePoolWorkDao.removePendingJobsOnMsRestart(vo.getMsid(), poolId);
                             pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
                             _storagePoolDao.update(poolId, pool);
@@ -1496,7 +1486,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean storagePoolHasEnoughIops(List<Volume> requestedVolumes,
-            StoragePool pool) {
+                                            StoragePool pool) {
         if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
             return false;
         }
@@ -1530,7 +1520,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean storagePoolHasEnoughSpace(List<Volume> volumes,
-            StoragePool pool) {
+                                             StoragePool pool) {
         if (volumes == null || volumes.isEmpty()){
             return false;
         }
