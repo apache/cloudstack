@@ -43,6 +43,7 @@ public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<Applicati
     final GenericSearchBuilder<ApplicationLoadBalancerRuleVO, Long> CountBy;
     protected final SearchBuilder<ApplicationLoadBalancerRuleVO> NotRevokedSearch;
     final GenericSearchBuilder<ApplicationLoadBalancerRuleVO, Long> CountNotRevoked;
+    final GenericSearchBuilder<ApplicationLoadBalancerRuleVO, Long> CountActive;
     
     
     protected ApplicationLoadBalancerRuleDaoImpl() {
@@ -77,6 +78,13 @@ public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<Applicati
         CountNotRevoked.and("state", CountNotRevoked.entity().getState(), Op.NEQ);
         CountNotRevoked.and("sourceIpNetworkId", CountNotRevoked.entity().getSourceIpNetworkId(), Op.EQ);
         CountNotRevoked.done();
+        
+        CountActive = createSearchBuilder(Long.class);
+        CountActive.select(null, Func.COUNT, CountActive.entity().getId());
+        CountActive.and("sourceIp", CountActive.entity().getSourceIp(), Op.EQ);
+        CountActive.and("state", CountActive.entity().getState(), Op.EQ);
+        CountActive.and("sourceIpNetworkId", CountActive.entity().getSourceIpNetworkId(), Op.EQ);
+        CountActive.done();
     }
 
     @Override
@@ -126,6 +134,16 @@ public class ApplicationLoadBalancerRuleDaoImpl extends GenericDaoBase<Applicati
         sc.setParameters("sourceIp", sourceIp);
         sc.setParameters("sourceIpNetworkId", sourceIpNetworkId);
         sc.setParameters("state", State.Revoke);
+        List<Long> results = customSearch(sc, null);
+        return results.get(0);
+    }
+    
+    @Override
+    public long countActiveBySourceIp(Ip sourceIp, long sourceIpNetworkId) {
+        SearchCriteria<Long> sc = CountActive.create();
+        sc.setParameters("sourceIp", sourceIp);
+        sc.setParameters("sourceIpNetworkId", sourceIpNetworkId);
+        sc.setParameters("state", State.Active);
         List<Long> results = customSearch(sc, null);
         return results.get(0);
     }
