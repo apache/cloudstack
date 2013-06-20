@@ -3616,7 +3616,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         //revoke all network ACLs for network
         try {
-            if (_networkACLMgr.revokeACLItemsForNetwork(networkId, callerUserId, caller)) {
+            if (_networkACLMgr.revokeACLItemsForNetwork(networkId)) {
                 s_logger.debug("Successfully cleaned up NetworkACLs for network id=" + networkId);
             } else {
                 success = false;
@@ -3785,7 +3785,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
             try {
                 //revoke all Network ACLs for the network w/o applying them in the DB
-                if (!_networkACLMgr.revokeACLItemsForNetwork(networkId, callerUserId, caller)) {
+                if (!_networkACLMgr.revokeACLItemsForNetwork(networkId)) {
                     s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules");
                     success = false;
                 }
