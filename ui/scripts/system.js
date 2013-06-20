@@ -9164,16 +9164,12 @@
                 
                                                                         $.ajax({
                                                                                 url: createURL("listPods&id=" + args.context.pods[0].id),
-                                                                                dataType: "json",
-                                                                                async: false,
                                                                                 success: function(json) {
                                                                                      var  item = json.listpodsresponse.pod[0];
 
 
                                                                                        $.ajax({
                                                     url:createURL("listDedicatedPods&podid=" +args.context.pods[0].id),
-                                                    dataType:"json",
-                                                    async:false,
                                                     success:function(json){
                                                          if(json.listdedicatedpodsresponse.dedicatedpod != undefined){
                                                             var podItem = json.listdedicatedpodsresponse.dedicatedpod[0];
@@ -9182,17 +9178,22 @@
                                                         }
                                                     }
                                                       else
-                                                         $.extend(item ,{ isdedicated: 'No' })
+                                                         $.extend(item ,{ isdedicated: 'No' });
+
+                                                    args.response.success({
+                                                      actionFilter: podActionfilter,
+                                                      data: item
+                                                    });
                                                  },
                                                  error:function(json){
                                                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
 
                                                  }
                                            });
-                                             args.response.success({
-                                                actionFilter: podActionfilter,
-                                                data: item
-                                            });
+                                            //  args.response.success({
+                                            //     actionFilter: podActionfilter,
+                                            //     data: item
+                                            // });
 
                                          }
                                                                         });
