@@ -20,7 +20,9 @@
       var target = args.sections.physicalResources.listView[targetID];
       var listViewArgs = $.isFunction(target) ? target() : target;
 
-      return $('<div>').listView(listViewArgs.listView ? listViewArgs : { listView: listViewArgs });
+      return $('<div>').listView(
+        (listViewArgs.listView || listViewArgs.sections) ? listViewArgs : { listView: listViewArgs }
+      );
     };
     var $dashboard = $('#template').find('.system-dashboard-view').clone();
     var getData = function() {
