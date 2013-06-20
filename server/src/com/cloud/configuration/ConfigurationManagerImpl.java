@@ -3015,6 +3015,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     txn.start();
                     if (!removeFromDb(vlanDbId)) {
                         txn.rollback();
+                        txn.close();
                         return false;
                     }
                     else {
