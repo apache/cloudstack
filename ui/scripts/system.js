@@ -10275,44 +10275,42 @@
                     var item = json.addclusterresponse.cluster[0];
                     clusterId= json.addclusterresponse.cluster[0].id;
                   
-                  //EXPLICIT DEDICATION
-                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
-                      var array2 = [];
+                    //EXPLICIT DEDICATION
+                    var array2 = [];
+                    if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       if(args.data.accountId != "")
                         array2.push("&account=" +todb(args.data.accountId));
                     }
 
                     if(clusterId != null){
                       $.ajax({
-                         url:createURL("dedicateCluster&clusterId=" +clusterId +"&domainId=" +args.data.domainId + array2.join("")),
-                         dataType:"json",
-                         success:function(json){
-                             var jid = json.dedicateclusterresponse.jobid;
-                    args.response.success({
-                                 _custom:
-                                   {      jobId: jid
-                                    },
-                                  notification: {
-                                    poll: pollAsyncJobResult
-                                    },
+                        url:createURL("dedicateCluster&clusterId=" +clusterId +"&domainId=" +args.data.domainId + array2.join("")),
+                        dataType:"json",
+                        success:function(json){
+                          var jid = json.dedicateclusterresponse.jobid;
+                          args.response.success({
+                            _custom:
+                            {      jobId: jid
+                            },
+                            notification: {
+                              poll: pollAsyncJobResult
+                            },
 
-                                  data:$.extend(item, {state:'Enabled'})
-										});
+                            data:$.extend(item, {state:'Enabled'})
+										      });
 
-                         },
+                        },
 
-                         error:function(json){
-                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                         }
-                       });
-                   }
+                        error:function(json){
+                          args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                        }
+                      });
+                    }
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                     args.response.error(errorMsg);
                   }
-
-
                 });
               },
 
@@ -11374,42 +11372,43 @@
 									data: data,
                   success: function(json) {
                     var item = json.addhostresponse.host[0];
+                    
                     hostId = json.addhostresponse.host[0].id;
 
+                    //EXPLICIT DEDICATION
+                    var array2 = [];
 
-                       //EXPLICIT DEDICATION
-                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
-                      var array2 = [];
+                    if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       if(args.data.accountId != "")
                         array2.push("&account=" +todb(args.data.accountId));
                     }
 
                     if(hostId != null){
                       $.ajax({
-                         url:createURL("dedicateHost&hostId=" +hostId +"&domainId=" +args.data.domainId + array2.join("")),
-                         dataType:"json",
-                         success:function(json){
-                             var jid = json.dedicatehostresponse.host.jobid;
-                    args.response.success({
-                                 _custom:
-                           {      jobId: jid
-                             },
+                        url:createURL("dedicateHost&hostId=" +hostId +"&domainId=" +args.data.domainId + array2.join("")),
+                        dataType:"json",
+                        success:function(json){
+                          var jid = json.dedicatehostresponse.jobid;
+                          args.response.success({
+                            _custom:
+                            {      jobId: jid
+                            },
                             notification: {
-                                 poll: pollAsyncJobResult
-                              },
+                              poll: pollAsyncJobResult
+                            },
 
-                             data:item
+                            data:item
 
-                    });
+                          });
 
+                        },
+
+                        error:function(json){
+                          args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                        }
+                      });
+                    }
                   },
-
-                         error:function(json){
-                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                         }
-                       });
-                   }
-                 },
 
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
