@@ -915,7 +915,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object hypervisorType = cmd.getHypervisorType();
         Object clusterType = cmd.getClusterType();
         Object allocationState = cmd.getAllocationState();
-        String zoneType = cmd.getZoneType();
         String keyword = cmd.getKeyword();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
@@ -930,13 +929,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
 
         SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
@@ -965,10 +957,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (allocationState != null) {
             sc.setParameters("allocationState", allocationState);
-        }
-
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
 
         if (keyword != null) {
@@ -1386,7 +1374,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Long zoneId = cmd.getZoneId();
         Object keyword = cmd.getKeyword();
         Object allocationState = cmd.getAllocationState();
-        String zoneType = cmd.getZoneType();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
 
@@ -1396,12 +1383,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
-
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
 
         SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
@@ -1426,10 +1407,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (allocationState != null) {
             sc.setParameters("allocationState", allocationState);
-        }
-
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
 
         Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
@@ -2962,7 +2939,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends VirtualMachine>, Integer> searchForSystemVm(ListSystemVMsCmd cmd) {
         String type = cmd.getSystemVmType();
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
-        String zoneType = cmd.getZoneType();
         Long id = cmd.getId();
         String name = cmd.getSystemVmName();
         String state = cmd.getState();
@@ -2987,12 +2963,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
             volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
             sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
-        }
-
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<VMInstanceVO> sc = sb.create();
@@ -3033,10 +3003,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (storageId != null) {
             sc.setJoinParameters("volumeSearch", "poolId", storageId);
-        }
-
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
 
         Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
@@ -3404,6 +3370,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     	_configDao.expunge(sc);
     	_encryptionKey = null;
     	_encryptionIV = null;
+    }
+
+    @Override
+    public boolean getExecuteInSequence() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     private static String getBase64EncodedRandomKey(int nBits) {

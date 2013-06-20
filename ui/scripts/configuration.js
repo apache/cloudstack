@@ -109,6 +109,34 @@
                       number: true
                     }
                   },
+                  diskBytesReadRate: {
+                      label: 'label.disk.bytes.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskBytesWriteRate: {
+                      label: 'label.disk.bytes.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsReadRate: {
+                      label: 'label.disk.iops.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsWriteRate: {
+                      label: 'label.disk.iops.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
                   offerHA: {
                     label: 'label.offer.ha',
                     docID: 'helpComputeOfferingHA',
@@ -227,7 +255,26 @@
 									  networkrate: args.data.networkRate
 									});
 								}
-
+                if(args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          bytesreadrate: args.data.diskBytesReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          byteswriterate: args.data.diskBytesWriteRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopsreadrate: args.data.diskIopsReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopswriterate: args.data.diskIopsWriteRate
+                                                                        });
+                                                                }
                 $.extend(data, {
                   offerha: (args.data.offerHA == "on")
                 });								
@@ -396,6 +443,10 @@
                       }
                     },
                     networkrate: { label: 'label.network.rate' },
+                    diskBytesReadRate: { label: 'label.disk.bytes.read.rate' },
+                    diskBytesWriteRate: { label: 'label.disk.bytes.write.rate' },
+                    diskIopsReadRate: { label: 'label.disk.iops.read.rate' },
+                    diskIopsWriteRate: { label: 'label.disk.iops.write.rate' },
                     offerha: {
                       label: 'label.offer.ha',
                       converter: cloudStack.converters.toBooleanText
@@ -534,6 +585,34 @@
                       number: true
                     }
                   },
+                  diskBytesReadRate: {
+                      label: 'label.disk.bytes.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskBytesWriteRate: {
+                      label: 'label.disk.bytes.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsReadRate: {
+                      label: 'label.disk.iops.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsWriteRate: {
+                      label: 'label.disk.iops.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
                   offerHA: {
                     label: 'label.offer.ha',
                     docID: 'helpSystemOfferingHA',
@@ -602,6 +681,26 @@
 									  networkrate: args.data.networkRate
 									});								
 								}
+                if(args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          bytesreadrate: args.data.diskBytesReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          byteswriterate: args.data.diskBytesWriteRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopsreadrate: args.data.diskIopsReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopswriterate: args.data.diskIopsWriteRate
+                                                                        });
+                                                                }
 
 								$.extend(data, {
 								  offerha: (args.data.offerHA == "on")
@@ -781,6 +880,10 @@
                       }
                     },
                     networkrate: { label: 'label.network.rate' },
+                    diskBytesReadRate: { label: 'label.disk.bytes.write.rate' },
+                    diskBytesWriteRate: { label: 'label.disk.bytes.write.rate' },
+                    diskIopsReadRate: { label: 'label.disk.iops.write.rate' },
+                    diskIopsWriteRate: { label: 'label.disk.iops.write.rate' },
                     offerha: {
                       label: 'label.offer.ha',
                       converter: cloudStack.converters.toBooleanText
@@ -911,6 +1014,34 @@
                     dependsOn: 'isCustomized',
                     validation: { required: true, number: true }
                   },
+                  diskBytesReadRate: {
+                      label: 'label.disk.bytes.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskBytesWriteRate: {
+                      label: 'label.disk.bytes.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsReadRate: {
+                      label: 'label.disk.iops.read.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
+                  diskIopsWriteRate: {
+                      label: 'label.disk.iops.write.rate',
+                      validation: {
+                        required: false, //optional
+                        number: true
+                      }
+                  },
                   tags: {
                     label: 'label.storage.tags',
                     docID: 'helpDiskOfferingStorageTags'
@@ -972,6 +1103,26 @@
 									  domainid: args.data.domainId
 									});		
 								}
+                if(args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          bytesreadrate: args.data.diskBytesReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskBytesWriteRate != null && args.data.diskBytesWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          byteswriterate: args.data.diskBytesWriteRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsReadRate != null && args.data.diskIopsReadRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopsreadrate: args.data.diskIopsReadRate
+                                                                        });
+                                                                }
+                if(args.data.diskIopsWriteRate != null && args.data.diskIopsWriteRate.length > 0) {
+                                                                  $.extend(data, {
+                                                                          iopswriterate: args.data.diskIopsWriteRate
+                                                                        });
+                                                                }
 
                 $.ajax({
                   url: createURL('createDiskOffering'),
@@ -1084,6 +1235,10 @@
                           return "N/A";
                       }
                     },
+                    diskBytesReadRate: { label: 'label.disk.bytes.write.rate' },
+                    diskBytesWriteRate: { label: 'label.disk.bytes.write.rate' },
+                    diskIopsReadRate: { label: 'label.disk.iops.write.rate' },
+                    diskIopsWriteRate: { label: 'label.disk.iops.write.rate' },
                     tags: { label: 'label.storage.tags' },
                     domain: { label: 'label.domain' },
                     storagetype: { label: 'label.storage.type' }

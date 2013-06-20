@@ -84,8 +84,6 @@ class Services:
                     "StaticNat": 'VpcVirtualRouter',
                     "NetworkACL": 'VpcVirtualRouter'
                 },
-                "servicecapabilitylist": {
-                },
             },
             "network_offering_no_lb": {
                 "name": 'VPC Network offering',
@@ -175,7 +173,6 @@ class Services:
             "ostype": 'CentOS 5.3 (64-bit)',
             "sleep": 60,
             "timeout": 10,
-            "mode": 'advanced'
         }
 
 
@@ -406,7 +403,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                 self.services["vpc_offering"]
                                                 )
 
-        self._cleanup.append(self.vpc_off)
+        self._cleanup.append(vpc_off)
         self.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
 

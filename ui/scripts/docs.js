@@ -231,7 +231,7 @@ cloudStack.docs = {
   externalLink: ''
   },
   helpComputeOfferingNetworkRate: {
-  desc: 'Allowed data transfer rate in MB per second',
+  desc: 'Allowed data transfer rate in megabits(Mb) per second',
   externalLink: ''
   },
   helpComputeOfferingHA: {
@@ -482,7 +482,7 @@ cloudStack.docs = {
   externalLink: ''
   },
   helpNetworkOfferingNetworkRate: {
-  desc: 'Allowed data transfer rate in MB per second',
+  desc: 'Allowed data transfer rate in megabits(Mb) per second',
   externalLink: ''
   },
   helpNetworkOfferingTrafficType: {
@@ -699,7 +699,7 @@ cloudStack.docs = {
   externalLink: ''
   },
   helpSystemOfferingNetworkRate: {
-  desc: 'Allowed data transfer rate in MB per second',
+  desc: 'Allowed data transfer rate in megabits(Mb) per second',
   externalLink: ''
   },
   helpSystemOfferingHA: {

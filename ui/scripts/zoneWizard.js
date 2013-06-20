@@ -3556,7 +3556,13 @@
                   }
                 });
               }
-            }
+            },
+           
+            error: function(XMLHttpResponse) {
+                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                    error('addCluster', errorMsg, { fn: 'addCluster', args: args });
+             }
+                     
           });
          }
          else{

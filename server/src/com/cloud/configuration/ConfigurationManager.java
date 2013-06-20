@@ -81,10 +81,15 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param useVirtualNetwork
      * @param deploymentPlanner
      * @param details
+     * @param bytesReadRate
+     * @param bytesWriteRate
+     * @param iopsReadRate
+     * @param iopsWriteRate
      * @return ID
      */
     ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details);
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details,
+            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
 
     /**
      * Creates a new disk offering
@@ -97,9 +102,14 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param isCustomized
      * @param localStorageRequired
      * @param isDisplayOfferingEnabled
+     * @param bytesReadRate
+     * @param bytesWriteRate
+     * @param iopsReadRate
+     * @param iopsWriteRate
      * @return newly created disk offering
      */
-    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled);
+    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled,
+            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
 
     /**
      * Creates a new pod

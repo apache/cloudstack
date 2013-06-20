@@ -2148,19 +2148,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(),
                 cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
                 localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(),
-                cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails());
+                cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(),
+                cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type,
             String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag,
-            Integer networkRate, String deploymentPlanner, Map<String, String> details) {
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag,
+            Integer networkRate, String deploymentPlanner, Map<String, String> details, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         tags = cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag, deploymentPlanner);
+
+        if ((bytesReadRate != null) && (bytesReadRate > 0))
+            offering.setBytesReadRate(bytesReadRate);
+        if ((bytesWriteRate != null) && (bytesWriteRate > 0))
+            offering.setBytesWriteRate(bytesWriteRate);
+        if ((iopsReadRate != null) && (iopsReadRate > 0))
+            offering.setIopsReadRate(iopsReadRate);
+        if ((iopsWriteRate != null) && (iopsWriteRate > 0))
+            offering.setIopsWriteRate(iopsWriteRate);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             if (details != null) {
@@ -2247,8 +2257,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_CREATE, eventDescription = "creating disk offering")
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes,
-            String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled) {
+    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled,
+            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && (numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2268,6 +2278,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized);
         newDiskOffering.setUseLocalStorage(localStorageRequired);
         newDiskOffering.setDisplayOffering(isDisplayOfferingEnabled);
+
+        if (bytesReadRate != null && (bytesReadRate > 0))
+            newDiskOffering.setBytesReadRate(bytesReadRate);
+        if (bytesWriteRate != null && (bytesWriteRate > 0))
+            newDiskOffering.setBytesWriteRate(bytesWriteRate);
+        if (iopsReadRate != null && (iopsReadRate > 0))
+            newDiskOffering.setIopsReadRate(iopsReadRate);
+        if (iopsWriteRate != null && (iopsWriteRate > 0))
+            newDiskOffering.setIopsWriteRate(iopsWriteRate);
+
         UserContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
         if (offering != null) {
@@ -2309,8 +2329,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized, localStorageRequired,
-                isDisplayOfferingEnabled);
+        Long bytesReadRate = cmd.getBytesReadRate();
+        Long bytesWriteRate = cmd.getBytesWriteRate();
+        Long iopsReadRate = cmd.getIopsReadRate();
+        Long iopsWriteRate = cmd.getIopsWriteRate();
+        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized, localStorageRequired, isDisplayOfferingEnabled, bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate);
     }
 
     @Override
@@ -4244,9 +4267,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 Capability.LbSchemes, publicLbStr);
                         internalLb = publicLbStr.contains("internal");
                         publicLb = publicLbStr.contains("public");
-                    } else {
-                        // if not specified, default public lb to true
-                        publicLb = true;
                     }
                 }
             }
@@ -4286,6 +4306,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
             }
+        }
+        
+        if (serviceProviderMap != null && serviceProviderMap.containsKey(Service.Lb) && !internalLb && !publicLb) {
+            //if not specified, default public lb to true
+            publicLb = true;
         }
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan,

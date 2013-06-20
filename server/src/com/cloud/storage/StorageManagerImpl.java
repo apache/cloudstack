@@ -134,6 +134,8 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
@@ -144,6 +146,9 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.listener.VolumeStateListener;
 import com.cloud.template.TemplateManager;
@@ -669,6 +674,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         HypervisorType hypervisorType = HypervisorType.KVM;
         if (scopeType == ScopeType.ZONE) {
+            // ignore passed clusterId and podId
+            clusterId = null;
+            podId = null;
             String hypervisor = cmd.getHypervisor();
             if (hypervisor != null) {
                 try {
@@ -1864,4 +1872,67 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.ImageCache);
     }
 
+    // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate
+    @Override
+    public Long getDiskBytesReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
+        if ((offering != null) && (offering.getBytesReadRate() != null) && (offering.getBytesReadRate() > 0)) {
+            return offering.getBytesReadRate();
+        } else if ((diskOffering != null) && (diskOffering.getBytesReadRate() != null) && (diskOffering.getBytesReadRate() > 0)) {
+            return diskOffering.getBytesReadRate();
+        } else {
+            Long bytesReadRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesReadRate.key()));
+            if ((bytesReadRate > 0) && ((offering == null) || (! offering.getSystemUse()))) {
+                return bytesReadRate;
+            }
+        }
+        return 0L;
+    }
+
+    // get bytesWriteRate from service_offering, disk_offering and vm.disk.throttling.bytes_write_rate
+    @Override
+    public Long getDiskBytesWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
+        if ((offering != null) && (offering.getBytesWriteRate() != null) && (offering.getBytesWriteRate() > 0)) {
+            return offering.getBytesWriteRate();
+        } else if ((diskOffering != null) && (diskOffering.getBytesWriteRate() != null) && (diskOffering.getBytesWriteRate() > 0)) {
+            return diskOffering.getBytesWriteRate();
+        } else {
+            Long bytesWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesWriteRate.key()));
+            if ((bytesWriteRate > 0) && ((offering == null) || (! offering.getSystemUse())))  {
+                return bytesWriteRate;
+            }
+        }
+        return 0L;
+    }
+
+    // get iopsReadRate from service_offering, disk_offering and vm.disk.throttling.iops_read_rate
+    @Override
+    public Long getDiskIopsReadRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
+        if ((offering != null) && (offering.getIopsReadRate() != null) && (offering.getIopsReadRate() > 0)) {
+            return offering.getIopsReadRate();
+        } else if ((diskOffering != null) && (diskOffering.getIopsReadRate() != null) && (diskOffering.getIopsReadRate() > 0)) {
+            return diskOffering.getIopsReadRate();
+        } else {
+            Long iopsReadRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsReadRate.key()));
+            if ((iopsReadRate > 0) && ((offering == null) || (! offering.getSystemUse())))  {
+                return iopsReadRate;
+            }
+        }
+        return 0L;
+    }
+
+    // get iopsWriteRate from service_offering, disk_offering and vm.disk.throttling.iops_write_rate
+    @Override
+    public Long getDiskIopsWriteRate(ServiceOfferingVO offering, DiskOfferingVO diskOffering) {
+        if ((offering != null) && (offering.getIopsWriteRate() != null) && (offering.getIopsWriteRate() > 0)) {
+            return offering.getIopsWriteRate();
+        } else if ((diskOffering != null) && (diskOffering.getIopsWriteRate() != null) && (diskOffering.getIopsWriteRate() > 0)) {
+            return diskOffering.getIopsWriteRate();
+        } else {
+            Long iopsWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsWriteRate.key()));
+            if ((iopsWriteRate > 0) && ((offering == null) || (! offering.getSystemUse())))  {
+                return iopsWriteRate;
+            }
+        }
+        return 0L;
+    }
 }

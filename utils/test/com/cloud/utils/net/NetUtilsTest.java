@@ -168,4 +168,9 @@ public class NetUtilsTest extends TestCase {
     	newMac = NetUtils.generateMacOnIncrease(mac, 16);
     	assertTrue(newMac.equals("06:00:0f:00:45:67"));
     }
+
+    @Test
+    public void testGetLocalIPString() {
+        assertNotNull(NetUtils.getLocalIPString());
+    }
 }

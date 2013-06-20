@@ -351,7 +351,7 @@ public class VolumeVO implements Volume {
     }
 
     @Override
-    public long getDiskOfferingId() {
+    public Long getDiskOfferingId() {
         return diskOfferingId;
     }
 

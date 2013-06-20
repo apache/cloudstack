@@ -140,6 +140,17 @@ table tbody td.loading {
   border-top: 1px solid #FBFBFB;
 }
 
+table tbody td.truncated {
+  overflow: visible;
+  max-width: 88px;
+}
+
+table tbody td.truncated > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /** Actions table cell*/
 table tbody td.actions {
   width: 130px;
@@ -441,7 +452,7 @@ body.login {
 div.list-view table tbody td span {
   display: block;
   float: left;
-  max-width: 100%;
+  max-width: 89%;
   word-wrap: break-word;
   text-indent: 0;
   margin-left: 12px;
@@ -3455,6 +3466,12 @@ div.view table td.editable div.edit {
   position: relative;
   left: 6px;
   top: 0px;
+}
+
+div.view table td.truncated.editable div.edit {
+  top: 1px;
+  width: 285px;
+  left: 1px;
 }
 
 div.view table td.editable div.edit input {
@@ -9087,29 +9104,63 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 /*** View switcher (drop-down)*/
 .project-switcher {
   float: left;
-  width: 141px;
+  width: 223px;
   padding: 9px 17px 0 0;
-}
-
-.project-switcher label {
-  position: absolute;
-  top: -2px;
-  color: #FFFFFF;
-  font-size: 11px;
-}
-
-.project-switcher select {
-  width: 100%;
-  font-size: 12px;
-  border: 1px solid #000000;
-  border-bottom: #FFFFFF;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px;
-  background: #ECECEC;
-  margin-top: 2px;
+}
+
+.project-switcher label {
+  position: absolute;
+  top: 15px;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.project-switcher select {
+  width: 79%;
+  font-weight: bold;
+  font-size: 12px;
+  /*+text-shadow:0px -1px 1px #000000;*/
+  -moz-text-shadow: 0px -1px 1px #000000;
+  -webkit-text-shadow: 0px -1px 1px #000000;
+  -o-text-shadow: 0px -1px 1px #000000;
+  text-shadow: 0px -1px 1px #000000;
+  border: 1px solid #9A9A9A;
+  border-bottom: #FFFFFF;
+  /*+box-shadow:inset 0px -1px #A2A2A2;*/
+  -moz-box-shadow: inset 0px -1px #A2A2A2;
+  -webkit-box-shadow: inset 0px -1px #A2A2A2;
+  -o-box-shadow: inset 0px -1px #A2A2A2;
+  box-shadow: inset 0px -1px #A2A2A2;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  color: #FFFFFF;
+  margin-top: -2px;
+  margin-left: 53px;
+  background: url(../images/bg-gradients.png) 0px -867px;
+  padding: 5px;
+}
+
+.project-switcher select:hover {
+  /*+box-shadow:inset 0px 2px 6px #3B3B3B;*/
+  -moz-box-shadow: inset 0px 2px 6px #3B3B3B;
+  -webkit-box-shadow: inset 0px 2px 6px #3B3B3B;
+  -o-box-shadow: inset 0px 2px 6px #3B3B3B;
+  box-shadow: inset 0px 2px 6px #3B3B3B;
+  cursor: pointer;
+  border-bottom: 1px solid #828282;
+}
+
+.project-switcher select option {
+  background: #7F8487;
 }
 
 /*** Select project*/

@@ -37,6 +37,10 @@ public class VolumeObjectTO implements DataTO {
     private String chainInfo;
     private Storage.ImageFormat format;
     private long id;
+    private Long bytesReadRate;
+    private Long bytesWriteRate;
+    private Long iopsReadRate;
+    private Long iopsWriteRate;
 
     public VolumeObjectTO() {
 
@@ -59,6 +63,10 @@ public class VolumeObjectTO implements DataTO {
         this.name = volume.getName();
         this.setId(volume.getId());
         this.format = volume.getFormat();
+        this.bytesReadRate = volume.getBytesReadRate();
+        this.bytesWriteRate = volume.getBytesWriteRate();
+        this.iopsReadRate = volume.getIopsReadRate();
+        this.iopsWriteRate = volume.getIopsWriteRate();
     }
 
     public String getUuid() {
@@ -170,6 +178,38 @@ public class VolumeObjectTO implements DataTO {
     public String toString() {
         return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path)
                 .append("|datastore=").append(dataStore).append("]").toString();
+    }
+
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
     }
 
 }

@@ -428,6 +428,14 @@ ALTER TABLE `cloud`.`nics` ADD COLUMN `display_nic` tinyint(1) NOT NULL DEFAULT 
 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `display_offering` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should disk offering be displayed to the end user';
 
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_read_rate` bigint(20);
+
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_write_rate` bigint(20);
+
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `iops_read_rate` bigint(20);
+
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `iops_write_rate` bigint(20);
+
 CREATE TABLE `cloud`.`volume_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `volume_id` bigint unsigned NOT NULL COMMENT 'volume id',
@@ -900,6 +908,10 @@ CREATE VIEW `cloud`.`volume_view` AS
         disk_offering.display_text disk_offering_display_text,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.bytes_read_rate,
+        disk_offering.bytes_write_rate,
+        disk_offering.iops_read_rate,
+        disk_offering.iops_write_rate,
         storage_pool.id pool_id,
         storage_pool.uuid pool_uuid,
         storage_pool.name pool_name,
@@ -1100,15 +1112,11 @@ CREATE VIEW `cloud`.`domain_router_view` AS
             left join
         `cloud`.`disk_offering` ON vm_instance.service_offering_id = disk_offering.id
             left join
-        `cloud`.`volumes` ON vm_instance.id = volumes.instance_id
-            left join
-        `cloud`.`storage_pool` ON volumes.pool_id = storage_pool.id
-            left join
-        `cloud`.`nics` ON vm_instance.id = nics.instance_id
+        `cloud`.`nics` ON vm_instance.id = nics.instance_id and nics.removed is null
             left join
         `cloud`.`networks` ON nics.network_id = networks.id
             left join
-        `cloud`.`vpc` ON domain_router.vpc_id = vpc.id
+        `cloud`.`vpc` ON domain_router.vpc_id = vpc.id and vpc.removed is null
             left join
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
@@ -1208,6 +1216,10 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.bytes_read_rate,
+        disk_offering.bytes_write_rate,
+        disk_offering.iops_read_rate,
+        disk_offering.iops_write_rate,
         service_offering.cpu,
         service_offering.speed,
         service_offering.ram_size,
@@ -1514,6 +1526,10 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.bytes_read_rate,
+        disk_offering.bytes_write_rate,
+        disk_offering.iops_read_rate,
+        disk_offering.iops_write_rate,
         disk_offering.sort_key,
         disk_offering.type,
 	disk_offering.display_offering,
@@ -1570,7 +1586,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
         data_center.is_security_group_enabled security_group_enabled,
-	data_center.networktype data_center_type,
+		data_center.networktype data_center_type,
         host.id host_id,
         host.uuid host_uuid,
         host.name host_name,
@@ -1682,11 +1698,11 @@ CREATE VIEW `cloud`.`user_vm_view` AS
             left join
         `cloud`.`security_group` ON security_group_vm_map.security_group_id = security_group.id
             left join
-        `cloud`.`nics` ON vm_instance.id = nics.instance_id
+        `cloud`.`nics` ON vm_instance.id = nics.instance_id and nics.removed is null
             left join
         `cloud`.`networks` ON nics.network_id = networks.id
             left join
-        `cloud`.`vpc` ON networks.vpc_id = vpc.id
+        `cloud`.`vpc` ON networks.vpc_id = vpc.id and vpc.removed is null
             left join
         `cloud`.`user_ip_address` ON user_ip_address.vm_id = vm_instance.id
             left join
@@ -1754,6 +1770,10 @@ CREATE VIEW `cloud`.`volume_view` AS
         disk_offering.display_text disk_offering_display_text,
         disk_offering.use_local_storage,
         disk_offering.system_use,
+        disk_offering.bytes_read_rate,
+        disk_offering.bytes_write_rate,
+        disk_offering.iops_read_rate,
+        disk_offering.iops_write_rate,
         storage_pool.id pool_id,
         storage_pool.uuid pool_uuid,
         storage_pool.name pool_name,
@@ -2088,7 +2108,10 @@ CREATE TABLE `cloud_usage`.`usage_vm_disk` (
 ) ENGINE=InnoDB CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.stats.interval', 0, 'Interval (in seconds) to report vm disk statistics.');
-
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.iops_read_rate', 0, 'Default disk I/O read rate in requests per second allowed in User vm\'s disk. ');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.iops_write_rate', 0, 'Default disk I/O write rate in requests per second allowed in User vm\'s disk. ');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.bytes_read_rate', 0, 'Default disk I/O read rate in bytes per second allowed in User vm\'s disk. ');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.bytes_write_rate', 0, 'Default disk I/O write rate in bytes per second allowed in User vm\'s disk. ');
 
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;			
@@ -2096,3 +2119,10 @@ SET foreign_key_checks = 1;
 UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;
 #update shared sg enabled network with not null name in Advance Security Group enabled network
 UPDATE `cloud`.`networks` set name='Shared SG enabled network', display_text='Shared SG enabled network' WHERE name IS null AND traffic_type='Guest' AND data_center_id IN (select id from data_center where networktype='Advanced' and is_security_group_enabled=1) AND acl_type='Domain';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'use.system.public.ips', 'true', 'If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been consumed ips will be acquired from the system pool');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'use.system.guest.vlans', 'true', 'If true, when account has dedicated guest vlan range(s), once the vlans dedicated to the account have been consumed vlans will be allocated from the system pool');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'execute.in.sequence.hypervisor.commands', 'false', 'If set to true, StartCommand, StopCommand, CopyVolumeCommand, CreateCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is false.');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'execute.in.sequence.network.element.commands', 'false', 'If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is false.');
+

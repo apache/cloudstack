@@ -196,13 +196,12 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
     }
 
-    @SuppressWarnings("unchecked")
-    private String determineLockId(final long accountId, final long templateId) {
+    static String determineLockId(final long accountId, final long templateId) {
 
         // TBD The lock scope may be too coarse grained. Deletes need to lock
         // the template across all zones where upload and download could
         // probably safely scoped to the zone ...
-        return join(asList("S3_TEMPLATE", accountId, templateId), "_");
+        return join("_", "S3_TEMPLATE", accountId, templateId);
 
     }
 
@@ -356,9 +355,7 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
                         throw new CloudRuntimeException(errMsg);
                     }
 
-                    final String installPath = join(
-                            asList("template", "tmpl", accountId,
-                                    templateId), File.separator);
+                    final String installPath = join(File.separator, "template", "tmpl", accountId, templateId);
                     final VMTemplateHostVO tmpltHost = new VMTemplateHostVO(
                             secondaryStore.getId(), templateId,
                             now(), 100, Status.DOWNLOADED, null, null,

@@ -117,9 +117,6 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="data_center_name")
     private String dataCenterName;
-    
-    @Column(name="data_center_type")
-    private String dataCenterType;
 
     @Column(name="vm_id")
     private long vmId;
@@ -183,6 +180,18 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
+
+    @Column(name="bytes_read_rate")
+    Long bytesReadRate;
+
+    @Column(name="bytes_write_rate")
+    Long bytesWriteRate;
+
+    @Column(name="iops_read_rate")
+    Long iopsReadRate;
+
+    @Column(name="iops_write_rate")
+    Long iopsWriteRate;
 
     @Column(name="pool_id")
     private long poolId;
@@ -742,6 +751,37 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
+    }
 
     public long getPoolId() {
         return poolId;
@@ -1017,19 +1057,7 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.dataCenterName = dataCenterName;
     }
 
-       
-        
-    public String getDataCenterType() {
-        return dataCenterType;
-    }
 
-
-
-    public void setDataCenterType(String dataCenterType) {
-        this.dataCenterType = dataCenterType;
-    }
-    
-    
 
     public long getPodId() {
         return podId;

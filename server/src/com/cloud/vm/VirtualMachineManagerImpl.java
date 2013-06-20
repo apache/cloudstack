@@ -130,6 +130,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -259,6 +260,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     protected ConfigurationServer _configServer;
+    @Inject
+    protected ManagementServer _mgmtServer;
 
     protected List<DeploymentPlanner> _planners;
     public List<DeploymentPlanner> getPlanners() {
@@ -857,7 +860,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
                     cmds = new Commands(OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost()));
+                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), _mgmtServer.getExecuteInSequence()));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
@@ -897,7 +900,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
 
-                            StopCommand cmd = new StopCommand(vm);
+                            StopCommand cmd = new StopCommand(vm, _mgmtServer.getExecuteInSequence());
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if (answer == null || !answer.getResult()) {
                                 s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers"));
@@ -984,7 +987,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected <T extends VMInstanceVO> boolean sendStop(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, boolean force) {
         VMInstanceVO vm = profile.getVirtualMachine();
-        StopCommand stop = new StopCommand(vm);
+        StopCommand stop = new StopCommand(vm, _mgmtServer.getExecuteInSequence());
         try {
             Answer answer = _agentMgr.send(vm.getHostId(), stop);
             if (!answer.getResult()) {
@@ -1169,8 +1172,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         vmGuru.prepareStop(profile);
-        
-        StopCommand stop = new StopCommand(vm);
+        StopCommand stop = new StopCommand(vm, _mgmtServer.getExecuteInSequence());
         boolean stopped = false;
         StopAnswer answer = null;
         try {
@@ -1923,11 +1925,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Command cleanup(VirtualMachine vm) {
-        return new StopCommand(vm);
+        return new StopCommand(vm, _mgmtServer.getExecuteInSequence());
     }
 
     public Command cleanup(String vmName) {
-        return new StopCommand(vmName);
+        return new StopCommand(vmName, _mgmtServer.getExecuteInSequence());
     }
 
     public Commands fullHostSync(final long hostId, StartupRoutingCommand startup) {

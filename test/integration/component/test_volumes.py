@@ -26,10 +26,7 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
 #Import System modules
-import os
-import urllib
 import time
-import tempfile
 
 
 class Services:

@@ -535,7 +535,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         String keyword = cmd.getKeyword();
         String snapshotTypeStr = cmd.getSnapshotType();
         String intervalTypeStr = cmd.getIntervalType();
-        String zoneType = cmd.getZoneType();
         Map<String, String> tags = cmd.getTags();
         Long zoneId = cmd.getZoneId();
         Account caller = UserContext.current().getCaller();
@@ -579,12 +578,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
 
-        if(zoneType != null) {
-            SearchBuilder<DataCenterVO> zoneSb = _dcDao.createSearchBuilder();
-            zoneSb.and("zoneNetworkType", zoneSb.entity().getNetworkType(), SearchCriteria.Op.EQ);
-            sb.join("zoneSb", zoneSb, sb.entity().getDataCenterId(), zoneSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
         SearchCriteria<SnapshotVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -602,10 +595,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
                 count++;
             }
-        }
-
-        if(zoneType != null) {
-            sc.setJoinParameters("zoneSb", "zoneNetworkType", zoneType);
         }
 
         if (zoneId != null) {

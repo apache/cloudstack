@@ -16,20 +16,18 @@
 // under the License.
 package com.cloud.utils.testcase;
 
-import java.nio.channels.ClosedChannelException;
-import java.util.Random;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.nio.Task.Type;
-
-import org.junit.Assert;
 import junit.framework.TestCase;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
+import java.nio.channels.ClosedChannelException;
+import java.util.Random;
 
 /**
  * 
@@ -83,6 +81,7 @@ public class NioTest extends TestCase {
         
         while (_clientLink == null) {
             try {
+                s_logger.debug("Link is not up! Waiting ...");
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
@@ -94,6 +93,7 @@ public class NioTest extends TestCase {
     public void tearDown() {
         while (!isTestsDone()) {
             try {
+                s_logger.debug(this._completedCount + "/" + this._testCount + " tests done. Waiting for completion");
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block

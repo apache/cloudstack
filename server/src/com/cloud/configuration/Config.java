@@ -219,7 +219,14 @@ public enum Config {
     AlertPurgeInterval("Advanced", ManagementServer.class, Integer.class, "alert.purge.interval", "86400", "The interval (in seconds) to wait before running the alert purge thread", null),
     AlertPurgeDelay("Advanced", ManagementServer.class, Integer.class, "alert.purge.delay", "0", "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts", null),
     HostReservationReleasePeriod("Advanced", ManagementServer.class, Integer.class, "host.reservation.release.period", "300000", "The interval in milliseconds between host reservation release checks", null),
-
+    UseSystemPublicIps("Advanced", ManagementServer.class, Boolean.class, "use.system.public.ips", "true",
+            "If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been" +
+            " consumed ips will be acquired from the system pool",
+            null, ConfigurationParameterScope.account.toString()),
+    UseSystemGuestVlans("Advanced", ManagementServer.class, Boolean.class, "use.system.guest.vlans", "true",
+                "If true, when account has dedicated guest vlan range(s), once the vlans dedicated to the account have been" +
+                " consumed vlans will be allocated from the system pool",
+                null, ConfigurationParameterScope.account.toString()),
 
     // LB HealthCheck Interval.
     LBHealthCheck("Advanced", ManagementServer.class, String.class, "healthcheck.update.interval", "600",
@@ -235,6 +242,10 @@ public enum Config {
 	VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Time (in seconds) to wait before taking over a VM in transition state", null),
 	VmDestroyForcestop("Advanced", ManagementServer.class, Boolean.class, "vm.destroy.forcestop", "false", "On destroy, force-stop takes this value ", null),
+        VmDiskThrottlingIopsReadRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.iops_read_rate", "0", "Default disk I/O read rate in requests per second allowed in User vm's disk.", null),
+        VmDiskThrottlingIopsWriteRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.iops_write_rate", "0", "Default disk I/O writerate in requests per second allowed in User vm's disk.", null),
+        VmDiskThrottlingBytesReadRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.bytes_read_rate", "0", "Default disk I/O read rate in bytes per second allowed in User vm's disk.", null),
+        VmDiskThrottlingBytesWriteRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.bytes_write_rate", "0", "Default disk I/O writerate in bytes per second allowed in User vm's disk.", null),
 
 	ControlCidr("Advanced", ManagementServer.class, String.class, "control.cidr", "169.254.0.0/16", "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", null),
 	ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),
@@ -419,11 +430,13 @@ public enum Config {
 
     BlacklistedRoutes("Advanced", VpcManager.class, String.class, "blacklisted.routes", null, "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
 	           "routes", ConfigurationParameterScope.zone.toString()),
-
-    InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, Long.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null);
-
-
-
+	
+    InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, Long.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null),
+    ExecuteInSequence("Advanced", ManagementServer.class, Boolean.class, "execute.in.sequence.hypervisor.commands", "false", "If set to true, StartCommand, StopCommand, CopyVolumeCommand, CreateCommand will be synchronized on the agent side." +
+    		" If set to false, these commands become asynchronous. Default value is false.", null),
+    ExecuteInSequenceNetworkElementCommands("Advanced", NetworkManager.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." + 
+            " If set to false, these commands become asynchronous. Default value is false.", null);
+	
 	private final String _category;
 	private final Class<?> _componentClass;
 	private final Class<?> _type;

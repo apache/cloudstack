@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -44,6 +45,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
@@ -103,6 +105,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         IdNetworkIdStatesSearch.done();
 
         HostUpSearch = createSearchBuilder();
+        HostUpSearch.select(null, Func.DISTINCT, HostUpSearch.entity().getId());
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), Op.EQ);
         HostUpSearch.and("states", HostUpSearch.entity().getState(), Op.NIN);
         SearchBuilder<RouterNetworkVO> joinRouterNetwork3 = _routerNetworkDao.createSearchBuilder();
@@ -112,6 +115,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         HostUpSearch.done();
           
         StateNetworkTypeSearch = createSearchBuilder();
+        StateNetworkTypeSearch.select(null, Func.DISTINCT, StateNetworkTypeSearch.entity().getId());
         StateNetworkTypeSearch.and("state", StateNetworkTypeSearch.entity().getState(), Op.EQ);
         SearchBuilder<RouterNetworkVO> joinRouterNetwork4 = _routerNetworkDao.createSearchBuilder();
         joinRouterNetwork4.and("networkId", joinRouterNetwork4.entity().getNetworkId(), Op.EQ);
@@ -214,7 +218,12 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
             sc.setParameters("host", hostId);
         }
         sc.setJoinParameters("networkRouter", "type", Network.GuestType.Isolated);
-        return listBy(sc);
+        List<DomainRouterVO> routerIds = listBy(sc);
+        List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
+        for (DomainRouterVO router : routerIds) {
+            routers.add(findById(router.getId()));
+        }
+        return routers;
     }
 
     @Override
@@ -253,7 +262,12 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("state", state);
         sc.setJoinParameters("networkRouter", "type", type);
         sc.setJoinParameters("host", "mgmtServerId", mgmtSrvrId);
-        return listBy(sc);
+        List<DomainRouterVO> routerIds = listBy(sc);
+        List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
+        for (DomainRouterVO router : routerIds) {
+            routers.add(findById(router.getId()));
+        }
+        return routers;
     }
 
     @Override

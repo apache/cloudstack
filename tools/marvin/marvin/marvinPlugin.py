@@ -34,9 +34,15 @@ class MarvinPlugin(Plugin):
     """
     
     name = "marvin"
+
     def configure(self, options, config):
-        self.enabled = 1
-        self.enableOpt = "--with-marvin"
+        if hasattr(options,self.enableOpt):
+            if not getattr(options, self.enableOpt):
+                self.enabled = False
+                return
+            else:
+                self.enabled = True
+
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 
         if options.debug_log:

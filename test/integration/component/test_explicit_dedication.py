@@ -87,9 +87,6 @@ class Services:
                     "name": "Cent OS Template",
                     "passwordenabled": True,
                 },
-                "diskdevice": '/dev/xvdd',
-                # Disk device where ISO is attached to instance
-                "mount_dir": "/mnt/tmp",
                 "sleep": 60,
                 "timeout": 10,
                 "ostype": 'CentOS 5.3 (64-bit)'

@@ -59,13 +59,11 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.UUID, entityType = VolumeResponse.class,
             description="the ID of the disk volume")
     private Long volumeId;
-    
-    @Parameter(name=ApiConstants.ZONE_TYPE, type=CommandType.STRING, description="the network type of the zone that the virtual machine belongs to")
-    private String zoneType;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
     private Long zoneId;
 
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -90,14 +88,10 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         return volumeId;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-
     public Long getZoneId() {
         return zoneId;
-    }
-    
+    }    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

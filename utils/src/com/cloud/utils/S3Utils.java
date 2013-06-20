@@ -226,8 +226,8 @@ public final class S3Utils {
         try {
 
             tempFile = createTempFile(
-                    join(asList(targetDirectory.getName(), currentTimeMillis(),
-                            "part"), "-"), "tmp", targetDirectory);
+                    join("-", targetDirectory.getName(), currentTimeMillis(),
+                            "part"), "tmp", targetDirectory);
             tempFile.deleteOnExit();
 
             if (LOGGER.isDebugEnabled()) {

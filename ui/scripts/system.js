@@ -1321,6 +1321,13 @@
                         }
                       },
 
+                      preFilter: function(args) { //Shared networks is only supported in Basic zone and Advanced zone with SG
+                          if(selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled != true)
+                              return false;
+                          else
+                              return true;
+                      },
+
                       createForm: {
                         title: 'label.add.guest.network',  //Add guest network in advanced zone
 
@@ -4019,6 +4026,332 @@
             }
           },
 
+          //Baremetal DHCP provider detail view
+          BaremetalDhcpProvider: {
+            type: 'detailView',
+            id: 'BaremetalDhcpProvider',
+            label: 'Baremetal DHCP Provider',
+            viewAll: { label: 'label.devices', path: '_zone.BaremetalDhcpDevices' },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {
+                    state: { label: 'label.state' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  refreshNspData("BaremetalDhcpProvider");
+                  var providerObj;
+                  $(nspHardcodingArray).each(function(){
+                    if(this.id == "BaremetalDhcpProvider") {
+                      providerObj = this;
+                      return false; //break each loop
+                    }
+                  });
+                  args.response.success({
+                    data: providerObj,
+                    actionFilter: networkProviderActionFilter('BaremetalDhcpProvider')
+                  });
+                }
+              }
+            },
+            actions: {
+              add: {
+                label: 'Add Baremetal DHCP Device',
+                createForm: {
+                  title: 'Add Baremetal DHCP Device',
+                  fields: {
+                    url: {
+                      label: 'label.url',
+                      validation: { required: true }
+                    },
+                    username: {
+                      label: 'label.username',
+                      validation: { required: true }
+                    },
+                    password: {
+                      label: 'label.password',
+                      isPassword: true,
+                      validation: { required: true }
+                    }           
+                  }
+                },
+                action: function(args) {
+                  addBaremetalDhcpDeviceFn(args);
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'Add Baremetal DHCP Device';
+                  }
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+              enable: {
+                label: 'label.enable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["BaremetalDhcpProvider"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                              $(window).trigger('cloudStack.fullRefresh');
+                            }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.enable.provider';
+                  },
+                  notification: function() {
+                    return 'label.enable.provider';
+                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'label.disable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["BaremetalDhcpProvider"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                              $(window).trigger('cloudStack.fullRefresh');
+                            }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.disable.provider';
+                  },
+                  notification: function() {
+                    return 'label.disable.provider';
+                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              destroy: {
+                label: 'label.shutdown.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("deleteNetworkServiceProvider&id=" + nspMap["BaremetalDhcpProvider"].id),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.deletenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {
+                           jobId: jid
+                         }
+                        }
+                      );
+
+                      $(window).trigger('cloudStack.fullRefresh');
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.shutdown.provider';
+                  },
+                notification: function(args) {
+                    return 'label.shutdown.provider';
+                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            }
+          },
+          
+          //Baremetal PXE provider detail view
+          BaremetalPxeProvider: {
+            type: 'detailView',
+            id: 'BaremetalPxeProvider',
+            label: 'Baremetal PXE Provider',
+            viewAll: { label: 'label.devices', path: '_zone.BaremetalPxeDevices' },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {
+                    state: { label: 'label.state' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  refreshNspData("BaremetalPxeProvider");
+                  var providerObj;
+                  $(nspHardcodingArray).each(function(){
+                    if(this.id == "BaremetalPxeProvider") {
+                      providerObj = this;
+                      return false; //break each loop
+                    }
+                  });
+                  args.response.success({
+                    data: providerObj,
+                    actionFilter: networkProviderActionFilter('BaremetalPxeProvider')
+                  });
+                }
+              }
+            },
+            actions: {
+              add: {
+                label: 'Add Baremetal PXE Device',
+                createForm: {
+                  title: 'Add Baremetal PXE Device',
+                  fields: {
+                    url: {
+                      label: 'label.url',
+                      validation: { required: true }
+                    },
+                    username: {
+                      label: 'label.username',
+                      validation: { required: true }
+                    },
+                    password: {
+                      label: 'label.password',
+                      isPassword: true,
+                      validation: { required: true }
+                    },
+                    tftpdir: {
+                      label: 'Tftp root directory',
+                      validation: { required: true }
+                    } 
+                  }
+                },
+                action: function(args) {
+                  addBaremetalPxeDeviceFn(args);
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'Add Baremetal PXE Device';
+                  }
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+              enable: {
+                label: 'label.enable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["BaremetalPxeProvider"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                              $(window).trigger('cloudStack.fullRefresh');
+                            }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.enable.provider';
+                  },
+                  notification: function() {
+                    return 'label.enable.provider';
+                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'label.disable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["BaremetalPxeProvider"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                              $(window).trigger('cloudStack.fullRefresh');
+                            }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.disable.provider';
+                  },
+                  notification: function() {
+                    return 'label.disable.provider';
+                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              destroy: {
+                label: 'label.shutdown.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("deleteNetworkServiceProvider&id=" + nspMap["BaremetalPxeProvider"].id),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.deletenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {
+                           jobId: jid
+                         }
+                        }
+                      );
+
+                      $(window).trigger('cloudStack.fullRefresh');
+                    }
+                  });
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.shutdown.provider';
+                  },
+                notification: function(args) {
+                    return 'label.shutdown.provider';
+                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            }
+          },
+          
 		      //f5 provider detail view
           f5: {
             type: 'detailView',
@@ -7929,6 +8262,134 @@
         }
       },
 
+      // Baremetal DHCP devices listView
+      BaremetalDhcpDevices: {
+        id: 'BaremetalDhcpDevices',
+        title: 'Baremetal DHCP Devices',
+        listView: {
+          id: 'BaremetalDhcpDevices',
+          fields: {
+            url: { label: 'label.url' }            
+          },
+          actions: {           
+            add: {
+              label: 'Add Baremetal DHCP Device',
+              createForm: {
+                title: 'Add Baremetal DHCP Device',
+                fields: {
+                  url: {
+                    label: 'label.url',
+                    validation: { required: true }
+                  },
+                  username: {
+                    label: 'label.username',
+                    validation: { required: true }
+                  },
+                  password: {
+                    label: 'label.password',
+                    isPassword: true,
+                    validation: { required: true }
+                  }           
+                }
+              },
+              action: function(args) {
+                addBaremetalDhcpDeviceFn(args);
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Add Baremetal DHCP Device';
+                }
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            },           
+          },
+          dataProvider: function(args) {
+            $.ajax({
+              url: createURL('listBaremetalDhcp'),
+              data: { 
+                physicalnetworkid: selectedPhysicalNetworkObj.id,
+                page: args.page, 
+                pageSize: pageSize 
+              },
+              dataType: "json",
+              async: false,
+              success: function(json) {
+                var items = json.listexternaldhcpresponse.baremetaldhcp;
+                args.response.success({data: items});
+              }
+            });
+          }
+        }
+      },
+      
+      // Baremetal PXE devices listView
+      BaremetalPxeDevices: {
+        id: 'BaremetalPxeDevices',
+        title: 'Baremetal PXE Devices',
+        listView: {
+          id: 'BaremetalPxeDevices',
+          fields: {
+            url: { label: 'label.url' }            
+          },
+          actions: {           
+            add: {
+              label: 'Add Baremetal PXE Device',
+              createForm: {
+                title: 'Add Baremetal PXE Device',
+                fields: {
+                  url: {
+                    label: 'label.url',
+                    validation: { required: true }
+                  },
+                  username: {
+                    label: 'label.username',
+                    validation: { required: true }
+                  },
+                  password: {
+                    label: 'label.password',
+                    isPassword: true,
+                    validation: { required: true }
+                  },
+                  tftpdir: {
+                    label: 'Tftp root directory',
+                    validation: { required: true }
+                  }           
+                }
+              },
+              action: function(args) {
+                addBaremetalPxeDeviceFn(args);
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Add Baremetal PXE Device';
+                }
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            },           
+          },
+          dataProvider: function(args) {
+            $.ajax({
+              url: createURL('listBaremetalPxePingServer'),
+              data: { 
+                physicalnetworkid: selectedPhysicalNetworkObj.id,
+                page: args.page, 
+                pageSize: pageSize 
+              },
+              dataType: "json",
+              async: false,
+              success: function(json) {
+                var items = json.listpingpxeserverresponse.pingpxeserver;
+                args.response.success({data: items});
+              }
+            });
+          }
+        }
+      },
+      
 			// F5 devices listView
       f5Devices: {
         id: 'f5Devices',
@@ -13573,6 +14034,184 @@
     }
   };
 
+  function addBaremetalDhcpDeviceFn(args) {  
+    if(nspMap["BaremetalDhcpProvider"] == null) {
+      $.ajax({
+        url: createURL("addNetworkServiceProvider&name=BaremetalDhcpProvider&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+        dataType: "json",
+        async: true,
+        success: function(json) {
+          var jobId = json.addnetworkserviceproviderresponse.jobid;                        
+          var addBaremetalDhcpProviderIntervalID = setInterval(function() {   
+            $.ajax({
+              url: createURL("queryAsyncJobResult&jobId="+jobId),
+              dataType: "json",
+              success: function(json) {
+                var result = json.queryasyncjobresultresponse;
+                if (result.jobstatus == 0) {
+                  return; //Job has not completed
+                }
+                else {
+                  clearInterval(addBaremetalDhcpProviderIntervalID); 
+                  if (result.jobstatus == 1) {
+                    nspMap["BaremetalDhcpProvider"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                         
+                    $.ajax({
+                      url: createURL('addBaremetalDhcp'),
+                      data: {
+                        physicalnetworkid: selectedPhysicalNetworkObj.id,
+                        dhcpservertype: 'DHCPD',
+                        url: args.data.url,
+                        username: args.data.username,
+                        password: args.data.password
+                      },
+                      success: function(json) {
+                        var jid = json.addexternaldhcpresponse.jobid;
+                        args.response.success(
+                          {_custom:
+                            {
+                              jobId: jid,
+                              getUpdatedItem: function(json) {
+                                var item = json.queryasyncjobresultresponse.jobresult.baremetaldhcp;
+                                return item;
+                              }
+                            }
+                          }
+                        );
+                      }
+                    });                          
+                  }
+                  else if (result.jobstatus == 2) {
+                    alert(_s(result.jobresult.errortext));
+                  }
+                }
+              },
+              error: function(XMLHttpResponse) {                             
+                alert(parseXMLHttpResponse(XMLHttpResponse));
+              }
+            });
+          }, g_queryAsyncJobResultInterval);    
+        }
+      });
+    }
+    else {     
+      $.ajax({
+        url: createURL('addBaremetalDhcp'),
+        data: {
+          physicalnetworkid: selectedPhysicalNetworkObj.id,
+          dhcpservertype: 'DHCPD',
+          url: args.data.url,
+          username: args.data.username,
+          password: args.data.password
+        },
+        success: function(json) {
+          var jid = json.addexternaldhcpresponse.jobid;
+          args.response.success(
+            {_custom:
+              {
+                jobId: jid,
+                getUpdatedItem: function(json) {
+                  var item = json.queryasyncjobresultresponse.jobresult.baremetaldhcp;
+                  return item;
+                }
+              }
+            }
+          );
+        }
+      });            
+    }
+  }
+  
+  function addBaremetalPxeDeviceFn(args) {  
+    if(nspMap["BaremetalPxeProvider"] == null) {
+      $.ajax({
+        url: createURL("addNetworkServiceProvider&name=BaremetalPxeProvider&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+        dataType: "json",
+        async: true,
+        success: function(json) {
+          var jobId = json.addnetworkserviceproviderresponse.jobid;                        
+          var addBaremetalPxeProviderIntervalID = setInterval(function() {   
+            $.ajax({
+              url: createURL("queryAsyncJobResult&jobId="+jobId),
+              dataType: "json",
+              success: function(json) {
+                var result = json.queryasyncjobresultresponse;
+                if (result.jobstatus == 0) {
+                  return; //Job has not completed
+                }
+                else {
+                  clearInterval(addBaremetalPxeProviderIntervalID); 
+                  if (result.jobstatus == 1) {
+                    nspMap["BaremetalPxeProvider"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                         
+                    $.ajax({
+                      url: createURL('addBaremetalPxeKickStartServer'),
+                      data: {
+                        physicalnetworkid: selectedPhysicalNetworkObj.id,
+                        pxeservertype: 'KICK_START',
+                        url: args.data.url,
+                        username: args.data.username,
+                        password: args.data.password,
+                        tftpdir: args.data.tftpdir
+                      },
+                      success: function(json) {
+                        var jid = json.addexternalpxeresponse.jobid;
+                        args.response.success(
+                          {_custom:
+                            {
+                              jobId: jid,
+                              getUpdatedItem: function(json) {
+                                var item = json.queryasyncjobresultresponse.jobresult.externalpxe;
+                                return item;
+                              }
+                            }
+                          }
+                        );
+                      }
+                    });                          
+                  }
+                  else if (result.jobstatus == 2) {
+                    alert(_s(result.jobresult.errortext));
+                  }
+                }
+              },
+              error: function(XMLHttpResponse) {                             
+                alert(parseXMLHttpResponse(XMLHttpResponse));
+              }
+            });
+          }, g_queryAsyncJobResultInterval);    
+        }
+      });
+    }
+    else {     
+      $.ajax({
+        url: createURL('addBaremetalPxeKickStartServer'),
+        data: {
+          physicalnetworkid: selectedPhysicalNetworkObj.id,
+          pxeservertype: 'KICK_START',
+          url: args.data.url,
+          username: args.data.username,
+          password: args.data.password,
+          tftpdir: args.data.tftpdir
+        },
+        success: function(json) {
+          var jid = json.addexternalpxeresponse.jobid;
+          args.response.success(
+            {_custom:
+              {
+                jobId: jid,
+                getUpdatedItem: function(json) {
+                  var item = json.queryasyncjobresultresponse.jobresult.externalpxe;
+                  return item;
+                }
+             }
+            }
+          );
+        }
+      });    
+    }
+  }
+  
   function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
     var array1 = [];
     array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
@@ -14524,6 +15163,12 @@
                             case "MidoNet":
                                 nspMap["midoNet"] = items[i];
                                 break;
+              case "BaremetalDhcpProvider":
+                nspMap["BaremetalDhcpProvider"] = items[i];
+                break;
+              case "BaremetalPxeProvider":
+                nspMap["BaremetalPxeProvider"] = items[i];
+                break;
 							case "F5BigIp":
 								nspMap["f5"] = items[i];
 								break;
@@ -14565,7 +15210,17 @@
                                 id: 'bigswitchVns',
                                 name: 'BigSwitch Vns',
                                 state: nspMap.bigswitchVns ? nspMap.bigswitchVns.state : 'Disabled'
-                        }
+                        },
+      {
+        id: 'BaremetalDhcpProvider',
+        name: 'Baremetal DHCP',
+        state: nspMap.BaremetalDhcpProvider ? nspMap.BaremetalDhcpProvider.state : 'Disabled'
+      },
+      {
+        id: 'BaremetalPxeProvider',
+        name: 'Baremetal PXE',
+        state: nspMap.BaremetalPxeProvider ? nspMap.BaremetalPxeProvider.state : 'Disabled'
+      }
 		];
 
     $(window).trigger('cloudStack.system.serviceProviders.makeHarcodedArray', {

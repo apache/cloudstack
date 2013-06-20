@@ -508,18 +508,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             // update the password in vm_details table too
             // Check if an SSH key pair was selected for the instance and if so
             // use it to encrypt & save the vm password
-            String sshPublicKey = userVm.getDetail("SSH.PublicKey");
-            if (sshPublicKey != null && !sshPublicKey.equals("")
-                    && password != null && !password.equals("saved_password")) {
-                String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(
-                        sshPublicKey, password);
-                if (encryptedPasswd == null) {
-                    throw new CloudRuntimeException("Error encrypting password");
-                }
-
-                userVm.setDetail("Encrypted.Password", encryptedPasswd);
-                _vmDao.saveDetails(userVm);
-            }
+            encryptAndStorePassword(userVm, password);
         } else {
             throw new CloudRuntimeException(
                     "Failed to reset password for the virtual machine ");
@@ -642,13 +631,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             if (template != null && template.getEnablePassword()) {
                 userVm.setPassword(password);
                 //update the encrypted password in vm_details table too
-                if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
-                    String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
-                    if (encryptedPasswd == null) {
-                        throw new CloudRuntimeException("Error encrypting password");
-                    }
-                    userVm.setDetail("Encrypted.Password", encryptedPasswd);
-                }
+                encryptAndStorePassword(userVm, password);
             }
             _vmDao.saveDetails(userVm);
         } else {
@@ -3281,18 +3264,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
             // Check if an SSH key pair was selected for the instance and if so
             // use it to encrypt & save the vm password
-            String sshPublicKey = vm.getDetail("SSH.PublicKey");
-            if (sshPublicKey != null && !sshPublicKey.equals("")
-                    && password != null && !password.equals("saved_password")) {
-                String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(
-                        sshPublicKey, password);
-                if (encryptedPasswd == null) {
-                    throw new CloudRuntimeException("Error encrypting password");
-                }
-
-                vm.setDetail("Encrypted.Password", encryptedPasswd);
-                _vmDao.saveDetails(vm);
-            }
+            encryptAndStorePassword(vm, password);
 
             params = new HashMap<VirtualMachineProfile.Param, Object>();
             if (additionalParams != null) {
@@ -3809,7 +3781,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
 
-        UserVmVO vm = _vmDao.findById(vmId);
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException(
                     "Unable to find the VM by id=" + vmId);
@@ -3900,7 +3872,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                             + " already has max Running VMs(count includes system VMs), cannot migrate to this host");
         }
 
-        collectVmDiskStatistics(vm);
+        UserVmVO uservm = _vmDao.findById(vmId);
+        if (uservm != null) {
+            collectVmDiskStatistics(uservm);
+        }
         VMInstanceVO migratedVm = _itMgr.migrate(vm, srcHostId, dest);
         return migratedVm;
     }
@@ -4598,15 +4573,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 // update the password in vm_details table too
                 // Check if an SSH key pair was selected for the instance and if so
                 // use it to encrypt & save the vm password
-                String sshPublicKey = vm.getDetail("SSH.PublicKey");
-                if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
-                    String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
-                    if (encryptedPasswd == null) {
-                        throw new CloudRuntimeException("VM reset is completed but error occurred when encrypting newly created password");
-                    }
-                    vm.setDetail("Encrypted.Password", encryptedPasswd);
-                    _vmDao.saveDetails(vm);
-                }
+                encryptAndStorePassword(vm, password);
             } else {
                 throw new CloudRuntimeException("VM reset is completed but failed to reset password for the virtual machine ");
             }
@@ -4693,6 +4660,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         UserVmVO vm = _vmDao.findById(profile.getId());
         if (vm.getState() == State.Running)
             collectVmDiskStatistics(vm);
+    }
+    
+    private void encryptAndStorePassword(UserVmVO vm, String password) {
+        String sshPublicKey = vm.getDetail("SSH.PublicKey");
+        if (sshPublicKey != null && !sshPublicKey.equals("")
+                && password != null && !password.equals("saved_password")) {
+            if (!sshPublicKey.startsWith("ssh-rsa")) {
+                s_logger.warn("Only RSA public keys can be used to encrypt a vm password.");
+                return;
+            }
+            String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(
+                    sshPublicKey, password);
+            if (encryptedPasswd == null) {
+                throw new CloudRuntimeException("Error encrypting password");
+            }
+
+            vm.setDetail("Encrypted.Password", encryptedPasswd);
+            _vmDao.saveDetails(vm);
+        }
     }
 
 }

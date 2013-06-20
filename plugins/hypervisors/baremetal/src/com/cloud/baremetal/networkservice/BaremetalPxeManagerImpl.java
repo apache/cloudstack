@@ -45,6 +45,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.resource.ResourceManager;
@@ -81,6 +82,7 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
 	@Inject NicDao _nicDao;
 	@Inject ConfigurationDao _configDao;
 	@Inject PhysicalNetworkDao _phynwDao;
+	@Inject NetworkModel _ntwkModel;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -184,7 +186,7 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
         String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
         NicVO nvo = _nicDao.findById(nic.getId());
-        VmDataCommand cmd = new VmDataCommand(nvo.getIp4Address(), vm.getInstanceName());
+        VmDataCommand cmd = new VmDataCommand(nvo.getIp4Address(), vm.getInstanceName(), _ntwkModel.getExecuteInSeqNtwkElmtCmd());
         cmd.addVmData("userdata", "user-data", vm.getUserData());
         cmd.addVmData("metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering));
         cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));

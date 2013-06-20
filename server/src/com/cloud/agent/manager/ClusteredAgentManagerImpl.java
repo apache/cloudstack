@@ -173,8 +173,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             s_logger.trace("Begin scanning directly connected hosts");
         }
 
-        // for agents that are self-managed, threshold to be considered as disconnected is 3 ping intervals
-        long cutSeconds = (System.currentTimeMillis() >> 10) - (_pingInterval * 3);
+        // for agents that are self-managed, threshold to be considered as disconnected after pingtimeout
+        long cutSeconds = (System.currentTimeMillis() >> 10) - (_pingTimeout);
         List<HostVO> hosts = _hostDao.findAndUpdateDirectAgentToLoad(cutSeconds, _loadSize, _nodeId);
         List<HostVO> appliances = _hostDao.findAndUpdateApplianceToLoad(cutSeconds, _nodeId);
         hosts.addAll(appliances);

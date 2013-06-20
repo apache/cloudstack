@@ -153,7 +153,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     Date getCreated();
 
-    long getDiskOfferingId();
+    Long getDiskOfferingId();
 
     String getChainInfo();
 

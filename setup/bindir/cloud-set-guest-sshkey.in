@@ -71,6 +71,7 @@ fi
 homedir=$(grep ^$user /etc/passwd|awk -F ":" '{print $6}')
 sshdir=$homedir/.ssh
 authorized=$sshdir/authorized_keys
+restorecon=/sbin/restorecon
 
 
 if [ ! -e $sshdir ]
@@ -86,6 +87,10 @@ fi
 cat $authorized|grep -v "$publickey" > $authorized
 echo "$publickey" >> $authorized
 
+if [ -e $restorecon ]
+then
+    $restorecon -R -v $sshdir
+fi
 
 exit 0
 

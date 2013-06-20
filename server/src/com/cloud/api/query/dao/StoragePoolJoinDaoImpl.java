@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -72,10 +71,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setIpAddress(pool.getHostAddress());
         poolResponse.setZoneId(pool.getZoneUuid());
         poolResponse.setZoneName(pool.getZoneName());
-        poolResponse.setZoneType(pool.getZoneType());
-        if (pool.getPoolType() != null) {
-            poolResponse.setType(pool.getPoolType().toString());
-        }
+        poolResponse.setType(pool.getPoolType().toString());
         poolResponse.setPodId(pool.getPodUuid());
         poolResponse.setPodName(pool.getPodName());
         poolResponse.setCreated(pool.getCreated());

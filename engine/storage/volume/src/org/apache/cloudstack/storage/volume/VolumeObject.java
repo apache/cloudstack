@@ -20,6 +20,8 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -63,6 +65,8 @@ public class VolumeObject implements VolumeInfo {
     ObjectInDataStoreManager objectInStoreMgr;
     @Inject
     VMInstanceDao vmInstanceDao;
+    @Inject
+    DiskOfferingDao diskOfferingDao;
     private Object payload;
 
     public VolumeObject() {
@@ -139,6 +143,50 @@ public class VolumeObject implements VolumeInfo {
             throw new CloudRuntimeException(errorMessage);
         }
         return result;
+    }
+
+    private DiskOfferingVO getDiskOfferingVO() {
+        if (getDiskOfferingId() != null) {
+            DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(getDiskOfferingId());
+            return diskOfferingVO;
+        }
+        return null;
+    }
+
+    @Override
+    public Long getBytesReadRate() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getBytesReadRate();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getBytesWriteRate() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getBytesWriteRate();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getIopsReadRate() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getIopsReadRate();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getIopsWriteRate() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getIopsWriteRate();
+        }
+        return null;
     }
 
     public void update() {
@@ -313,7 +361,7 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
-    public long getDiskOfferingId() {
+    public Long getDiskOfferingId() {
         return this.volumeVO.getDiskOfferingId();
     }
 
