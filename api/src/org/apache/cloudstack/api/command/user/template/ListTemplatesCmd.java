@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
@@ -55,7 +56,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the template name")
     private String templateName;
 
-    @Parameter(name=ApiConstants.TEMPLATE_FILTER, type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". " + 
+    @Parameter(name=ApiConstants.TEMPLATE_FILTER, type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". " +
                                                                                         "* featured : templates that have been marked as featured and public. " +
                                                                                         "* self : templates that have been registered or created by the calling user. " +
                                                                                         "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. " +
@@ -119,17 +120,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        Set<Pair<Long, Long>> templateZonePairSet = _mgr.listTemplates(this);
-
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-        List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
-
-        for (Pair<Long, Long> template : templateZonePairSet) {
-            List<TemplateResponse> responses = _responseGenerator.createTemplateResponses(template.first().longValue(), template.second(), listInReadyState());
-            templateResponses.addAll(responses);
-        }
-
-        response.setResponses(templateResponses);
+        ListResponse<TemplateResponse> response = _queryService.listTemplates(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

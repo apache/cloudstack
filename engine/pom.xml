@@ -37,13 +37,25 @@
     <module>storage</module>
     <module>storage/volume</module>
     <module>storage/image</module>
-    <module>storage/imagemotion</module>
-    <module>storage/backup</module>
+    <module>storage/datamotion</module>
+    <module>storage/cache</module>
     <module>storage/snapshot</module>
-    <module>storage/integration-test</module>
     <module>components-api</module>
     <module>schema</module>
     <module>network</module>
     <module>service</module>
   </modules>
+  <profiles>
+  <profile>
+      <id>integration-test</id>
+      <activation>
+        <property>
+          <name>nonoss</name>
+        </property>
+      </activation>
+      <modules>
+        <module>storage/integration-test</module>
+      </modules>
+  </profile>
+  </profiles>
 </project>

@@ -53,8 +53,8 @@ public class SnapshotCommand extends Command {
     public SnapshotCommand(StoragePool pool,
             String secondaryStorageUrl, String snapshotUuid,
             String snapshotName, Long dcId, Long accountId, Long volumeId) {
-        this.primaryStoragePoolNameLabel = pool.getUuid();
-        this.primaryPool = new StorageFilerTO(pool);
+       // this.primaryStoragePoolNameLabel = pool.getUuid();
+        //this.primaryPool = new StorageFilerTO(pool);
         this.snapshotUuid = snapshotUuid;
         this.secondaryStorageUrl = secondaryStorageUrl;
         this.dcId = dcId;

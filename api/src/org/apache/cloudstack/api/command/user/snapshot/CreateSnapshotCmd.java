@@ -152,7 +152,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        Snapshot snapshot = _snapshotService.allocSnapshot(getVolumeId(), getPolicyId());
+        Snapshot snapshot = this._volumeService.allocSnapshot(getVolumeId(), getPolicyId());
         if (snapshot != null) {
             this.setEntityId(snapshot.getId());
             this.setEntityUuid(snapshot.getUuid());
@@ -165,15 +165,19 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     public void execute() {
         s_logger.info("VOLSS: createSnapshotCmd starts:" + System.currentTimeMillis());
         UserContext.current().setEventDetails("Volume Id: "+getVolumeId());
-        Snapshot snapshot = _snapshotService.createSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()));
-        if (snapshot != null) {
-            SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        } else {
+        Snapshot snapshot;
+        try {
+            snapshot = _volumeService.takeSnapshot(this.getVolumeId(), this.getPolicyId(), this.getEntityId(), _accountService.getAccount(getEntityOwnerId()));
+            if (snapshot != null) {
+                SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
+                response.setResponseName(getCommandName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
+            }
+        } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
         }
-        s_logger.info("VOLSS:  backupSnapshotCmd finishes:" + System.currentTimeMillis());
     }
 
 

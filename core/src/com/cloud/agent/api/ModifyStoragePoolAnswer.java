@@ -18,16 +18,16 @@ package com.cloud.agent.api;
 
 import java.util.Map;
 
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 
 public class ModifyStoragePoolAnswer extends Answer {
     StoragePoolInfo poolInfo;
-    Map<String, TemplateInfo> templateInfo;
+    Map<String, TemplateProp> templateInfo;
 
     protected ModifyStoragePoolAnswer() {
     }
 
-    public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateInfo> tInfo) {
+    public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateProp> tInfo) {
         super(cmd);
         this.result = true;
         this.poolInfo = new StoragePoolInfo(null,
@@ -46,11 +46,11 @@ public class ModifyStoragePoolAnswer extends Answer {
     }
 
 
-    public Map<String, TemplateInfo> getTemplateInfo() {
+    public Map<String, TemplateProp> getTemplateInfo() {
         return templateInfo;
     }
 
-    public void setTemplateInfo(Map<String, TemplateInfo> templateInfo) {
+    public void setTemplateInfo(Map<String, TemplateProp> templateInfo) {
         this.templateInfo = templateInfo;
     }
 

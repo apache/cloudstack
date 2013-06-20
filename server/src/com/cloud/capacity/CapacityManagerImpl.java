@@ -179,7 +179,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         CapacityVO capacityMemory = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
         Long clusterId = null;
         if (hostId != null) {
-            HostVO host = _hostDao.findById(hostId);
+        HostVO host = _hostDao.findById(hostId);
             clusterId = host.getClusterId();
         }
         if (capacityCpu == null || capacityMemory == null || svo == null) {
@@ -530,7 +530,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @DB
     @Override
-	public void updateCapacityForHost(HostVO host){
+	public void updateCapacityForHost(Host host){
     	// prepare the service offerings
         List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
         Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
@@ -819,7 +819,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         // TODO Auto-generated method stub
 
     }

@@ -50,6 +50,7 @@ public interface VolumeManager extends VolumeApiService {
             Long destPoolClusterId, HypervisorType dataDiskHyperType)
             throws ConcurrentOperationException;
 
+    @Override
     VolumeVO uploadVolume(UploadVolumeCmd cmd)
             throws ResourceAllocationException;
 
@@ -61,28 +62,35 @@ public interface VolumeManager extends VolumeApiService {
 
     String getVmNameOnVolume(Volume volume);
 
+    @Override
     VolumeVO allocVolume(CreateVolumeCmd cmd)
             throws ResourceAllocationException;
 
+    @Override
     VolumeVO createVolume(CreateVolumeCmd cmd);
 
+    @Override
     VolumeVO resizeVolume(ResizeVolumeCmd cmd)
             throws ResourceAllocationException;
 
+    @Override
     boolean deleteVolume(long volumeId, Account caller)
             throws ConcurrentOperationException;
-    
+
     void destroyVolume(VolumeVO volume);
 
     DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, VMInstanceVO vm, Account owner);
+    @Override
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
+    @Override
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
 
     void release(VirtualMachineProfile<? extends VMInstanceVO> profile);
 
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 
+    @Override
     Volume migrateVolume(MigrateVolumeCmd cmd);
 
     <T extends VMInstanceVO> void migrateVolumes(T vm, VirtualMachineTO vmTo, Host srcHost, Host destHost,
@@ -105,6 +113,7 @@ public interface VolumeManager extends VolumeApiService {
     DiskProfile allocateTemplatedVolume(Type type, String name,
             DiskOfferingVO offering, VMTemplateVO template, VMInstanceVO vm,
             Account owner);
+
 
     String getVmNameFromVolumeId(long volumeId);
 

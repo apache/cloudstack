@@ -16,6 +16,20 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -35,7 +49,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.GetDomRVersionCmd;
@@ -83,10 +96,7 @@ import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -102,14 +112,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @Local(value = { SimulatorManager.class })
@@ -294,12 +296,10 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 return _mockStorageMgr.ManageSnapshot((ManageSnapshotCommand)cmd);
             } else if (cmd instanceof BackupSnapshotCommand) {
                 return _mockStorageMgr.BackupSnapshot((BackupSnapshotCommand)cmd, info);
-            } else if (cmd instanceof DeleteSnapshotBackupCommand) {
-                return _mockStorageMgr.DeleteSnapshotBackup((DeleteSnapshotBackupCommand)cmd);
             } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
                 return _mockStorageMgr.CreateVolumeFromSnapshot((CreateVolumeFromSnapshotCommand)cmd);
-            } else if (cmd instanceof DeleteTemplateCommand) {
-                return _mockStorageMgr.DeleteTemplate((DeleteTemplateCommand)cmd);
+            } else if (cmd instanceof DeleteCommand) {
+                return _mockStorageMgr.Delete((DeleteCommand)cmd);
             } else if (cmd instanceof SecStorageVMSetupCommand) {
                 return _mockStorageMgr.SecStorageVMSetup((SecStorageVMSetupCommand)cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {

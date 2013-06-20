@@ -37,12 +37,13 @@ ALTER TABLE `cloud`.`load_balancer_vm_map` ADD state VARCHAR(40) NULL COMMENT 's
 
 alter table storage_pool add hypervisor varchar(32);
 alter table storage_pool change storage_provider_id storage_provider_name varchar(255);
-alter table template_host_ref add state varchar(255);
-alter table template_host_ref add update_count bigint unsigned;
-alter table template_host_ref add updated datetime;
-alter table volume_host_ref add state varchar(255);
-alter table volume_host_ref add update_count bigint unsigned;
-alter table volume_host_ref add updated datetime;
+alter table storage_pool change available_bytes used_bytes bigint unsigned;
+-- alter table template_host_ref add state varchar(255);
+-- alter table template_host_ref add update_count bigint unsigned;
+-- alter table template_host_ref add updated datetime;
+-- alter table volume_host_ref add state varchar(255);
+-- alter table volume_host_ref add update_count bigint unsigned;
+-- alter table volume_host_ref add updated datetime;
 alter table template_spool_ref add updated datetime;
 CREATE TABLE  `cloud`.`object_datastore_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -68,25 +69,160 @@ CREATE TABLE  `cloud`.`object_datastore_ref` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`data_store_provider` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `name` varchar(255) NOT NULL COMMENT 'name of primary data store provider',
-  `uuid` varchar(255) NOT NULL COMMENT 'uuid of primary data store provider',
-  PRIMARY KEY(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- CREATE TABLE `cloud`.`data_store_provider` (
+--  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+--  `name` varchar(255) NOT NULL COMMENT 'name of primary data store provider',
+--  `uuid` varchar(255) NOT NULL COMMENT 'uuid of primary data store provider',
+--  PRIMARY KEY(`id`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`image_data_store` (
+CREATE TABLE `cloud`.`image_store` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name of data store',
-  `image_provider_name` varchar(255) NOT NULL COMMENT 'id of image_data_store_provider',
+  `image_provider_name` varchar(255) NOT NULL COMMENT 'id of image_store_provider',
   `protocol` varchar(255) NOT NULL COMMENT 'protocol of data store',
+  `url` varchar(255) COMMENT 'url for image data store',
   `data_center_id` bigint unsigned  COMMENT 'datacenter id of data store',
   `scope` varchar(255) COMMENT 'scope of data store',
+  `role` varchar(255) COMMENT 'role of data store',
   `uuid` varchar(255) COMMENT 'uuid of data store',
+  `parent` varchar(255) COMMENT 'parent path for the storage server',
+  `created` datetime COMMENT 'date the image store first signed on',
+  `removed` datetime COMMENT 'date removed if not null',  
+  `total_size` bigint unsigned COMMENT 'storage total size statistics',
+  `used_bytes` bigint unsigned COMMENT 'storage available bytes statistics',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`vm_template` ADD COLUMN `image_data_store_id` bigint unsigned;
+CREATE TABLE `cloud`.`image_store_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `store_id` bigint unsigned NOT NULL COMMENT 'store the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_image_store_details__store_id` FOREIGN KEY `fk_image_store__store_id`(`store_id`) REFERENCES `image_store`(`id`) ON DELETE CASCADE,
+  INDEX `i_image_store__name__value`(`name`(128), `value`(128))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP VIEW IF EXISTS `cloud`.`image_store_view`;
+CREATE VIEW `cloud`.`image_store_view` AS
+    select 
+        image_store.id,
+        image_store.uuid,
+        image_store.name,
+        image_store.image_provider_name,
+        image_store.protocol,
+        image_store.url,
+        image_store.scope,
+        image_store.role,
+        image_store.removed,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        image_store_details.name detail_name,
+        image_store_details.value detail_value
+    from
+        `cloud`.`image_store`
+            left join
+        `cloud`.`data_center` ON image_store.data_center_id = data_center.id
+            left join
+        `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
+
+            
+-- here we have to allow null for store_id to accomodate baremetal case to search for ready templates since template state is only stored in this table
+-- FK also commented out due to this            
+CREATE TABLE  `cloud`.`template_store_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `store_id` bigint unsigned,
+  `template_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `job_id` varchar(255),
+  `download_pct` int(10) unsigned,
+  `size` bigint unsigned,
+  `store_role` varchar(255),  
+  `physical_size` bigint unsigned DEFAULT 0,
+  `download_state` varchar(255),
+  `error_str` varchar(255),
+  `local_path` varchar(255),
+  `install_path` varchar(255),
+  `url` varchar(255),
+  `state` varchar(255) NOT NULL,
+  `destroyed` tinyint(1) COMMENT 'indicates whether the template_store entry was destroyed by the user or not',
+  `is_copy` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates whether this was copied ',
+  `update_count` bigint unsigned,
+  `ref_cnt` bigint unsigned,
+  `updated` datetime, 
+  PRIMARY KEY  (`id`),
+--  CONSTRAINT `fk_template_store_ref__store_id` FOREIGN KEY `fk_template_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
+  INDEX `i_template_store_ref__store_id`(`store_id`),
+  CONSTRAINT `fk_template_store_ref__template_id` FOREIGN KEY `fk_template_store_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
+  INDEX `i_template_store_ref__template_id`(`template_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+-- ALTER TABLE `cloud`.`vm_template` ADD COLUMN `image_data_store_id` bigint unsigned;
+
+-- Do we still need these columns? TODO, to delete them, remove FK constraints from snapshots table
+-- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `swift_id`;
+-- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `s3_id`;
+-- ALTER TABLE `cloud`.`snapshots` DROP COLUMN `sechost_id`;
+
+-- change upload host_id FK to point to image_store table
+ALTER TABLE `cloud`.`upload` DROP FOREIGN KEY `fk_upload__host_id`; 
+ALTER TABLE `cloud`.`upload` ADD CONSTRAINT `fk_upload__store_id` FOREIGN KEY(`host_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE;
+
+CREATE TABLE  `cloud`.`snapshot_store_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `store_id` bigint unsigned NOT NULL,
+  `snapshot_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `job_id` varchar(255),
+  `store_role` varchar(255),
+  `size` bigint unsigned,
+  `physical_size` bigint unsigned DEFAULT 0,
+  `parent_snapshot_id` bigint unsigned DEFAULT 0,
+  `install_path` varchar(255),
+  `state` varchar(255) NOT NULL,  
+  -- `removed` datetime COMMENT 'date removed if not null',  
+  `update_count` bigint unsigned,
+  `ref_cnt` bigint unsigned,
+  `updated` datetime,   
+  PRIMARY KEY  (`id`),
+  INDEX `i_snapshot_store_ref__store_id`(`store_id`),
+  CONSTRAINT `fk_snapshot_store_ref__snapshot_id` FOREIGN KEY `fk_snapshot_store_ref__snapshot_id` (`snapshot_id`) REFERENCES `snapshots` (`id`),
+  INDEX `i_snapshot_store_ref__snapshot_id`(`snapshot_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `cloud`.`volume_store_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `store_id` bigint unsigned NOT NULL,
+  `volume_id` bigint unsigned NOT NULL,
+  `zone_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `job_id` varchar(255),
+  `download_pct` int(10) unsigned,
+  `size` bigint unsigned,
+  `physical_size` bigint unsigned DEFAULT 0,
+  `download_state` varchar(255),
+  `checksum` varchar(255) COMMENT 'checksum for the data disk',
+  `error_str` varchar(255),
+  `local_path` varchar(255),
+  `install_path` varchar(255),
+  `url` varchar(255),
+  `state` varchar(255) NOT NULL,  
+  `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
+  `update_count` bigint unsigned,
+  `ref_cnt` bigint unsigned,
+  `updated` datetime,   
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_volume_store_ref__store_id` FOREIGN KEY `fk_volume_store_ref__store_id` (`store_id`) REFERENCES `image_store` (`id`) ON DELETE CASCADE,
+  INDEX `i_volume_store_ref__store_id`(`store_id`),
+  CONSTRAINT `fk_volume_store_ref__volume_id` FOREIGN KEY `fk_volume_store_ref__volume_id` (`volume_id`) REFERENCES `volumes` (`id`),
+  INDEX `i_volume_store_ref__volume_id`(`volume_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
 
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `is_volatile` tinyint(1) unsigned NOT NULL DEFAULT 0  COMMENT 'true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk';
 
@@ -284,6 +420,8 @@ ALTER TABLE `cloud`.`user_vm_details` ADD COLUMN `display_detail` tinyint(1) NOT
 
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `display_volume` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should volume be displayed to the end user';
 
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `format` varchar(255) COMMENT 'volume format';
+
 ALTER TABLE `cloud`.`networks` ADD COLUMN `display_network` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should network be displayed to the end user';
 
 ALTER TABLE `cloud`.`nics` ADD COLUMN `display_nic` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should nic be displayed to the end user';
@@ -439,7 +577,7 @@ CREATE TABLE `cloud`.`service_offering_details` (
   CONSTRAINT `fk_service_offering_details__service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE,
   CONSTRAINT UNIQUE KEY `uk_service_offering_id_name` (`service_offering_id`, `name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
+      
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
     select 
@@ -1700,6 +1838,107 @@ ALTER TABLE `cloud`.`cluster_details` MODIFY value varchar(255);
 ALTER TABLE `cloud`.`storage_pool_details` MODIFY value varchar(255);
 ALTER TABLE `cloud`.`account_details` MODIFY value varchar(255);
 
+-- END: support for LXC
+
+DROP VIEW IF EXISTS `cloud`.`template_view`;
+CREATE VIEW `cloud`.`template_view` AS
+    select 
+        vm_template.id,
+        vm_template.uuid,
+        vm_template.unique_name,
+        vm_template.name,
+        vm_template.public,
+        vm_template.featured,
+        vm_template.type,
+        vm_template.hvm,
+        vm_template.bits,
+        vm_template.url,
+        vm_template.format,
+        vm_template.created,
+        vm_template.checksum,
+        vm_template.display_text,
+        vm_template.enable_password,
+        vm_template.guest_os_id,
+        -- vm_template.state,
+        guest_os.uuid guest_os_uuid,
+        guest_os.display_name guest_os_name,
+        vm_template.bootable,
+        vm_template.prepopulate,
+        vm_template.cross_zones,
+        vm_template.hypervisor_type,
+        vm_template.extractable,
+        vm_template.template_tag,
+        vm_template.sort_key,
+        vm_template.removed,
+        vm_template.enable_sshkey,
+        source_template.id source_template_id,
+        source_template.uuid source_template_uuid,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,        
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        launch_permission.account_id lp_account_id,
+        template_store_ref.store_id,
+        template_store_ref.state,
+        template_store_ref.download_state,
+        template_store_ref.download_pct,
+        template_store_ref.error_str,
+        template_store_ref.size,
+        template_store_ref.destroyed,
+        template_store_ref.created created_on_store,
+        vm_template_details.name detail_name,
+        vm_template_details.value detail_value,
+        resource_tags.id tag_id,
+        resource_tags.uuid tag_uuid,
+        resource_tags.key tag_key,
+        resource_tags.value tag_value,
+        resource_tags.domain_id tag_domain_id,
+        resource_tags.account_id tag_account_id,
+        resource_tags.resource_id tag_resource_id,
+        resource_tags.resource_uuid tag_resource_uuid,
+        resource_tags.resource_type tag_resource_type,
+        resource_tags.customer tag_customer
+    from
+        `cloud`.`vm_template`
+            inner join
+        `cloud`.`guest_os` ON guest_os.id = vm_template.guest_os_id        
+            inner join
+        `cloud`.`account` ON account.id = vm_template.account_id
+            inner join
+        `cloud`.`domain` ON domain.id = account.domain_id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = account.id    
+            left join
+        `cloud`.`vm_template_details` ON vm_template_details.template_id = vm_template.id         
+            left join
+        `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id            
+            left join
+        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id
+            AND template_zone_ref.removed is null
+            left join
+        `cloud`.`data_center` ON template_zone_ref.zone_id = data_center.id
+            left join
+        `cloud`.`image_store` ON image_store.removed is NULL AND (image_store.data_center_id = data_center.id OR image_store.scope = 'REGION')
+            left join
+        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id AND template_store_ref.store_id = image_store.id
+            left join
+        `cloud`.`launch_permission` ON launch_permission.template_id = vm_template.id
+            left join
+        `cloud`.`resource_tags` ON resource_tags.resource_id = vm_template.id
+            and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO');
+
+
+
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.apiserver.address', 'http://localhost:8081', 'Specify the address at which the Midonet API server can be contacted (if using Midonet)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.providerrouter.id', 'd7c5e6a3-e2f4-426b-b728-b7ce6a0448e5', 'Specifies the UUID of the Midonet provider router (if using Midonet)');
 
@@ -1721,6 +1960,9 @@ CREATE TABLE `cloud`.`account_vnet_map` (
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN account_vnet_map_id bigint unsigned;
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__account_vnet_map_id` FOREIGN KEY `fk_op_dc_vnet_alloc__account_vnet_map_id` (`account_vnet_map_id`) REFERENCES `account_vnet_map` (`id`);
+            
+ update  `cloud`.`vm_template` set state='Allocated' where state is NULL;
+ update  `cloud`.`vm_template` set update_count=0 where update_count is NULL;
 
 CREATE TABLE `cloud`.`network_acl` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
@@ -1876,7 +2118,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.disk.throttling.bytes_write_rate', 0, 'Default disk I/O write rate in bytes per second allowed in User vm\'s disk. ');
 
 -- Re-enable foreign key checking, at the end of the upgrade path
-SET foreign_key_checks = 1;
+SET foreign_key_checks = 1;			
 
 UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;
 #update shared sg enabled network with not null name in Advance Security Group enabled network

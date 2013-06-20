@@ -18,8 +18,9 @@
   cloudStack.uiCustom.physicalResources = function(args) {
     var listView = function(targetID) {
       var target = args.sections.physicalResources.listView[targetID];
+      var listViewArgs = $.isFunction(target) ? target() : target;
 
-      return $('<div>').listView({ listView: $.isFunction(target) ? target() : target });
+      return $('<div>').listView(listViewArgs.listView ? listViewArgs : { listView: listViewArgs });
     };
     var $dashboard = $('#template').find('.system-dashboard-view').clone();
     var getData = function() {

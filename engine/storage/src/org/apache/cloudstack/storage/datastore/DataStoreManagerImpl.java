@@ -25,50 +25,73 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 @Component
 public class DataStoreManagerImpl implements DataStoreManager {
     @Inject
     PrimaryDataStoreProviderManager primaryStorMgr;
     @Inject
-    ImageDataStoreManager imageDataStoreMgr;
+    ImageStoreProviderManager imageDataStoreMgr;
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
         if (role == DataStoreRole.Primary) {
             return primaryStorMgr.getPrimaryDataStore(storeId);
         } else if (role == DataStoreRole.Image) {
-            return imageDataStoreMgr.getImageDataStore(storeId);
+            return imageDataStoreMgr.getImageStore(storeId);
+        } else if (role == DataStoreRole.ImageCache) {
+            return imageDataStoreMgr.getImageStore(storeId);
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
-    @Override
-    public DataStore registerDataStore(Map<String, String> params,
-            String providerUuid) {
-        return null;
-    }
+
     @Override
     public DataStore getDataStore(String uuid, DataStoreRole role) {
         if (role == DataStoreRole.Primary) {
             return primaryStorMgr.getPrimaryDataStore(uuid);
         } else if (role == DataStoreRole.Image) {
-            return imageDataStoreMgr.getImageDataStore(uuid);
+            return imageDataStoreMgr.getImageStore(uuid);
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
+
     @Override
-    public List<DataStore> getImageStores(Scope scope) {
-        return imageDataStoreMgr.getList();
+    public List<DataStore> getImageStoresByScope(ZoneScope scope) {
+        return imageDataStoreMgr.listImageStoresByScope(scope);
     }
+
+    @Override
+    public DataStore getImageStore(long zoneId) {
+        List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
+        if (stores == null || stores.size() == 0) {
+            return null;
+        }
+        Collections.shuffle(stores);
+        return stores.get(0);
+    }
+
     @Override
     public DataStore getPrimaryDataStore(long storeId) {
         return primaryStorMgr.getPrimaryDataStore(storeId);
+    }
+
+    @Override
+    public List<DataStore> getImageCacheStores(Scope scope) {
+        return imageDataStoreMgr.listImageCacheStores(scope);
+    }
+
+    @Override
+    public List<DataStore> listImageStores() {
+        return imageDataStoreMgr.listImageStores();
     }
 
 }

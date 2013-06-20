@@ -25,53 +25,51 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.utils.DateUtil.IntervalType;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="snapshot_policy")
+@Table(name = "snapshot_policy")
 public class SnapshotPolicyVO implements SnapshotPolicy {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-    @Column(name="volume_id")
+    @Column(name = "volume_id")
     long volumeId;
 
-    @Column(name="schedule")
+    @Column(name = "schedule")
     String schedule;
 
-    @Column(name="timezone")
+    @Column(name = "timezone")
     String timezone;
 
-    @Column(name="interval")
+    @Column(name = "interval")
     private short interval;
 
-    @Column(name="max_snaps")
+    @Column(name = "max_snaps")
     private int maxSnaps;
 
-    @Column(name="active")
+    @Column(name = "active")
     boolean active = false;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid;
 
     public SnapshotPolicyVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public SnapshotPolicyVO(long volumeId, String schedule, String timezone, IntervalType intvType, int maxSnaps) {
-    	this.volumeId = volumeId;
+        this.volumeId = volumeId;
         this.schedule = schedule;
         this.timezone = timezone;
-        this.interval = (short)intvType.ordinal();
+        this.interval = (short) intvType.ordinal();
         this.maxSnaps = maxSnaps;
         this.active = true;
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public long getId() {
@@ -79,10 +77,10 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
     }
 
     public long getVolumeId() {
-		return volumeId;
-	}
+        return volumeId;
+    }
 
-	public void setSchedule(String schedule) {
+    public void setSchedule(String schedule) {
         this.schedule = schedule;
     }
 
@@ -124,10 +122,10 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 }

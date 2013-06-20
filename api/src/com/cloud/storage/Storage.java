@@ -21,13 +21,13 @@ import java.util.List;
 
 public class Storage {
     public static enum ImageFormat {
-        QCOW2(true, true, false),
-        RAW(false, false, false),
-        VHD(true, true, true),
-        ISO(false, false, false),
+        QCOW2(true, true, false, "qcow2"),
+        RAW(false, false, false, "raw"),
+        VHD(true, true, true, "vhd"),
+        ISO(false, false, false, "iso"),
         OVA(true, true, true, "ova"),
-        BAREMETAL(false, false, false),
-        TAR(false, false, false);
+        BAREMETAL(false, false, false, "BAREMETAL"),
+        TAR(false, false, false, "tar");
 
         private final boolean thinProvisioned;
         private final boolean supportSparse;
@@ -66,6 +66,7 @@ public class Storage {
 
             return fileExtension;
         }
+        
     }
 
     public static enum FileSystem {

@@ -62,7 +62,7 @@ public abstract class DownloadState {
 			getDownloadListener().log("onEntry, event type=" + event + ", curr state=" + getName(), Level.TRACE);
 		}
 		if (event==DownloadEvent.DOWNLOAD_ANSWER) {
-			getDownloadListener().updateDatabase((DownloadAnswer)evtObj);
+			getDownloadListener().callback((DownloadAnswer)evtObj);
 		}
 	}
 	

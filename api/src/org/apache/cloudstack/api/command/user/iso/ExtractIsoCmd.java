@@ -33,6 +33,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "extractIso", description="Extracts an ISO", responseObject=ExtractResponse.class)
 public class ExtractIsoCmd extends BaseAsyncCmd {
@@ -123,9 +124,9 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     public void execute(){
         try {
             UserContext.current().setEventDetails(getEventDescription());
-            Long uploadId = _templateService.extract(this);
-            if (uploadId != null){
-                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);
+            String uploadUrl = _templateService.extract(this);
+            if (uploadUrl != null) {
+                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
                 response.setObjectName("iso");
                 this.setResponseObject(response);

@@ -127,9 +127,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 	public VmwareServerDiscoverer() {
 		s_logger.info("VmwareServerDiscoverer is constructed");
 	}
-	
+
 	@Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, 
+    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url,
     	String username, String password, List<String> hostTags) throws DiscoveryException {
 
     	if(s_logger.isInfoEnabled())
@@ -542,7 +542,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 		Long id;
 		if (tmplt == null) {
 			id = _tmpltDao.getNextInSequence(Long.class, "id");
-			VMTemplateVO template = new VMTemplateVO(id, isoName, isoName,
+			VMTemplateVO template = VMTemplateVO.createPreHostIso(id, isoName, isoName,
 					ImageFormat.ISO, true, true, TemplateType.PERHOST, null,
 					null, true, 64, Account.ACCOUNT_ID_SYSTEM, null,
 					"VMware Tools Installer ISO", false, 1, false,
@@ -713,7 +713,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             return VirtualSwitchType.NexusDistributedVirtualSwitch;
         else if(useDVS)
             return VirtualSwitchType.VMwareDistributedVirtualSwitch;
-        else 
+        else
             return VirtualSwitchType.StandardVirtualSwitch;
     }
 

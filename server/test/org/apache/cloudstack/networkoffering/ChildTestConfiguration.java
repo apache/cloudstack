@@ -19,10 +19,10 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
@@ -35,6 +35,7 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
@@ -345,7 +346,7 @@ public class ChildTestConfiguration {
 
     @Bean
     public DataCenterLinkLocalIpAddressDao datacenterLinkLocalIpAddressDao() {
-        return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
+    	return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
     }
 
     @Bean
@@ -361,6 +362,11 @@ public class ChildTestConfiguration {
     @Bean
     public AccountDetailsDao accountDetailsDao() {
         return Mockito.mock(AccountDetailsDao.class);
+    }
+
+    @Bean
+    public DataStoreManager dataStoreManager() {
+        return Mockito.mock(DataStoreManager.class);
     }
 
     public static class Library implements TypeFilter {

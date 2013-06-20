@@ -101,6 +101,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -1741,36 +1742,36 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             if (!setupPublicNetwork) {
-            	Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, plan.getPodId());
+            	    Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, plan.getPodId());
             	if (guestNetwork.getCidr() != null) {
             		if (placeholder != null && placeholder.getIp4Address() != null) {
             			s_logger.debug("Requesting ipv4 address " + placeholder.getIp4Address() + " stored in placeholder nic for the network " + guestNetwork);
-            			defaultNetworkStartIp = placeholder.getIp4Address(); 
-            		} else {
-            			String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
-            			if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
-            				defaultNetworkStartIp = startIp;
-            			} else if (s_logger.isDebugEnabled()){
+            	        defaultNetworkStartIp = placeholder.getIp4Address();
+            	    } else {
+            	        String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
+                        if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+                            defaultNetworkStartIp = startIp;
+                        } else if (s_logger.isDebugEnabled()){
             				s_logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId() + 
-            						" is already allocated, can't use it for domain router; will get random ip address from the range");
-            			}
-            		}
+                                    " is already allocated, can't use it for domain router; will get random ip address from the range");
+                        }
+            	    }
             	}
-
+            	
             	if (guestNetwork.getIp6Cidr() != null) {
             		if (placeholder != null && placeholder.getIp6Address() != null) {
             			s_logger.debug("Requesting ipv6 address " + placeholder.getIp6Address() + " stored in placeholder nic for the network " + guestNetwork);
             			defaultNetworkStartIpv6 = placeholder.getIp6Address(); 
             		} else {
-            			String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
-            			if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
-            				defaultNetworkStartIpv6 = startIpv6;
-            			} else if (s_logger.isDebugEnabled()){
-            				s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId() + 
-            						" is already allocated, can't use it for domain router; will get random ipv6 address from the range");
-            			}
+            		String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
+            		if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
+            			defaultNetworkStartIpv6 = startIpv6;
+            		} else if (s_logger.isDebugEnabled()){
+            			s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId() + 
+            					" is already allocated, can't use it for domain router; will get random ipv6 address from the range");
             		}
             	}
+            }
             }
 
             NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
@@ -2240,15 +2241,15 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     	PvlanSetupCommand cmd = PvlanSetupCommand.createDhcpSetup(op, nic.getBroadCastUri(), networkTag, router.getInstanceName(), nic.getMacAddress(), nic.getIp4Address());
     	// In fact we send command to the host of router, we're not programming router but the host
         Answer answer = null;
-        try {
+    	try {
             answer = _agentMgr.send(hostId, cmd);
         } catch (OperationTimedoutException e) {
             s_logger.warn("Timed Out", e);
             return false;
-        } catch (AgentUnavailableException e) {
+		} catch (AgentUnavailableException e) {
             s_logger.warn("Agent Unavailable ", e);
-            return false;
-        }
+			return false;
+		}
 
         if (answer == null || !answer.getResult()) {
         	return false;
@@ -2491,7 +2492,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                    activeIpAliasTOs.add(new IpAliasTO(aliasVO.getIp4Address(), aliasVO.getNetmask(), aliasVO.getAliasCount().toString()));
             }
             if (revokedIpAliasTOs.size() != 0 || activeIpAliasTOs.size() != 0){
-                createDeleteIpAliasCommand(router, revokedIpAliasTOs, activeIpAliasTOs, guestNetworkId, cmds);
+            createDeleteIpAliasCommand(router, revokedIpAliasTOs, activeIpAliasTOs, guestNetworkId, cmds);
                 configDnsMasq(router, _networkDao.findById(guestNetworkId), cmds);
             }
 
@@ -2803,7 +2804,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                             vlanDbIdList.add(vlan.getId());
                         }
                         if (dc.getNetworkType() == NetworkType.Basic) {
-                            routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
+                        routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
                         }
                         else {
                             routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(router.getDataCenterId(), null, caller, Vlan.VlanType.DirectAttached, vlanDbIdList, nic.getNetworkId(), null, false);
@@ -3872,7 +3873,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         UserContext context = UserContext.current();
         context.setAccountId(1);
         List<DomainRouterVO> routers = _routerDao.listIsolatedByHostId(host.getId());

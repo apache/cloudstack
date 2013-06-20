@@ -230,9 +230,20 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             }
 
             String hostIpAdr = NetUtils.getDefaultHostIp();
+            boolean needUpdateHostIp = true;
             if (hostIpAdr != null) {
-                _configDao.update(Config.ManagementHostIPAdr.key(), Config.ManagementHostIPAdr.getCategory(), hostIpAdr);
-                s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
+            	Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
+            	if (devel) {
+            		String value = _configDao.getValue(Config.ManagementHostIPAdr.key());
+            		if (value != null) {
+            			needUpdateHostIp = false;
+            		}
+            	}
+               
+            	if (needUpdateHostIp) {
+            		 _configDao.update(Config.ManagementHostIPAdr.key(), Config.ManagementHostIPAdr.getCategory(), hostIpAdr);
+                     s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
+            	}
             }
 
             // generate a single sign-on key

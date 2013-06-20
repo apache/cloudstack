@@ -75,7 +75,7 @@
     </dependencies>
     <build>
         <defaultGoal>compile</defaultGoal>
-        <sourceDirectory>src</sourceDirectory>
+        <sourceDirectory>test</sourceDirectory>
         <testSourceDirectory>test</testSourceDirectory>
         <plugins>
             <plugin>

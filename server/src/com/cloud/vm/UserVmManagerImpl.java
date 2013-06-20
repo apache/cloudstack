@@ -32,6 +32,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import com.cloud.server.ConfigurationServer;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -58,10 +61,11 @@ import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -79,9 +83,9 @@ import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -181,7 +185,6 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -197,10 +200,8 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -277,8 +278,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected VMTemplateDao _templateDao = null;
     @Inject
     protected VMTemplateDetailsDao _templateDetailsDao = null;
-    @Inject
-    protected VMTemplateHostDao _templateHostDao = null;
     @Inject
     protected VMTemplateZoneDao _templateZoneDao = null;
     @Inject
@@ -387,8 +386,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Inject
     protected ItWorkDao _workDao;
     @Inject
-    protected VolumeHostDao _volumeHostDao;
-    @Inject
     ResourceTagDao _resourceTagDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
@@ -415,6 +412,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     AffinityGroupDao _affinityGroupDao;
+    @Inject
+    TemplateDataFactory templateFactory;
     @Inject
     DedicatedResourceDao _dedicatedDao;
     @Inject
@@ -1095,7 +1094,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
     }
-    
+
     @Override
     public HashMap<Long, List<VmDiskStatsEntry>> getVmDiskStatistics(long hostId, String hostName, List<Long> vmIds) throws CloudRuntimeException {
         HashMap<Long, List<VmDiskStatsEntry>> vmDiskStatsById = new HashMap<Long, List<VmDiskStatsEntry>>();
@@ -1227,7 +1226,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                         // Decrement CPU and Memory count accordingly.
                         if (newCpu > currentCpu) {
                             _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
-                        }
+                    }
                         if (newMemory > currentMemory) {
                             _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
                         }
@@ -1631,7 +1630,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                         .findUsableVolumesForInstance(vm.getId());
                 for (VolumeVO volume : volumesForThisVm) {
                     if (volume.getState() != Volume.State.Destroy) {
-                        this.volumeMgr.destroyVolume(volume);
+                        volumeMgr.destroyVolume(volume);
                     }
                 }
                 String msg = "Failed to deploy Vm with Id: " + vmId + ", on Host with Id: " + hostId;
@@ -2451,7 +2450,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
-        long size = _templateHostDao.findByTemplateId(template.getId()).getSize();
+        long size = _templateDao.findById(template.getId()).getSize();
         if (diskOfferingId != null) {
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
@@ -2889,52 +2888,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         vm.setDetails(details);
 
         if (vm.getIsoId() != null) {
-            String isoPath = null;
-
-            VirtualMachineTemplate template = _templateDao.findById(vm
-                    .getIsoId());
-            if (template == null || template.getFormat() != ImageFormat.ISO) {
-                throw new CloudRuntimeException(
-                        "Can not find ISO in vm_template table for id "
-                                + vm.getIsoId());
+            TemplateInfo template = this.templateMgr.prepareIso(vm.getIsoId(), vm.getDataCenterId());
+            if (template == null){
+                s_logger.error("Failed to prepare ISO on secondary or cache storage");
+                throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
             }
-
-            Pair<String, String> isoPathPair = this.templateMgr.getAbsoluteIsoPath(
-                    template.getId(), vm.getDataCenterId());
-
-            if (template.getTemplateType() == TemplateType.PERHOST) {
-                isoPath = template.getName();
-            } else {
-                if (isoPathPair == null) {
-                    s_logger.warn("Couldn't get absolute iso path");
-                    return false;
-                } else {
-                    isoPath = isoPathPair.first();
-                }
-            }
-
             if (template.isBootable()) {
                 profile.setBootLoaderType(BootloaderType.CD);
             }
+
             GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
             String displayName = null;
             if (guestOS != null) {
                 displayName = guestOS.getDisplayName();
             }
-            VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO,
-                    StoragePoolType.ISO, null, template.getName(), null,
-                    isoPath, 0, null, displayName);
 
-            iso.setDeviceId(3);
-            profile.addDisk(iso);
+            TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
+            iso.setGuestOsType(displayName);
+            DiskTO disk = new DiskTO(iso, 3L, Volume.Type.ISO);
+            profile.addDisk(disk);
         } else {
-            VirtualMachineTemplate template = profile.getTemplate();
-            /* create a iso placeholder */
-            VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO,
-                    StoragePoolType.ISO, null, template.getName(), null, null,
-                    0, null);
-            iso.setDeviceId(3);
-            profile.addDisk(iso);
+            TemplateObjectTO iso = new TemplateObjectTO();
+            iso.setFormat(ImageFormat.ISO);
+            DiskTO disk = new DiskTO(iso, 3L, Volume.Type.ISO);
+            profile.addDisk(disk);
         }
 
         return true;
@@ -3415,7 +3392,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     	List<String> vmNames = new ArrayList<String>();
     	vmNames.add(userVm.getInstanceName());
     	HostVO host = _hostDao.findById(hostId);
-    	
+
     	GetVmDiskStatsAnswer diskStatsAnswer = null;
     	try {
     		diskStatsAnswer = (GetVmDiskStatsAnswer) _agentMgr.easySend(hostId, new GetVmDiskStatsCommand(vmNames, host.getGuid(), host.getName()));
@@ -3433,39 +3410,39 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 txn.start();
                 HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsByName = diskStatsAnswer.getVmDiskStatsMap();
                 List<VmDiskStatsEntry> vmDiskStats = vmDiskStatsByName.get(userVm.getInstanceName());
-                
+
                 if (vmDiskStats == null)
 		    return;
-	        	
+
 	        for (VmDiskStatsEntry vmDiskStat:vmDiskStats) {
                     SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
                     sc_volume.addAnd("path", SearchCriteria.Op.EQ, vmDiskStat.getPath());
                     VolumeVO volume = _volsDao.search(sc_volume, null).get(0);
 	            VmDiskStatisticsVO previousVmDiskStats = _vmDiskStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), volume.getId());
 	            VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), volume.getId());
-	                
+
 	                if ((vmDiskStat.getIORead() == 0) && (vmDiskStat.getIOWrite() == 0) && (vmDiskStat.getBytesRead() == 0) && (vmDiskStat.getBytesWrite() == 0)) {
 	                    s_logger.debug("Read/Write of IO and Bytes are both 0. Not updating vm_disk_statistics");
 	                    continue;
 	                }
-	                
+
 	                if (vmDiskStat_lock == null) {
 	                    s_logger.warn("unable to find vm disk stats from host for account: " + userVm.getAccountId() + " with vmId: " + userVm.getId()+ " and volumeId:" + volume.getId());
 	                    continue;
 	                }
-	
+
 	                if (previousVmDiskStats != null
 	                        && ((previousVmDiskStats.getCurrentIORead() != vmDiskStat_lock.getCurrentIORead())
 	                        || ((previousVmDiskStats.getCurrentIOWrite() != vmDiskStat_lock.getCurrentIOWrite())
 	                        || (previousVmDiskStats.getCurrentBytesRead() != vmDiskStat_lock.getCurrentBytesRead())
 	    	                || (previousVmDiskStats.getCurrentBytesWrite() != vmDiskStat_lock.getCurrentBytesWrite())))) {
 	                    s_logger.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " +
-	                            "Ignoring current answer. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() + 
+	                            "Ignoring current answer. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
 	                            " IO Read: " + vmDiskStat.getIORead() + " IO Write: " + vmDiskStat.getIOWrite() +
 	                            " Bytes Read: " + vmDiskStat.getBytesRead() + " Bytes Write: " + vmDiskStat.getBytesWrite());
 	                    continue;
 	                }
-	
+
 	                if (vmDiskStat_lock.getCurrentIORead() > vmDiskStat.getIORead()) {
 	                    if (s_logger.isDebugEnabled()) {
 	                        s_logger.debug("Read # of IO that's less than the last one.  " +
@@ -3502,15 +3479,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 	                    vmDiskStat_lock.setNetBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
 	                }
 	                vmDiskStat_lock.setCurrentBytesWrite(vmDiskStat.getBytesWrite());
-	                
+
 	                if (! _dailyOrHourly) {
-	                    //update agg bytes 
+	                    //update agg bytes
 	                	vmDiskStat_lock.setAggIORead(vmDiskStat_lock.getNetIORead() + vmDiskStat_lock.getCurrentIORead());
 	                	vmDiskStat_lock.setAggIOWrite(vmDiskStat_lock.getNetIOWrite() + vmDiskStat_lock.getCurrentIOWrite());
 	                	vmDiskStat_lock.setAggBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
 	                	vmDiskStat_lock.setAggBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
 	                }
-	
+
 	                _vmDiskStatsDao.update(vmDiskStat_lock.getId(), vmDiskStat_lock);
 	        	}
 	        	txn.commit();
@@ -4584,10 +4561,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 vm.setTemplateId(newTemplateId);
                 _vmDao.update(vmId, vm);
             } else {
-                newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
-                vm.setGuestOSId(template.getGuestOSId());
-                vm.setTemplateId(newTemplateId);
-                _vmDao.update(vmId, vm);
+            newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
+            vm.setGuestOSId(template.getGuestOSId());
+            vm.setTemplateId(newTemplateId);
+            _vmDao.update(vmId, vm);
             }
         } else {
             newVol = volumeMgr.allocateDuplicateVolume(root, null);
@@ -4598,7 +4575,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         /* Detach and destory the old root volume */
 
         _volsDao.detachVolume(root.getId());
-        this.volumeMgr.destroyVolume(root);
+        volumeMgr.destroyVolume(root);
 
         if (template.getEnablePassword()) {
             String password = generateRandomPassword();

@@ -11,16 +11,31 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
 
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Local;
+
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
@@ -33,36 +48,25 @@ import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
-import javax.ejb.Local;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @Local(value=ServerResource.class)
 public class XenServer56FP1Resource extends XenServer56Resource {
     private static final long mem_128m = 134217728L;
     private static final Logger s_logger = Logger.getLogger(XenServer56FP1Resource.class);
-    
+
     public XenServer56FP1Resource() {
         super();
     }
-    
+
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
     	return CitrixHelper.getXenServer56FP1GuestOsType(stdType, bootFromCD);
     }
-   
+
     @Override
-    protected List<File> getPatchFiles() {      
+    protected List<File> getPatchFiles() {
         List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver56fp1/patch";    
+        String patch = "scripts/vm/hypervisor/xenserver/xenserver56fp1/patch";
         String patchfilePath = Script.findScript("" , patch);
         if ( patchfilePath == null ) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);
@@ -209,13 +213,17 @@ public class XenServer56FP1Resource extends XenServer56Resource {
 
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
-                VolumeTO[] disks = vmSpec.getDisks();
-                for (VolumeTO disk : disks) {
-                    if (disk.getType() == Volume.Type.ISO && disk.getOsType() != null) {
-                        String isoGuestOsName = getGuestOsType(disk.getOsType(), vmSpec.getBootloader() == BootloaderType.CD);
-                        if (!isoGuestOsName.equals(guestOsTypeName)) {
-                            vmSpec.setBootloader(BootloaderType.PyGrub);
-                        }
+                DiskTO[] disks = vmSpec.getDisks();
+                for (DiskTO disk : disks) {
+                    if (disk.getType() == Volume.Type.ISO ) {
+                    	TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
+                    	String osType = iso.getGuestOsType();
+                    	if (osType != null) {
+                    		String isoGuestOsName = getGuestOsType(osType, vmSpec.getBootloader() == BootloaderType.CD);
+                    		if (!isoGuestOsName.equals(guestOsTypeName)) {
+                    			vmSpec.setBootloader(BootloaderType.PyGrub);
+                    		}
+                    	}
                     }
                 }
             }

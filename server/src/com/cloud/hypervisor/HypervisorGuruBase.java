@@ -22,6 +22,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
@@ -94,7 +96,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         VirtualMachine vm = vmProfile.getVirtualMachine();
         Long minMemory = (long) (offering.getRamSize() / vmProfile.getMemoryOvercommitRatio());
         int minspeed = (int) (offering.getSpeed() / vmProfile.getCpuOvercommitRatio());
-        int maxspeed = (offering.getSpeed());
+        int  maxspeed = (offering.getSpeed());
         VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed,
                 minMemory * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
@@ -107,7 +109,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         }
 
         to.setNics(nics);
-        to.setDisks(vmProfile.getDisks().toArray(new VolumeTO[vmProfile.getDisks().size()]));
+        to.setDisks(vmProfile.getDisks().toArray(new DiskTO[vmProfile.getDisks().size()]));
 
         if(vmProfile.getTemplate().getBits() == 32) {
             to.setArch("i686");
@@ -132,7 +134,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
         to.setUuid(vmInstance.getUuid());
-
+        
         //
         return to;
     }

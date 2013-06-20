@@ -41,106 +41,101 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateObject;
 
 @Entity
-@Table(name="vm_template")
-public class VMTemplateVO implements VirtualMachineTemplate, StateObject<TemplateState> {
+@Table(name = "vm_template")
+public class VMTemplateVO implements VirtualMachineTemplate {
     @Id
-    @TableGenerator(name="vm_template_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_template_seq", allocationSize=1)
-    @Column(name="id", nullable = false)
+    @TableGenerator(name = "vm_template_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value",
+            pkColumnValue = "vm_template_seq", allocationSize = 1)
+    @Column(name = "id", nullable = false)
     private long id;
 
-    @Column(name="format")
+    @Column(name = "format")
     private Storage.ImageFormat format;
 
-    @Column(name="unique_name")
+    @Column(name = "unique_name")
     private String uniqueName;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name = null;
 
-    @Column(name="public")
+    @Column(name = "public")
     private boolean publicTemplate = true;
 
-    @Column(name="featured")
+    @Column(name = "featured")
     private boolean featured;
 
-    @Column(name="type")
+    @Column(name = "type")
     private Storage.TemplateType templateType;
 
-    @Column(name="url")
+    @Column(name = "url")
     private String url = null;
 
-    @Column(name="hvm")
+    @Column(name = "hvm")
     private boolean requiresHvm;
 
-    @Column(name="bits")
+    @Column(name = "bits")
     private int bits;
 
-    @Temporal(value=TemporalType.TIMESTAMP)
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created = null;
 
-    @Column(name=GenericDao.REMOVED)
+    @Column(name = GenericDao.REMOVED)
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="checksum")
+    @Column(name = "checksum")
     private String checksum;
 
-    @Column(name="display_text", length=4096)
+    @Column(name = "display_text", length = 4096)
     private String displayText;
 
-    @Column(name="enable_password")
+    @Column(name = "enable_password")
     private boolean enablePassword;
 
-    @Column(name="guest_os_id")
+    @Column(name = "guest_os_id")
     private long guestOSId;
 
-    @Column(name="bootable")
+    @Column(name = "bootable")
     private boolean bootable = true;
 
-    @Column(name="prepopulate")
+    @Column(name = "prepopulate")
     private boolean prepopulate = false;
 
-    @Column(name="cross_zones")
+    @Column(name = "cross_zones")
     private boolean crossZones = false;
 
-    @Column(name="hypervisor_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "hypervisor_type")
+    @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisorType;
 
-    @Column(name="extractable")
+    @Column(name = "extractable")
     private boolean extractable = true;
 
-    @Column(name="source_template_id")
+    @Column(name = "source_template_id")
     private Long sourceTemplateId;
 
-    @Column(name="template_tag")
+    @Column(name = "template_tag")
     private String templateTag;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="sort_key")
+    @Column(name = "sort_key")
     private int sortKey;
 
-    @Column(name="enable_sshkey")
+    @Column(name = "enable_sshkey")
     private boolean enableSshKey;
-    
-    @Column(name = "image_data_store_id")
-    private long imageDataStoreId;
-    
+
     @Column(name = "size")
     private Long size;
-    
-    @Column(name = "state")
-    private TemplateState state;
-    
-    @Column(name="update_count", updatable = true)
+
+    @Column(name = "update_count", updatable = true)
     protected long updatedCount;
-    
+
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
@@ -161,29 +156,50 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
     }
 
     public VMTemplateVO() {
-    	this.uuid = UUID.randomUUID().toString();
-    	this.state = TemplateState.Allocated;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     /**
      * Proper constructor for a new vm template.
      */
-    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, Map details) {
-        this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, isExtractable, type, url, null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType, details);
-    	this.uuid = UUID.randomUUID().toString();
-    	this.state = TemplateState.Allocated;
+    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured,
+            boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId,
+            String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
+            HypervisorType hyperType, Map details) {
+        this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, isExtractable, type, url,
+                null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType,
+                details);
+        this.uuid = UUID.randomUUID().toString();
     }
 
-    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled, boolean isDynamicallyScalable) {
-        this(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType, details);
+    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured,
+            boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId,
+            String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
+            HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled) {
+        this(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, cksum,
+                displayText, enablePassword, guestOSId, bootable, hyperType, details);
         this.templateTag = templateTag;
-    	this.uuid = UUID.randomUUID().toString();
-    	this.state = TemplateState.Allocated;
-    	this.enableSshKey = sshKeyEnabled;
-        this.dynamicallyScalable = isDynamicallyScalable;
+        this.uuid = UUID.randomUUID().toString();
+        this.enableSshKey = sshKeyEnabled;
     }
 
-    public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
+
+    public static VMTemplateVO createPreHostIso(Long id, String uniqueName, String name, ImageFormat format,
+            boolean isPublic, boolean featured, TemplateType type, String url, Date created, boolean requiresHvm,
+            int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId,
+            boolean bootable, HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled, boolean isDynamicallyScalable) {
+        VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, type, url, created,
+                requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType);
+        template.templateTag = templateTag;
+        template.enableSshKey = sshKeyEnabled;
+        template.dynamicallyScalable = isDynamicallyScalable;
+        return template;
+    }
+
+    public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic,
+            boolean featured, TemplateType type, String url, Date created, boolean requiresHvm, int bits,
+            long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
+            HypervisorType hyperType) {
         this.id = id;
         this.name = name;
         this.publicTemplate = isPublic;
@@ -202,22 +218,29 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
         this.guestOSId = guestOSId;
         this.bootable = bootable;
         this.hypervisorType = hyperType;
-    	this.uuid = UUID.randomUUID().toString();
-    	this.state = TemplateState.Allocated;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     // Has an extra attribute - isExtractable
-    public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, Map details) {
-        this(id, uniqueName, name, format, isPublic, featured, type, url, created, requiresHvm, bits, accountId, cksum,  displayText, enablePassword, guestOSId, bootable, hyperType);
+    public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic,
+            boolean featured, boolean isExtractable, TemplateType type, String url, Date created, boolean requiresHvm,
+            int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId,
+            boolean bootable, HypervisorType hyperType, Map details) {
+        this(id, uniqueName, name, format, isPublic, featured, type, url, created, requiresHvm, bits, accountId, cksum,
+                displayText, enablePassword, guestOSId, bootable, hyperType);
         this.extractable = isExtractable;
-    	this.uuid = UUID.randomUUID().toString();
-    	this.details = details;
+        this.uuid = UUID.randomUUID().toString();
+        this.details = details;
     }
 
-    public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, String templateTag, Map details) {
-        this(id, uniqueName, name, format, isPublic, featured, isExtractable, type, url, created, requiresHvm, bits, accountId, cksum,  displayText, enablePassword, guestOSId, bootable, hyperType, details);
+    public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic,
+            boolean featured, boolean isExtractable, TemplateType type, String url, Date created, boolean requiresHvm,
+            int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId,
+            boolean bootable, HypervisorType hyperType, String templateTag, Map details) {
+        this(id, uniqueName, name, format, isPublic, featured, isExtractable, type, url, created, requiresHvm, bits,
+                accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType, details);
         this.templateTag = templateTag;
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -428,32 +451,36 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
         return -1;
     }
 
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     public Map getDetails() {
-    	return this.details;
+        return this.details;
     }
 
     public void setDetails(Map details) {
-    	this.details = details;
+        this.details = details;
     }
 
     @Override
     public boolean equals(Object that) {
-        if (this == that ) {
+        if (this == that) {
             return true;
         }
-        if (!(that instanceof VMTemplateVO)){
+        if (!(that instanceof VMTemplateVO)) {
             return false;
         }
-        VMTemplateVO other = (VMTemplateVO)that;
+        VMTemplateVO other = (VMTemplateVO) that;
 
         return ((this.getUniqueName().equals(other.getUniqueName())));
     }
@@ -465,10 +492,12 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
 
     @Transient
     String toString;
+
     @Override
     public String toString() {
         if (toString == null) {
-            toString = new StringBuilder("Tmpl[").append(id).append("-").append(format).append("-").append(uniqueName).toString();
+            toString = new StringBuilder("Tmpl[").append(id).append("-").append(format).append("-").append(uniqueName)
+                    .toString();
         }
         return toString;
     }
@@ -478,61 +507,12 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
     }
 
     public void setSortKey(int key) {
-    	sortKey = key;
+        sortKey = key;
     }
 
     public int getSortKey() {
-    	return sortKey;
+        return sortKey;
     }
-
-	@Override
-	public boolean getEnableSshKey() {
-		return enableSshKey;
-	}
-
-	public void setEnableSshKey(boolean enable) {
-		enableSshKey = enable;
-	}
-	
-	 public Long getImageDataStoreId() {
-	        return this.imageDataStoreId;
-	    }
-
-	    public void setImageDataStoreId(long dataStoreId) {
-	        this.imageDataStoreId = dataStoreId;
-	    }
-	    
-	    public void setSize(Long size) {
-	        this.size = size;
-	    }
-	    
-	    public Long getSize() {
-	        return this.size;
-	    }
-	    
-	    public TemplateState getState() {
-	        return this.state;
-	    }
-	    
-	    public long getUpdatedCount() {
-	        return this.updatedCount;
-	    }
-	    
-	    public void incrUpdatedCount() {
-	        this.updatedCount++;
-	    }
-
-	    public void decrUpdatedCount() {
-	        this.updatedCount--;
-	    }
-	    
-	    public Date getUpdated() {
-	        return updated;
-	    }
-	    
-	    public void setUpdated(Date updated) {
-	        this.updated = updated;
-	    }
 
         public void setDynamicallyScalable(boolean dynamicallyScalable) {
             this.dynamicallyScalable = dynamicallyScalable;
@@ -542,5 +522,41 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
             return this.dynamicallyScalable;
         }
 
+    @Override
+    public boolean getEnableSshKey() {
+        return enableSshKey;
+    }
+
+    public void setEnableSshKey(boolean enable) {
+        enableSshKey = enable;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
+    public Long getSize() {
+        return this.size;
+    }
+
+    public long getUpdatedCount() {
+        return this.updatedCount;
+    }
+
+    public void incrUpdatedCount() {
+        this.updatedCount++;
+    }
+
+    public void decrUpdatedCount() {
+        this.updatedCount--;
+    }
+
+    public Date getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(Date updated) {
+        this.updated = updated;
+    }
 
 }

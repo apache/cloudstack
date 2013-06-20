@@ -18,9 +18,12 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import com.cloud.storage.DataStoreRole;
 
 public interface SnapshotDataFactory {
-    public SnapshotInfo getSnapshot(long snapshotId, DataStore store);
-    public SnapshotInfo getSnapshot(DataObject obj, DataStore store);
-    public SnapshotInfo getSnapshot(long snapshotId);
+    SnapshotInfo getSnapshot(long snapshotId, DataStore store);
+
+    SnapshotInfo getSnapshot(DataObject obj, DataStore store);
+
+    SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role);
 }

@@ -76,7 +76,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     @Inject protected AsyncJobManager         _asyncMgr;
     @Inject protected VolumeDao               _volsDao;
     @Inject protected ConfigurationDao 		  _configDao;
-    
+
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private int        _snapshotPollInterval;
     private Timer      _testClockTimer;
@@ -348,7 +348,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             _testTimerTask = new TestClock(this, minutesPerHour, hoursPerDay, daysPerWeek, daysPerMonth, weeksPerMonth, monthsPerYear);
         }
         _currentTimestamp = new Date();
-        
+
         s_logger.info("Snapshot Scheduler is configured.");
 
         return true;

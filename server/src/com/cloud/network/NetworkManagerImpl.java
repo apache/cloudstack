@@ -99,7 +99,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -888,12 +887,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             DataCenter zone = _configMgr.getZone(network.getDataCenterId());
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 if (network.getGuestType() == Network.GuestType.Shared) {
-                    if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                        _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
-                    } else {
-                        throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if " +
-                                "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
-                    }
+                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+                    _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
+                } else {
+                    throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if " +
+                        "network services Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
+                }
                 }
             } else {
                 _accountMgr.checkAccess(caller, null, true, ipToAssoc);
@@ -3634,9 +3633,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         for (IPAddressVO ipToRelease : ipsToRelease) {
             if (ipToRelease.getVpcId() == null) {
                 if (!ipToRelease.isPortable()) {
-                    IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
-                    assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
-                } else {
+                IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
+                assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
+            } else {
                     // portable IP address are associated with owner, until explicitly requested to be disassociated
                     // so as part of network clean up just break IP association with guest network
                     ipToRelease.setAssociatedWithNetworkId(null);
@@ -3843,7 +3842,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
         }
@@ -4150,37 +4149,37 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-
-        VirtualMachine vm = vmProfile.getVirtualMachine();
-        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        Host host = _hostDao.findById(vm.getHostId()); 
-        DeployDestination dest = new DeployDestination(dc, null, null, host);
-
-        NicProfile nic = getNicProfileForVm(network, requested, vm);
-
-        //1) allocate nic (if needed) Always allocate if it is a user vm
-        if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
-            int deviceId = _nicDao.countNics(vm.getId());
-            
-            nic = allocateNic(requested, network, false, 
-                    deviceId, vmProfile).first();
-            
-            if (nic == null) {
-                throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
+                
+                VirtualMachine vm = vmProfile.getVirtualMachine();
+                DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+                Host host = _hostDao.findById(vm.getHostId()); 
+                DeployDestination dest = new DeployDestination(dc, null, null, host);
+                
+                NicProfile nic = getNicProfileForVm(network, requested, vm);
+                
+                //1) allocate nic (if needed) Always allocate if it is a user vm
+                if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
+                    int deviceId = _nicDao.countNics(vm.getId());
+                    
+                    nic = allocateNic(requested, network, false, 
+                            deviceId, vmProfile).first();
+                    
+                    if (nic == null) {
+                        throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
+                    }
+                    
+                    s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network); 
+                }
+                
+                //2) prepare nic
+                if (prepare) {
+                    Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
+                    nic = prepareNic(vmProfile, dest, context, nic.getId(), implemented.second());
+                    s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
+                }
+                
+                return nic;
             }
-
-            s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network); 
-        }
-
-        //2) prepare nic
-        if (prepare) {
-            Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
-            nic = prepareNic(vmProfile, dest, context, nic.getId(), implemented.second());
-            s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
-        }
-        
-        return nic;
-    }
 
 
     @Override
@@ -4265,7 +4264,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
         return elements;
     }
-
+    
 
     @Override
     public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
@@ -4301,7 +4300,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         assert lbElement instanceof LoadBalancingServiceProvider; 
         return (LoadBalancingServiceProvider)lbElement;        
     }
-
+    
 
     @Override
     public boolean isNetworkInlineMode(Network network) {
@@ -4319,7 +4318,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
 
-    @Override
+         @Override
     public boolean isSecondaryIpSetForNic(long nicId) {
         NicVO nic = _nicDao.findById(nicId);
         return nic.getSecondaryIp();
@@ -4327,42 +4326,41 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
 
     private boolean removeVmSecondaryIpsOfNic(long nicId) {
-       Transaction txn = Transaction.currentTxn();
-       txn.start();
-       List <NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByNicId(nicId);
-       if (ipList != null) {
-           for (NicSecondaryIpVO ip: ipList) {
-               _nicSecondaryIpDao.remove(ip.getId());
+           Transaction txn = Transaction.currentTxn();
+           txn.start();
+           List <NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByNicId(nicId);
+           if (ipList != null) {
+               for (NicSecondaryIpVO ip: ipList) {
+                   _nicSecondaryIpDao.remove(ip.getId());
+               }
+               s_logger.debug("Revoving nic secondary ip entry ...");
            }
-           s_logger.debug("Revoving nic secondary ip entry ...");
-       }
-       txn.commit();
-       return true;
-    }
-
-
-    @Override
-    public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod,Account owner,
-            String requestedIp) throws InsufficientAddressCapacityException {
-        PublicIp ip = assignPublicIpAddress(dc.getId(), null, owner, VlanType.DirectAttached, networkId, requestedIp, false);
-        if (ip == null) {
-            s_logger.debug("There is no free public ip address");
-            return null;
+           txn.commit();
+           return true;
         }
-        Ip ipAddr = ip.getAddress();
-        return ipAddr.addr();
-    }
 
 
-    @Override
+        @Override
+        public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod,Account owner,
+                String requestedIp) throws InsufficientAddressCapacityException {
+            PublicIp ip = assignPublicIpAddress(dc.getId(), null, owner, VlanType.DirectAttached, networkId, requestedIp, false);
+            if (ip == null) {
+                s_logger.debug("There is no free public ip address");
+                return null;
+            }
+            Ip ipAddr = ip.getAddress();
+            return ipAddr.addr();
+        }
+        
+
+        @Override
     public NicVO savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType) {
-        NicVO nic = new NicVO(null, null, network.getId(), null); 
-        nic.setIp4Address(ip4Address);
+            NicVO nic = new NicVO(null, null, network.getId(), null); 
+            nic.setIp4Address(ip4Address);
         nic.setIp6Address(ip6Address);
         nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
         nic.setState(Nic.State.Reserved);
         nic.setVmType(vmType);
         return _nicDao.persist(nic);
     }
-    
  }

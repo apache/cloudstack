@@ -1173,7 +1173,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         vmGuru.prepareStop(profile);
-
         StopCommand stop = new StopCommand(vm, _mgmtServer.getExecuteInSequence());
         boolean stopped = false;
         StopAnswer answer = null;
@@ -2591,7 +2590,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
         }
@@ -2834,7 +2833,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
 
             s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
-
+            
             boolean result = false;
             try{
                 result = vmGuru.plugNic(network, nicTO, vmTO, context, dest);
@@ -2844,17 +2843,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     // insert nic's Id into DB as resource_name
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmVO.getAccountId(),
                             vmVO.getDataCenterId(), vmVO.getId(), Long.toString(nic.getId()), network.getNetworkOfferingId(),
-                            null, isDefault, VirtualMachine.class.getName(), vmVO.getUuid());
+                            null, isDefault, VirtualMachine.class.getName(), vmVO.getUuid());                     
                     return nic;
                 } else {
                     s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
                     return null;
-                }
+                }                
             }finally{
                 if(!result){
                     _networkMgr.removeNic(vmProfile, _nicsDao.findById(nic.getId()));
                 }
-            }
+            }            
         } else if (vm.getState() == State.Stopped) {
             //1) allocate nic
             return _networkMgr.createNicForVm(network, requested, context, vmProfile, false);
@@ -2895,10 +2894,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.warn("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
             throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
         }
-
+        
         // if specified nic is associated with PF/LB/Static NAT
         if(rulesMgr.listAssociatedRulesForGuestNic(nic).size() > 0){
-            throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network
+            throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network 
                     + ", nic has associated Port forwarding or Load balancer or Static NAT rules.");
         }
 
@@ -2916,7 +2915,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
                 long isDefault = (nic.isDefaultNic()) ? 1 : 0;
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(),
-                        vm.getId(), Long.toString(nic.getId()), network.getNetworkOfferingId(), null,
+                        vm.getId(), Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 
                         isDefault, VirtualMachine.class.getName(), vm.getUuid());
             } else {
                 s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);

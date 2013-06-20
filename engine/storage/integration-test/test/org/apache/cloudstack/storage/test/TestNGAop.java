@@ -31,8 +31,7 @@ import com.cloud.utils.db.Transaction;
 public class TestNGAop implements IMethodInterceptor {
 
     @Override
-    public List<IMethodInstance> intercept(List<IMethodInstance> methods,
-            ITestContext context) {
+    public List<IMethodInstance> intercept(List<IMethodInstance> methods, ITestContext context) {
         for (IMethodInstance methodIns : methods) {
             ITestNGMethod method = methodIns.getMethod();
             ConstructorOrMethod meth = method.getConstructorOrMethod();
@@ -44,8 +43,7 @@ public class TestNGAop implements IMethodInterceptor {
                 }
             }
         }
-        
-        
+
         // TODO Auto-generated method stub
         return methods;
     }

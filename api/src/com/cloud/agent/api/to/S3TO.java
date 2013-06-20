@@ -18,9 +18,10 @@ package com.cloud.agent.api.to;
 
 import java.util.Date;
 
+import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.S3Utils;
 
-public final class S3TO implements S3Utils.ClientOptions {
+public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
 
     private Long id;
     private String uuid;
@@ -33,6 +34,7 @@ public final class S3TO implements S3Utils.ClientOptions {
     private Integer maxErrorRetry;
     private Integer socketTimeout;
     private Date created;
+    private boolean enableRRS;
 
     public S3TO() {
 
@@ -44,7 +46,7 @@ public final class S3TO implements S3Utils.ClientOptions {
             final String secretKey, final String endPoint,
             final String bucketName, final Boolean httpsFlag,
             final Integer connectionTimeout, final Integer maxErrorRetry,
-            final Integer socketTimeout, final Date created) {
+            final Integer socketTimeout, final Date created, final boolean enableRRS) {
 
         super();
 
@@ -59,6 +61,7 @@ public final class S3TO implements S3Utils.ClientOptions {
         this.maxErrorRetry = maxErrorRetry;
         this.socketTimeout = socketTimeout;
         this.created = created;
+        this.enableRRS = enableRRS;
 
     }
 
@@ -125,6 +128,10 @@ public final class S3TO implements S3Utils.ClientOptions {
 
         if (created != null ? !created.equals(thatS3TO.created)
                 : thatS3TO.created != null) {
+            return false;
+        }
+
+        if (enableRRS != thatS3TO.enableRRS) {
             return false;
         }
 
@@ -248,5 +255,21 @@ public final class S3TO implements S3Utils.ClientOptions {
     public void setCreated(final Date created) {
         this.created = created;
     }
+
+    @Override
+    public DataStoreRole getRole() {
+        return DataStoreRole.Image;
+    }
+
+
+
+    public boolean getEnableRRS() {
+        return enableRRS;
+    }
+
+    public void setEnableRRS(boolean enableRRS) {
+        this.enableRRS = enableRRS;
+    }
+
 
 }

@@ -156,6 +156,7 @@
                 <argument>${basedir}/target/db/cloudbridge_offering_alter.sql</argument>
                 <!-- Seed the database -->
                 <argument>${basedir}/developer-prefill.sql</argument>
+                <argument>${basedir}/developer-prefill.sql.override</argument>
                 <!-- Do database upgrade-->
                 <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
                 <argument>--database=cloud,usage,awsapi</argument>

@@ -26,59 +26,60 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="vm_template_details")
+@Table(name = "vm_template_details")
 public class VMTemplateDetailVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="template_id")
+
+    @Column(name = "template_id")
     private long templateId;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
-    
-    @Column(name="value", length=1024)
+
+    @Column(name = "value", length = 1024)
     private String value;
-	
-    public VMTemplateDetailVO() {}
-    
-    public VMTemplateDetailVO(long templateId, String name, String value) {
-    	this.templateId = templateId;
-    	this.name = name;
-    	this.value = value;
+
+    public VMTemplateDetailVO() {
     }
 
-	public long getId() {
-		return id;
-	}
+    public VMTemplateDetailVO(long templateId, String name, String value) {
+        this.templateId = templateId;
+        this.name = name;
+        this.value = value;
+    }
 
-	public long getTemplateId() {
-		return templateId;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public long getTemplateId() {
+        return templateId;
+    }
 
-	public String getValue() {
-		return value;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    public String getValue() {
+        return value;
+    }
 
-	public void setTemplateId(long templateId) {
-		this.templateId = templateId;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setTemplateId(long templateId) {
+        this.templateId = templateId;
+    }
 
-	public void setValue(String value) {
-		this.value = value;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

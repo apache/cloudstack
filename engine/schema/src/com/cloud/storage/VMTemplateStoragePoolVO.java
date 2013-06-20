@@ -37,228 +37,239 @@ import com.cloud.utils.db.GenericDaoBase;
 
 /**
  * Join table for storage pools and templates
- *
+ * 
  */
 @Entity
-@Table(name="template_spool_ref")
+@Table(name = "template_spool_ref")
 public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, DataObjectInStore {
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	long id;
-	
-	@Column(name="pool_id")
-	private long poolId;
-	
-	@Column(name="template_id") long templateId;
-	
-	@Column(name=GenericDaoBase.CREATED_COLUMN) Date created = null;
-	
-	@Column(name="last_updated")
-	@Temporal(value=TemporalType.TIMESTAMP) Date lastUpdated = null;
-	
-	@Column (name="download_pct") int downloadPercent;
-	
-	@Column (name="download_state")
-	@Enumerated(EnumType.STRING) Status downloadState;
-	
-	@Column (name="local_path") String localDownloadPath;
-	
-	@Column (name="error_str") String errorString;
-	
-	@Column (name="job_id") String jobId;
-	
-	@Column (name="install_path") String installPath;
-	
-	@Column (name="template_size") long templateSize;
-	
-	@Column (name="marked_for_gc") boolean markedForGC;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id;
 
-	@Column(name="update_count", updatable = true, nullable=false)
-	protected long updatedCount;
+    @Column(name = "pool_id")
+    private long poolId;
 
-	@Column(name = "updated")
-	@Temporal(value = TemporalType.TIMESTAMP)
-	Date updated;
+    @Column(name = "template_id")
+    long templateId;
 
-	@Column(name = "state")
-	@Enumerated(EnumType.STRING)
-	ObjectInDataStoreStateMachine.State state;
+    @Column(name = GenericDaoBase.CREATED_COLUMN)
+    Date created = null;
 
-	@Override
+    @Column(name = "last_updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date lastUpdated = null;
+
+    @Column(name = "download_pct")
+    int downloadPercent;
+
+    @Column(name = "download_state")
+    @Enumerated(EnumType.STRING)
+    Status downloadState;
+
+    @Column(name = "local_path")
+    String localDownloadPath;
+
+    @Column(name = "error_str")
+    String errorString;
+
+    @Column(name = "job_id")
+    String jobId;
+
+    @Column(name = "install_path")
+    String installPath;
+
+    @Column(name = "template_size")
+    long templateSize;
+
+    @Column(name = "marked_for_gc")
+    boolean markedForGC;
+
+    @Column(name = "update_count", updatable = true, nullable = false)
+    protected long updatedCount;
+
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date updated;
+
+    @Column(name = "state")
+    @Enumerated(EnumType.STRING)
+    ObjectInDataStoreStateMachine.State state;
+
+    @Override
     public String getInstallPath() {
-		return installPath;
-	}
-	
-	@Override
+        return installPath;
+    }
+
+    @Override
     public long getTemplateSize() {
-		return templateSize;
-	}
+        return templateSize;
+    }
 
-	public long getPoolId() {
-		return poolId;
-	}
+    public long getPoolId() {
+        return poolId;
+    }
 
-	public void setpoolId(long poolId) {
-		this.poolId = poolId;
-	}
+    public void setpoolId(long poolId) {
+        this.poolId = poolId;
+    }
 
-	@Override
+    @Override
     public long getTemplateId() {
-		return templateId;
-	}
+        return templateId;
+    }
 
-	@Override
+    @Override
     public void setTemplateId(long templateId) {
-		this.templateId = templateId;
-	}
+        this.templateId = templateId;
+    }
 
-	@Override
+    @Override
     public int getDownloadPercent() {
-		return downloadPercent;
-	}
+        return downloadPercent;
+    }
 
-	@Override
+    @Override
     public void setDownloadPercent(int downloadPercent) {
-		this.downloadPercent = downloadPercent;
-	}
+        this.downloadPercent = downloadPercent;
+    }
 
-	@Override
+    @Override
     public void setDownloadState(Status downloadState) {
-		this.downloadState = downloadState;
-	}
+        this.downloadState = downloadState;
+    }
 
-	@Override
+    @Override
     public long getId() {
-		return id;
-	}
+        return id;
+    }
 
-	@Override
+    @Override
     public Date getCreated() {
-		return created;
-	}
+        return created;
+    }
 
-	@Override
+    @Override
     public Date getLastUpdated() {
-		return lastUpdated;
-	}
-	
-	@Override
+        return lastUpdated;
+    }
+
+    @Override
     public void setLastUpdated(Date date) {
-	    lastUpdated = date;
-	}
-	
-	@Override
+        lastUpdated = date;
+    }
+
+    @Override
     public void setInstallPath(String installPath) {
-	    this.installPath = installPath;
-	}
+        this.installPath = installPath;
+    }
 
-	@Override
+    @Override
     public Status getDownloadState() {
-		return downloadState;
-	}
+        return downloadState;
+    }
 
-	public VMTemplateStoragePoolVO(long poolId, long templateId) {
-		super();
-		this.poolId = poolId;
-		this.templateId = templateId;
-		this.downloadState = Status.NOT_DOWNLOADED;
-		this.state = ObjectInDataStoreStateMachine.State.Allocated;
-		this.markedForGC = false;
-	}
+    public VMTemplateStoragePoolVO(long poolId, long templateId) {
+        super();
+        this.poolId = poolId;
+        this.templateId = templateId;
+        this.downloadState = Status.NOT_DOWNLOADED;
+        this.state = ObjectInDataStoreStateMachine.State.Allocated;
+        this.markedForGC = false;
+    }
 
-	public VMTemplateStoragePoolVO(long poolId, long templateId, Date lastUpdated,
-			int downloadPercent, Status downloadState,
-			String localDownloadPath, String errorString, String jobId,
-			String installPath, long templateSize) {
-		super();
-		this.poolId = poolId;
-		this.templateId = templateId;
-		this.lastUpdated = lastUpdated;
-		this.downloadPercent = downloadPercent;
-		this.downloadState = downloadState;
-		this.localDownloadPath = localDownloadPath;
-		this.errorString = errorString;
-		this.jobId = jobId;
-		this.installPath = installPath;
-		this.templateSize = templateSize;
-	}
+    public VMTemplateStoragePoolVO(long poolId, long templateId, Date lastUpdated, int downloadPercent,
+            Status downloadState, String localDownloadPath, String errorString, String jobId, String installPath,
+            long templateSize) {
+        super();
+        this.poolId = poolId;
+        this.templateId = templateId;
+        this.lastUpdated = lastUpdated;
+        this.downloadPercent = downloadPercent;
+        this.downloadState = downloadState;
+        this.localDownloadPath = localDownloadPath;
+        this.errorString = errorString;
+        this.jobId = jobId;
+        this.installPath = installPath;
+        this.templateSize = templateSize;
+    }
 
-	protected VMTemplateStoragePoolVO() {
-		
-	}
+    protected VMTemplateStoragePoolVO() {
 
-	@Override
+    }
+
+    @Override
     public void setLocalDownloadPath(String localPath) {
-		this.localDownloadPath = localPath;
-	}
+        this.localDownloadPath = localPath;
+    }
 
-	@Override
+    @Override
     public String getLocalDownloadPath() {
-		return localDownloadPath;
-	}
+        return localDownloadPath;
+    }
 
-	@Override
+    @Override
     public void setErrorString(String errorString) {
-		this.errorString = errorString;
-	}
+        this.errorString = errorString;
+    }
 
-	@Override
+    @Override
     public String getErrorString() {
-		return errorString;
-	}
+        return errorString;
+    }
 
-	@Override
+    @Override
     public void setJobId(String jobId) {
-		this.jobId = jobId;
-	}
+        this.jobId = jobId;
+    }
 
-	@Override
+    @Override
     public String getJobId() {
-		return jobId;
-	}
-	
-	public void setTemplateSize(long templateSize) {
-		this.templateSize = templateSize;
-	}
-	
-	public boolean getMarkedForGC() {
-		return markedForGC;
-	}
-	
-	public void setMarkedForGC(boolean markedForGC) {
-		this.markedForGC = markedForGC;
-	}
+        return jobId;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof VMTemplateStoragePoolVO) {
-		   VMTemplateStoragePoolVO other = (VMTemplateStoragePoolVO)obj;
-		   return (this.templateId==other.getTemplateId() && this.poolId==other.getPoolId());
-		}
-		return false;
-	}
+    public void setTemplateSize(long templateSize) {
+        this.templateSize = templateSize;
+    }
 
-	@Override
-	public int hashCode() {
-		Long tid = new Long(templateId);
-		Long hid = new Long(poolId);
-		return tid.hashCode()+hid.hashCode();
-	}
-	
-	@Override
+    public boolean getMarkedForGC() {
+        return markedForGC;
+    }
+
+    public void setMarkedForGC(boolean markedForGC) {
+        this.markedForGC = markedForGC;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof VMTemplateStoragePoolVO) {
+            VMTemplateStoragePoolVO other = (VMTemplateStoragePoolVO) obj;
+            return (this.templateId == other.getTemplateId() && this.poolId == other.getPoolId());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        Long tid = new Long(templateId);
+        Long hid = new Long(poolId);
+        return tid.hashCode() + hid.hashCode();
+    }
+
+    @Override
     public String toString() {
-	    return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId").append("-").append(installPath).append("]").toString();
-	}
+        return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId")
+                .append("-").append(installPath).append("]").toString();
+    }
 
     @Override
     public State getState() {
         return this.state;
     }
-    
+
     public long getUpdatedCount() {
         return this.updatedCount;
     }
-    
+
     public void incrUpdatedCount() {
         this.updatedCount++;
     }
@@ -266,10 +277,24 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
     public void decrUpdatedCount() {
         this.updatedCount--;
     }
-    
+
     public Date getUpdated() {
         return updated;
     }
-    
+
+    @Override
+    public long getObjectId() {
+        return this.getTemplateId();
+    }
+
+    @Override
+    public long getDataStoreId() {
+        return this.getPoolId();
+    }
+
+    @Override
+    public State getObjectInStoreState() {
+        return this.state;
+    }
 
 }

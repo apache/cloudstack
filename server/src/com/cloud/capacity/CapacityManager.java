@@ -18,6 +18,7 @@ package com.cloud.capacity;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.Manager;
@@ -41,7 +42,7 @@ public interface CapacityManager extends Manager {
      */
     boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, float memoryOvercommitRatio, boolean considerReservedCapacity);
 
-	void updateCapacityForHost(HostVO host);
+	void updateCapacityForHost(Host host);
     
 	/**
      * @param pool storage pool

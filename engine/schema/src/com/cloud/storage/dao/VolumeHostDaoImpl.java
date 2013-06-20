@@ -35,7 +35,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
-@Local(value={VolumeHostDao.class})
+@Local(value = { VolumeHostDao.class })
 public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implements VolumeHostDao {
     private static final Logger s_logger = Logger.getLogger(VolumeHostDaoImpl.class);
     protected final SearchBuilder<VolumeHostVO> HostVolumeSearch;
@@ -44,7 +44,8 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
     protected final SearchBuilder<VolumeHostVO> HostSearch;
     protected final SearchBuilder<VolumeHostVO> HostDestroyedSearch;
     protected final SearchBuilder<VolumeHostVO> updateStateSearch;
-    public VolumeHostDaoImpl(){
+
+    public VolumeHostDaoImpl() {
         HostVolumeSearch = createSearchBuilder();
         HostVolumeSearch.and("host_id", HostVolumeSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostVolumeSearch.and("volume_id", HostVolumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
@@ -58,7 +59,7 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
         ZoneVolumeSearch.done();
 
         HostSearch = createSearchBuilder();
-        HostSearch.and("host_id", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);		
+        HostSearch.and("host_id", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.and("destroyed", HostSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         HostSearch.done();
 
@@ -70,16 +71,14 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
         HostDestroyedSearch = createSearchBuilder();
         HostDestroyedSearch.and("host_id", HostDestroyedSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostDestroyedSearch.and("destroyed", HostDestroyedSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        HostDestroyedSearch.done();	
-        
+        HostDestroyedSearch.done();
+
         updateStateSearch = this.createSearchBuilder();
         updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
         updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
         updateStateSearch.done();
     }
-
-
 
     @Override
     public VolumeHostVO findByHostVolume(long hostId, long volumeId) {
@@ -88,7 +87,7 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
         sc.setParameters("volume_id", volumeId);
         sc.setParameters("destroyed", false);
         return findOneIncludingRemovedBy(sc);
-    }	
+    }
 
     @Override
     public VolumeHostVO findVolumeByZone(long volumeId, long zoneId) {
@@ -107,8 +106,6 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
         return findOneBy(sc);
     }
 
-
-
     @Override
     public List<VolumeHostVO> listBySecStorage(long ssHostId) {
         SearchCriteria<VolumeHostVO> sc = HostSearch.create();
@@ -118,7 +115,7 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
     }
 
     @Override
-    public List<VolumeHostVO> listDestroyed(long hostId){
+    public List<VolumeHostVO> listDestroyed(long hostId) {
         SearchCriteria<VolumeHostVO> sc = HostDestroyedSearch.create();
         sc.setParameters("host_id", hostId);
         sc.setParameters("destroyed", true);
@@ -126,13 +123,11 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
     }
 
     @Override
-    public boolean updateState(State currentState, Event event,
-            State nextState, DataObjectInStore vo, Object data) {
+    public boolean updateState(State currentState, Event event, State nextState, DataObjectInStore vo, Object data) {
         VolumeHostVO volHost = (VolumeHostVO) vo;
         Long oldUpdated = volHost.getUpdatedCount();
         Date oldUpdatedTime = volHost.getUpdated();
-    
-        
+
         SearchCriteria<VolumeHostVO> sc = updateStateSearch.create();
         sc.setParameters("id", volHost.getId());
         sc.setParameters("state", currentState);
@@ -149,14 +144,18 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
             VolumeHostVO dbVol = findByIdIncludingRemoved(volHost.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
+                        .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
                         .append(dbVol.getUpdated());
-                str.append(": New Data={id=").append(volHost.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(volHost.getUpdatedCount())
+                str.append(": New Data={id=").append(volHost.getId()).append("; state=").append(nextState)
+                        .append("; event=").append(event).append("; updatecount=").append(volHost.getUpdatedCount())
                         .append("; updatedTime=").append(volHost.getUpdated());
-                str.append(": stale Data={id=").append(volHost.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                str.append(": stale Data={id=").append(volHost.getId()).append("; state=").append(currentState)
+                        .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
                         .append("; updatedTime=").append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + volHost.getId() + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + volHost.getId()
+                        + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;

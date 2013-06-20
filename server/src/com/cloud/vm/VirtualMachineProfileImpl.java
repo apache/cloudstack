@@ -16,7 +16,14 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.agent.api.to.VolumeTO;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+
+import com.cloud.agent.api.to.DiskTO;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -28,24 +35,19 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Implementation of VirtualMachineProfile.
  *
  */
 public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements VirtualMachineProfile<T> {
-    
+
     T _vm;
     ServiceOfferingVO _offering;
     VMTemplateVO _template;
     UserVmDetailVO _userVmDetails;
     Map<Param, Object> _params;
     List<NicProfile> _nics = new ArrayList<NicProfile>();
-    List<VolumeTO> _disks = new ArrayList<VolumeTO>();
+    List<DiskTO> _disks = new ArrayList<DiskTO>();
     StringBuilder _bootArgs = new StringBuilder();
     Account _owner;
     BootloaderType _bootloader;
@@ -53,7 +55,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     Float memoryOvercommitRatio = 1.0f;
 
     VirtualMachine.Type _type;
-    
+
     public VirtualMachineProfileImpl(T vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<Param, Object> params) {
         _vm = vm;
         _template = template;
@@ -66,25 +68,25 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
         if (vm != null)
         	_type = vm.getType();
     }
-    
+
     public VirtualMachineProfileImpl(T vm) {
         this(vm, null, null, null, null);
     }
-    
+
     public VirtualMachineProfileImpl(VirtualMachine.Type type) {
         _type = type;
     }
-    
+
     @Override
     public String toString() {
         return _vm.toString();
     }
-    
+
     @Override
     public T getVirtualMachine() {
         return _vm;
     }
-    
+
     @Override
     public ServiceOffering getServiceOffering() {
         if (_offering == null) {
@@ -92,17 +94,17 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
         }
         return _offering;
     }
-    
+
     @Override
     public void setParameter(Param name, Object value) {
         _params.put(name, value);
     }
-    
-    @Override 
+
+    @Override
     public void setBootLoaderType(BootloaderType bootLoader) {
     	this._bootloader = bootLoader;
     }
-    
+
     @Override
     public VirtualMachineTemplate getTemplate() {
         if (_template == null && _vm != null) {
@@ -110,7 +112,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
         }
         return _template;
     }
-    
+
     @Override
     public HypervisorType getHypervisorType() {
         return _vm.getHypervisorType();
@@ -130,7 +132,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     public long getId() {
         return _vm.getId();
     }
-    
+
     @Override
     public String getUuid() {
 	return _vm.getUuid();
@@ -139,48 +141,48 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     public void setNics(List<NicProfile> nics) {
         _nics = nics;
     }
-    
-    public void setDisks(List<VolumeTO> disks) {
+
+    public void setDisks(List<DiskTO> disks) {
         _disks = disks;
     }
-    
+
     @Override
     public List<NicProfile> getNics() {
         return _nics;
     }
-    
+
     @Override
-    public List<VolumeTO> getDisks() {
+    public List<DiskTO> getDisks() {
         return _disks;
     }
-    
+
     @Override
     public void addNic(int index, NicProfile nic) {
         _nics.add(index, nic);
     }
-    
+
     @Override
-    public void addDisk(int index, VolumeTO disk) {
+    public void addDisk(int index, DiskTO disk) {
         _disks.add(index, disk);
     }
-    
+
     @Override
     public StringBuilder getBootArgsBuilder() {
         return _bootArgs;
     }
-    
+
     @Override
     public void addBootArgs(String... args) {
         for (String arg : args) {
             _bootArgs.append(arg).append(" ");
         }
     }
-    
+
     @Override
     public VirtualMachine.Type getType() {
         return _type;
     }
-    
+
     @Override
     public Account getOwner() {
         if (_owner == null) {
@@ -188,12 +190,12 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
         }
         return _owner;
     }
-    
+
     @Override
     public String getBootArgs() {
         return _bootArgs.toString();
     }
-    
+
     static ServiceOfferingDao s_offeringDao;
     static VMTemplateDao s_templateDao;
     static AccountDao s_accountDao;
@@ -209,7 +211,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     }
 
     @Override
-    public void addDisk(VolumeTO disk) {
+    public void addDisk(DiskTO disk) {
         _disks.add(disk);
     }
 
@@ -217,12 +219,12 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     public Object getParameter(Param name) {
         return _params.get(name);
     }
-    
+
     @Override
     public String getHostName() {
         return _vm.getHostName();
     }
-    
+
     @Override
     public String getInstanceName() {
         return _vm.getInstanceName();
@@ -232,15 +234,15 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
 	public BootloaderType getBootLoaderType() {
 		return this._bootloader;
 	}
-	
+
 	@Override
 	public Map<Param, Object> getParameters() {
 	    return _params;
 	}
 
-    public void setServiceOffering(ServiceOfferingVO offering) {
-        _offering = offering;
-    }
+	public void setServiceOffering(ServiceOfferingVO offering) {
+		_offering = offering;
+	}
 
     public void setCpuOvercommitRatio(Float cpuOvercommitRatio) {
         this.cpuOvercommitRatio = cpuOvercommitRatio;
@@ -254,7 +256,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
 
     @Override
     public Float getCpuOvercommitRatio() {
-        return this.cpuOvercommitRatio;
+        return  this.cpuOvercommitRatio;
     }
 
     @Override

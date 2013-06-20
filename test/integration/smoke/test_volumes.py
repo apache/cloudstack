@@ -19,6 +19,7 @@
 #Import Local Modules
 import marvin
 from marvin.cloudstackTestCase import *
+from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
 from marvin.integration.lib.utils import *
@@ -345,7 +346,7 @@ class TestVolumes(cloudstackTestCase):
                         cls.disk_offering,
                         cls.volume,
                         cls.account
-        ]
+                        ]
 
     @classmethod
     def tearDownClass(cls):

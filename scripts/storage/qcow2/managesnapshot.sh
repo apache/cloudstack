@@ -48,7 +48,7 @@ is_lv() {
 		# And a logical volume
 		lvm lvs "${1}" > /dev/null 2>&1 && return 0
 	fi
-	return 1
+	return 0
 }
 
 get_vg() {

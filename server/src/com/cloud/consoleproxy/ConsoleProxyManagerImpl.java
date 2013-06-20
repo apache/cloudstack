@@ -30,6 +30,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -99,12 +101,10 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -189,7 +189,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     private VMInstanceDao _instanceDao;
     @Inject
-    private VMTemplateHostDao _vmTemplateHostDao;
+    private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
     private AgentManager _agentMgr;
     @Inject
@@ -307,11 +307,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
                 _consoleProxyDao.update(cmd.getProxyVmId(), 0, DateUtil.currentGMTTime(), null);
             }
-        }
-
-        @Override
-        public void onAgentConnect(HostVO host, StartupCommand cmd) {
-            // no-op
         }
 
         @Override
@@ -695,14 +690,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
             defaultNetwork = networks.get(0);
         } else {
-            TrafficType defaultTrafficType = TrafficType.Public;
-            if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
-                defaultTrafficType = TrafficType.Guest;
-            }
-            List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dataCenterId, defaultTrafficType);
+        TrafficType defaultTrafficType = TrafficType.Public;
+        if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
+            defaultTrafficType = TrafficType.Guest;
+        }
+        List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dataCenterId, defaultTrafficType);
 
             // api should never allow this situation to happen
-            if (defaultNetworks.size() != 1) {
+        if (defaultNetworks.size() != 1) {
                 throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type "
                       + defaultTrafficType + " when expect to find 1");
             }
@@ -943,22 +938,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
-            HostVO secondaryStorageHost = this.templateMgr.getSecondaryStorageHost(dataCenterId);
-            boolean templateReady = false;
-            
-            if (secondaryStorageHost == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("No secondary storage available in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
-                }
-                return false;
-            }
+            TemplateDataStoreVO templateHostRef = this._vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
+                    Status.DOWNLOADED);
 
-            if (template != null && secondaryStorageHost != null) {
-                VMTemplateHostVO templateHostRef = _vmTemplateHostDao.findByHostTemplate(secondaryStorageHost.getId(), template.getId());
-                templateReady = (templateHostRef != null) && (templateHostRef.getDownloadState() == Status.DOWNLOADED);
-            }
-
-            if (templateReady) {
+            if (templateHostRef != null) {
                 List<Pair<Long, Integer>> l = _consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, _use_lvm);
                 if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
                     return true;
@@ -971,11 +954,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 if (s_logger.isDebugEnabled()) {
                     if (template == null) {
                         s_logger.debug("Zone host is ready, but console proxy template is null");
-                    } else if (secondaryStorageHost != null) {
-			s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
-		    } else {
-			s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage.");
-		    }
+                    } else {
+                        s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() + " is not ready on secondary storage.");
+                    }
                 }
             }
         }

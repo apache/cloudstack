@@ -58,7 +58,7 @@ public interface StoragePool extends Identity, InternalIdentity {
     /**
      * @return available storage in bytes
      */
-    long getAvailableBytes();
+    long getUsedBytes();
 
     Long getClusterId();
 

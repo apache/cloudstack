@@ -28,7 +28,7 @@ public abstract class AbstractDownloadCommand extends ssCommand {
     protected AbstractDownloadCommand() {
     }
 
-    protected AbstractDownloadCommand(String name, String url, ImageFormat format, long accountId) {
+    protected AbstractDownloadCommand(String name, String url, ImageFormat format, Long accountId) {
     	assert(url != null);
     	url = url.replace('\\', '/');
 

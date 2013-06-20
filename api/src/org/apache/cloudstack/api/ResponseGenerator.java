@@ -122,6 +122,7 @@ import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
@@ -187,6 +188,7 @@ import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.usage.Usage;
 
+import com.cloud.storage.ImageStore;
 import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
@@ -278,7 +280,7 @@ public interface ResponseGenerator {
 
     Host findHostById(Long hostId);
 
-    List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
+    //List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
 
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
@@ -294,7 +296,9 @@ public interface ResponseGenerator {
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
-    ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode);
+    ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode, String url);
+
+    ExtractResponse createExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url);
 
     String toSerializedString(CreateCmdResponse response, String responseType);
 
@@ -304,7 +308,9 @@ public interface ResponseGenerator {
 
     //List<EventResponse> createEventResponse(EventJoinVO... events);
 
-    TemplateResponse createIsoResponse(VirtualMachineTemplate result);
+    TemplateResponse createTemplateUpdateResponse(VirtualMachineTemplate result);
+
+    List<TemplateResponse> createTemplateResponses(VirtualMachineTemplate result, Long zoneId, boolean readyOnly);
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
@@ -324,12 +330,12 @@ public interface ResponseGenerator {
 
     Long getSecurityGroupId(String groupName, long accountId);
 
-    List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
+
+   // List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
+    //List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
-
-
-    List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
     List<TemplateResponse> createTemplateResponses(long templateId, Long vmId);
 
@@ -362,6 +368,8 @@ public interface ResponseGenerator {
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
 
     RegionResponse createRegionResponse(Region region);
+
+    ImageStoreResponse createImageStoreResponse(ImageStore os);
 
     /**
      * @param resourceTag
@@ -437,7 +445,7 @@ public interface ResponseGenerator {
     public NicResponse createNicResponse(Nic result);
 
     ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances);
-    
+
     AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
 
     Long getAffinityGroupId(String name, long entityOwnerId);

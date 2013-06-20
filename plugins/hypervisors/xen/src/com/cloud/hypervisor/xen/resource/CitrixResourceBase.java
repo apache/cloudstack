@@ -17,6 +17,56 @@
 package com.cloud.hypervisor.xen.resource;
 
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import com.cloud.agent.api.*;
+import com.cloud.agent.api.to.*;
+import com.cloud.network.rules.FirewallRule;
+
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -199,7 +249,9 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
+import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -345,7 +397,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected boolean _canBridgeFirewall = false;
     protected boolean _isOvs = false;
     protected List<VIF> _tmpDom0Vif = new ArrayList<VIF>();
-    protected XenServerStorageResource storageResource;
+    protected StorageSubsystemCommandHandler storageHandler;
     protected int _maxNics = 7;
 
     public enum SRType {
@@ -613,7 +665,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
             return execute((CheckS2SVpnConnectionsCommand) cmd);
         } else if (cmd instanceof StorageSubSystemCommand) {
-            return this.storageResource.handleStorageCommands((StorageSubSystemCommand)cmd);
+            return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
         } else if (clazz == CreateVMSnapshotCommand.class) {
             return execute((CreateVMSnapshotCommand)cmd);
         } else if (clazz == DeleteVMSnapshotCommand.class) {
@@ -1133,31 +1185,42 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected VDI mount(Connection conn, String vmName, VolumeTO volume) throws XmlRpcException, XenAPIException {
-        if (volume.getType() == Volume.Type.ISO) {
-            String isopath = volume.getPath();
-            if (isopath == null) {
+    protected VDI mount(Connection conn, String vmName, DiskTO volume) throws XmlRpcException, XenAPIException {
+        DataTO data = volume.getData();
+        Volume.Type type = volume.getType();
+        if (type == Volume.Type.ISO) {
+            TemplateObjectTO iso = (TemplateObjectTO)data;
+            DataStoreTO store = iso.getDataStore();
+            
+            if (store == null) {
+                //It's a fake iso
                 return null;
             }
-            if (isopath.startsWith("xs-tools")) {
+            
+            //corer case, xenserver pv driver iso
+            String templateName = iso.getName();
+            if (templateName.startsWith("xs-tools")) {
                 try {
-                    Set<VDI> vdis = VDI.getByNameLabel(conn, isopath);
+                    Set<VDI> vdis = VDI.getByNameLabel(conn, templateName);
                     if (vdis.isEmpty()) {
-                        throw new CloudRuntimeException("Could not find ISO with URL: " + isopath);
+                        throw new CloudRuntimeException("Could not find ISO with URL: " + templateName);
                     }
                     return vdis.iterator().next();
-
                 } catch (XenAPIException e) {
-                    throw new CloudRuntimeException("Unable to get pv iso: " + isopath + " due to " + e.toString());
+                    throw new CloudRuntimeException("Unable to get pv iso: " + templateName + " due to " + e.toString());
                 } catch (Exception e) {
-                    throw new CloudRuntimeException("Unable to get pv iso: " + isopath + " due to " + e.toString());
+                    throw new CloudRuntimeException("Unable to get pv iso: " + templateName + " due to " + e.toString());
                 }
             }
+            
+            if (!(store instanceof NfsTO)) {
+                throw new CloudRuntimeException("only support mount iso on nfs");
+            }
+            NfsTO nfsStore = (NfsTO)store;
+            String isoPath = nfsStore.getUrl() + File.separator + iso.getPath();
+            int index = isoPath.lastIndexOf("/");
 
-
-            int index = isopath.lastIndexOf("/");
-
-            String mountpoint = isopath.substring(0, index);
+            String mountpoint = isoPath.substring(0, index);
             URI uri;
             try {
                 uri = new URI(mountpoint);
@@ -1166,20 +1229,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             SR isoSr = createIsoSRbyURI(conn, uri, vmName, false);
 
-            String isoname = isopath.substring(index + 1);
+            String isoname = isoPath.substring(index + 1);
 
             VDI isoVdi = getVDIbyLocationandSR(conn, isoname, isoSr);
 
             if (isoVdi == null) {
-                throw new CloudRuntimeException("Unable to find ISO " + volume.getPath());
+                throw new CloudRuntimeException("Unable to find ISO " + isoPath);
             }
             return isoVdi;
         } else {
-            return VDI.getByUuid(conn, volume.getPath());
+            VolumeObjectTO vol = (VolumeObjectTO)data;
+            return VDI.getByUuid(conn,vol.getPath());
         }
     }
 
-    protected VBD createVbd(Connection conn, VolumeTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
+    protected VBD createVbd(Connection conn, DiskTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
         Volume.Type type = volume.getType();
 
         VDI vdi = mount(conn, vmName, volume);
@@ -1197,7 +1261,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vbdr.bootable = true;
         }
 
-        vbdr.userdevice = Long.toString(volume.getDeviceId());
+        vbdr.userdevice = Long.toString(volume.getDiskSeq());
         if (volume.getType() == Volume.Type.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
@@ -1293,12 +1357,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
-                VolumeTO [] disks = vmSpec.getDisks();
-                for (VolumeTO disk : disks) {
-                    if (disk.getType() == Volume.Type.ISO && disk.getOsType() != null) {
-                        String isoGuestOsName = getGuestOsType(disk.getOsType(), vmSpec.getBootloader() == BootloaderType.CD);
-                        if (!isoGuestOsName.equals(guestOsTypeName)) {
-                            vmSpec.setBootloader(BootloaderType.PyGrub);
+                DiskTO [] disks = vmSpec.getDisks();
+                for (DiskTO disk : disks) {
+                    Volume.Type type = disk.getType();
+                    if (type == Volume.Type.ISO) {
+                        TemplateObjectTO tmpl = (TemplateObjectTO)disk.getData();
+                        String osType = tmpl.getGuestOsType();
+                        if (tmpl.getFormat() == ImageFormat.ISO && osType != null ) {
+                            String isoGuestOsName = getGuestOsType(osType, vmSpec.getBootloader() == BootloaderType.CD);
+                            if (!isoGuestOsName.equals(guestOsTypeName)) {
+                                vmSpec.setBootloader(BootloaderType.PyGrub);
+                            }
                         }
                     }
                 }
@@ -1592,7 +1661,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Host host = Host.getByUuid(conn, _host.uuid);
             vm = createVmFromTemplate(conn, vmSpec, host);
 
-            for (VolumeTO disk : vmSpec.getDisks()) {
+            for (DiskTO disk : vmSpec.getDisks()) {
                 createVbd(conn, disk, vmName, vm, vmSpec.getBootloader());
             }
 
@@ -3912,7 +3981,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
 
-    private void swiftBackupSnapshot(Connection conn, SwiftTO swift, String srUuid, String snapshotUuid, String container, Boolean isISCSI, int wait)  {
+    public void swiftBackupSnapshot(Connection conn, SwiftTO swift, String srUuid, String snapshotUuid, String container, Boolean isISCSI, int wait)  {
         String lfilename;
         String ldir;
         if ( isISCSI ) {
@@ -5579,7 +5648,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.warn(msg);
                     return new Answer(cmd, false, msg);
                 }
-                Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+                Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
                 ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
                 return answer;
             } catch (XenAPIException e) {
@@ -6065,13 +6134,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         CheckXenHostInfo();
 
-        this.storageResource = getStorageResource();
+        this.storageHandler = getStorageHandler();
         return true;
 
     }
 
-    protected XenServerStorageResource getStorageResource() {
-        return new XenServerStorageResource(this);
+    protected StorageSubsystemCommandHandler getStorageHandler() {
+    	XenServerStorageProcessor processor = new XenServerStorageProcessor(this);
+        return new StorageSubsystemCommandHandlerBase(processor);
     }
 
     private void CheckXenHostInfo() throws ConfigurationException {

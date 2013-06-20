@@ -19,6 +19,7 @@
 package com.cloud.storage.s3;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.agent.api.to.S3TO;
 import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
@@ -40,13 +41,15 @@ public interface S3Manager extends Manager {
 
     S3 addS3(AddS3Cmd addS3Cmd) throws DiscoveryException;
 
+    void verifyS3Fields(Map<String, String> params) throws DiscoveryException;
+
     Long chooseZoneForTemplateExtract(VMTemplateVO template);
 
     boolean isS3Enabled();
 
     boolean isTemplateInstalled(Long templateId);
 
-    void deleteTemplate(final Long accountId, final Long templateId);
+    //void deleteTemplate(final Long accountId, final Long templateId);
 
     String downloadTemplateFromS3ToSecondaryStorage(final long dcId,
             final long templateId, final int primaryStorageDownloadWait);

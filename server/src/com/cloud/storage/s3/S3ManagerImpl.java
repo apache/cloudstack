@@ -45,14 +45,16 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.DeleteTemplateFromS3Command;
 import com.cloud.agent.api.DownloadTemplateFromS3ToSecondaryStorageCommand;
 import com.cloud.agent.api.UploadTemplateToS3FromSecondaryStorageCommand;
 import com.cloud.agent.api.to.S3TO;
@@ -88,11 +90,12 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
     private static final Logger LOGGER = Logger.getLogger(S3ManagerImpl.class);
 
-    @Inject 
+    @Inject
     private AgentManager agentManager;
 
     @Inject
     private S3Dao s3Dao;
+
 
     @Inject
     private VMTemplateZoneDao vmTemplateZoneDao;
@@ -115,12 +118,13 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
     @Inject
     private HostDao hostDao;
 
+
     @Inject
-    private SecondaryStorageVmManager secondaryStorageVMManager;
+    private DataStoreManager dataStoreManager;
 
     public S3ManagerImpl() {
     }
-    
+
     private void verifyConnection(final S3TO s3) throws DiscoveryException {
 
         if (!canConnect(s3)) {
@@ -245,6 +249,26 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
     }
 
+
+    @Override
+    public void verifyS3Fields(Map<String, String> params) throws DiscoveryException {
+        final S3VO s3VO = new S3VO(UUID.randomUUID().toString(),
+                params.get(ApiConstants.S3_ACCESS_KEY),
+                params.get(ApiConstants.S3_SECRET_KEY),
+                params.get(ApiConstants.S3_END_POINT),
+                params.get(ApiConstants.S3_BUCKET_NAME),
+                params.get(ApiConstants.S3_HTTPS_FLAG) == null ? false : Boolean.valueOf(params.get(ApiConstants.S3_HTTPS_FLAG)),
+                params.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_CONNECTION_TIMEOUT)),
+                params.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_MAX_ERROR_RETRY)),
+                params.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(params.get(ApiConstants.S3_SOCKET_TIMEOUT)), now());
+
+        this.validateFields(s3VO);
+
+        final S3TO s3 = s3VO.toS3TO();
+        this.verifyConnection(s3);
+        this.verifyBuckets(s3);
+    }
+
     @Override
     public boolean isS3Enabled() {
         return Boolean
@@ -258,70 +282,7 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
                         + "been implemented");
     }
 
-    @Override
-    public void deleteTemplate(final Long templateId, final Long accountId) {
 
-        final S3TO s3 = getS3TO();
-
-        if (s3 == null) {
-            final String errorMessage = "Delete Template Failed: No S3 configuration defined.";
-            LOGGER.error(errorMessage);
-            throw new CloudRuntimeException(errorMessage);
-        }
-
-        final VMTemplateS3VO vmTemplateS3VO = vmTemplateS3Dao
-                .findOneByS3Template(s3.getId(), templateId);
-        if (vmTemplateS3VO == null) {
-            final String errorMessage = format(
-                    "Delete Template Failed: Unable to find Template %1$s in S3.",
-                    templateId);
-            LOGGER.error(errorMessage);
-            throw new CloudRuntimeException(errorMessage);
-        }
-
-        try {
-
-            executeWithNoWaitLock(determineLockId(accountId, templateId),
-                    new Callable<Void>() {
-
-                @Override
-                public Void call() throws Exception {
-
-                    final Answer answer = agentManager.sendToSSVM(null,
-                            new DeleteTemplateFromS3Command(s3,
-                                    accountId, templateId));
-                    if (answer == null || !answer.getResult()) {
-                        final String errorMessage = format(
-                                "Delete Template Failed: Unable to delete template id %1$s from S3 due to following error: %2$s",
-                                templateId,
-                                ((answer == null) ? "answer is null"
-                                        : answer.getDetails()));
-                        LOGGER.error(errorMessage);
-                        throw new CloudRuntimeException(errorMessage);
-                    }
-
-                    vmTemplateS3Dao.remove(vmTemplateS3VO.getId());
-                    LOGGER.debug(format(
-                            "Deleted template %1$s from S3.",
-                            templateId));
-
-                    return null;
-
-                }
-
-            });
-
-        } catch (Exception e) {
-
-            final String errorMessage = format(
-                    "Delete Template Failed: Unable to delete template id %1$s from S3 due to the following error: %2$s.",
-                    templateId, e.getMessage());
-            LOGGER.error(errorMessage);
-            throw new CloudRuntimeException(errorMessage, e);
-
-        }
-
-    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -360,11 +321,10 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
             return errorMessage;
         }
 
-        final HostVO secondaryStorageHost = secondaryStorageVMManager
-                .findSecondaryStorageHost(dataCenterId);
-        if (secondaryStorageHost == null) {
+        final DataStore secondaryStore = this.dataStoreManager.getImageStore(dataCenterId);
+        if (secondaryStore == null) {
             final String errorMessage = format(
-                    "Unable to find secondary storage host for zone id %1$s.",
+                    "Unable to find secondary storage for zone id %1$s.",
                     dataCenterId);
             LOGGER.error(errorMessage);
             throw new CloudRuntimeException(errorMessage);
@@ -372,7 +332,7 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
         final long accountId = template.getAccountId();
         final DownloadTemplateFromS3ToSecondaryStorageCommand cmd = new DownloadTemplateFromS3ToSecondaryStorageCommand(
-                s3, accountId, templateId, secondaryStorageHost.getName(),
+                s3, accountId, templateId, secondaryStore.getName(),
                 primaryStorageDownloadWait);
 
         try {
@@ -397,7 +357,7 @@ public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
                     final String installPath = join(File.separator, "template", "tmpl", accountId, templateId);
                     final VMTemplateHostVO tmpltHost = new VMTemplateHostVO(
-                            secondaryStorageHost.getId(), templateId,
+                            secondaryStore.getId(), templateId,
                             now(), 100, Status.DOWNLOADED, null, null,
                             null, installPath, template.getUrl());
                     tmpltHost.setSize(templateS3VO.getSize());

@@ -21,36 +21,32 @@ import java.util.List;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-
-import com.cloud.capacity.Capacity;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.capacity.Capacity;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
 @Component
-@Local(value={StoragePoolJoinDao.class})
+@Local(value = { StoragePoolJoinDao.class })
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
     public static final Logger s_logger = Logger.getLogger(StoragePoolJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao  _configDao;
+    private ConfigurationDao _configDao;
 
     private final SearchBuilder<StoragePoolJoinVO> spSearch;
 
     private final SearchBuilder<StoragePoolJoinVO> spIdSearch;
-
 
     protected StoragePoolJoinDaoImpl() {
 
@@ -65,10 +61,6 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         this._count = "select count(distinct id) from storage_pool_view WHERE ";
     }
 
-
-
-
-
     @Override
     public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool) {
         StoragePoolResponse poolResponse = new StoragePoolResponse();
@@ -79,18 +71,20 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setIpAddress(pool.getHostAddress());
         poolResponse.setZoneId(pool.getZoneUuid());
         poolResponse.setZoneName(pool.getZoneName());
-        poolResponse.setType(ObjectUtils.toString(pool.getPoolType(), null));
+        poolResponse.setType(pool.getPoolType().toString());
         poolResponse.setPodId(pool.getPodUuid());
         poolResponse.setPodName(pool.getPodName());
         poolResponse.setCreated(pool.getCreated());
-        poolResponse.setScope(ObjectUtils.toString(pool.getScope(), null));
-        poolResponse.setHypervisor(ObjectUtils.toString(pool.getHypervisor(), null));
+        poolResponse.setScope(pool.getScope().toString());
+        if (pool.getHypervisor() != null) {
+            poolResponse.setHypervisor(pool.getHypervisor().toString());
+        }
 
-        long allocatedSize = pool.getUsedCapacity() +  pool.getReservedCapacity();
+        long allocatedSize = pool.getUsedCapacity() + pool.getReservedCapacity();
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
 
-        //TODO: StatsCollector does not persist data
+        // TODO: StatsCollector does not persist data
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
         if (stats != null) {
             Long used = stats.getByteUsed();
@@ -115,10 +109,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     public StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO sp) {
         String tag = sp.getTag();
         if (tag != null) {
-            if ( response.getTags() != null && response.getTags().length() > 0){
+            if (response.getTags() != null && response.getTags().length() > 0) {
                 response.setTags(response.getTags() + "," + tag);
-            }
-            else{
+            } else {
                 response.setTags(tag);
             }
         }
@@ -146,13 +139,13 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             poolResponse.setHypervisor(pool.getHypervisor().toString());
         }
 
-
-        short capacityType = pool.getScope() == ScopeType.HOST ? Capacity.CAPACITY_TYPE_LOCAL_STORAGE : Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED;
+        short capacityType = pool.getScope() == ScopeType.HOST ? Capacity.CAPACITY_TYPE_LOCAL_STORAGE
+                : Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED;
         long allocatedSize = ApiDBUtils.getStorageCapacitybyPool(pool.getId(), capacityType);
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
 
-        //TODO: StatsCollector does not persist data
+        // TODO: StatsCollector does not persist data
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
         if (stats != null) {
             Long used = stats.getByteUsed();
@@ -172,11 +165,10 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public StoragePoolResponse setStoragePoolForMigrationResponse(StoragePoolResponse response,
-            StoragePoolJoinVO sp) {
+    public StoragePoolResponse setStoragePoolForMigrationResponse(StoragePoolResponse response, StoragePoolJoinVO sp) {
         String tag = sp.getTag();
         if (tag != null) {
-            if ( response.getTags() != null && response.getTags().length() > 0){
+            if (response.getTags() != null && response.getTags().length() > 0) {
                 response.setTags(response.getTags() + "," + tag);
             } else {
                 response.setTags(tag);
@@ -193,22 +185,20 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
 
     }
 
-
-
     @Override
     public List<StoragePoolJoinVO> searchByIds(Long... spIds) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if ( batchCfg != null ){
+        if (batchCfg != null) {
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
         List<StoragePoolJoinVO> uvList = new ArrayList<StoragePoolJoinVO>();
         // query details by batches
         int curr_index = 0;
-        if ( spIds.length > DETAILS_BATCH_SIZE ){
-            while ( (curr_index + DETAILS_BATCH_SIZE ) <= spIds.length ) {
+        if (spIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= spIds.length) {
                 Long[] ids = new Long[DETAILS_BATCH_SIZE];
                 for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
                     ids[k] = spIds[j];
@@ -238,8 +228,5 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         }
         return uvList;
     }
-
-
-
 
 }
