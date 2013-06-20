@@ -2978,7 +2978,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork == null ) {
             throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
-        } else if (physicalNetwork.getIsolationMethods() != null && !physicalNetwork.getIsolationMethods().contains("VLAN")) {
+        } else if (!physicalNetwork.getIsolationMethods().isEmpty() && !physicalNetwork.getIsolationMethods().contains("VLAN")) {
             throw new InvalidParameterValueException("Cannot dedicate guest vlan range. " +
                     "Physical isolation type of network " + physicalNetworkId + " is not VLAN");
         }
