@@ -753,12 +753,12 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
                             domainid=cls.domain_2.id
                             )
 
-   cls._cleanup = [
-                   cls.account_2,
-                   cls.domain_2,
-                   cls.service_offering,
-                   cls.account_1,
-                   cls.domain_1,
+       cls._cleanup = [
+                       cls.account_2,
+                       cls.domain_2,
+                       cls.service_offering,
+                       cls.account_1,
+                       cls.domain_1,
                        ]
 
         return
@@ -888,11 +888,11 @@ class TesttemplateHierarchy(cloudstackTestCase):
                                             domainid=cls.domain_1.id
                                         )
         cls._cleanup = [
-                        cls.template,
-                        cls.account_1,
                         cls.account_2,
-                        cls.domain_1,
                         cls.domain_2,
+           cls.template,
+                        cls.account_1,
+                        cls.domain_1,
                         ]
         return
 
