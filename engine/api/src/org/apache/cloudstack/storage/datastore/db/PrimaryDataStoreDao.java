@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.db;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,8 +37,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 	/**
 	 * @param datacenterId -- the id of the datacenter (availability zone)
 	 */
-	List<StoragePoolVO> listBy(long datacenterId, long podId, Long clusterId, ScopeType scope);
-    
+	List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope);
+
 	/**
 	 * Set capacity of storage pool in bytes
 	 * @param id pool id.

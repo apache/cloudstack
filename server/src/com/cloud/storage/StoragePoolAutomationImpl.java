@@ -18,20 +18,20 @@
  */
 package com.cloud.storage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -108,11 +108,39 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         Long userId = UserContext.current().getCallerUserId();
         User user = _userDao.findById(userId);
         Account account = UserContext.current().getCaller();
-        StoragePoolVO pool = this.primaryDataStoreDao.findById(store.getId());
+        StoragePoolVO pool = primaryDataStoreDao.findById(store.getId());
         try {
+            List<StoragePoolVO> spes = null;
+            // Handling Zone and Cluster wide storage scopes.
+            // if the storage is ZONE wide then we pass podid and cluster id as null as they will be empty for ZWPS
+            if (pool.getScope() == ScopeType.ZONE) {
+                spes = primaryDataStoreDao.listBy(
+                        pool.getDataCenterId(), null,
+                        null, ScopeType.ZONE);
+            }
+            else {
+                spes = primaryDataStoreDao.listBy(
+                        pool.getDataCenterId(), pool.getPodId(),
+                        pool.getClusterId(), ScopeType.CLUSTER);
+            }
+            for (StoragePoolVO sp : spes) {
+                if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
+                    throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId()
+                            + " is already in  PrepareForMaintenance mode ");
+                }
+            }
             StoragePool storagePool = (StoragePool) store;
-            List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(
+
+            //Handeling the Zone wide and cluster wide primay storage
+            List<HostVO> hosts = new ArrayList<HostVO>();
+            // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
+            if (pool.getScope().equals(ScopeType.ZONE)) {
+                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(pool.getHypervisor() , pool.getDataCenterId());
+            } else {
+                hosts = _resourceMgr.listHostsInClusterByStatus(
                     pool.getClusterId(), Status.Up);
+            }
+
             if (hosts == null || hosts.size() == 0) {
                 pool.setStatus(StoragePoolStatus.Maintenance);
                 primaryDataStoreDao.update(pool.getId(), pool);
@@ -135,7 +163,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
                 } else {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("ModifyStoragePool false secceeded");
+                        s_logger.debug("ModifyStoragePool false succeeded");
                     }
                 }
             }
@@ -151,7 +179,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             }
 
             // 2. Get a list of all the ROOT volumes within this storage pool
-            List<VolumeVO> allVolumes = this.volumeDao.findByPoolId(pool
+            List<VolumeVO> allVolumes = volumeDao.findByPoolId(pool
                     .getId());
 
             // 3. Enqueue to the work queue
@@ -222,7 +250,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
                     if (restart) {
 
-                        if (this.vmMgr.advanceStart(consoleProxy, null, user,
+                        if (vmMgr.advanceStart(consoleProxy, null, user,
                                 account) == null) {
                             String errorMsg = "There was an error starting the console proxy id: "
                                     + vmInstance.getId()
@@ -315,12 +343,11 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
                 }
             }
-            
         } catch(Exception e) {
             s_logger.error(
                     "Exception in enabling primary storage maintenance:", e);
             pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
-            this.primaryDataStoreDao.update(pool.getId(), pool);
+            primaryDataStoreDao.update(pool.getId(), pool);
             throw new CloudRuntimeException(e.getMessage());
         }
         return true;
@@ -332,10 +359,10 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         Long userId = UserContext.current().getCallerUserId();
         User user = _userDao.findById(userId);
         Account account = UserContext.current().getCaller();
-        StoragePoolVO poolVO = this.primaryDataStoreDao
+        StoragePoolVO poolVO = primaryDataStoreDao
                 .findById(store.getId());
         StoragePool pool = (StoragePool)store;
-       
+
         List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(
                 pool.getClusterId(), Status.Up);
         if (hosts == null || hosts.size() == 0) {

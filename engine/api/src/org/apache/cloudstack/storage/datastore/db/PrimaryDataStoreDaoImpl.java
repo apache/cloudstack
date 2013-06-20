@@ -28,14 +28,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-
 import com.cloud.storage.StoragePoolStatus;
-
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -76,7 +75,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         AllFieldSearch.and("path", AllFieldSearch.entity().getPath(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("podId", AllFieldSearch.entity().getPodId(), Op.EQ);
         AllFieldSearch.and("clusterId", AllFieldSearch.entity().getClusterId(), Op.EQ);
-        AllFieldSearch.done();  
+        AllFieldSearch.done();
         
     	DcPodSearch = createSearchBuilder();
     	DcPodSearch.and("datacenterId", DcPodSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -104,7 +103,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         DeleteLvmSearch.and().op("LVM", DeleteLvmSearch.entity().getPoolType(), SearchCriteria.Op.EQ);
         DeleteLvmSearch.or("Filesystem", DeleteLvmSearch.entity().getPoolType(), SearchCriteria.Op.EQ);
         DeleteLvmSearch.cp();
-        DeleteLvmSearch.done();        
+        DeleteLvmSearch.done();
 
         
         
@@ -198,26 +197,26 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         return findOneBy(sc);
     }
 
-	@Override
-	public List<StoragePoolVO> listBy(long datacenterId, long podId, Long clusterId, ScopeType scope) {
-	    if (clusterId != null) {
-    		SearchCriteria<StoragePoolVO> sc = DcPodSearch.create();
+    @Override
+    public List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope) {
+        if (clusterId != null) {
+            SearchCriteria<StoragePoolVO> sc = DcPodSearch.create();
             sc.setParameters("datacenterId", datacenterId);
             sc.setParameters("podId", podId);
             sc.setParameters("status", Status.Up);
             sc.setParameters("scope", scope);
-           
+
             sc.setParameters("cluster", clusterId);
             return listBy(sc);
-	    } else {
-	        SearchCriteria<StoragePoolVO> sc = DcPodAnyClusterSearch.create();
-	        sc.setParameters("datacenterId", datacenterId);
-	        sc.setParameters("podId", podId);
-	        sc.setParameters("status", Status.Up);
-	        sc.setParameters("scope", scope);
-	        return listBy(sc);
-	    }
-	}
+        } else {
+            SearchCriteria<StoragePoolVO> sc = DcPodAnyClusterSearch.create();
+            sc.setParameters("datacenterId", datacenterId);
+            sc.setParameters("podId", podId);
+            sc.setParameters("status", Status.Up);
+            sc.setParameters("scope", scope);
+            return listBy(sc);
+        }
+    }
 
 	@Override
 	public List<StoragePoolVO> listPoolByHostPath(String host, String path) {

@@ -40,7 +40,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.server.ConfigurationServer;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
@@ -66,22 +68,17 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CleanupSnapshotBackupCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityState;
@@ -92,7 +89,6 @@ import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -119,11 +115,10 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
-import com.cloud.network.NetworkModel;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -142,18 +137,15 @@ import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
-import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.listener.VolumeStateListener;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -178,12 +170,9 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -338,7 +327,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private int _customDiskOfferingMinSize = 1;
     private int _customDiskOfferingMaxSize = 1024;
-    private Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
+    private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
 
     private boolean _recreateSystemVmEnabled;
 
@@ -473,7 +462,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         	final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, 1);
         	if (poolList != null && !poolList.isEmpty()) {
-        		return (StoragePool)this.dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
+                return (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
         	}
         }
         return null;
@@ -709,7 +698,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), "", pInfo.getUuid());
                 }
             }
-            DataStoreProvider provider = this.dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
+            DataStoreProvider provider = dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
             DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             if (pool == null) {
                 Map<String, Object> params = new HashMap<String, Object>();
@@ -726,7 +715,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                 store = lifeCycle.initialize(params);
             } else {
-                store = (DataStore) dataStoreMgr.getDataStore(pool.getId(),
+                store = dataStoreMgr.getDataStore(pool.getId(),
                         DataStoreRole.Primary);
             }
 
@@ -737,7 +726,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new ConnectionException(true, "Unable to setup the local storage pool for " + host, e);
         }
 
-        return (DataStore) dataStoreMgr.getDataStore(store.getId(),
+        return dataStoreMgr.getDataStore(store.getId(),
                 DataStoreRole.Primary);
     }
 
@@ -932,7 +921,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 // force expunge non-destroyed volumes
                 List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed();
                 for (VolumeVO vol : vols) {
-                    AsyncCallFuture<VolumeApiResult> future = this.volService.expungeVolumeAsync(this.volFactory.getVolume(vol.getId()));
+                    AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
                     try {
                         future.get();
                     } catch (InterruptedException e) {
@@ -978,7 +967,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public void connectHostToSharedPool(long hostId, long poolId)
             throws StorageUnavailableException {
-        StoragePool pool = (StoragePool)this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        StoragePool pool = (StoragePool)dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         assert (pool.isShared()) : "Now, did you actually read the name of this method?";
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
 
@@ -1140,7 +1129,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     for (VolumeVO vol : vols) {
                         try {
 
-                            this.volService.expungeVolumeAsync(this.volFactory.getVolume(vol.getId()));
+                            volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
 
                         } catch (Exception e) {
                             s_logger.warn("Unable to destroy " + vol.getId(), e);
@@ -1418,7 +1407,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         boolean restart = true;
         StoragePoolVO primaryStorage = null;
-
         primaryStorage = _storagePoolDao.findById(primaryStorageId);
 
         if (primaryStorage == null) {
@@ -1427,24 +1415,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException(msg);
         }
 
-        List<StoragePoolVO> spes = _storagePoolDao.listBy(
-                primaryStorage.getDataCenterId(), primaryStorage.getPodId(),
-                primaryStorage.getClusterId(), ScopeType.CLUSTER);
-        for (StoragePoolVO sp : spes) {
-            if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
-                throw new CloudRuntimeException(
-                        "Only one storage pool in a cluster can be in PrepareForMaintenance mode, "
-                                + sp.getId()
-                                + " is already in  PrepareForMaintenance mode ");
-            }
-        }
-
-        if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up)
-                && !primaryStorage.getStatus().equals(
-                        StoragePoolStatus.ErrorInMaintenance)) {
-            throw new InvalidParameterValueException("Primary storage with id "
-                    + primaryStorageId
-                    + " is not ready for migration, as the status is:"
+        if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up) && !primaryStorage.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)) {
+            throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:"
                     + primaryStorage.getStatus().toString());
         }
 
