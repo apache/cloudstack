@@ -361,9 +361,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (pool.getStatus() != StoragePoolStatus.Up) {
                 continue;
             }
-            ClusterVO cluster = _clusterDao.findById(pool.getClusterId());
-            if (type == cluster.getHypervisorType()) {
-                retPools.add(pool);
+            if (pool.getScope() == ScopeType.ZONE) {
+                if (pool.getHypervisor() != null && pool.getHypervisor() == type) {
+                    retPools.add(pool);
+                }
+            } else {
+                ClusterVO cluster = _clusterDao.findById(pool.getClusterId());
+                if (type == cluster.getHypervisorType()) {
+                    retPools.add(pool);
+                }
             }
         }
         Collections.shuffle(retPools);

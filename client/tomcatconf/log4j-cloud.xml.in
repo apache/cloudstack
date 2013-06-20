@@ -123,6 +123,10 @@ under the License.
      <priority value="DEBUG"/>
    </category>
    
+   <category name="org.apache.cloudstack">
+      <priority value="DEBUG"/>
+   </category>
+
    <category name="com.cloud.utils.nio">
      <priority value="INFO"/>
    </category>
