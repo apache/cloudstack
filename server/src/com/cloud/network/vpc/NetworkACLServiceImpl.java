@@ -40,6 +40,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -247,6 +248,40 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 throw new InvalidParameterValueException("Network: "+network.getUuid()+" does not belong to VPC");
             }
             aclId = network.getNetworkACLId();
+
+            if(aclId == null){
+                //Network is not associated with any ACL. Create a new ACL and add aclItem in it for backward compatibility
+                s_logger.debug("Network "+network.getId()+" is not associated with any ACL. Creating an ACL before adding acl item");
+
+                //verify that ACLProvider is supported by network offering
+                if(!_networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.NetworkACL)){
+                    throw new InvalidParameterValueException("Network Offering does not support NetworkACL service");
+                }
+
+                Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
+                if(vpc == null){
+                    throw new InvalidParameterValueException("Unable to find Vpc associated with the Network");
+                }
+
+                //Create new ACL
+                String aclName = "VPC_"+vpc.getName()+"_Tier_"+network.getName()+"_ACL_"+network.getUuid();
+                String description = "ACL for "+aclName;
+                NetworkACL acl = _networkAclMgr.createNetworkACL(aclName, description, network.getVpcId());
+                if(acl == null){
+                    throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network "+network.getId());
+                }
+                s_logger.debug("Created ACL: "+aclName+" for network "+network.getId());
+                aclId = acl.getId();
+                //Apply acl to network
+                try {
+                    if(!_networkAclMgr.replaceNetworkACL(acl, (NetworkVO)network)){
+                        throw new CloudRuntimeException("Unable to apply auto created ACL to network "+network.getId());
+                    }
+                    s_logger.debug("Created ACL is applied to network "+network.getId());
+                } catch (ResourceUnavailableException e) {
+                    throw new CloudRuntimeException("Unable to apply auto created ACL to network "+network.getId(), e);
+                }
+            }
         }
 
         NetworkACL acl = _networkAclMgr.getNetworkACL(aclId);
