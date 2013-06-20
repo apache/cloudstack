@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.log4j.Logger;
