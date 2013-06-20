@@ -106,11 +106,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
             String accountName, Long domainId, String chksum, Boolean bootable, Map details) throws ResourceAllocationException {
 	    return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId, hypervisorType,
-<<<<<<< HEAD
 	            chksum, bootable, null, null, details, false, null, false);
-=======
-	            chksum, bootable, null, null, details, false);
->>>>>>> object_store
 	}
 
 	@Override

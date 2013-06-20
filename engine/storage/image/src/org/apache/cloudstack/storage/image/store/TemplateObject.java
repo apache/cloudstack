@@ -431,6 +431,11 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public Boolean isDynamicallyScalable() {
+        return Boolean.FALSE;
+    }
+
+    @Override
     public long getDomainId() {
         return this.imageVO.getDomainId();
     }
