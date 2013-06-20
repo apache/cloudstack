@@ -104,7 +104,7 @@ public interface NetworkACLManager{
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean revokeACLItemsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
+    boolean revokeACLItemsForNetwork(long networkId) throws ResourceUnavailableException;
 
     /**
      * List network ACL items by network

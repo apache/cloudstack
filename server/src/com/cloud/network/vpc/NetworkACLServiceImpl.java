@@ -104,7 +104,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         SearchBuilder<NetworkACLVO> sb = _networkACLDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("name", sb.entity().getName(), Op.EQ);
-        sb.and("vpcId", sb.entity().getVpcId(), Op.EQ);
+        sb.and("vpcId", sb.entity().getVpcId(), Op.IN);
 
         if(networkId != null){
             SearchBuilder<NetworkVO> network = _networkDao.createSearchBuilder();
@@ -122,7 +122,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         if(vpcId != null){
-            sc.setParameters("vpcId", vpcId);
+            //Include vpcId 0 to list default ACLs
+            sc.setParameters("vpcId", vpcId, 0);
         }
 
         if(networkId != null){

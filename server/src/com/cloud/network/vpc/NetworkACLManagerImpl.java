@@ -150,6 +150,18 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             throw new InvalidParameterValueException("Cannot apply NetworkACL. Network Offering does not support NetworkACL service");
         }
 
+        if(network.getNetworkACLId() != null){
+            //Revoke ACL Items of the existing ACL if the new ACL is empty
+            //Existing rules won't be removed otherwise
+            List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(acl.getId());
+            if(aclItems == null || aclItems.isEmpty()){
+                s_logger.debug("New network ACL is empty. Revoke existing rules before applying ACL");
+               if(!revokeACLItemsForNetwork(network.getId())){
+                   throw new CloudRuntimeException("Failed to replace network ACL. Error while removing existing ACL items for network: "+network.getId());
+               }
+            }
+        }
+
         network.setNetworkACLId(acl.getId());
         //Update Network ACL
         if(_networkDao.update(network.getId(), network)){
@@ -229,7 +241,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    public boolean revokeACLItemsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
+    public boolean revokeACLItemsForNetwork(long networkId) throws ResourceUnavailableException {
         Network network = _networkDao.findById(networkId);
         if(network.getNetworkACLId() == null){
             return true;
