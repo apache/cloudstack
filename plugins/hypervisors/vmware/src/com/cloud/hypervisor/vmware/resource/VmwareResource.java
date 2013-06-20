@@ -764,12 +764,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String[] results = new String[cmd.getRules().length];
         FirewallRuleTO[] allrules = cmd.getRules();
         FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
+        String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
 
         String[][] rules = cmd.generateFwRules();
         String args = "";
         args += " -F ";
         if (trafficType == FirewallRule.TrafficType.Egress){
             args+= " -E ";
+            if (egressDefault.equals("true")) {
+                args+= " -P 1 ";
+            } else if (egressDefault.equals("System")) {
+                args+= " -P 2 ";
+            } else {
+                args+= " -P 0 ";
+            }
         }
 
         StringBuilder sb = new StringBuilder();
