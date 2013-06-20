@@ -9766,9 +9766,9 @@
                     var item = json.addclusterresponse.cluster[0];
                     clusterId= json.addclusterresponse.cluster[0].id;
                   
-                  //EXPLICIT DEDICATION
-                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
-                      var array2 = [];
+                    //EXPLICIT DEDICATION
+                    var array2 = [];
+                    if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       if(args.data.accountId != "")
                         array2.push("&account=" +todb(args.data.accountId));
                     }
@@ -9790,7 +9790,7 @@
                                   data:$.extend(item, {state:'Enabled'})
                              });
 
-                         },
+                        },
 
                          error:function(json){
                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -9802,8 +9802,6 @@
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                     args.response.error(errorMsg);
                   }
-
-
                 });
               },
 
@@ -10865,12 +10863,13 @@
 									data: data,
                   success: function(json) {
                     var item = json.addhostresponse.host[0];
+                    
                     hostId = json.addhostresponse.host[0].id;
 
+                    //EXPLICIT DEDICATION
+                    var array2 = [];
 
-                       //EXPLICIT DEDICATION
-                if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
-                      var array2 = [];
+                    if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       if(args.data.accountId != "")
                         array2.push("&account=" +todb(args.data.accountId));
                     }
@@ -10886,21 +10885,21 @@
                            {      jobId: jid
                              },
                             notification: {
-                                 poll: pollAsyncJobResult
-                              },
+                              poll: pollAsyncJobResult
+                            },
 
-                             data:item
+                            data:item
 
                             });
 
                          },
-
-                         error:function(json){
-                           args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                         }
-                       });
-                   }
-                 },
+                        
+                        error:function(json){
+                          args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                        }
+                      });
+                    }
+                  },
 
                    error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
