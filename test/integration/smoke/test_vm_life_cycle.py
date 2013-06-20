@@ -116,7 +116,7 @@ class Services:
                     "name": "Cent OS Template",
                     "passwordenabled": True,
                 },
-            "diskdevice": '/dev/xvdd',
+            "diskdevice": ['/dev/xvdd', '/dev/cdrom', '/dev/sr0', '/dev/cdrom1' ],
             # Disk device where ISO is attached to instance
             "mount_dir": "/mnt/tmp",
             "sleep": 60,
@@ -696,9 +696,9 @@ class TestVMLifeCycle(cloudstackTestCase):
                     )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "needle"])
     def test_10_attachAndDetach_iso(self):
-        """Test for detach ISO to virtual machine"""
+        """Test for attach and detach ISO to virtual machine"""
 
         # Validate the following
         # 1. Create ISO
@@ -747,20 +747,20 @@ class TestVMLifeCycle(cloudstackTestCase):
             self.fail("SSH failed for virtual machine: %s - %s" %
                                 (self.virtual_machine.ipaddress, e))
 
-        cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount -rt iso9660 %s %s" \
-                                % (
-                                   self.services["diskdevice"],
-                                   self.services["mount_dir"]
-                                   ),
-            ]
-        for c in cmds:
-            res = ssh_client.execute(c)
-            self.assertEqual(res, [], "Check mount is successful or not")
-            c = "fdisk -l|grep %s|head -1" % self.services["diskdevice"]
-            res = ssh_client.execute(c)
-            #Disk /dev/xvdd: 4393 MB, 4393723904 bytes
+        cmds = [ "mkdir -p %s" % self.services["mount_dir"] ]
+        self.assert_(ssh_client.execute(cmds) == [], "mkdir failed within guest")
+
+        for diskdevice in self.services["diskdevice"]:
+            res = ssh_client.execute("mount -rt iso9660 {} {}".format(diskdevice, self.services["mount_dir"]))
+            if res == []:
+                self.services["mount"] = diskdevice
+                break
+        else:
+            self.skipTest("No mount points matched. Mount was unsuccessful")
+
+        c = "fdisk -l|grep %s|head -1" % self.services["mount"]
+        res = ssh_client.execute(c)
+        self.debug("Found a mount point at %s" % res)
 
         # Res may contain more than one strings depending on environment
         # Split strings to form new list which is used for assertion on ISO size 
@@ -806,7 +806,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                 (self.virtual_machine.ipaddress, e))
 
         # Check if ISO is properly detached from VM (using fdisk)
-        result = self.services["diskdevice"] in str(res)
+        result = self.services["mount"] in str(res)
 
         self.assertEqual(
                          result,
