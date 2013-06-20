@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.utils.script.Script;
-
 public class LibvirtVMDef {
     private String _hvsType;
     private static long _libvirtVersion;
@@ -719,45 +717,69 @@ public class LibvirtVMDef {
         private String _ipAddr;
         private String _scriptPath;
         private nicModel _model;
+        private Integer _networkRateKBps;
         private String _virtualPortType;
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
 
         public void defBridgeNet(String brName, String targetBrName,
                 String macAddr, nicModel model) {
+            defBridgeNet(brName, targetBrName, macAddr, model, 0);
+        }
+
+        public void defBridgeNet(String brName, String targetBrName,
+                String macAddr, nicModel model, Integer networkRateKBps) {
             _netType = guestNetType.BRIDGE;
             _sourceName = brName;
             _networkName = targetBrName;
             _macAddr = macAddr;
             _model = model;
+            _networkRateKBps = networkRateKBps;
         }
 
         public void defDirectNet(String sourceName, String targetName,
                                  String macAddr, nicModel model, String sourceMode) {
+            defDirectNet(sourceName, targetName, macAddr, model, sourceMode, 0);
+        }
+
+        public void defDirectNet(String sourceName, String targetName,
+                                 String macAddr, nicModel model, String sourceMode, Integer networkRateKBps) {
             _netType = guestNetType.DIRECT;
             _netSourceMode = sourceMode;
             _sourceName = sourceName;
             _networkName = targetName;
             _macAddr = macAddr;
             _model = model;
+            _networkRateKBps = networkRateKBps;
         }
 
         public void defPrivateNet(String networkName, String targetName,
                 String macAddr, nicModel model) {
+            defPrivateNet(networkName, targetName, macAddr, model, 0);
+        }
+
+        public void defPrivateNet(String networkName, String targetName,
+                String macAddr, nicModel model, Integer networkRateKBps) {
             _netType = guestNetType.NETWORK;
             _sourceName = networkName;
             _networkName = targetName;
             _macAddr = macAddr;
             _model = model;
+            _networkRateKBps = networkRateKBps;
         }
 
         public void defEthernet(String targetName, String macAddr, nicModel model, String scriptPath) {
+            defEthernet(targetName, macAddr, model, scriptPath, 0);
+        }
+
+        public void defEthernet(String targetName, String macAddr, nicModel model, String scriptPath, Integer networkRateKBps) {
             _netType = guestNetType.ETHERNET;
             _networkName = targetName;
             _sourceName = targetName;
             _macAddr = macAddr;
             _model = model;
             _scriptPath = scriptPath;
+            _networkRateKBps = networkRateKBps;
          }
 
         public void defEthernet(String targetName, String macAddr, nicModel model) {
@@ -835,6 +857,12 @@ public class LibvirtVMDef {
             }
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
+            }
+            if ((_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
+                netBuilder.append("<bandwidth>\n");
+                netBuilder.append("<inbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
+                netBuilder.append("<outbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
+                netBuilder.append("</bandwidth>\n");
             }
             if (_scriptPath != null) {
                 netBuilder.append("<script path='" + _scriptPath + "'/>\n");
