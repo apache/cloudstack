@@ -14002,6 +14002,8 @@
               createForm: {
                 title: 'label.add.ip.range',
                 fields: {
+                  gateway: { label: 'label.gateway' },
+                  netmask: { label: 'label.netmask' },
                   startipv4: { label: 'IPv4 Start IP' },
                   endipv4: { label: 'IPv4 End IP' },
                   startipv6: { label: 'IPv6 Start IP' },
@@ -14010,6 +14012,12 @@
               },
               action: function(args) {
                 var array2 = [];
+                
+                if(args.data.gateway != null && args.data.gateway.length > 0)
+                  array2.push("&gateway=" + args.data.gateway);   
+                if(args.data.netmask != null && args.data.netmask.length > 0)
+                  array2.push("&netmask=" + args.data.netmask); 
+                
                 if(args.data.startipv4 != null && args.data.startipv4.length > 0)
                   array2.push("&startip=" + args.data.startipv4);                
                 if(args.data.endipv4 != null && args.data.endipv4.length > 0)
