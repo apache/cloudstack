@@ -2750,28 +2750,50 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             // pass boot arguments through machine.id & perform customized options to VMX
 
-            Map<String, String> vmDetailOptions = validateVmDetails(vmSpec.getDetails());
-            OptionValue[] extraOptions = new OptionValue[2 + vmDetailOptions.size()];
-            extraOptions[0] = new OptionValue();
-            extraOptions[0].setKey("machine.id");
-            extraOptions[0].setValue(vmSpec.getBootArgs());
+            ArrayList<OptionValue> extraOptions = new ArrayList<OptionValue>();
+            OptionValue newVal = new OptionValue();
+            newVal.setKey("machine.id");
+            newVal.setValue(vmSpec.getBootArgs());
+            extraOptions.add(newVal);
 
-            extraOptions[1] = new OptionValue();
-            extraOptions[1].setKey("devices.hotplug");
-            extraOptions[1].setValue("true");
-
-            int j = 2;
-            for(Map.Entry<String, String> entry : vmDetailOptions.entrySet()) {
-                extraOptions[j] = new OptionValue();
-                extraOptions[j].setKey(entry.getKey());
-                extraOptions[j].setValue(entry.getValue());
-                j++;
+            newVal = new OptionValue();
+            newVal.setKey("devices.hotplug");
+            newVal.setValue("true");
+            extraOptions.add(newVal);
+            
+            /**
+             * Extra Config : nvp.vm-uuid = uuid
+             *  - Required for Nicira NVP integration
+             */
+            newVal = new OptionValue();
+            newVal.setKey("nvp.vm-uuid");
+            newVal.setValue(vmSpec.getUuid());
+            extraOptions.add(newVal);
+            
+            /**
+             * Extra Config : nvp.iface-id<num> = uuid
+             *  - Required for Nicira NVP integration
+             */
+            int nicNum = 0;
+            for (NicTO nicTo : sortNicsByDeviceId(nics)) {
+                newVal = new OptionValue();
+                newVal.setKey("nvp.iface-id" + nicNum);
+                newVal.setValue(nicTo.getUuid());
+                extraOptions.add(newVal);
+                nicNum++;
+            }
+            
+            for(Map.Entry<String, String> entry : validateVmDetails(vmSpec.getDetails()).entrySet()) {
+                newVal = new OptionValue();
+                newVal.setKey(entry.getKey());
+                newVal.setValue(entry.getValue());
+                extraOptions.add(newVal);
             }
 
             String keyboardLayout = null;
             if(vmSpec.getDetails() != null)
                 keyboardLayout = vmSpec.getDetails().get(VmDetailConstants.KEYBOARD);
-            vmConfigSpec.getExtraConfig().addAll(Arrays.asList(configureVnc(extraOptions, hyperHost, vmName, vmSpec.getVncPassword(), keyboardLayout)));
+            vmConfigSpec.getExtraConfig().addAll(Arrays.asList(configureVnc(extraOptions.toArray(new OptionValue[0]), hyperHost, vmName, vmSpec.getVncPassword(), keyboardLayout)));
 
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure VM before start. vmName: " + vmName);
