@@ -3471,6 +3471,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         long allocIpCount = _publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true);
         List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
         boolean success = true;
+        List<IPAddressVO> ipsInUse = new ArrayList<IPAddressVO>();
         if (allocIpCount > 0) {
             try {
                 vlan = _vlanDao.acquireInLockTable(vlanDbId, 30);
@@ -3488,6 +3489,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                     + " as part of Public IP" + " range release to the system pool");
                         }
                         success = success && _networkMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
+                    } else {
+                        ipsInUse.add(ip);
                     }
                 }
                 if (!success) {
@@ -3501,12 +3504,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // A Public IP range can only be dedicated to one account at a time
         if (_accountVlanMapDao.remove(acctVln.get(0).getId())) {
-            // generate usage events to remove dedication for every ip in the
-            // range
+            // generate usage events to remove dedication for every ip in the range that has been disassociated
             for (IPAddressVO ip : ips) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip
-                        .getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan
-                        .getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                if (!ipsInUse.contains(ip)) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip
+                            .getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan
+                            .getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                }
             }
             // decrement resource count for dedicated public ip's
             _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(
