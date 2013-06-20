@@ -32,9 +32,8 @@ under the License.
 %applications%
 </match>
 <then>
-<permit>
+%action%
 %tunnel%
-</permit>
 <count>
 </count>
 </then>
