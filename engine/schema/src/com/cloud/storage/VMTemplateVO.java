@@ -187,12 +187,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     public static VMTemplateVO createPreHostIso(Long id, String uniqueName, String name, ImageFormat format,
             boolean isPublic, boolean featured, TemplateType type, String url, Date created, boolean requiresHvm,
             int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId,
-            boolean bootable, HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled, boolean isDynamicallyScalable) {
+            boolean bootable, HypervisorType hyperType) {
         VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, type, url, created,
                 requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType);
-        template.templateTag = templateTag;
-        template.enableSshKey = sshKeyEnabled;
-        template.dynamicallyScalable = isDynamicallyScalable;
         return template;
     }
 
