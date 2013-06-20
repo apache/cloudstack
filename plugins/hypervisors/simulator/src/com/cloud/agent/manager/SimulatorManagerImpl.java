@@ -16,20 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -100,18 +86,32 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.resource.SimulatorStorageProcessor;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.simulator.dao.MockHostDao;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
+import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @Local(value = { SimulatorManager.class })
@@ -129,18 +129,12 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     MockConfigurationDao _mockConfigDao;
     @Inject
     MockHostDao _mockHost = null;
-    private ConnectionConcierge _concierge;
+    protected StorageSubsystemCommandHandler storageHandler;
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        /*
-        try {
-            Connection conn = Transaction.getStandaloneSimulatorConnection();
-            conn.setAutoCommit(true);
-            _concierge = new ConnectionConcierge("SimulatorConnection", conn, true);
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to get a db connection to simulator", e);
-        }
-         */
+        SimulatorStorageProcessor processor = new SimulatorStorageProcessor(this);
+        this.storageHandler = new StorageSubsystemCommandHandlerBase(processor);
         return true;
     }
 
@@ -356,6 +350,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 return _mockVmMgr.scaleVm((ScaleVmCommand) cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return _mockNetworkMgr.setupPVLAN((PvlanSetupCommand) cmd);
+            } else if (cmd instanceof StorageSubSystemCommand) {
+                return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else {
                 s_logger.error("Simulator does not implement command of type "+cmd.toString());
                 return Answer.createUnsupportedCommandAnswer(cmd);
