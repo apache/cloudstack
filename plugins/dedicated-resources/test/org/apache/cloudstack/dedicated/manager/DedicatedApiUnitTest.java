@@ -63,6 +63,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -120,7 +121,8 @@ public class DedicatedApiUnitTest {
         AccountVO account = new AccountVO(accountName, domainId, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
         DomainVO domain = new DomainVO("rootDomain", 5L, 5L, "networkDomain");
 
-        CallContext.register(1, account, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
+        
         when(_acctMgr.finalizeOwner((Account) anyObject(), anyString(), anyLong(), anyLong())).thenReturn(account);
         when(_accountDao.findByIdIncludingRemoved(0L)).thenReturn(account);
         when(_accountDao.findById(anyLong())).thenReturn(account);

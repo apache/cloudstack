@@ -84,6 +84,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.UserVmVO;
@@ -165,7 +166,7 @@ public class ImplicitPlannerTest {
         acct.setDomainId(domainId);
         acct.setId(accountId);
 
-        CallContext.register(1, acct, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
     }
 
     @Test

@@ -43,6 +43,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.DomainRouterDao;
 
@@ -97,7 +98,8 @@ public class VpcTest extends TestCase {
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
-        CallContext.register(1, account, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
+
         vpc = new VpcVO(1, "myvpc", "myvpc", 2, 1, 1, "10.0.1.0/16", "mydomain");
     }
 

@@ -42,6 +42,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
@@ -355,6 +356,11 @@ public class ChildTestConfiguration {
     @Bean
     public AccountDetailsDao accountDetailsDao() {
         return Mockito.mock(AccountDetailsDao.class);
+    }
+    
+    @Bean
+    public ConfigurationManager configurationMgr() {
+    	return Mockito.mock(ConfigurationManager.class);
     }
 
     public static class Library implements TypeFilter {

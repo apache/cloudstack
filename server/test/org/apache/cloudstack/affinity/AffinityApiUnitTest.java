@@ -64,6 +64,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.SearchBuilder;
@@ -125,7 +126,7 @@ public class AffinityApiUnitTest {
         acct.setAccountName("user");
         acct.setDomainId(domainId);
 
-        CallContext.register(1, acct, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
 
         when(_acctMgr.finalizeOwner((Account) anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
         when(_processor.getType()).thenReturn("mock");

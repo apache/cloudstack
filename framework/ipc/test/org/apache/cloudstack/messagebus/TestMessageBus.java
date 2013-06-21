@@ -115,7 +115,6 @@ public class TestMessageBus extends TestCase {
 		_messageBus.clearAll();
 	}
 	
-	@Test
 	public void testMessageDetector() {
 		MessageDetector detector = new MessageDetector();
 		detector.open(_messageBus, new String[] {"VM", "Host"});

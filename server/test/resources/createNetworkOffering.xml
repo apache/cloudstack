@@ -37,11 +37,16 @@
     </property>
   </bean>
 
+<!--  
+    we need to disable real DB access in unit test in order to be able to run under build system that
+    does not have a CloudStack database instance
+    
     <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
     <bean id="ConfigurationManager" class="com.cloud.configuration.ConfigurationManagerImpl">
         <property name="name" value="ConfigurationManager"/>
     </bean>
+-->
 
-    <bean class="org.apache.cloudstack.networkoffering.ChildTestConfiguration" />
+  <bean class="org.apache.cloudstack.networkoffering.ChildTestConfiguration" />
 
 </beans>

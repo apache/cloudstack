@@ -68,7 +68,7 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
     public VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId) {
 		
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobSearch.create();
-		sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
+		sc.setParameters("jobStatus", JobInfo.	Status.IN_PROGRESS);
 		sc.setParameters("vmType", type);
 		sc.setParameters("vmInstanceId", instanceId);
 		

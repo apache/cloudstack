@@ -114,9 +114,11 @@
     <testResources>
       <testResource>
         <directory>test/resources</directory>
+<!--          
           <excludes>
               <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
           </excludes>
+-->     
       </testResource>
     </testResources>
     <plugins>
@@ -130,9 +132,9 @@
                     <configuration>
                         <testExcludes>
                             <exclude>**/com/cloud/upgrade/*.java</exclude>
-<!--                              
                             <exclude>**/com/cloud/async/*.java</exclude>
--->       
+                            <exclude>**/com/cloud/vm/*.java</exclude>
+                            <exclude>**/org/apache/cloudstack/networkoffering/CreateNetworkOfferingTest.java</exclude>
                         </testExcludes>
                     </configuration>
                     <goals>

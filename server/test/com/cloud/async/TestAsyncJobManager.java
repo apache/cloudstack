@@ -34,6 +34,7 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import org.apache.cloudstack.config.ConfigDepot;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
@@ -73,6 +74,7 @@ public class TestAsyncJobManager extends TestCase {
     @Inject AccountManager accountMgr;
     @Inject SyncQueueDao syncQueueDao;
     @Inject SyncQueueItemDao syncQueueItemDao;
+    @Inject ConfigDepot configDepot;
     
     @Override
     @Before

@@ -91,8 +91,8 @@ public class InternalLBVMServiceTest extends TestCase {
         Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
         Mockito.when(_accountDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(new AccountVO(2));
-        CallContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
-        
+     
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
         
         DomainRouterVO validVm = new DomainRouterVO(validVmId,off.getId(),1,"alena",1,HypervisorType.XenServer,1,1,1,
                 false, 0,false,null,false,false,

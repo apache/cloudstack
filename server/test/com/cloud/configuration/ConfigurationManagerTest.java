@@ -50,6 +50,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.Ip;
@@ -113,7 +114,8 @@ public class ConfigurationManagerTest {
 
         when(configurationMgr._vlanDao.acquireInLockTable(anyLong(), anyInt())).thenReturn(vlan);
 
-        CallContext.register(1, account, null, true);
+        UserVO user = new UserVO(1);
+        CallContext.register(user, account, null);
 
         Field dedicateIdField = _dedicatePublicIpRangeClass.getDeclaredField("id");
         dedicateIdField.setAccessible(true);

@@ -133,7 +133,9 @@ public class ApplicationLoadBalancerTest extends TestCase{
         
         Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
-        CallContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
+        
+        UserVO user = new UserVO(_accountMgr.getSystemUser().getId());
+        CallContext.register(user, _accountMgr.getSystemAccount(), null);
         
         Mockito.when(_ntwkModel.areServicesSupportedInNetwork(Mockito.anyLong(), Mockito.any(Network.Service.class))).thenReturn(true);
         

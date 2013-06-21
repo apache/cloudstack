@@ -86,8 +86,9 @@ public class CreateNetworkOfferingTest extends TestCase{
         Mockito.when(mapDao.persist(Mockito.any(NetworkOfferingServiceMapVO.class))).thenReturn(new NetworkOfferingServiceMapVO());
         Mockito.when(accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
-
-        CallContext.register(accountMgr.getSystemUser().getId(), accountMgr.getSystemAccount(), null, false);
+        
+        UserVO user = new UserVO(accountMgr.getSystemUser().getId());
+        CallContext.register(user, accountMgr.getSystemAccount(), null);
     }
 
     //Test Shared network offerings

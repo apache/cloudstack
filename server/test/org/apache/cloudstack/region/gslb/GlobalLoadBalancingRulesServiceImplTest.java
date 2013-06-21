@@ -25,6 +25,7 @@ import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.Ip;
 import junit.framework.Assert;
@@ -499,7 +500,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
-        CallContext.register(1, account, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
@@ -564,7 +565,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         Account account = (Account) new AccountVO("testaccount", 3, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
-        CallContext.register(1, account, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
@@ -651,7 +652,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
-        CallContext.register(1, account, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
@@ -710,7 +711,8 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
-        CallContext.register(1, account, null, true);
+
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
@@ -783,8 +785,9 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
-        CallContext.register(1, account, null, true);
 
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
+        
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(removeFromGslbCmd, new Long(1));
@@ -845,8 +848,9 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
-        CallContext.register(1, account, null, true);
 
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
+        
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(removeFromGslbCmd, new Long(1));
@@ -891,7 +895,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
-        CallContext.register(1, account, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
@@ -939,7 +943,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         Account account = (Account) new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
-        CallContext.register(1, account, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);

@@ -17,6 +17,7 @@
 
 package com.cloud.async;
 
+import org.apache.cloudstack.config.ConfigDepot;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDaoImpl;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
@@ -114,4 +115,10 @@ public class AsyncJobTestConfiguration {
 	public AsyncJobJoinMapDao asyncJobJoinMapDao() {
 		return new AsyncJobJoinMapDaoImpl();
 	}
+	
+	@Bean 
+	public ConfigDepot configDepot() {
+		return Mockito.mock(ConfigDepot.class);
+	}
 }
+

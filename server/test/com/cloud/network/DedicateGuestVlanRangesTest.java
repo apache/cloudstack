@@ -44,6 +44,7 @@ import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.utils.db.Transaction;
 
 import junit.framework.Assert;
@@ -90,7 +91,7 @@ public class DedicateGuestVlanRangesTest {
         when(networkService._accountMgr.getAccount(anyLong())).thenReturn(account);
         when(networkService._accountDao.findActiveAccount(anyString(), anyLong())).thenReturn(account);
 
-        CallContext.register(1, account, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
 
         Field accountNameField = _dedicateGuestVlanRangeClass.getDeclaredField("accountName");
         accountNameField.setAccessible(true);
