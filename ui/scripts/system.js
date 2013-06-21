@@ -13318,7 +13318,7 @@
                     },
                     action: function(args) {
                       $.ajax({
-                        url: createURL("deleteImageStore&id=" + args.context.secondarystorages[0].id),
+                        url: createURL("deleteImageStore&id=" + args.context.secondaryStorage[0].id),
                         dataType: "json",
                         async: true,
                         success: function(json) {
