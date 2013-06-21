@@ -254,6 +254,7 @@ addImageStore=1
 listImageStores=1
 deleteImageStore=1
 createCacheStore=1
+listCacheStores=1
 
 #### host commands
 addHost=3

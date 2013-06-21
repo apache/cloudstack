@@ -145,6 +145,7 @@ import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrationCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListCacheStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
@@ -2755,6 +2756,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListImageStoresCmd.class);
         cmdList.add(DeleteImageStoreCmd.class);
         cmdList.add(CreateCacheStoreCmd.class);
+        cmdList.add(ListCacheStoresCmd.class);
         cmdList.add(CreateApplicationLoadBalancerCmd.class);
         cmdList.add(ListApplicationLoadBalancersCmd.class);
         cmdList.add(DeleteApplicationLoadBalancerCmd.class);

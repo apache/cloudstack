@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListCacheStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
@@ -2033,6 +2034,86 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         SearchCriteria<ImageStoreJoinVO> sc = sb.create();
         sc.setParameters("role", DataStoreRole.Image);
+
+        if (keyword != null) {
+            SearchCriteria<ImageStoreJoinVO> ssc = _imageStoreJoinDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("provider", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
+        }
+        if (provider != null) {
+            sc.setParameters("provider", provider);
+        }
+        if (protocol != null) {
+            sc.setParameters("protocol", protocol);
+        }
+
+        // search Store details by ids
+        Pair<List<ImageStoreJoinVO>, Integer> uniqueStorePair = _imageStoreJoinDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueStorePair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueStorePair;
+        }
+        List<ImageStoreJoinVO> uniqueStores = uniqueStorePair.first();
+        Long[] vrIds = new Long[uniqueStores.size()];
+        int i = 0;
+        for (ImageStoreJoinVO v : uniqueStores) {
+            vrIds[i++] = v.getId();
+        }
+        List<ImageStoreJoinVO> vrs = _imageStoreJoinDao.searchByIds(vrIds);
+        return new Pair<List<ImageStoreJoinVO>, Integer>(vrs, count);
+
+    }
+
+    @Override
+    public ListResponse<ImageStoreResponse> searchForCacheStores(ListCacheStoresCmd cmd) {
+        Pair<List<ImageStoreJoinVO>, Integer> result = searchForCacheStoresInternal(cmd);
+        ListResponse<ImageStoreResponse> response = new ListResponse<ImageStoreResponse>();
+
+        List<ImageStoreResponse> poolResponses = ViewResponseHelper.createImageStoreResponse(result.first().toArray(
+                new ImageStoreJoinVO[result.first().size()]));
+        response.setResponses(poolResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<ImageStoreJoinVO>, Integer> searchForCacheStoresInternal(ListCacheStoresCmd cmd) {
+
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Object id = cmd.getId();
+        Object name = cmd.getStoreName();
+        String provider = cmd.getProvider();
+        String protocol = cmd.getProtocol();
+        Object keyword = cmd.getKeyword();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+
+        Filter searchFilter = new Filter(ImageStoreJoinVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+
+        SearchBuilder<ImageStoreJoinVO> sb = _imageStoreJoinDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+                                                             // ids
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
+        sb.and("provider", sb.entity().getProviderName(), SearchCriteria.Op.EQ);
+        sb.and("role", sb.entity().getRole(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<ImageStoreJoinVO> sc = sb.create();
+        sc.setParameters("role", DataStoreRole.ImageCache);
 
         if (keyword != null) {
             SearchCriteria<ImageStoreJoinVO> ssc = _imageStoreJoinDao.createSearchCriteria();
