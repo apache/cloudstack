@@ -37,6 +37,7 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -104,7 +105,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         templateResponse.setDisplayText(template.getDisplayText());
         templateResponse.setPublic(template.isPublicTemplate());
         templateResponse.setCreated(template.getCreatedOnStore());
-        templateResponse.setReady(template.getState() == ObjectInDataStoreStateMachine.State.Ready);
+        if ( template.getFormat() == Storage.ImageFormat.BAREMETAL ){
+            // for baremetal template, we didn't download, but is ready to use.
+            templateResponse.setReady(true);
+        }
+        else{
+            templateResponse.setReady(template.getState() == ObjectInDataStoreStateMachine.State.Ready);
+        }
         templateResponse.setFeatured(template.isFeatured());
         templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM));
         templateResponse.setPasswordEnabled(template.isEnablePassword());

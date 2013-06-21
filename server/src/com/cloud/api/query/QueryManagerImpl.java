@@ -133,6 +133,7 @@ import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
@@ -2834,7 +2835,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
 
             if (onlyReady) {
-                sc.addAnd("state", SearchCriteria.Op.EQ, TemplateState.Ready);
+                SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
+                readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
+                readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
+                SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
+                isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
+                isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
+                readySc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
+                sc.addAnd("state", SearchCriteria.Op.SC, readySc);
             }
 
             if (zoneId != null) {
