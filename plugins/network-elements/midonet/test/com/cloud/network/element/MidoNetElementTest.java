@@ -29,6 +29,8 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import org.junit.Ignore;
+
 import junit.framework.TestCase;
 
 import com.midokura.midonet.client.MidonetApi;
@@ -53,12 +55,12 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 
-// public class MidoNetElementTest extends TestCase {
-public class MidoNetElementTest {
+public class MidoNetElementTest extends TestCase {
 
     /*
      * Test the standard case of addDhcpEntry with no errors.
      */
+	@Ignore
     public void testAddDhcpEntry() {
 
         //mockMgmt
@@ -139,6 +141,7 @@ public class MidoNetElementTest {
     /*
      * Test the standard case of implement with no errors.
      */
+	@Ignore
     public void testImplement() {
         //mock
         MidonetApi api = mock(MidonetApi.class, RETURNS_DEEP_STUBS);
