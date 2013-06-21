@@ -146,6 +146,7 @@ known_categories = {
     'listImageStore': 'Image Store',
     'deleteImageStore': 'Image Store',
     'createCacheStore': 'Image Store',
+    'listCacheStores': 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
     'PortableIp': 'Portable IP',
