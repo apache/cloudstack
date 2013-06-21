@@ -752,10 +752,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException {
         
-        long id = _internalLbVmDao.getNextInSequence(Long.class, "id");
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating the internal lb vm " + id + " in datacenter "  + dest.getDataCenter());
-        }
+       
 
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
 
@@ -769,8 +766,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
         for (Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             HypervisorType hType = iter.next();
             try {
-                s_logger.debug("Allocating the Internal lb with the hypervisor type " + hType);
-                String templateName = null;
+                long id = _internalLbVmDao.getNextInSequence(Long.class, "id");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Creating the internal lb vm " + id + " in datacenter "  + dest.getDataCenter() + " with hypervisor type " + hType);
+                }                String templateName = null;
                 switch (hType) {
                     case XenServer:
                         templateName = _configServer.getConfigValue(Config.RouterTemplateXen.key(), Config.ConfigurationParameterScope.zone.toString(), dest.getDataCenter().getId());

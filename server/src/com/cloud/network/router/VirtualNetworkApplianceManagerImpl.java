@@ -1585,11 +1585,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             Long vpcId, List<Pair<NetworkVO, NicProfile>> networks, boolean startRouter, List<HypervisorType> supportedHypervisors) throws ConcurrentOperationException,
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException {
-        
-        long id = _routerDao.getNextInSequence(Long.class, "id");
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating the router " + id + " in datacenter "  + dest.getDataCenter());
-        }
 
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
 
@@ -1603,7 +1598,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         for (Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             HypervisorType hType = iter.next();
             try {
-                s_logger.debug("Allocating the domR with the hypervisor type " + hType);
+                long id = _routerDao.getNextInSequence(Long.class, "id");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Allocating the VR i="+ id + " in datacenter "  + dest.getDataCenter() + "with the hypervisor type " + hType);
+                }
+                
                 String templateName = null;
                 switch (hType) {
                     case XenServer:
