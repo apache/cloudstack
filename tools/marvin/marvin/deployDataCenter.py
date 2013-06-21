@@ -380,9 +380,9 @@ specify a valid config file" % cfgFile)
                     self.createVlanIpRanges(zone.networktype, zone.ipranges,
                                             zoneId, forvirtualnetwork=True)
 
-            isFreeZone = (zone.networktype == "Advanced"
-                          and zone.securitygroupenabled != "true")
-            if ifFreeZone:
+            isPureAdvancedZone = (zone.networktype == "Advanced"
+                                  and zone.securitygroupenabled != "true")
+            if isPureAdvancedZone:
                 self.createpods(zone.pods, zoneId)
                 self.createVlanIpRanges(zone.networktype, zone.ipranges,
                                         zoneId)
