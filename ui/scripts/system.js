@@ -6870,27 +6870,20 @@
                               args.response.error(parseXMLHttpResponse(json));
                             }
                           });
-                        },
+                        }
+                
+                        /*
+                        ,
                         detailView: {
-                          updateContext: function (args) {
-                            var zone;
-
-                            $.ajax({
-                              url: createURL('listZones'),
-                              data: { id: args.context.secondarystorages[0].zoneid },
-                              async: false,
-                              success: function (json) {
-                                zone = json.listzonesresponse.zone[0];
-                              }
-                            });
-
-                            selectedZoneObj = zone;
-
+                          updateContext: function (args) {                            
                             return {
-                              zones: [zone]
+                              zones: [{}]
                             };
+                            
                           }
                         }
+                        */
+                
                       }                      
                     },
                     cacheStorage: {
@@ -6914,27 +6907,19 @@
                               args.response.error(parseXMLHttpResponse(json));
                             }
                           });
-                        },
+                        }
+                    
+                        /*
+                        ,
                         detailView: {
-                          updateContext: function (args) {
-                            var zone;
-
-                            $.ajax({
-                              url: createURL('listZones'),
-                              data: { id: args.context.secondarystorages[0].zoneid },
-                              async: false,
-                              success: function (json) {
-                                zone = json.listzonesresponse.zone[0];
-                              }
-                            });
-
-                            selectedZoneObj = zone;
-
+                          updateContext: function (args) {                            
                             return {
-                              zones: [zone]
+                              zones: [{}]
                             };
                           }
                         }
+                        */
+                    
                       }                      
                     }
                   }
@@ -13378,9 +13363,9 @@
                       }
                     ],
 
-                    dataProvider: function(args) {
+                    dataProvider: function(args) {                      
                       $.ajax({
-                        url: createURL("listImageStores&id=" + args.context.secondarystorages[0].id),
+                        url: createURL("listImageStores&id=" + args.context.secondaryStorage[0].id),
                         dataType: "json",
                         async: true,
                         success: function(json) {
@@ -13597,19 +13582,19 @@
                       }
                     ],
 
-                    dataProvider: function(args) {
+                    dataProvider: function(args) {                                
                       $.ajax({
-                        url: createURL("listImageStores&id=" + args.context.secondarystorages[0].id),
-                        dataType: "json",
-                        async: true,
-                        success: function(json) {
-                          var item = json.listimagestoreresponse.imagestore[0];
-                          args.response.success({
-                            actionFilter: secondarystorageActionfilter,
-                            data:item
-                          });
+                        url: createURL('listCacheStores'),
+                        data: { 
+                          id: args.context.cacheStorage[0].id
+                        },
+                        async: false,
+                        success: function (json) {                          
+                          var item = json.listcachestoreresponse.imagestore[0];                          
+                          args.response.success({ data: item });
+                          
                         }
-                      });
+                      });                      
                     }
                   }
 
