@@ -6893,7 +6893,7 @@
                         }
                       }                      
                     },
-                    imageStores: {
+                    cacheStorage: {
                       listView: {
                         dataProvider: function (args) {
                           var searchByArgs = args.filterBy.search.value.length ?
@@ -6907,10 +6907,10 @@
                           };
 
                           $.ajax({
-                            url: createURL('listImageStores' + searchByArgs),
+                            url: createURL('listCacheStores' + searchByArgs),
                             data: data,
                             success: function (json) {
-                              args.response.success({ data: json.listimagestoreresponse.imagestore });
+                              args.response.success({ data: json.listcachestoreresponse.cachestore });
                             },
                             error: function (json) {
                               args.response.error(parseXMLHttpResponse(json));
@@ -12865,7 +12865,7 @@
         title: 'label.secondary.storage',
         id: 'secondarystorages',
         sectionSelect: {
-          label: 'label.select.view'
+          label: 'label.select-view'
         },
         sections: {
           secondaryStorage: {
@@ -13418,9 +13418,9 @@
               }
             }
           },
-          imageStores: {
+          cacheStorage: {
             type: 'select',
-            title: 'Image stores',
+            title: 'Cache Storage',
             listView: {
               id: 'secondarystorages',
               section: 'seconary-storage',
