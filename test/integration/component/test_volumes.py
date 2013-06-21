@@ -58,7 +58,6 @@ class Services:
                         },
                         "volume": {
                                 "diskname": "TestDiskServ",
-                                "max": 6,
                         },
                          "virtual_machine": {
                                     "displayname": "testVM",
@@ -97,6 +96,7 @@ class TestAttachVolume(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -110,7 +110,25 @@ class TestAttachVolume(cloudstackTestCase):
         cls.services["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
-
+        #get max data volumes limit based on the hypervisor type and version
+        listHost = Host.list(
+                             cls.api_client,
+                             hypervisor = cls.services["virtual_machine"]["hypervisor"],
+                             type ='Routing',
+                             zoneid = cls.zone.id,
+                             podid = cls.pod.id,
+                             )
+        ver = listHost[0].hypervisorversion
+        cmd = listHypervisorCapabilities.listHypervisorCapabilitiesCmd()
+        cmd.hypervisor = cls.services["virtual_machine"]["hypervisor"]
+        res = cls.api_client.listHypervisorCapabilities(cmd)
+        cls.debug('Hypervisor Capabilities: {}'.format(res))
+        for i in range(len(res)):
+            if res[i].hypervisorversion == ver:
+                break
+        max_data_volumes = int(res[i].maxdatavolumeslimit)
+        cls.debug('max data volumes:{}'.format(max_data_volumes))
+        cls.services["volume"]["max"] = max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
@@ -368,6 +386,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -381,7 +400,25 @@ class TestAttachDetachVolume(cloudstackTestCase):
         cls.services["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
-
+        #get max data volumes limit based on the hypervisor type and version
+        listHost = Host.list(
+                             cls.api_client,
+                             hypervisor = cls.services["virtual_machine"]["hypervisor"],
+                             type ='Routing',
+                             zoneid = cls.zone.id,
+                             podid = cls.pod.id,
+                             )
+        ver = listHost[0].hypervisorversion
+        cmd = listHypervisorCapabilities.listHypervisorCapabilitiesCmd()
+        cmd.hypervisor = cls.services["virtual_machine"]["hypervisor"]
+        res = cls.api_client.listHypervisorCapabilities(cmd)
+        cls.debug('Hypervisor Capabilities: {}'.format(res))
+        for i in range(len(res)):
+            if res[i].hypervisorversion == ver:
+                break
+        max_data_volumes = int(res[i].maxdatavolumeslimit)
+        cls.debug('max data volumes:{}'.format(max_data_volumes))
+        cls.services["volume"]["max"] = max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
@@ -614,6 +651,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -628,14 +666,31 @@ class TestAttachVolumeISO(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["iso"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
-
+        #get max data volumes limit based on the hypervisor type and version
+        listHost = Host.list(
+                             cls.api_client,
+                             hypervisor = cls.services["virtual_machine"]["hypervisor"],
+                             type ='Routing',
+                             zoneid = cls.zone.id,
+                             podid = cls.pod.id,
+                             )
+        ver = listHost[0].hypervisorversion
+        cmd = listHypervisorCapabilities.listHypervisorCapabilitiesCmd()
+        cmd.hypervisor = cls.services["virtual_machine"]["hypervisor"]
+        res = cls.api_client.listHypervisorCapabilities(cmd)
+        cls.debug('Hypervisor Capabilities: {}'.format(res))
+        for i in range(len(res)):
+            if res[i].hypervisorversion == ver:
+                break
+        max_data_volumes = int(res[i].maxdatavolumeslimit)
+        cls.debug('max data volumes:{}'.format(max_data_volumes))
+        cls.services["volume"]["max"] = max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-
         cls.services["account"] = cls.account.name
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
