@@ -3804,6 +3804,10 @@ Dialogs*/
   margin: 0 0 12px;
 }
 
+.ui-dialog.big div.form-container div.form-item {
+  width: 45%;
+}
+
 .ui-dialog div.form-container div.name {
   float: left;
   clear: both;
