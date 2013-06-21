@@ -13522,35 +13522,8 @@
               },
 
               detailView: {
-                name: 'Secondary storage details',
-                isMaximized: true,
-                actions: {
-                  remove: {
-                    label: 'label.action.delete.secondary.storage' ,
-                    messages: {
-                      confirm: function(args) {
-                        return 'message.action.delete.secondary.storage';
-                      },
-                      notification: function(args) {
-                        return 'label.action.delete.secondary.storage';
-                      }
-                    },
-                    action: function(args) {
-                      $.ajax({
-                        url: createURL("deleteImageStore&id=" + args.context.secondarystorages[0].id),
-                        dataType: "json",
-                        async: true,
-                        success: function(json) {
-                          args.response.success();
-                        }
-                      });
-                    },
-                    notification: {
-                      poll: function(args) { args.complete({ data: { resourcestate: 'Destroyed' } }); }
-                    }
-                  }
-
-                },
+                name: 'Cache Storage details',
+                isMaximized: true,                
                 tabs: {
                   details: {
                     title: 'label.details',
