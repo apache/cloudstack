@@ -241,7 +241,8 @@ if __name__ == "__main__":
     "queryasyncjobresultresponse" : {
         "errorcode" : 431,
         "errortext" :
-"Unable to execute API command queryasyncjobresultresponse due to missing parameter jobid"
+"Unable to execute API command queryasyncjobresultresponse \
+due to missing parameter jobid"
     }
 }'''
     try:
