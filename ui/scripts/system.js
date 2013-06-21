@@ -6849,7 +6849,7 @@
                   sections: {
                     secondaryStorage: {
                       listView: {
-                        dataProvider: function (args) {
+                        dataProvider: function (args) {                         
                           var searchByArgs = args.filterBy.search.value.length ?
                             '&name=' + args.filterBy.search.value : '';
 
@@ -12878,7 +12878,8 @@
                 providername: { label: 'Provider' }
               },
 
-              dataProvider: function(args) {
+              /*
+              dataProvider: function(args) { //being replaced with dataProvider in line 6852
                 var array1 = [];
                 if(args.filterBy != null) {
                   if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
@@ -12905,6 +12906,7 @@
                   }
                 });
               },
+              */
 
               actions: {
                 add: {
