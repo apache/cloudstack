@@ -55,6 +55,7 @@
               },
 
               createForm: {
+                bigSize: true,
                 title: 'label.add.compute.offering',
                 fields: {
                   name: {
