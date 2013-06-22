@@ -115,6 +115,7 @@
   $.widget('cloudStack.tagger', {
     _init: function(args) {
       var context = this.options.context;
+			var jsonObj = this.options.jsonObj;
       var dataProvider = this.options.dataProvider;
       var actions = this.options.actions;
       var $container = this.element.addClass('tagger');
@@ -209,6 +210,7 @@
       $loading.appendTo($container);
       dataProvider({
         context: context,
+				jsonObj: jsonObj,
         response: {
           success: function(args) {
             var data = args.data;
