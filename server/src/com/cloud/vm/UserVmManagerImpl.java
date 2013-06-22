@@ -2450,7 +2450,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
-        long size = _templateDao.findById(template.getId()).getSize();
+        // For baremetal, size can be null
+        Long tmp = _templateDao.findById(template.getId()).getSize();
+        long size = 0;
+        if (tmp != null) {
+        	size = tmp;
+        }
         if (diskOfferingId != null) {
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
