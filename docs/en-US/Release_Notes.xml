@@ -5151,9 +5151,9 @@ under the License.
                         <listitem>
                             <para>Update the agent software with one of the following command sets as appropriate
                                 for your environment.</para>
-                            <para><command># yum update cloud-*</command></para>
+                            <para><command># yum update cloud*</command></para>
                             <para><command># apt-get update</command></para>
-                            <para><command># apt-get upgrade cloud-*</command></para>
+                            <para><command># apt-get upgrade cloud*</command></para>
                         </listitem>
                         <listitem>
                             <para>Start the agent.</para>
@@ -5744,10 +5744,10 @@ under the License.
                         <listitem>
                             <para>Update the agent software with one of the following command sets as
                                 appropriate.</para>
-                            <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
+                            <programlisting><prompt>#</prompt> <command>yum</command> update cloud*</programlisting>
                             <programlisting>
                                 <prompt>#</prompt> <command>apt-get</command> update
-                                <prompt>#</prompt> <command>apt-get</command> upgrade cloud-*
+                                <prompt>#</prompt> <command>apt-get</command> upgrade cloud*
                             </programlisting>
                         </listitem>
                         <listitem>
