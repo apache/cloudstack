@@ -92,6 +92,7 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -346,7 +347,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             }
         }
         s_logger.info("Preparing network on host " + hostMo.getContext().toString() + " for " + privateTrafficLabel);
-        HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+        //The management network is probably always going to be a physical network with vlans, so assume BroadcastDomainType VLAN
+        HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false, BroadcastDomainType.Vlan);
     }
 
     @Override

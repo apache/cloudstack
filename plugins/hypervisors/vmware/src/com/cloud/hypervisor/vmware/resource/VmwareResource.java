@@ -229,6 +229,7 @@ import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.rules.FirewallRule;
@@ -1787,12 +1788,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (_publicTrafficInfo != null) {
             vSwitchType = _publicTrafficInfo.getVirtualSwitchType();
         }
+        /** FIXME We have no clue which network this nic is on and that means that we can't figure out the BroadcastDomainType
+         *  so we assume that it's VLAN for now
+         */
         if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
             networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, _ops_timeout, true);
+                    vmMo.getRunningHost(), vlanId, null, null, _ops_timeout, true, BroadcastDomainType.Vlan);
         } else {
-            networkInfo = HypervisorHostHelper.prepareNetwork(this._publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, null, this._ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false);
+            networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
+                    vmMo.getRunningHost(), vlanId, null, null, null, _ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan);
         }
 
         int nicIndex = allocPublicNicIndex(vmMo);
@@ -2953,7 +2957,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (VirtualSwitchType.StandardVirtualSwitch == switchType) {
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix,
                     hostMo, getVlanInfo(nicTo, switchName.second()), nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
-                    !namePrefix.startsWith("cloud.private"));
+                    !namePrefix.startsWith("cloud.private"), nicTo.getBroadcastType());
         }
         else {
             String vlanId = getVlanInfo(nicTo, switchName.second());
@@ -2967,7 +2971,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 svlanId = getPvlanInfo(nicTo);
             }
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, vlanId, svlanId,
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType, _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus);
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType, 
+                    _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus, nicTo.getBroadcastType());
         }
 
         return networkInfo;
@@ -5327,73 +5332,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return VirtualMachineGuestOsIdentifier.OTHER_GUEST_64;
         }
         return VirtualMachineGuestOsIdentifier.OTHER_GUEST;
-    }
-
-    private void prepareNetworkForVmTargetHost(HostMO hostMo, VirtualMachineMO vmMo) throws Exception {
-        assert (vmMo != null);
-        assert (hostMo != null);
-
-        String[] networks = vmMo.getNetworks();
-        for (String networkName : networks) {
-            HostPortGroupSpec portGroupSpec = hostMo.getHostPortGroupSpec(networkName);
-            HostNetworkTrafficShapingPolicy shapingPolicy = null;
-            if (portGroupSpec != null) {
-                shapingPolicy = portGroupSpec.getPolicy().getShapingPolicy();
-            }
-
-            if (networkName.startsWith("cloud.private")) {
-                String[] tokens = networkName.split("\\.");
-                if (tokens.length == 3) {
-                    Integer networkRateMbps = null;
-                    if (shapingPolicy != null && shapingPolicy.isEnabled() != null && shapingPolicy.isEnabled().booleanValue()) {
-                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
-                    }
-                    String vlanId = null;
-                    if(!"untagged".equalsIgnoreCase(tokens[2]))
-                        vlanId = tokens[2];
-
-                    HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private",
-                            hostMo, vlanId, networkRateMbps, null, _ops_timeout, false);
-                } else {
-                    s_logger.info("Skip suspecious cloud network " + networkName);
-                }
-            } else if (networkName.startsWith("cloud.public")) {
-                String[] tokens = networkName.split("\\.");
-                if (tokens.length == 3) {
-                    Integer networkRateMbps = null;
-                    if (shapingPolicy != null && shapingPolicy.isEnabled() != null && shapingPolicy.isEnabled().booleanValue()) {
-                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
-                    }
-                    String vlanId = null;
-                    if(!"untagged".equalsIgnoreCase(tokens[2]))
-                        vlanId = tokens[2];
-
-                    HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                            hostMo, vlanId, networkRateMbps, null, _ops_timeout, false);
-                } else {
-                    s_logger.info("Skip suspecious cloud network " + networkName);
-                }
-            } else if (networkName.startsWith("cloud.guest")) {
-                String[] tokens = networkName.split("\\.");
-                if (tokens.length >= 3) {
-                    Integer networkRateMbps = null;
-                    if (shapingPolicy != null && shapingPolicy.isEnabled() != null && shapingPolicy.isEnabled().booleanValue()) {
-                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
-                    }
-
-                    String vlanId = null;
-                    if(!"untagged".equalsIgnoreCase(tokens[2]))
-                        vlanId = tokens[2];
-
-                    HypervisorHostHelper.prepareNetwork(_guestTrafficInfo.getVirtualSwitchName(), "cloud.guest",
-                            hostMo, vlanId, networkRateMbps, null, _ops_timeout, false);
-                } else {
-                    s_logger.info("Skip suspecious cloud network " + networkName);
-                }
-            } else {
-                s_logger.info("Skip non-cloud network " + networkName + " when preparing target host");
-            }
-        }
     }
 
     private HashMap<String, State> getVmStates() throws Exception {
