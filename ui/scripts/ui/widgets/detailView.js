@@ -1178,7 +1178,8 @@
               !$detailView.data('view-args').compact) {
             $('<div>').tagger(
               $.extend(true, {}, tabs.tags, {
-                context: $detailView.data('view-args').context
+                context: $detailView.data('view-args').context,
+								jsonObj: $detailView.data('view-args').jsonObj
               })
             ).appendTo($detailView.find('.main-groups'));
           }
