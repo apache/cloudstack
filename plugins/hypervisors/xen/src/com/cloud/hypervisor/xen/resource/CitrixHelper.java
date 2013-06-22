@@ -660,6 +660,8 @@ public class CitrixHelper {
         _xenServer610GuestOsMap.put("CentOS 6.1 (64-bit)", "CentOS 6 (64-bit)");
         _xenServer610GuestOsMap.put("CentOS 6.2 (32-bit)", "CentOS 6 (32-bit)");
         _xenServer610GuestOsMap.put("CentOS 6.2 (64-bit)", "CentOS 6 (64-bit)");
+        _xenServer610GuestOsMap.put("CentOS 6.3 (32-bit)", "CentOS 6 (32-bit)");
+        _xenServer610GuestOsMap.put("CentOS 6.3 (64-bit)", "CentOS 6 (64-bit)");
         _xenServer610GuestOsMap.put("Debian GNU/Linux 6(32-bit)", "Debian Squeeze 6.0 (32-bit)");
         _xenServer610GuestOsMap.put("Debian GNU/Linux 6(64-bit)", "Debian Squeeze 6.0 (64-bit)");
         _xenServer610GuestOsMap.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5 (32-bit)");
@@ -749,6 +751,8 @@ public class CitrixHelper {
         _xenServer610GuestOsMap.put("Ubuntu 10.10 (64-bit)", "Ubuntu Maverick Meerkat 10.10 (64-bit) (experimental)");
         _xenServer610GuestOsMap.put("Ubuntu 12.04 (32-bit)", "Ubuntu Precise Pangolin 12.04 (32-bit)");
         _xenServer610GuestOsMap.put("Ubuntu 12.04 (64-bit)", "Ubuntu Precise Pangolin 12.04 (64-bit)");
+        _xenServer610GuestOsMap.put("Ubuntu 11.04 (32-bit)", "Other install media");
+        _xenServer610GuestOsMap.put("Ubuntu 11.04 (64-bit)", "Other install media");
         _xenServer610GuestOsMap.put("Other Linux (32-bit)", "Other install media");
         _xenServer610GuestOsMap.put("Other Linux (64-bit)", "Other install media");
         _xenServer610GuestOsMap.put("Other (32-bit)", "Other install media");

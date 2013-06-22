@@ -219,6 +219,11 @@ INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (166
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (167, UUID(), 6, 'Windows Server 2012 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (168, UUID(), 6, 'Windows Server 8 (64-bit)');
 
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (169, 10, 'Ubuntu 11.04 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (170, 10, 'Ubuntu 11.04 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (171, 1, 'CentOS 6.3 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (172, 1, 'CentOS 6.3 (64-bit)');
+
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (200, UUID(), 1, 'Other CentOS (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (201, UUID(), 1, 'Other CentOS (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (202, UUID(), 5, 'Other SUSE Linux(32-bit)');
