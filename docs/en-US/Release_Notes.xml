@@ -4709,10 +4709,6 @@ under the License.
                     <programlisting><prompt>#</prompt> mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
                 </listitem>
                 <listitem>
-                    <para>Whether you're upgrading a Red Hat/CentOS based system or Ubuntu based system, you're going to need to stop the CloudStack management server before proceeding.</para>
-                    <programlisting language="Bash"><prompt>#</prompt> service cloud-management stop</programlisting>
-                </listitem>
-                <listitem>
                     <para>If you have made changes to <filename>/etc/cloud/management/components.xml</filename>, you'll need to carry these over manually to the new file, <filename>/etc/cloudstack/management/componentContext.xml</filename>. This is not done automatically. (If you're unsure, we recommend making a backup of the original <filename>components.xml</filename> to be on the safe side.</para>
                 </listitem>
                 <listitem>
