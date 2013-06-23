@@ -45,7 +45,7 @@ under the License.
     </para>
     <screen>
         <command>mvn clean install -P developer,systemvm</command>
-        <command>$ dpkg-buildpackge -uc -us</command>
+        <command>$ dpkg-buildpackage -uc -us</command>
     </screen>
 
     <para>
