@@ -63,7 +63,7 @@ public class HostDatastoreSystemMO extends BaseMO {
 					DynamicProperty prop = oc.getPropSet().get(1);
 					if(prop != null && prop.getVal() != null) {
 						if(prop.getVal() instanceof CustomFieldStringValue) {
-							String val = ((CustomFieldStringValue)prop.getVal()).getPresetParams();
+							String val = ((CustomFieldStringValue)prop.getVal()).getValue();
 							if(val.equalsIgnoreCase(name))
 								return oc.getObj();
 						}

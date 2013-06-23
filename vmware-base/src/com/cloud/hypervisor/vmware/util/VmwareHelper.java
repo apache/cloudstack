@@ -145,7 +145,7 @@ public class VmwareHelper {
         final VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
 
         dvPortConnection.setSwitchUuid(dvSwitchUuid);
-        dvPortConnection.setPortgroupKey(morNetwork.getPresetParams());
+        dvPortConnection.setPortgroupKey(morNetwork.getValue());
         dvPortBacking.setPort(dvPortConnection);
         nic.setBacking(dvPortBacking);
         nic.setKey(30);

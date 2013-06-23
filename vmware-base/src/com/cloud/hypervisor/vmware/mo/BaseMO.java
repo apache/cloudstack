@@ -129,7 +129,7 @@ public class BaseMO {
 		CustomFieldStringValue cfValue = (CustomFieldStringValue)_context.getVimClient().getDynamicProperty(getMor(),
 			String.format("value[%d]", key));
 		if(cfValue != null)
-			return cfValue.getPresetParams();
+			return cfValue.getValue();
 
 		return null;
 	}

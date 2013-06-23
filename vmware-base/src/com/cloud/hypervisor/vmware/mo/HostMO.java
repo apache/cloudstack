@@ -544,7 +544,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		        			name = (String)objProp.getVal();
 		        		} else {
 		        			OptionValue optValue = (OptionValue)objProp.getVal();
-		        			value = (String)optValue.getPresetParams();
+		        			value = (String)optValue.getValue();
 		        		}
 		        	}
 
@@ -561,7 +561,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	@Override
     public ObjectContent[] getVmPropertiesOnHyperHost(String[] propertyPaths) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - retrieveProperties() for VM properties. target MOR: " + _mor.getPresetParams() + ", properties: " + new Gson().toJson(propertyPaths));
+			s_logger.trace("vCenter API trace - retrieveProperties() for VM properties. target MOR: " + _mor.getValue() + ", properties: " + new Gson().toJson(propertyPaths));
 
 		PropertySpec pSpec = new PropertySpec();
 		pSpec.setType("VirtualMachine");
@@ -594,7 +594,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	@Override
 	public ObjectContent[] getDatastorePropertiesOnHyperHost(String[] propertyPaths) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - retrieveProperties() on Datastore properties. target MOR: " + _mor.getPresetParams() + ", properties: " + new Gson().toJson(propertyPaths));
+			s_logger.trace("vCenter API trace - retrieveProperties() on Datastore properties. target MOR: " + _mor.getValue() + ", properties: " + new Gson().toJson(propertyPaths));
 
 		PropertySpec pSpec = new PropertySpec();
 		pSpec.setType("Datastore");
@@ -628,7 +628,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		List<Pair<ManagedObjectReference, String>> mounts = new ArrayList<Pair<ManagedObjectReference, String>>();
 
 		ObjectContent[] ocs = getDatastorePropertiesOnHyperHost(new String[] {
-			String.format("host[\"%s\"].mountInfo.path", _mor.getPresetParams()) });
+			String.format("host[\"%s\"].mountInfo.path", _mor.getValue()) });
 		if(ocs != null) {
 			for(ObjectContent oc : ocs) {
 				Pair<ManagedObjectReference, String> mount = new Pair<ManagedObjectReference, String>(
@@ -659,7 +659,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
 	public void importVmFromOVF(String ovfFilePath, String vmName, String datastoreName, String diskOption) throws Exception {
 	    if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - importVmFromOVF(). target MOR: " + _mor.getPresetParams() + ", ovfFilePath: " + ovfFilePath + ", vmName: " + vmName
+			s_logger.trace("vCenter API trace - importVmFromOVF(). target MOR: " + _mor.getValue() + ", ovfFilePath: " + ovfFilePath + ", vmName: " + vmName
 				+ ",datastoreName: " + datastoreName + ", diskOption: " + diskOption);
 
 		DatastoreMO dsMo = getHostDatastoreMO(datastoreName);
@@ -686,9 +686,9 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
 
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - createBlankVm(). target MOR: " + _mor.getPresetParams() + ", vmName: " + vmName + ", cpuCount: " + cpuCount
+			s_logger.trace("vCenter API trace - createBlankVm(). target MOR: " + _mor.getValue() + ", vmName: " + vmName + ", cpuCount: " + cpuCount
 				+ ", cpuSpeedMhz: " + cpuSpeedMHz + ", cpuReservedMHz: " + cpuReservedMHz + ", limitCpu: " + limitCpuUse + ", memoryMB: " + memoryMB
-				+ ", guestOS: " + guestOsIdentifier + ", datastore: " + morDs.getPresetParams() + ", snapshotDirToParent: " + snapshotDirToParent);
+				+ ", guestOS: " + guestOsIdentifier + ", datastore: " + morDs.getValue() + ", snapshotDirToParent: " + snapshotDirToParent);
 
 		boolean result = HypervisorHostHelper.createBlankVm(this, vmName, cpuCount, cpuSpeedMHz, cpuReservedMHz, limitCpuUse,
 			memoryMB, memoryReserveMB, guestOsIdentifier, morDs, snapshotDirToParent);
@@ -736,7 +736,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		int poolHostPort, String poolPath, String poolUuid) throws Exception {
 
 	    if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - mountDatastore(). target MOR: " + _mor.getPresetParams() + ", vmfs: " + vmfsDatastore + ", poolHost: " + poolHostAddress
+			s_logger.trace("vCenter API trace - mountDatastore(). target MOR: " + _mor.getValue() + ", vmfs: " + vmfsDatastore + ", poolHost: " + poolHostAddress
 				+ ", poolHostPort: " + poolHostPort + ", poolPath: " + poolPath + ", poolUuid: " + poolUuid);
 
     	HostDatastoreSystemMO hostDatastoreSystemMo = getHostDatastoreSystemMO();
@@ -751,7 +751,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
                             poolUuid);
                 } catch (AlreadyExistsFaultMsg e) {
                     s_logger.info("Creation of NFS datastore on vCenter failed since datastore already exists." +
-                            " Details: vCenter API trace - mountDatastore(). target MOR: " + _mor.getPresetParams() + ", vmfs: " +
+                            " Details: vCenter API trace - mountDatastore(). target MOR: " + _mor.getValue() + ", vmfs: " +
                             vmfsDatastore + ", poolHost: " + poolHostAddress + ", poolHostPort: " + poolHostPort +
                             ", poolPath: " + poolPath + ", poolUuid: " + poolUuid);
                     // Retrieve the morDatastore and return it.
@@ -759,7 +759,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
                             poolHostPort, poolPath, poolUuid, hostDatastoreSystemMo));
                 } catch (Exception e) {
                     s_logger.info("Creation of NFS datastore on vCenter failed. " +
-                            " Details: vCenter API trace - mountDatastore(). target MOR: " + _mor.getPresetParams() + ", vmfs: " +
+                            " Details: vCenter API trace - mountDatastore(). target MOR: " + _mor.getValue() + ", vmfs: " +
                             vmfsDatastore + ", poolHost: " + poolHostAddress + ", poolHostPort: " + poolHostPort +
                             ", poolPath: " + poolPath + ", poolUuid: " + poolUuid + ". Exception mesg: " + e.getMessage());
                     throw new Exception("Creation of NFS datastore on vCenter failed.");
@@ -800,7 +800,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	public void unmountDatastore(String poolUuid) throws Exception {
 
 	    if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - unmountDatastore(). target MOR: " + _mor.getPresetParams() + ", poolUuid: " + poolUuid);
+			s_logger.trace("vCenter API trace - unmountDatastore(). target MOR: " + _mor.getValue() + ", poolUuid: " + poolUuid);
 
     	HostDatastoreSystemMO hostDatastoreSystemMo = getHostDatastoreSystemMO();
     	if(!hostDatastoreSystemMo.deleteDatastore(poolUuid)) {
@@ -836,7 +836,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	@Override
 	public VmwareHypervisorHostResourceSummary getHyperHostResourceSummary() throws Exception {
 	    if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - getHyperHostResourceSummary(). target MOR: " + _mor.getPresetParams());
+			s_logger.trace("vCenter API trace - getHyperHostResourceSummary(). target MOR: " + _mor.getValue());
 
 		VmwareHypervisorHostResourceSummary summary = new VmwareHypervisorHostResourceSummary();
 
@@ -854,7 +854,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	@Override
 	public VmwareHypervisorHostNetworkSummary getHyperHostNetworkSummary(String managementPortGroup) throws Exception {
 	    if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - getHyperHostNetworkSummary(). target MOR: " + _mor.getPresetParams() + ", mgmtPortgroup: " + managementPortGroup);
+			s_logger.trace("vCenter API trace - getHyperHostNetworkSummary(). target MOR: " + _mor.getValue() + ", mgmtPortgroup: " + managementPortGroup);
 
 		VmwareHypervisorHostNetworkSummary summary = new VmwareHypervisorHostNetworkSummary();
 
@@ -906,7 +906,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	@Override
 	public ComputeResourceSummary getHyperHostHardwareSummary() throws Exception {
 	    if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - getHyperHostHardwareSummary(). target MOR: " + _mor.getPresetParams());
+			s_logger.trace("vCenter API trace - getHyperHostHardwareSummary(). target MOR: " + _mor.getValue());
 
 		//
 		// This is to adopt the model when using Cluster as a big host while ComputeResourceSummary is used

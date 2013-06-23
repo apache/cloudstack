@@ -29,8 +29,6 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.UUID;
 
-import org.junit.Ignore;
-
 import junit.framework.TestCase;
 
 import com.midokura.midonet.client.MidonetApi;
@@ -60,7 +58,6 @@ public class MidoNetElementTest extends TestCase {
     /*
      * Test the standard case of addDhcpEntry with no errors.
      */
-	@Ignore
     public void testAddDhcpEntry() {
 
         //mockMgmt
@@ -82,9 +79,8 @@ public class MidoNetElementTest extends TestCase {
         ResourceCollection mockSubnetCollection = mock(ResourceCollection.class);
         when(mockSubnetCollection.get(anyInt())).thenReturn(mockSub);
 
-        //mockBridge
-        Bridge mockBridge = mock(Bridge.class);	// FIXME! the mocked object can't be casted for some reason
-        										// I have to disable the whole test case for now
+        
+        Bridge mockBridge = mock(Bridge.class);
         
         when(api.addBridge().tenantId(anyString()).name(anyString()).create()).thenReturn(mockBridge);
         when(mockBridge.getDhcpSubnets()).thenReturn(mockSubnetCollection);
@@ -141,7 +137,6 @@ public class MidoNetElementTest extends TestCase {
     /*
      * Test the standard case of implement with no errors.
      */
-	@Ignore
     public void testImplement() {
         //mock
         MidonetApi api = mock(MidonetApi.class, RETURNS_DEEP_STUBS);

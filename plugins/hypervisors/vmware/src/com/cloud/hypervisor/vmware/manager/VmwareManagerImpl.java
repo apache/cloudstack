@@ -396,7 +396,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
-                s_logger.error("Unsupport host type " + mor.getType() + ":" + mor.getPresetParams() + " from inventory path: " + hostInventoryPath);
+                s_logger.error("Unsupport host type " + mor.getType() + ":" + mor.getValue() + " from inventory path: " + hostInventoryPath);
                 return null;
             }
         }
