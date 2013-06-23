@@ -37,9 +37,13 @@ server_id=1
         <para>The server_id must be unique with respect to other servers. The recommended way to achieve this is to give the master an ID of 1 and each slave a sequential number greater than 1, so that the servers are numbered 1, 2, 3, etc.</para>
     </listitem>
     <listitem>
-        <para>Restart the MySQL service:</para>
+        <para>Restart the MySQL service. On RHEL/CentOS systems, use:</para>
         <programlisting>
 # service mysqld restart
+        </programlisting>
+        <para>On Debian/Ubuntu systems, use:</para>
+        <programlisting>
+# service mysql restart
         </programlisting>
     </listitem>
     <listitem>
@@ -90,9 +94,13 @@ innodb_lock_wait_timeout=600
         </programlisting>
     </listitem>
     <listitem>
-        <para>Restart MySQL.</para>
+        <para>Restart MySQL. Use "mysqld" on RHEL/CentOS systems:</para>
         <programlisting>
 # service mysqld restart
+        </programlisting>
+        <para>On Ubuntu/Debian systems use "mysql."</para>
+        <programlisting>
+# service mysql restart
         </programlisting>
     </listitem>
     <listitem>
