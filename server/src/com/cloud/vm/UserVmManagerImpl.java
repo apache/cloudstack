@@ -62,6 +62,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -3885,7 +3886,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (uservm != null) {
             collectVmDiskStatistics(uservm);
         }
-        return _itMgr.migrate(vm.getUuid(), srcHostId, dest);
+        Outcome<VirtualMachine> outcome = _itMgr.migrate(vm.getUuid(), srcHostId, dest);
+        try {
+            return outcome.get();
+        } catch (InterruptedException e) {
+            throw new CloudRuntimeException("Interrupted while waiting for the outcome of " + outcome.getJob());
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw new CloudRuntimeException("Unable to start virtual machine", e.getCause());
+        }
     }
 
     private boolean checkIfHostIsDedicated(HostVO host) {

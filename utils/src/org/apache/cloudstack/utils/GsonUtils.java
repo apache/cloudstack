@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api;
+package org.apache.cloudstack.utils;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -28,19 +28,21 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
 @SuppressWarnings("rawtypes")
-public class StringMapTypeAdapter implements JsonDeserializer<Map> {
-    @Override
-    
-    public Map deserialize(JsonElement src, Type srcType,
-            JsonDeserializationContext context) throws JsonParseException {
 
-        Map<String, String> obj = new HashMap<String, String>();
-        JsonObject json = src.getAsJsonObject();
+public class GsonUtils {
+    public static class StringMapTypeAdapter implements JsonDeserializer<Map> {
         
-        for(Entry<String, JsonElement> entry : json.entrySet()) {
-            obj.put(entry.getKey(), entry.getValue().getAsString());
+        @Override
+        public Map deserialize(JsonElement src, Type srcType, JsonDeserializationContext context) throws JsonParseException {
+
+            Map<String, String> obj = new HashMap<String, String>();
+            JsonObject json = src.getAsJsonObject();
+
+            for (Entry<String, JsonElement> entry : json.entrySet()) {
+                obj.put(entry.getKey(), entry.getValue().getAsString());
+            }
+
+            return obj;
         }
-        
-        return obj;
     }
 }

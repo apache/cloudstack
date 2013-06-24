@@ -23,10 +23,20 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface JobInfo extends Identity, InternalIdentity {
     public enum Status {
-        IN_PROGRESS,
-        SUCCEEDED,
-        FAILED,
-        CANCELLED;
+        IN_PROGRESS(false),
+        SUCCEEDED(true),
+        FAILED(true),
+        CANCELLED(true);
+        
+        private final boolean done;
+
+        private Status(boolean done) {
+            this.done = done;
+        }
+        
+        public boolean done() {
+            return done;
+        }
     }
 
     String getType();

@@ -30,9 +30,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.utils.GsonUtils;
 
-import com.cloud.api.StringMapTypeAdapter;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -44,7 +43,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     static {
         GsonBuilder gBuilder = new GsonBuilder();
         gBuilder.setVersion(1.3);
-        gBuilder.registerTypeAdapter(Map.class, new StringMapTypeAdapter());
+        gBuilder.registerTypeAdapter(Map.class, new GsonUtils.StringMapTypeAdapter());
         s_gson = gBuilder.create();
     }
 
@@ -61,11 +60,11 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     public static final String VM_WORK_JOB_WAKEUP_DISPATCHER = "VmWorkJobWakeupDispatcher";
     public final static String Start = "start";
     public final static String Stop = "stop";
+    public final static String Migrate = "migrate";
 
     @Inject
     private VirtualMachineManagerImpl _vmMgr;
 	@Inject private AsyncJobManager _asyncJobMgr;
-    @Inject private AccountDao _accountDao;
     @Inject private VMInstanceDao _instanceDao;
     @Inject
     private EntityManager _entityMgr;
@@ -97,7 +96,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                 _vmMgr.orchestrateStart(vm.getUuid(), start.getParams(), start.getPlan());
             } else if (cmd.equals(Stop)) {
                 VmWorkStop stop = (VmWorkStop)work;
-                _vmMgr.orchestrateStop(vm.getUuid(), stop.isForceStop());
+                _vmMgr.orchestrateStop(vm.getUuid(), stop.isCleanup());
             }
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
         } catch(Throwable e) {

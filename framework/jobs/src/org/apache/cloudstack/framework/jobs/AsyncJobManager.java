@@ -117,8 +117,7 @@ public interface AsyncJobManager extends Manager {
      * @return true, predicate condition is satisfied
      * 			false, wait is timed out
      */
-    @Deprecated
-    boolean waitAndCheck(String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds,
+    boolean waitAndCheck(AsyncJob job, String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds,
     	long timeoutInMiliseconds, Predicate predicate);
 
     AsyncJob queryJob(long jobId, boolean updatePollTime);

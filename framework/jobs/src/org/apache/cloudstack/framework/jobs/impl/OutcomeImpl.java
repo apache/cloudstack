@@ -22,7 +22,6 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.Outcome;
 
 import com.cloud.utils.Predicate;
@@ -36,9 +35,9 @@ public class OutcomeImpl<T> implements Outcome<T> {
 
     protected T _result;
 
-    private static AsyncJobManager s_jobMgr;
+    private static AsyncJobManagerImpl s_jobMgr;
 
-    public static void init(AsyncJobManager jobMgr) {
+    public static void init(AsyncJobManagerImpl jobMgr) {
         s_jobMgr = jobMgr;
     }
 
@@ -62,7 +61,7 @@ public class OutcomeImpl<T> implements Outcome<T> {
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
-        s_jobMgr.waitAndCheck(_topics, _checkIntervalInMs, -1, _predicate);
+        s_jobMgr.waitAndCheck(getJob(), _topics, _checkIntervalInMs, -1, _predicate);
         try {
             AsyncJobExecutionContext.getCurrentExecutionContext().disjoinJob(_job.getId());
         } catch (Throwable e) {
@@ -74,7 +73,7 @@ public class OutcomeImpl<T> implements Outcome<T> {
 
     @Override
     public T get(long timeToWait, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        s_jobMgr.waitAndCheck(_topics, _checkIntervalInMs, unit.toMillis(timeToWait), _predicate);
+        s_jobMgr.waitAndCheck(getJob(), _topics, _checkIntervalInMs, unit.toMillis(timeToWait), _predicate);
         try {
             AsyncJobExecutionContext.getCurrentExecutionContext().disjoinJob(_job.getId());
         } catch (Throwable e) {
@@ -120,4 +119,7 @@ public class OutcomeImpl<T> implements Outcome<T> {
 
     }
 
+    public Predicate getPredicate() {
+        return _predicate;
+    }
 }

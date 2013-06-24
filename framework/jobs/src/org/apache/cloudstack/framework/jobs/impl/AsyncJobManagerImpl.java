@@ -19,6 +19,7 @@ package org.apache.cloudstack.framework.jobs.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -582,17 +583,26 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
     
     @Override
-    public boolean waitAndCheck(String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds,
+    public boolean waitAndCheck(AsyncJob job, String[] wakeupTopicsOnMessageBus, long checkIntervalInMilliSeconds,
         long timeoutInMiliseconds, Predicate predicate) {
     	
     	MessageDetector msgDetector = new MessageDetector();
-    	msgDetector.open(_messageBus, wakupTopicsOnMessageBus);
+        String[] topics = Arrays.copyOf(wakeupTopicsOnMessageBus, wakeupTopicsOnMessageBus.length + 1);
+        topics[topics.length - 1] = AsyncJob.Topics.JOB_STATE;
+
+        msgDetector.open(_messageBus, topics);
     	try {
     		long startTick = System.currentTimeMillis();
     		while(System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
     			msgDetector.waitAny(checkIntervalInMilliSeconds);
-    			if(predicate.checkCondition())
+                job = _jobDao.findById(job.getId());
+                if (job.getStatus().done()) {
+                    return true;
+                }
+
+                if (predicate.checkCondition()) {
     				return true;
+                }
     		}
     	} finally {
     		msgDetector.close();

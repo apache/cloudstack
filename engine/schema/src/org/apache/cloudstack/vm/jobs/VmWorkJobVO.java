@@ -35,14 +35,26 @@ import com.cloud.vm.VirtualMachine;
 @PrimaryKeyJoinColumn(name="id")
 public class VmWorkJobVO extends AsyncJobVO {
 
+    // These steps are rather arbiturary.  What's recorded depends on the
+    // the operation being performed.
 	public enum Step {
-        Prepare,
-        Starting,
-        Started,
-        Release,
-        Done,
-        Migrating,
-        Reconfiguring
+        Prepare(false),
+        Starting(true),
+        Started(false),
+        Release(false),
+        Done(false),
+        Migrating(true),
+        Reconfiguring(false),
+        Error(false);
+        
+        boolean updateState; // Should the VM State be updated after this step?
+        private Step(boolean updateState) {
+            this.updateState = updateState;
+        }
+        
+        boolean updateState() {
+            return updateState;
+        }
     }
 	
     @Column(name="step")

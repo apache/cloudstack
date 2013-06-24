@@ -18,17 +18,14 @@ package com.cloud.vm;
 
 public class VmWorkStop extends VmWork {
 
-	private boolean forceStop;
+	private final boolean cleanup;
 	
-	public VmWorkStop() {
-		forceStop = false;
+    public VmWorkStop(long userId, long accountId, long vmId, boolean cleanup) {
+        super(userId, accountId, vmId);
+        this.cleanup = cleanup;
 	}
 	
-	public void setForceStop(boolean value) {
-		forceStop = value;
-	}
-	
-	public boolean isForceStop() {
-		return forceStop;
+	public boolean isCleanup() {
+		return cleanup;
 	}
 }

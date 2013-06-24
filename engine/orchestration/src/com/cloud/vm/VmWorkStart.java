@@ -21,9 +21,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
@@ -47,7 +48,8 @@ public class VmWorkStart extends VmWork {
 	// use serialization friendly map
 	private Map<String, String> rawParams;
 
-	public VmWorkStart() {
+    public VmWorkStart(long userId, long accountId, long vmId) {
+        super(userId, accountId, vmId);
 	}
 
 	public DeploymentPlan getPlan() {
@@ -62,7 +64,7 @@ public class VmWorkStart extends VmWork {
 			}
 			
 			DeploymentPlan plan = new DataCenterDeployment(
-					dcId, podId, clusterId, hostId, poolId, physicalNetworkId, 
+					dcId, podId, clusterId, hostId, poolId, physicalNetworkId,
 					context);
 			return plan;
 		}
@@ -90,7 +92,7 @@ public class VmWorkStart extends VmWork {
 	}
 
 	public void setRawParams(Map<String, String> params) {
-		this.rawParams = params;
+		rawParams = params;
 	}
 	
 	public Map<VirtualMachineProfile.Param, Object> getParams() {

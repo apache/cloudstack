@@ -21,30 +21,22 @@ public class VmWork {
 	long accountId;
 	long vmId;
 
-	public VmWork() {
+    public VmWork(long userId, long accountId, long vmId) {
+        this.userId = userId;
+        this.accountId = accountId;
+        this.vmId = vmId;
 	}
 
 	public long getUserId() {
 		return userId;
 	}
 
-	public void setUserId(long userId) {
-		this.userId = userId;
-	}
-
 	public long getAccountId() {
 		return accountId;
-	}
-
-	public void setAccountId(long accountId) {
-		this.accountId = accountId;
 	}
 
 	public long getVmId() {
 		return vmId;
 	}
 
-	public void setVmId(long vmId) {
-		this.vmId = vmId;
-	}
 }
