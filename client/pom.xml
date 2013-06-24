@@ -590,6 +590,7 @@
         </dependency>
       </dependencies>
     </profile>
+<!--  
     <profile>
       <id>netapp</id>
       <activation>
@@ -650,6 +651,7 @@
         </dependency>
       </dependencies>
     </profile>
+-->    
     <profile>
       <id>vmware</id>
       <activation>
