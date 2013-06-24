@@ -158,8 +158,9 @@
     <title>Blacklisting Routes</title>
     <para>&PRODUCT; enables you to block a list of routes so that they are not assigned to any of
       the VPC private gateways. Specify the list of routes that you want to blacklist in the
-        <code>blacklisted.routes</code> global parameter. Note that the parameter update affects only new
-      static route creations. If you block an existing static route, it remains intact and
-      continue functioning. </para>
+        <code>blacklisted.routes</code> global parameter. Note that the parameter update affects
+      only new static route creations. If you block an existing static route, it remains intact and
+      continue functioning. You cannot add a static route if the route is blacklisted for the zone.
+    </para>
   </section>
 </section>
