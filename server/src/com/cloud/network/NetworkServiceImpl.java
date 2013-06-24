@@ -1298,8 +1298,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     throw new InvalidParameterValueException("Unable to find specified NetworkACL");
                 }
 
-                if(!vpcId.equals(acl.getVpcId())){
-                    throw new InvalidParameterValueException("ACL: "+aclId+" do not belong to the VPC");
+                if(aclId != NetworkACL.DEFAULT_DENY && aclId != NetworkACL.DEFAULT_ALLOW) {
+                    //ACL is not default DENY/ALLOW
+                    // ACL should be associated with a VPC
+                    if(!vpcId.equals(acl.getVpcId())){
+                        throw new InvalidParameterValueException("ACL: "+aclId+" do not belong to the VPC");
+                    }
                 }
             }
             network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
