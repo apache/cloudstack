@@ -1397,7 +1397,11 @@
         listView.listView.dataProvider = function(args) {
           $.ajax({
             url: createURL('listPublicIpAddresses'),
-            data: { networkid: args.context.networks[0].id, isstaticnat: true },
+            data: { 
+              networkid: args.context.networks[0].id, 
+              isstaticnat: true,
+              listall: true
+            },
             success: function(json) {
               args.response.success({
                 data: json.listpublicipaddressesresponse.publicipaddress
@@ -3498,7 +3502,10 @@
             $.ajax({
               url: createURL('listPublicIpAddresses'),
               async: false,
-              data: { 'vpcid': args.context.vpc[0].id },
+              data: { 
+            	vpcid: args.context.vpc[0].id,
+            	listAll: true
+              },
               success: function(json) {
                 publicIpAddresses = json.listpublicipaddressesresponse;
               },
