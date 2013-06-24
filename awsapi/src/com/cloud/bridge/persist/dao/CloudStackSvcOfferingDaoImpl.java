@@ -50,6 +50,7 @@ public class CloudStackSvcOfferingDaoImpl extends GenericDaoBase<CloudStackServi
             return findOneBy(sc);
         
         }finally {
+            txn.commit();
             txn.close();
         }
 
@@ -68,6 +69,7 @@ public class CloudStackSvcOfferingDaoImpl extends GenericDaoBase<CloudStackServi
             return findOneBy(sc);
         
         }finally {
+            txn.commit();
             txn.close();
         }
 
