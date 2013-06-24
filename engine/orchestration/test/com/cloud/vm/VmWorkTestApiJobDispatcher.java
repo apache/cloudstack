@@ -65,10 +65,7 @@ public class VmWorkTestApiJobDispatcher extends AdapterBase implements AsyncJobD
 		workJob.setVmInstanceId(1L);
 
 		// save work context info (there are some duplications)
-		VmWorkStart workInfo = new VmWorkStart();
-		workInfo.setAccountId(1L);
-		workInfo.setUserId(1L);
-		workInfo.setVmId(1L);
+        VmWorkStart workInfo = new VmWorkStart(1L, 1L, 1L);
 		workInfo.setPlan(null);
 		workInfo.setParams(null);
         workJob.setCmdInfo(VmWorkJobDispatcher.serialize(workInfo));

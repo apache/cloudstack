@@ -112,7 +112,7 @@ public class VmWorkTest extends TestCase {
 	
 	@Test
 	public void testVmWorkStart() {
-		VmWorkStart work = new VmWorkStart();
+        VmWorkStart work = new VmWorkStart(1L, 1L, 1L);
 		Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
 		params.put(VirtualMachineProfile.Param.HaTag, "HA");
 		params.put(VirtualMachineProfile.Param.ControlNic, new Long(100));
@@ -133,12 +133,12 @@ public class VmWorkTest extends TestCase {
 		workJob.setVmType(VirtualMachine.Type.ConsoleProxy);
 		workJob.setVmInstanceId(1L);
 		
-		VmWorkStart workInfo = new VmWorkStart();
+        VmWorkStart workInfo = new VmWorkStart(1L, 1L, 1L);
         workJob.setCmdInfo(VmWorkJobDispatcher.serialize(workInfo));
 		
 		_jobMgr.submitAsyncJob(workJob, "VM", 1);
 		
-		_jobMgr.waitAndCheck(new String[] {"Done"}, 120000, 120000, new Predicate() {
+        _jobMgr.waitAndCheck(workJob, new String[] {"Done"}, 120000, 120000, new Predicate() {
 
 			@Override
 			public boolean checkCondition() {

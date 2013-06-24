@@ -56,6 +56,7 @@ import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.vm.jobs.VmWorkJobDao;
 import org.apache.cloudstack.vm.jobs.VmWorkJobVO;
@@ -511,7 +512,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
 
-        _agentMgr.registerForHost)Events(this, true, true, true);
+        _agentMgr.registerForHostEvents(this, true, true, true);
         
         RootVolumeSearch = _entityMgr.createSearchBuilder(VolumeVO.class);
         VolumeVO rvsEntity = RootVolumeSearch.entity();
@@ -1002,10 +1003,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         VmWorkJobVO.Step prevStep = work.getStep();
                         _workJobDao.updateStep(work.getId(), VmWorkJobVO.Step.Release);
                         if (prevStep == VmWorkJobVO.Step.Started || prevStep == VmWorkJobVO.Step.Starting) {
-                            cleanup(vmGuru, vmProfile, work, VirtualMachine.Event.OperationFailed, false);
+                            cleanup(vmGuru, vmProfile, work, false);
                         } else {
                             //if step is not starting/started, send cleanup command with force=true
-                            cleanup(vmGuru, vmProfile, work, VirtualMachine.Event.OperationFailed, true);
+                            cleanup(vmGuru, vmProfile, work, true);
                         }
                     }
                 }
@@ -1225,7 +1226,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             if (doCleanup) {
-                if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, VirtualMachine.Event.StopRequested, forced)) {
+                if (cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, forced)) {
                     try {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Updating work item to Done, id:" + work.getId());
@@ -1589,25 +1590,57 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost.getName()
                         + " in zone " + dest.getDataCenter().getName() + " and pod " + dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
+
+                boolean cleanup = false;
                 try {
-                    _agentMgr.send(dstHostId, new Commands(cleanup(vm)), null);
-                } catch (AgentUnavailableException ae) {
-                    s_logger.info("Looks like the destination Host is unavailable for cleanup");
+                    cleanupMigration(work, dstVm, vm, false);
+                    cleanup = true;
+                } catch (Exception ae) {
+                    s_logger.warn("Unable to cleanup migration for " + vm);
                 }
 
-                try {
-                    stateTransitTo(vm, VirtualMachine.Event.OperationFailed, srcHostId);
-                } catch (NoTransitionException e) {
-                    s_logger.warn(e.getMessage());
+                if (cleanup) {
+                    _networkMgr.rollbackNicForMigration(srcVm, dstVm);
+
+                    work.setStep(Step.Done);
+                    _workJobDao.update(work.getId(), work);
                 }
-                _networkMgr.rollbackNicForMigration(srcVm, dstVm);
-                
-                work.setStep(Step.Done);
-                _workJobDao.update(work.getId(), work);
             }
         }
     }
 
+    private void determineVmLocation(VirtualMachineProfile vm, VMInstanceVO vo, boolean confirmedStopped) {
+        try {
+            if (checkVmOnHost(vo, vo.getLastHostId())) {
+                stateTransitTo(vo, VirtualMachine.Event.AgentReportRunning, vo.getLastHostId());
+            } else if (checkVmOnHost(vo, vo.getHostId())) {
+                stateTransitTo(vo, VirtualMachine.Event.AgentReportRunning, vo.getHostId());
+            } else {
+                s_logger.warn("Unable to find " + vo + " on source " + vo.getLastHostId() + " or on destination " + vo.getHostId()
+                        + (!confirmedStopped ? ".  Either call Stop with cleanup option or wait for vmsync to check where the VM is." : "."));
+                stateTransitTo(vo, VirtualMachine.Event.AgentReportStopped, null);
+            }
+        } catch (AgentUnavailableException e) {
+            if (confirmedStopped) {
+                s_logger.debug("Agent is unavailable to determine state for " + vo + " but continuing with confirmed stopped option");
+            } else {
+                throw new CloudRuntimeException("Unable to determine the state for " + vo).add(VirtualMachine.class, vo.getUuid());
+            }
+        } catch (OperationTimedoutException e) {
+            if (confirmedStopped) {
+                s_logger.debug("Operation timedout while determining state for " + vo + " but continuing with confirmed stopped option");
+            } else {
+                throw new CloudRuntimeException("Unable to determine the state for " + vo).add(VirtualMachine.class, vo.getUuid());
+            }
+        } catch (NoTransitionException e) {
+            throw new CloudRuntimeException("Unable to change VM state ", e).add(VirtualMachine.class, vo.getUuid());
+        }
+
+        if (confirmedStopped) {
+            s_logger.info("Cleanup was requested on " + vo);
+            cleanup(getVmGuru(vo), vm, null, true);
+        }
+    }
     /**
      * Migration goes through the following steps.
      *   Prepare - nics and storage are prepared
@@ -1622,8 +1655,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * @param vo - vo object representing the VM.
      */
     private void cleanupMigration(VmWorkJobVO job, VirtualMachineProfile vm, VMInstanceVO vo, boolean confirmedStopped) {
-        boolean uncertain = false;
-        boolean rollbackPreparation = false;
         if (job == null) {
             s_logger.info("Cleaning up " + vo + " with no job to track progress");
             if (vo.getState() != VirtualMachine.State.Migrating) {
@@ -1632,48 +1663,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
                 return;
             }
-            if (checkVmOnHost(vo, vo.getLastHostId())) {
-                stateTransitTo(vo, VirtualMachine.Event.AgentReportRunning, vo.getLastHostId());
-            } else if (checkVmOnHost(vo, vo.getHostId())) {
-                stateTransitTo(vo, VirtualMachine.Event.AgentReportRunning, vo.getHostId());
-            } else {
-                s_logger.warn("Unable to find " + vo + " on source " + vo.getLastHostId() + " or on destination " + vo.getHostId() + (!confirmedStopped ? ".  Either call Stop with cleanup option or wait for vmsync to check where the VM is." : "."));
-            }
-            
-            if (confirmedStopped) {
-                s_logger.info("Cleanup was requested on " + vo);
-                cleanup(getVmGuru(vo), vm, null, true);
-            }
+            determineVmLocation(vm, vo, confirmedStopped);
             return;
         }
         
         Step step = job.getStep();
         
-        s_logger.info("Cleaning up based on what stage the current job is at: " + step);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Migration operation was at " + step + " for " + vo);
+        }
         if (step == Step.Started) {
-            if (checkVmOnHost(vo, vo.getLastHostId())) {
-                changeState2(vo, VirtualMachine.Event.AgentReportRunning, vo.getHostId(), job, Event.OperationSucceeded);
-            } else {
-                changeState2(vo, VirtualMachine.Event.AgentReportStopped, vo.getHostId(), job, Event.OperationFailed);
-            }
+            determineVmLocation(vm, vo, confirmedStopped);
         } else if (step == Step.Migrating) {
-            s_logger.debug("We are at the migrating step.  We have to find out if the operation succeeded or ");
+            determineVmLocation(vm, vo, confirmedStopped);
         }
-        if (step == Step.Prepare) {
-            s_logger.debug("Prepare Step: ");
-            rollbackPreparation = true;
-        }
-
-        if (uncertain) {
-            Long srcHostId = vo.getLastHostId();
-            Long dstHostId = vo.getHostId();
-
-            if (!checkVmOnHost(vo, srcHostId)) {
-                changeState2(vo, Event.OperationFailed, job,)
-            }
-
-        }
-
     }
 
 
@@ -1827,7 +1830,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     } catch (AgentUnavailableException e) {
                         s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
                     }
-                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, VirtualMachine.Event.AgentReportStopped, true);
+                    cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, true);
                     return null;
                 }
             } catch (OperationTimedoutException e) {
@@ -1952,27 +1955,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             excludes.addHost(dest.getHost().getId());
             VirtualMachine vmInstance = null;
+            Outcome<VirtualMachine> outcome = migrate(vm.getUuid(), srcHostId, dest);
             try {
-                vmInstance = migrate(vm.getUuid(), srcHostId, dest);
-            } catch (ResourceUnavailableException e) {
-                s_logger.debug("Unable to migrate to unavailable " + dest);
-            } catch (ConcurrentOperationException e) {
-                s_logger.debug("Unable to migrate VM due to: " + e.getMessage());
-            } catch (ManagementServerException e) {
-                s_logger.debug("Unable to migrate VM: " + e.getMessage());
-            } catch (VirtualMachineMigrationException e) {
-                s_logger.debug("Got VirtualMachineMigrationException, Unable to migrate: " + e.getMessage());
-                if (vm.getState() == State.Starting) {
-                    s_logger.debug("VM seems to be still Starting, we should retry migration later");
-                    throw e;
-                } else {
-                    s_logger.debug("Unable to migrate VM, VM is not in Running or even Starting state, current state: " + vm.getState().toString());
-                }
+                vmInstance = outcome.get();
+            } catch (InterruptedException e1) {
+                s_logger.warn("Unable to migrate teh VM", e1);
+            } catch (java.util.concurrent.ExecutionException e1) {
+                s_logger.warn("Unable to migrate the VM", e1);
             }
             if (vmInstance != null) {
                 return true;
             }
-            Outcome<VirtualMachine> outcome = stop(vm.getUuid(), true);
+            outcome = stop(vm.getUuid(), true);
             try {
                 outcome.get(_jobTimeout.value(), TimeUnit.MILLISECONDS);
                 return true;
