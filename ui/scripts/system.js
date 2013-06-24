@@ -5711,7 +5711,7 @@
                       title: 'Add VMware datacenter',
                       fields: {
                         name: { 
-                          label: 'label.name',
+                          label: 'DC Name',
                           validation: { required: true }
                         },
                         vcenter: { 
@@ -5720,12 +5720,12 @@
                         },
                         username: {
                           label: 'label.username',
-                          validation: { required: false }
+                          validation: { required: true }
                         },
                         password: {
                           label: 'label.password',
                           isPassword: true,
-                          validation: { required: false }
+                          validation: { required: true }
                         },
                       }
                     },                    
