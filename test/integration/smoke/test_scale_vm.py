@@ -145,7 +145,7 @@ class TestScaleVm(cloudstackTestCase):
         #how does it work ??
         cls._cleanup = [
                         cls.small_offering,
-                        cls.account
+                        #cls.account
                         ]
 
     @classmethod
@@ -173,9 +173,10 @@ class TestScaleVm(cloudstackTestCase):
         
       
       
-        self.debug("Scaling VM-ID: %s to service offering: %s" % (
+        self.debug("Scaling VM-ID: %s to service offering: %s and state %s" % (
                                         self.virtual_machine.id,
-                                        self.big_offering.id
+                                        self.big_offering.id,
+					self.virtual_machine.state
                                         ))
         
         cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
@@ -207,6 +208,12 @@ class TestScaleVm(cloudstackTestCase):
                         "Check virtual machine ID of scaled VM"
                         )
 
+        self.debug("Scaling VM-ID: %s from service offering: %s to new service offering %s and the response says %s" % (
+                                        self.virtual_machine.id,
+					self.virtual_machine.serviceofferingid,
+                                        self.big_offering.id,
+					vm_response.serviceofferingid
+                                        ))
         self.assertEqual(
                         vm_response.serviceofferingid,
                         self.big_offering.id,

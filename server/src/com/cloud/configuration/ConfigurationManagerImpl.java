@@ -323,6 +323,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private int _maxVolumeSizeInGb = Integer.parseInt(Config.MaxVolumeSize.getDefaultValue());
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     protected Set<String> configValuesForValidation;
+    private Set<String> weightBasedParametersForValidation;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -335,6 +336,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         	Long.parseLong(Config.DefaultPageSize.getDefaultValue()));
 
         populateConfigValuesForValidationSet();
+        weightBasedParametersForValidation();
         return true;
     }
 
@@ -358,6 +360,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("wait");
         configValuesForValidation.add("xen.heartbeat.interval");
         configValuesForValidation.add("incorrect.login.attempts.allowed");
+    }
+
+    private void weightBasedParametersForValidation() {
+        weightBasedParametersForValidation = new HashSet<String>();
+        weightBasedParametersForValidation.add(Config.CPUCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.StorageAllocatedCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.StorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.MemoryCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.PublicIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.PrivateIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.SecondaryStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.VlanCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.DirectNetworkPublicIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.LocalStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(Config.StorageAllocatedCapacityDisableThreshold.key());
+        weightBasedParametersForValidation.add(Config.StorageCapacityDisableThreshold.key());
+        weightBasedParametersForValidation.add(Config.CPUCapacityDisableThreshold.key());
+        weightBasedParametersForValidation.add(Config.MemoryCapacityDisableThreshold.key());
+        weightBasedParametersForValidation.add(Config.AgentLoadThreshold.key());
+        weightBasedParametersForValidation.add(Config.VmUserDispersionWeight.key());
+
+
     }
 
     @Override
@@ -689,6 +713,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (NumberFormatException e) {
                 s_logger.error("There was an error trying to parse the integer value for:" + name);
                 throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
+            }
+        }
+
+        if (type.equals(Float.class)) {
+            try {
+                Float val = Float.parseFloat(value);
+                if (weightBasedParametersForValidation.contains(name) && (val < 0f || val > 1f)) {
+                    throw new InvalidParameterValueException("Please enter a value between 0 and 1 for the configuration parameter: "+ name);
+                }
+            } catch (NumberFormatException e) {
+                s_logger.error("There was an error trying to parse the float value for:" + name);
+                throw new InvalidParameterValueException("There was an error trying to parse the float value for:" + name);
             }
         }
 
