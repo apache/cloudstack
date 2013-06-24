@@ -103,7 +103,10 @@
             >https://www.citrix.com/English/ss/downloads/</ulink>, download the appropriate version
           of XenServer for your &PRODUCT; version (see <xref
             linkend="system-requirements-xenserver-hosts"/>). Install it using the Citrix XenServer
-          Installation Guide.</para>
+        Installation Guide.</para>
+    <note><title>Older Versions of XenServer</title>
+        <para>Note that you can download the most recent release of XenServer without having a Citrix account. If you wish to download older versions, you will need to create an account and look through the download archives.</para>
+    </note>
       </listitem>
       <listitem>
         <para>After installation, perform the following configuration steps, which are described in

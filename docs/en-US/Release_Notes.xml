@@ -4642,11 +4642,6 @@ under the License.
           <programlisting><prompt>#</prompt> mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
         </listitem>
         <listitem>
-          <para>Whether you're upgrading a Red Hat/CentOS based system or Ubuntu based system,
-            you're going to need to stop the CloudStack management server before proceeding.</para>
-          <programlisting language="Bash"><prompt>#</prompt> service cloud-management stop</programlisting>
-        </listitem>
-        <listitem>
           <para>If you have made changes to
               <filename>/etc/cloud/management/components.xml</filename>, you'll need to carry these
             over manually to the new file,
@@ -5598,7 +5593,7 @@ service cloudstack-agent start
               <programlisting language="Bash">$ sudo apt-get install cloudstack-management</programlisting>
             </listitem>
             <listitem id="kvm-agent-deb-22">
-              <para>You will need to manually install the <filename>cloudstack-agent</filename>
+              <para>On KVM hosts, you will need to manually install the <filename>cloudstack-agent</filename>
                 package:</para>
               <programlisting language="Bash">$ sudo apt-get install cloudstack-agent</programlisting>
               <para>During the installation of <filename>cloudstack-agent</filename>, APT will copy
@@ -5621,7 +5616,7 @@ service cloudstack-agent start
 service cloud-agent stop
 killall jsvc
 service cloudstack-agent start
-                            </programlisting>
+              </programlisting>
             </listitem>
             <listitem>
               <para>During the upgrade, <filename>log4j-cloud.xml</filename> was simply copied over,

@@ -50,8 +50,8 @@ baseimage() {
   
   mount -o loop,offset=$offset $IMAGELOC  $MOUNTPOINT
   
-  #debootstrap --variant=minbase --keyring=/usr/share/keyrings/debian-archive-keyring.gpg squeeze $MOUNTPOINT http://${APT_PROXY}${DEBIAN_MIRROR}
-  debootstrap --variant=minbase --arch=i386 squeeze $MOUNTPOINT http://${APT_PROXY}${DEBIAN_MIRROR}
+  #debootstrap --variant=minbase --keyring=/usr/share/keyrings/debian-archive-keyring.gpg wheezy $MOUNTPOINT http://${APT_PROXY}${DEBIAN_MIRROR}
+  debootstrap --variant=minbase --arch=i386 wheezy $MOUNTPOINT http://${APT_PROXY}${DEBIAN_MIRROR}
 }
 
 
@@ -63,11 +63,14 @@ EOF
   fi
 
   cat > etc/apt/sources.list << EOF
-deb http://ftp.us.debian.org/debian/ squeeze main contrib non-free
-deb-src http://ftp.us.debian.org/debian/ squeeze main contrib non-free
+deb http://ftp.us.debian.org/debian/ wheezy main contrib non-free
+deb-src http://ftp.us.debian.org/debian/ wheezy main contrib non-free
 
-deb http://security.debian.org/ squeeze/updates main
-deb-src http://security.debian.org/ squeeze/updates main
+deb http://security.debian.org/ wheezy/updates main
+deb-src http://security.debian.org/ wheezy/updates main
+
+deb http://ftp.us.debian.org/debian/ wheezy-backports main
+deb-src http://ftp.us.debian.org/debian/ wheezy-backports main
 EOF
 
   cat >> etc/apt/apt.conf << EOF
@@ -347,7 +350,7 @@ packages() {
   export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
   #basic stuff
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent virt-what sudo
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent virt-what sudo
   #fix hostname in openssh-server generated keys
   sed -i "s/root@\(.*\)$/root@systemvm/g" etc/ssh/ssh_host_*.pub
 
@@ -373,14 +376,8 @@ packages() {
   #ipcalc
   chroot . apt-get --no-install-recommends -q -y --force-yes install ipcalc
 
-  echo "***** getting sun jre 6*********"
-  chroot . echo 'sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true
-	sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true
-	sun-java6-jre sun-java6-jre/stopthread boolean true
-	sun-java6-jre sun-java6-jre/jcepolicy note
-	sun-java6-bin shared/present-sun-dlj-v1-1 note
-	sun-java6-jre shared/present-sun-dlj-v1-1 note ' | chroot . debconf-set-selections
-  chroot .  apt-get --no-install-recommends -q -y install  sun-java6-jre 
+  echo "***** getting jre 7 *********"
+  chroot .  apt-get --no-install-recommends -q -y install openjdk-7-jre-headless
 }
 
 
@@ -409,7 +406,9 @@ services() {
   chroot . chkconfig xl2tpd off
   chroot . chkconfig --add cloud-early-config
   chroot . chkconfig cloud-early-config on
-  chroot . chkconfig --add cloud-passwd-srvr 
+  chroot . chkconfig --add iptables-persistent
+  chroot . chkconfig iptables-persistent off
+  chroot . chkconfig --force --add cloud-passwd-srvr
   chroot . chkconfig cloud-passwd-srvr off
   chroot . chkconfig --add cloud
   chroot . chkconfig cloud off
@@ -477,9 +476,9 @@ scriptdir=$(dirname $PWD/$0)
 
 rm -rf /tmp/systemvm
 mkdir -p /tmp/systemvm
-cp ./xt_CHECKSUM.ko /tmp/systemvm
-cp ./iptables_1.4.8-3local1checksum1_i386.deb /tmp/systemvm
-cp ./xe-guest-utilities_5.6.0-595_i386.deb /tmp/systemvm
+#cp ./xt_CHECKSUM.ko /tmp/systemvm
+#cp ./iptables_1.4.8-3local1checksum1_i386.deb /tmp/systemvm
+#cp ./xe-guest-utilities_5.6.0-595_i386.deb /tmp/systemvm
 
 rm -f $IMAGELOC
 begin=$(date +%s)
