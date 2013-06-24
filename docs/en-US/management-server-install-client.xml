@@ -46,7 +46,7 @@
     <para>Before setting up the Management Server, download vhd-util from <ulink
         url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink>.</para>
     <para>If the Management Server is RHEL or CentOS, copy vhd-util to
-      /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver.</para>
+      /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver.</para>
     <para>If the Management Server is Ubuntu, copy vhd-util to
       /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver.</para>
   </section>
