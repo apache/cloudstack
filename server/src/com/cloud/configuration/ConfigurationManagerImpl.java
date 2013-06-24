@@ -1301,6 +1301,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         physicalNetworks.add(2, "there are physical networks in this zone");
         tablesToCheck.add(physicalNetworks);
 
+        List<String> vmwareDcs = new ArrayList<String>();
+        vmwareDcs.add(0, "vmware_data_center_zone_map");
+        vmwareDcs.add(1, "zone_id");
+        vmwareDcs.add(2, "there are VMware datacenters associated with this zone. Remove VMware DC from this zone.");
+        tablesToCheck.add(vmwareDcs);
+
         for (List<String> table : tablesToCheck) {
             String tableName = table.get(0);
             String column = table.get(1);
