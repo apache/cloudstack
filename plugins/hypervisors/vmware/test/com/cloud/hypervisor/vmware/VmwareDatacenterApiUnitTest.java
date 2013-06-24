@@ -87,6 +87,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -172,7 +173,7 @@ public class VmwareDatacenterApiUnitTest {
         acct.setType(Account.ACCOUNT_TYPE_ADMIN);
         acct.setAccountName("admin");
         acct.setDomainId(domainId);
-        CallContext.register(1, acct, null, true);
+        CallContext.register(new UserVO(1), new AccountVO(2L), null);
 
         when(_accountDao.findByIdIncludingRemoved(0L)).thenReturn(acct);
 
