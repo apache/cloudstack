@@ -130,6 +130,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "is_persistent")
     boolean isPersistent;
 
+    @Column(name = "egress_default_policy")
+    boolean egressdefaultpolicy;
+
     @Override
     public String getDisplayText() {
         return displayText;
@@ -275,6 +278,10 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.redundantRouter = redundantRouter;
     }
 
+    public boolean getEgressDefaultPolicy() {
+        return egressdefaultpolicy;
+    }
+
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
             Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb) {
         this.name = name;
@@ -306,7 +313,7 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
             Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb,
-            boolean specifyIpRanges, boolean inline, boolean isPersistent, boolean associatePublicIP, boolean publicLb, boolean internalLb) {
+            boolean specifyIpRanges, boolean inline, boolean isPersistent, boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean egressdefaultpolicy) {
         this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability, tags, guestType, conserveMode, specifyIpRanges, isPersistent, internalLb, publicLb);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
@@ -315,6 +322,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.elasticLb = elasticLb;
         this.inline = inline;
         this.eipAssociatePublicIp = associatePublicIP;
+        this.egressdefaultpolicy = egressdefaultpolicy;
     }
 
     public NetworkOfferingVO() {
