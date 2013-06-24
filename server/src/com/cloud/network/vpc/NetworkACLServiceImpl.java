@@ -308,7 +308,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         validateNetworkACLItem(aclItemCmd.getSourcePortStart(), aclItemCmd.getSourcePortEnd(), aclItemCmd.getSourceCidrList(),
-                aclItemCmd.getProtocol(), aclItemCmd.getIcmpCode(), aclItemCmd.getIcmpType(), aclItemCmd.getAction());
+                aclItemCmd.getProtocol(), aclItemCmd.getIcmpCode(), aclItemCmd.getIcmpType(), aclItemCmd.getAction(), aclItemCmd.getNumber());
 
         return _networkAclMgr.createNetworkACLItem(aclItemCmd.getSourcePortStart(),
                 aclItemCmd.getSourcePortEnd(), aclItemCmd.getProtocol(), aclItemCmd.getSourceCidrList(), aclItemCmd.getIcmpCode(),
@@ -316,7 +316,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
 
     private void validateNetworkACLItem(Integer portStart, Integer portEnd, List<String> sourceCidrList, String protocol, Integer icmpCode,
-                                        Integer icmpType, String action) {
+                                        Integer icmpType, String action, Integer number) {
 
         if (portStart != null && !NetUtils.isValidPort(portStart)) {
             throw new InvalidParameterValueException("publicPort is an invalid value: " + portStart);
@@ -387,6 +387,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             if(!("Allow".equalsIgnoreCase(action) || "Deny".equalsIgnoreCase(action))){
                 throw new InvalidParameterValueException("Invalid action. Allowed actions are Allow and Deny");
             }
+        }
+
+        //Check for valid number
+        if(number != null && number < 1){
+            throw new InvalidParameterValueException("Invalid number. Number cannot be < 1");
         }
     }
 
@@ -526,7 +531,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         validateNetworkACLItem((sourcePortStart == null) ? aclItem.getSourcePortStart() : sourcePortStart, (sourcePortEnd == null) ? aclItem.getSourcePortEnd() : sourcePortEnd,
-                sourceCidrList, protocol, icmpCode, (icmpType == null) ? aclItem.getIcmpType() : icmpType, action);
+                sourceCidrList, protocol, icmpCode, (icmpType == null) ? aclItem.getIcmpType() : icmpType, action, number);
 
         return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart,
                 sourcePortEnd, icmpCode, icmpType);
