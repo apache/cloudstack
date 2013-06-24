@@ -43,7 +43,8 @@ public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> impl
         try {
             txn.start();
             return listAll().size();
-        }finally {
+        } finally {
+            txn.commit();
             txn.close();
         }
 	    
@@ -61,8 +62,8 @@ public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> impl
            SearchCriteria<OfferingBundleVO> sc = searchByAmazon.create();
            sc.setParameters("AmazonEC2Offering", amazonEC2Offering);
            return findOneBy(sc).getCloudstackOffering();
-           
         } finally {
+            txn.commit();
             txn.close();
         }
 	}
@@ -79,8 +80,8 @@ public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> impl
 	           SearchCriteria<OfferingBundleVO> sc = searchByAmazon.create();
 	           sc.setParameters("CloudStackOffering", cloudStackOffering);
 	           return findOneBy(sc).getAmazonOffering();
-	           
 	        } finally {
+                txn.commit();
 	            txn.close();
 	        }
 	    }
@@ -109,7 +110,6 @@ public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> impl
                 offering = persist(offering);
             else
                 update(offering.getID(), offering);
-
             txn.commit();
          } finally {
              txn.close();
