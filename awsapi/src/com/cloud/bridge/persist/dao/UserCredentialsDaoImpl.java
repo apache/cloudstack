@@ -67,6 +67,7 @@ public class UserCredentialsDaoImpl extends GenericDaoBase<UserCredentialsVO, Lo
             sc.setParameters("CertUniqueId", certId);
             return findOneBy(sc);
 	    }finally {
+            txn.commit();
 	        txn.close();
 	    }
 	    
