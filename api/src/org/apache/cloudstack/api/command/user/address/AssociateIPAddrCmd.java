@@ -16,21 +16,42 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
+import java.util.List;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.*;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.*;
-import org.apache.log4j.Logger;
-
-import java.util.List;
 
 @APICommand(name = "associateIpAddress", description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
 public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
@@ -175,7 +196,19 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         if (accountName != null && domainId != null) {
             Account account = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
             return account.getId();
-        } else if (networkId != null){
+        } else if (projectId != null) {
+            Project project = _projectService.getProject(projectId);
+            if (project != null) {
+                if (project.getState() == Project.State.Active) {
+                    return project.getProjectAccountId();
+                } else {
+                    throw new PermissionDeniedException("Can't add resources to the project with specified projectId in state="
+                           + project.getState() + " as it's no longer active");
+                }
+            } else {
+                throw new InvalidParameterValueException("Unable to find project by id");
+            }
+       } else if (networkId != null){
             Network network = _networkService.getNetwork(networkId);
             return network.getAccountId();
         } else if (vpcId != null) {
