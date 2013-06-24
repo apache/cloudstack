@@ -1750,7 +1750,7 @@ public class EC2Engine extends ManagerBase {
     private String serviceOfferingIdToInstanceType( String serviceOfferingId ){	
         try{
 
-            CloudStackServiceOfferingVO offering =  scvoDao.getSvcOfferingById(serviceOfferingId); //dao.getSvcOfferingById(serviceOfferingId);
+            CloudStackServiceOfferingVO offering =  scvoDao.getSvcOfferingById(serviceOfferingId);
             if(offering == null){
                 logger.warn( "No instanceType match for serviceOfferingId: [" + serviceOfferingId + "]" );
                 return "m1.small";
