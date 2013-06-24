@@ -409,7 +409,9 @@ services() {
   chroot . chkconfig xl2tpd off
   chroot . chkconfig --add cloud-early-config
   chroot . chkconfig cloud-early-config on
-  chroot . chkconfig --add cloud-passwd-srvr 
+  chroot . chkconfig --add iptables-persistent
+  chroot . chkconfig iptables-persistent off
+  chroot . chkconfig --force --add cloud-passwd-srvr
   chroot . chkconfig cloud-passwd-srvr off
   chroot . chkconfig --add cloud
   chroot . chkconfig cloud off
