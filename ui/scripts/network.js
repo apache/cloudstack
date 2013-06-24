@@ -4123,7 +4123,7 @@
                           dataType: 'json',
                           async: true,
                           success: function(data) {
-                            var jobID = data.revokesecuritygroupingress.jobid;
+                            var jobID = data.revokesecuritygroupingressresponse.jobid;
 
                             args.response.success({
                               _custom: {
@@ -4295,7 +4295,7 @@
                           dataType: 'json',
                           async: true,
                           success: function(data) {
-                            var jobID = data.revokesecuritygroupegress.jobid;
+                            var jobID = data.revokesecuritygroupegressresponse.jobid;
 
                             args.response.success({
                               _custom: {
