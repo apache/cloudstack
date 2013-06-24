@@ -205,10 +205,8 @@ public class VmWorkMockVirtualMachineManagerImpl implements VirtualMachineManage
 	}
 
 	@Override
-    public VirtualMachine migrate(String vmUuid, long srcHostId,
-			DeployDestination dest) throws ResourceUnavailableException,
-			ConcurrentOperationException, ManagementServerException,
-			VirtualMachineMigrationException {
+    public Outcome<VirtualMachine> migrate(String vmUuid, long srcHostId,
+            DeployDestination dest) {
 		// TODO Auto-generated method stub
 		return null;
 	}

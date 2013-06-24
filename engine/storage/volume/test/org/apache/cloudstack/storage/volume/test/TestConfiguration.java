@@ -33,7 +33,7 @@ public class TestConfiguration {
     public ImageMotionService imageMotion() {
         return Mockito.mock(ImageMotionService.class);
     }
-    
+
     @Bean
     public ClusterDao clusterDao() {
         return Mockito.mock(ClusterDaoImpl.class);

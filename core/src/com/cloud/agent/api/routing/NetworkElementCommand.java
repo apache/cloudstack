@@ -33,6 +33,7 @@ public abstract class NetworkElementCommand extends Command {
     public static final String ZONE_NETWORK_TYPE = "zone.network.type";
     public static final String GUEST_BRIDGE = "guest.bridge";
     public static final String VPC_PRIVATE_GATEWAY = "vpc.gateway.private";
+    public static final String FIREWALL_EGRESS_DEFAULT = "firewall.egress.default";
 
 
     protected NetworkElementCommand() {

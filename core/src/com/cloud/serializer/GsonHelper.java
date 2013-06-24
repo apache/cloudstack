@@ -25,7 +25,10 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.transport.ArrayTypeAdaptor;
+import com.cloud.agent.transport.InterfaceTypeAdaptor;
 import com.cloud.agent.transport.LoggingExclusionStrategy;
 import com.cloud.agent.transport.Request.NwGroupsCommandTypeAdaptor;
 import com.cloud.agent.transport.Request.PortConfigListTypeAdaptor;
@@ -52,6 +55,10 @@ public class GsonHelper {
 
     static Gson setDefaultGsonConfig(GsonBuilder builder) {
         builder.setVersion(1.5);
+        InterfaceTypeAdaptor<DataStoreTO> dsAdaptor = new InterfaceTypeAdaptor<DataStoreTO>();
+        builder.registerTypeAdapter(DataStoreTO.class, dsAdaptor);
+        InterfaceTypeAdaptor<DataTO> dtAdaptor = new InterfaceTypeAdaptor<DataTO>();
+        builder.registerTypeAdapter(DataTO.class, dtAdaptor);
         ArrayTypeAdaptor<Command> cmdAdaptor = new ArrayTypeAdaptor<Command>();
         builder.registerTypeAdapter(Command[].class, cmdAdaptor);
         ArrayTypeAdaptor<Answer> ansAdaptor = new ArrayTypeAdaptor<Answer>();
@@ -61,6 +68,8 @@ public class GsonHelper {
         builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
         }.getType(), new NwGroupsCommandTypeAdaptor());
         Gson gson = builder.create();
+        dsAdaptor.initGson(gson);
+        dtAdaptor.initGson(gson);
         cmdAdaptor.initGson(gson);
         ansAdaptor.initGson(gson);
         return gson;

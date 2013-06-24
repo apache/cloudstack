@@ -19,27 +19,27 @@ package com.cloud.agent.api.storage;
 import java.util.Map;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 
 public class ListTemplateAnswer extends Answer  {
     private String secUrl;
-    private Map<String, TemplateInfo> templateInfos;
+    private Map<String, TemplateProp> templateInfos;
 
 	public ListTemplateAnswer() {
-
+	    super();
 	}
 
-	public ListTemplateAnswer(String secUrl, Map<String, TemplateInfo> templateInfos) {
+	public ListTemplateAnswer(String secUrl, Map<String, TemplateProp> templateInfos) {
 	    super(null, true, "success");
 	    this.setSecUrl(secUrl);
 	    this.templateInfos = templateInfos;
 	}
 
-	public Map<String, TemplateInfo> getTemplateInfo() {
+	public Map<String, TemplateProp> getTemplateInfo() {
 	    return templateInfos;
 	}
 
-	public void setTemplateInfo(Map<String, TemplateInfo> templateInfos) {
+	public void setTemplateInfo(Map<String, TemplateProp> templateInfos) {
 	    this.templateInfos = templateInfos;
 	}
 

@@ -94,6 +94,9 @@ public class RegisterIsoCmd extends BaseCmd {
             description="Image store uuid")
     private String imageStoreUuid;
 
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if iso contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    protected Boolean isDynamicallyScalable;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -150,6 +153,10 @@ public class RegisterIsoCmd extends BaseCmd {
         return this.imageStoreUuid;
     }
 
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable ==  null ? false : isDynamicallyScalable;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -174,7 +181,7 @@ public class RegisterIsoCmd extends BaseCmd {
         VirtualMachineTemplate template = _templateService.registerIso(this);
         if (template != null) {
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(template.getId(), zoneId, false);
+            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(template, zoneId, false);
             response.setResponses(templateResponses);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

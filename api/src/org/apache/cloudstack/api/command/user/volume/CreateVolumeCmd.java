@@ -118,7 +118,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
 
     public Boolean getDisplayVolume() {
-        return displayVolume;
+        return displayVolume != null ? displayVolume : Boolean.TRUE;
     }
 
     /////////////////////////////////////////////////////

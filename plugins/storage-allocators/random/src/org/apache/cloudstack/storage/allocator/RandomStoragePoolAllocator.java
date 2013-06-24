@@ -21,24 +21,25 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=StoragePoolAllocator.class)
+@Local(value = StoragePoolAllocator.class)
 public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomStoragePoolAllocator.class);
     
     @Override
-    public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile,
+            DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 
     	List<StoragePool> suitablePools = new ArrayList<StoragePool>();
     	
@@ -58,11 +59,11 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
     	if (s_logger.isDebugEnabled()) {
             s_logger.debug("RandomStoragePoolAllocator has " + pools.size() + " pools to check for allocation");
         }
-        for (StoragePoolVO pool: pools) {
-        	if(suitablePools.size() == returnUpTo){
+        for (StoragePoolVO pool : pools) {
+            if (suitablePools.size() == returnUpTo) {
         		break;
-        	}        	
-        	StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+        	}
+            StoragePool pol = (StoragePool) dataStoreMgr.getPrimaryDataStore(pool.getId());
             
         	if (filter(avoid, pol, dskCh, plan)) {
         		suitablePools.add(pol);
@@ -70,7 +71,7 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("RandomStoragePoolAllocator returning "+suitablePools.size() +" suitable storage pools");
+            s_logger.debug("RandomStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
         }
 
         return suitablePools;

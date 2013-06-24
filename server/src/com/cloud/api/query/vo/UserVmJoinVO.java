@@ -156,9 +156,6 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="data_center_name")
     private String dataCenterName = null;
 
-    @Column(name="data_center_type")
-    private String dataCenterType = null;
-    
     @Column(name="security_group_enabled")
     private boolean securityGroupEnabled;
 
@@ -393,6 +390,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="uuid")
     private String uuid;
+
+    @Column(name="dynamically_scalable")
+    private boolean isDynamicallyScalable;
 
     public UserVmJoinVO() {
     }
@@ -813,17 +813,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     public void setDataCenterName(String zoneName) {
         this.dataCenterName = zoneName;
     }
-   
-    
-    public String getDataCenterType() {
-        return dataCenterType;
-    }
 
-
-    public void setDataCenterType(String zoneType) {
-        this.dataCenterType = zoneType;
-    }   
-    
 
     public boolean isSecurityGroupEnabled() {
         return securityGroupEnabled;
@@ -1728,6 +1718,14 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getAffinityGroupDescription() {
         return affinityGroupDescription;
+    }
+
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable;
+    }
+
+    public void setDynamicallyScalable(boolean isDynamicallyScalable) {
+        this.isDynamicallyScalable = isDynamicallyScalable;
     }
 
 

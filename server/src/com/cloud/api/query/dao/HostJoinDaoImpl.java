@@ -99,7 +99,6 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setOsCategoryId(host.getOsCategoryUuid());
             hostResponse.setOsCategoryName(host.getOsCategoryName());
             hostResponse.setZoneName(host.getZoneName());
-            hostResponse.setZoneType(host.getZoneType().toString());
             hostResponse.setPodName(host.getPodName());
             if ( host.getClusterId() > 0) {
                 hostResponse.setClusterName(host.getClusterName());

@@ -16,10 +16,9 @@
 // under the License.
 package com.cloud.storage.dao;
 
-
 import java.util.Date;
 import java.util.List;
-import com.cloud.storage.SnapshotPolicyVO;
+
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -28,7 +27,7 @@ import com.cloud.utils.db.GenericDao;
  */
 public interface SnapshotScheduleDao extends GenericDao<SnapshotScheduleVO, Long> {
 
-	List<SnapshotScheduleVO> getCoincidingSnapshotSchedules(long volumeId, Date date);
+    List<SnapshotScheduleVO> getCoincidingSnapshotSchedules(long volumeId, Date date);
 
     List<SnapshotScheduleVO> getSchedulesToExecute(Date currentTimestamp);
 

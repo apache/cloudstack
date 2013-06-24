@@ -42,9 +42,6 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name for the router")
     private String zoneName;
 
-    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description = "network type of the availability zone")
-    private String zoneType;   
-    
     @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the router")
     private String dns1;
 
@@ -188,14 +185,6 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.zoneName = zoneName;
     }
 
-    public String getZoneType() {
-        return zoneType;
-    }
-
-    public void setZoneType(String zoneType) {
-        this.zoneType = zoneType;
-    }        
-    
     public void setDns1(String dns1) {
         this.dns1 = dns1;
     }

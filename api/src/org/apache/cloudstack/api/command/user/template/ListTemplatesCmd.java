@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -120,18 +121,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute(){
-        Set<Pair<Long, Long>> templateZonePairSet = _mgr.listTemplates(this);
-
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-        List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
-
-        for (Pair<Long, Long> template : templateZonePairSet) {
-            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            responses = _responseGenerator.createTemplateResponses(template.first().longValue(), template.second(), listInReadyState());
-            templateResponses.addAll(responses);
-        }
-
-        response.setResponses(templateResponses);
+        ListResponse<TemplateResponse> response = _queryService.listTemplates(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

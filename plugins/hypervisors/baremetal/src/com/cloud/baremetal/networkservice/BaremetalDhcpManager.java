@@ -24,6 +24,8 @@ package com.cloud.baremetal.networkservice;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.AddBaremetalDhcpCmd;
+
 import com.cloud.baremetal.database.BaremetalDhcpVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;

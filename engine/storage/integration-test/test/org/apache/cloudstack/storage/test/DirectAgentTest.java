@@ -22,13 +22,13 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.to.ImageDataStoreTO;
-import org.apache.cloudstack.storage.to.ImageOnPrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.TemplateTO;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.testng.annotations.Test;
+
+import org.apache.cloudstack.storage.to.ImageStoreTO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -50,11 +50,11 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceState;
 
-@ContextConfiguration(locations="classpath:/storageContext.xml")
+@ContextConfiguration(locations = "classpath:/storageContext.xml")
 public class DirectAgentTest extends CloudStackTestNGBase {
     @Inject
     AgentManager agentMgr;
-    @Inject 
+    @Inject
     HostDao hostDao;
     @Inject
     HostPodDao podDao;
@@ -65,39 +65,40 @@ public class DirectAgentTest extends CloudStackTestNGBase {
     private long dcId;
     private long clusterId;
     private long hostId;
-    
+
     @Test(priority = -1)
     public void setUp() {
-        HostVO host = hostDao.findByGuid(this.getHostGuid());
+        HostVO host = hostDao.findByGuid(getHostGuid());
         if (host != null) {
             hostId = host.getId();
             dcId = host.getDataCenterId();
             clusterId = host.getClusterId();
             return;
         }
-        //create data center
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24", 
-                null, null, NetworkType.Basic, null, null, true,  true, null, null);
+        // create data center
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
+                "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true, true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
-        //create pod
+        // create pod
 
-        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(), this.getHostCidr(), 8, "test");
+        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), getHostGateway(), getHostCidr(), 8,
+                "test");
         pod = podDao.persist(pod);
-        //create xen cluster
+        // create xen cluster
         ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
         cluster.setHypervisorType(HypervisorType.XenServer.toString());
         cluster.setClusterType(ClusterType.CloudManaged);
         cluster.setManagedState(ManagedState.Managed);
         cluster = clusterDao.persist(cluster);
         clusterId = cluster.getId();
-        //create xen host
+        // create xen host
 
-        host = new HostVO(this.getHostGuid());
+        host = new HostVO(getHostGuid());
         host.setName("devcloud xen host");
         host.setType(Host.Type.Routing);
         host.setHypervisorType(HypervisorType.XenServer);
-        host.setPrivateIpAddress(this.getHostIp());
+        host.setPrivateIpAddress(getHostIp());
         host.setDataCenterId(dc.getId());
         host.setVersion("6.0.1");
         host.setAvailable(true);
@@ -109,7 +110,7 @@ public class DirectAgentTest extends CloudStackTestNGBase {
         host = hostDao.persist(host);
         hostId = host.getId();
     }
-    
+
     @Test
     public void testInitResource() {
         ReadyCommand cmd = new ReadyCommand(dcId);
@@ -123,23 +124,24 @@ public class DirectAgentTest extends CloudStackTestNGBase {
             e.printStackTrace();
         }
     }
-    
+
     @Test
     public void testDownloadTemplate() {
-        ImageOnPrimaryDataStoreTO image = Mockito.mock(ImageOnPrimaryDataStoreTO.class);
+        ImageStoreTO image = Mockito.mock(ImageStoreTO.class);
         PrimaryDataStoreTO primaryStore = Mockito.mock(PrimaryDataStoreTO.class);
-        Mockito.when(primaryStore.getUuid()).thenReturn(this.getLocalStorageUuid());
-        Mockito.when(image.getPrimaryDataStore()).thenReturn(primaryStore);
-        
-        ImageDataStoreTO imageStore = Mockito.mock(ImageDataStoreTO.class);
-        Mockito.when(imageStore.getType()).thenReturn("http");
-        
-        TemplateTO template = Mockito.mock(TemplateTO.class);
-        Mockito.when(template.getPath()).thenReturn(this.getTemplateUrl());
-        Mockito.when(template.getImageDataStore()).thenReturn(imageStore);
-        
-        Mockito.when(image.getTemplate()).thenReturn(template);
-        //CopyTemplateToPrimaryStorageCmd cmd = new CopyTemplateToPrimaryStorageCmd(image);
+        Mockito.when(primaryStore.getUuid()).thenReturn(getLocalStorageUuid());
+        // Mockito.when(image.get).thenReturn(primaryStore);
+
+        ImageStoreTO imageStore = Mockito.mock(ImageStoreTO.class);
+        Mockito.when(imageStore.getProtocol()).thenReturn("http");
+
+        TemplateObjectTO template = Mockito.mock(TemplateObjectTO.class);
+        Mockito.when(template.getPath()).thenReturn(getTemplateUrl());
+        Mockito.when(template.getDataStore()).thenReturn(imageStore);
+
+        // Mockito.when(image.getTemplate()).thenReturn(template);
+        // CopyTemplateToPrimaryStorageCmd cmd = new
+        // CopyTemplateToPrimaryStorageCmd(image);
         Command cmd = null;
         try {
             agentMgr.send(hostId, cmd);

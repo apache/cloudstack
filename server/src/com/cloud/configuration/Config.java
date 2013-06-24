@@ -72,6 +72,9 @@ public enum Config {
 	StorageOverprovisioningFactor("Storage", StoragePoolAllocator.class, String.class, "storage.overprovisioning.factor", "2", "Used for storage overprovisioning calculation; available storage will be (actualStorageSize * storage.overprovisioning.factor)", null, ConfigurationParameterScope.zone.toString()),
 	StorageStatsInterval("Storage", ManagementServer.class, String.class, "storage.stats.interval", "60000", "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", null),
 	MaxVolumeSize("Storage", ManagementServer.class, Integer.class, "storage.max.volume.size", "2000", "The maximum size for a volume (in GB).", null),
+    StorageCacheReplacementLRUTimeInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.lru.interval", "30", "time interval for unsed data on cache storage (in days).", null),
+    StorageCacheReplacementEnabled("Storage", ManagementServer.class, Boolean.class, "storage.cache.replacement.enabled", "true", "enable or disable cache storage replacement algorithm.", null),
+    StorageCacheReplacementInterval("Storage", ManagementServer.class, Integer.class, "storage.cache.replacement.interval", "86400", "time interval between cache replacement threads (in seconds).", null),
 	MaxUploadVolumeSize("Storage",  ManagementServer.class, Integer.class, "storage.max.volume.upload.size", "500", "The maximum size for a uploaded volume(in GB).", null),
 	TotalRetries("Storage", AgentManager.class, Integer.class, "total.retries", "4", "The number of times each command sent to a host should be retried in case of failure.", null),
 	StoragePoolMaxWaitSeconds("Storage", ManagementServer.class, Integer.class, "storage.pool.max.waitseconds", "3600", "Timeout (in seconds) to synchronize storage pool operations.", null),
@@ -240,6 +243,10 @@ public enum Config {
 	VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Time (in seconds) to wait before taking over a VM in transition state", null),
 	VmDestroyForcestop("Advanced", ManagementServer.class, Boolean.class, "vm.destroy.forcestop", "false", "On destroy, force-stop takes this value ", null),
+        VmDiskThrottlingIopsReadRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.iops_read_rate", "0", "Default disk I/O read rate in requests per second allowed in User vm's disk.", null),
+        VmDiskThrottlingIopsWriteRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.iops_write_rate", "0", "Default disk I/O writerate in requests per second allowed in User vm's disk.", null),
+        VmDiskThrottlingBytesReadRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.bytes_read_rate", "0", "Default disk I/O read rate in bytes per second allowed in User vm's disk.", null),
+        VmDiskThrottlingBytesWriteRate("Advanced", ManagementServer.class, Integer.class, "vm.disk.throttling.bytes_write_rate", "0", "Default disk I/O writerate in bytes per second allowed in User vm's disk.", null),
 
 	ControlCidr("Advanced", ManagementServer.class, String.class, "control.cidr", "169.254.0.0/16", "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", null),
 	ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),
@@ -403,7 +410,7 @@ public enum Config {
 	NetworkIPv6SearchRetryMax("Network", ManagementServer.class, Integer.class, "network.ipv6.search.retry.max", "10000", "The maximum number of retrying times to search for an available IPv6 address in the table", null),
 
 	ExternalBaremetalSystemUrl("Advanced", ManagementServer.class, String.class, "external.baremetal.system.url", null, "url of external baremetal system that CloudStack will talk to", null),
-	ExternalBaremetalResourceClassName("Advanced", ManagementServer.class, String.class, "external,baremetal.resource.classname", null, "class name for handling external baremetal resource", null),
+	ExternalBaremetalResourceClassName("Advanced", ManagementServer.class, String.class, "external.baremetal.resource.classname", null, "class name for handling external baremetal resource", null),
 	EnableBaremetalSecurityGroupAgentEcho("Advanced", ManagementServer.class, Boolean.class, "enable.baremetal.securitygroup.agent.echo", "false", "After starting provision process, periodcially echo security agent installed in the template. Treat provisioning as success only if echo successfully", null),
 	IntervalToEchoBaremetalSecurityGroupAgent("Advanced", ManagementServer.class, Integer.class, "interval.baremetal.securitygroup.agent.echo", "10", "Interval to echo baremetal security group agent, in seconds", null),
 	TimeoutToEchoBaremetalSecurityGroupAgent("Advanced", ManagementServer.class, Integer.class, "timeout.baremetal.securitygroup.agent.echo", "3600", "Timeout to echo baremetal security group agent, in seconds, the provisioning process will be treated as a failure", null),
@@ -413,6 +420,8 @@ public enum Config {
     ApiLimitMax("Advanced", ManagementServer.class, Integer.class, "api.throttling.max", "25", "Max allowed number of APIs within fixed interval", null),
     ApiLimitCacheSize("Advanced", ManagementServer.class, Integer.class, "api.throttling.cachesize", "50000", "Account based API count cache size", null),
 
+    // object store
+    S3EnableRRS("Advanced", ManagementServer.class, Boolean.class, "s3.rrs.enabled", "false", "enable s3 reduced redundancy storage", null),
 	
 	// VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
@@ -423,9 +432,11 @@ public enum Config {
     BlacklistedRoutes("Advanced", VpcManager.class, String.class, "blacklisted.routes", null, "Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway",
 	           "routes", ConfigurationParameterScope.zone.toString()),
 	
-    InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, Long.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null);
- 
-    
+    InternalLbVmServiceOfferingId("Advanced", ManagementServer.class, String.class, "internallbvm.service.offering", null, "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", null),
+    ExecuteInSequence("Advanced", ManagementServer.class, Boolean.class, "execute.in.sequence.hypervisor.commands", "false", "If set to true, StartCommand, StopCommand, CopyVolumeCommand, CreateCommand will be synchronized on the agent side." +
+    		" If set to false, these commands become asynchronous. Default value is false.", null),
+    ExecuteInSequenceNetworkElementCommands("Advanced", NetworkManager.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." + 
+            " If set to false, these commands become asynchronous. Default value is false.", null);
 	
 	private final String _category;
 	private final Class<?> _componentClass;

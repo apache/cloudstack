@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -64,6 +66,7 @@ import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
+import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
@@ -72,6 +75,7 @@ import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
@@ -83,6 +87,7 @@ import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
@@ -91,6 +96,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
@@ -217,6 +223,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
@@ -248,6 +255,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
@@ -325,7 +333,6 @@ public class ApiDBUtils {
     static PrimaryDataStoreDao _storagePoolDao;
     static VMTemplateDao _templateDao;
     static VMTemplateDetailsDao _templateDetailsDao;
-    static VMTemplateHostDao _templateHostDao;
     static VMTemplateSwiftDao _templateSwiftDao;
     static VMTemplateS3Dao _templateS3Dao;
     static UploadDao _uploadDao;
@@ -337,7 +344,6 @@ public class ApiDBUtils {
     static VolumeDao _volumeDao;
     static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
     static Site2SiteCustomerGatewayDao _site2SiteCustomerGatewayDao;
-    static VolumeHostDao _volumeHostDao;
     static DataCenterDao _zoneDao;
     static NetworkOfferingDao _networkOfferingDao;
     static NetworkDao _networkDao;
@@ -375,8 +381,10 @@ public class ApiDBUtils {
     static HostJoinDao _hostJoinDao;
     static VolumeJoinDao _volJoinDao;
     static StoragePoolJoinDao _poolJoinDao;
+    static ImageStoreJoinDao _imageStoreJoinDao;
     static AccountJoinDao _accountJoinDao;
     static AsyncJobJoinDao _jobJoinDao;
+    static TemplateJoinDao _templateJoinDao;
 
     static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
@@ -434,7 +442,6 @@ public class ApiDBUtils {
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private VMTemplateDao templateDao;
     @Inject private VMTemplateDetailsDao templateDetailsDao;
-    @Inject private VMTemplateHostDao templateHostDao;
     @Inject private VMTemplateSwiftDao templateSwiftDao;
     @Inject private VMTemplateS3Dao templateS3Dao;
     @Inject private UploadDao uploadDao;
@@ -446,7 +453,6 @@ public class ApiDBUtils {
     @Inject private VolumeDao volumeDao;
     @Inject private Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
     @Inject private Site2SiteCustomerGatewayDao site2SiteCustomerGatewayDao;
-    @Inject private VolumeHostDao volumeHostDao;
     @Inject private DataCenterDao zoneDao;
     @Inject private NetworkOfferingDao networkOfferingDao;
     @Inject private NetworkDao networkDao;
@@ -484,8 +490,10 @@ public class ApiDBUtils {
     @Inject private HostJoinDao hostJoinDao;
     @Inject private VolumeJoinDao volJoinDao;
     @Inject private StoragePoolJoinDao poolJoinDao;
+    @Inject private ImageStoreJoinDao imageStoreJoinDao;
     @Inject private AccountJoinDao accountJoinDao;
     @Inject private AsyncJobJoinDao jobJoinDao;
+    @Inject private TemplateJoinDao templateJoinDao;
 
     @Inject private PhysicalNetworkTrafficTypeDao physicalNetworkTrafficTypeDao;
     @Inject private PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
@@ -543,7 +551,6 @@ public class ApiDBUtils {
         _storagePoolDao = storagePoolDao;
         _templateDao = templateDao;
         _templateDetailsDao = templateDetailsDao;
-        _templateHostDao = templateHostDao;
         _templateSwiftDao = templateSwiftDao;
         _templateS3Dao = templateS3Dao;
         _uploadDao = uploadDao;
@@ -555,7 +562,6 @@ public class ApiDBUtils {
         _volumeDao = volumeDao;
         _site2SiteVpnGatewayDao = site2SiteVpnGatewayDao;
         _site2SiteCustomerGatewayDao = site2SiteCustomerGatewayDao;
-        _volumeHostDao = volumeHostDao;
         _zoneDao = zoneDao;
         _securityGroupDao = securityGroupDao;
         _securityGroupJoinDao = securityGroupJoinDao;
@@ -591,8 +597,10 @@ public class ApiDBUtils {
         _hostJoinDao = hostJoinDao;
         _volJoinDao = volJoinDao;
         _poolJoinDao = poolJoinDao;
+        _imageStoreJoinDao = imageStoreJoinDao;
         _accountJoinDao = accountJoinDao;
         _jobJoinDao = jobJoinDao;
+        _templateJoinDao = templateJoinDao;
 
         _physicalNetworkTrafficTypeDao = physicalNetworkTrafficTypeDao;
         _physicalNetworkServiceProviderDao = physicalNetworkServiceProviderDao;
@@ -879,25 +887,6 @@ public class ApiDBUtils {
         return template;
     }
 
-    public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
-        return findTemplateHostRef(templateId, zoneId, false);
-    }
-
-    public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId, boolean readyOnly) {
-        VMTemplateVO vmTemplate = findTemplateById(templateId);
-        if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
-            List<VMTemplateHostVO> res = _templateHostDao.listByTemplateId(templateId);
-            return res.size() == 0 ? null : res.get(0);
-        } else {
-            return _templateMgr.getTemplateHostRef(zoneId, templateId, readyOnly);
-        }
-    }
-
-
-    public static VolumeHostVO findVolumeHostRef(long volumeId, long zoneId) {
-        return _volumeHostDao.findVolumeByZone(volumeId, zoneId);
-    }
-
     public static VMTemplateSwiftVO findTemplateSwiftRef(long templateId) {
         return _templateSwiftDao.findOneByTemplateId(templateId);
     }
@@ -968,18 +957,6 @@ public class ApiDBUtils {
         return _storageMgr.getHypervisorTypeFromFormat(format);
     }
 
-    public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId, boolean readyOnly) {
-        if (zoneId != null) {
-            VMTemplateVO vmTemplate = findTemplateById(templateId);
-            if (vmTemplate.getHypervisorType() == HypervisorType.BareMetal) {
-                return _templateHostDao.listByTemplateId(templateId);
-            } else {
-                return _templateHostDao.listByZoneTemplate(zoneId, templateId, readyOnly);
-            }
-        } else {
-            return _templateHostDao.listByOnlyTemplateId(templateId);
-        }
-    }
 
     public static List<UserStatisticsVO> listUserStatsBy(Long accountId) {
         return _userStatsDao.listBy(accountId);
@@ -1591,6 +1568,18 @@ public class ApiDBUtils {
         return _poolJoinDao.newStoragePoolView(vr);
     }
 
+    public static ImageStoreResponse newImageStoreResponse(ImageStoreJoinVO vr) {
+        return _imageStoreJoinDao.newImageStoreResponse(vr);
+    }
+
+    public static ImageStoreResponse fillImageStoreDetails(ImageStoreResponse vrData, ImageStoreJoinVO vr){
+        return _imageStoreJoinDao.setImageStoreResponse(vrData, vr);
+    }
+
+    public static List<ImageStoreJoinVO> newImageStoreView(ImageStore vr){
+        return _imageStoreJoinDao.newImageStoreView(vr);
+    }
+
 
     public static AccountResponse newAccountResponse(AccountJoinVO ve) {
         return _accountJoinDao.newAccountResponse(ve);
@@ -1642,6 +1631,33 @@ public class ApiDBUtils {
 
    public static List<NicSecondaryIpVO> findNicSecondaryIps(long nicId) {
        return _nicSecondaryIpDao.listByNicId(nicId);
+   }
+
+   public static TemplateResponse newTemplateUpdateResponse(TemplateJoinVO vr) {
+       return _templateJoinDao.newUpdateResponse(vr);
+   }
+
+
+   public static TemplateResponse newTemplateResponse(TemplateJoinVO vr) {
+       return _templateJoinDao.newTemplateResponse(vr);
+   }
+
+
+   public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
+       return _templateJoinDao.newIsoResponse(vr);
+  }
+
+   public static TemplateResponse fillTemplateDetails(TemplateResponse vrData, TemplateJoinVO vr){
+       return _templateJoinDao.setTemplateResponse(vrData, vr);
+   }
+
+   public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr){
+       return _templateJoinDao.newTemplateView(vr);
+   }
+
+
+   public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr, long zoneId, boolean readyOnly){
+       return _templateJoinDao.newTemplateView(vr, zoneId, readyOnly);
    }
 
     public static AffinityGroup getAffinityGroup(String groupName, long accountId) {

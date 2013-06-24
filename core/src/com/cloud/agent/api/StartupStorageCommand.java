@@ -22,13 +22,13 @@ import java.util.Map;
 import com.cloud.host.Host;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateProp;
 
 
 public class StartupStorageCommand extends StartupCommand {
 
 	String parent;
-    Map<String, TemplateInfo> templateInfo;
+    Map<String, TemplateProp> templateInfo;
     long totalSize;
     StoragePoolInfo poolInfo;
     Storage.StorageResourceType resourceType;
@@ -40,7 +40,7 @@ public class StartupStorageCommand extends StartupCommand {
         super(Host.Type.Storage);
     }
 
-    public StartupStorageCommand(String parent, StoragePoolType fsType, long totalSize, Map<String, TemplateInfo> info) {
+    public StartupStorageCommand(String parent, StoragePoolType fsType, long totalSize, Map<String, TemplateProp> info) {
         super(Host.Type.Storage);
         this.parent = parent;
         this.totalSize = totalSize;
@@ -50,7 +50,7 @@ public class StartupStorageCommand extends StartupCommand {
     }
 
 
-    public StartupStorageCommand(String parent, StoragePoolType fsType, Map<String, TemplateInfo> templateInfo, StoragePoolInfo poolInfo) {
+    public StartupStorageCommand(String parent, StoragePoolType fsType, Map<String, TemplateProp> templateInfo, StoragePoolInfo poolInfo) {
 		super(Host.Type.Storage);
 		this.parent = parent;
 		this.templateInfo = templateInfo;
@@ -79,11 +79,11 @@ public class StartupStorageCommand extends StartupCommand {
         return totalSize;
     }
 
-	public Map<String, TemplateInfo> getTemplateInfo() {
+	public Map<String, TemplateProp> getTemplateInfo() {
 		return templateInfo;
 	}
 
-	public void setTemplateInfo(Map<String, TemplateInfo> templateInfo) {
+	public void setTemplateInfo(Map<String, TemplateProp> templateInfo) {
 		this.templateInfo = templateInfo;
 	}
 

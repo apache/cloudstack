@@ -1388,9 +1388,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         long networkAclId = NetworkACL.DEFAULT_DENY;
         if (aclId != null) {
-            if ( _networkAclDao.findById(aclId) == null) {
+            NetworkACLVO aclVO = _networkAclDao.findById(aclId);
+            if ( aclVO == null) {
                 throw new InvalidParameterValueException("Invalid network acl id passed ");
             }
+            if ((aclVO.getVpcId() != vpcId) && !(aclId == NetworkACL.DEFAULT_DENY || aclId == NetworkACL.DEFAULT_ALLOW)) {
+                throw new InvalidParameterValueException("Private gateway and network acl are not in the same vpc");
+            }
+
             networkAclId = aclId;
         }
 

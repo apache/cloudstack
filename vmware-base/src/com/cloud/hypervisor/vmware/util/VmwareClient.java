@@ -24,17 +24,17 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.MessageContext;
-
 
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
 import com.vmware.vim25.InvalidPropertyFaultMsg;
 import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.ObjectUpdate;
 import com.vmware.vim25.ObjectUpdateKind;
@@ -51,7 +51,6 @@ import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.UpdateSet;
 import com.vmware.vim25.VimPortType;
 import com.vmware.vim25.VimService;
-import com.vmware.vim25.ObjectContent;
 
 /**
  * A wrapper class to handle Vmware vsphere connection and disconnection.
@@ -554,7 +553,7 @@ public class VmwareClient {
             if (type == null || type.equals(mor.getType())) {
                 if (propary.size() > 0) {
                     String propval = (String) propary.get(0).getVal();
-                    if (propval != null && name.equals(propval))
+                    if (propval != null && name.equalsIgnoreCase(propval))
                         return mor;
                 }
             }

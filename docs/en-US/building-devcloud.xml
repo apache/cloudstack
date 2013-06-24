@@ -27,6 +27,6 @@
     <para>The DevCloud appliance can be downloaded from the wiki at <ulink url="https://cwiki.apache.org/confluence/display/CLOUDSTACK/DevCloud"></ulink>. It can also be built from scratch. Code is being developed to provide this alternative build. It is based on <emphasis>veewee</emphasis>, <emphasis>Vagrant</emphasis> and <emphasis>Puppet</emphasis>.</para>
     <para>The goal is to automate the DevCloud build and make this automation capability available to all within the source release of &PRODUCT;</para>
     <warning><para>This is under heavy development. The code is located in the source tree under <emphasis>tools/devcloud</emphasis> </para>
-        <para>A preliminary wiki page describes the build at <ulink url="https://cwiki.apache.org/CLOUDSTACK/building-devcloud.html">https://cwiki.pache.org/CLOUDSTACK/building-devcloud.html</ulink></para>
+        <para>A preliminary wiki page describes the build at <ulink url="https://cwiki.apache.org/confluence/display/CLOUDSTACK/Building+DevCloud">https://cwiki.apache.org/confluence/display/CLOUDSTACK/Building+DevCloud</ulink></para>
     </warning>
 </section>

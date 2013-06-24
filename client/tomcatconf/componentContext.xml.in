@@ -116,11 +116,7 @@
           <ref bean="SecondaryStorageDiscoverer"/>
           <ref bean="KvmServerDiscoverer"/>
           <ref bean="LxcServerDiscoverer"/>
-
-  <!--
           <ref bean="BareMetalDiscoverer"/>
-  -->
-
           <ref bean="OvmDiscoverer"/>
       </list>
     </property>
@@ -156,9 +152,7 @@
           <ref bean="UserDispersingPlanner" />
           <ref bean="UserConcentratedPodPlanner" />
           <ref bean="ImplicitDedicationPlanner" />
-<!--
           <ref bean="BareMetalPlanner" />
--->
       </list>
     </property>
   </bean>
@@ -208,9 +202,7 @@
       <list>
           <ref bean="VirtualRouter"/>
           <ref bean="VpcVirtualRouter"/>
-<!--
           <ref bean="BareMetalDhcp"/>
--->
       </list>
     </property>
   </bean>
@@ -243,11 +235,9 @@
           <ref bean="NiciraNvp" />
           <ref bean="MidoNetElement"/>
           <ref bean="InternalLbVm"/>
-<!--
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
           <ref bean="BareMetalUserdata"/>
--->
       </list>
     </property>
   </bean>

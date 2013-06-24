@@ -17,6 +17,9 @@
 package org.apache.cloudstack.api.command.admin.ldap;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.naming.NamingException;
 
 import org.apache.log4j.Logger;
@@ -27,6 +30,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -91,7 +95,7 @@ public class LDAPConfigCmd extends BaseCmd  {
     }
 
     public void setBindDN(String bdn) {
-        this.bindDN=bdn;
+        bindDN=bdn;
     }
 
     public String getQueryFilter() {
@@ -159,9 +163,16 @@ public class LDAPConfigCmd extends BaseCmd  {
               if (getListAll()){
                   // return the existing conf
                   LDAPConfigCmd cmd = _configService.listLDAPConfig(this);
-                  LDAPConfigResponse lr = _responseGenerator.createLDAPConfigResponse(cmd.getHostname(), cmd.getPort(), cmd.getUseSSL(), cmd.getQueryFilter(), cmd.getSearchBase(), cmd.getBindDN());
-                  lr.setResponseName(getCommandName());
-                  this.setResponseObject(lr);
+                  ListResponse<LDAPConfigResponse> response = new ListResponse<LDAPConfigResponse>();
+                  List<LDAPConfigResponse> responses = new ArrayList<LDAPConfigResponse>();
+
+                  if(!cmd.getHostname().equals("")) {
+                  	responses.add(_responseGenerator.createLDAPConfigResponse(cmd.getHostname(), cmd.getPort(), cmd.getUseSSL(), cmd.getQueryFilter(), cmd.getSearchBase(), cmd.getBindDN()));
+                  }
+                  
+                  response.setResponses(responses);
+                  response.setResponseName(getCommandName());
+                  setResponseObject(response);
               }
               else if (getHostname()==null || getSearchBase() == null || getQueryFilter() == null) {
                   throw new InvalidParameterValueException("You need to provide hostname, searchbase and queryfilter to configure your LDAP server");
@@ -171,7 +182,7 @@ public class LDAPConfigCmd extends BaseCmd  {
                   if (result){
                       LDAPConfigResponse lr = _responseGenerator.createLDAPConfigResponse(getHostname(), getPort(), getUseSSL(), getQueryFilter(), getSearchBase(), getBindDN());
                       lr.setResponseName(getCommandName());
-                      this.setResponseObject(lr);
+                      setResponseObject(lr);
                   }
               }
           }

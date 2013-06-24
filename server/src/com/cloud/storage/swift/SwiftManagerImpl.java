@@ -34,9 +34,11 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
 import com.cloud.agent.api.to.SwiftTO;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -144,7 +146,10 @@ public class SwiftManagerImpl extends ManagerBase implements SwiftManager {
            s_logger.warn(msg);
            throw new CloudRuntimeException(msg);
         }
-        Answer answer = _agentMgr.sendToSSVM(null, new DeleteObjectFromSwiftCommand(swift, "T-" + cmd.getId(), null));
+        TemplateObjectTO tmplTO = new TemplateObjectTO();
+        tmplTO.setDataStore(swift);
+        tmplTO.setId(cmd.getId());
+        Answer answer = _agentMgr.sendToSSVM(null, new DeleteCommand(tmplTO));
         if (answer == null || !answer.getResult()) {
             msg = "Failed to delete " + tmpltSwiftRef + " due to " + ((answer == null) ? "answer is null" : answer.getDetails());
             s_logger.warn(msg);
@@ -170,7 +175,9 @@ public class SwiftManagerImpl extends ManagerBase implements SwiftManager {
             s_logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
-        Answer answer = _agentMgr.sendToSSVM(null, new DeleteObjectFromSwiftCommand(swift, "T-" + cmd.getId(), null));
+        TemplateObjectTO tmplTO = new TemplateObjectTO();
+        tmplTO.setId(cmd.getId());
+        Answer answer = _agentMgr.sendToSSVM(null, new DeleteCommand(tmplTO));
         if (answer == null || !answer.getResult()) {
             msg = "Failed to delete " + tmpltSwiftRef + " due to " + ((answer == null) ? "answer is null" : answer.getDetails());
             s_logger.warn(msg);
@@ -236,7 +243,7 @@ public class SwiftManagerImpl extends ManagerBase implements SwiftManager {
         if (swift == null) {
             return null;
         }
-        
+
         List<VMTemplateHostVO> tmpltHosts = _vmTmpltHostDao.listByOnlyTemplateId(tmpltId);
         if (tmpltHosts != null) {
             Collections.shuffle(tmpltHosts);

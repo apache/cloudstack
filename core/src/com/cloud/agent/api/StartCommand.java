@@ -24,6 +24,7 @@ import com.cloud.host.Host;
 public class StartCommand extends Command {
     VirtualMachineTO vm;
     String hostIp;
+    boolean executeInSequence = false;
 
     public VirtualMachineTO getVirtualMachine() {
         return vm;
@@ -31,19 +32,16 @@ public class StartCommand extends Command {
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        return executeInSequence;
     }
 
     protected StartCommand() {
     }
 
-    public StartCommand(VirtualMachineTO vm) {
-        this.vm = vm;
-    }
-
-    public StartCommand(VirtualMachineTO vm, Host host) {
+    public StartCommand(VirtualMachineTO vm, Host host, boolean executeInSequence) {
         this.vm = vm;
         this.hostIp = host.getPrivateIpAddress();
+        this.executeInSequence = executeInSequence;
     }
 
     public String getHostIp() {

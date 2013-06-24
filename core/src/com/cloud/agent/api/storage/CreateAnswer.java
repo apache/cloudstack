@@ -23,6 +23,7 @@ public class CreateAnswer extends Answer {
     VolumeTO volume;
     boolean requestTemplateReload = false;
     protected CreateAnswer() {
+        super();
     }
 
     public CreateAnswer(CreateCommand cmd, VolumeTO volume) {

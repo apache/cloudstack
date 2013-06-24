@@ -62,7 +62,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findUsableVolumesForInstance(long instanceId);
 
-    Long countAllocatedVolumesForAccount(long accountId); 
+    Long countAllocatedVolumesForAccount(long accountId);
 
     HypervisorType getHypervisorType(long volumeId);
 
@@ -76,15 +76,16 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     /**
      * Gets the Total Primary Storage space allocated for an account
-     *
+     * 
      * @param account
      * @return total Primary Storage space (in bytes) used
      */
     long primaryStorageUsedForAccount(long accountId);
 
     /**
-     * Gets the Total Secondary Storage space used by volumes allocated for an account
-     *
+     * Gets the Total Secondary Storage space used by volumes allocated for an
+     * account
+     * 
      * @param account
      * @return total Secondary Storage space (in bytes) used
      */

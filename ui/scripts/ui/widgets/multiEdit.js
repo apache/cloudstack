@@ -354,7 +354,7 @@
                   error: function(message) {
                     cloudStack.dialog.notice({ message: message });
                     $item.show();
-                    $loading.remove();
+                    $dataItem.find('.loading-overlay').remove();
                   }
                 }
               });

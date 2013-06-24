@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.storage.upload;
 
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import javax.inject.Inject;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -31,6 +32,10 @@ import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
 
@@ -47,8 +52,7 @@ import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiSerializerHelper;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Upload.Status;
 import com.cloud.storage.Upload.Type;
@@ -59,13 +63,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UploadListener implements Listener {
 
-
 	private static final class StatusTask extends TimerTask {
 		private final UploadListener ul;
 		private final RequestType reqType;
 
-		public StatusTask( UploadListener ul,  RequestType req) {
-			reqType = req;
+        public StatusTask(UploadListener ul, RequestType req) {
+            reqType = req;
 			this.ul = ul;
 		}
 
@@ -79,7 +82,7 @@ public class UploadListener implements Listener {
 	private static final class TimeoutTask extends TimerTask {
 		private final UploadListener ul;
 
-		public TimeoutTask( UploadListener ul) {
+        public TimeoutTask(UploadListener ul) {
 			this.ul = ul;
 		}
 
@@ -93,23 +96,22 @@ public class UploadListener implements Listener {
 	public static final int SMALL_DELAY = 100;
 	public static final long STATUS_POLL_INTERVAL = 10000L;
 
-	public static final String UPLOADED=Status.UPLOADED.toString();
-	public static final String NOT_UPLOADED=Status.NOT_UPLOADED.toString();
-	public static final String UPLOAD_ERROR=Status.UPLOAD_ERROR.toString();
-	public static final String UPLOAD_IN_PROGRESS=Status.UPLOAD_IN_PROGRESS.toString();
-	public static final String UPLOAD_ABANDONED=Status.ABANDONED.toString();
-	public static final Map<String,String> responseNameMap;
-	static{
-	    Map<String, String>tempMap = new HashMap<String, String>();
+    public static final String UPLOADED = Status.UPLOADED.toString();
+    public static final String NOT_UPLOADED = Status.NOT_UPLOADED.toString();
+    public static final String UPLOAD_ERROR = Status.UPLOAD_ERROR.toString();
+    public static final String UPLOAD_IN_PROGRESS = Status.UPLOAD_IN_PROGRESS.toString();
+    public static final String UPLOAD_ABANDONED = Status.ABANDONED.toString();
+    public static final Map<String, String> responseNameMap;
+    static {
+        Map<String, String> tempMap = new HashMap<String, String>();
         tempMap.put(Type.ISO.toString(), ExtractIsoCmd.getStaticName());
         tempMap.put(Type.TEMPLATE.toString(), ExtractTemplateCmd.getStaticName());
         tempMap.put(Type.VOLUME.toString(), ExtractVolumeCmd.getStaticName());
-        tempMap.put("DEFAULT","extractresponse");
+        tempMap.put("DEFAULT", "extractresponse");
         responseNameMap = Collections.unmodifiableMap(tempMap);
 	}
 
-
-	private HostVO sserver;
+    private DataStore sserver;
 
 	private boolean uploadActive = true;
 
@@ -134,6 +136,8 @@ public class UploadListener implements Listener {
 	private long eventId;
 	private AsyncJobManager asyncMgr;
 	private ExtractResponse resultObj;
+    @Inject
+    EndPointSelector _epSelector;
 
 	public AsyncJobManager getAsyncMgr() {
 		return asyncMgr;
@@ -162,7 +166,7 @@ public class UploadListener implements Listener {
 	private final Map<String,  UploadState> stateMap = new HashMap<String, UploadState>();
 	private Long uploadId;
 
-	public UploadListener(HostVO host, Timer _timer, UploadDao uploadDao,
+    public UploadListener(DataStore host, Timer _timer, UploadDao uploadDao,
 			UploadVO uploadObj, UploadMonitorImpl uploadMonitor, UploadCommand cmd,
 			Long accountId, String typeName, Type type, long eventId, long asyncJobId, AsyncJobManager asyncMgr) {
 		sserver = host;
@@ -174,24 +178,24 @@ public class UploadListener implements Listener {
 		this.typeName = typeName;
 		this.type = type;
 		initStateMachine();
-		currState = getState(Status.NOT_UPLOADED.toString());
-		timer = _timer;
-		timeoutTask = new TimeoutTask(this);
-		timer.schedule(timeoutTask, 3*STATUS_POLL_INTERVAL);
+        currState = getState(Status.NOT_UPLOADED.toString());
+        timer = _timer;
+        timeoutTask = new TimeoutTask(this);
+        timer.schedule(timeoutTask, 3 * STATUS_POLL_INTERVAL);
 		this.eventId = eventId;
 		this.asyncJobId = asyncJobId;
 		this.asyncMgr = asyncMgr;
 		String extractId = null;
-		if ( type == Type.VOLUME ){
+        if (type == Type.VOLUME) {
 		    extractId = ApiDBUtils.findVolumeById(uploadObj.getTypeId()).getUuid();
 		}
-		else{
+        else {
 		    extractId = ApiDBUtils.findTemplateById(uploadObj.getTypeId()).getUuid();
 		}
 		resultObj = new ExtractResponse(extractId, typeName, ApiDBUtils.findAccountById(accountId).getUuid(), Status.NOT_UPLOADED.toString(),
 		        ApiDBUtils.findUploadById(uploadId).getUuid());
 		resultObj.setResponseName(responseNameMap.get(type.toString()));
-		updateDatabase(Status.NOT_UPLOADED, cmd.getUrl(),"");
+        updateDatabase(Status.NOT_UPLOADED, cmd.getUrl(), "");
 	}
 
 	public UploadListener(UploadMonitorImpl monitor) {
@@ -227,12 +231,12 @@ public class UploadListener implements Listener {
 	@Override
 	public boolean processAnswers(long agentId, long seq, Answer[] answers) {
 		boolean processed = false;
-    	if(answers != null & answers.length > 0) {
-    		if(answers[0] instanceof UploadAnswer) {
+        if (answers != null & answers.length > 0) {
+            if (answers[0] instanceof UploadAnswer) {
     			final UploadAnswer answer = (UploadAnswer)answers[0];
     			if (getJobId() == null) {
     				setJobId(answer.getJobId());
-    			} else if (!getJobId().equalsIgnoreCase(answer.getJobId())){
+                } else if (!getJobId().equalsIgnoreCase(answer.getJobId())) {
     				return false;//TODO
     			}
     			transition(UploadEvent.UPLOAD_ANSWER, answer);
@@ -242,14 +246,13 @@ public class UploadListener implements Listener {
         return processed;
 	}
 
-
 	@Override
 	public boolean processCommands(long agentId, long seq, Command[] commands) {
 		return false;
 	}
 
 	@Override
-	public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
+    public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
 		if (!(cmd instanceof StartupStorageCommand)) {
 	        return;
 	    }
@@ -258,7 +261,7 @@ public class UploadListener implements Listener {
 
 	    StartupStorageCommand storage = (StartupStorageCommand)cmd;
 	    if (storage.getResourceType() == Storage.StorageResourceType.STORAGE_HOST ||
-	    storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE )
+                storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE)
 	    {
 	    	uploadMonitor.handleUploadSync(agentId);
 	    }
@@ -271,8 +274,8 @@ public class UploadListener implements Listener {
 	}
 
 	public void setUploadInactive(Status reason) {
-		uploadActive=false;
-		uploadMonitor.handleUploadEvent(sserver, accountId, typeName, type, uploadId, reason, eventId);
+        uploadActive = false;
+        uploadMonitor.handleUploadEvent(accountId, typeName, type, uploadId, reason, eventId);
 	}
 
 	public void logUploadStart() {
@@ -280,11 +283,13 @@ public class UploadListener implements Listener {
 	}
 
 	public void cancelTimeoutTask() {
-		if (timeoutTask != null) timeoutTask.cancel();
+        if (timeoutTask != null)
+            timeoutTask.cancel();
 	}
 
 	public void cancelStatusTask() {
-		if (statusTask != null) statusTask.cancel();
+        if (statusTask != null)
+            statusTask.cancel();
 	}
 
 	@Override
@@ -321,10 +326,10 @@ public class UploadListener implements Listener {
 			if (currState != null) {
 				currState.onEntry(prevName, event, evtObj);
 			} else {
-				throw new CloudRuntimeException("Invalid next state: currState="+prevName+", evt="+event + ", next=" + nextState);
+                throw new CloudRuntimeException("Invalid next state: currState=" + prevName + ", evt=" + event + ", next=" + nextState);
 			}
 		} else {
-			throw new CloudRuntimeException("Unhandled event transition: currState="+prevName+", evt="+event);
+            throw new CloudRuntimeException("Unhandled event transition: currState=" + prevName + ", evt=" + event);
 		}
 	}
 
@@ -345,14 +350,16 @@ public class UploadListener implements Listener {
 	}
 
 	public void scheduleStatusCheck(com.cloud.agent.api.storage.UploadProgressCommand.RequestType getStatus) {
-		if (statusTask != null) statusTask.cancel();
+        if (statusTask != null)
+            statusTask.cancel();
 
 		statusTask = new StatusTask(this, getStatus);
 		timer.schedule(statusTask, STATUS_POLL_INTERVAL);
 	}
 
 	public void scheduleTimeoutTask(long delay) {
-		if (timeoutTask != null) timeoutTask.cancel();
+        if (timeoutTask != null)
+            timeoutTask.cancel();
 
 		timeoutTask = new TimeoutTask(this);
 		timer.schedule(timeoutTask, delay);
@@ -374,12 +381,11 @@ public class UploadListener implements Listener {
 		uploadDao.update(getUploadId(), vo);
 	}
 
-	public void updateDatabase(Status state, String uploadUrl,String uploadErrorString) {
+    public void updateDatabase(Status state, String uploadUrl, String uploadErrorString) {
 		resultObj.setResultString(uploadErrorString);
 		resultObj.setState(state.toString());
 		asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
         asyncMgr.updateAsyncJobStatus(asyncJobId, JobInfo.Status.IN_PROGRESS.ordinal(), ApiSerializerHelper.toSerializedString(resultObj));
-
 
 		UploadVO vo = uploadDao.createForUpdate();
 		vo.setUploadState(state);
@@ -398,20 +404,20 @@ public class UploadListener implements Listener {
 
 	public synchronized void updateDatabase(UploadAnswer answer) {
 
-	    if(answer.getErrorString().startsWith("553")){
+        if (answer.getErrorString().startsWith("553")) {
 	        answer.setErrorString(answer.getErrorString().concat("Please check if the file name already exists."));
 	    }
 		resultObj.setResultString(answer.getErrorString());
 		resultObj.setState(answer.getUploadStatus().toString());
 		resultObj.setUploadPercent(answer.getUploadPct());
 
-		if (answer.getUploadStatus() == Status.UPLOAD_IN_PROGRESS){
+        if (answer.getUploadStatus() == Status.UPLOAD_IN_PROGRESS) {
 			asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
             asyncMgr.updateAsyncJobStatus(asyncJobId, JobInfo.Status.IN_PROGRESS.ordinal(), ApiSerializerHelper.toSerializedString(resultObj));
-		}else if(answer.getUploadStatus() == Status.UPLOADED){
-		    resultObj.setResultString("Success");
+        } else if (answer.getUploadStatus() == Status.UPLOADED) {
+            resultObj.setResultString("Success");
             asyncMgr.completeAsyncJob(asyncJobId, JobInfo.Status.SUCCEEDED, 1, ApiSerializerHelper.toSerializedString(resultObj));
-		}else{
+        } else {
             asyncMgr.completeAsyncJob(asyncJobId, JobInfo.Status.FAILED, 2, ApiSerializerHelper.toSerializedString(resultObj));
 		}
         UploadVO updateBuilder = uploadDao.createForUpdate();
@@ -430,8 +436,9 @@ public class UploadListener implements Listener {
 				log("Sending progress command ", Level.TRACE);
 			}
 			try {
-	            uploadMonitor.send(sserver.getId(), new UploadProgressCommand(getCommand(), getJobId(), reqType), this);
-            } catch (AgentUnavailableException e) {
+                EndPoint ep = _epSelector.select(sserver);
+                ep.sendMessageAsync(new UploadProgressCommand(getCommand(), getJobId(), reqType), new Callback(ep.getId(), this));
+            } catch (Exception e) {
             	s_logger.debug("Send command failed", e);
 				setDisconnected();
             }
@@ -448,7 +455,8 @@ public class UploadListener implements Listener {
 	}
 
 	public void scheduleImmediateStatusCheck(RequestType request) {
-		if (statusTask != null) statusTask.cancel();
+        if (statusTask != null)
+            statusTask.cancel();
 		statusTask = new StatusTask(this, request);
 		timer.schedule(statusTask, SMALL_DELAY);
 	}
@@ -456,4 +464,19 @@ public class UploadListener implements Listener {
 	public void setCurrState(Status uploadState) {
 		currState = getState(currState.toString());
 	}
+
+    public static class Callback implements AsyncCompletionCallback<Answer> {
+        long id;
+        Listener listener;
+
+        public Callback(long id, Listener listener) {
+            this.id = id;
+            this.listener = listener;
+        }
+
+        @Override
+        public void complete(Answer answer) {
+            listener.processAnswers(id, -1, new Answer[] {answer});
+        }
+    }
 }

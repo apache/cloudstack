@@ -31,6 +31,8 @@ public class ApiConstants {
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
     public static final String BIND_PASSWORD = "bindpass";
+    public static final String BYTES_READ_RATE = "bytesreadrate";
+    public static final String BYTES_WRITE_RATE = "byteswriterate";
     public static final String CATEGORY = "category";
     public static final String CERTIFICATE = "certificate";
     public static final String PRIVATE_KEY = "privatekey";
@@ -104,6 +106,8 @@ public class ApiConstants {
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERVAL_TYPE = "intervaltype";
+    public static final String IOPS_READ_RATE = "iopsreadrate";
+    public static final String IOPS_WRITE_RATE = "iopswriterate";
     public static final String IP_ADDRESS = "ipaddress";
     public static final String IP6_ADDRESS = "ip6address";
     public static final String IP_ADDRESS_ID = "ipaddressid";
@@ -117,6 +121,7 @@ public class ApiConstants {
     public static final String IS_PORTABLE = "isportable";
     public static final String IS_PUBLIC = "ispublic";
     public static final String IS_PERSISTENT = "ispersistent";
+    public static final String EGRESS_DEFAULT_POLICY = "egressdefaultpolicy";
     public static final String IS_READY = "isready";
     public static final String IS_RECURSIVE = "isrecursive";
     public static final String ISO_FILTER = "isofilter";
@@ -241,8 +246,7 @@ public class ApiConstants {
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
     public static final String ZONE_ID = "zoneid";
-    public static final String ZONE_NAME = "zonename";
-    public static final String ZONE_TYPE = "zonetype";
+    public static final String ZONE_NAME = "zonename";    
     public static final String NETWORK_TYPE = "networktype";
     public static final String PAGE = "page";
     public static final String PAGE_SIZE = "pagesize";
@@ -506,6 +510,7 @@ public class ApiConstants {
     public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
     public static final String ACL_ID = "aclid";
     public static final String NUMBER = "number";
+    public static final String IS_DYNAMICALLY_SCALABLE = "isdynamicallyscalable";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

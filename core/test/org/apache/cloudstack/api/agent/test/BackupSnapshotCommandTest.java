@@ -83,7 +83,7 @@ public class BackupSnapshotCommandTest {
         };
 
         @Override
-        public long getAvailableBytes() {
+        public long getUsedBytes() {
             return 0L;
         };
 
@@ -159,11 +159,6 @@ public class BackupSnapshotCommandTest {
             "9012793e-0657-11e2-bebc-0050568b0057",
             "7167e0b2-f5b0-11e1-8414-0050568b0057", false, "vmName", 5);
 
-    @Test
-    public void testGetPrimaryStoragePoolNameLabel() {
-        String label = bsc.getPrimaryStoragePoolNameLabel();
-        assertTrue(label.equals("bed9f83e-cac3-11e1-ac8a-0050568b007e"));
-    }
 
     @Test
     public void testGetSecondaryStorageUrl() {
@@ -199,37 +194,6 @@ public class BackupSnapshotCommandTest {
         assertEquals(expected, ssId);
     }
 
-    @Test
-    public void testGetPool() {
-        StorageFilerTO pool = bsc.getPool();
-
-        Long id = pool.getId();
-        Long expectedL = 1L;
-        assertEquals(expectedL, id);
-
-        String uuid = pool.getUuid();
-        assertTrue(uuid.equals("bed9f83e-cac3-11e1-ac8a-0050568b007e"));
-
-        String host = pool.getHost();
-        assertTrue(host.equals("hostAddress"));
-
-        String path = pool.getPath();
-        assertTrue(path.equals("path"));
-
-        String userInfo = pool.getUserInfo();
-        assertTrue(userInfo.equals("userInfo"));
-
-        Integer port = pool.getPort();
-        Integer expectedI = 25;
-        assertEquals(expectedI, port);
-
-        StoragePoolType type = pool.getType();
-        assertEquals(StoragePoolType.Filesystem, type);
-
-        String str = pool.toString();
-        assertTrue(str.equals("Pool[" + id.toString() + "|" + host + ":"
-                + port.toString() + "|" + path + "]"));
-    }
 
     @Test
     public void testGetCreated() {

@@ -113,10 +113,12 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
         return  "extracting template: " + getId() + " from zone: " + getZoneId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Template;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -125,11 +127,11 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     public void execute(){
         try {
             CallContext.current().setEventDetails(getEventDescription());
-            Long uploadId = _templateService.extract(this);
-            if (uploadId != null){
-                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);
+            String uploadUrl = _templateService.extract(this);
+            if (uploadUrl != null) {
+                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract template");
             }

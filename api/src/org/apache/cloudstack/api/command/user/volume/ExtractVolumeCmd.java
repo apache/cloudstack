@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import java.net.URISyntaxException;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -96,10 +94,12 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Volume;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -127,11 +127,9 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        try {
-            CallContext.current().setEventDetails("Volume Id: "+getId());
-            Long uploadId = _mgr.extractVolume(this);
-            if (uploadId != null){
-                Upload uploadInfo = _entityMgr.findById(Upload.class, uploadId);
+        CallContext.current().setEventDetails("Volume Id: " + getId());
+        String uploadUrl = _volumeService.extractVolume(this);
+        if (uploadUrl != null) {
                 ExtractResponse response = new ExtractResponse();
                 response.setResponseName(getCommandName());
                 response.setObjectName("volume");
@@ -142,18 +140,13 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
                 response.setZoneId(zone.getUuid());
                 response.setZoneName(zone.getName());
                 response.setMode(mode);
-                response.setUploadId(uploadInfo.getUuid());
-                response.setState(uploadInfo.getUploadState().toString());
+            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
                 Account account = _entityMgr.findById(Account.class, getEntityOwnerId());
                 response.setAccountId(account.getUuid());
-                response.setUrl(uploadInfo.getUploadUrl());
-                this.setResponseObject(response);
+            response.setUrl(uploadUrl);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract volume");
             }
-        } catch (URISyntaxException ex) {
-            s_logger.info(ex);
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
-        }
     }
 }

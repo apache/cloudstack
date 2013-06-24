@@ -24,11 +24,12 @@ public class StopCommand extends RebootCommand {
     private String urlPort=null;
     private String publicConsoleProxyIpAddress=null;
     private boolean cleanupOnly;
+    boolean executeInSequence = false;
 
     protected StopCommand() {
     }
 
-    public StopCommand(VirtualMachine vm, boolean isProxy, String urlPort, String publicConsoleProxyIpAddress, boolean cleanupOnly) {
+    public StopCommand(VirtualMachine vm, boolean isProxy, String urlPort, String publicConsoleProxyIpAddress, boolean cleanupOnly, boolean executeInSequence) {
     	super(vm);
     	this.isProxy = isProxy;
     	this.urlPort = urlPort;
@@ -36,21 +37,24 @@ public class StopCommand extends RebootCommand {
         this.cleanupOnly = cleanupOnly;
     }
 
-    public StopCommand(VirtualMachine vm, String vnet) {
+    public StopCommand(VirtualMachine vm, String vnet, boolean executeInSequence) {
         super(vm);
         this.vnet = vnet;
+        this.executeInSequence = executeInSequence;
     }
     
     public boolean isCleanupOnly() {
         return cleanupOnly;
     }
 
-    public StopCommand(VirtualMachine vm) {
+    public StopCommand(VirtualMachine vm, boolean executeInSequence) {
         super(vm);
+        this.executeInSequence = executeInSequence;
     }
 
-    public StopCommand(String vmName) {
+    public StopCommand(String vmName, boolean executeInSequence) {
         super(vmName);
+        this.executeInSequence = executeInSequence;
     }
 
     public String getVnet() {
@@ -59,7 +63,7 @@ public class StopCommand extends RebootCommand {
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        return executeInSequence;
     }
 
 	public boolean isProxy() {

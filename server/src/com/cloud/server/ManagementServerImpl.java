@@ -17,11 +17,6 @@
 package com.cloud.server;
 
 import java.lang.reflect.Field;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -29,11 +24,9 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -147,11 +140,16 @@ import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.StartRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.StopRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.CreateCacheStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrationCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListCacheStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
@@ -419,32 +417,24 @@ import org.apache.cloudstack.api.command.user.vpn.RemoveVpnUserCmd;
 import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
-import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiSerializerHelper;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -487,7 +477,6 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
@@ -525,13 +514,9 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Upload;
-import com.cloud.storage.Upload.Mode;
-import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeManager;
@@ -550,7 +535,6 @@ import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
-import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.SSHKeyPair;
@@ -602,6 +586,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
+
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -728,6 +713,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     ConfigurationServer _configServer;
     @Inject
     UserVmManager _userVmMgr;
+    @Inject
+    VolumeDataFactory _volFactory;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -958,9 +945,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Cluster>, Integer> searchForClusters(ListClustersCmd cmd) {
-        Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
-
         Object id = cmd.getId();
         Object name = cmd.getClusterName();
         Object podId = cmd.getPodId();
@@ -972,32 +956,45 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
         
+
+    	Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
+        sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", "%" + name + "%");
         }
 
         if (podId != null) {
-            sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+            sc.setParameters("podId", podId);
         }
 
         if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            sc.setParameters("dataCenterId", zoneId);
         }
 
         if (hypervisorType != null) {
-            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
+            sc.setParameters("hypervisorType", hypervisorType);
         }
 
         if (clusterType != null) {
-            sc.addAnd("clusterType", SearchCriteria.Op.EQ, clusterType);
+            sc.setParameters("clusterType", clusterType);
         }
 
         if (allocationState != null) {
-            sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
+            sc.setParameters("allocationState", allocationState);
         }
 
         if (keyword != null) {
@@ -1410,9 +1407,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd) {
-        Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<HostPodVO> sc = _hostPodDao.createSearchCriteria();
-
         String podName = cmd.getPodName();
         Long id = cmd.getId();
         Long zoneId = cmd.getZoneId();
@@ -1421,6 +1415,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
                
+
+    	Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1430,19 +1433,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (podName != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + podName + "%");
+            sc.setParameters("name", "%" + podName + "%");
         }
 
         if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            sc.setParameters("dataCenterId", zoneId);
         }
 
         if (allocationState != null) {
-            sc.addAnd("allocationState", SearchCriteria.Op.EQ, allocationState);
+            sc.setParameters("allocationState", allocationState);
         }
 
         Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
@@ -1653,73 +1656,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Configuration>, Integer>(result.first(), result.second());
     }
 
-    @Override
-    public Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
-        TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
-        Account caller = CallContext.current().getCallingAccount();
-        Map<String, String> tags = cmd.getTags();
-
-        boolean listAll = false;
-        if (isoFilter != null && isoFilter == TemplateFilter.all) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
-            }
-            listAll = true;
-        }
-        List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
-                cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
-                domainIdRecursiveListProject, listAll, false);
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-
-        List<Account> permittedAccounts = new ArrayList<Account>();
-        for (Long accountId : permittedAccountIds) {
-            permittedAccounts.add(_accountMgr.getAccount(accountId));
-        }
-
-        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(),
-                cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller,
-                listProjectResourcesCriteria, tags);
-    }
-
-    @Override
-    public Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
-        TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
-        Long id = cmd.getId();
-        Map<String, String> tags = cmd.getTags();
-        Account caller = CallContext.current().getCallingAccount();
-
-        boolean listAll = false;
-        if (templateFilter != null && templateFilter == TemplateFilter.all) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
-            }
-            listAll = true;
-        }
-
-        List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
-                cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject,
-                listAll, false);
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        List<Account> permittedAccounts = new ArrayList<Account>();
-        for (Long accountId : permittedAccountIds) {
-            permittedAccounts.add(_accountMgr.getAccount(accountId));
-        }
-
-        boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
-        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-
-        return listTemplates(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(),
-                cmd.getZoneId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
-    }
-
+    /* TODO: this method should go away. Keep here just in case that our latest refactoring using template_store_ref missed anything
+     * in handling Swift or S3.
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso,
             Boolean bootable, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
-            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
+            List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, String zoneType) {
 
         VMTemplateVO template = null;
         if (templateId != null) {
@@ -1760,7 +1701,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                         startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, tags);
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
                 templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
 
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
@@ -1784,7 +1725,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
                 templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers,
                         bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                        permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
 
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
@@ -1802,7 +1743,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else {
             if (template == null) {
                 templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize,
-                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                        startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller, listProjectResourcesCriteria, tags, zoneType);
             } else {
                 // if template is not public, perform permission check here
                 if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -1815,16 +1756,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         return templateZonePairSet;
     }
-
-    @Override
-    public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) {
-        return updateTemplateOrIso(cmd);
-    }
-
-    @Override
-    public VMTemplateVO updateTemplate(UpdateTemplateCmd cmd) {
-        return updateTemplateOrIso(cmd);
-    }
+*/
 
     private VMTemplateVO updateTemplateOrIso(BaseUpdateTemplateOrIsoCmd cmd) {
         Long id = cmd.getId();
@@ -1835,6 +1767,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Boolean passwordEnabled = cmd.isPasswordEnabled();
         Boolean bootable = cmd.isBootable();
         Integer sortKey = cmd.getSortKey();
+        Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         Account account = CallContext.current().getCallingAccount();
 
         // verify that template exists
@@ -1856,7 +1789,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
 
         boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null
-                && bootable == null && sortKey == null);
+                && bootable == null && sortKey == null && isDynamicallyScalable == null);
         if (!updateNeeded) {
             return template;
         }
@@ -1903,6 +1836,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (bootable != null) {
             template.setBootable(bootable);
+        }
+
+        if (isDynamicallyScalable != null) {
+            template.setDynamicallyScalable(isDynamicallyScalable);
         }
 
         _templateDao.update(id, template);
@@ -2849,6 +2786,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AssignToGlobalLoadBalancerRuleCmd.class);
         cmdList.add(RemoveFromGlobalLoadBalancerRuleCmd.class);
         cmdList.add(ListStorageProvidersCmd.class);
+        cmdList.add(AddImageStoreCmd.class);
+        cmdList.add(ListImageStoresCmd.class);
+        cmdList.add(DeleteImageStoreCmd.class);
+        cmdList.add(CreateCacheStoreCmd.class);
+        cmdList.add(ListCacheStoresCmd.class);
         cmdList.add(CreateApplicationLoadBalancerCmd.class);
         cmdList.add(ListApplicationLoadBalancersCmd.class);
         cmdList.add(DeleteApplicationLoadBalancerCmd.class);
@@ -3303,208 +3245,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_EXTRACT, eventDescription = "extracting volume", async = true)
-    public Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException {
-        Long volumeId = cmd.getId();
-        String url = cmd.getUrl();
-        Long zoneId = cmd.getZoneId();
-        AsyncJob job = null; // FIXME: cmd.getJob();
-        String mode = cmd.getMode();
-        Account account = CallContext.current().getCallingAccount();
-
-        if (!_accountMgr.isRootAdmin(account.getType()) && ApiDBUtils.isExtractionDisabled()) {
-            throw new PermissionDeniedException("Extraction has been disabled by admin");
-        }
-
-        VolumeVO volume = _volumeDao.findById(volumeId);
-        if (volume == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with specified volumeId");
-            ex.addProxyObject(volumeId.toString(), "volumeId");
-            throw ex;
-        }
-
-        // perform permission check
-        _accountMgr.checkAccess(account, null, true, volume);
-
-        if (_dcDao.findById(zoneId) == null) {
-            throw new InvalidParameterValueException("Please specify a valid zone.");
-        }
-        if (volume.getPoolId() == null) {
-            throw new InvalidParameterValueException("The volume doesnt belong to a storage pool so cant extract it");
-        }
-        // Extract activity only for detached volumes or for volumes whose
-        // instance is stopped
-        if (volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped) {
-            s_logger.debug("Invalid state of the volume with ID: " + volumeId
-                    + ". It should be either detached or the VM should be in stopped state.");
-            PermissionDeniedException ex = new PermissionDeniedException(
-                    "Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
-            ex.addProxyObject(volume.getUuid(), "volumeId");
-            throw ex;
-        }
-
-        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont
-            // have any
-            // template
-            // dependence.
-
-            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-            if (template != null) { // For ISO based volumes template = null and
-                // we allow extraction of all ISO based
-                // volumes
-                boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-                if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global
-                    // admins are always allowed to extract
-                    PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
-                    ex.addProxyObject(volume.getUuid(), "volumeId");
-                    throw ex;
-                }
-            }
-        }
-
-        Upload.Mode extractMode;
-        if (mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString()))) {
-            throw new InvalidParameterValueException("Please specify a valid extract Mode ");
-        } else {
-            extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
-        }
-
-        // If mode is upload perform extra checks on url and also see if there
-        // is an ongoing upload on the same.
-        if (extractMode == Upload.Mode.FTP_UPLOAD) {
-            URI uri = new URI(url);
-            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp"))) {
-                throw new IllegalArgumentException("Unsupported scheme for url: " + url);
-            }
-
-            String host = uri.getHost();
-            try {
-                InetAddress hostAddr = InetAddress.getByName(host);
-                if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
-                    throw new IllegalArgumentException("Illegal host specified in url");
-                }
-                if (hostAddr instanceof Inet6Address) {
-                    throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-                }
-            } catch (UnknownHostException uhe) {
-                throw new IllegalArgumentException("Unable to resolve " + host);
-            }
-
-            if (_uploadMonitor.isTypeUploadInProgress(volumeId, Upload.Type.VOLUME)) {
-                throw new IllegalArgumentException(volume.getName()
-                        + " upload is in progress. Please wait for some time to schedule another upload for the same");
-            }
-        }
-
-        long accountId = volume.getAccountId();
-        StoragePool srcPool = (StoragePool)dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
-        HostVO sserver = templateMgr.getSecondaryStorageHost(zoneId);
-        String secondaryStorageURL = sserver.getStorageUrl();
-
-        List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
-
-        if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0) {
-            return extractURLList.get(0).getId(); // If download url already  Note: volss
-            // exists then return
-        } else {
-            UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, Upload.Type.VOLUME,
-                    url, extractMode);
-            s_logger.debug("Extract Mode - " + uploadJob.getMode());
-            uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
-
-            // Update the async AsyncJob
-
-            ExtractResponse resultObj = new ExtractResponse(ApiDBUtils.findVolumeById(volumeId).getUuid(),
-                    volume.getName(), ApiDBUtils.findAccountById(accountId).getUuid(), UploadVO.Status.COPY_IN_PROGRESS.toString(),
-                    uploadJob.getUuid());
-            resultObj.setResponseName(cmd.getCommandName());
-            AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-            if (asyncExecutionContext != null) {
-                job = asyncExecutionContext.getJob();
-                _asyncMgr.updateAsyncJobAttachment(job.getId(), Upload.Type.VOLUME.toString(), volumeId);
-                _asyncMgr.updateAsyncJobStatus(job.getId(), JobInfo.Status.IN_PROGRESS.ordinal(), ApiSerializerHelper.toSerializedString(resultObj));
-            }
-            String value = _configs.get(Config.CopyVolumeWait.toString());
-            int copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
-            // Copy the volume from the source storage pool to secondary storage
-            CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true, copyvolumewait);
-            CopyVolumeAnswer cvAnswer = null;
-            try {
-                cvAnswer = (CopyVolumeAnswer) _storageMgr.sendToPool(srcPool, cvCmd);
-            } catch (StorageUnavailableException e) {
-                s_logger.debug("Storage unavailable");
-            }
-
-            // Check if you got a valid answer.
-            if (cvAnswer == null || !cvAnswer.getResult()) {
-                String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
-
-                // Update the async job.
-                resultObj.setResultString(errorString);
-                resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
-                if (asyncExecutionContext != null) {
-                    _asyncMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, ApiSerializerHelper.toSerializedString(resultObj));
-                }
-
-                // Update the DB that volume couldn't be copied
-                uploadJob.setUploadState(UploadVO.Status.COPY_ERROR);
-                uploadJob.setErrorString(errorString);
-                uploadJob.setLastUpdated(new Date());
-                _uploadDao.update(uploadJob.getId(), uploadJob);
-
-                throw new CloudRuntimeException(errorString);
-            }
-
-            String volumeLocalPath = "volumes/" + volume.getId() + "/" + cvAnswer.getVolumePath() + "." + getFormatForPool(srcPool);
-          //Fang:  volss, handle the ova special case;
-            if (getFormatForPool(srcPool) == "ova") {
-                CreateVolumeOVACommand cvOVACmd = new CreateVolumeOVACommand(secondaryStorageURL, volumeLocalPath, cvAnswer.getVolumePath(), srcPool, copyvolumewait);
-                CreateVolumeOVAAnswer  OVAanswer = null;
-
-                try {
-                        cvOVACmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
-                        OVAanswer = (CreateVolumeOVAAnswer) _storageMgr.sendToPool(srcPool, cvOVACmd); //Fang: for extract volume, create the ova file here;
-
-                } catch (StorageUnavailableException e) {
-                    s_logger.debug("Storage unavailable");
-                }
-            }
-            // Update the DB that volume is copied and volumePath
-            uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);
-            uploadJob.setLastUpdated(new Date());
-            uploadJob.setInstallPath(volumeLocalPath);
-            _uploadDao.update(uploadJob.getId(), uploadJob);
-
-            if (extractMode == Mode.FTP_UPLOAD) { // Now that the volume is
-                // copied perform the actual
-                // uploading
-                _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
-                return uploadJob.getId();
-            } else { // Volume is copied now make it visible under apache and
-                // create a URL.
-                _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId());
-                return uploadJob.getId();
-            }
-        }
-    }
-
-    private String getFormatForPool(StoragePool pool) {
-        ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
-
-        if (cluster.getHypervisorType() == HypervisorType.XenServer) {
-            return "vhd";
-        } else if (cluster.getHypervisorType() == HypervisorType.KVM) {
-            return "qcow2";
-        } else if (cluster.getHypervisorType() == HypervisorType.VMware) {
-            return "ova";
-        } else if (cluster.getHypervisorType() == HypervisorType.Ovm) {
-            return "raw";
-        } else {
-            return null;
-        }
-    }
-
-    @Override
     public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         Long groupId = cmd.getId();
@@ -3670,6 +3410,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     	_encryptionIV = null;
     }
     
+    @Override
+    public boolean getExecuteInSequence() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     private static String getBase64EncodedRandomKey(int nBits) {
 		SecureRandom random;
 		try {

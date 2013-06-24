@@ -112,10 +112,12 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Iso;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -124,12 +126,12 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     public void execute(){
         try {
             CallContext.current().setEventDetails(getEventDescription());
-            Long uploadId = _templateService.extract(this);
-            if (uploadId != null){
-                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);
+            String uploadUrl = _templateService.extract(this);
+            if (uploadUrl != null) {
+                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
                 response.setObjectName("iso");
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract iso");
             }

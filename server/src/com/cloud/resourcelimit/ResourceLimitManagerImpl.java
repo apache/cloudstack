@@ -29,11 +29,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.context.CallContext;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -65,12 +67,10 @@ import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.user.Account;
@@ -144,11 +144,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
-    private VMTemplateHostDao _vmTemplateHostDao;
+    private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
     private VlanDao _vlanDao;
 
-    protected GenericSearchBuilder<VMTemplateHostVO, SumCount> templateSizeSearch;
+    protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
 
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
@@ -178,7 +178,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         ResourceCountSearch.and("domainId", ResourceCountSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ResourceCountSearch.done();
 
-        templateSizeSearch = _vmTemplateHostDao.createSearchBuilder(SumCount.class);
+        templateSizeSearch = _vmTemplateStoreDao.createSearchBuilder(SumCount.class);
         templateSizeSearch.select("sum", Func.SUM, templateSizeSearch.entity().getSize());
         templateSizeSearch.and("downloadState", templateSizeSearch.entity().getDownloadState(), Op.EQ);
         templateSizeSearch.and("destroyed", templateSizeSearch.entity().getDestroyed(), Op.EQ);
@@ -231,6 +231,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             s_logger.trace("Not incrementing resource count for system accounts, returning");
             return;
         }
+
         long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
 
         if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
@@ -904,7 +905,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setParameters("downloadState", Status.DOWNLOADED);
         sc.setParameters("destroyed", false);
         sc.setJoinParameters("templates", "accountId", accountId);
-        List<SumCount> templates = _vmTemplateHostDao.customSearch(sc, null);
+        List<SumCount> templates = _vmTemplateStoreDao.customSearch(sc, null);
         if (templates != null) {
             totalTemplatesSize = templates.get(0).sum;
         }

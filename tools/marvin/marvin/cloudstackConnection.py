@@ -38,7 +38,7 @@ class cloudConnection(object):
                  apiKey=None, securityKey=None,
                  asyncTimeout=3600, logging=None, scheme='http',
                  path='client/api'):
-        self.loglevel() #Turn off requests logs
+        self.loglevel()  # Turn off requests logs
         self.apiKey = apiKey
         self.securityKey = securityKey
         self.mgtSvr = mgtSvr

@@ -19,6 +19,7 @@
 #Import Local Modules
 import marvin
 from marvin.cloudstackTestCase import *
+from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
 from marvin.integration.lib.utils import *
@@ -80,7 +81,6 @@ class Services:
                         "privateport": 22,
                         "publicport": 22,
                         "protocol": 'TCP',
-                        "diskdevice": "/dev/xvdb",
                         "ostype": 'CentOS 5.5 (64-bit)',
                         "sleep": 10,
                         "timeout": 600,
@@ -346,7 +346,7 @@ class TestVolumes(cloudstackTestCase):
                         cls.disk_offering,
                         cls.volume,
                         cls.account
-        ]
+                        ]
 
     @classmethod
     def tearDownClass(cls):

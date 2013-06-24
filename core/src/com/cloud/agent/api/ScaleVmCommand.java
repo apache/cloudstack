@@ -41,7 +41,7 @@ public class ScaleVmCommand extends Command {
 	}
 
 	public ScaleVmCommand(String vmName, int cpus,
-			Integer minSpeed, Integer maxSpeed, long minRam, long maxRam, boolean limitCpuUse) {
+			Integer minSpeed, Integer maxSpeed, long minRam, long maxRam, boolean limitCpuUse, boolean isDynamicallyScalable) {
 		super();
 		this.vmName = vmName;
 		this.cpus = cpus;
@@ -50,6 +50,7 @@ public class ScaleVmCommand extends Command {
 		this.minRam = minRam;
 		this.maxRam = maxRam;
 		this.vm = new VirtualMachineTO(1L, vmName, null, cpus, minSpeed, maxSpeed, minRam, maxRam, null, null, false, limitCpuUse, null);
+        vm.setEnableDynamicallyScaleVm(isDynamicallyScalable);
 		/*vm.setName(vmName);
 		vm.setCpus(cpus);
 		vm.setRam(minRam, maxRam);*/

@@ -227,7 +227,7 @@ public class TestAsyncJobManager extends TestCase {
     
 		jobMonitor.registerActiveTask(1, 1);
 		
-    	asyncMgr.waitAndCheck(new String[] {"VM"}, 5000L, 10000L, new Predicate() {
+        asyncMgr.waitAndCheck(new AsyncJobVO(), new String[] {"VM"}, 5000L, 10000L, new Predicate() {
     		@Override
             public boolean checkCondition() {
     			System.out.println("Check condition to exit");

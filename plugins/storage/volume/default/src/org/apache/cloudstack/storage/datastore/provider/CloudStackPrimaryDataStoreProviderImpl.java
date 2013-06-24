@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
@@ -31,18 +32,17 @@ import org.apache.cloudstack.storage.datastore.lifecycle.CloudStackPrimaryDataSt
 
 import com.cloud.utils.component.ComponentContext;
 
-public class CloudStackPrimaryDataStoreProviderImpl implements
-        PrimaryDataStoreProvider {
+public class CloudStackPrimaryDataStoreProviderImpl implements PrimaryDataStoreProvider {
 
-    private final String providerName = "ancient primary data store provider";
+    private final String providerName = DataStoreProvider.DEFAULT_PRIMARY;
     protected PrimaryDataStoreDriver driver;
     protected HypervisorHostListener listener;
     protected DataStoreLifeCycle lifecycle;
 
     CloudStackPrimaryDataStoreProviderImpl() {
-        
+
     }
-    
+
     @Override
     public String getName() {
         return providerName;
@@ -70,10 +70,10 @@ public class CloudStackPrimaryDataStoreProviderImpl implements
     public HypervisorHostListener getHostListener() {
         return this.listener;
     }
-    
+
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
         types.add(DataStoreProviderType.PRIMARY);
         return types;
     }

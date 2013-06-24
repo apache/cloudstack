@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -43,7 +43,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     VMTemplateVO _template;
     Map<Param, Object> _params;
     List<NicProfile> _nics = new ArrayList<NicProfile>();
-    List<VolumeTO> _disks = new ArrayList<VolumeTO>();
+    List<DiskTO> _disks = new ArrayList<DiskTO>();
     StringBuilder _bootArgs = new StringBuilder();
     Account _owner;
     BootloaderType _bootloader;
@@ -137,7 +137,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
         _nics = nics;
     }
     
-    public void setDisks(List<VolumeTO> disks) {
+    public void setDisks(List<DiskTO> disks) {
         _disks = disks;
     }
     
@@ -147,7 +147,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     }
     
     @Override
-    public List<VolumeTO> getDisks() {
+    public List<DiskTO> getDisks() {
         return _disks;
     }
     
@@ -157,7 +157,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     }
     
     @Override
-    public void addDisk(int index, VolumeTO disk) {
+    public void addDisk(int index, DiskTO disk) {
         _disks.add(index, disk);
     }
     
@@ -200,7 +200,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     }
 
     @Override
-    public void addDisk(VolumeTO disk) {
+    public void addDisk(DiskTO disk) {
         _disks.add(disk);
     }
 

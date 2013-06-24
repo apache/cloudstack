@@ -36,6 +36,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.log4j.Logger;
@@ -59,10 +61,10 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveredWithErrorException;
+import com.cloud.host.Host;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -113,7 +115,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
-import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ManagedObjectReference;;
 
 
 @Local(value = {VmwareManager.class, VmwareDatacenterService.class})
@@ -137,6 +139,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject CommandExecLogDao _cmdExecLogDao;
     @Inject ClusterManager _clusterMgr;
     @Inject SecondaryStorageVmManager _ssvmMgr;
+    @Inject DataStoreManager _dataStoreMgr;
     @Inject CiscoNexusVSMDeviceDao _nexusDao;
     @Inject ClusterVSMMapDao _vsmMapDao;
     @Inject ConfigurationDao _configDao;
@@ -339,7 +342,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         s_logger.info("Preparing network on host " + hostMo.getContext().toString() + " for " + privateTrafficLabel);
-            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+        HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
     }
 
     @Override
@@ -446,9 +449,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public String getSecondaryStorageStoreUrl(long dcId) {
 
-        List<HostVO> secStorageHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
-        if(secStorageHosts.size() > 0)
-            return secStorageHosts.get(0).getStorageUrl();
+        DataStore secStore = this._dataStoreMgr.getImageStore(dcId);
+        if(secStore != null)
+            return secStore.getUri();
 
         return null;
     }
@@ -731,7 +734,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @DB
-    private void updateClusterNativeHAState(HostVO host, StartupCommand cmd) {
+    private void updateClusterNativeHAState(Host host, StartupCommand cmd) {
         ClusterVO cluster = _clusterDao.findById(host.getClusterId());
         if(cluster.getClusterType() == ClusterType.ExternalManaged) {
             if(cmd instanceof StartupRoutingCommand) {
@@ -779,7 +782,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
         if(cmd instanceof StartupCommand) {
             if(host.getHypervisorType() == HypervisorType.VMware) {
                 updateClusterNativeHAState(host, cmd);

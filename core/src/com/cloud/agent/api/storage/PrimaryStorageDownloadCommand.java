@@ -34,7 +34,16 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
 	String primaryStorageUrl;
 
     protected PrimaryStorageDownloadCommand() {
+        
 	}
+    
+    public PrimaryStorageDownloadCommand(String url, StoragePool pool, int wait) {
+        super(null, url, null, null);
+        this.poolId = pool.getId();
+        this.poolUuid = pool.getUuid();
+        this.primaryPool = new StorageFilerTO(pool);
+        setWait(wait);
+    }
 
     public PrimaryStorageDownloadCommand(String name, String url, ImageFormat format, long accountId, StoragePool pool, int wait) {
         super(name, url, format, accountId);

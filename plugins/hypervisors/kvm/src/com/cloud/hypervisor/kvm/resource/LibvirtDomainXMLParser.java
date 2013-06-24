@@ -105,6 +105,31 @@ public class LibvirtDomainXMLParser {
                                 DiskDef.diskBus.valueOf(bus.toUpperCase()));
                     }
                 }
+
+                NodeList iotune = disk.getElementsByTagName("iotune");
+                if ((iotune != null) && (iotune.getLength() !=0)) {
+                    String bytesReadRateStr = getTagValue("read_bytes_sec", (Element)iotune.item(0));
+                    if (bytesReadRateStr != null) {
+                        Long bytesReadRate = Long.parseLong(bytesReadRateStr);
+                        def.setBytesReadRate(bytesReadRate);
+                    }
+                    String bytesWriteRateStr = getTagValue("write_bytes_sec", (Element)iotune.item(0));
+                    if (bytesWriteRateStr != null) {
+                        Long bytesWriteRate = Long.parseLong(bytesWriteRateStr);
+                        def.setBytesWriteRate(bytesWriteRate);
+                    }
+                    String iopsReadRateStr = getTagValue("read_iops_sec", (Element)iotune.item(0));
+                    if (iopsReadRateStr != null) {
+                        Long iopsReadRate = Long.parseLong(iopsReadRateStr);
+                        def.setIopsReadRate(iopsReadRate);
+                    }
+                    String iopsWriteRateStr = getTagValue("write_iops_sec", (Element)iotune.item(0));
+                    if (iopsWriteRateStr != null) {
+                        Long iopsWriteRate = Long.parseLong(iopsWriteRateStr);
+                        def.setIopsWriteRate(iopsWriteRate);
+                    }
+                }
+
                 diskDefs.add(def);
             }
 
@@ -117,18 +142,25 @@ public class LibvirtDomainXMLParser {
                 String dev = getAttrValue("target", "dev", nic);
                 String model = getAttrValue("model", "type", nic);
                 InterfaceDef def = new InterfaceDef();
-
+                NodeList bandwidth = nic.getElementsByTagName("bandwidth");
+                Integer networkRateKBps = 0;
+                if ((bandwidth != null) && (bandwidth.getLength() !=0)) {
+                    Integer inbound = Integer.valueOf(getAttrValue("inbound", "average", (Element)bandwidth.item(0)));
+                    Integer outbound = Integer.valueOf(getAttrValue("outbound", "average", (Element)bandwidth.item(0)));
+                    if (inbound == outbound)
+                        networkRateKBps = inbound;
+                }
                 if (type.equalsIgnoreCase("network")) {
                     String network = getAttrValue("source", "network", nic);
                     def.defPrivateNet(network, dev, mac,
-                            nicModel.valueOf(model.toUpperCase()));
+                            nicModel.valueOf(model.toUpperCase()), networkRateKBps);
                 } else if (type.equalsIgnoreCase("bridge")) {
                     String bridge = getAttrValue("source", "bridge", nic);
                     def.defBridgeNet(bridge, dev, mac,
-                            nicModel.valueOf(model.toUpperCase()));
+                            nicModel.valueOf(model.toUpperCase()), networkRateKBps);
                 } else if (type.equalsIgnoreCase("ethernet"))  {
                     String scriptPath = getAttrValue("script", "path", nic);
-                    def.defEthernet(dev, mac, nicModel.valueOf(model.toUpperCase()), scriptPath);
+                    def.defEthernet(dev, mac, nicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
                 }
                 interfaces.add(def);
             }

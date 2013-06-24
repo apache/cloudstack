@@ -531,7 +531,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @DB
     @Override
-	public void updateCapacityForHost(HostVO host){
+	public void updateCapacityForHost(Host host){
     	// prepare the service offerings
         List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
         Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
@@ -820,7 +820,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         // TODO Auto-generated method stub
 
     }

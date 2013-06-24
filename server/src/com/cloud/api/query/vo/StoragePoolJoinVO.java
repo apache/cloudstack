@@ -24,16 +24,17 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import com.cloud.org.Cluster;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.db.GenericDao;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.org.Cluster;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.utils.db.GenericDao;
 
 /**
  * Storage Pool DB view.
@@ -98,9 +99,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="data_center_name")
     private String zoneName;
-
-    @Column(name="data_center_type")
-    private String zoneType;
 
     @Column(name="pod_id")
     private long podId;
@@ -299,14 +297,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
-    }
-
-    public String getZoneType() {
-        return zoneType;
-    }
-
-    public void setZoneType(String zoneType) {
-        this.zoneType = zoneType;
     }
 
     public long getPodId() {

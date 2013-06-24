@@ -92,4 +92,6 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
 
     String getTemplateTag();
     Map getDetails();
+
+    Boolean isDynamicallyScalable();
 }

@@ -25,10 +25,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -41,7 +42,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -78,10 +78,10 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         // data disk and host identified from deploying vm (attach volume case)
         if (dskCh.getType() == Volume.Type.DATADISK && plan.getHostId() != null) {
             List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(plan.getHostId());
-            for (StoragePoolHostVO hostPool: hostPools) {
+            for (StoragePoolHostVO hostPool : hostPools) {
                 StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
                 if (pool != null && pool.isLocal()) {
-                	StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                    StoragePool pol = (StoragePool) dataStoreMgr.getPrimaryDataStore(pool.getId());
                 	if (filter(avoid, pol, dskCh, plan)) {
                 		s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
                 		suitablePools.add(pol);
@@ -95,12 +95,13 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 }
             }
         } else {
-        	List<StoragePoolVO> availablePools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
+            List<StoragePoolVO> availablePools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(),
+                    plan.getPodId(), plan.getClusterId(), dskCh.getTags());
         	for (StoragePoolVO pool : availablePools) {
         		if (suitablePools.size() == returnUpTo) {
             		break;
             	}
-        		StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                StoragePool pol = (StoragePool) dataStoreMgr.getPrimaryDataStore(pool.getId());
         		if (filter(avoid, pol, dskCh, plan)) {
         			suitablePools.add(pol);
                 } else {

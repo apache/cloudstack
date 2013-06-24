@@ -62,8 +62,8 @@ public class VMTemplateS3VO implements InternalIdentity {
         super();
     }
 
-    public VMTemplateS3VO(final long s3Id, final long templateId,
-            final Date created, final Long size, final Long physicalSize) {
+    public VMTemplateS3VO(final long s3Id, final long templateId, final Date created, final Long size,
+            final Long physicalSize) {
 
         super();
 
@@ -100,19 +100,16 @@ public class VMTemplateS3VO implements InternalIdentity {
             return false;
         }
 
-        if (this.created != null ? !created.equals(thatVMTemplateS3VO.created)
-                : thatVMTemplateS3VO.created != null) {
+        if (this.created != null ? !created.equals(thatVMTemplateS3VO.created) : thatVMTemplateS3VO.created != null) {
             return false;
         }
 
-        if (this.physicalSize != null ? !physicalSize
-                .equals(thatVMTemplateS3VO.physicalSize)
+        if (this.physicalSize != null ? !physicalSize.equals(thatVMTemplateS3VO.physicalSize)
                 : thatVMTemplateS3VO.physicalSize != null) {
             return false;
         }
 
-        if (this.size != null ? !size.equals(thatVMTemplateS3VO.size)
-                : thatVMTemplateS3VO.size != null) {
+        if (this.size != null ? !size.equals(thatVMTemplateS3VO.size) : thatVMTemplateS3VO.size != null) {
             return false;
         }
 
@@ -125,14 +122,10 @@ public class VMTemplateS3VO implements InternalIdentity {
         int result = (int) (this.id ^ (this.id >>> 32));
 
         result = 31 * result + (int) (this.s3Id ^ (this.s3Id >>> 32));
-        result = 31 * result
-                + (int) (this.templateId ^ (this.templateId >>> 32));
-        result = 31 * result
-                + (this.created != null ? this.created.hashCode() : 0);
+        result = 31 * result + (int) (this.templateId ^ (this.templateId >>> 32));
+        result = 31 * result + (this.created != null ? this.created.hashCode() : 0);
         result = 31 * result + (this.size != null ? this.size.hashCode() : 0);
-        result = 31
-                * result
-                + (this.physicalSize != null ? this.physicalSize.hashCode() : 0);
+        result = 31 * result + (this.physicalSize != null ? this.physicalSize.hashCode() : 0);
 
         return result;
 
@@ -189,13 +182,10 @@ public class VMTemplateS3VO implements InternalIdentity {
     @Override
     public String toString() {
 
-        final StringBuilder stringBuilder = new StringBuilder(
-                "VMTemplateS3VO [ id: ").append(id).append(", created: ")
-                .append(DateFormat.getDateTimeInstance().format(created))
-                .append(", physicalSize: ").append(physicalSize)
-                .append(", size: ").append(size).append(", templateId: ")
-                .append(templateId).append(", s3Id: ").append(s3Id)
-                .append(" ]");
+        final StringBuilder stringBuilder = new StringBuilder("VMTemplateS3VO [ id: ").append(id).append(", created: ")
+                .append(DateFormat.getDateTimeInstance().format(created)).append(", physicalSize: ")
+                .append(physicalSize).append(", size: ").append(size).append(", templateId: ").append(templateId)
+                .append(", s3Id: ").append(s3Id).append(" ]");
 
         return stringBuilder.toString();
 

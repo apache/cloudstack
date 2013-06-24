@@ -28,40 +28,40 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.storage.snapshot.SnapshotSchedule;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="snapshot_schedule")
+@Table(name = "snapshot_schedule")
 public class SnapshotScheduleVO implements SnapshotSchedule {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="id")
-	long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    long id;
 
-    // DB constraint: For a given volume and policyId, there will only be one entry in this table.
-    @Column(name="volume_id")
+    // DB constraint: For a given volume and policyId, there will only be one
+    // entry in this table.
+    @Column(name = "volume_id")
     long volumeId;
 
-    @Column(name="policy_id")
+    @Column(name = "policy_id")
     long policyId;
 
-    @Column(name="scheduled_timestamp")
-    @Temporal(value=TemporalType.TIMESTAMP)
+    @Column(name = "scheduled_timestamp")
+    @Temporal(value = TemporalType.TIMESTAMP)
     Date scheduledTimestamp;
 
-    @Column(name="async_job_id")
+    @Column(name = "async_job_id")
     Long asyncJobId;
 
-    @Column(name="snapshot_id")
+    @Column(name = "snapshot_id")
     Long snapshotId;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
 
-    public SnapshotScheduleVO() { }
+    public SnapshotScheduleVO() {
+    }
 
     public SnapshotScheduleVO(long volumeId, long policyId, Date scheduledTimestamp) {
         this.volumeId = volumeId;
@@ -83,43 +83,43 @@ public class SnapshotScheduleVO implements SnapshotSchedule {
         return policyId;
     }
 
-	public void setPolicyId(long policyId) {
+    public void setPolicyId(long policyId) {
         this.policyId = policyId;
     }
 
     /**
-	 * @return the scheduledTimestamp
-	 */
-	public Date getScheduledTimestamp() {
-		return scheduledTimestamp;
-	}
+     * @return the scheduledTimestamp
+     */
+    public Date getScheduledTimestamp() {
+        return scheduledTimestamp;
+    }
 
-	public void setScheduledTimestamp(Date scheduledTimestamp) {
+    public void setScheduledTimestamp(Date scheduledTimestamp) {
         this.scheduledTimestamp = scheduledTimestamp;
     }
 
     public Long getAsyncJobId() {
-	    return asyncJobId;
-	}
+        return asyncJobId;
+    }
 
-	public void setAsyncJobId(Long asyncJobId) {
-	    this.asyncJobId = asyncJobId;
-	}
+    public void setAsyncJobId(Long asyncJobId) {
+        this.asyncJobId = asyncJobId;
+    }
 
-	public Long getSnapshotId() {
-	    return snapshotId;
-	}
+    public Long getSnapshotId() {
+        return snapshotId;
+    }
 
-	public void setSnapshotId(Long snapshotId) {
-	    this.snapshotId = snapshotId;
-	}
+    public void setSnapshotId(Long snapshotId) {
+        this.snapshotId = snapshotId;
+    }
 
-	@Override
-	public String getUuid() {
-		return this.uuid;
-	}
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
 
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

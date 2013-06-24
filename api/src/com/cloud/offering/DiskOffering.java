@@ -52,4 +52,20 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     boolean isCustomized();
 
     void setDiskSize(long diskSize);
+
+    void setBytesReadRate(Long bytesReadRate);
+
+    Long getBytesReadRate();
+
+    void setBytesWriteRate(Long bytesWriteRate);
+
+    Long getBytesWriteRate();
+
+    void setIopsReadRate(Long iopsReadRate);
+
+    Long getIopsReadRate();
+
+    void setIopsWriteRate(Long iopsWriteRate);
+
+    Long getIopsWriteRate();
 }

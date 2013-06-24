@@ -25,11 +25,22 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualLsiLogicController;
+import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
+import com.vmware.vim25.VirtualSCSISharing;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
@@ -46,11 +57,10 @@ import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.PrepareOVAPackingAnswer;
-import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
+import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
 import com.cloud.agent.api.storage.CreateVolumeOVACommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -60,7 +70,6 @@ import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
-import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -76,17 +85,6 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
-import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.TaskEvent;
-import com.vmware.vim25.TaskInfo;
-import com.vmware.vim25.VirtualDeviceConfigSpec;
-import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
-import com.vmware.vim25.VirtualDisk;
-import com.vmware.vim25.VirtualLsiLogicController;
-import com.vmware.vim25.VirtualMachineConfigSpec;
-import com.vmware.vim25.VirtualMachineFileInfo;
-import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
-import com.vmware.vim25.VirtualSCSISharing;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageManagerImpl.class);
@@ -111,7 +109,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     //Fang note: use Answer here instead of the PrepareOVAPackingAnswer
     @Override
     public Answer execute(VmwareHostService hostService, PrepareOVAPackingCommand cmd) {
-		String secStorageUrl = ((PrepareOVAPackingCommand) cmd).getSecondaryStorageUrl();
+		String secStorageUrl = cmd.getSecondaryStorageUrl();
 		assert (secStorageUrl != null);
         String installPath = cmd.getTemplatePath();
         String details = null;
@@ -165,7 +163,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
     @Override
     public Answer execute(VmwareHostService hostService, CreateVolumeOVACommand cmd) {
-		String secStorageUrl = ((CreateVolumeOVACommand) cmd).getSecondaryStorageUrl();
+		String secStorageUrl = cmd.getSecondaryStorageUrl();
 		assert (secStorageUrl != null);
         String installPath = cmd.getVolPath();
         String details = null;
@@ -1466,9 +1464,5 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             command.add(dir);
             return command.execute();
         }
-    }
-
-    private static String getVolumeRelativeDirInSecStroage(long volumeId) {
-        return "volumes/" + volumeId;
     }
 }

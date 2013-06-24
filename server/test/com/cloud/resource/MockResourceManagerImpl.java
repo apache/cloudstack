@@ -49,6 +49,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.Swift;
 import com.cloud.template.VirtualMachineTemplate;

@@ -101,7 +101,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -1309,7 +1308,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     _configMgr.createNetworkOffering(NetworkOffering.QuickCloudNoServices,
                             "Offering for QuickCloud with no services", TrafficType.Guest, null, true,
                             Availability.Optional, null, new HashMap<Network.Service, Set<Network.Provider>>(), true,
-                            Network.GuestType.Shared, false, null, true, null, true, false, null);
+                            Network.GuestType.Shared, false, null, true, null, true, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1320,7 +1319,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOfferingWithSGService,
                             "Offering for Shared Security group enabled networks", TrafficType.Guest, null, true,
                             Availability.Optional, null, defaultSharedNetworkOfferingProviders, true,
-                            Network.GuestType.Shared, false, null, true, null, true, false, null);
+                            Network.GuestType.Shared, false, null, true, null, true, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1328,7 +1327,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         //#3 - shared network offering with no SG service
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true, Availability.Optional, null,
-                    defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false, null);
+                    defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1339,7 +1338,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
                     "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest,
                     null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders,
-                    true, Network.GuestType.Isolated, false, null, true, null, false, false, null);
+                    true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false);
+
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1349,7 +1349,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                     "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest,
                     null, false, Availability.Optional, null, defaultVPCOffProviders,
-                    true, Network.GuestType.Isolated, false, null, false, null, false, false, null);
+                    true, Network.GuestType.Isolated, false, null, false, null, false, false, null,false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1361,7 +1361,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
                     "Offering for Isolated VPC networks with Source Nat service enabled and LB service disabled", TrafficType.Guest,
                     null, false, Availability.Optional, null, defaultVPCOffProviders,
-                    true, Network.GuestType.Isolated, false, null, false, null, false, false, null);
+                    true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1371,7 +1371,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOffering,
                     "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, true,
                     Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated,
-                    false, null, true, null, true, false, null);
+                    false, null, true, null, true, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1397,7 +1397,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB,
                     "Offering for Isolated VPC networks with Internal Lb support", TrafficType.Guest,
                     null, false, Availability.Optional, null, internalLbOffProviders,
-                    true, Network.GuestType.Isolated, false, null, false, null, false, false, null);
+                    true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             offering.setInternalLb(true);
             _networkOfferingDao.update(offering.getId(), offering);
@@ -1427,7 +1427,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedEIPandELBNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedEIPandELBNetworkOffering, "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, null, true,
-                    Availability.Optional, null, netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true, false, null);
+                    Availability.Optional, null, netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             offering.setDedicatedLB(false);
             _networkOfferingDao.update(offering.getId(), offering);
@@ -3093,9 +3093,21 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         List<FirewallRuleVO> firewallEgressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
+        if (firewallEgressRulesToApply.size() == 0) {
+            NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            //there are no egress rules then apply the default egress rule
+            DataCenter zone = _dcDao.findById(network.getDataCenterId());
+            if (offering.getEgressDefaultPolicy() && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)
+                    && (network.getGuestType() == Network.GuestType.Isolated ||
+                    (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
+                // add default egress rule to accept the traffic
+                _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), true);
+            }
+        } else {
         if (!_firewallMgr.applyFirewallRules(firewallEgressRulesToApply, false, caller)) {
             s_logger.warn("Failed to reapply firewall Egress rule(s) as a part of network id=" + networkId + " restart");
             success = false;
+        }
         }
 
         // apply port forwarding rules
@@ -3302,7 +3314,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     @Override
     public DhcpServiceProvider getDhcpServiceProvider(Network network) {
-        String DhcpProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+        String DhcpProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
 
         if (DhcpProvider == null) {
             s_logger.debug("Network " + network + " doesn't support service " + Service.Dhcp.getName());
@@ -3620,7 +3632,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         //revoke all network ACLs for network
         try {
-            if (_networkACLMgr.revokeACLItemsForNetwork(networkId, callerUserId, caller)) {
+            if (_networkACLMgr.revokeACLItemsForNetwork(networkId)) {
                 s_logger.debug("Successfully cleaned up NetworkACLs for network id=" + networkId);
             } else {
                 success = false;
@@ -3789,7 +3801,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         try {
                 //revoke all Network ACLs for the network w/o applying them in the DB
-                if (!_networkACLMgr.revokeACLItemsForNetwork(networkId, callerUserId, caller)) {
+                if (!_networkACLMgr.revokeACLItemsForNetwork(networkId)) {
                 s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules");
                 success = false;
             }
@@ -3846,7 +3858,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
         }
@@ -4367,5 +4379,4 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             nic.setVmType(vmType);
             return _nicDao.persist(nic);
         }
-        
  }

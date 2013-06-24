@@ -25,10 +25,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -36,11 +37,10 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
-@Local(value=StoragePoolAllocator.class)
+@Local(value = StoragePoolAllocator.class)
 public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(ClusterScopeStoragePoolAllocator.class);
     protected String _allocationAlgorithm = "random";
@@ -58,9 +58,10 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
 		Long podId = plan.getPodId();
 		Long clusterId = plan.getClusterId();
 
-        if(dskCh.getTags() != null && dskCh.getTags().length != 0){
-        	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()));
-        }else{
+        if (dskCh.getTags() != null && dskCh.getTags().length != 0) {
+            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId
+                    + " having tags:" + Arrays.toString(dskCh.getTags()));
+        } else {
         	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         }
 
@@ -75,17 +76,18 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
 
         if (pools.size() == 0) {
             if (s_logger.isDebugEnabled()) {
-                String storageType = dskCh.useLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString();
+                String storageType = dskCh.useLocalStorage() ? ServiceOffering.StorageType.local.toString()
+                        : ServiceOffering.StorageType.shared.toString();
                 s_logger.debug("No storage pools available for " + storageType + " volume allocation, returning");
             }
             return suitablePools;
         }
     	
-        for (StoragePoolVO pool: pools) {
-        	if(suitablePools.size() == returnUpTo){
+        for (StoragePoolVO pool : pools) {
+            if (suitablePools.size() == returnUpTo) {
         		break;
         	}
-        	StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+            StoragePool pol = (StoragePool) dataStoreMgr.getPrimaryDataStore(pool.getId());
         	if (filter(avoid, pol, dskCh, plan)) {
         		suitablePools.add(pol);
             } else {
@@ -94,7 +96,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
         }
         
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("FirstFitStoragePoolAllocator returning "+suitablePools.size() +" suitable storage pools");
+            s_logger.debug("FirstFitStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
         }
         
         return suitablePools;

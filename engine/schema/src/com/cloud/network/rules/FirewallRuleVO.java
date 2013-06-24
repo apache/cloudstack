@@ -223,6 +223,13 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
 
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol,
+                          long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode,
+                          Integer icmpType, Long related, TrafficType trafficType, FirewallRuleType type) {
+        this(xId, ipAddressId, portStart, portEnd, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, trafficType);
+        this.type = type;
+    }
+
     public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, 
             long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
         this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, null);

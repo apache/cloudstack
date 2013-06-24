@@ -20,11 +20,14 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListCacheStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
@@ -32,6 +35,7 @@ import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
+import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
@@ -75,6 +79,10 @@ public interface QueryService {
 
     public ListResponse<StoragePoolResponse> searchForStoragePools(ListStoragePoolsCmd cmd);
 
+    public ListResponse<ImageStoreResponse> searchForImageStores(ListImageStoresCmd cmd);
+
+    public ListResponse<ImageStoreResponse> searchForCacheStores(ListCacheStoresCmd cmd);
+
     public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
 
     public ListResponse<AsyncJobResponse>  searchForAsyncJobs(ListAsyncJobsCmd cmd);
@@ -85,6 +93,9 @@ public interface QueryService {
 
     public ListResponse<ZoneResponse>  listDataCenters(ListZonesByCmd cmd);
 
+    public ListResponse<TemplateResponse> listTemplates(ListTemplatesCmd cmd);
+
+    public ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd);
     public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
             String affinityGroupType, Long vmId, String accountName, Long domainId, boolean isRecursive,
             boolean listAll, Long startIndex, Long pageSize);

@@ -46,13 +46,16 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 
     protected static final String HOST_FOR_POOL_SEARCH = "SELECT * FROM storage_pool_host_ref ph,  host h where  ph.host_id = h.id and ph.pool_id=? and h.status=? ";
 
-    protected static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
-            + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
+    protected static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) "
+            + " FROM storage_pool p, storage_pool_host_ref ph " + " WHERE p.id = ph.pool_id AND p.data_center_id = ? "
+            + " GROUP by p.data_center_id";
 
-    protected static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
-            + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " AND p.pool_type NOT IN ('LVM', 'Filesystem')" + " GROUP by p.data_center_id";
+    protected static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) "
+            + " FROM storage_pool p, storage_pool_host_ref ph " + " WHERE p.id = ph.pool_id AND p.data_center_id = ? "
+            + " AND p.pool_type NOT IN ('LVM', 'Filesystem')" + " GROUP by p.data_center_id";
 
-    protected static final String DELETE_PRIMARY_RECORDS = "DELETE " + "FROM storage_pool_host_ref " + "WHERE host_id = ?";
+    protected static final String DELETE_PRIMARY_RECORDS = "DELETE " + "FROM storage_pool_host_ref "
+            + "WHERE host_id = ?";
 
     public StoragePoolHostDaoImpl() {
         PoolSearch = createSearchBuilder();
@@ -83,7 +86,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
         sc.setParameters("host_id", hostId);
         return listIncludingRemovedBy(sc);
     }
-    
+
     @Override
     public List<StoragePoolHostVO> listByHostId(long hostId) {
         SearchCriteria<StoragePoolHostVO> sc = HostSearch.create();
@@ -113,7 +116,8 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
             pstmt.setString(2, hostStatus.toString());
             rs = pstmt.executeQuery();
             while (rs.next()) {
-                // result.add(toEntityBean(rs, false)); TODO: this is buggy in GenericDaoBase for hand constructed queries
+                // result.add(toEntityBean(rs, false)); TODO: this is buggy in
+                // GenericDaoBase for hand constructed queries
                 long id = rs.getLong(1); // ID column
                 result.add(findById(id));
             }

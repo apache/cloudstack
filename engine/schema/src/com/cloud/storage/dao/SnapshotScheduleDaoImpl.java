@@ -30,60 +30,63 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local (value={SnapshotScheduleDao.class})
+@Local(value = { SnapshotScheduleDao.class })
 public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, Long> implements SnapshotScheduleDao {
-	protected final SearchBuilder<SnapshotScheduleVO> executableSchedulesSearch;
-	protected final SearchBuilder<SnapshotScheduleVO> coincidingSchedulesSearch;
+    protected final SearchBuilder<SnapshotScheduleVO> executableSchedulesSearch;
+    protected final SearchBuilder<SnapshotScheduleVO> coincidingSchedulesSearch;
     private final SearchBuilder<SnapshotScheduleVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotScheduleVO> VolumeIdPolicyIdSearch;
-	
-	
-	protected SnapshotScheduleDaoImpl() {
-		
-	    executableSchedulesSearch = createSearchBuilder();
-        executableSchedulesSearch.and("scheduledTimestamp", executableSchedulesSearch.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);
-        executableSchedulesSearch.and("asyncJobId", executableSchedulesSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
+
+    protected SnapshotScheduleDaoImpl() {
+
+        executableSchedulesSearch = createSearchBuilder();
+        executableSchedulesSearch.and("scheduledTimestamp", executableSchedulesSearch.entity().getScheduledTimestamp(),
+                SearchCriteria.Op.LT);
+        executableSchedulesSearch.and("asyncJobId", executableSchedulesSearch.entity().getAsyncJobId(),
+                SearchCriteria.Op.NULL);
         executableSchedulesSearch.done();
-        
+
         coincidingSchedulesSearch = createSearchBuilder();
-        coincidingSchedulesSearch.and("volumeId", coincidingSchedulesSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        coincidingSchedulesSearch.and("scheduledTimestamp", coincidingSchedulesSearch.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);
-        coincidingSchedulesSearch.and("asyncJobId", coincidingSchedulesSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
+        coincidingSchedulesSearch.and("volumeId", coincidingSchedulesSearch.entity().getVolumeId(),
+                SearchCriteria.Op.EQ);
+        coincidingSchedulesSearch.and("scheduledTimestamp", coincidingSchedulesSearch.entity().getScheduledTimestamp(),
+                SearchCriteria.Op.LT);
+        coincidingSchedulesSearch.and("asyncJobId", coincidingSchedulesSearch.entity().getAsyncJobId(),
+                SearchCriteria.Op.NULL);
         coincidingSchedulesSearch.done();
-        
+
         VolumeIdSearch = createSearchBuilder();
         VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdSearch.done();
-        
+
         VolumeIdPolicyIdSearch = createSearchBuilder();
         VolumeIdPolicyIdSearch.and("volumeId", VolumeIdPolicyIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdPolicyIdSearch.and("policyId", VolumeIdPolicyIdSearch.entity().getPolicyId(), SearchCriteria.Op.EQ);
         VolumeIdPolicyIdSearch.done();
-		
-	}
-	
-	/**
-	 * {@inheritDoc} 
-	 */
-	@Override
-	public List<SnapshotScheduleVO> getCoincidingSnapshotSchedules(long volumeId, Date date) {
-		SearchCriteria<SnapshotScheduleVO> sc = coincidingSchedulesSearch.create();
-	    sc.setParameters("volumeId", volumeId);
-	    sc.setParameters("scheduledTimestamp", date);
-	    // Don't return manual snapshots. They will be executed through another code path.
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<SnapshotScheduleVO> getCoincidingSnapshotSchedules(long volumeId, Date date) {
+        SearchCriteria<SnapshotScheduleVO> sc = coincidingSchedulesSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("scheduledTimestamp", date);
+        // Don't return manual snapshots. They will be executed through another
+        // code path.
         sc.addAnd("policyId", SearchCriteria.Op.NEQ, 1L);
         return listBy(sc);
-	}
+    }
 
-	
     @Override
     public SnapshotScheduleVO findOneByVolume(long volumeId) {
         SearchCriteria<SnapshotScheduleVO> sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
         return findOneBy(sc);
     }
-    
-    
+
     @Override
     public SnapshotScheduleVO findOneByVolumePolicy(long volumeId, long policyId) {
         SearchCriteria<SnapshotScheduleVO> sc = VolumeIdPolicyIdSearch.create();
@@ -91,8 +94,9 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         sc.setParameters("policyId", policyId);
         return findOneBy(sc);
     }
-	/**
-     * {@inheritDoc} 
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public List<SnapshotScheduleVO> getSchedulesToExecute(Date currentTimestamp) {
@@ -100,9 +104,9 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         sc.setParameters("scheduledTimestamp", currentTimestamp);
         return listBy(sc);
     }
-    
+
     /**
-     * {@inheritDoc} 
+     * {@inheritDoc}
      */
     @Override
     public SnapshotScheduleVO getCurrentSchedule(Long volumeId, Long policyId, boolean executing) {
@@ -113,7 +117,8 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         if (policyId != null) {
             sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);
             if (policyId != Snapshot.MANUAL_POLICY_ID) {
-                // manual policies aren't scheduled by the snapshot poller, so don't look for the jobId here
+                // manual policies aren't scheduled by the snapshot poller, so
+                // don't look for the jobId here
                 sc.addAnd("asyncJobId", op);
             }
         } else {
@@ -121,14 +126,14 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         }
 
         List<SnapshotScheduleVO> snapshotSchedules = listBy(sc);
-        // This will return only one schedule because of a DB uniqueness constraint.
+        // This will return only one schedule because of a DB uniqueness
+        // constraint.
         assert (snapshotSchedules.size() <= 1);
         if (snapshotSchedules.isEmpty()) {
             return null;
-        }
-        else {
+        } else {
             return snapshotSchedules.get(0);
         }
     }
-    
+
 }

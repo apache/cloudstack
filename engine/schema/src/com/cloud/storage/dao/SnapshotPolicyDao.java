@@ -28,11 +28,17 @@ import com.cloud.utils.db.GenericDao;
  * Data Access Object for snapshot_policy table
  */
 public interface SnapshotPolicyDao extends GenericDao<SnapshotPolicyVO, Long> {
-	List<SnapshotPolicyVO> listByVolumeId(long volumeId);
-	List<SnapshotPolicyVO> listByVolumeId(long volumeId, Filter filter);
+    List<SnapshotPolicyVO> listByVolumeId(long volumeId);
+
+    List<SnapshotPolicyVO> listByVolumeId(long volumeId, Filter filter);
+
     Pair<List<SnapshotPolicyVO>, Integer> listAndCountByVolumeId(long volumeId);
+
     Pair<List<SnapshotPolicyVO>, Integer> listAndCountByVolumeId(long volumeId, Filter filter);
-	SnapshotPolicyVO findOneByVolumeInterval(long volumeId, IntervalType intvType);
+
+    SnapshotPolicyVO findOneByVolumeInterval(long volumeId, IntervalType intvType);
+
     List<SnapshotPolicyVO> listActivePolicies();
+
     SnapshotPolicyVO findOneByVolume(long volumeId);
 }

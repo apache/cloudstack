@@ -32,85 +32,85 @@ import com.cloud.utils.db.GenericDaoBase;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="template_zone_ref")
+@Table(name = "template_zone_ref")
 public class VMTemplateZoneVO implements InternalIdentity {
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	Long id;
-	
-	@Column(name="zone_id")
-	private long zoneId;
-	
-	@Column(name="template_id")
-	private long templateId;
-	
-	@Column(name=GenericDaoBase.CREATED_COLUMN)
-	private Date created = null;
-	
-	@Column(name="last_updated")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date lastUpdated = null;
-    
-    @Temporal(value=TemporalType.TIMESTAMP)
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
+    @Column(name = "zone_id")
+    private long zoneId;
+
+    @Column(name = "template_id")
+    private long templateId;
+
+    @Column(name = GenericDaoBase.CREATED_COLUMN)
+    private Date created = null;
+
+    @Column(name = "last_updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastUpdated = null;
+
+    @Temporal(value = TemporalType.TIMESTAMP)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
+
     protected VMTemplateZoneVO() {
-    	
+
     }
 
-	public VMTemplateZoneVO(long zoneId, long templateId, Date lastUpdated) {
-		this.zoneId = zoneId;
-		this.templateId = templateId;
-		this.lastUpdated = lastUpdated;
-	}
+    public VMTemplateZoneVO(long zoneId, long templateId, Date lastUpdated) {
+        this.zoneId = zoneId;
+        this.templateId = templateId;
+        this.lastUpdated = lastUpdated;
+    }
 
-	public long getId() {
-		return id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public long getZoneId() {
-		return zoneId;
-	}
+    public long getZoneId() {
+        return zoneId;
+    }
 
-	public void setZoneId(long zoneId) {
-		this.zoneId = zoneId;
-	}
+    public void setZoneId(long zoneId) {
+        this.zoneId = zoneId;
+    }
 
-	public long getTemplateId() {
-		return templateId;
-	}
+    public long getTemplateId() {
+        return templateId;
+    }
 
-	public void setTemplateId(long templateId) {
-		this.templateId = templateId;
-	}
+    public void setTemplateId(long templateId) {
+        this.templateId = templateId;
+    }
 
-	public Date getCreated() {
-		return created;
-	}
+    public Date getCreated() {
+        return created;
+    }
 
-	public void setCreated(Date created) {
-		this.created = created;
-	}
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 
-	public Date getLastUpdated() {
-		return lastUpdated;
-	}
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
 
-	public void setLastUpdated(Date lastUpdated) {
-		this.lastUpdated = lastUpdated;
-	}
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
 
-	public void setRemoved(Date removed) {
-		this.removed = removed;
-	}
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
 
-	public Date getRemoved() {
-		return removed;
-	}
-    
+    public Date getRemoved() {
+        return removed;
+    }
+
 }

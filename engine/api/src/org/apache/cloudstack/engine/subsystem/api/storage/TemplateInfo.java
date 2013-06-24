@@ -18,5 +18,10 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-public interface TemplateInfo extends DataObject {
+import com.cloud.template.VirtualMachineTemplate;
+
+public interface TemplateInfo extends DataObject, VirtualMachineTemplate {
+    String getUniqueName();
+
+    String getInstallPath();
 }

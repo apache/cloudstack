@@ -112,6 +112,9 @@ get_boot_params() {
           sed -i "s/%/ /g" /var/cache/cloud/cmdline
           ;;
      kvm)
+          if [ ! -e /dev/vport0p1 ]; then
+            log_it "/dev/vport0p1 not loaded, perhaps guest kernel is too old." && exit 2
+          fi
           while read line; do
             if [[ $line == cmdline:* ]]; then
               cmd=${line//cmdline:/}
@@ -133,7 +136,7 @@ get_boot_params() {
           mount -t ntfs /dev/sdb1 $EXTRA_MOUNT
           cp -f $EXTRA_MOUNT/cmdline /var/cache/cloud/cmdline
           umount $EXTRA_MOUNT
-          ;;          
+          ;;
   esac
 
 }
@@ -540,6 +543,8 @@ setup_dnsmasq() {
   NS6=${NS6%?}
   [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
   [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,$NS6" >> /etc/dnsmasq.conf
+#adding the name data-server to the /etc/hosts for allowing the access to user-data service and ssh-key reset in every subnet.
+  echo "$ETH0_IP data-server" >> /etc/hosts
 }
 
 setup_sshd(){

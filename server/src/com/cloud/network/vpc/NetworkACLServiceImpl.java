@@ -39,6 +39,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -104,7 +105,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         SearchBuilder<NetworkACLVO> sb = _networkACLDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("name", sb.entity().getName(), Op.EQ);
-        sb.and("vpcId", sb.entity().getVpcId(), Op.EQ);
+        sb.and("vpcId", sb.entity().getVpcId(), Op.IN);
 
         if(networkId != null){
             SearchBuilder<NetworkVO> network = _networkDao.createSearchBuilder();
@@ -122,7 +123,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         if(vpcId != null){
-            sc.setParameters("vpcId", vpcId);
+            //Include vpcId 0 to list default ACLs
+            sc.setParameters("vpcId", vpcId, 0);
         }
 
         if(networkId != null){
@@ -248,6 +250,40 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 throw new InvalidParameterValueException("Network: "+network.getUuid()+" does not belong to VPC");
             }
             aclId = network.getNetworkACLId();
+
+            if(aclId == null){
+                //Network is not associated with any ACL. Create a new ACL and add aclItem in it for backward compatibility
+                s_logger.debug("Network "+network.getId()+" is not associated with any ACL. Creating an ACL before adding acl item");
+
+                //verify that ACLProvider is supported by network offering
+                if(!_networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.NetworkACL)){
+                    throw new InvalidParameterValueException("Network Offering does not support NetworkACL service");
+                }
+
+                Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
+                if(vpc == null){
+                    throw new InvalidParameterValueException("Unable to find Vpc associated with the Network");
+                }
+
+                //Create new ACL
+                String aclName = "VPC_"+vpc.getName()+"_Tier_"+network.getName()+"_ACL_"+network.getUuid();
+                String description = "ACL for "+aclName;
+                NetworkACL acl = _networkAclMgr.createNetworkACL(aclName, description, network.getVpcId());
+                if(acl == null){
+                    throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network "+network.getId());
+                }
+                s_logger.debug("Created ACL: "+aclName+" for network "+network.getId());
+                aclId = acl.getId();
+                //Apply acl to network
+                try {
+                    if(!_networkAclMgr.replaceNetworkACL(acl, (NetworkVO)network)){
+                        throw new CloudRuntimeException("Unable to apply auto created ACL to network "+network.getId());
+                    }
+                    s_logger.debug("Created ACL is applied to network "+network.getId());
+                } catch (ResourceUnavailableException e) {
+                    throw new CloudRuntimeException("Unable to apply auto created ACL to network "+network.getId(), e);
+                }
+            }
         }
 
         NetworkACL acl = _networkAclMgr.getNetworkACL(aclId);
@@ -273,7 +309,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         validateNetworkACLItem(aclItemCmd.getSourcePortStart(), aclItemCmd.getSourcePortEnd(), aclItemCmd.getSourceCidrList(),
-                aclItemCmd.getProtocol(), aclItemCmd.getIcmpCode(), aclItemCmd.getIcmpType(), aclItemCmd.getAction());
+                aclItemCmd.getProtocol(), aclItemCmd.getIcmpCode(), aclItemCmd.getIcmpType(), aclItemCmd.getAction(), aclItemCmd.getNumber());
 
         return _networkAclMgr.createNetworkACLItem(aclItemCmd.getSourcePortStart(),
                 aclItemCmd.getSourcePortEnd(), aclItemCmd.getProtocol(), aclItemCmd.getSourceCidrList(), aclItemCmd.getIcmpCode(),
@@ -281,7 +317,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
 
     private void validateNetworkACLItem(Integer portStart, Integer portEnd, List<String> sourceCidrList, String protocol, Integer icmpCode,
-                                        Integer icmpType, String action) {
+                                        Integer icmpType, String action, Integer number) {
 
         if (portStart != null && !NetUtils.isValidPort(portStart)) {
             throw new InvalidParameterValueException("publicPort is an invalid value: " + portStart);
@@ -352,6 +388,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             if(!("Allow".equalsIgnoreCase(action) || "Deny".equalsIgnoreCase(action))){
                 throw new InvalidParameterValueException("Invalid action. Allowed actions are Allow and Deny");
             }
+        }
+
+        //Check for valid number
+        if(number != null && number < 1){
+            throw new InvalidParameterValueException("Invalid number. Number cannot be < 1");
         }
     }
 
@@ -491,7 +532,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         validateNetworkACLItem((sourcePortStart == null) ? aclItem.getSourcePortStart() : sourcePortStart, (sourcePortEnd == null) ? aclItem.getSourcePortEnd() : sourcePortEnd,
-                sourceCidrList, protocol, icmpCode, (icmpType == null) ? aclItem.getIcmpType() : icmpType, action);
+                sourceCidrList, protocol, icmpCode, (icmpType == null) ? aclItem.getIcmpType() : icmpType, action, number);
 
         return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart,
                 sourcePortEnd, icmpCode, icmpType);

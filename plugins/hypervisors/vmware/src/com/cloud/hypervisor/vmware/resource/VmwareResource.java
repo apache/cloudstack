@@ -31,9 +31,12 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -43,210 +46,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import com.cloud.agent.IAgentControl;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.BackupSnapshotAnswer;
-import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.BumpUpPriorityCommand;
-import com.cloud.agent.api.CheckHealthAnswer;
-import com.cloud.agent.api.CheckHealthCommand;
-import com.cloud.agent.api.CheckNetworkAnswer;
-import com.cloud.agent.api.CheckNetworkCommand;
-import com.cloud.agent.api.CheckOnHostAnswer;
-import com.cloud.agent.api.CheckOnHostCommand;
-import com.cloud.agent.api.CheckRouterAnswer;
-import com.cloud.agent.api.CheckRouterCommand;
-import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
-import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
-import com.cloud.agent.api.CheckVirtualMachineAnswer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
-import com.cloud.agent.api.CreateStoragePoolCommand;
-import com.cloud.agent.api.CreateVMSnapshotAnswer;
-import com.cloud.agent.api.CreateVMSnapshotCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteStoragePoolCommand;
-import com.cloud.agent.api.DeleteVMSnapshotAnswer;
-import com.cloud.agent.api.DeleteVMSnapshotCommand;
-import com.cloud.agent.api.MigrateWithStorageAnswer;
-import com.cloud.agent.api.MigrateWithStorageCommand;
-import com.cloud.agent.api.UnregisterVMCommand;
-import com.cloud.agent.api.GetDomRVersionAnswer;
-import com.cloud.agent.api.GetDomRVersionCmd;
-import com.cloud.agent.api.GetHostStatsAnswer;
-import com.cloud.agent.api.GetHostStatsCommand;
-import com.cloud.agent.api.GetStorageStatsAnswer;
-import com.cloud.agent.api.GetStorageStatsCommand;
-import com.cloud.agent.api.GetVmStatsAnswer;
-import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.GetVncPortAnswer;
-import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.HostStatsEntry;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.ManageSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.MigrateAnswer;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.ModifySshKeysCommand;
-import com.cloud.agent.api.ModifyStoragePoolAnswer;
-import com.cloud.agent.api.ModifyStoragePoolCommand;
-import com.cloud.agent.api.NetworkUsageAnswer;
-import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.PingRoutingCommand;
-import com.cloud.agent.api.PingTestCommand;
-import com.cloud.agent.api.PlugNicAnswer;
-import com.cloud.agent.api.PlugNicCommand;
-import com.cloud.agent.api.PoolEjectCommand;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.PvlanSetupCommand;
-import com.cloud.agent.api.ReadyAnswer;
-import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.RebootAnswer;
-import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.RebootRouterCommand;
-import com.cloud.agent.api.RevertToVMSnapshotAnswer;
-import com.cloud.agent.api.RevertToVMSnapshotCommand;
-import com.cloud.agent.api.ScaleVmAnswer;
-import com.cloud.agent.api.ScaleVmCommand;
-import com.cloud.agent.api.SetupAnswer;
-import com.cloud.agent.api.SetupCommand;
-import com.cloud.agent.api.SetupGuestNetworkAnswer;
-import com.cloud.agent.api.SetupGuestNetworkCommand;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.StopCommand;
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.agent.api.UnPlugNicAnswer;
-import com.cloud.agent.api.UnPlugNicCommand;
-import com.cloud.agent.api.UpgradeSnapshotCommand;
-import com.cloud.agent.api.ValidateSnapshotAnswer;
-import com.cloud.agent.api.ValidateSnapshotCommand;
-import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.agent.api.check.CheckSshAnswer;
-import com.cloud.agent.api.check.CheckSshCommand;
-import com.cloud.agent.api.routing.CreateIpAliasCommand;
-import com.cloud.agent.api.routing.DeleteIpAliasCommand;
-import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.DnsMasqConfigCommand;
-import com.cloud.agent.api.routing.IpAliasTO;
-import com.cloud.agent.api.routing.IpAssocAnswer;
-import com.cloud.agent.api.routing.IpAssocCommand;
-import com.cloud.agent.api.routing.IpAssocVpcCommand;
-import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
-import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
-import com.cloud.agent.api.routing.SetFirewallRulesCommand;
-import com.cloud.agent.api.routing.SetNetworkACLAnswer;
-import com.cloud.agent.api.routing.SetNetworkACLCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
-import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
-import com.cloud.agent.api.routing.SetSourceNatAnswer;
-import com.cloud.agent.api.routing.SetSourceNatCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
-import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
-import com.cloud.agent.api.routing.VmDataCommand;
-import com.cloud.agent.api.routing.VpnUsersCfgCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateVolumeOVACommand;
-import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
-import com.cloud.agent.api.storage.MigrateVolumeAnswer;
-import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.storage.PrepareOVAPackingAnswer;
-import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.storage.ResizeVolumeAnswer;
-import com.cloud.agent.api.storage.ResizeVolumeCommand;
-import com.cloud.agent.api.to.FirewallRuleTO;
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.Vlan;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.host.Host.Type;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.vmware.manager.VmwareHostService;
-import com.cloud.hypervisor.vmware.manager.VmwareManager;
-import com.cloud.hypervisor.vmware.mo.ClusterMO;
-import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
-import com.cloud.hypervisor.vmware.mo.CustomFieldsManagerMO;
-import com.cloud.hypervisor.vmware.mo.DatacenterMO;
-import com.cloud.hypervisor.vmware.mo.DatastoreMO;
-import com.cloud.hypervisor.vmware.mo.DiskControllerType;
-import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
-import com.cloud.hypervisor.vmware.mo.HostMO;
-import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
-import com.cloud.hypervisor.vmware.mo.NetworkDetails;
-import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
-import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
-import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
-import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
-import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
-import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareGuestOsMapper;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.network.DnsMasqConfigurator;
-import com.cloud.network.HAProxyConfigurator;
-import com.cloud.network.LoadBalancerConfigurator;
-import com.cloud.network.Networks;
-import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.VmwareTrafficLabel;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.resource.ServerResource;
-import com.cloud.serializer.GsonHelper;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeManager;
-import com.cloud.storage.VolumeManagerImpl;
-import com.cloud.storage.resource.StoragePoolResource;
-import com.cloud.storage.template.TemplateInfo;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExceptionUtil;
-import com.cloud.utils.mgmt.JmxUtil;
-import com.cloud.utils.mgmt.PropertyMapDynamicBean;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ClusterDasConfigInfo;
@@ -289,9 +88,224 @@ import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Map.Entry;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
+import com.cloud.agent.IAgentControl;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachIsoCommand;
+import com.cloud.agent.api.AttachVolumeAnswer;
+import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.BackupSnapshotAnswer;
+import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.BumpUpPriorityCommand;
+import com.cloud.agent.api.CheckHealthAnswer;
+import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckOnHostAnswer;
+import com.cloud.agent.api.CheckOnHostCommand;
+import com.cloud.agent.api.CheckRouterAnswer;
+import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
+import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVMSnapshotAnswer;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
+import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
+import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.DeleteVMSnapshotAnswer;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.GetHostStatsAnswer;
+import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetStorageStatsAnswer;
+import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVmStatsAnswer;
+import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortAnswer;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.HostStatsEntry;
+import com.cloud.agent.api.MaintainAnswer;
+import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.ManageSnapshotAnswer;
+import com.cloud.agent.api.ManageSnapshotCommand;
+import com.cloud.agent.api.MigrateAnswer;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateWithStorageAnswer;
+import com.cloud.agent.api.MigrateWithStorageCommand;
+import com.cloud.agent.api.ModifySshKeysCommand;
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkUsageAnswer;
+import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.PingRoutingCommand;
+import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.PoolEjectCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
+import com.cloud.agent.api.ReadyAnswer;
+import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.RevertToVMSnapshotAnswer;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmAnswer;
+import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.SetupAnswer;
+import com.cloud.agent.api.SetupCommand;
+import com.cloud.agent.api.SetupGuestNetworkAnswer;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
+import com.cloud.agent.api.StartAnswer;
+import com.cloud.agent.api.StartCommand;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.UnregisterVMCommand;
+import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.ValidateSnapshotAnswer;
+import com.cloud.agent.api.ValidateSnapshotCommand;
+import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.check.CheckSshAnswer;
+import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.api.routing.CreateIpAliasCommand;
+import com.cloud.agent.api.routing.DeleteIpAliasCommand;
+import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.DnsMasqConfigCommand;
+import com.cloud.agent.api.routing.IpAliasTO;
+import com.cloud.agent.api.routing.IpAssocAnswer;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
+import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetNetworkACLAnswer;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
+import com.cloud.agent.api.routing.SetSourceNatAnswer;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
+import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateAnswer;
+import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVAAnswer;
+import com.cloud.agent.api.storage.CreateVolumeOVACommand;
+import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
+import com.cloud.agent.api.storage.PrepareOVAPackingAnswer;
+import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.FirewallRuleTO;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.Vlan;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.host.Host.Type;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.vmware.manager.VmwareHostService;
+import com.cloud.hypervisor.vmware.manager.VmwareManager;
+import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
+import com.cloud.hypervisor.vmware.mo.ClusterMO;
+import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
+import com.cloud.hypervisor.vmware.mo.CustomFieldsManagerMO;
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
+import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.DiskControllerType;
+import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
+import com.cloud.hypervisor.vmware.mo.HostMO;
+import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+import com.cloud.hypervisor.vmware.mo.NetworkDetails;
+import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
+import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
+import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
+import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
+import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
+import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareGuestOsMapper;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.network.DnsMasqConfigurator;
+import com.cloud.network.HAProxyConfigurator;
+import com.cloud.network.LoadBalancerConfigurator;
+import com.cloud.network.Networks;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.VmwareTrafficLabel;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.resource.ServerResource;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeManager;
+import com.cloud.storage.VolumeManagerImpl;
+import com.cloud.storage.resource.StoragePoolResource;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
+import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
+import com.cloud.storage.resource.VmwareStorageProcessor;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionUtil;
+import com.cloud.utils.mgmt.JmxUtil;
+import com.cloud.utils.mgmt.PropertyMapDynamicBean;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.ssh.SshHelper;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VmDetailConstants;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -343,12 +357,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected volatile long _cmdSequence = 1;
 
+    protected StorageSubsystemCommandHandler storageHandler;
+
     protected static HashMap<VirtualMachinePowerState, PowerState> s_statesTable;
     static {
         s_statesTable = new HashMap<VirtualMachinePowerState, PowerState>();
         s_statesTable.put(VirtualMachinePowerState.POWERED_ON, PowerState.PowerOn);
         s_statesTable.put(VirtualMachinePowerState.POWERED_OFF, PowerState.PowerOff);
         s_statesTable.put(VirtualMachinePowerState.SUSPENDED, PowerState.PowerOn);
+    }
+
+    public Gson getGson() {
+    	return _gson;
     }
 
     public VmwareResource() {
@@ -517,6 +537,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((ResizeVolumeCommand) cmd);
             } else if (clz == UnregisterVMCommand.class) {
                 return execute((UnregisterVMCommand) cmd);
+            } else if (cmd instanceof StorageSubSystemCommand) {
+            	return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (clz == ScaleVmCommand.class) {
                 return execute((ScaleVmCommand) cmd);
             } else if (clz == PvlanSetupCommand.class) {
@@ -744,12 +766,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String[] results = new String[cmd.getRules().length];
         FirewallRuleTO[] allrules = cmd.getRules();
         FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
+        String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
 
         String[][] rules = cmd.generateFwRules();
         String args = "";
         args += " -F ";
         if (trafficType == FirewallRule.TrafficType.Egress){
             args+= " -E ";
+            if (egressDefault.equals("true")) {
+                args+= " -P 1 ";
+            } else if (egressDefault.equals("System")) {
+                args+= " -P 2 ";
+            } else {
+                args+= " -P 0 ";
+            }
         }
 
         StringBuilder sb = new StringBuilder();
@@ -1430,7 +1460,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if(!isVMWareToolsInstalled(vmMo)){
                 String errMsg = "vmware tools is not installed or not running, cannot add nic to vm " + vmName;
                 s_logger.debug(errMsg);
-                return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + errMsg); 
+                return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + errMsg);
             }
 
             // TODO need a way to specify the control of NIC device type
@@ -1543,7 +1573,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-        int ethDeviceNum = this.findRouterEthDeviceIndex(domrName, routerIp, ip.getVifMacAddress());
+        int ethDeviceNum = findRouterEthDeviceIndex(domrName, routerIp, ip.getVifMacAddress());
         if (ethDeviceNum < 0) {
             if (ip.isAdd()) {
                 throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
@@ -1710,11 +1740,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vSwitchType = _publicTrafficInfo.getVirtualSwitchType();
         }
         if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
-            networkInfo = HypervisorHostHelper.prepareNetwork(this._publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
+            networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
+                    vmMo.getRunningHost(), vlanId, null, null, _ops_timeout, true);
         } else {
-            networkInfo = HypervisorHostHelper.prepareNetwork(this._publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, null, this._ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false);
+            networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
+                    vmMo.getRunningHost(), vlanId, null, null, null, _ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false);
         }
 
         int nicIndex = allocPublicNicIndex(vmMo);
@@ -2305,14 +2335,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new CheckSshAnswer(cmd);
     }
 
-    private VolumeTO[] validateDisks(VolumeTO[] disks) {
-        List<VolumeTO> validatedDisks = new ArrayList<VolumeTO>();
+    private DiskTO[] validateDisks(DiskTO[] disks) {
+        List<DiskTO> validatedDisks = new ArrayList<DiskTO>();
 
-        for (VolumeTO vol : disks) {
-            if (vol.getPoolUuid() != null && !vol.getPoolUuid().isEmpty()) {
+        for (DiskTO vol : disks) {
+            if (vol.getType() != Volume.Type.ISO) {
+            	VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
+            	PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+            	if (primaryStore.getUuid() != null && !primaryStore.getUuid().isEmpty()) {
                 validatedDisks.add(vol);
-            } else if (vol.getPoolType() == StoragePoolType.ISO && (vol.getPath() != null && !vol.getPath().isEmpty())) {
+            	}
+            } else if (vol.getType() == Volume.Type.ISO) {
+            	TemplateObjectTO templateTO = (TemplateObjectTO)vol.getData();
+            	if (templateTO.getPath() != null && !templateTO.getPath().isEmpty()) {
                 validatedDisks.add(vol);
+            	}
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Drop invalid disk option, volumeTO: " + _gson.toJson(vol));
@@ -2320,7 +2357,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         }
 
-        return validatedDisks.toArray(new VolumeTO[0]);
+        return validatedDisks.toArray(new DiskTO[0]);
     }
 
     protected ScaleVmAnswer execute(ScaleVmCommand cmd) {
@@ -2369,7 +2406,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("VM " + vmName + " will be started with NIC device type: " + nicDeviceType);
 
             VmwareHypervisorHost hyperHost = getHyperHost(context);
-            VolumeTO[] disks = validateDisks(vmSpec.getDisks());
+            DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
             NicTO[] nics = vmSpec.getNics();
 
@@ -2406,9 +2443,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 } else {
                     int ramMb = (int) (vmSpec.getMinRam() / (1024 * 1024));
                     Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
-                    for (VolumeTO vol : disks) {
+                    for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ROOT) {
-                            rootDiskDataStoreDetails = dataStoresDetails.get(vol.getPoolUuid());
+                        	PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getData().getDataStore();
+                            rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
                         }
                     }
 
@@ -2427,12 +2465,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             int totalChangeDevices = disks.length + nics.length;
-            VolumeTO volIso = null;
+            DiskTO volIso = null;
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 // system VM needs a patch ISO
                 totalChangeDevices++;
             } else {
-                for (VolumeTO vol : disks) {
+                for (DiskTO vol : disks) {
                     if (vol.getType() == Volume.Type.ISO) {
                         volIso = vol;
                         break;
@@ -2456,12 +2494,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("Nested Virtualization enabled in configuration, checking hypervisor capability");
                 ManagedObjectReference hostMor = vmMo.getRunningHost().getMor();
                 ManagedObjectReference computeMor = context.getVimClient().getMoRefProp(hostMor, "parent");
-                ManagedObjectReference environmentBrowser = 
+                ManagedObjectReference environmentBrowser =
                         context.getVimClient().getMoRefProp(computeMor, "environmentBrowser");
                 HostCapability hostCapability = context.getService().queryTargetCapabilities(environmentBrowser, hostMor);
                 if (hostCapability.isNestedHVSupported()) {
                     s_logger.debug("Hypervisor supports nested virtualization, enabling for VM " + vmSpec.getName());
-                    vmConfigSpec.setNestedHVEnabled(true);                   
+                    vmConfigSpec.setNestedHVEnabled(true);
                 }
                 else {
                 	s_logger.warn("Hypervisor doesn't support nested virtualization, unable to set config for VM " +vmSpec.getName());
@@ -2511,8 +2549,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             } else {
                 // we will always plugin a CDROM device
-                if (volIso != null && volIso.getPath() != null && !volIso.getPath().isEmpty()) {
-                    Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, volIso.getPath());
+
+                if (volIso != null) {
+                	TemplateObjectTO iso = (TemplateObjectTO)volIso.getData();
+
+                	if (iso.getPath() != null && !iso.getPath().isEmpty()) {
+                		DataStoreTO imageStore = iso.getDataStore();
+                		if (!(imageStore instanceof NfsTO)) {
+                			s_logger.debug("unsupported protocol");
+                			throw new Exception("unsupported protocol");
+                		}
+                		NfsTO nfsImageStore = (NfsTO)imageStore;
+                		String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
+                		Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, isoPath);
                     assert (isoDatastoreInfo != null);
                     assert (isoDatastoreInfo.second() != null);
 
@@ -2528,6 +2577,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             s_logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
                         deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
                     }
+                	}
                 } else {
                     deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                     Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, null, null, true, true, ideUnitNumber++, i + 1);
@@ -2546,7 +2596,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
             i++;
-            for (VolumeTO vol : sortVolumesByDeviceId(disks)) {
+            for (DiskTO vol : sortVolumesByDeviceId(disks)) {
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
 
                 if (vol.getType() == Volume.Type.ISO) {
@@ -2569,19 +2619,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 if (vol.getType() != Volume.Type.ISO) {
-                    Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(vol.getPoolUuid());
+                	VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
+                	PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+                    Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
                     assert (volumeDsDetails != null);
                     VirtualDevice device;
-
-                    datastoreDiskPath = volumeDsDetails.second().searchFileInSubFolders(vol.getPath() + ".vmdk", true);
-
-                    String chainInfo = vol.getChainInfo();
+                    datastoreDiskPath = String.format("[%s] %s.vmdk", volumeDsDetails.second().getName(), volumeTO.getPath());
+                    String chainInfo = volumeTO.getChainInfo();
 
                     if (chainInfo != null && !chainInfo.isEmpty()) {
                         String[] diskChain = _gson.fromJson(chainInfo, String[].class);
                         if (diskChain == null || diskChain.length < 1) {
                             s_logger.warn("Empty previously-saved chain info, fall back to the original");
-                            device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, new String[] { datastoreDiskPath }, volumeDsDetails.first(), 
+                            device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, new String[] { datastoreDiskPath }, volumeDsDetails.first(),
                             		(controllerKey==ideControllerKey)?ideUnitNumber++:scsiUnitNumber++, i + 1);
                         } else {
                             s_logger.info("Attach the disk with stored chain info: " + chainInfo);
@@ -2589,7 +2639,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                 diskChain[j] = String.format("[%s] %s", volumeDsDetails.second().getName(), diskChain[j]);
                             }
 
-                            device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, diskChain, volumeDsDetails.first(), 
+                            device = VmwareHelper.prepareDiskDevice(vmMo, controllerKey, diskChain, volumeDsDetails.first(),
                             		(controllerKey==ideControllerKey)?ideUnitNumber++:scsiUnitNumber++, i + 1);
                         }
                     } else {
@@ -2753,19 +2803,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return listForSort.toArray(new NicTO[0]);
     }
 
-    private VolumeTO[] sortVolumesByDeviceId(VolumeTO[] volumes) {
+    private DiskTO[] sortVolumesByDeviceId(DiskTO[] volumes) {
 
-        List<VolumeTO> listForSort = new ArrayList<VolumeTO>();
-        for (VolumeTO vol : volumes) {
+        List<DiskTO> listForSort = new ArrayList<DiskTO>();
+        for (DiskTO vol : volumes) {
             listForSort.add(vol);
         }
-        Collections.sort(listForSort, new Comparator<VolumeTO>() {
+        Collections.sort(listForSort, new Comparator<DiskTO>() {
 
             @Override
-            public int compare(VolumeTO arg0, VolumeTO arg1) {
-                if (arg0.getDeviceId() < arg1.getDeviceId()) {
+            public int compare(DiskTO arg0, DiskTO arg1) {
+                if (arg0.getDiskSeq() < arg1.getDiskSeq()) {
                     return -1;
-                } else if (arg0.getDeviceId() == arg1.getDeviceId()) {
+                } else if (arg0.getDiskSeq() == arg1.getDiskSeq()) {
                     return 0;
                 }
 
@@ -2773,16 +2823,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         });
 
-        return listForSort.toArray(new VolumeTO[0]);
+        return listForSort.toArray(new DiskTO[0]);
     }
 
-    private HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> inferDatastoreDetailsFromDiskInfo(VmwareHypervisorHost hyperHost, VmwareContext context, VolumeTO[] disks) throws Exception {
+    private HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> inferDatastoreDetailsFromDiskInfo(VmwareHypervisorHost hyperHost, VmwareContext context, DiskTO[] disks) throws Exception {
         HashMap<String ,Pair<ManagedObjectReference, DatastoreMO>> poolMors = new HashMap<String, Pair<ManagedObjectReference, DatastoreMO>>();
 
         assert (hyperHost != null) && (context != null);
-        for (VolumeTO vol : disks) {
+        for (DiskTO vol : disks) {
             if (vol.getType() != Volume.Type.ISO) {
-                String poolUuid = vol.getPoolUuid();
+            	VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
+            	PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+                String poolUuid = primaryStore.getUuid();
                 if(poolMors.get(poolUuid) == null) {
                     ManagedObjectReference morDataStore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolUuid);
                     if (morDataStore == null) {
@@ -2790,7 +2842,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         s_logger.error(msg);
                         throw new Exception(msg);
                     }
-                    poolMors.put(vol.getPoolUuid(), new Pair<ManagedObjectReference, DatastoreMO> (morDataStore, new DatastoreMO(context, morDataStore)));
+                    poolMors.put(poolUuid, new Pair<ManagedObjectReference, DatastoreMO> (morDataStore, new DatastoreMO(context, morDataStore)));
                 }
             }
         }
@@ -2888,13 +2940,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         if (nicTo.getType() == Networks.TrafficType.Guest) {
-            return new Pair<String, String>(this._guestTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
+            return new Pair<String, String>(_guestTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management) {
-            return new Pair<String, String>(this._privateNetworkVSwitchName, Vlan.UNTAGGED);
+            return new Pair<String, String>(_privateNetworkVSwitchName, Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Public) {
-            return new Pair<String, String>(this._publicTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
+            return new Pair<String, String>(_publicTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Storage) {
-            return new Pair<String, String>(this._privateNetworkVSwitchName, Vlan.UNTAGGED);
+            return new Pair<String, String>(_privateNetworkVSwitchName, Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Vpn) {
             throw new Exception("Unsupported traffic type: " + nicTo.getType().toString());
         } else {
@@ -3581,7 +3633,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             state = State.Stopping;
-            List<VolumeTO> volumeToList = null;
+            List<VolumeObjectTO> volumeToList = null;
             return new MigrateWithStorageAnswer(cmd, volumeToList);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
@@ -3732,7 +3784,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
             long capacity = summary.getCapacity();
             long available = summary.getFreeSpace();
-            Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+            Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
             return answer;
         } catch (Throwable e) {
@@ -3902,7 +3954,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private synchronized ManagedObjectReference prepareSecondaryDatastoreOnHost(String storeUrl) throws Exception {
+    public synchronized ManagedObjectReference prepareSecondaryDatastoreOnHost(String storeUrl) throws Exception {
         String storeName = getSecondaryDatastoreUUID(storeUrl);
         URI uri = new URI(storeUrl);
 
@@ -4311,14 +4363,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    @Override
-    public Answer execute(DestroyCommand cmd) {
+    public Answer execute(DeleteCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource DestroyCommand: " + _gson.toJson(cmd));
         }
 
         /*
-         * DestroyCommand content example
+         * DestroyCommand content exafmple
          *
          * {"volume": {"id":5,"name":"Volume1", "mountPoint":"/export/home/kelven/vmware-test/primary",
          * "path":"6bb8762f-c34c-453c-8e03-26cc246ceec4", "size":0,"type":"DATADISK","resourceType":
@@ -4332,11 +4383,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
-            VolumeTO vol = cmd.getVolume();
+            VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
+            PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
 
-            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, vol.getPoolUuid());
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, store.getUuid());
             if (morDs == null) {
-                String msg = "Unable to find datastore based on volume mount point " + cmd.getVolume().getMountPoint();
+                String msg = "Unable to find datastore based on volume mount point " + store.getPath();
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
@@ -4347,8 +4399,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
             ClusterMO clusterMo = new ClusterMO(context, morCluster);
 
-            if (cmd.getVolume().getType() == Volume.Type.ROOT) {
-                String vmName = cmd.getVmName();
+            if (vol.getVolumeType() == Volume.Type.ROOT) {
+                String vmName = vol.getVmName();
                 if (vmName != null) {
                     VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vmName);
                     if (vmMo != null) {
@@ -4375,20 +4427,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
 
                     if (s_logger.isInfoEnabled())
-                        s_logger.info("Destroy volume by original name: " + cmd.getVolume().getPath() + ".vmdk");
-                    dsMo.deleteFile(cmd.getVolume().getPath() + ".vmdk", morDc, true);
+                        s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
+                    dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
 
                     // root volume may be created via linked-clone, delete the delta disk as well
                     if (_fullCloneFlag) {
                         if (s_logger.isInfoEnabled()) {
-                            s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-flat.vmdk");
+                            s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
                         }
-                        dsMo.deleteFile(cmd.getVolume().getPath() + "-flat.vmdk", morDc, true);
+                        dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
                     } else {
                         if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-delta.vmdk");
+                        s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-delta.vmdk");
                         }
-                    dsMo.deleteFile(cmd.getVolume().getPath() + "-delta.vmdk", morDc, true);
+                    dsMo.deleteFile(vol.getPath() + "-delta.vmdk", morDc, true);
                     }
                     return new Answer(cmd, true, "Success");
                 }
@@ -4398,17 +4450,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             } else {
                 // evitTemplate will be converted into DestroyCommand, test if we are running in this case
-                VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(cmd.getVolume().getPath());
+                VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vol.getPath());
                 if (vmMo != null) {
                     if (s_logger.isInfoEnabled())
-                        s_logger.info("Destroy template volume " + cmd.getVolume().getPath());
+                        s_logger.info("Destroy template volume " + vol.getPath());
 
                     vmMo.destroy();
                     return new Answer(cmd, true, "Success");
                 }
             }
 
-            String chainInfo = cmd.getVolume().getChainInfo();
+            String chainInfo = vol.getChainInfo();
             if (chainInfo != null && !chainInfo.isEmpty()) {
                 s_logger.info("Destroy volume by chain info: " + chainInfo);
                 String[] diskChain = _gson.fromJson(chainInfo, String[].class);
@@ -4424,23 +4476,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("Empty disk chain info, fall back to try to delete by original backing file name");
                     }
-                    dsMo.deleteFile(cmd.getVolume().getPath() + ".vmdk", morDc, true);
+                    dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
 
                     if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-flat.vmdk");
+                        s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
                     }
-                    dsMo.deleteFile(cmd.getVolume().getPath() + "-flat.vmdk", morDc, true);
+                    dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
                 }
             } else {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Destroy volume by original name: " + cmd.getVolume().getPath() + ".vmdk");
+                    s_logger.info("Destroy volume by original name: " + vol.getPath() + ".vmdk");
                 }
-                dsMo.deleteFile(cmd.getVolume().getPath() + ".vmdk", morDc, true);
+                dsMo.deleteFile(vol.getPath() + ".vmdk", morDc, true);
 
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-flat.vmdk");
+                    s_logger.info("Destroy volume by derived name: " + vol.getPath() + "-flat.vmdk");
                 }
-                dsMo.deleteFile(cmd.getVolume().getPath() + "-flat.vmdk", morDc, true);
+                dsMo.deleteFile(vol.getPath() + "-flat.vmdk", morDc, true);
             }
 
             return new Answer(cmd, true, "Success");
@@ -4456,7 +4508,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private void cleanupNetwork(HostMO hostMo, NetworkDetails netDetails) {
+    public void cleanupNetwork(HostMO hostMo, NetworkDetails netDetails) {
         // we will no longer cleanup VLAN networks in order to support native VMware HA
         /*
          * assert(netDetails.getName() != null); try { synchronized(this) { NetworkMO networkMo = new
@@ -5022,7 +5074,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     
     protected HashMap<String, PowerState> sync() {
     	try {
-    		return this.getVmStates();
+    		return getVmStates();
     	} catch(Exception e) {
     		return new HashMap<String, PowerState>();
     	}
@@ -5252,8 +5304,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if(!"untagged".equalsIgnoreCase(tokens[2]))
                         vlanId = tokens[2];
 
-                    HypervisorHostHelper.prepareNetwork(this._privateNetworkVSwitchName, "cloud.private",
-                            hostMo, vlanId, networkRateMbps, null, this._ops_timeout, false);
+                    HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private",
+                            hostMo, vlanId, networkRateMbps, null, _ops_timeout, false);
                 } else {
                     s_logger.info("Skip suspecious cloud network " + networkName);
                 }
@@ -5269,7 +5321,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         vlanId = tokens[2];
 
                     HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                            hostMo, vlanId, networkRateMbps, null, this._ops_timeout, false);
+                            hostMo, vlanId, networkRateMbps, null, _ops_timeout, false);
                 } else {
                     s_logger.info("Skip suspecious cloud network " + networkName);
                 }
@@ -5286,7 +5338,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         vlanId = tokens[2];
 
                     HypervisorHostHelper.prepareNetwork(_guestTrafficInfo.getVirtualSwitchName(), "cloud.guest",
-                            hostMo, vlanId, networkRateMbps, null, this._ops_timeout, false);
+                            hostMo, vlanId, networkRateMbps, null, _ops_timeout, false);
                 } else {
                     s_logger.info("Skip suspecious cloud network " + networkName);
                 }
@@ -5543,7 +5595,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return s_statesTable.get(powerState);
     }
 
-    private static PowerState getVmState(VirtualMachineMO vmMo) throws Exception {
+    public static PowerState getVmState(VirtualMachineMO vmMo) throws Exception {
         VirtualMachineRuntimeInfo runtimeInfo = vmMo.getRuntimeInfo();
         return convertState(runtimeInfo.getPowerState());
     }
@@ -5668,9 +5720,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         s_logger.info("VmwareResource network configuration info." +
                 " private traffic over vSwitch: " + _privateNetworkVSwitchName + ", public traffic over " +
-                this._publicTrafficInfo.getVirtualSwitchType() + " : " + this._publicTrafficInfo.getVirtualSwitchName() +
-                ", guest traffic over " + this._guestTrafficInfo.getVirtualSwitchType() + " : " +
-                this._guestTrafficInfo.getVirtualSwitchName());
+                _publicTrafficInfo.getVirtualSwitchType() + " : " + _publicTrafficInfo.getVirtualSwitchName() +
+                ", guest traffic over " + _guestTrafficInfo.getVirtualSwitchType() + " : " +
+                _guestTrafficInfo.getVirtualSwitchName());
 
         value = params.get("vmware.create.full.clone").toString();
         if (value != null && value.equalsIgnoreCase("true")) {
@@ -5678,6 +5730,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else {
             _fullCloneFlag = false;
         }
+        value = (String)params.get("scripts.timeout");
+        int timeout = NumbersUtil.parseInt(value, 1440) * 1000;
+        VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor((VmwareHostService)this, _fullCloneFlag, (VmwareStorageMount)mgr,
+        		timeout, this, _shutdown_waitMs
+        		);
+        storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
         return true;
     }
@@ -5697,15 +5756,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return true;
     }
 
-    private VmwareContext getServiceContext() {
+    public VmwareContext getServiceContext() {
         return getServiceContext(null);
     }
 
-    private void invalidateServiceContext() {
+    public void invalidateServiceContext() {
         invalidateServiceContext(null);
     }
 
-    private VmwareHypervisorHost getHyperHost(VmwareContext context) {
+    public VmwareHypervisorHost getHyperHost(VmwareContext context) {
         return getHyperHost(context, null);
     }
 
@@ -5803,8 +5862,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
 	}
 
+	@Override
+	public Answer execute(DestroyCommand cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
     private boolean isVMWareToolsInstalled(VirtualMachineMO vmMo) throws Exception{
         GuestInfo guestInfo = vmMo.getVmGuestInfo();
         return (guestInfo != null && guestInfo.getGuestState() != null && guestInfo.getGuestState().equalsIgnoreCase("running"));
-    }	
+    }
 }

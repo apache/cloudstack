@@ -22,7 +22,8 @@
   <title>Adding a Private Gateway to a VPC</title>
   <para>A private gateway can be added by the root admin only. The VPC private network has 1:1
     relationship with the NIC of the physical network. You can configure multiple private gateways
-    to a single VPC. No gateways with duplicated VLAN and IP are allowed in the same data center.</para>
+    to a single VPC. No gateways with duplicated VLAN and IP are allowed in the same data
+    center.</para>
   <orderedlist>
     <listitem>
       <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
@@ -147,5 +148,19 @@
       ingress traffic to the private gateway interface and all the egress traffic out from the
       private gateway interface are blocked. You can change this default behaviour while creating a
       private gateway.</para>
+  </section>
+  <section id="static-route">
+    <title>Creating a Static Route</title>
+    <para>&PRODUCT; enables you to specify routing for the VPN connection you create. You can enter
+      one or CIDR addresses to indicate which traffic is to be routed back to the gateway.</para>
+  </section>
+  <section id="blacklist-route">
+    <title>Blacklisting Routes</title>
+    <para>&PRODUCT; enables you to block a list of routes so that they are not assigned to any of
+      the VPC private gateways. Specify the list of routes that you want to blacklist in the
+        <code>blacklisted.routes</code> global parameter. Note that the parameter update affects
+      only new static route creations. If you block an existing static route, it remains intact and
+      continue functioning. You cannot add a static route if the route is blacklisted for the zone.
+    </para>
   </section>
 </section>

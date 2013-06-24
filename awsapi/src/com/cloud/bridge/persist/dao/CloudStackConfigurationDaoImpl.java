@@ -54,7 +54,8 @@ public class CloudStackConfigurationDaoImpl extends GenericDaoBase<CloudStackCon
             }
             return configItem.getValue();
         }finally {
-
+            txn.commit();
+            txn.close();
         }
     }
 

@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.storage.download;
 
+import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
 import org.apache.log4j.Level;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public abstract class DownloadActiveState extends DownloadState {
@@ -64,7 +64,7 @@ public abstract class DownloadActiveState extends DownloadState {
 		}
 		
 		if (event==DownloadEvent.DOWNLOAD_ANSWER) {
-			getDownloadListener().updateDatabase((DownloadAnswer)evtObj);
+			getDownloadListener().callback((DownloadAnswer)evtObj);
 			getDownloadListener().setLastUpdated();
 		}
 		

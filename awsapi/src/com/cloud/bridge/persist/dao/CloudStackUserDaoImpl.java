@@ -55,6 +55,7 @@ public class CloudStackUserDaoImpl extends GenericDaoBase<CloudStackUserVO, Stri
             }
             return cloudSecretKey;
         } finally {
+            txn.commit();
             txn.close();
         }
     }

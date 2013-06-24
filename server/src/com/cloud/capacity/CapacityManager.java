@@ -42,7 +42,7 @@ public interface CapacityManager extends Manager {
      */
     boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, float memoryOvercommitRatio, boolean considerReservedCapacity);
 
-	void updateCapacityForHost(HostVO host);
+	void updateCapacityForHost(Host host);
     
 	/**
      * @param pool storage pool

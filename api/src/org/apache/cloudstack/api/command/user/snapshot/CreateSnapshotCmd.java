@@ -65,7 +65,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             description = "policy id of the snapshot, if this is null, then use MANUAL_POLICY.")
     private Long policyId;
 
-    private String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
+    private final String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -153,10 +153,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        Snapshot snapshot = _snapshotService.allocSnapshot(getVolumeId(), getPolicyId());
+        Snapshot snapshot = _volumeService.allocSnapshot(getVolumeId(), getPolicyId());
         if (snapshot != null) {
-            this.setEntityId(snapshot.getId());
-            this.setEntityUuid(snapshot.getUuid());
+            setEntityId(snapshot.getId());
+            setEntityUuid(snapshot.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot");
         }
@@ -166,15 +166,19 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     public void execute() {
         s_logger.info("VOLSS: createSnapshotCmd starts:" + System.currentTimeMillis());
         CallContext.current().setEventDetails("Volume Id: "+getVolumeId());
-        Snapshot snapshot = _snapshotService.createSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()));
-        if (snapshot != null) {
-            SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        } else {
+        Snapshot snapshot;
+        try {
+            snapshot = _volumeService.takeSnapshot(getVolumeId(), getPolicyId(), getEntityId(), _accountService.getAccount(getEntityOwnerId()));
+            if (snapshot != null) {
+                SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
+            }
+        } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
         }
-        s_logger.info("VOLSS:  backupSnapshotCmd finishes:" + System.currentTimeMillis());
     }
 
 

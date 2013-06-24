@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,24 +24,27 @@ import cloudstackException
 import sys
 import os
 
+
 class dbConnection(object):
-    def __init__(self, host="localhost", port=3306, user='cloud', passwd='cloud', db='cloud'):
+    def __init__(self, host="localhost", port=3306, user='cloud',
+                 passwd='cloud', db='cloud'):
         self.host = host
         self.port = port
-        self.user = str(user) #Workaround: http://bugs.mysql.com/?id=67306
+        self.user = str(user)  # Workaround: http://bugs.mysql.com/?id=67306
         self.passwd = passwd
         self.database = db
-        
+
     def execute(self, sql=None, params=None):
         if sql is None:
             return None
 
         resultRow = []
-        with contextlib.closing(mysql.connector.connect(host=str(self.host),
-                                                        port=int(self.port),
-                                                        user=str(self.user),
-                                                        password=str(self.passwd),
-                                                        db=str(self.database))) as conn:
+        with contextlib.\
+            closing(mysql.connector.connect(host=str(self.host),
+                                            port=int(self.port),
+                                            user=str(self.user),
+                                            password=str(self.passwd),
+                                            db=str(self.database))) as conn:
             conn.autocommit = True
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
                 cursor.execute(sql, params)
@@ -54,19 +57,21 @@ class dbConnection(object):
 
     def executeSqlFromFile(self, fileName=None):
         if fileName is None:
-            raise cloudstackException.InvalidParameterException("file can't not none")
-        
+            raise cloudstackException.\
+                InvalidParameterException("file can't not none")
+
         if not os.path.exists(fileName):
-            raise cloudstackException.InvalidParameterException("%s not exists"%fileName)
-        
+            raise cloudstackException.\
+                InvalidParameterException("%s not exists" % fileName)
+
         sqls = open(fileName, "r").read()
         return self.execute(sqls)
-    
+
 if __name__ == "__main__":
     db = dbConnection()
     '''
     try:
-     
+
         result = db.executeSqlFromFile("/tmp/server-setup.sql")
         if result is not None:
             for r in result:
@@ -76,6 +81,6 @@ if __name__ == "__main__":
     '''
     print db.execute("update vm_template set name='fjkd' where id=200")
     for i in range(10):
-        result = db.execute("select job_status, created, last_updated from async_job where id=%d"%i)
+        result = db.execute("select job_status, created, \
+last_updated from async_job where id=%d" % i)
         print result
-

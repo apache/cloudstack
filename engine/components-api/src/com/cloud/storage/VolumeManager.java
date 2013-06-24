@@ -113,6 +113,7 @@ public interface VolumeManager extends VolumeApiService {
             DiskOfferingVO offering, VMTemplateVO template, VMInstanceVO vm,
             Account owner);
 
+
     String getVmNameFromVolumeId(long volumeId);
 
     String getStoragePoolOfVolume(long volumeId);

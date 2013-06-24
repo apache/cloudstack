@@ -44,6 +44,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -51,9 +52,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
-import org.springframework.stereotype.Component;
 
 @Local(value = Discoverer.class)
 public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
@@ -62,7 +61,6 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
 
     @Inject HostDao _hostDao;
     @Inject VMTemplateDao _vmTemplateDao;
-    @Inject VMTemplateHostDao _vmTemplateHostDao;
     @Inject VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject ClusterDao _clusterDao;
     @Inject AgentManager _agentMgr = null;
@@ -255,7 +253,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 
         /*if(forRebalance)
 		return;

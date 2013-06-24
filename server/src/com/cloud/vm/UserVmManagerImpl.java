@@ -61,10 +61,13 @@ import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -77,9 +80,9 @@ import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -179,7 +182,6 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -195,10 +197,8 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -274,8 +274,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected VMTemplateDao _templateDao = null;
     @Inject
     protected VMTemplateDetailsDao _templateDetailsDao = null;
-    @Inject
-    protected VMTemplateHostDao _templateHostDao = null;
     @Inject
     protected VMTemplateZoneDao _templateZoneDao = null;
     @Inject
@@ -384,8 +382,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Inject
     protected ItWorkDao _workDao;
     @Inject
-    protected VolumeHostDao _volumeHostDao;
-    @Inject
     ResourceTagDao _resourceTagDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
@@ -412,6 +408,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     AffinityGroupDao _affinityGroupDao;
+    @Inject
+    TemplateDataFactory templateFactory;
     @Inject
     DedicatedResourceDao _dedicatedDao;
     @Inject
@@ -1156,9 +1154,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         int currentMemory = currentServiceOffering.getRamSize();
         int currentSpeed = currentServiceOffering.getSpeed();
 
-        if(newSpeed     <= currentSpeed
-           && newMemory <= currentMemory
-           && newCpu    <= currentCpu){
+        // Don't allow to scale when (Any of the new values less than current values) OR (All current and new values are same)
+        if( (newSpeed < currentSpeed || newMemory < currentMemory || newCpu < currentCpu)
+                ||  ( newSpeed == currentSpeed && newMemory == currentMemory && newCpu == currentCpu)){
             throw new InvalidParameterValueException("Only scaling up the vm is supported, new service offering should have both cpu and memory greater than the old values");
         }
 
@@ -1703,6 +1701,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         Long osTypeId = cmd.getOsTypeId();
         String userData = cmd.getUserData();
         Account caller = CallContext.current().getCallingAccount();
+        Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
 
         // Input validation
         UserVmVO vmInstance = null;
@@ -1786,6 +1785,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (group != null) {
             if (addInstanceToGroup(id, group)) {
                 description += "Added to group: " + group + ".";
+            }
+        }
+
+        if (isDynamicallyScalable != null) {
+            UserVmDetailVO vmDetailVO = _vmDetailsDao.findDetail(vm.getId(), VirtualMachine.IsDynamicScalingEnabled);
+            if (vmDetailVO == null) {
+                vmDetailVO = new UserVmDetailVO(vm.getId(), VirtualMachine.IsDynamicScalingEnabled, isDynamicallyScalable.toString());
+                _vmDetailsDao.persist(vmDetailVO);
+            } else {
+                vmDetailVO.setValue(isDynamicallyScalable.toString());
+                _vmDetailsDao.update(vmDetailVO.getId(), vmDetailVO);
             }
         }
 
@@ -2432,7 +2442,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
-        long size = _templateHostDao.findByTemplateId(template.getId()).getSize();
+        // For baremetal, size can be null
+        Long tmp = _templateDao.findById(template.getId()).getSize();
+        long size = 0;
+        if (tmp != null) {
+        	size = tmp;
+        }
         if (diskOfferingId != null) {
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
@@ -2677,6 +2692,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 owner.getDomainId(), owner.getId(), offering.getId(), userData,
                 hostName, diskOfferingId);
         vm.setUuid(uuidName);
+        vm.setDetail(VirtualMachine.IsDynamicScalingEnabled, template.isDynamicallyScalable().toString());
 
         if (sshPublicKey != null) {
             vm.setDetail("SSH.PublicKey", sshPublicKey);
@@ -2869,52 +2885,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         vm.setDetails(details);
 
         if (vm.getIsoId() != null) {
-            String isoPath = null;
-
-            VirtualMachineTemplate template = _templateDao.findById(vm
-                    .getIsoId());
-            if (template == null || template.getFormat() != ImageFormat.ISO) {
-                throw new CloudRuntimeException(
-                        "Can not find ISO in vm_template table for id "
-                                + vm.getIsoId());
-            }
-
-            Pair<String, String> isoPathPair = templateMgr.getAbsoluteIsoPath(
-                    template.getId(), vm.getDataCenterId());
-
-            if (template.getTemplateType() == TemplateType.PERHOST) {
-                isoPath = template.getName();
-            } else {
-                if (isoPathPair == null) {
-                    s_logger.warn("Couldn't get absolute iso path");
-                    return false;
-                } else {
-                    isoPath = isoPathPair.first();
+            TemplateInfo template = templateMgr.prepareIso(vm.getIsoId(), vm.getDataCenterId());
+            if (template == null){
+                s_logger.error("Failed to prepare ISO on secondary or cache storage");
+                throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
                 }
-            }
-
             if (template.isBootable()) {
                 profile.setBootLoaderType(BootloaderType.CD);
             }
+
             GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
             String displayName = null;
             if (guestOS != null) {
                 displayName = guestOS.getDisplayName();
             }
-            VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO,
-                    StoragePoolType.ISO, null, template.getName(), null,
-                    isoPath, 0, null, displayName);
 
-            iso.setDeviceId(3);
-            profile.addDisk(iso);
+            TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
+            iso.setGuestOsType(displayName);
+            DiskTO disk = new DiskTO(iso, 3L, Volume.Type.ISO);
+            profile.addDisk(disk);
         } else {
-            VirtualMachineTemplate template = profile.getTemplate();
-            /* create a iso placeholder */
-            VolumeTO iso = new VolumeTO(profile.getId(), Volume.Type.ISO,
-                    StoragePoolType.ISO, null, template.getName(), null, null,
-                    0, null);
-            iso.setDeviceId(3);
-            profile.addDisk(iso);
+            TemplateObjectTO iso = new TemplateObjectTO();
+            iso.setFormat(ImageFormat.ISO);
+            DiskTO disk = new DiskTO(iso, 3L, Volume.Type.ISO);
+            profile.addDisk(disk);
         }
 
         return true;

@@ -36,6 +36,8 @@ import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -98,12 +100,10 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -113,9 +113,9 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
@@ -186,7 +186,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     private VMInstanceDao _instanceDao;
     @Inject
-    private VMTemplateHostDao _vmTemplateHostDao;
+    private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
     private AgentManager _agentMgr;
     @Inject
@@ -307,11 +307,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
                 _consoleProxyDao.update(cmd.getProxyVmId(), 0, DateUtil.currentGMTTime(), null);
             }
-        }
-
-        @Override
-        public void onAgentConnect(HostVO host, StartupCommand cmd) {
-            // no-op
         }
 
         @Override
@@ -939,22 +934,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
-            HostVO secondaryStorageHost = templateMgr.getSecondaryStorageHost(dataCenterId);
-            boolean templateReady = false;
+            TemplateDataStoreVO templateHostRef = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
+                    Status.DOWNLOADED);
 
-            if (secondaryStorageHost == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("No secondary storage available in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
-                }
-                return false;
-            }
-
-            if (template != null && secondaryStorageHost != null) {
-                VMTemplateHostVO templateHostRef = _vmTemplateHostDao.findByHostTemplate(secondaryStorageHost.getId(), template.getId());
-                templateReady = (templateHostRef != null) && (templateHostRef.getDownloadState() == Status.DOWNLOADED);
-            }
-
-            if (templateReady) {
+            if (templateHostRef != null) {
                 List<Pair<Long, Integer>> l = _consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, _use_lvm);
                 if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
                     return true;
@@ -967,8 +950,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 if (s_logger.isDebugEnabled()) {
                     if (template == null) {
                         s_logger.debug("Zone host is ready, but console proxy template is null");
-                    } else if (secondaryStorageHost != null) {
-			s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
 		    } else {
 			s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage.");
 		    }

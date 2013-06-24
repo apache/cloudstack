@@ -23,21 +23,18 @@ import java.util.Map;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
-
 public interface DataStoreLifeCycle {
-    public DataStore initialize(Map<String, Object> dsInfos);
+    DataStore initialize(Map<String, Object> dsInfos);
 
-    public boolean attachCluster(DataStore store, ClusterScope scope);
-    public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo);
+    boolean attachCluster(DataStore store, ClusterScope scope);
+
+    boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo);
+
     boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType);
 
-    public boolean dettach();
+    boolean maintain(DataStore store);
 
-    public boolean unmanaged();
+    boolean cancelMaintain(DataStore store);
 
-    public boolean maintain(DataStore store);
-
-    public boolean cancelMaintain(DataStore store);
-
-    public boolean deleteDataStore(DataStore store);
+    boolean deleteDataStore(DataStore store);
 }

@@ -112,12 +112,11 @@ public class RegisterTemplateCmd extends BaseCmd {
             description="Register template for the project")
     private Long projectId;
     
-    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
-            description="Image store uuid")
-    private String imageStoreUuid;
-    
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
     protected Map details;
+
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    protected Boolean isDynamicallyScalable;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -195,9 +194,6 @@ public class RegisterTemplateCmd extends BaseCmd {
         return templateTag;
     }
     
-    public String getImageStoreUuid() {
-        return this.imageStoreUuid;
-    }
 
     public Map getDetails() {
         if (details == null || details.isEmpty()) {
@@ -207,6 +203,10 @@ public class RegisterTemplateCmd extends BaseCmd {
         Collection paramsCollection = details.values();
         Map params = (Map) (paramsCollection.toArray())[0];
         return params;
+    }
+
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable == null ? false : isDynamicallyScalable;
     }
 
     /////////////////////////////////////////////////////
@@ -238,7 +238,7 @@ public class RegisterTemplateCmd extends BaseCmd {
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){
                 ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), zoneId, false);
+                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template, zoneId, false);
                 response.setResponses(templateResponses);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);

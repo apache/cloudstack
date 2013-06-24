@@ -921,7 +921,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
                     cmds = new Commands(OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost()));
+                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), true));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, reservation);
 
@@ -957,7 +957,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
 
-                            StopCommand cmd = new StopCommand(vm);
+                            StopCommand cmd = new StopCommand(vm, true);
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if (answer == null || !answer.getResult()) {
                                 s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers"));
@@ -1045,7 +1045,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected boolean sendStop(VirtualMachineGuru guru, VirtualMachineProfile profile, boolean force) {
         VirtualMachine vm = profile.getVirtualMachine();
-        StopCommand stop = new StopCommand(vm);
+        StopCommand stop = new StopCommand(vm, true);
         try {
             Answer answer = _agentMgr.send(vm.getHostId(), stop);
             if (!answer.getResult()) {
@@ -1248,7 +1248,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         vmGuru.prepareStop(profile);
         
-        StopCommand stop = new StopCommand(vm);
+        StopCommand stop = new StopCommand(vm, true);
         boolean stopped = false;
         StopAnswer answer = null;
         try {
@@ -2056,11 +2056,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Command cleanup(VirtualMachine vm) {
-        return new StopCommand(vm);
+        return new StopCommand(vm, true);
     }
 
     public Command cleanup(String vmName) {
-        return new StopCommand(vmName);
+        return new StopCommand(vmName, true);
     }
 /*
     public Commands fullHostSync(final long hostId, StartupRoutingCommand startup) {
@@ -2702,7 +2702,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
     
     @Override
-    public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupRoutingCommand)) {
             return;
         }

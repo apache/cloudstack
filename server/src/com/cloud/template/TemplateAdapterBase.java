@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -53,8 +53,8 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -77,11 +77,12 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject AccountManager _accountMgr;
 	protected @Inject DataCenterDao _dcDao;
 	protected @Inject VMTemplateDao _tmpltDao;
-	protected @Inject VMTemplateHostDao _tmpltHostDao;
+	protected @Inject TemplateDataStoreDao _tmpltStoreDao;
 	protected @Inject VMTemplateZoneDao _tmpltZoneDao;
 	protected @Inject UsageEventDao _usageEventDao;
 	protected @Inject HostDao _hostDao;
 	protected @Inject UserVmDao _userVmDao;
+	protected @Inject GuestOSHypervisorDao _osHyperDao;
 	protected @Inject ResourceLimitService _resourceLimitMgr;
 	protected @Inject DataStoreManager storeMgr;
 	@Inject TemplateManager templateMgr;
@@ -99,31 +100,24 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 
+	@Override
 	public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
             Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
             Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
             String accountName, Long domainId, String chksum, Boolean bootable, Map details) throws ResourceAllocationException {
 	    return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId, hypervisorType,
-	            chksum, bootable, null, null, details, false, null);
+	            chksum, bootable, null, null, details, false, null, false);
 	}
 	
+	@Override
 	public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits,
 			Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
 			Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
 			String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled,
-			String imageStoreUuid) throws ResourceAllocationException {
+			String imageStoreUuid, Boolean isDynamicallyScalable) throws ResourceAllocationException {
 		//Long accountId = null;
 		// parameters verification
 		
-	    String storeUuid = imageStoreUuid;
-        if (storeUuid != null) {
-            DataStore store = this.storeMgr.getDataStore(storeUuid, DataStoreRole.Image);
-            if (store == null) {
-                throw new InvalidParameterValueException("invalide image store uuid" + storeUuid);
-            }
-            
-        }
-        
 		if (isPublic == null) {
 			isPublic = Boolean.FALSE;
 		}
@@ -171,6 +165,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 		if (url.toLowerCase().contains("file://")) {
 			throw new InvalidParameterValueException("File:// type urls are currently unsupported");
 		}
+
 		// check whether owner can create public templates
 		boolean allowPublicUserTemplates = Boolean.parseBoolean(_configServer.getConfigValue(Config.AllowPublicUserTemplates.key(), Config.ConfigurationParameterScope.account.toString(), templateOwner.getId()));
 		if (!isAdmin && !allowPublicUserTemplates && isPublic) {
@@ -217,16 +212,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
         }
         
-        DataStore imageStore = this.templateMgr.getImageStore(imageStoreUuid, zoneId);
-        if (imageStore == null) {
-            throw new IllegalArgumentException("Cann't find an image store");
-        }
-        Long imageStoreId = imageStore.getId();
-        
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         CallContext.current().setEventDetails("Id: " +id+ " name: " + name);
 		return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic,
-				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details, sshkeyEnabled, imageStoreId);
+				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details, sshkeyEnabled, null, isDynamicallyScalable);
+
 	}
 	
 	@Override
@@ -241,9 +231,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 		return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
 				cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(),
 				cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()),
-				cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), cmd.getImageStoreUuid());
+				cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable());
+
 	}
 
+	@Override
 	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
 	    //check if the caller can operate with the template owner
 	    Account caller = CallContext.current().getCallingAccount();
@@ -252,7 +244,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	   
 		return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
 					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
-					cmd.getZoneId(), HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false, cmd.getImageStoreUuid());
+					cmd.getZoneId(), HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable());
 	}
 	
 	protected VMTemplateVO persistTemplate(TemplateProfile profile) {
@@ -263,7 +255,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 				profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType(), profile.getTemplateTag(), 
 				profile.getDetails(), profile.getSshKeyEnabled());
 
-		template.setImageDataStoreId(profile.getImageStoreId());
+
 		if (zoneId == null || zoneId.longValue() == -1) {
             List<DataCenterVO> dcs = _dcDao.listAll();
             
@@ -316,6 +308,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 		return userId;
 	}
 	
+	@Override
 	public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
 		Long templateId = cmd.getId();
 		Long userId = CallContext.current().getCallingUserId();
@@ -378,6 +371,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     	return new TemplateProfile(userId, template, zoneId);
 	}
 
+	@Override
 	abstract public VMTemplateVO create(TemplateProfile profile);
+	@Override
 	abstract public boolean delete(TemplateProfile profile);
 }

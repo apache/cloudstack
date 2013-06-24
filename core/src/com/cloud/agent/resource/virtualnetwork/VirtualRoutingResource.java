@@ -224,6 +224,7 @@ public class VirtualRoutingResource implements Manager {
             results[i] = "Failed";
         }
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
 
         if (routerIp == null) {
             return new SetFirewallRulesAnswer(cmd, false, results);
@@ -239,6 +240,13 @@ public class VirtualRoutingResource implements Manager {
         
         if (trafficType == FirewallRule.TrafficType.Egress){
             command.add("-E");
+            if (egressDefault.equals("true")) {
+                command.add("-P ", "1");
+            } else if (egressDefault.equals("System")) {
+                command.add("-P ", "2");
+            } else {
+                command.add("-P ", "0");
+            }
         }
 
         StringBuilder sb = new StringBuilder();

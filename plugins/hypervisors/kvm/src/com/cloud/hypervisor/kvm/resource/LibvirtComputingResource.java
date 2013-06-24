@@ -66,6 +66,9 @@ import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
 
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -91,9 +94,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
@@ -174,7 +174,11 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -205,6 +209,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.hypervisor.kvm.storage.KVMStorageProcessor;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
@@ -218,11 +223,13 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
+import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.TemplateInfo;
 import com.cloud.storage.template.TemplateLocation;
+import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -338,6 +345,8 @@ ServerResource {
 
     protected HypervisorType _hypervisorType;
     protected String _hypervisorURI;
+    protected long _hypervisorLibvirtVersion;
+    protected long _hypervisorQemuVersion;
     protected String _hypervisorPath;
     protected String _networkDirectSourceMode;
     protected String _networkDirectDevice;
@@ -354,7 +363,6 @@ ServerResource {
     protected String _localStoragePath;
     protected String _localStorageUUID;
     private final Map <String, String> _pifs = new HashMap<String, String>();
-    private final Map<String, Map<String, String>> hostNetInfo = new HashMap<String, Map<String, String>>();
     private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
 
     protected boolean _disconnected = true;
@@ -392,6 +400,8 @@ ServerResource {
     }
 
     protected BridgeType _bridgeType;
+
+    protected StorageSubsystemCommandHandler storageHandler;
 
     private String getEndIpFromStartIp(String startIp, int numIps) {
         String[] tokens = startIp.split("[.]");
@@ -460,7 +470,7 @@ ServerResource {
     }
 
     protected String getDefaultDomrScriptsDir() {
-        return "scripts/network/domr/kvm";
+        return "scripts/network/domr";
     }
 
     protected String getNetworkDirectSourceMode() {
@@ -693,7 +703,7 @@ ServerResource {
 
         _localStorageUUID = (String) params.get("local.storage.uuid");
         if (_localStorageUUID == null) {
-            throw new ConfigurationException("local.storage.uuid is not set! Please set this to a valid UUID");
+        	_localStorageUUID = UUID.nameUUIDFromBytes(_localStoragePath.getBytes()).toString();
         }
 
         value = (String) params.get("scripts.timeout");
@@ -737,6 +747,8 @@ ServerResource {
         try {
             _hvVersion = conn.getVersion();
             _hvVersion = (_hvVersion % 1000000) / 1000;
+            _hypervisorLibvirtVersion = conn.getLibVirVersion();
+            _hypervisorQemuVersion = conn.getVersion();
         } catch (LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
         }
@@ -831,6 +843,10 @@ ServerResource {
         params.put("libvirt.computing.resource", this);
 
         configureVifDrivers(params);
+
+        KVMStorageProcessor storageProcessor = new KVMStorageProcessor(_storagePoolMgr, this);
+        storageProcessor.configure(name, params);
+        storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
         return true;
     }
@@ -980,11 +996,6 @@ ServerResource {
         return pif;
     }
 
-    private String getOvsPif(String bridge) {
-        String pif = Script.runSimpleBashScript("ovs-vsctl list-ports " + bridge);
-        return pif;
-    }
-    
     private String matchPifFileInDirectory(String bridgeName){
         File f = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
 
@@ -1243,6 +1254,8 @@ ServerResource {
                 return execute((CheckNetworkCommand) cmd);
             } else if (cmd instanceof NetworkRulesVmSecondaryIpCommand) {
                 return execute((NetworkRulesVmSecondaryIpCommand) cmd);
+            } else if (cmd instanceof StorageSubSystemCommand) {
+                return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return execute((PvlanSetupCommand) cmd);
             } else {
@@ -1413,6 +1426,10 @@ ServerResource {
             VolumeTO volume = new VolumeTO(cmd.getVolumeId(), dskch.getType(),
                     pool.getType(), pool.getUuid(), pool.getPath(),
                     vol.getName(), vol.getName(), disksize, null);
+            volume.setBytesReadRate(dskch.getBytesReadRate());
+            volume.setBytesWriteRate(dskch.getBytesWriteRate());
+            volume.setIopsReadRate(dskch.getIopsReadRate());
+            volume.setIopsWriteRate(dskch.getIopsWriteRate());
             return new CreateAnswer(cmd, volume);
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to create volume: " + e.toString());
@@ -1545,8 +1562,6 @@ ServerResource {
                     vol.getPoolType(),
                     vol.getPoolUuid());
             pool.deletePhysicalDisk(vol.getPath());
-            String vmName = cmd.getVmName();
-            String poolPath = pool.getLocalPath();
             return new Answer(cmd, true, "Success");
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to delete volume: " + e.toString());
@@ -1714,7 +1729,6 @@ ServerResource {
 
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
-            Domain vm = getDomain(conn, routerName);
             List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
             InterfaceDef routerNic = null;
 
@@ -1729,7 +1743,6 @@ ServerResource {
                 return new SetupGuestNetworkAnswer(cmd, false, "Can not find nic with mac " + nic.getMac() + " for VM " + routerName);
             }
 
-            String args = "vpc_guestnw.sh " + routerIP + " -C";
             String dev = "eth" + nic.getDeviceId();
             String netmask = NetUtils.getSubNet(routerGIP, nic.getNetmask());
             String result = _virtRouterResource.assignGuestNetwork(dev, routerIP,
@@ -1748,15 +1761,11 @@ ServerResource {
 
     private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
         String[] results = new String[cmd.getRules().length];
-        String callResult;
-        Connect conn;
-        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String privateGw = cmd.getAccessDetail(NetworkElementCommand.VPC_PRIVATE_GATEWAY);
 
         try {
-            conn = LibvirtConnection.getConnectionByVmName(routerName);
-            Domain vm = getDomain(conn, routerName);
             String [][] rules = cmd.generateFwRules();
             String[] aclRules = rules[0];
             NicTO nic = cmd.getNic();
@@ -1780,7 +1789,7 @@ ServerResource {
             }
 
             return new SetNetworkACLAnswer(cmd, true, results);
-        } catch (LibvirtException e) {
+        } catch (Exception e) {
             String msg = "SetNetworkACL failed due to " + e.toString();
             s_logger.error(msg, e);
             return new SetNetworkACLAnswer(cmd, false, results);
@@ -1795,7 +1804,6 @@ ServerResource {
 
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
-            Domain vm = getDomain(conn, routerName);
             Integer devNum = 0;
             String pubVlan = pubIP.getVlanId();
             List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
@@ -1842,7 +1850,6 @@ ServerResource {
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
             IpAddressTO[] ips = cmd.getIpAddresses();
-            Domain vm = getDomain(conn, routerName);
             Integer devNum = 0;
             Map<String, Integer> vlanToNicNum = new HashMap<String, Integer>();
             List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
@@ -2028,7 +2035,6 @@ ServerResource {
         Long volumeId = cmd.getVolumeId();
         String secondaryStoragePoolUrl = cmd.getSecondaryStorageUrl();
         String snapshotName = cmd.getSnapshotName();
-        String snapshotPath = cmd.getVolumePath();
         String snapshotDestPath = null;
         String snapshotRelPath = null;
         String vmName = cmd.getVmName();
@@ -2124,66 +2130,6 @@ ServerResource {
                 + File.separator + snapshotName, true);
     }
 
-    protected DeleteSnapshotBackupAnswer execute(
-            final DeleteSnapshotBackupCommand cmd) {
-        Long dcId = cmd.getDataCenterId();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        KVMStoragePool secondaryStoragePool = null;
-        try {
-            secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(cmd
-                    .getSecondaryStorageUrl());
-
-            String ssPmountPath = secondaryStoragePool.getLocalPath();
-            String snapshotDestPath = ssPmountPath + File.separator
-                    + "snapshots" + File.separator + dcId + File.separator
-                    + accountId + File.separator + volumeId;
-
-            final Script command = new Script(_manageSnapshotPath,
-                    _cmdsTimeout, s_logger);
-            command.add("-d", snapshotDestPath);
-            command.add("-n", cmd.getSnapshotName());
-
-            command.execute();
-        } catch (CloudRuntimeException e) {
-            return new DeleteSnapshotBackupAnswer(cmd, false, e.toString());
-        } finally {
-            if (secondaryStoragePool != null) {
-                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
-            }
-        }
-        return new DeleteSnapshotBackupAnswer(cmd, true, null);
-    }
-
-    protected Answer execute(DeleteSnapshotsDirCommand cmd) {
-        Long dcId = cmd.getDcId();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        KVMStoragePool secondaryStoragePool = null;
-        try {
-            secondaryStoragePool = _storagePoolMgr.getStoragePoolByURI(cmd
-                    .getSecondaryStorageUrl());
-
-            String ssPmountPath = secondaryStoragePool.getLocalPath();
-            String snapshotDestPath = ssPmountPath + File.separator
-                    + "snapshots" + File.separator + dcId + File.separator
-                    + accountId + File.separator + volumeId;
-
-            final Script command = new Script(_manageSnapshotPath,
-                    _cmdsTimeout, s_logger);
-            command.add("-d", snapshotDestPath);
-            command.add("-f");
-            command.execute();
-        } catch (CloudRuntimeException e) {
-            return new Answer(cmd, false, e.toString());
-        } finally {
-            if (secondaryStoragePool != null) {
-                _storagePoolMgr.deleteStoragePool(secondaryStoragePool.getType(),secondaryStoragePool.getUuid());
-            }
-
-        }
-        return new Answer(cmd, true, null);
-    }
 
     protected CreateVolumeFromSnapshotAnswer execute(
             final CreateVolumeFromSnapshotCommand cmd) {
@@ -2303,7 +2249,6 @@ ServerResource {
         KVMStoragePool secondaryStorage = null;
         KVMStoragePool primary = null;
         try {
-            Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             String templateFolder = cmd.getAccountId() + File.separator
                     + cmd.getTemplateId() + File.separator;
             String templateInstallFolder = "/template/tmpl/" + templateFolder;
@@ -2399,10 +2344,6 @@ ServerResource {
                     templateInstallFolder + cmd.getUniqueName() + ".qcow2",
                     info.virtualSize, info.size, cmd.getUniqueName(),
                     ImageFormat.QCOW2);
-        } catch (LibvirtException e) {
-            s_logger.debug("Failed to get secondary storage pool: "
-                    + e.toString());
-            return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
         } catch (InternalErrorException e) {
             return new CreatePrivateTemplateAnswer(cmd, false, e.toString());
         } catch (IOException e) {
@@ -2481,7 +2422,6 @@ ServerResource {
     }
 
     protected Answer execute(ModifyStoragePoolCommand cmd) {
-        String poolType = cmd.getPool().getType().toString();
         KVMStoragePool storagepool = _storagePoolMgr.createStoragePool(cmd
                 .getPool().getUuid(), cmd.getPool().getHost(),
                 cmd.getPool().getPort(), cmd.getPool().getPath(),
@@ -2490,7 +2430,7 @@ ServerResource {
             return new Answer(cmd, false, " Failed to create storage pool");
         }
 
-        Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+        Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
         ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd,
                 storagepool.getCapacity(), storagepool.getUsed(), tInfo);
 
@@ -2628,7 +2568,7 @@ ServerResource {
                     cmd.getPoolUuid());
             KVMPhysicalDisk disk = primary.getPhysicalDisk(cmd.getVolumePath());
             attachOrDetachDisk(conn, cmd.getAttach(), cmd.getVmName(), disk,
-                    cmd.getDeviceId().intValue());
+                    cmd.getDeviceId().intValue(), cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate());
         } catch (LibvirtException e) {
             return new AttachVolumeAnswer(cmd, e.toString());
         } catch (InternalErrorException e) {
@@ -2813,8 +2753,8 @@ ServerResource {
             }
 
             /* setup disks, e.g for iso */
-            VolumeTO[] volumes = vm.getDisks();
-            for (VolumeTO volume : volumes) {
+            DiskTO[] volumes = vm.getDisks();
+            for (DiskTO volume : volumes) {
                 if (volume.getType() == Volume.Type.ISO) {
                     getVolumePath(conn, volume);
                 }
@@ -3229,6 +3169,8 @@ ServerResource {
         } else {
             guest.setGuestType(GuestDef.guestType.KVM);
             vm.setHvsType(HypervisorType.KVM.toString().toLowerCase());
+            vm.setLibvirtVersion(_hypervisorLibvirtVersion);
+            vm.setQemuVersion(_hypervisorQemuVersion);
         }
         guest.setGuestArch(vmTO.getArch());
         guest.setMachineType("pc");
@@ -3415,10 +3357,14 @@ ServerResource {
         }
     }
 
-    private String getVolumePath(Connect conn, VolumeTO volume)
+    private String getVolumePath(Connect conn, DiskTO volume)
             throws LibvirtException, URISyntaxException {
-        if (volume.getType() == Volume.Type.ISO && volume.getPath() != null) {
-            String isoPath = volume.getPath();
+        DataTO data = volume.getData();
+        DataStoreTO store = data.getDataStore();
+
+        if (volume.getType() == Volume.Type.ISO && data.getPath() != null) {
+            NfsTO nfsStore = (NfsTO)store;
+            String isoPath = nfsStore.getUrl() + File.separator + data.getPath();
             int index = isoPath.lastIndexOf("/");
             String path = isoPath.substring(0, index);
             String name = isoPath.substring(index + 1);
@@ -3427,26 +3373,28 @@ ServerResource {
             KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
             return isoVol.getPath();
         } else {
-            return volume.getPath();
+            return data.getPath();
         }
     }
 
     protected void createVbd(Connect conn, VirtualMachineTO vmSpec,
             String vmName, LibvirtVMDef vm) throws InternalErrorException,
             LibvirtException, URISyntaxException {
-        List<VolumeTO> disks = Arrays.asList(vmSpec.getDisks());
-        Collections.sort(disks, new Comparator<VolumeTO>() {
+        List<DiskTO> disks = Arrays.asList(vmSpec.getDisks());
+        Collections.sort(disks, new Comparator<DiskTO>() {
             @Override
-            public int compare(VolumeTO arg0, VolumeTO arg1) {
-                return arg0.getDeviceId() > arg1.getDeviceId() ? 1 : -1;
+            public int compare(DiskTO arg0, DiskTO arg1) {
+                return arg0.getDiskSeq() > arg1.getDiskSeq() ? 1 : -1;
             }
         });
 
-        for (VolumeTO volume : disks) {
+        for (DiskTO volume : disks) {
             KVMPhysicalDisk physicalDisk = null;
             KVMStoragePool pool = null;
-            if (volume.getType() == Volume.Type.ISO && volume.getPath() != null) {
-                String volPath = volume.getPath();
+            DataTO data = volume.getData();
+            if (volume.getType() == Volume.Type.ISO && data.getPath() != null) {
+                NfsTO nfsStore = (NfsTO)data.getDataStore();
+                String volPath = nfsStore.getUrl() + File.separator + data.getPath();
                 int index = volPath.lastIndexOf("/");
                 String volDir = volPath.substring(0, index);
                 String volName = volPath.substring(index + 1);
@@ -3454,10 +3402,11 @@ ServerResource {
                         getStoragePoolByURI(volDir);
                 physicalDisk = secondaryStorage.getPhysicalDisk(volName);
             } else if (volume.getType() != Volume.Type.ISO) {
+                PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
                 pool = _storagePoolMgr.getStoragePool(
-                        volume.getPoolType(),
-                        volume.getPoolUuid());
-                physicalDisk = pool.getPhysicalDisk(volume.getPath());
+                        store.getPoolType(),
+                        store.getUuid());
+                physicalDisk = pool.getPhysicalDisk(data.getPath());
             }
 
             String volPath = null;
@@ -3475,7 +3424,7 @@ ServerResource {
                     disk.defISODisk(volPath);
                 }
             } else {
-                int devId = (int) volume.getDeviceId();
+                int devId = volume.getDiskSeq().intValue();
 
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
@@ -3502,6 +3451,17 @@ ServerResource {
 
             }
 
+            VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
+
+            if ((volumeObjectTO.getBytesReadRate() != null) && (volumeObjectTO.getBytesReadRate()  > 0))
+                disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
+            if ((volumeObjectTO.getBytesWriteRate() != null) && (volumeObjectTO.getBytesWriteRate() > 0))
+                disk.setBytesWriteRate(volumeObjectTO.getBytesWriteRate());
+            if ((volumeObjectTO.getIopsReadRate() != null) && (volumeObjectTO.getIopsReadRate() > 0))
+                disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
+            if ((volumeObjectTO.getIopsWriteRate() != null) && (volumeObjectTO.getIopsWriteRate() > 0))
+                disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
+
             vm.getDevices().addDevice(disk);
         }
 
@@ -3515,12 +3475,14 @@ ServerResource {
 
         // For LXC, find and add the root filesystem
         if (HypervisorType.LXC.toString().toLowerCase().equals(vm.getHvsType())) {
-            for (VolumeTO volume : disks) {
+            for (DiskTO volume : disks) {
                 if (volume.getType() == Volume.Type.ROOT) {
+                    DataTO data = volume.getData();
+                    PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
                     KVMStoragePool pool = _storagePoolMgr.getStoragePool(
-                            volume.getPoolType(),
-                            volume.getPoolUuid());
-                    KVMPhysicalDisk physicalDisk = pool.getPhysicalDisk(volume.getPath());
+                            store.getPoolType(),
+                            store.getUuid());
+                    KVMPhysicalDisk physicalDisk = pool.getPhysicalDisk(data.getPath());
                     FilesystemDef rootFs = new FilesystemDef(physicalDisk.getPath(), "/");
                     vm.getDevices().addDevice(rootFs);
                     break;
@@ -3528,16 +3490,6 @@ ServerResource {
             }
         }
 
-    }
-
-    private VolumeTO getVolume(VirtualMachineTO vmSpec, Volume.Type type) {
-        VolumeTO volumes[] = vmSpec.getDisks();
-        for (VolumeTO volume : volumes) {
-            if (volume.getType() == type) {
-                return volume;
-            }
-        }
-        return null;
     }
 
     private void createVif(LibvirtVMDef vm, NicTO nic)
@@ -3568,7 +3520,7 @@ ServerResource {
         return new CheckSshAnswer(cmd);
     }
 
-    private boolean cleanupDisk(Connect conn, DiskDef disk) {
+    public boolean cleanupDisk(Connect conn, DiskDef disk) {
         // need to umount secondary storage
         String path = disk.getDiskPath();
         String poolUuid = null;
@@ -3635,7 +3587,7 @@ ServerResource {
 
     protected synchronized String attachOrDetachDisk(Connect conn,
             boolean attach, String vmName, KVMPhysicalDisk attachingDisk,
-            int devId) throws LibvirtException, InternalErrorException {
+            int devId, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -3675,6 +3627,14 @@ ServerResource {
                     diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId,
                             DiskDef.diskBus.VIRTIO);
                 }
+                if ((bytesReadRate != null) && (bytesReadRate > 0))
+                    diskdef.setBytesReadRate(bytesReadRate);
+                if ((bytesWriteRate != null) && (bytesWriteRate > 0))
+                    diskdef.setBytesWriteRate(bytesWriteRate);
+                if ((iopsReadRate != null) && (iopsReadRate > 0))
+                    diskdef.setIopsReadRate(iopsReadRate);
+                if ((iopsWriteRate != null) && (iopsWriteRate > 0))
+                    diskdef.setIopsWriteRate(iopsWriteRate);
             }
 
             String xml = diskdef.toString();
@@ -4383,6 +4343,7 @@ ServerResource {
         return parser.getEmulator();
     }
 
+
     private String getGuestType(Connect conn, String vmName) {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
@@ -4441,14 +4402,6 @@ ServerResource {
         }
     }
 
-    private InterfaceDef.nicModel getGuestNicModel(String guestOSType) {
-        if (isGuestPVEnabled(guestOSType)) {
-            return InterfaceDef.nicModel.VIRTIO;
-        } else {
-            return InterfaceDef.nicModel.E1000;
-        }
-    }
-
     private DiskDef.diskBus getGuestDiskModel(String guestOSType) {
         if (isGuestPVEnabled(guestOSType)) {
             return DiskDef.diskBus.VIRTIO;
@@ -4482,7 +4435,7 @@ ServerResource {
         }
     }
 
-    private Domain getDomain(Connect conn, String vmName)
+    public Domain getDomain(Connect conn, String vmName)
             throws LibvirtException {
         return conn
                 .domainLookupByName(vmName);
@@ -4510,7 +4463,7 @@ ServerResource {
         }
     }
 
-    protected List<DiskDef> getDisks(Connect conn, String vmName) {
+    public List<DiskDef> getDisks(Connect conn, String vmName) {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         Domain dm = null;
         try {
@@ -4539,38 +4492,7 @@ ServerResource {
         return command.execute();
     }
 
-    private String executeBashScript(String script, OutputInterpreter parser) {
-        Script command = new Script("/bin/bash", _timeout, s_logger);
-        command.add("-c");
-        command.add(script);
-        return command.execute(parser);
-    }
 
-    private void deletExitingLinkLocalRoutTable(String linkLocalBr) {
-        Script command = new Script("/bin/bash", _timeout);
-        command.add("-c");
-        command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
-        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-        String result = command.execute(parser);
-        boolean foundLinkLocalBr = false;
-        if (result == null && parser.getLines() != null) {
-            String[] lines = parser.getLines().split("\\n");
-            for (String line : lines) {
-                String[] tokens = line.split(" ");
-                if (!tokens[2].equalsIgnoreCase(linkLocalBr)) {
-                    Script.runSimpleBashScript("ip route del "
-                            + NetUtils.getLinkLocalCIDR());
-                } else {
-                    foundLinkLocalBr = true;
-                }
-            }
-        }
-        if (!foundLinkLocalBr) {
-            Script.runSimpleBashScript("ip route add "
-                    + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr
-                    + " src " + NetUtils.getLinkLocalGateway());
-        }
-    }
 
     private List<VmDiskStatsEntry> getVmDiskStat(Connect conn, String vmName)
             throws LibvirtException {

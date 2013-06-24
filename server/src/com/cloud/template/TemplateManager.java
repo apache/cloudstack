@@ -19,7 +19,9 @@ package com.cloud.template;
 import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.InternalErrorException;
@@ -35,11 +37,11 @@ import com.cloud.utils.Pair;
 /**
  * TemplateManager manages the templates stored on secondary storage. It is responsible for creating private/public templates.
  */
-public interface TemplateManager extends TemplateService{
+public interface TemplateManager extends TemplateApiService{
 
     /**
      * Prepares a template for vm creation for a certain storage pool.
-     * 
+     *
      * @param template
      *            template to prepare
      * @param pool
@@ -52,21 +54,20 @@ public interface TemplateManager extends TemplateService{
 
     /**
      * Copies a template from its current secondary storage server to the secondary storage server in the specified zone.
-     * 
+     *
      * @param template
-     * @param srcSecHost
-     * @param srcZone
+     * @param srcSecStore
      * @param destZone
      * @return true if success
      * @throws InternalErrorException
      * @throws StorageUnavailableException
      * @throws ResourceAllocationException
      */
-    boolean copy(long userId, VMTemplateVO template, HostVO srcSecHost, DataCenterVO srcZone, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException;
+    boolean copy(long userId, VMTemplateVO template, DataStore srcSecStore, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Deletes a template from secondary storage servers
-     * 
+     *
      * @param userId
      * @param templateId
      * @param zoneId
@@ -77,7 +78,7 @@ public interface TemplateManager extends TemplateService{
 
     /**
      * Lists templates in the specified storage pool that are not being used by any VM.
-     * 
+     *
      * @param pool
      * @return list of VMTemplateStoragePoolVO
      */
@@ -85,36 +86,32 @@ public interface TemplateManager extends TemplateService{
 
     /**
      * Deletes a template in the specified storage pool.
-     * 
+     *
      * @param templatePoolVO
      */
     void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO);
 
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
 
-    VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool);
-
-
-    VMTemplateHostVO findVmTemplateHost(long templateId,
-            StoragePool pool);
+    boolean templateIsDeleteable(long templateId);
 
     Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId);
 
     String getSecondaryStorageURL(long zoneId);
 
-    HostVO getSecondaryStorageHost(long zoneId, long tmpltId);
-
-    VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId,
-            boolean readyOnly);
-
-    HostVO getSecondaryStorageHost(long zoneId);
-
-    List<HostVO> getSecondaryStorageHosts(long zoneId);
+    DataStore getImageStore(long zoneId, long tmpltId);
 
     Long getTemplateSize(long templateId, long zoneId);
 
     DataStore getImageStore(String storeUuid, Long zoneId);
 
-    String getChecksum(Long hostId, String templatePath);
+    String getChecksum(DataStore store, String templatePath);
+
+    List<DataStore> getImageStoreByTemplate(long templateId, Long zoneId);
+
+    TemplateInfo prepareIso(long isoId, long dcId);
+
+
+
 
 }

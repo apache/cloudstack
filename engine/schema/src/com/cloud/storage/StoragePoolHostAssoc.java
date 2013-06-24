@@ -21,15 +21,15 @@ import org.apache.cloudstack.api.InternalIdentity;
 import java.util.Date;
 
 public interface StoragePoolHostAssoc extends InternalIdentity {
-	
-	long getHostId();
-	
-	long getPoolId();
-	
-	String getLocalPath();
 
-	Date getCreated();
+    long getHostId();
 
-	Date getLastUpdated();
+    long getPoolId();
+
+    String getLocalPath();
+
+    Date getCreated();
+
+    Date getLastUpdated();
 
 }

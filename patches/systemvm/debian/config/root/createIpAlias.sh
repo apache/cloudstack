@@ -33,3 +33,6 @@ do
  ifconfig eth0:$alias_count $routerip netmask $netmask up
  var=$( echo $var | sed "s/${var1}-//" )
 done
+#restaring the password service to enable it on the ip aliases
+/etc/init.d/cloud-passwd-srvr restart
+exit $?

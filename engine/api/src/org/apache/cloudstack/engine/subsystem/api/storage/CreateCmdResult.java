@@ -18,20 +18,30 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import org.apache.cloudstack.storage.command.CommandResult;
+
+import com.cloud.agent.api.Answer;
+
 public class CreateCmdResult extends CommandResult {
     private String path;
-    private Long size;
-    public CreateCmdResult(String path, Long size) {
+    private Answer answer;
+
+    public CreateCmdResult(String path, Answer answer) {
         super();
         this.path = path;
-        this.size = size;
+        this.answer = answer;
     }
-    
+
     public String getPath() {
         return this.path;
     }
-    
-    public Long getSize() {
-        return this.size;
+
+    public Answer getAnswer() {
+        return answer;
     }
+
+    public void setAnswer(Answer answer) {
+        this.answer = answer;
+    }
+
 }

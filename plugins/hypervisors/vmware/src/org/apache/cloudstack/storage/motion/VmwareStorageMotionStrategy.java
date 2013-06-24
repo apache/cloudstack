@@ -21,11 +21,10 @@ package org.apache.cloudstack.storage.motion;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.List;
-
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -39,12 +38,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateWithStorageAnswer;
 import com.cloud.agent.api.MigrateWithStorageCommand;
-import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
-import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
-import com.cloud.agent.api.MigrateWithStorageReceiveAnswer;
-import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
-import com.cloud.agent.api.MigrateWithStorageSendAnswer;
-import com.cloud.agent.api.MigrateWithStorageSendCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;

@@ -17,8 +17,10 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -32,7 +34,7 @@ import com.cloud.template.VirtualMachineTemplate;
 
 @EntityReference(value=VirtualMachineTemplate.class)
 @SuppressWarnings("unused")
-public class TemplateResponse extends BaseResponse implements ControlledEntityResponse {
+public class TemplateResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the template ID")
     private String id;
 
@@ -83,15 +85,14 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name to which the template belongs")
     private String account;
 
+    //TODO: since a template can be associated to more than one zones, this model is not accurate. For backward-compatibility, keep these fields
+    // here, but add a zones field to capture multiple zones.
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone for this template")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone for this template")
     private String zoneName;
     
-    @SerializedName(ApiConstants.ZONE_TYPE) @Param(description="the networktype of the zone for this template")
-    private String zoneType;
-
     @SerializedName(ApiConstants.STATUS) @Param(description="the status of the template")
     private String status;
 
@@ -137,11 +138,23 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.DETAILS) @Param(description="additional key/value details tied with template")
     private Map details;
 
+    @SerializedName("zones")  @Param(description="list of zones associated with tempate", responseObject = TemplateZoneResponse.class)
+    private Set<TemplateZoneResponse> zones;
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with tempate", responseObject = ResourceTagResponse.class)
-    private List<ResourceTagResponse> tags;
+    private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.SSHKEY_ENABLED) @Param(description="true if template is sshkey enabled, false otherwise")
     private Boolean sshKeyEnabled;
+
+    @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE) @Param(description="true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    private Boolean isDynamicallyScalable;
+
+    public TemplateResponse(){
+        zones = new LinkedHashSet<TemplateZoneResponse>();
+        tags = new LinkedHashSet<ResourceTagResponse>();
+    }
+
 
     @Override
     public String getObjectId() {
@@ -160,10 +173,6 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
         this.zoneName = zoneName;
     }
 
-    public void setZoneType(String zoneType) {
-        this.zoneType = zoneType;
-    }
-    
     public void setAccountId(String accountId) {
         this.accountId = accountId;
     }
@@ -296,12 +305,31 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
         this.details = details;
     }
 
-    public void setTags(List<ResourceTagResponse> tags) {
+    public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void addTag(ResourceTagResponse tag){
+        this.tags.add(tag);
+    }
+
+    public void setZones(Set<TemplateZoneResponse> zones){
+        this.zones = zones;
+    }
+
+    public void addZone(TemplateZoneResponse zone){
+        this.zones.add(zone);
     }
 
     public void setSshKeyEnabled(boolean sshKeyEnabled) {
         this.sshKeyEnabled = sshKeyEnabled;
     }
 
+    public void setDynamicallyScalable(boolean isDynamicallyScalable) {
+        this.isDynamicallyScalable = isDynamicallyScalable;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
 }

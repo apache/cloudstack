@@ -97,6 +97,7 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 
@@ -151,6 +152,8 @@ public class VirtualMachineManagerImplTest {
     ConfigDepot _configDepot;
         @Mock
         HostVO hostVO;
+        @Mock
+        UserVmDetailVO _vmDetailVO;
 
     @Mock
     EntityManager _entityMgr;
@@ -160,6 +163,7 @@ public class VirtualMachineManagerImplTest {
         @Mock DataCenterDao _dcDao;
         @Mock DiskOfferingDao _diskOfferingDao;
         @Mock PrimaryDataStoreDao _storagePoolDao;
+        @Mock UserVmDetailsDao _vmDetailsDao;
         @Mock StoragePoolHostDao _poolHostDao;
         @Mock NetworkManager _networkMgr;
         @Mock HypervisorGuruManager _hvGuruMgr;
@@ -231,14 +235,24 @@ public class VirtualMachineManagerImplTest {
         DeployDestination dest = new DeployDestination(null, null, null, _host);
         long l = 1L;
 
+        when(_vmInstance.getId()).thenReturn(3L);
+        when(_vmDetailsDao.findDetail(3L, VirtualMachine.IsDynamicScalingEnabled)).thenReturn(_vmDetailVO);
+        when(_vmDetailVO.getValue()).thenReturn("true");
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         ServiceOfferingVO newServiceOffering = getSvcoffering(512);
         when(_hostDao.findById(_vmInstance.hostId)).thenReturn(hostVO);
         when(hostVO.getClusterId()).thenReturn(1L);
 //        when(_configDepot.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
 //        when(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
+        when(_vmInstance.getHostId()).thenReturn(1L);
+        when(_hostDao.findById(1L)).thenReturn(hostVO);
+        when(_vmInstance.getDataCenterId()).thenReturn(1L);
+        when(hostVO.getClusterId()).thenReturn(1L);
+//        when(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), 1L)).thenReturn("true");
+//        when(_configServer.getConfigValue(Config.MemOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
+//        when(_configServer.getConfigValue(Config.CPUOverprovisioningFactor.key(), Config.ConfigurationParameterScope.cluster.toString(), 1L)).thenReturn("1.0");
         ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(),
-                newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
+                newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse(), true);
         Answer answer = new ScaleVmAnswer(reconfigureCmd, true, "details");
         when(_agentMgr.send(2l, reconfigureCmd)).thenReturn(null);
         _vmMgr.reConfigureVm(_vmInstance, getSvcoffering(256), false);

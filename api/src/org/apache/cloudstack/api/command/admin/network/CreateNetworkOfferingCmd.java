@@ -100,6 +100,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     		" Supported keys are internallbprovider/publiclbprovider with service provider as a value")
     protected Map details;
 
+    @Parameter(name=ApiConstants.EGRESS_DEFAULT_POLICY, type=CommandType.BOOLEAN, description="true if default guest network egress policy is allow; false if default egress policy is deny")
+    private Boolean egressDefaultPolicy;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -161,6 +164,13 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getIsPersistent() {
         return isPersistent == null ? false : isPersistent;
+    }
+
+    public Boolean getEgressDefaultPolicy() {
+        if (egressDefaultPolicy == null) {
+            return true;
+        }
+        return egressDefaultPolicy;
     }
 
     public Map<String, List<String>> getServiceProviders() {

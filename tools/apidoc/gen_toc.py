@@ -142,11 +142,17 @@ known_categories = {
     'removeIpFromNic': 'Nic',
     'listNics':'Nic',
 	'AffinityGroup': 'Affinity Group',
+    'addImageStore': 'Image Store',
+    'listImageStore': 'Image Store',
+    'deleteImageStore': 'Image Store',
+    'createCacheStore': 'Image Store',
+    'listCacheStores': 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
     'PortableIp': 'Portable IP',
     'dedicateHost': 'Dedicate Resources',
-    'releaseDedicatedHost': 'Dedicate Resources'
+    'releaseDedicatedHost': 'Dedicate Resources',
+    'Baremetal' : 'Baremetal'
     }
 
 

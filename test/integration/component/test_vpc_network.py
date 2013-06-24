@@ -72,7 +72,6 @@ class Services:
                 },
                 "serviceCapabilityList": {
                     "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
-                    "Lb": {"lbSchemes": "public", "SupportedLbIsolation": "dedicated"}
                 },
             },
             "network_off_netscaler": {
@@ -95,7 +94,6 @@ class Services:
                 },
                 "serviceCapabilityList": {
                     "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
-                    "Lb": {"lbSchemes": "public", "SupportedLbIsolation": "dedicated"}
                 },
             },
             "network_off_shared": {
@@ -229,25 +227,7 @@ class TestVPCNetwork(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = [self.account]
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                   )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -394,7 +374,7 @@ class TestVPCNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_02_create_network_fail(self):
-        """ Test create network in VPC
+        """ Test create network in VPC mismatched services (Should fail)
         """
 
         # Validate the following
@@ -712,7 +692,7 @@ class TestVPCNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_06_create_network_with_rvr(self):
-        """ Test create network with eredundant router capability
+        """ Test create network with redundant router capability
         """
 
         # Validate the following
@@ -752,7 +732,7 @@ class TestVPCNetwork(cloudstackTestCase):
         self.validate_vpc_network(vpc)
 
         # Enable redundant router capability for the network offering
-        self.services["network"]["servicecapabilitylist"] = {
+        self.services["network"]["serviceCapabilityList"] = {
                                                 "SourceNat": {
                                                     "RedundantRouter": "true",
                                                     },
@@ -1094,25 +1074,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = [self.account]
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                   )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -1365,6 +1327,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         # 3. Add network2 with cidr - 10.1.1.1/24  to this VPC
         # 4. Add network3 with cidr - 10.1.1.1/26  to this VPC
         # 5. Network creation in step 3 & 4 should fail.
+        self.services = Services().services
 
         self.debug("Creating a VPC offering")
         vpc_off = VpcOffering.create(
@@ -1606,19 +1569,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = [self.account]
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                              "network.gc.interval",
-                                              "network.gc.wait"])
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -1673,8 +1624,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_01_network_services_upgrade(self):
-        """ Test update Network that is part of a VPC to a network offering
-            that has more services.
+        """ Test update Network that is part of a VPC to a network offering that has more services
         """
 
         # Validate the following
@@ -2027,8 +1977,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_02_network_vpcvr2vr_upgrade(self):
-        """ Test update Network that is NOT part of a VPC to a nw offering
-            that has services that are provided by VPCVR and vice versa.
+        """ Test update Network that is NOT part of a VPC to a nw offering that has services that are provided by VPCVR and vice versa
         """
 
         # Validate the following
@@ -2298,7 +2247,6 @@ class TestVPCNetworkGc(cloudstackTestCase):
                 cmd = stopVirtualMachine.stopVirtualMachineCmd()
                 cmd.id = vm.id
                 self.apiclient.stopVirtualMachine(cmd)
-        self.cleanup = []
         return
 
     def tearDown(self):
@@ -2311,15 +2259,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                                   )
         for vm in vms:
             if vm.state == "Stopped":
-                cmd = startVirtualMachine.startVirtualMachineCmd()
-                cmd.id = vm.id
-                self.apiclient.startVirtualMachine(cmd)
-
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+                vm.start(self.apiclient)
         return
 
     def validate_vpc_offering(self, vpc_offering):

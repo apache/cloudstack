@@ -26,6 +26,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.*;
+import com.cloud.offerings.NetworkOfferingVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -65,23 +67,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.dao.ExternalFirewallDeviceDao;
-import com.cloud.network.dao.ExternalFirewallDeviceVO;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
-import com.cloud.network.dao.InlineLoadBalancerNicMapVO;
-import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkExternalFirewallDao;
-import com.cloud.network.dao.NetworkExternalFirewallVO;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -538,6 +523,9 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         }
 
         List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
+        NetworkVO networkVO = _networkDao.findById(network.getId());
+        NetworkOfferingVO offering = _networkOfferingDao.findById(networkVO.getNetworkOfferingId());
+        Boolean defaultEgressPolicy = offering.getEgressDefaultPolicy();
 
         for (FirewallRule rule : rules) {
             if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
@@ -547,7 +535,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             if (rule.getPurpose() == Purpose.Firewall && rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
                 String guestVlanTag = network.getBroadcastUri().getHost();
                 String guestCidr = network.getCidr();
-                ruleTO = new FirewallRuleTO(rule, guestVlanTag, rule.getTrafficType());
+                ruleTO = new FirewallRuleTO(rule, guestVlanTag, rule.getTrafficType(), guestCidr, defaultEgressPolicy, rule.getType());
             } else {
                 IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());

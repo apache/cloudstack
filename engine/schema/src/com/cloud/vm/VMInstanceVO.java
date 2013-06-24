@@ -185,24 +185,24 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
             long accountId,
             boolean haEnabled) {
         this.id = id;
-        this.hostName = name != null ? name : this.uuid;
+        hostName = name != null ? name : uuid;
         if (vmTemplateId != null) {
-            this.templateId = vmTemplateId;
+            templateId = vmTemplateId;
         }
         this.instanceName = instanceName;
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
-        this.vncPassword = Long.toHexString(new Random().nextLong());
-        this.state = State.Stopped;
+        vncPassword = Long.toHexString(new Random().nextLong());
+        state = State.Stopped;
         this.accountId = accountId;
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
-        this.limitCpuUse = false;
+        limitCpuUse = false;
         
-        this.powerState = PowerState.PowerUnknown;
-        this.powerStateUpdateTime = DateUtil.currentGMTTime();
+        powerState = PowerState.PowerUnknown;
+        powerStateUpdateTime = DateUtil.currentGMTTime();
     }
 
     public VMInstanceVO(long id,
@@ -218,11 +218,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
             boolean haEnabled,
             boolean limitResourceUse, Long diskOfferingId) {
         this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
-        this.limitCpuUse = limitResourceUse;
+        limitCpuUse = limitResourceUse;
         this.diskOfferingId = diskOfferingId;
 
-        this.powerState = PowerState.PowerUnknown;
-        this.powerStateUpdateTime = DateUtil.currentGMTTime();
+        powerState = PowerState.PowerUnknown;
+        powerStateUpdateTime = DateUtil.currentGMTTime();
     }
 
     protected VMInstanceVO() {
@@ -337,11 +337,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public Date getProxyAssignTime() {
-        return this.proxyAssignTime;
+        return proxyAssignTime;
     }
 
     public void setProxyAssignTime(Date time) {
-        this.proxyAssignTime = time;
+        proxyAssignTime = time;
     }
 
     @Override
@@ -425,7 +425,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public void setPodId(long podId) {
-        this.podIdToDeployIn = podId;
+        podIdToDeployIn = podId;
     }
 
     public void setPrivateMacAddress(String privateMacAddress) {
@@ -449,7 +449,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public String getReservationId() {
-        return this.reservationId;
+        return reservationId;
     }
 
     @Override
@@ -509,7 +509,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	}
 	
 	public VirtualMachine.PowerState getPowerState() {
-		return this.powerState;
+		return powerState;
 	}
 	
 	public void setPowerState(PowerState powerState) {
@@ -517,26 +517,26 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	}
 	
 	public Date getPowerStateUpdateTime() {
-		return this.powerStateUpdateTime;
+		return powerStateUpdateTime;
 	}
     
 	public void setPowerStateUpdateTime(Date updateTime) {
-		this.powerStateUpdateTime = updateTime;
+		powerStateUpdateTime = updateTime;
 	}
 	
 	public int getPowerStateUpdateCount() {
-		return this.powerStateUpdateCount;
+		return powerStateUpdateCount;
 	}
 	
 	public void setPowerStateUpdateCount(int count) {
-		this.powerStateUpdateCount = count;
+		powerStateUpdateCount = count;
 	}
 	
 	public Long getPowerHostId() {
-		return this.powerHostId;
+		return powerHostId;
 	}
 	
 	public void setPowerHostId(Long hostId) {
-		this.powerHostId = hostId;
+		powerHostId = hostId;
 	}
 }

@@ -31,6 +31,7 @@ import org.springframework.core.type.filter.TypeFilter;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
 import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
@@ -42,7 +43,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
@@ -359,8 +359,8 @@ public class ChildTestConfiguration {
     }
     
     @Bean
-    public ConfigurationManager configurationMgr() {
-    	return Mockito.mock(ConfigurationManager.class);
+    public DataStoreManager dataStoreManager() {
+        return Mockito.mock(DataStoreManager.class);
     }
 
     public static class Library implements TypeFilter {

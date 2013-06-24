@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-
 import java.util.List;
 
 import javax.ejb.Local;
@@ -32,40 +31,40 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local (value={SnapshotPolicyDao.class})
+@Local(value = { SnapshotPolicyDao.class })
 public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long> implements SnapshotPolicyDao {
-	private final SearchBuilder<SnapshotPolicyVO> VolumeIdSearch;
-	private final SearchBuilder<SnapshotPolicyVO> VolumeIdIntervalSearch;
-	private final SearchBuilder<SnapshotPolicyVO> ActivePolicySearch;
-	
-	@Override
-	public SnapshotPolicyVO findOneByVolumeInterval(long volumeId, IntervalType intvType) {
-		SearchCriteria<SnapshotPolicyVO> sc = VolumeIdIntervalSearch.create();
+    private final SearchBuilder<SnapshotPolicyVO> VolumeIdSearch;
+    private final SearchBuilder<SnapshotPolicyVO> VolumeIdIntervalSearch;
+    private final SearchBuilder<SnapshotPolicyVO> ActivePolicySearch;
+
+    @Override
+    public SnapshotPolicyVO findOneByVolumeInterval(long volumeId, IntervalType intvType) {
+        SearchCriteria<SnapshotPolicyVO> sc = VolumeIdIntervalSearch.create();
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("interval", intvType.ordinal());
-		return findOneBy(sc);
-	}
-	
-   @Override
+        return findOneBy(sc);
+    }
+
+    @Override
     public SnapshotPolicyVO findOneByVolume(long volumeId) {
         SearchCriteria<SnapshotPolicyVO> sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("active", true);
         return findOneBy(sc);
     }
-	
-	@Override
-	public List<SnapshotPolicyVO> listByVolumeId(long volumeId) {
-		return listByVolumeId(volumeId, null);
-	}
-	
+
+    @Override
+    public List<SnapshotPolicyVO> listByVolumeId(long volumeId) {
+        return listByVolumeId(volumeId, null);
+    }
+
     @Override
     public List<SnapshotPolicyVO> listByVolumeId(long volumeId, Filter filter) {
         SearchCriteria<SnapshotPolicyVO> sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
         return listBy(sc, filter);
     }
-	
+
     @Override
     public Pair<List<SnapshotPolicyVO>, Integer> listAndCountByVolumeId(long volumeId) {
         return listAndCountByVolumeId(volumeId, null);
@@ -84,12 +83,12 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
         VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdSearch.and("active", VolumeIdSearch.entity().isActive(), SearchCriteria.Op.EQ);
         VolumeIdSearch.done();
-        
+
         VolumeIdIntervalSearch = createSearchBuilder();
         VolumeIdIntervalSearch.and("volumeId", VolumeIdIntervalSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdIntervalSearch.and("interval", VolumeIdIntervalSearch.entity().getInterval(), SearchCriteria.Op.EQ);
         VolumeIdIntervalSearch.done();
-        
+
         ActivePolicySearch = createSearchBuilder();
         ActivePolicySearch.and("active", ActivePolicySearch.entity().isActive(), SearchCriteria.Op.EQ);
         ActivePolicySearch.done();
@@ -100,5 +99,5 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
         SearchCriteria<SnapshotPolicyVO> sc = ActivePolicySearch.create();
         sc.setParameters("active", true);
         return listIncludingRemovedBy(sc);
-    }	
+    }
 }

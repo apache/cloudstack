@@ -249,6 +249,13 @@ listSwifts=1
 addS3=1
 listS3s=1
 
+#### image store commands
+addImageStore=1
+listImageStores=1
+deleteImageStore=1
+createCacheStore=1
+listCacheStores=1
+
 #### host commands
 addHost=3
 addCluster=1
@@ -595,6 +602,9 @@ revertToVMSnapshot=15
 
 #### Baremetal commands
 addBaremetalHost=1
+addBaremetalPxeKickStartServer=1
+addBaremetalPxePingServer=1
+addBaremetalDhcp=1
 
 #### New Load Balancer commands
 createLoadBalancer=15
