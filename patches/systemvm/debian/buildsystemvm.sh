@@ -477,9 +477,9 @@ scriptdir=$(dirname $PWD/$0)
 
 rm -rf /tmp/systemvm
 mkdir -p /tmp/systemvm
-cp ./xt_CHECKSUM.ko /tmp/systemvm
-cp ./iptables_1.4.8-3local1checksum1_i386.deb /tmp/systemvm
-cp ./xe-guest-utilities_5.6.0-595_i386.deb /tmp/systemvm
+#cp ./xt_CHECKSUM.ko /tmp/systemvm
+#cp ./iptables_1.4.8-3local1checksum1_i386.deb /tmp/systemvm
+#cp ./xe-guest-utilities_5.6.0-595_i386.deb /tmp/systemvm
 
 rm -f $IMAGELOC
 begin=$(date +%s)
