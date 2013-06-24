@@ -790,7 +790,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     @Override
     public VMTemplateVO findRoutingTemplate(HypervisorType hType, String templateName) {
         SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch2.create();
-        sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+        sc.setParameters("templateType", TemplateType.ROUTING);
         sc.setParameters("hypervisorType", hType);
         if (templateName != null) {
             sc.setParameters("templateName", templateName);
@@ -803,7 +803,22 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         if (tmplts.size() > 0) {
             return tmplts.get(0);
         } else {
-            return null;
+            sc = tmpltTypeHyperSearch2.create();
+            sc.setParameters("templateType", TemplateType.SYSTEM);
+            sc.setParameters("hypervisorType", hType);
+            if (templateName != null) {
+                sc.setParameters("templateName", templateName);
+            }
+
+            // order by descending order of id and select the first (this is going
+            // to be the latest)
+            tmplts = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, 1l));
+
+            if (tmplts.size() > 0) {
+                return tmplts.get(0);
+            } else {
+                return null;
+            }
         }
     }
 

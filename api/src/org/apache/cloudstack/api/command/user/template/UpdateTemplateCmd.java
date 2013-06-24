@@ -70,6 +70,7 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd {
         if (result != null) {
             TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(result);
             response.setObjectName("template");
+            response.setTemplateType(result.getTemplateType().toString());//Template can be either USER or ROUTING type
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

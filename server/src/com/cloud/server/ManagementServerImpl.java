@@ -486,6 +486,7 @@ import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeManager;
@@ -506,6 +507,7 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
@@ -679,6 +681,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     UserVmManager _userVmMgr;
     @Inject
     VolumeDataFactory _volFactory;
+    @Inject
+    AccountService _accountService;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -1732,6 +1736,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Boolean bootable = cmd.isBootable();
         Integer sortKey = cmd.getSortKey();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
+        Boolean isRoutingTemplate = cmd.isRoutingType();
         Account account = UserContext.current().getCaller();
 
         // verify that template exists
@@ -1752,8 +1757,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // do a permission check
         _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
 
+        if(cmd.isRoutingType() != null){
+            if(!_accountService.isRootAdmin(account.getType())){
+                throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
+            }
+        }
         boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null
-                && bootable == null && sortKey == null && isDynamicallyScalable == null);
+                && bootable == null && sortKey == null && isDynamicallyScalable == null && isRoutingTemplate == null);
         if (!updateNeeded) {
             return template;
         }
@@ -1804,6 +1814,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (isDynamicallyScalable != null) {
             template.setDynamicallyScalable(isDynamicallyScalable);
+        }
+
+        if (isRoutingTemplate != null) {
+            if (isRoutingTemplate) {
+                template.setTemplateType(TemplateType.ROUTING);
+            } else {
+                template.setTemplateType(TemplateType.USER);
+            }
         }
 
         _templateDao.update(id, template);
