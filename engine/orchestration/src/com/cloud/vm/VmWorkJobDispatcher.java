@@ -78,8 +78,10 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         	
         	if (cmd.equals(Start)) {
                 work = deserialize(VmWorkStart.class, job.getCmdInfo());
-            } else {
+            } else if (cmd.equals(Stop)){
                 work = deserialize(VmWorkStop.class, job.getCmdInfo());
+            } else if (cmd.equals(Migrate)) {
+                work = deserialize(VmWorkMigrate.class, job.getCmdInfo());
             }
         	assert(work != null);
         	
@@ -97,6 +99,9 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             } else if (cmd.equals(Stop)) {
                 VmWorkStop stop = (VmWorkStop)work;
                 _vmMgr.orchestrateStop(vm.getUuid(), stop.isCleanup());
+            } else if (cmd.equals(Migrate)) {
+                VmWorkMigrate migrate = (VmWorkMigrate)work;
+                _vmMgr.orchestrateMigrate(vm.getUuid(), migrate.getSrcHostId(), migrate.getDeployDestination());
             }
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
         } catch(Throwable e) {

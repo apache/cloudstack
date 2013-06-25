@@ -35,9 +35,10 @@ import com.cloud.vm.VirtualMachine;
 @PrimaryKeyJoinColumn(name="id")
 public class VmWorkJobVO extends AsyncJobVO {
 
-    // These steps are rather arbiturary.  What's recorded depends on the
+    // These steps are rather arbitrary.  What's recorded depends on the
     // the operation being performed.
 	public enum Step {
+        Filed(false),
         Prepare(false),
         Starting(true),
         Started(false),
@@ -71,6 +72,7 @@ public class VmWorkJobVO extends AsyncJobVO {
     }
 
     public VmWorkJobVO(String related) {
+        step = Step.Filed;
         setRelated(related);
     }
     

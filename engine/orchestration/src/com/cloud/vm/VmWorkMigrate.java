@@ -34,9 +34,11 @@ public class VmWorkMigrate extends VmWork {
     Long clusterId;
     Long hostId;
     private Map<String, String> storage;
+    long srcHostId;
 
-    public VmWorkMigrate(long userId, long accountId, long vmId, DeployDestination dst) {
+    public VmWorkMigrate(long userId, long accountId, long vmId, long srcHostId, DeployDestination dst) {
         super(userId, accountId, vmId);
+        this.srcHostId = srcHostId;
         zoneId = dst.getDataCenter() != null ? dst.getDataCenter().getId() : null;
         podId = dst.getPod() != null ? dst.getPod().getId() : null;
         clusterId = dst.getCluster() != null ? dst.getCluster().getId() : null;
@@ -68,6 +70,10 @@ public class VmWorkMigrate extends VmWork {
 
         DeployDestination dest = new DeployDestination(zone, pod, cluster, host, vols);
         return dest;
+    }
+
+    public long getSrcHostId() {
+        return srcHostId;
     }
 
     static private EntityManager s_entityMgr;

@@ -216,7 +216,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected static final StateMachine<Step, VirtualMachine.Event> MigrationStateMachine = new StateMachine<Step, VirtualMachine.Event>();
     static {
-        MigrationStateMachine.addTransition(null, VirtualMachine.Event.MigrationRequested, Step.Prepare);
+        MigrationStateMachine.addTransition(Step.Filed, VirtualMachine.Event.MigrationRequested, Step.Prepare);
         MigrationStateMachine.addTransition(Step.Prepare, VirtualMachine.Event.OperationSucceeded, Step.Migrating);
         MigrationStateMachine.addTransition(Step.Prepare, VirtualMachine.Event.OperationFailed, Step.Error);
         MigrationStateMachine.addTransition(Step.Migrating, VirtualMachine.Event.OperationSucceeded, Step.Started);
@@ -1462,16 +1462,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = new VmWorkJobVO(context.getContextId());
 
             workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(VmWorkJobDispatcher.Start);
+            workJob.setCmd(VmWorkJobDispatcher.Migrate);
 
             workJob.setAccountId(account.getId());
             workJob.setUserId(user.getId());
-            workJob.setStep(VmWorkJobVO.Step.Migrating);
             workJob.setVmType(vm.getType());
             workJob.setVmInstanceId(vm.getId());
 
             // save work context info (there are some duplications)
-            VmWorkMigrate workInfo = new VmWorkMigrate(user.getId(), account.getId(), vm.getId(), dest);
+            VmWorkMigrate workInfo = new VmWorkMigrate(user.getId(), account.getId(), vm.getId(), srcHostId, dest);
             workJob.setCmdInfo(VmWorkJobDispatcher.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
