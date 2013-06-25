@@ -2155,11 +2155,15 @@
                             return;             
                           }
 
-                          if('vpc' in args.context) {
-                            if($tierSelect.size() && $tierSelect.val() != '-1' ){ 
-                              data.networkid = $tierSelect.val();
-                            }                          
+                          // if no tier is selected
+                          if($tierSelect.val() == '-1'){
+                            args.response.success({ data: null });
+                            return;             
+                          }
+                          
+                          if('vpc' in args.context) {                                                                        
                             $.extend(data, {
+                            	networkid: $tierSelect.val(),
                               vpcid: args.context.vpc[0].id
                             });
                           }
