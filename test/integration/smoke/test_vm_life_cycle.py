@@ -747,7 +747,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             self.fail("SSH failed for virtual machine: %s - %s" %
                                 (self.virtual_machine.ipaddress, e))
 
-        cmds = [ "mkdir -p %s" % self.services["mount_dir"] ]
+        cmds = "mkdir -p %s" % self.services["mount_dir"]
         self.assert_(ssh_client.execute(cmds) == [], "mkdir failed within guest")
 
         for diskdevice in self.services["diskdevice"]:
