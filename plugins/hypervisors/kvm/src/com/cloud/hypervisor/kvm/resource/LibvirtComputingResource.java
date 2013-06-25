@@ -3446,17 +3446,17 @@ ServerResource {
 
             }
 
-            VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
-
-            if ((volumeObjectTO.getBytesReadRate() != null) && (volumeObjectTO.getBytesReadRate()  > 0))
-                disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
-            if ((volumeObjectTO.getBytesWriteRate() != null) && (volumeObjectTO.getBytesWriteRate() > 0))
-                disk.setBytesWriteRate(volumeObjectTO.getBytesWriteRate());
-            if ((volumeObjectTO.getIopsReadRate() != null) && (volumeObjectTO.getIopsReadRate() > 0))
-                disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
-            if ((volumeObjectTO.getIopsWriteRate() != null) && (volumeObjectTO.getIopsWriteRate() > 0))
-                disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
-
+            if (data instanceof VolumeObjectTO) {
+                VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
+                if ((volumeObjectTO.getBytesReadRate() != null) && (volumeObjectTO.getBytesReadRate()  > 0))
+                    disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
+                if ((volumeObjectTO.getBytesWriteRate() != null) && (volumeObjectTO.getBytesWriteRate() > 0))
+                    disk.setBytesWriteRate(volumeObjectTO.getBytesWriteRate());
+                if ((volumeObjectTO.getIopsReadRate() != null) && (volumeObjectTO.getIopsReadRate() > 0))
+                    disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
+                if ((volumeObjectTO.getIopsWriteRate() != null) && (volumeObjectTO.getIopsWriteRate() > 0))
+                    disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
+            }
             vm.getDevices().addDevice(disk);
         }
 
