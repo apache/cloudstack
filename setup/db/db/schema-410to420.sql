@@ -94,11 +94,8 @@ CREATE TABLE `cloud`.`image_store` (
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-<<<<<<< HEAD
 ALTER TABLE `cloud`.`async_job` ADD COLUMN `related` CHAR(40) NOT NULL;
 
-ALTER TABLE `cloud`.`vm_template` ADD COLUMN `image_data_store_id` bigint unsigned;
-=======
 CREATE TABLE `cloud`.`image_store_details` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `store_id` bigint unsigned NOT NULL COMMENT 'store the detail is related to',
@@ -227,8 +224,6 @@ CREATE TABLE  `cloud`.`volume_store_ref` (
   CONSTRAINT `fk_volume_store_ref__volume_id` FOREIGN KEY `fk_volume_store_ref__volume_id` (`volume_id`) REFERENCES `volumes` (`id`),
   INDEX `i_volume_store_ref__volume_id`(`volume_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
->>>>>>> master
 
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `is_volatile` tinyint(1) unsigned NOT NULL DEFAULT 0  COMMENT 'true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk';
 

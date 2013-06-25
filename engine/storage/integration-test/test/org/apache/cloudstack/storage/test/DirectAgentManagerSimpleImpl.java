@@ -34,14 +34,11 @@ import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SetupCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostEnvironment;
@@ -238,13 +235,6 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource,
-            boolean forRebalance) throws ConnectionException {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
