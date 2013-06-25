@@ -23,20 +23,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ManagedObjectReference;
+
 import org.apache.cloudstack.api.ApiConstants;
-import org.springframework.beans.NullValueInNestedPathException;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -67,7 +68,6 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.element.CiscoNexusVSMElement;
-import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
@@ -80,9 +80,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.UriUtils;
-
-import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ManagedObjectReference;
 
 
 @Local(value = Discoverer.class)
@@ -129,7 +126,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 	}
 	
 	@Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, 
+    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url,
     	String username, String password, List<String> hostTags) throws DiscoveryException {
 
     	if(s_logger.isInfoEnabled())
@@ -364,7 +361,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 				details.put("url", hostMo.getHostName());
 				details.put("username", username);
 				details.put("password", password);
-				String guid = morHost.getType() + ":" + morHost.getPresetParams()
+                String guid = morHost.getType() + ":" + morHost.getValue()
 						+ "@" + url.getHost();
 				details.put("guid", guid);
 
@@ -490,7 +487,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 						"ClusterComputeResource"))
 					return false;
 
-				if (!morParent.getPresetParams().equals(morCluster.getPresetParams()))
+                if (!morParent.getValue().equals(morCluster.getValue()))
 					return false;
 			}
 		}
@@ -713,7 +710,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             return VirtualSwitchType.NexusDistributedVirtualSwitch;
         else if(useDVS)
             return VirtualSwitchType.VMwareDistributedVirtualSwitch;
-        else 
+        else
             return VirtualSwitchType.StandardVirtualSwitch;
     }
 

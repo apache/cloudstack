@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.resource;
@@ -102,7 +102,7 @@ public class F5BigIpResource implements ServerResource {
 		
 		public LocalLBLBMethod getMethod() {
 			return method;
-		}		
+		}
 	}
 	
 	private enum LbProtocol {
@@ -117,7 +117,7 @@ public class F5BigIpResource implements ServerResource {
 	private String _password;
 	private String _publicInterface;
 	private String _privateInterface;
-	private Integer _numRetries; 
+	private Integer _numRetries;
 	private String _guid;
 
 	private Interfaces _interfaces;
@@ -129,14 +129,14 @@ public class F5BigIpResource implements ServerResource {
 	private NetworkingRouteDomainBindingStub _routeDomainApi;
 	private SystemConfigSyncBindingStub _configSyncApi;
 	private LocalLBProfilePersistenceBindingStub  _persistenceProfileApi;
-	private String _objectNamePathSep = "-";
-	private String _routeDomainIdentifier = "%";
+	private final String _objectNamePathSep = "-";
+	private final String _routeDomainIdentifier = "%";
 	
 	private static final Logger s_logger = Logger.getLogger(F5BigIpResource.class);
 	
 	@Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	try {    		    		
+    	try {
     		_name = (String) params.get("name");
     		if (_name == null) {
     			throw new ConfigurationException("Unable to find name");
@@ -160,7 +160,7 @@ public class F5BigIpResource implements ServerResource {
     		_password = (String) params.get("password");
     		if (_password == null) {
     			throw new ConfigurationException("Unable to find password");
-    		}    		    		
+    		}
     		
     		_publicInterface = (String) params.get("publicinterface");
     		if (_publicInterface == null) {
@@ -189,7 +189,7 @@ public class F5BigIpResource implements ServerResource {
     }
 
 	@Override
-    public StartupCommand[] initialize() {   
+    public StartupCommand[] initialize() {
 		StartupExternalLoadBalancerCommand cmd = new StartupExternalLoadBalancerCommand();
 		cmd.setName(_name);
 		cmd.setDataCenter(_zoneId);
@@ -229,7 +229,7 @@ public class F5BigIpResource implements ServerResource {
 	@Override
 	public void disconnected() {
 		return;
-	}		
+	}
 
 	@Override
     public IAgentControl getAgentControl() {
@@ -244,7 +244,7 @@ public class F5BigIpResource implements ServerResource {
 	@Override
     public Answer executeRequest(Command cmd) {
 		return executeRequest(cmd, _numRetries);
-	}		
+	}
 	
 	private Answer executeRequest(Command cmd, int numRetries) {
 		if (cmd instanceof ReadyCommand) {
@@ -262,10 +262,10 @@ public class F5BigIpResource implements ServerResource {
 		}
 	}
 	
-	private Answer retry(Command cmd, int numRetries) {				
+	private Answer retry(Command cmd, int numRetries) {
 		int numRetriesRemaining = numRetries - 1;
 		s_logger.error("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetriesRemaining);
-		return executeRequest(cmd, numRetriesRemaining);	
+		return executeRequest(cmd, numRetriesRemaining);
 	}
 	
 	private boolean shouldRetry(int numRetries) {
@@ -286,19 +286,19 @@ public class F5BigIpResource implements ServerResource {
 	
 	private Answer execute(MaintainCommand cmd) {
 		return new MaintainAnswer(cmd);
-	}	
+	}
 	
 	private synchronized Answer execute(IpAssocCommand cmd, int numRetries) {
             String[] results = new String[cmd.getIpAddresses().length];
             int i = 0;
-            try {		
+            try {
                 IpAddressTO[] ips = cmd.getIpAddresses();
                 for (IpAddressTO ip : ips) {
                     long guestVlanTag = Long.valueOf(ip.getVlanId());
                     // It's a hack, using isOneToOneNat field for indicate if it's inline or not
                     boolean inline = ip.isOneToOneNat();
                     String vlanSelfIp = inline ? tagAddressWithRouteDomain(ip.getVlanGateway(), guestVlanTag) : ip.getVlanGateway();
-                    String vlanNetmask = ip.getVlanNetmask();      
+                    String vlanNetmask = ip.getVlanNetmask();
 
                     // Delete any existing guest VLAN with this tag, self IP, and netmask
                     deleteGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask, inline);
@@ -308,25 +308,25 @@ public class F5BigIpResource implements ServerResource {
                         addGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask, inline);
                     }
 
-                    saveConfiguration();               
+                    saveConfiguration();
                     results[i++] = ip.getPublicIp() + " - success";
                 }
 
             } catch (ExecutionException e) {
-                s_logger.error("Failed to execute IPAssocCommand due to " + e);				    
+                s_logger.error("Failed to execute IPAssocCommand due to " + e);
 
                 if (shouldRetry(numRetries)) {
                     return retry(cmd, numRetries);
                 } else {
                     results[i++] = IpAssocAnswer.errorResult;
                 }
-            }		
+            }
 
             return new IpAssocAnswer(cmd, results);
         }
 	
 	private synchronized Answer execute(LoadBalancerConfigCommand cmd, int numRetries) {
-		try {			
+		try {
 			long guestVlanTag = Long.parseLong(cmd.getAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG));
 			LoadBalancerTO[] loadBalancers = cmd.getLoadBalancers();
 			for (LoadBalancerTO loadBalancer : loadBalancers) {
@@ -349,10 +349,10 @@ public class F5BigIpResource implements ServerResource {
 					lbAlgorithm = LbAlgorithm.LeastConn;
 				} else {
 					throw new ExecutionException("Got invalid algorithm: " + loadBalancer.getAlgorithm());
-				}		
+				}
 				
 				String srcIp = inline ? tagAddressWithRouteDomain(loadBalancer.getSrcIp(), guestVlanTag) : loadBalancer.getSrcIp();
-				int srcPort = loadBalancer.getSrcPort();	
+				int srcPort = loadBalancer.getSrcPort();
 				String virtualServerName = genVirtualServerName(lbProtocol, srcIp, srcPort);
 												
 				boolean destinationsToAdd = false;
@@ -365,11 +365,11 @@ public class F5BigIpResource implements ServerResource {
 				
 				// Delete the virtual server with this protocol, source IP, and source port, along with its default pool and all pool members
 				deleteVirtualServerAndDefaultPool(virtualServerName);
-				if (!loadBalancer.isRevoked() && destinationsToAdd) {		
-					// Add the pool 
+				if (!loadBalancer.isRevoked() && destinationsToAdd) {
+					// Add the pool
 					addPool(virtualServerName, lbAlgorithm);
 					
-					// Add pool members  
+					// Add pool members
 					List<String> activePoolMembers = new ArrayList<String>();
 					for (DestinationTO destination : loadBalancer.getDestinations()) {
 						if (!destination.isRevoked()) {
@@ -377,15 +377,15 @@ public class F5BigIpResource implements ServerResource {
 							addPoolMember(virtualServerName, destIp, destination.getDestPort());
 							activePoolMembers.add(destIp + "-" + destination.getDestPort());
 						}
-					}			
+					}
 					
-					// Add the virtual server 
+					// Add the virtual server
 					addVirtualServer(virtualServerName, lbProtocol, srcIp, srcPort, loadBalancer.getStickinessPolicies());
 				}
-			}																																																		
+			}
 			
-			saveConfiguration();				
-			return new Answer(cmd);		
+			saveConfiguration();
+			return new Answer(cmd);
 		} catch (ExecutionException e) {
 			s_logger.error("Failed to execute LoadBalancerConfigCommand due to " + e);
 			
@@ -396,7 +396,7 @@ public class F5BigIpResource implements ServerResource {
 			}
 			
 		}
-	}		
+	}
 	
 	private synchronized ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
 		try {
@@ -408,8 +408,8 @@ public class F5BigIpResource implements ServerResource {
 	
 	private void saveConfiguration() throws ExecutionException {
 		try {
-			_configSyncApi.save_configuration("", SystemConfigSyncSaveMode.SAVE_BASE_LEVEL_CONFIG);		
-			_configSyncApi.save_configuration("", SystemConfigSyncSaveMode.SAVE_HIGH_LEVEL_CONFIG);		
+			_configSyncApi.save_configuration("", SystemConfigSyncSaveMode.SAVE_BASE_LEVEL_CONFIG);
+			_configSyncApi.save_configuration("", SystemConfigSyncSaveMode.SAVE_HIGH_LEVEL_CONFIG);
 			s_logger.debug("Successfully saved F5 BigIp configuration.");
 		} catch (RemoteException e) {
 			s_logger.error("Failed to save F5 BigIp configuration due to: " + e);
@@ -419,9 +419,9 @@ public class F5BigIpResource implements ServerResource {
 	
 	private void addGuestVlan(long vlanTag, String vlanSelfIp, String vlanNetmask, boolean inline) throws ExecutionException {
 		try {
-			String vlanName = genVlanName(vlanTag);	
+			String vlanName = genVlanName(vlanTag);
 			List<String> allVlans = getVlans();
-			if (!allVlans.contains(vlanName)) {				
+			if (!allVlans.contains(vlanName)) {
 				String[] vlanNames = genStringArray(vlanName);
 				long[] vlanTags = genLongArray(vlanTag);
 				CommonEnabledState[] commonEnabledState = {CommonEnabledState.STATE_DISABLED};
@@ -433,7 +433,7 @@ public class F5BigIpResource implements ServerResource {
 				vlanMemberEntries[0][0].setMember_name(_privateInterface);
 					
 				s_logger.debug("Creating a guest VLAN with tag " + vlanTag);
-				_vlanApi.create(vlanNames, vlanTags, vlanMemberEntries, commonEnabledState, new long[]{10L}, new String[]{"00:00:00:00:00:00"});		
+				_vlanApi.create(vlanNames, vlanTags, vlanMemberEntries, commonEnabledState, new long[]{10L}, new String[]{"00:00:00:00:00:00"});
 				
 				if (!getVlans().contains(vlanName)) {
 					throw new ExecutionException("Failed to create vlan with tag " + vlanTag);
@@ -504,7 +504,7 @@ public class F5BigIpResource implements ServerResource {
 				}
 			}
 
-			String vlanName = genVlanName(vlanTag);	
+			String vlanName = genVlanName(vlanTag);
 			List<String> allVlans = getVlans();
 			if (allVlans.contains(vlanName)) {
 				_vlanApi.delete_vlan(genStringArray(vlanName));
@@ -512,7 +512,7 @@ public class F5BigIpResource implements ServerResource {
 				if (getVlans().contains(vlanName)) {
 					throw new ExecutionException("Failed to delete VLAN with tag: " + vlanTag);
 				}
-			}				
+			}
 		} catch (RemoteException e) {
 			throw new ExecutionException(e.getMessage());
 		}
@@ -532,7 +532,7 @@ public class F5BigIpResource implements ServerResource {
 					virtualServersToDelete.add(virtualServerName);
 					break;
 				}
-			}			
+			}
 		}
 		
 		for (String virtualServerName : virtualServersToDelete) {
@@ -590,10 +590,10 @@ public class F5BigIpResource implements ServerResource {
 		}
 	}
 	
-	// Login	
+	// Login
 	
 	private void login() throws ExecutionException {
-		try {			
+		try {
 			_interfaces = new Interfaces();
 			
 			if (!_interfaces.initialize(_ip, _username, _password)) {
@@ -604,7 +604,7 @@ public class F5BigIpResource implements ServerResource {
 			_interfaces.getSystemSystemInfo().get_system_information();
 
 			_virtualServerApi = _interfaces.getLocalLBVirtualServer();
-			_loadbalancerApi = _interfaces.getLocalLBPool();		
+			_loadbalancerApi = _interfaces.getLocalLBPool();
 			_nodeApi = _interfaces.getLocalLBNodeAddress();
 			_vlanApi = _interfaces.getNetworkingVLAN();
 			_selfIpApi = _interfaces.getNetworkingSelfIP();
@@ -680,10 +680,10 @@ public class F5BigIpResource implements ServerResource {
 
 				if (getVirtualServers().contains(virtualServerName)) {
 					throw new ExecutionException("Failed to delete virtual server " + virtualServerName);
-				}	
+				}
 
 				// Delete the default pool
-				deletePool(virtualServerName);	
+				deletePool(virtualServerName);
 			}
 		} catch (RemoteException e) {
 			throw new ExecutionException(e.getMessage());
@@ -754,10 +754,10 @@ public class F5BigIpResource implements ServerResource {
 	}
 	
 	private LocalLBVirtualServerVirtualServerProfile[][] genVirtualServerProfile(LbProtocol protocol) {
-		LocalLBVirtualServerVirtualServerProfile vsProfs[][] = {{new LocalLBVirtualServerVirtualServerProfile()}};	
-		vsProfs[0][0].setProfile_context(LocalLBProfileContextType.PROFILE_CONTEXT_TYPE_ALL);		
+		LocalLBVirtualServerVirtualServerProfile vsProfs[][] = {{new LocalLBVirtualServerVirtualServerProfile()}};
+		vsProfs[0][0].setProfile_context(LocalLBProfileContextType.PROFILE_CONTEXT_TYPE_ALL);
 		
-		if (protocol.equals(LbProtocol.tcp)) {					
+		if (protocol.equals(LbProtocol.tcp)) {
 			vsProfs[0][0].setProfile_name("http");
 		} else if (protocol.equals(LbProtocol.udp)) {
 			vsProfs[0][0].setProfile_name("udp");
@@ -771,7 +771,7 @@ public class F5BigIpResource implements ServerResource {
 		persistenceProfs[0][0].setDefault_profile(true);
 		persistenceProfs[0][0].setProfile_name(persistenceProfileName);
 		return persistenceProfs;
-	}			
+	}
 	
 	// Load balancing pool methods
 	
@@ -787,7 +787,7 @@ public class F5BigIpResource implements ServerResource {
 
 				if (!poolExists(virtualServerName)) {
 					throw new ExecutionException("Failed to create new pool for virtual server " + virtualServerName);
-				}							
+				}
 			}
 		} catch (RemoteException e) {
 			throw new ExecutionException(e.getMessage());
@@ -807,11 +807,11 @@ public class F5BigIpResource implements ServerResource {
 		} catch (RemoteException e) {
 			throw new ExecutionException(e.getMessage());
 		}
-	}	
+	}
 	
 	private void addPoolMember(String virtualServerName, String destIp, int destPort) throws ExecutionException {
 		try {
-			String memberIdentifier = destIp + "-" + destPort;			
+			String memberIdentifier = destIp + "-" + destPort;
 
 			if (poolExists(virtualServerName) && !memberExists(virtualServerName, memberIdentifier)) {
 				s_logger.debug("Adding member " + memberIdentifier + " into pool for virtual server " + virtualServerName);
@@ -839,7 +839,7 @@ public class F5BigIpResource implements ServerResource {
 	
 	private void deletePoolMember(String virtualServerName, String destIp, int destPort) throws ExecutionException {
 		try {
-			String memberIdentifier = destIp + "-" + destPort;			
+			String memberIdentifier = destIp + "-" + destPort;
 			List<String> lbPools = getAllLbPools();
 
 			if (lbPools.contains(virtualServerName) && memberExists(virtualServerName, memberIdentifier)) {
@@ -859,8 +859,8 @@ public class F5BigIpResource implements ServerResource {
 									nodeNeeded = true;
 									break done;
 								}
-							}		
-						}						
+							}
+						}
 
 					if (!nodeNeeded) {
 						s_logger.debug("Deleting node " + destIp);
@@ -871,7 +871,7 @@ public class F5BigIpResource implements ServerResource {
 						}
 					}
 				}
-			}			
+			}
 		} catch (RemoteException e) {
 			throw new ExecutionException(e.getMessage());
 		}
@@ -929,7 +929,7 @@ public class F5BigIpResource implements ServerResource {
 		String[] nodesArray = _nodeApi.get_list();
 		
 		for (String node : nodesArray) {
-			nodes.add(node);		
+			nodes.add(node);
 		}
 		
 		return nodes;
@@ -973,9 +973,9 @@ public class F5BigIpResource implements ServerResource {
 				    bytesSentAndReceived = new long[]{0, 0};
 				}
 								
-				for (CommonStatistic stat : entry.getStatistics()) {	
+				for (CommonStatistic stat : entry.getStatistics()) {
 					int index;
-					if (stat.getType().equals(CommonStatisticType.STATISTIC_CLIENT_SIDE_BYTES_OUT)) {		
+					if (stat.getType().equals(CommonStatisticType.STATISTIC_CLIENT_SIDE_BYTES_OUT)) {
 						// Add to the outgoing bytes
 						index = 0;
 					} else if (stat.getType().equals(CommonStatisticType.STATISTIC_CLIENT_SIDE_BYTES_IN)) {
@@ -985,8 +985,8 @@ public class F5BigIpResource implements ServerResource {
 						continue;
 					}
 					
-					long high = stat.getPresetParams().getHigh(); 
-					long low = stat.getPresetParams().getLow(); 
+                    long high = stat.getValue().getHigh();
+                    long low = stat.getValue().getLow();
 					long full = getFullUsage(high, low);
 					
 					
@@ -994,7 +994,7 @@ public class F5BigIpResource implements ServerResource {
 				}
 				
 				if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
-					answer.ipBytes.put(virtualServerIp, bytesSentAndReceived);			
+					answer.ipBytes.put(virtualServerIp, bytesSentAndReceived);
 				}
 			}
 		} catch (Exception e) {
@@ -1006,24 +1006,24 @@ public class F5BigIpResource implements ServerResource {
 	}
 	
 	private long getFullUsage(long high, long low) {
-		Double full; 
-		Double rollOver = new Double((double) 0x7fffffff); 
-		rollOver = new Double(rollOver.doubleValue() + 1.0); 
+		Double full;
+		Double rollOver = new Double(0x7fffffff);
+		rollOver = new Double(rollOver.doubleValue() + 1.0);
 		
-		if (high >= 0) { 
-			// shift left 32 bits and mask off new bits to 0's 
-			full = new Double((high << 32 & 0xffff0000)); 
+		if (high >= 0) {
+			// shift left 32 bits and mask off new bits to 0's
+			full = new Double((high << 32 & 0xffff0000));
 		} else {
 			// mask off sign bits + shift left by 32 bits then add the sign bit back
-			full = new Double(((high & 0x7fffffff) << 32) + (0x80000000 << 32)); 
+			full = new Double(((high & 0x7fffffff) << 32) + (0x80000000 << 32));
 		}
 		
 		if (low >= 0) {
 			// add low to full and we're good
-			full = new Double(full.doubleValue() + (double) low); 
+			full = new Double(full.doubleValue() + low);
 		} else {
 			// add full to low after masking off sign bits and adding 1 to the masked off low order value
-			full = new Double(full.doubleValue() + (double) ((low & 0x7fffffff)) + rollOver.doubleValue()); 
+			full = new Double(full.doubleValue() + ((low & 0x7fffffff)) + rollOver.doubleValue());
 		}
 		
 		return full.longValue();
@@ -1058,7 +1058,7 @@ public class F5BigIpResource implements ServerResource {
 		}
 		
 		return objectName;
-	}	
+	}
 	
 	private long[] genLongArray(long l) {
 		return new long[]{l};
@@ -1096,7 +1096,7 @@ public class F5BigIpResource implements ServerResource {
 	public void setRunLevel(int level) {
 		// TODO Auto-generated method stub
 		
-	}				
+	}
 
 }
 
