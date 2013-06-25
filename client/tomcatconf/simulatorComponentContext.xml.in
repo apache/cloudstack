@@ -37,9 +37,9 @@
   <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl"/>
 
   <!-- simulator components -->
-  <bean id="SimulatorSecondaryDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">
-    <property name="name" value="SecondaryStorage"/>
-  </bean>
+  <!--<bean id="SimulatorSecondaryDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">-->
+    <!--<property name="name" value="SecondaryStorage"/>-->
+  <!--</bean>-->
   <bean id="SimulatorDiscoverer" class="com.cloud.resource.SimulatorDiscoverer">
     <property name="name" value="Simulator Agent"/>
   </bean>
@@ -214,6 +214,11 @@
       </list>
     </property>
   </bean>
+
+  <!--
+    Image Store
+  -->
+  <!--<bean id="simulatorImageStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.SimulatorImageStoreProviderImpl" />-->
 
   <bean id="GlobalLoadBalancingRulesServiceImpl"
         class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl"/>

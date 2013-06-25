@@ -35,7 +35,7 @@
     <module>api/rate-limit</module>
     <module>api/discovery</module>
     <module>acl/static-role-based</module>
-	<module>affinity-group-processors/host-anti-affinity</module>
+	  <module>affinity-group-processors/host-anti-affinity</module>
     <module>affinity-group-processors/explicit-dedication</module>
     <module>deployment-planners/user-concentrated-pod</module>
     <module>deployment-planners/user-dispersing</module>
@@ -64,7 +64,8 @@
     <module>storage/image/s3</module>
     <module>storage/image/swift</module>
     <module>storage/image/default</module>
-    <module>storage/image/sample</module>    
+    <module>storage/image/sample</module>
+    <module>storage/image/simulator</module>
     <module>storage/volume/solidfire</module>
     <module>storage/volume/default</module>
     <module>storage/volume/sample</module>
@@ -158,8 +159,8 @@
       </activation>
       <modules>
         <module>hypervisors/simulator</module>
+        <module>storage/image/simulator</module>
       </modules>
      </profile>
   </profiles>
-
 </project>
