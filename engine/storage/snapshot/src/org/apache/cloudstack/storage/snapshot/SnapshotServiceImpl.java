@@ -33,7 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -79,7 +79,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     @Inject
     VMSnapshotDao _vmSnapshotDao;
 
-    static private class CreateSnapshotContext<T> extends AsyncRpcConext<T> {
+    static private class CreateSnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo snapshot;
         final AsyncCallFuture<SnapshotResult> future;
 
@@ -91,7 +91,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
     }
 
-    static private class DeleteSnapshotContext<T> extends AsyncRpcConext<T> {
+    static private class DeleteSnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo snapshot;
         final AsyncCallFuture<SnapshotResult> future;
 
@@ -104,7 +104,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     }
 
-    static private class CopySnapshotContext<T> extends AsyncRpcConext<T> {
+    static private class CopySnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo srcSnapshot;
         final SnapshotInfo destSnapshot;
         final AsyncCallFuture<SnapshotResult> future;

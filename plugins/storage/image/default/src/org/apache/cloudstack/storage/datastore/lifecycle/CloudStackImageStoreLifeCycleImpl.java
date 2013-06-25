@@ -16,14 +16,14 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.Discoverer;
+import com.cloud.resource.ResourceManager;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.utils.UriUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -35,14 +35,12 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageStoreLifeCycle;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.Discoverer;
-import com.cloud.resource.ResourceManager;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
-import com.cloud.utils.UriUtils;
+import javax.inject.Inject;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
@@ -83,7 +81,7 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         DataStoreRole role = (DataStoreRole) dsInfos.get("role");
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
 
-        s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
+        s_logger.info("Trying to add a new data store at " + url + " to data center " + dcId);
 
         URI uri = null;
         try {
@@ -103,7 +101,7 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         if (dcId == null) {
             throw new InvalidParameterValueException(
-                    "DataCenter id is null, and cloudstack default image storehas to be associated with a data center");
+                    "DataCenter id is null, and cloudstack default image store has to be associated with a data center");
         }
 
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();

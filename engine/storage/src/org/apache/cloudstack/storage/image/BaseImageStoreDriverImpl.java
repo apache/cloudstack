@@ -18,28 +18,6 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import java.util.Date;
-import java.util.Set;
-import javax.inject.Inject;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcConext;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.cloudstack.storage.image.ImageStoreDriver;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -50,11 +28,30 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import java.util.Date;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private static final Logger s_logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
     @Inject
-    VMTemplateDao templateDao;
+    VMTemplateDao _templateDao;
     @Inject
     DownloadMonitor _downloadMonitor;
     @Inject
@@ -71,7 +68,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-    class CreateContext<T> extends AsyncRpcConext<T> {
+    class CreateContext<T> extends AsyncRpcContext<T> {
         final DataObject data;
 
         public CreateContext(AsyncCompletionCallback<T> callback, DataObject data) {
@@ -115,9 +112,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
             _templateStoreDao.update(tmpltStoreVO.getId(), updateBuilder);
             // update size in vm_template table
-            VMTemplateVO tmlptUpdater = templateDao.createForUpdate();
+            VMTemplateVO tmlptUpdater = _templateDao.createForUpdate();
             tmlptUpdater.setSize(answer.getTemplateSize());
-            templateDao.update(obj.getId(), tmlptUpdater);
+            _templateDao.update(obj.getId(), tmlptUpdater);
         }
 
         AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
@@ -131,9 +128,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             caller.complete(result);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             if (answer.getCheckSum() != null) {
-                VMTemplateVO templateDaoBuilder = templateDao.createForUpdate();
+                VMTemplateVO templateDaoBuilder = _templateDao.createForUpdate();
                 templateDaoBuilder.setChecksum(answer.getCheckSum());
-                templateDao.update(obj.getId(), templateDaoBuilder);
+                _templateDao.update(obj.getId(), templateDaoBuilder);
             }
 
             CreateCmdResult result = new CreateCmdResult(null, null);

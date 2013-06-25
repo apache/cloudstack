@@ -46,7 +46,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.DataObjectManager;
@@ -124,7 +124,7 @@ public class VolumeServiceImpl implements VolumeService {
     public VolumeServiceImpl() {
     }
 
-    private class CreateVolumeContext<T> extends AsyncRpcConext<T> {
+    private class CreateVolumeContext<T> extends AsyncRpcContext<T> {
 
         private final DataObject volume;
         private final AsyncCallFuture<VolumeApiResult> future;
@@ -190,7 +190,7 @@ public class VolumeServiceImpl implements VolumeService {
         return null;
     }
 
-    private class DeleteVolumeContext<T> extends AsyncRpcConext<T> {
+    private class DeleteVolumeContext<T> extends AsyncRpcContext<T> {
         private final VolumeObject volume;
         private final AsyncCallFuture<VolumeApiResult> future;
 
@@ -282,7 +282,7 @@ public class VolumeServiceImpl implements VolumeService {
         return null;
     }
 
-    class CreateBaseImageContext<T> extends AsyncRpcConext<T> {
+    class CreateBaseImageContext<T> extends AsyncRpcContext<T> {
         private final VolumeInfo volume;
         private final PrimaryDataStore dataStore;
         private final TemplateInfo srcTemplate;
@@ -421,7 +421,7 @@ public class VolumeServiceImpl implements VolumeService {
         return null;
     }
 
-    private class CreateVolumeFromBaseImageContext<T> extends AsyncRpcConext<T> {
+    private class CreateVolumeFromBaseImageContext<T> extends AsyncRpcContext<T> {
         private final DataObject vo;
         private final AsyncCallFuture<VolumeApiResult> future;
         private final DataObject templateOnStore;
@@ -576,7 +576,7 @@ public class VolumeServiceImpl implements VolumeService {
         return volDao.persist(newVol);
     }
 
-    private class CopyVolumeContext<T> extends AsyncRpcConext<T> {
+    private class CopyVolumeContext<T> extends AsyncRpcContext<T> {
         final VolumeInfo srcVolume;
         final VolumeInfo destVolume;
         final AsyncCallFuture<VolumeApiResult> future;
@@ -780,7 +780,7 @@ public class VolumeServiceImpl implements VolumeService {
         return null;
     }
 
-    private class MigrateVolumeContext<T> extends AsyncRpcConext<T> {
+    private class MigrateVolumeContext<T> extends AsyncRpcContext<T> {
         final VolumeInfo srcVolume;
         final VolumeInfo destVolume;
         final AsyncCallFuture<VolumeApiResult> future;
@@ -848,7 +848,7 @@ public class VolumeServiceImpl implements VolumeService {
         return null;
     }
 
-    private class MigrateVmWithVolumesContext<T> extends AsyncRpcConext<T> {
+    private class MigrateVmWithVolumesContext<T> extends AsyncRpcContext<T> {
         final Map<VolumeInfo, DataStore> volumeToPool;
         final AsyncCallFuture<CommandResult> future;
 

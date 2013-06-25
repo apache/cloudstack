@@ -39,7 +39,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.log4j.Logger;
@@ -168,13 +168,13 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         return template;
     }
 
-    private class CreateTemplateContext<T> extends AsyncRpcConext<T> {
-        final TemplateInfo template;
-        public CreateTemplateContext(AsyncCompletionCallback<T> callback, TemplateInfo template) {
-            super(callback);
-            this.template = template;
-        }
-    }
+	private class CreateTemplateContext<T> extends AsyncRpcContext<T> {
+		final TemplateInfo template;
+		public CreateTemplateContext(AsyncCompletionCallback<T> callback, TemplateInfo template) {
+			super(callback);
+			this.template = template;
+		}
+	}
 
     protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> callback,
             CreateTemplateContext<TemplateApiResult> context) {
