@@ -461,7 +461,7 @@ public class HypervisorHostHelper {
             VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = null;
             //VMwareDVSPvlanConfigSpec pvlanSpec = null;
             DVSSecurityPolicy secPolicy;
-            VMwareDVSPortSetting dvsPortSetting;
+            VMwareDVSPortSetting dvsPortSetting = null;
             DVPortgroupConfigSpec dvPortGroupSpec;
             DVPortgroupConfigInfo dvPortgroupInfo;
             //DVSConfigInfo dvsInfo;
@@ -551,30 +551,21 @@ public class HypervisorHostHelper {
             }
 
             // Next, create the port group. For this, we need to create a VLAN spec.
-            if (vid == null) {
-                vlanSpec = createDVPortVlanSpec();
-            } else {
-                if (spvlanid == null) {
-                    // Create vlan spec.
-                    vlanSpec = createDVPortVlanIdSpec(vid);
-                } else {
-                    // Create a pvlan spec. The pvlan spec is different from the pvlan config spec
-                    // that we created earlier. The pvlan config spec is used to configure the switch
-                    // with a <primary vlanId, secondary vlanId> tuple. The pvlan spec is used
-                    // to configure a port group (i.e., a network) with a secondary vlan id. We don't
-                    // need to mention more than the secondary vlan id because one secondary vlan id
-                    // can be associated with only one primary vlan id. Give vCenter the secondary vlan id,
-                    // and it will find out the associated primary vlan id and do the rest of the
-                    // port group configuration.
-                    pvlanSpec = createDVPortPvlanIdSpec(spvlanid);
-            }
-            }
-
             // NOTE - VmwareDistributedVirtualSwitchPvlanSpec extends VmwareDistributedVirtualSwitchVlanSpec.
-            if (pvlanSpec != null) {
+            if (vid == null || spvlanid == null) {
+                vlanSpec = createDVPortVlanIdSpec(vid);
+                dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
+            } else if (spvlanid != null) {
+                // Create a pvlan spec. The pvlan spec is different from the pvlan config spec
+                // that we created earlier. The pvlan config spec is used to configure the switch
+                // with a <primary vlanId, secondary vlanId> tuple. The pvlan spec is used
+                // to configure a port group (i.e., a network) with a secondary vlan id. We don't
+                // need to mention more than the secondary vlan id because one secondary vlan id
+                // can be associated with only one primary vlan id. Give vCenter the secondary vlan id,
+                // and it will find out the associated primary vlan id and do the rest of the
+                // port group configuration.
+                pvlanSpec = createDVPortPvlanIdSpec(spvlanid);
                 dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, pvlanSpec);
-            } else {
-            dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
             }
 
             dvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts, autoExpandSupported);
@@ -804,15 +795,11 @@ public class HypervisorHostHelper {
         pvlanConfigSpec.setOperation(operation.toString());
         return pvlanConfigSpec;
     }
-    public static VmwareDistributedVirtualSwitchVlanIdSpec createDVPortVlanIdSpec(int vlanId) {
-        VmwareDistributedVirtualSwitchVlanIdSpec vlanIdSpec = new VmwareDistributedVirtualSwitchVlanIdSpec();
-        vlanIdSpec.setVlanId(vlanId);
-        return vlanIdSpec;
-    }
 
-    public static VmwareDistributedVirtualSwitchVlanSpec createDVPortVlanSpec() {
-        VmwareDistributedVirtualSwitchVlanSpec vlanSpec = new VmwareDistributedVirtualSwitchVlanSpec();
-        return vlanSpec;
+    public static VmwareDistributedVirtualSwitchVlanIdSpec createDVPortVlanIdSpec(Integer vlanId) {
+        VmwareDistributedVirtualSwitchVlanIdSpec vlanIdSpec = new VmwareDistributedVirtualSwitchVlanIdSpec();
+        vlanIdSpec.setVlanId(vlanId == null ? 0 : vlanId.intValue());
+        return vlanIdSpec;
     }
 
     public static DVSSecurityPolicy createDVSSecurityPolicy() {
