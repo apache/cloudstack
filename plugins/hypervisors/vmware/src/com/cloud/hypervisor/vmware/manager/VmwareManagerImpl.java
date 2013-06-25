@@ -224,6 +224,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         } else {
             _fullCloneFlag = Boolean.parseBoolean(value);
         }
+        _portsPerDvPortGroup = NumbersUtil.parseInt(_configDao.getValue(Config.VmwarePortsPerDVPortGroup.key()), _portsPerDvPortGroup);
 
         _serviceConsoleName = _configDao.getValue(Config.VmwareServiceConsole.key());
         if(_serviceConsoleName == null) {
