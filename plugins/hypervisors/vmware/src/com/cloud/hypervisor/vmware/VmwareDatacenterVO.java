@@ -92,7 +92,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     }
 
     @Override
-    public String getVcenterHost() {
+    public String getVCenterHost() {
         return vCenterHost;
     }
 
@@ -108,7 +108,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
         vmwareDatacenterName = name;
     }
 
-    public void setVcenterHost(String vCenterHost) {
+    public void setVCenterHost(String vCenterHost) {
         this.vCenterHost = vCenterHost;
     }
 

@@ -1053,7 +1053,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
         vmwareDatacenter = _vmwareDcDao.findById(vmwareDcId);
         vmwareDcName = vmwareDatacenter.getVmwareDatacenterName();
-        vCenterHost = vmwareDatacenter.getVcenterHost();
+        vCenterHost = vmwareDatacenter.getVCenterHost();
         userName = vmwareDatacenter.getUser();
         password = vmwareDatacenter.getPassword();
         txn = Transaction.currentTxn();

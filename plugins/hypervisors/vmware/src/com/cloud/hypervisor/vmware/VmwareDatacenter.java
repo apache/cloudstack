@@ -26,7 +26,7 @@ public interface VmwareDatacenter extends Identity, InternalIdentity {
 
     String getGuid();
 
-    String getVcenterHost();
+    String getVCenterHost();
 
     long getId();
 

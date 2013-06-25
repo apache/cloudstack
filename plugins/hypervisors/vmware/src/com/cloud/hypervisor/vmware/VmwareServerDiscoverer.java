@@ -434,7 +434,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         vmwareDcId = vmwareDcZone.getVmwareDcId();
         vmwareDc = _vmwareDcDao.findById(vmwareDcId);
         vmwareDcNameFromApi = vmwareDcNameFromDb = vmwareDc.getVmwareDatacenterName();
-        vCenterHost = vmwareDc.getVcenterHost();
+        vCenterHost = vmwareDc.getVCenterHost();
         String inventoryPath = url.getPath();
 
         assert (inventoryPath != null);

@@ -51,11 +51,11 @@ public class VmwareDatacenterDaoImpl extends GenericDaoBase<VmwareDatacenterVO, 
 
         nameVcSearch = createSearchBuilder();
         nameVcSearch.and("name", nameVcSearch.entity().getVmwareDatacenterName(), Op.EQ);
-        nameVcSearch.and("vCenterHost", nameVcSearch.entity().getVcenterHost(), Op.EQ);
+        nameVcSearch.and("vCenterHost", nameVcSearch.entity().getVCenterHost(), Op.EQ);
         nameVcSearch.done();
 
         vcSearch = createSearchBuilder();
-        vcSearch.and("vCenterHost", vcSearch.entity().getVcenterHost(), Op.EQ);
+        vcSearch.and("vCenterHost", vcSearch.entity().getVCenterHost(), Op.EQ);
         vcSearch.done();
 
         guidSearch = createSearchBuilder();
