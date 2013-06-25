@@ -528,8 +528,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     @Override
     public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd)   {
         List<String> result = new ArrayList<String>();
-
-        result.addAll(Arrays.asList(globalSection));
+        List <String> gSection =  Arrays.asList(globalSection);
+        gSection.set(2,"\tmaxconn " + lbCmd.maxconn);
+        result.addAll(gSection);
         result.add(blankLine);
         result.addAll(Arrays.asList(defaultsSection));
         if (!lbCmd.lbStatsVisibility.equals("disabled")) {
