@@ -126,16 +126,19 @@ import edu.emory.mathcs.backport.java.util.Collections;
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  *
- * @config {@table || Param Name | Description | Values | Default || || port | port to listen on for agent connection. | Integer
- *         | 8250 || || workers | # of worker threads | Integer | 5 || || router.template.id | default id for template | Integer
- *         | 1 || || router.ram.size | default ram for router vm in mb | Integer | 128 || || router.ip.address | ip address for
- *         the router | ip | 10.1.1.1 || || wait | Time to wait for control commands to return | seconds | 1800 || || domain |
- *         domain for domain routers| String | foo.com || || alert.wait | time to wait before alerting on a disconnected agent |
- *         seconds | 1800 || || update.wait | time to wait before alerting on a updating agent | seconds | 600 || ||
- *         ping.interval | ping interval in seconds | seconds | 60 || || instance.name | Name of the deployment String |
- *         required || || start.retry | Number of times to retry start | Number | 2 || || ping.timeout | multiplier to
- *         ping.interval before announcing an agent has timed out | float | 2.0x || || router.stats.interval | interval to
- *         report router statistics | seconds | 300s || * }
+ * @config {@table  || Param Name | Description | Values | Default ||
+ *                  || port | port to listen on for agent connection. | Integer | 8250 ||
+ *                  || workers | # of worker threads | Integer | 5 || || router.ram.size | default ram for router vm in mb | Integer | 128 ||
+ *                  || router.ip.address | ip address for the router | ip | 10.1.1.1 ||
+ *                  || wait | Time to wait for control commands to return | seconds | 1800 ||
+ *                  || domain | domain for domain routers| String | foo.com ||
+ *                  || alert.wait | time to wait before alerting on a disconnected agent | seconds | 1800 ||
+ *                  || update.wait | time to wait before alerting on a updating agent | seconds | 600 ||
+ *                  || ping.interval | ping interval in seconds | seconds | 60 ||
+ *                  || instance.name | Name of the deployment String | required ||
+ *                  || start.retry | Number of times to retry start | Number | 2 ||
+ *                  || ping.timeout | multiplier to ping.interval before announcing an agent has timed out | float | 2.0x ||
+ *                  || router.stats.interval | interval to report router statistics | seconds | 300s || }
  **/
 @Local(value = { AgentManager.class })
 public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory {
