@@ -2148,3 +2148,25 @@ ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devi
 ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 
 alter table `cloud`.`network_offerings` add column egress_default_policy boolean default false;
+
+-- Add stratospher ssp tables
+CREATE TABLE `cloud`.`external_stratosphere_ssp_uuids` (
+  `id` bigint(20) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  `uuid` varchar(255) NOT NULL COMMENT "uuid provided by SSP",
+  `obj_class` varchar(255) NOT NULL,
+  `obj_id` bigint(20) NOT NULL,
+  `reservation_id` varchar(255)
+) Engine=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`external_stratosphere_ssp_tenants` (
+  `id` bigint(20) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  `uuid` varchar(255) NOT NULL COMMENT "SSP tenant uuid",
+  `zone_id` bigint(20) NOT NULL COMMENT "cloudstack zone_id"
+) Engine=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`external_stratosphere_ssp_credentials` (
+  `id` bigint(20) UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  `data_center_id` bigint(20) unsigned NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL
+) Engine=InnoDB DEFAULT CHARSET=utf8;

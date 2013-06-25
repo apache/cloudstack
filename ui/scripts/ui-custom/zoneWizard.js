@@ -620,14 +620,17 @@
 								}).html('VLAN'),	
 								$('<option>').attr({
 									value: 'GRE'
-                                }).html('GRE'),
+                              }).html('GRE'),
                                                                 $('<option>').attr({
                                                                         value: 'STT'
                                                                 }).html('STT'),
                                                                 $('<option>').attr({
                                                                         value: 'VNS'
-                                                                }).html('VNS')
+                                                                }).html('VNS'),
 
+								$('<option>').attr({
+									value: 'SSP'
+								}).html('SSP')
 							)
 						)
 					);

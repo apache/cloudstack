@@ -70,6 +70,19 @@
     <property name="name" value="MidoNetElement"/>
   </bean>
 
+  <!--
+    Stratosphere SSP support components
+  -->
+  <bean id="sspCredentialDaoImpl" class="com.cloud.network.dao.SspCredentialDaoImpl"/>
+  <bean id="sspTenantDaoImpl" class="com.cloud.network.dao.SspTenantDaoImpl"/>
+  <bean id="sspUuidDaoImpl" class="com.cloud.network.dao.SspUuidDaoImpl"/>
+  <bean id="SspGuestNetworkGuru" class="com.cloud.network.guru.SspGuestNetworkGuru">
+    <property name="name" value="SspGuestNetworkGuru"/>
+  </bean>
+  <bean id="StratosphereSsp" class="com.cloud.network.element.SspElement">
+    <property name="name" value="StratosphereSsp"/>
+  </bean>
+
 <!--
 
   Deployment configurations of various adapters
@@ -221,6 +234,7 @@
           <ref bean="PrivateNetworkGuru"/>
           <ref bean="NiciraNvpGuestNetworkGuru"/>
           <ref bean="MidoNetGuestNetworkGuru"/>
+          <ref bean="SspGuestNetworkGuru"/>
       </list>
     </property>
   </bean>
@@ -234,6 +248,7 @@
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp" />
           <ref bean="MidoNetElement"/>
+          <ref bean="StratosphereSsp"/>
           <ref bean="InternalLbVm"/>
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
