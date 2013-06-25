@@ -2866,7 +2866,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     private boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
-        boolean updateResourceCount = (!ntwkOff.getSpecifyVlan() && aclType == ACLType.Account);
+        //Update resource count only for Isolated account specific non-system networks
+        boolean updateResourceCount = (ntwkOff.getGuestType() == GuestType.Isolated &&
+                !ntwkOff.isSystemOnly() && aclType == ACLType.Account);
         return updateResourceCount;
     }
 
