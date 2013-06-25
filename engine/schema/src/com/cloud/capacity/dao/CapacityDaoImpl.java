@@ -119,7 +119,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     /* In the below query"LIST_CLUSTERS_CROSSING_THRESHOLD" the threshold value is getting from the cluster_details table if not present then it gets from the global configuration
     *
     * CASE statement works like
-    * if (cluster_details table has thershold value)
+    * if (cluster_details table has threshold value)
     * then
     *     if (value from the cluster_details table is not null)
     *     then
@@ -132,15 +132,15 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     *     */
     private static final String LIST_CLUSTERS_CROSSING_THRESHOLD = "SELECT clusterList.cluster_id " +
                        "FROM (	SELECT cluster.cluster_id cluster_id, ( (sum(cluster.used) + sum(cluster.reserved) + ?)/sum(cluster.total) ) ratio, cluster.configValue value " +
-                                "FROM (	SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity total, " +
+                                "FROM (	SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity * overcommit.value total, " +
                                             "CASE (SELECT count(*) FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) " +
                                                 "WHEN 1 THEN (	CASE WHEN (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ?) is NULL " +
                                                                     "THEN (SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?)" +
                                                                     "ELSE (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) END )"  +
                                                 "ELSE (	SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?) " +
                                             "END configValue " +
-                                        "FROM `cloud`.`op_host_capacity` capacity " +
-                                        "WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0) cluster " +
+                                        "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster_details` overcommit ON overcommit.cluster_id = capacity.cluster_id " +
+                                        "WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0 AND overcommit.name = ?) cluster " +
 
                                 "GROUP BY cluster.cluster_id)  clusterList " +
                         "WHERE clusterList.ratio > clusterList.value; ";
@@ -180,14 +180,19 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
          // we need to check with disabled thresholds of each cluster if not defined at cluster consider the global value
          try {
              pstmt = txn.prepareAutoCloseStatement(sql.toString());
-             pstmt.setLong(1,compute_requested);
+             pstmt.setLong(1, compute_requested);
              pstmt.setString(2, configName);
              pstmt.setString(3, configName);
              pstmt.setString(4, configName);
              pstmt.setString(5, configName);
              pstmt.setString(6, configName);
-             pstmt.setLong(7,zoneId);
-             pstmt.setShort(8,capacityType);
+             pstmt.setLong(7, zoneId);
+             pstmt.setShort(8, capacityType);
+             if (capacityType == 0) {
+                 pstmt.setString(9, "memoryOvercommitRatio");
+             } else if(capacityType == 1) {
+                pstmt.setString(9, "cpuOvercommitRatio");
+             }
 
              ResultSet rs = pstmt.executeQuery();
              while (rs.next()) {
