@@ -3453,7 +3453,10 @@
             $.ajax({
               url: createURL('listPrivateGateways'),
               async: false,
-              data: { 'vpcid': args.context.vpc[0].id },
+              data: { 
+              	'vpcid': args.context.vpc[0].id,
+              	listAll: true
+              },
               success: function(json) {
                 privateGateways = json.listprivategatewaysresponse;
               },
