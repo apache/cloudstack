@@ -438,6 +438,9 @@ public class HypervisorHostHelper {
         String dvSwitchName = null;
         boolean bWaitPortGroupReady = false;
         boolean createGCTag = false;
+        String vcApiVersion;
+        String minVcApiVersionSupportingAutoExpand;
+        boolean autoExpandSupported;
         String networkName;
         Integer vid = null;
         Integer spvlanid = null;  // secondary pvlan id
@@ -462,6 +465,9 @@ public class HypervisorHostHelper {
             DVPortgroupConfigSpec dvPortGroupSpec;
             DVPortgroupConfigInfo dvPortgroupInfo;
             //DVSConfigInfo dvsInfo;
+            vcApiVersion = getVcenterApiVersion(context);
+            minVcApiVersionSupportingAutoExpand = "5.0";
+            autoExpandSupported = isFeatureSupportedInVcenterApiVersion(vcApiVersion, minVcApiVersionSupportingAutoExpand);
 
             dvSwitchName = physicalNetwork;
             // TODO(sateesh): Remove this after ensuring proper default value for vSwitchName throughout traffic types
@@ -571,7 +577,7 @@ public class HypervisorHostHelper {
             dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
             }
 
-            dvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts);
+            dvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts, autoExpandSupported);
 
             if (!dataCenterMo.hasDvPortGroup(networkName)) {
                 s_logger.info("Distributed Virtual Port group " + networkName + " not found.");
@@ -656,6 +662,18 @@ public class HypervisorHostHelper {
         return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
     }
 
+    public static String getVcenterApiVersion(VmwareContext serviceContext) throws Exception {
+        String vcApiVersion = null;
+        if (serviceContext != null) {
+            vcApiVersion = serviceContext.getServiceContent().getAbout().getApiVersion();
+        }
+        return vcApiVersion;
+    }
+
+    public static boolean isFeatureSupportedInVcenterApiVersion(String vCenterApiVersion, String minVcenterApiVersionForFeature) {
+        return vCenterApiVersion.compareTo(minVcenterApiVersionForFeature) >= 0 ? true : false;
+    }
+
     public static ManagedObjectReference waitForDvPortGroupReady(
 			DatacenterMO dataCenterMo, String dvPortGroupName, long timeOutMs) throws Exception {
 		ManagedObjectReference morDvPortGroup = null;
@@ -710,16 +728,14 @@ public class HypervisorHostHelper {
 		return true;
 	}
 
-    public static DVPortgroupConfigSpec createDvPortGroupSpec(String dvPortGroupName, DVPortSetting portSetting, int numPorts) {
+    public static DVPortgroupConfigSpec createDvPortGroupSpec(String dvPortGroupName, DVPortSetting portSetting, int numPorts, boolean autoExpandSupported) {
         DVPortgroupConfigSpec spec = new DVPortgroupConfigSpec();
         spec.setName(dvPortGroupName);
         spec.setDefaultPortConfig(portSetting);
         spec.setPortNameFormat("vnic<portIndex>");
         spec.setType("earlyBinding");
         spec.setNumPorts(numPorts);
-        // TODO(sateesh): Get vSphere API version and
-        // if >= 5.0 set autoExpand property of dvPortGroup config spec to true.
-        // spec.setAutoExpand(true);
+        spec.setAutoExpand(autoExpandSupported);
         return spec;
     }
 
