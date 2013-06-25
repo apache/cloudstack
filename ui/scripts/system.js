@@ -9771,7 +9771,7 @@
                     if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       if(args.data.accountId != "")
                         array2.push("&account=" +todb(args.data.accountId));
-                    }
+                    
 
                     if(clusterId != null){
                       $.ajax({
@@ -9797,6 +9797,7 @@
                          }
                        });
                    }
+                  }
                  },
                  error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -10872,7 +10873,7 @@
                     if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
                       if(args.data.accountId != "")
                         array2.push("&account=" +todb(args.data.accountId));
-                    }
+                    
 
                     if(hostId != null){
                       $.ajax({
@@ -10899,6 +10900,7 @@
                         }
                       });
                     }
+                  }
                   },
 
                    error: function(XMLHttpResponse) {
