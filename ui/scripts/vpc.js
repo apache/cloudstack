@@ -831,7 +831,7 @@
             $.ajax({
               url: createURL('listPublicIpAddresses'),
               async: false,
-              data: { networkid: args.context.networks[0].id, forloadbalancing: true },
+              data: { associatednetworkid: args.context.networks[0].id, forloadbalancing: true },
               success: function(json) {
                 var items = json.listpublicipaddressesresponse;
                 args.response.success({ data: items });
@@ -1398,7 +1398,7 @@
           $.ajax({
             url: createURL('listPublicIpAddresses'),
             data: { 
-              networkid: args.context.networks[0].id, 
+            	associatednetworkid: args.context.networks[0].id, 
               isstaticnat: true,
               listall: true
             },
@@ -3503,8 +3503,8 @@
               url: createURL('listPublicIpAddresses'),
               async: false,
               data: { 
-            	vpcid: args.context.vpc[0].id,
-            	listAll: true
+            	  vpcid: args.context.vpc[0].id,
+            	  listAll: true
               },
               success: function(json) {
                 publicIpAddresses = json.listpublicipaddressesresponse;
@@ -3583,7 +3583,7 @@
                 $.ajax({
                   url: createURL('listPublicIpAddresses&listAll=true'),
                   async: false,
-                  data: { networkid: tier.id, forloadbalancing: true },
+                  data: { associatednetworkid: tier.id, forloadbalancing: true },
                   success: function(json) {
                     publicLbIps = json.listpublicipaddressesresponse;
                   },
@@ -3596,7 +3596,7 @@
                 $.ajax({
                   url: createURL('listPublicIpAddresses&listAll=true'),
                   async: false,
-                  data: { networkid: tier.id, isstaticnat: true },
+                  data: { associatednetworkid: tier.id, isstaticnat: true },
                   success: function(json) {
                     staticNatIps = json.listpublicipaddressesresponse;
                   },
