@@ -102,6 +102,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.EGRESS_DEFAULT_POLICY, type=CommandType.BOOLEAN, description="true if default guest network egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
 
+    @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
+    private Integer maxConnections;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -170,6 +173,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             return true;
         }
         return egressDefaultPolicy;
+    }
+
+    public Integer getMaxconnections() {
+        return maxConnections;
     }
 
     public Map<String, List<String>> getServiceProviders() {

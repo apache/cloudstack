@@ -3319,10 +3319,17 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 _networkModel.getNetworkRate(guestNetwork.getId(), router.getId()),
                 _networkModel.isSecurityGroupSupportedInNetwork(guestNetwork),
                 _networkModel.getNetworkTag(router.getHypervisorType(), guestNetwork));
-
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,routerPublicIp,
-                getRouterIpInNetwork(guestNetworkId, router.getId()),router.getPrivateIpAddress(),
-                _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId());
+        NetworkOffering offering =_networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
+        String maxconn= null;
+        if (offering.getConcurrentConnections() == null) {
+            maxconn =  _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+        }
+        else {
+            maxconn = offering.getConcurrentConnections().toString();
+        }
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, routerPublicIp,
+                getRouterIpInNetwork(guestNetworkId, router.getId()), router.getPrivateIpAddress(),
+                _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn);
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());

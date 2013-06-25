@@ -133,6 +133,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "egress_default_policy")
     boolean egressdefaultpolicy;
 
+    @Column(name = "concurrent_connections")
+    Integer concurrent_connections;
+
     @Override
     public String getDisplayText() {
         return displayText;
@@ -426,4 +429,11 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.internalLb = internalLb;
     }
 
+    public Integer getConcurrentConnections() {
+        return  this.concurrent_connections;
+    }
+
+    public void setConcurrentConnections(Integer concurrent_connections) {
+        this.concurrent_connections = concurrent_connections;
+    }
 }

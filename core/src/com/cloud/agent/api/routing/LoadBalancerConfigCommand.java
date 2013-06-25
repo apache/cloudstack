@@ -32,6 +32,7 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     public String lbStatsSrcCidrs = "0/0" ; /* TODO : currently there is no filtering based on the source ip */
     public String lbStatsAuth = "admin1:AdMiN123";
     public String lbStatsUri = "/admin?stats";
+    public String maxconn ="";
     NicTO nic;
     Long vpcId;
 
@@ -43,13 +44,14 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     	this.vpcId = vpcId;
     }
 
-    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers,String PublicIp,String GuestIp,String PrivateIp, NicTO nic, Long vpcId) {
+    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers,String PublicIp,String GuestIp,String PrivateIp, NicTO nic, Long vpcId, String maxconn) {
     	this.loadBalancers = loadBalancers;
     	this.lbStatsPublicIP = PublicIp;
     	this.lbStatsPrivateIP = PrivateIp;
     	this.lbStatsGuestIP = GuestIp;
     	this.nic = nic;
     	this.vpcId = vpcId;
+        this.maxconn=maxconn;
     }
 
     public NicTO getNic() {

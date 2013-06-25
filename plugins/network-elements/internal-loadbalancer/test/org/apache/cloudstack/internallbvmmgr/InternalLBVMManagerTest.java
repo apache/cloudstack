@@ -24,6 +24,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import junit.framework.TestCase;
 
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
@@ -91,7 +94,7 @@ public class InternalLBVMManagerTest extends TestCase {
     @Inject NetworkModel _ntwkModel;
     @Inject VirtualMachineManager _itMgr;
     @Inject DataCenterDao _dcDao;
-    
+    @Inject NetworkOfferingDao _offeringDao;
     long validNtwkId = 1L;
     long invalidNtwkId = 2L;
     String requestedIp = "10.1.1.1";
@@ -153,7 +156,9 @@ public class InternalLBVMManagerTest extends TestCase {
         DataCenterVO dc = new DataCenterVO
                 (1L, null, null, null, null, null, null, null, null, null, NetworkType.Advanced, null, null);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
-        
+        NetworkOfferingVO networkOfferingVO = new NetworkOfferingVO();
+        networkOfferingVO.setConcurrentConnections(500);
+        Mockito.when(_offeringDao.findById(Mockito.anyLong())).thenReturn(networkOfferingVO);
         
         try {
             Mockito.when(_itMgr.expunge(Mockito.any(DomainRouterVO.class), Mockito.any(User.class), Mockito.any(Account.class))).thenReturn(true);

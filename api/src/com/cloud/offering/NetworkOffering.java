@@ -129,4 +129,5 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean getPublicLb();
     boolean getEgressDefaultPolicy();
 
+    Integer getConcurrentConnections();
 }

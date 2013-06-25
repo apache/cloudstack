@@ -2232,3 +2232,6 @@ CREATE VIEW `cloud`.`project_view` AS
             and resource_tags.resource_type = 'Project'
             left join
         `cloud`.`project_account` pacct ON projects.id = pacct.project_id;
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'network.loadbalancer.haproxy.max.conn', '4096', 'Load Balancer(haproxy) maximum number of concurrent connections(global max)');
+
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)';

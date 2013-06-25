@@ -482,9 +482,17 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
                 _ntwkModel.isSecurityGroupSupportedInNetwork(guestNetwork), 
                 _ntwkModel.getNetworkTag(internalLbVm.getHypervisorType(), guestNetwork));
 
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, guestNic.getIp4Address(), 
+        NetworkOffering offering =_networkOfferingDao.findById(guestNetworkId);
+        String maxconn= null;
+        if (offering.getConcurrentConnections() == null) {
+            maxconn =  _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+        }
+        else {
+            maxconn = offering.getConcurrentConnections().toString();
+        }
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, guestNic.getIp4Address(),
                 guestNic.getIp4Address(), internalLbVm.getPrivateIpAddress(), 
-                _itMgr.toNicTO(guestNicProfile, internalLbVm.getHypervisorType()), internalLbVm.getVpcId());
+                _itMgr.toNicTO(guestNicProfile, internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn);
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
@@ -878,7 +886,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements
             s_logger.debug("No lb rules to be applied for network " + network);
             return true;
         }
-        
+        s_logger.info("lb rules to be applied for network ");
         //only one internal lb vm is supported per ip address at this time
         if (internalLbVms == null || internalLbVms.isEmpty()) {
             throw new CloudRuntimeException("Can't apply the lb rules on network " + network + " as the list of internal lb vms is empty");

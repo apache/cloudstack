@@ -3827,6 +3827,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean isPersistent = cmd.getIsPersistent();
         Map<String, String> detailsStr = cmd.getDetails();
         Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
+        Integer maxconn = null;
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -3981,7 +3982,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     "Capabilities for LB service can be specifed only when LB service is enabled for network offering.");
         }
         validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
-
+        
+        if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+            maxconn = cmd.getMaxconnections();
+            if (maxconn == null) {
+                maxconn=Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+            }
+        }
+        
         // validate the Source NAT service capabilities specified in the network
         // offering
         Map<Capability, String> sourceNatServiceCapabilityMap = cmd.getServiceCapabilities(Service.SourceNat);
@@ -4176,7 +4184,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type,
             boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
             Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
-            Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy) {
+            Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -4334,6 +4342,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         txn.start();
         // 1) create network offering object
         s_logger.debug("Adding network offering " + offering);
+        offering.setConcurrentConnections(maxconn);
         offering = _networkOfferingDao.persist(offering, details);
         // 2) populate services and providers
         if (serviceProviderMap != null) {
@@ -4694,6 +4703,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String name = cmd.getNetworkOfferingName();
         String availabilityStr = cmd.getAvailability();
         Integer sortKey = cmd.getSortKey();
+        Integer maxconn = cmd.getMaxconnections();
         Availability availability = null;
         String state = cmd.getState();
         CallContext.current().setEventDetails(" Id: " + id);
@@ -4766,6 +4776,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 offering.setAvailability(availability);
             }
+        }
+
+        if (maxconn != null) {
+            offering.setConcurrentConnections(maxconn);
         }
 
         if (_networkOfferingDao.update(id, offering)) {

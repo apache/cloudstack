@@ -303,8 +303,16 @@ ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
             lbs[i++] = lb; 
         }
 
+        NetworkOffering offering =_networkOfferingDao.findById(guestNetworkId);
+        String maxconn= null;
+        if (offering.getConcurrentConnections() == null) {
+            maxconn =  _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+        }
+        else {
+            maxconn = offering.getConcurrentConnections().toString();
+        }
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,elbVm.getPublicIpAddress(),
-                _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),elbVm.getPrivateIpAddress(), null, null);
+                _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),elbVm.getPrivateIpAddress(), null, null, maxconn);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP,
                 elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME,
