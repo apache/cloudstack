@@ -104,12 +104,12 @@
 
   <!--
     Netapp support components
-  -->  
+
   <bean id="lunDaoImpl" class="com.cloud.netapp.dao.LunDaoImpl" />
   <bean id="poolDaoImpl" class="com.cloud.netapp.dao.PoolDaoImpl" />
   <bean id="netappVolumeDaoImpl" class="com.cloud.netapp.dao.VolumeDaoImpl" />
   <bean id="NetappManager" class="com.cloud.netapp.NetappManagerImpl"/>
-
+  -->  
   <!--
    JuniperSRX support components
   -->
