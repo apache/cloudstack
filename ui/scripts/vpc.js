@@ -1689,8 +1689,9 @@
               select:function(args){
                 $.ajax({
                  url: createURL('listNetworkACLLists'),
-                 dataType: 'json',
-                 async: true,
+                 data: {
+                	 vpcid: args.context.vpc[0].id
+                 },
                  success: function(json) {
                       var objs = json.listnetworkacllistsresponse.networkacllist;
                       var items = [];
