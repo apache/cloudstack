@@ -102,8 +102,7 @@
       <modules>
         <module>hypervisors/kvm</module>
       </modules>
-    </profile>
-<!--      
+    </profile>      
     <profile>
       <id>f5</id>
       <activation>
@@ -137,7 +136,6 @@
         <module>network-elements/juniper-srx</module>
       </modules>
     </profile>
--->    
     <profile>
       <id>vmware</id>
       <activation>
