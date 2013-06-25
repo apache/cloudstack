@@ -609,7 +609,7 @@
           <version>${project.version}</version>
         </dependency>
       </dependencies>
-    </profile>  
+    </profile>
     <profile>
       <id>netapp</id>
       <activation>

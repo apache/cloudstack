@@ -46,7 +46,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     private String guid;
 
     @Column(name = "name")
-    private String name;
+    private String vmwareDatacenterName;
 
     @Column(name = "vcenter_host")
     private String vCenterHost;
@@ -73,7 +73,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
 
     @Override
     public String getVmwareDatacenterName() {
-        return name;
+        return vmwareDatacenterName;
     }
 
     @Override
@@ -105,7 +105,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     }
 
     public void setVmwareDatacenterName(String name) {
-        this.name = name;
+        vmwareDatacenterName = name;
     }
 
     public void setVcenterHost(String vCenterHost) {
@@ -133,15 +133,15 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof VmwareDatacenterVO) {
-            return ((VmwareDatacenterVO)obj).getId() == this.getId();
+            return ((VmwareDatacenterVO)obj).getId() == getId();
         } else {
             return false;
         }
     }
 
     public VmwareDatacenterVO(String guid, String name, String vCenterHost, String user, String password) {
-        this.uuid = UUID.randomUUID().toString();
-        this.name = name;
+        uuid = UUID.randomUUID().toString();
+        vmwareDatacenterName = name;
         this.guid = guid;
         this.vCenterHost = vCenterHost;
         this.user = user;
@@ -154,7 +154,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     }
 
     public VmwareDatacenterVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
 }
