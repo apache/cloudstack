@@ -336,12 +336,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // prepare at least one network on the vswitch to enable OVF importing
         String vSwitchName = privateTrafficLabel;
         String vlanId = null;
+        String vlanToken;
         String[] tokens = privateTrafficLabel.split(",");
-        if(tokens.length == 2) {
+        if(tokens.length >= 2) {
             vSwitchName = tokens[0].trim();
-            vlanId = tokens[1].trim();
+            vlanToken = tokens[1].trim();
+            if (!vlanToken.isEmpty()) {
+                vlanId = vlanToken;
+            }
         }
-
         s_logger.info("Preparing network on host " + hostMo.getContext().toString() + " for " + privateTrafficLabel);
         HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
     }

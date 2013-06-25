@@ -2981,7 +2981,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // If all 3 fields are mentioned then number of tokens would be 3.
             // If only <VSWITCH>,<VLANID> are mentioned then number of tokens would be 2.
             if(tokens.length == 2 || tokens.length == 3) {
-                return new Pair<String, String>(tokens[0], tokens[1]);
+                String vlanToken = tokens[1];
+                if (vlanToken.isEmpty()) {
+                    vlanToken = Vlan.UNTAGGED;
+                }
+                return new Pair<String, String>(tokens[0], vlanToken);
             } else {
                 return new Pair<String, String>(nicTo.getName(), Vlan.UNTAGGED);
             }
