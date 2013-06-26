@@ -849,9 +849,9 @@ public class EC2Engine extends ManagerBase {
             CloudStackAccount caller = getCurrentAccount();
 
             CloudStackZone zone = findZone();
-            CloudStackNetwork net = findNetwork(zone);
+            //CloudStackNetwork net = findNetwork(zone);
 //			CloudStackIpAddress resp = getApi().associateIpAddress(null, null, null, "0036952d-48df-4422-9fd0-94b0885e18cb");
-            CloudStackIpAddress resp = getApi().associateIpAddress(zone.getId(), caller.getName(), caller.getDomainId(), net != null ? net.getId():null);
+            CloudStackIpAddress resp = getApi().associateIpAddress(zone.getId(), caller.getName(), caller.getDomainId(), null);
             ec2Address.setAssociatedInstanceId(resp.getId());
 
             if (resp.getIpAddress() == null) {
@@ -1399,14 +1399,14 @@ public class EC2Engine extends ManagerBase {
             CloudStackZone zone = zones.get(0);
 
             // network
-            CloudStackNetwork network = findNetwork(zone);
+            //CloudStackNetwork network = findNetwork(zone);
 
             // now actually deploy the vms
             for( int i=0; i < createInstances; i++ ) {
                 try{
                     CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
-                            request.getTemplateId(), zoneId, null, null, null, null, 
-                            null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
+                            request.getTemplateId(), zoneId, null, null, null, null,
+                            null, null, null, request.getKeyName(), null, null,
                             null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
                     EC2Instance vm = new EC2Instance();
                     vm.setId(resp.getId().toString());
