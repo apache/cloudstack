@@ -889,13 +889,12 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
     @Override
     public void preinstallTemplates(String url, long zoneId) {
         MockSecStorageVO storage = null;
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         try {
             storage = _mockSecStorageDao.findByUrl(url);
         } catch (Exception ex) {
             throw new CloudRuntimeException("Unable to find sec storage at " + url, ex);
         } finally {
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
         }
         if (storage == null) {
@@ -916,7 +915,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             storage.setCapacity(DEFAULT_HOST_STORAGE_SIZE);
 
             storage.setMountPoint(dir);
-            txn = Transaction.open(Transaction.SIMULATOR_DB);
+            Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
             try {
                 txn.start();
                 storage = _mockSecStorageDao.persist(storage);
@@ -974,7 +973,6 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                 txn.close();
             }
         }
-
     }
 
     @Override
