@@ -18,17 +18,8 @@
   -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:tx="http://www.springframework.org/schema/tx"
-       xmlns:aop="http://www.springframework.org/schema/aop"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-                      http://www.springframework.org/schema/tx
-                      http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-                      http://www.springframework.org/schema/aop
-                      http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
-                      http://www.springframework.org/schema/context
-                      http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
   <!--
     OSS deployment component configuration
@@ -36,15 +27,28 @@
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker"/>
   <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl"/>
 
-  <!-- simulator components -->
-  <!--<bean id="SimulatorSecondaryDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">-->
-    <!--<property name="name" value="SecondaryStorage"/>-->
-  <!--</bean>-->
   <bean id="SimulatorDiscoverer" class="com.cloud.resource.SimulatorDiscoverer">
     <property name="name" value="Simulator Agent"/>
   </bean>
   <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
     <property name="name" value="Simulator Guru"/>
+  </bean>
+
+  <bean id="SimulatorImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.SimulatorImageStoreProviderImpl"/>
+
+  <!--Storage Providers-->
+  <!--<bean id="dataStoreProviderManagerChild" parent="dataStoreProviderManager">-->
+  <bean id="dataStoreProviderManager"
+        class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl">
+    <property name="providers">
+      <!--Override the cloudstack default image store provider to use simulator defined provider-->
+      <list>
+        <!--Data Store Providers-->
+        <ref bean="CloudStackPrimaryDataStoreProviderImpl"/>
+        <ref bean="SimulatorImageStoreProviderImpl"/>
+      </list>
+    </property>
   </bean>
 
   <!--
@@ -85,7 +89,6 @@
     <property name="Adapters">
       <list>
         <ref bean="SimulatorDiscoverer"/>
-        <ref bean="SimulatorSecondaryDiscoverer"/>
         <ref bean="XcpServerDiscoverer"/>
         <ref bean="SecondaryStorageDiscoverer"/>
         <ref bean="KvmServerDiscoverer"/>
@@ -124,10 +127,6 @@
         <ref bean="FirstFitPlanner"/>
         <ref bean="UserDispersingPlanner"/>
         <ref bean="UserConcentratedPodPlanner"/>
-
-        <!--
-                  <ref bean="BareMetalPlanner" />
-        -->
       </list>
     </property>
   </bean>
@@ -175,9 +174,6 @@
       <list>
         <ref bean="VirtualRouter"/>
         <ref bean="VpcVirtualRouter"/>
-        <!--
-                  <ref bean="BareMetalDhcp"/>
-        -->
       </list>
     </property>
   </bean>
@@ -206,11 +202,6 @@
         <ref bean="SecurityGroupProvider"/>
         <ref bean="VpcVirtualRouter"/>
         <ref bean="InternalLbVm"/>
-        <!--
-                  <ref bean="BareMetalDhcp"/>
-                  <ref bean="BareMetalPxe"/>
-                  <ref bean="BareMetalUserdata"/>
-        -->
       </list>
     </property>
   </bean>
@@ -218,7 +209,8 @@
   <!--
     Image Store
   -->
-  <!--<bean id="simulatorImageStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.SimulatorImageStoreProviderImpl" />-->
+
+
 
   <bean id="GlobalLoadBalancingRulesServiceImpl"
         class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl"/>
@@ -244,5 +236,4 @@
     <property name="name" value="ExplicitDedicationProcessor"/>
     <property name="type" value="ExplicitDedication"/>
   </bean>
-
 </beans>

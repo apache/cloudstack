@@ -18,11 +18,9 @@
  */
 package org.apache.cloudstack.storage.motion;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.Host;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -32,9 +30,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.Host;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class DataMotionServiceImpl implements DataMotionService {
@@ -71,5 +69,9 @@ public class DataMotionServiceImpl implements DataMotionService {
             }
         }
         throw new CloudRuntimeException("can't find strategy to move data");
+    }
+
+    public void setStrategies(List<DataMotionStrategy> strategies) {
+        this.strategies = strategies;
     }
 }

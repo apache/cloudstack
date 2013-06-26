@@ -17,16 +17,14 @@
   under the License.
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-  xmlns:context="http://www.springframework.org/schema/context"
-  xmlns:tx="http://www.springframework.org/schema/tx" 
-  xmlns:aop="http://www.springframework.org/schema/aop"
-  xsi:schemaLocation="http://www.springframework.org/schema/beans
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
                       http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-                      http://www.springframework.org/schema/tx 
-                      http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-                      http://www.springframework.org/schema/aop
-                      http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+
+
+
+
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">                     
 
@@ -613,7 +611,96 @@
   <bean id="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru">
     <property name="name" value="OvmGuru"/>
   </bean>
-  
+
+
+  <!--=====================================================================================================-->
+  <!--                                                                                                     -->
+  <!--                           Storage Subsystem Components and Helpers                                  -->
+  <!--                                                                                                     -->
+  <!--=====================================================================================================-->
+
+  <!--Filesystem types-->
+  <bean id="iSCSI" class="org.apache.cloudstack.storage.datastore.type.ISCSI" />
+  <bean id="networkFileSystem" class="org.apache.cloudstack.storage.datastore.type.NetworkFileSystem" />
+
+  <!--Image formats-->
+  <bean id="ISO" class="org.apache.cloudstack.storage.image.format.ISO" />
+  <bean id="OVA" class="org.apache.cloudstack.storage.image.format.OVA" />
+  <bean id="QCOW2" class="org.apache.cloudstack.storage.image.format.QCOW2" />
+  <bean id="VHD" class="org.apache.cloudstack.storage.image.format.VHD" />
+  <bean id="unknown" class="org.apache.cloudstack.storage.image.format.Unknown" />
+
+  <!--Data Store Services -->
+  <bean id="snapshotServiceImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotServiceImpl"
+        depends-on="snapshotStateMachineManagerImpl, snapshotDataFactoryImpl, dataStoreManagerImpl, dataMotionServiceImpl, objectInDataStoreManagerImpl"/>
+  <bean id="templateServiceImpl" class="org.apache.cloudstack.storage.image.TemplateServiceImpl"
+        depends-on="dataObjectManagerImpl, dataStoreManagerImpl, dataMotionServiceImpl, objectInDataStoreManagerImpl, defaultEndPointSelector, templateDataFactoryImpl"/>
+  <bean id="volumeServiceImpl" class="org.apache.cloudstack.storage.volume.VolumeServiceImpl"
+        depends-on="snapshotManagerImpl, dataMotionServiceImpl"/>
+
+  <bean id="xenserverSnapshotStrategy" class="org.apache.cloudstack.storage.snapshot.XenserverSnapshotStrategy" />
+
+  <!--Data Store Factory-->
+  <bean id="templateDataFactoryImpl" class="org.apache.cloudstack.storage.image.TemplateDataFactoryImpl" />
+  <bean id="snapshotDataFactoryImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotDataFactoryImpl"
+        depends-on="dataStoreManagerImpl, snapshotDataStoreDaoImpl, volumeDataFactoryImpl"/>
+  <bean id="volumeDataFactoryImpl" class="org.apache.cloudstack.storage.volume.VolumeDataFactoryImpl" />
+
+  <bean id="objectInDataStoreManagerImpl" class="org.apache.cloudstack.storage.datastore.ObjectInDataStoreManagerImpl" />
+  <bean id="dataObjectManagerImpl" class="org.apache.cloudstack.storage.datastore.DataObjectManagerImpl" />
+
+  <!--Data Store Helpers-->
+  <bean id="primaryDataStoreHelper" class="org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper" />
+  <bean id="imageStoreHelper" class="org.apache.cloudstack.storage.image.datastore.ImageStoreHelper" />
+  <bean id="imageFormatHelper" class="org.apache.cloudstack.storage.image.format.ImageFormatHelper" />
+
+  <bean id="storageCacheRandomAllocator" class="org.apache.cloudstack.storage.cache.allocator.StorageCacheRandomAllocator" />
+  <bean id="storageCacheManagerImpl" class="org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl"  />
+  <bean id="StorageCacheReplacementAlgorithm" class="org.apache.cloudstack.storage.cache.manager.StorageCacheReplacementAlgorithmLRU" />
+
+  <bean id="snapshotStateMachineManagerImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotStateMachineManagerImpl" />
+  <bean id="defaultEndPointSelector" class="org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector" />
+
+
+  <bean id="ancientDataMotionStrategy" class="org.apache.cloudstack.storage.motion.AncientDataMotionStrategy" />
+  <bean id="xenserverStorageMotionStrategy" class="org.apache.cloudstack.storage.motion.XenServerStorageMotionStrategy" />
+
+  <!--Data Motion Services-->
+  <bean id="dataMotionServiceImpl" class="org.apache.cloudstack.storage.motion.DataMotionServiceImpl">
+    <property name="strategies">
+      <list>
+        <ref local="ancientDataMotionStrategy"/>
+        <ref local="xenserverStorageMotionStrategy"/>
+      </list>
+    </property>
+  </bean>
+
+  <!--
+    Data Store Provider Manager
+  -->
+  <bean id="primaryDataStoreProviderMgr"
+        class="org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreProviderManagerImpl"/>
+  <bean id="imageStoreProviderMgr" class="org.apache.cloudstack.storage.image.manager.ImageStoreProviderManagerImpl"/>
+
+  <bean id="dataStoreManagerImpl" class="org.apache.cloudstack.storage.datastore.DataStoreManagerImpl"
+        depends-on="dataStoreProviderManager">
+    <property name="primaryStoreMgr" ref="primaryDataStoreProviderMgr"/>
+    <property name="imageDataStoreMgr" ref="imageStoreProviderMgr"/>
+  </bean>
+
+  <bean id="CloudStackPrimaryDataStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl"/>
+
+  <bean id="dataStoreProviderManager"
+        class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl">
+    <property name="providers">
+      <list>
+        <!--Data Store Providers-->
+        <ref bean="CloudStackPrimaryDataStoreProviderImpl"/>
+      </list>
+    </property>
+  </bean>
+
   <!--
     Managers
   -->
@@ -622,15 +709,15 @@
     <property name="UserPasswordEncoders" value="#{userPasswordEncoders.Adapters}" />
     <property name="SecurityCheckers" value="#{securityCheckers.Adapters}" />
   </bean>
-  
+
   <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl">
     <property name="UserAuthenticators" value="#{userAuthenticators.Adapters}" />
     <property name="UserPasswordEncoders" value="#{userPasswordEncoders.Adapters}" />
     <property name="HostAllocators" value="#{hostAllocators.Adapters}" />
-	<property name="AffinityGroupProcessors" value="#{affinityProcessors.Adapters}" />
-	<property name="Planners" value="#{deploymentPlanners.Adapters}" />
+    <property name="AffinityGroupProcessors" value="#{affinityProcessors.Adapters}" />
+    <property name="Planners" value="#{deploymentPlanners.Adapters}" />
   </bean>
-  
+
   <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl">
     <property name="StoragePoolAllocators" value="#{storagePoolAllocators.Adapters}" />
   </bean>
@@ -638,7 +725,7 @@
   <bean id="FirstFitPlanner" class="com.cloud.deploy.FirstFitPlanner">
     <property name="name" value="FirstFitPlanner"/>
   </bean>
-  
+
   <bean id="resourceManagerImpl" class="com.cloud.resource.ResourceManagerImpl" >
     <property name="PodAllocators" value="#{podAllocators.Adapters}" />
     <property name="Discoverers" value="#{resourceDiscoverers.Adapters}" />
@@ -653,7 +740,7 @@
     <property name="HostAllocators" value="#{hostAllocators.Adapters}" />
     <property name="Planners" value="#{deploymentPlanners.Adapters}" />
   </bean>
-  
+
   <bean id="networkManagerImpl" class="com.cloud.network.NetworkManagerImpl" >
     <property name="NetworkGurus" value="#{networkGurus.Adapters}" />
     <property name="NetworkElements" value="#{networkElements.Adapters}" />
@@ -664,9 +751,9 @@
   <bean id="networkModelImpl" class="com.cloud.network.NetworkModelImpl">
     <property name="NetworkElements" value="#{networkElements.Adapters}" />
   </bean>
-   
+
   <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
-   
+
   <bean id="clusterManagerImpl" class="com.cloud.cluster.ClusterManagerImpl" />
   <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
 
@@ -685,7 +772,7 @@
   <bean id="capacityManagerImpl" class="com.cloud.capacity.CapacityManagerImpl" />
   <bean id="clusterFenceManagerImpl" class="com.cloud.cluster.ClusterFenceManagerImpl" />
   <bean id="configurationManagerImpl" class="com.cloud.configuration.ConfigurationManagerImpl" />
-  <bean id="dataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl" />
+
   <bean id="elasticLoadBalancerManagerImpl" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl" />
   <bean id="entityManagerImpl" class="com.cloud.dao.EntityManagerImpl" />
   <bean id="externalDeviceUsageManagerImpl" class="com.cloud.network.ExternalDeviceUsageManagerImpl" />
@@ -724,17 +811,14 @@
   <bean id="vpcManagerImpl" class="com.cloud.network.vpc.VpcManagerImpl" />
   <bean id="vpcVirtualNetworkApplianceManagerImpl" class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
 
+
+
   <!--
     Misc components
   -->
   <bean id="actionEventUtils" class="com.cloud.event.ActionEventUtils" />
   <bean id="agentMonitor" class="com.cloud.agent.manager.AgentMonitor" />
   <bean id="alertGenerator" class="com.cloud.event.AlertGenerator" />
-  <bean id="ancientDataMotionStrategy" class="org.apache.cloudstack.storage.motion.AncientDataMotionStrategy" />
-  <bean id="storageCacheManagerImpl" class="org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl"  />
-  <bean id="storageCacheRandomAllocator" class="org.apache.cloudstack.storage.cache.allocator.StorageCacheRandomAllocator" />
-  <bean id="xenserverSnapshotStrategy" class="org.apache.cloudstack.storage.snapshot.XenserverSnapshotStrategy" />
-  <bean id="xenserverStorageMotionStrategy" class="org.apache.cloudstack.storage.motion.XenServerStorageMotionStrategy" />
   <bean id="apiDBUtils" class="com.cloud.api.ApiDBUtils" />
   <bean id="apiDiscoveryServiceImpl" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl" />
   <bean id="apiDispatcher" class="com.cloud.api.ApiDispatcher" />
@@ -747,46 +831,24 @@
   <bean id="consoleProxyServlet" class="com.cloud.servlet.ConsoleProxyServlet" />
   <bean id="dataCenterResourceManagerImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceManagerImpl" />
   <bean id="dataDisk" class="org.apache.cloudstack.engine.subsystem.api.storage.type.DataDisk" />
-  <bean id="dataMotionServiceImpl" class="org.apache.cloudstack.storage.motion.DataMotionServiceImpl" />
-  <bean id="dataObjectManagerImpl" class="org.apache.cloudstack.storage.datastore.DataObjectManagerImpl" />
-  <bean id="dataStoreManagerImpl" class="org.apache.cloudstack.storage.datastore.DataStoreManagerImpl" />
-  <bean id="defaultEndPointSelector" class="org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector" />
-  <bean id="primaryDataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreProviderManagerImpl" />
-  <bean id="imageStoreProviderManagerImpl" class="org.apache.cloudstack.storage.image.manager.ImageStoreProviderManagerImpl" />  
+
+
   <bean id="eventUtils" class="com.cloud.event.EventUtils" />
-  <bean id="iSCSI" class="org.apache.cloudstack.storage.datastore.type.ISCSI" />
-  <bean id="ISO" class="org.apache.cloudstack.storage.image.format.ISO" />
-  <bean id="templateDataFactoryImpl" class="org.apache.cloudstack.storage.image.TemplateDataFactoryImpl" />
-  <bean id="imageStoreHelper" class="org.apache.cloudstack.storage.image.datastore.ImageStoreHelper" />
-  <bean id="imageFormatHelper" class="org.apache.cloudstack.storage.image.format.ImageFormatHelper" />
-  <bean id="templateServiceImpl" class="org.apache.cloudstack.storage.image.TemplateServiceImpl" />
-  <bean id="iso" class="org.apache.cloudstack.engine.subsystem.api.storage.type.Iso" />
-  <bean id="networkFileSystem" class="org.apache.cloudstack.storage.datastore.type.NetworkFileSystem" />
-  <bean id="networkRestService" class="org.apache.cloudstack.engine.rest.service.api.NetworkRestService" />
-  <bean id="OVA" class="org.apache.cloudstack.storage.image.format.OVA" />
-  <bean id="objectInDataStoreManagerImpl" class="org.apache.cloudstack.storage.datastore.ObjectInDataStoreManagerImpl" />
   <bean id="podRestService" class="org.apache.cloudstack.engine.rest.service.api.PodRestService" />
-  <bean id="primaryDataStoreHelper" class="org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper" />
+  <bean id="iso" class="org.apache.cloudstack.engine.subsystem.api.storage.type.Iso" />
+  <bean id="networkRestService" class="org.apache.cloudstack.engine.rest.service.api.NetworkRestService" />
   <bean id="provisioningServiceImpl" class="org.apache.cloudstack.engine.service.api.ProvisioningServiceImpl" />
-  <bean id="QCOW2" class="org.apache.cloudstack.storage.image.format.QCOW2" />
-  <bean id="registerCompleteServlet" class="com.cloud.servlet.RegisterCompleteServlet" />
   <bean id="rootDisk" class="org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk" />
-  <bean id="snapshotDataFactoryImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotDataFactoryImpl" />
-  <bean id="snapshotServiceImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotServiceImpl" />
-  <bean id="snapshotStateMachineManagerImpl" class="org.apache.cloudstack.storage.snapshot.SnapshotStateMachineManagerImpl" />
+  <bean id="registerCompleteServlet" class="com.cloud.servlet.RegisterCompleteServlet" />
   <bean id="statsCollector" class="com.cloud.server.StatsCollector" />
   <bean id="storagePoolAutomationImpl" class="com.cloud.storage.StoragePoolAutomationImpl" />
-  <bean id="unknown" class="org.apache.cloudstack.storage.image.format.Unknown" />
   <bean id="usageEventUtils" class="com.cloud.event.UsageEventUtils" />
   <bean id="userContextInitializer" class="com.cloud.user.UserContextInitializer" />
-  <bean id="VHD" class="org.apache.cloudstack.storage.image.format.VHD" />
   <bean id="vMEntityManagerImpl" class="org.apache.cloudstack.engine.cloud.entity.api.VMEntityManagerImpl" />
   <bean id="virtualMachineEntityFactory" class="org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityFactory" />
   <bean id="virtualMachineEntityImpl" class="org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl" />
   <bean id="virtualMachineRestService" class="org.apache.cloudstack.engine.rest.service.api.VirtualMachineRestService" />
-  <bean id="volumeDataFactoryImpl" class="org.apache.cloudstack.storage.volume.VolumeDataFactoryImpl" />
   <bean id="volumeRestService" class="org.apache.cloudstack.engine.rest.service.api.VolumeRestService" />
-  <bean id="volumeServiceImpl" class="org.apache.cloudstack.storage.volume.VolumeServiceImpl" />
   <bean id="volumeTypeHelper" class="org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper" />
   <bean id="zoneRestService" class="org.apache.cloudstack.engine.rest.service.api.ZoneRestService" />
   <bean id="cloudZonesStartupProcessor" class="com.cloud.hypervisor.CloudZonesStartupProcessor" />
@@ -796,21 +858,18 @@
   <bean id="downloadMonitorImpl" class="com.cloud.storage.download.DownloadMonitorImpl" />
   <bean id="lBHealthCheckManagerImpl" class="com.cloud.network.lb.LBHealthCheckManagerImpl" />
   <bean id="mockAgentManagerImpl" class="com.cloud.agent.manager.MockAgentManagerImpl" />
+
+  <bean id="volumeManagerImpl" class="com.cloud.storage.VolumeManagerImpl" />
+  <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
+  <bean id="InternalLoadBalancerVMManager" class="org.apache.cloudstack.network.lb.InternalLoadBalancerVMManagerImpl" />
+
+  <!--Simulator Components-->
+  <!--<bean id="simulatorImageStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.SimulatorImageStoreProviderImpl" />-->
   <bean id="mockStorageManagerImpl" class="com.cloud.agent.manager.MockStorageManagerImpl" />
   <bean id="mockVmManagerImpl" class="com.cloud.agent.manager.MockVmManagerImpl" />
   <bean id="mockNetworkManagerImpl" class="com.cloud.agent.manager.MockNetworkManagerImpl" />
   <bean id="simulatorManagerImpl" class="com.cloud.agent.manager.SimulatorManagerImpl" />
   <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
-  <bean id="volumeManagerImpl" class="com.cloud.storage.VolumeManagerImpl" />
-  <bean id="ClassicalPrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl" />
-  <bean id="cloudStackImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl" />
-  <bean id="s3ImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl" />
-  <bean id="swiftImageStoreProviderImpl" class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl" />
-  <bean id="solidFireDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.SolidfirePrimaryDataStoreProvider" />
-  <bean id="simulatorImageStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.SimulatorImageStoreProviderImpl" />
-  <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
-  <bean id="InternalLoadBalancerVMManager" class="org.apache.cloudstack.network.lb.InternalLoadBalancerVMManagerImpl" />
-  <bean id="StorageCacheReplacementAlgorithm" class="org.apache.cloudstack.storage.cache.manager.StorageCacheReplacementAlgorithmLRU" />
 
 
 <!--=======================================================================================================-->
