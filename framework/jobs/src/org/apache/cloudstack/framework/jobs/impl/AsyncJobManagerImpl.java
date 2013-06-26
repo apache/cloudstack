@@ -80,11 +80,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
-    // Although we may have detailed masks for each individual wakeup event, i.e.
-    // periodical timer, matched topic from message bus, it seems that we don't
-    // need to distinguish them to such level. Therefore, only one wakeup signal
-    // is defined
-    public static final int SIGNAL_MASK_WAKEUP = 1;
 
     private static final int MAX_ONETIME_SCHEDULE_SIZE = 50;
     private static final int HEARTBEAT_INTERVAL = 2000;
@@ -235,7 +230,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             for(Long id : wakeupList) {
             	// TODO, we assume that all jobs in this category is API job only
             	AsyncJobVO jobToWakeup = _jobDao.findById(id);
-                if (jobToWakeup != null && (jobToWakeup.getPendingSignals() & SIGNAL_MASK_WAKEUP) != 0)
+                if (jobToWakeup != null && (jobToWakeup.getPendingSignals() & AsyncJob.Contants.SIGNAL_MASK_WAKEUP) != 0)
             	    scheduleExecution(jobToWakeup, false);
             }
              
@@ -462,7 +457,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         s_logger.debug("Executing " + job);
                     }
 
-                    if ((getAndResetPendingSignals(job) & SIGNAL_MASK_WAKEUP) != 0) {
+                    if ((getAndResetPendingSignals(job) & AsyncJob.Contants.SIGNAL_MASK_WAKEUP) != 0) {
                     	AsyncJobDispatcher jobDispatcher = getWakeupDispatcher(job);
                     	if(jobDispatcher != null) {
                     		jobDispatcher.runJob(job);
@@ -651,7 +646,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     for(Long jobId : standaloneWakeupJobs) {
                     	// TODO, we assume that all jobs in this category is API job only
                     	AsyncJobVO job = _jobDao.findById(jobId);
-                        if (job != null && (job.getPendingSignals() & SIGNAL_MASK_WAKEUP) != 0)
+                        if (job != null && (job.getPendingSignals() & AsyncJob.Contants.SIGNAL_MASK_WAKEUP) != 0)
                     	    scheduleExecution(job, false);
                     }
                 } catch(Throwable e) {

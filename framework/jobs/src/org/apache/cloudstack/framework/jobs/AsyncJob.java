@@ -31,6 +31,15 @@ public interface AsyncJob extends JobInfo {
         public static final String JOB_HEARTBEAT = "job.heartbeat";
         public static final String JOB_STATE = "job.state";
     }
+    
+    public static interface Contants {
+
+    	// Although we may have detailed masks for each individual wakeup event, i.e.
+        // periodical timer, matched topic from message bus, it seems that we don't
+        // need to distinguish them to such level. Therefore, only one wakeup signal
+        // is defined
+        public static final int SIGNAL_MASK_WAKEUP = 1;
+    }
 	
     @Override
     String getType();
