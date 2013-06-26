@@ -33,7 +33,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -162,6 +161,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -182,10 +182,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-@Component
 public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
-    private static final Logger s_logger = Logger
-            .getLogger(VolumeManagerImpl.class);
+    private static final Logger s_logger = Logger.getLogger(VolumeManagerImpl.class);
     @Inject
     protected UserVmManager _userVmMgr;
     @Inject
@@ -328,6 +326,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     UploadMonitor _uploadMonitor;
     @Inject
     UploadDao _uploadDao;
+    @Inject
+    EntityManager _entityMgr;
 
     private int _copyvolumewait;
     @Inject
@@ -2209,9 +2209,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     }
     
     @Override
-    public void prepareForMigration(
-            VirtualMachineProfile vm,
-            DeployDestination dest) {
+    public void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest) {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
@@ -2224,7 +2222,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         if (vm.getType() == VirtualMachine.Type.User) {
-            UserVmVO userVM = (UserVmVO) vm.getVirtualMachine();
+            UserVm userVM = _entityMgr.findById(UserVm.class, vm.getId());
             if (userVM.getIsoId() != null) {
                 DataTO dataTO = tmplFactory.getTemplate(userVM.getIsoId(), DataStoreRole.Image, userVM.getDataCenterId()).getTO();
                 DiskTO iso = new DiskTO(dataTO, 3L, Volume.Type.ISO);

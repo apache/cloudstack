@@ -486,7 +486,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     public boolean savePasswordToRouter(Network network, final NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException {
-        _userVmDao.loadDetails((UserVmVO)profile.getVirtualMachine());
+        UserVmVO vm = _userVmDao.findById(profile.getId());
+        _userVmDao.loadDetails(vm);
 
         final VirtualMachineProfile updatedProfile = profile;
 

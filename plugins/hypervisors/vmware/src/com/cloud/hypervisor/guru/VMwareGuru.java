@@ -117,8 +117,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             details = new HashMap<String, String>();
 
         String nicDeviceType = details.get(VmDetailConstants.NIC_ADAPTER);
-        if(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO
-                || vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
+        if (vm.getType() == VirtualMachine.Type.DomainRouter || vm.getType() == VirtualMachine.Type.ConsoleProxy
+                || vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
 
             if(nicDeviceType == null) {
                 details.put(VmDetailConstants.NIC_ADAPTER, _vmwareMgr.getSystemVMDefaultNicAdapterType());

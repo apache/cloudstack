@@ -79,8 +79,10 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountManager;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -89,7 +91,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
@@ -143,6 +144,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     VirtualRouterProviderDao _vrProviderDao;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    EntityManager _entityMgr;
 
     protected boolean canHandle(Network network, Service service) {
         Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
@@ -1026,12 +1029,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 			return true;
 		}
 		if (vm.getType() == Type.DomainRouter) {
-			assert vm instanceof DomainRouterVO;
-			DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
+            DomainRouterVO router = _entityMgr.findById(DomainRouterVO.class, vm.getId());
 			_routerMgr.setupDhcpForPvlan(false, router, router.getHostId(), nic);
 		} else if (vm.getType() == Type.User){
-			assert vm instanceof UserVmVO;
-			UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
+            UserVm userVm = _entityMgr.findById(UserVm.class, vm.getId());
 			_userVmMgr.setupVmForPvlan(false, userVm.getHostId(), nic);
 		}
 		return true;
@@ -1045,12 +1046,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 			return;
 		}
 		if (vm.getType() == Type.DomainRouter) {
-			assert vm instanceof DomainRouterVO;
-			DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
+            DomainRouterVO router = _entityMgr.findById(DomainRouterVO.class, vm.getId());
 			_routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
 		} else if (vm.getType() == Type.User){
-			assert vm instanceof UserVmVO;
-			UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
+            UserVm userVm = _entityMgr.findById(UserVm.class, vm.getId());
 			_userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
 		}
 	}
@@ -1063,12 +1062,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 			return;
 		}
 		if (vm.getType() == Type.DomainRouter) {
-			assert vm instanceof DomainRouterVO;
-			DomainRouterVO router = (DomainRouterVO)vm.getVirtualMachine();
+            DomainRouterVO router = _entityMgr.findById(DomainRouterVO.class, vm.getId());
 			_routerMgr.setupDhcpForPvlan(true, router, router.getHostId(), nic);
 		} else if (vm.getType() == Type.User){
-			assert vm instanceof UserVmVO;
-			UserVmVO userVm = (UserVmVO)vm.getVirtualMachine();
+            UserVm userVm = _entityMgr.findById(UserVm.class, vm.getId());
 			_userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
 		}
 	}
