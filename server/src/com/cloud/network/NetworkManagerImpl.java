@@ -1125,7 +1125,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         Transaction txn = Transaction.currentTxn();
-        txn.start();
 
         assert(isPortableIpTransferableFromNetwork(ipAddrId, currentNetworkId));
 
@@ -1135,7 +1134,26 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             disassociatePortableIPToGuestNetwork(ipAddrId, currentNetworkId);
         }
 
+        if (srcNetwork.getDataCenterId() != dstNetwork.getDataCenterId()) {
+            // portable IP need to be transferred across the zones, so mark the entry corresponding to portable ip
+            // in user_ip_address as provisioned in destination data center
+            txn.start();
+            ip.setDataCenterId(dstNetwork.getDataCenterId());
+            ip.setPhysicalNetworkId(dstNetwork.getPhysicalNetworkId());
+            _ipAddressDao.update(ipAddrId, ip);
+
+            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+            vlan.setPhysicalNetworkId(dstNetwork.getPhysicalNetworkId());
+            vlan.setNetworkId(newNetworkId);
+            vlan.setDataCenterId(dstNetwork.getDataCenterId());
+            _vlanDao.update(ip.getVlanId(), vlan);
+            txn.commit();
+        }
+
         associatePortableIPToGuestNetwork(ipAddrId, newNetworkId, false);
+
+
+        txn.start();
 
         if (dstNetwork.getVpcId() != null) {
             ip.setVpcId(dstNetwork.getVpcId());
@@ -1144,6 +1162,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         _ipAddressDao.update(ipAddrId, ip);
+
         txn.commit();
         ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, Domain.ROOT_DOMAIN,
                 EventTypes.EVENT_PORTABLE_IP_TRANSFER, "Portable IP associated is transferred from network "

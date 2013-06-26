@@ -158,6 +158,10 @@ public class IPAddressVO implements IpAddress {
 	    return dataCenterId;
 	}
 
+    public void setDataCenterId(long dcId) {
+        this.dataCenterId = dcId;
+    }
+
 	@Override
     public Ip getAddress() {
 		return address;
