@@ -159,7 +159,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         // validate that userVM is in the same availability zone as the IP address
         if (ipAddress.getDataCenterId() != userVm.getDataCenterId()) {
-            throw new InvalidParameterValueException("Unable to create ip forwarding rule, IP address " + ipAddress + " is not in the same availability zone as virtual machine " + userVm.toString());
+            //make an exception for portable IP
+            if (!ipAddress.isPortable()) {
+                throw new InvalidParameterValueException("Unable to create ip forwarding rule, IP address " + ipAddress + " is not in the same availability zone as virtual machine " + userVm.toString());
+            }
         }
 
     }

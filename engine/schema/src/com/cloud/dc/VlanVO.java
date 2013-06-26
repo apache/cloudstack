@@ -120,6 +120,10 @@ public class VlanVO implements Vlan {
 		return dataCenterId;
 	}
 
+    public void setDataCenterId(long dcId) {
+        this.dataCenterId = dcId;
+    }
+
 	@Override
     public String getIpRange() {
 		return ipRange;
