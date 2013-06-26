@@ -652,7 +652,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 	        return backupUuid + "/" + backupUuid;
 	    }
 	@Override
-	public Answer backupSnasphot(CopyCommand cmd) {
+	public Answer backupSnapshot(CopyCommand cmd) {
 		SnapshotObjectTO srcSnapshot = (SnapshotObjectTO)cmd.getSrcTO();
 		PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcSnapshot.getDataStore();
 		SnapshotObjectTO destSnapshot = (SnapshotObjectTO)cmd.getDestTO();
