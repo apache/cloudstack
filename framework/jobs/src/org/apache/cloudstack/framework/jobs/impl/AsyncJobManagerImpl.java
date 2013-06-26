@@ -79,7 +79,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             "60", "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, null);
 
     private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
+
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC 		= 60; 	// 60 seconds
 
     private static final int MAX_ONETIME_SCHEDULE_SIZE = 50;
     private static final int HEARTBEAT_INTERVAL = 2000;
@@ -338,7 +340,63 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     
     @Override @DB
     public void completeJoin(long joinJobId, JobInfo.Status joinStatus, String joinResult) {
-    	_joinMapDao.completeJoin(joinJobId, joinStatus, joinResult, getMsid());
+    	//
+    	// TODO
+    	// this is a temporary solution to solve strange MySQL deadlock issue,
+    	// completeJoin() causes deadlock happens at async_job table
+
+/*    	
+    	------------------------
+    	LATEST DETECTED DEADLOCK
+    	------------------------
+    	130625 20:03:10
+    	*** (1) TRANSACTION:
+    	TRANSACTION 0 98087127, ACTIVE 0 sec, process no 1489, OS thread id 139837829175040 fetching rows, thread declared inside InnoDB 494
+    	mysql tables in use 2, locked 1
+    	LOCK WAIT 3 lock struct(s), heap size 368, 2 row lock(s), undo log entries 1
+    	MySQL thread id 28408, query id 368571321 localhost 127.0.0.1 cloud preparing
+    	UPDATE async_job SET job_pending_signals=1 WHERE id IN (SELECT job_id FROM async_job_join_map WHERE join_job_id = 9)
+    	*** (1) WAITING FOR THIS LOCK TO BE GRANTED:
+    	RECORD LOCKS space id 0 page no 1275 n bits 80 index `PRIMARY` of table `cloud`.`async_job` trx id 0 98087127 lock_mode X locks rec but not gap waiting
+    	Record lock, heap no 9 PHYSICAL RECORD: n_fields 26; compact format; info bits 0
+    	0: len 8; hex 0000000000000008; asc         ;; 1: len 6; hex 000005d8b0d8; asc       ;; 2: len 7; hex 00000009270110; asc     '  ;; 3: len 8; hex 0000000000000002; asc         ;; 4: len 8; hex 0000000000000002; asc         ;; 5: SQL NULL; 6: SQL NULL; 7: len 30; hex 6f72672e6170616368652e636c6f7564737461636b2e6170692e636f6d6d; asc org.apache.cloudstack.api.comm;...(truncated); 8: len 30; hex 7b226964223a2232222c22706879736963616c6e6574776f726b6964223a; asc {"id":"2","physicalnetworkid":;...(truncated); 9: len 4; hex 80000000; asc     ;; 10: len 4; hex 80000001; asc     ;; 11: len 4; hex 80000000; asc     ;; 12: len 4; hex 80000000; asc     ;; 13: len 30; hex 6f72672e6170616368652e636c6f7564737461636b2e6170692e72657370; asc org.apache.cloudstack.api.resp;...(truncated); 14: len 8; hex 80001a6f7bb0d0a8; asc    o{   ;; 15: len 8; hex 80001a6f7bb0d0a8; asc    o{   ;; 16: len 8; hex 8000124f06cfd5b6; asc    O    ;; 17: len 8; hex 8000124f06cfd5b6; asc    O    ;; 18: SQL NULL; 19: SQL NULL; 20: len 30; hex 66376466396532362d323139622d346338652d393231332d393766653636; asc f7df9e26-219b-4c8e-9213-97fe66;...(truncated); 21: len 30; hex 36623238306364362d663436652d343563322d383833642d333863616439; asc 6b280cd6-f46e-45c2-883d-38cad9;...(truncated); 22: SQL NULL; 23: len 21; hex 4170694173796e634a6f6244697370617463686572; asc ApiAsyncJobDispatcher;; 24: SQL NULL; 25: len 4; hex 80000000; asc     ;;
+
+    	*** (2) TRANSACTION:
+    	TRANSACTION 0 98087128, ACTIVE 0 sec, process no 1489, OS thread id 139837671909120 fetching rows, thread declared inside InnoDB 492
+    	mysql tables in use 2, locked 1
+    	3 lock struct(s), heap size 368, 2 row lock(s), undo log entries 1
+    	MySQL thread id 28406, query id 368571323 localhost 127.0.0.1 cloud preparing
+    	UPDATE async_job SET job_pending_signals=1 WHERE id IN (SELECT job_id FROM async_job_join_map WHERE join_job_id = 8)
+    	*** (2) HOLDS THE LOCK(S):
+    	RECORD LOCKS space id 0 page no 1275 n bits 80 index `PRIMARY` of table `cloud`.`async_job` trx id 0 98087128 lock_mode X locks rec but not gap
+    	Record lock, heap no 9 PHYSICAL RECORD: n_fields 26; compact format; info bits 0
+    	0: len 8; hex 0000000000000008; asc         ;; 1: len 6; hex 000005d8b0d8; asc       ;; 2: len 7; hex 00000009270110; asc     '  ;; 3: len 8; hex 0000000000000002; asc         ;; 4: len 8; hex 0000000000000002; asc         ;; 5: SQL NULL; 6: SQL NULL; 7: len 30; hex 6f72672e6170616368652e636c6f7564737461636b2e6170692e636f6d6d; asc org.apache.cloudstack.api.comm;...(truncated); 8: len 30; hex 7b226964223a2232222c22706879736963616c6e6574776f726b6964223a; asc {"id":"2","physicalnetworkid":;...(truncated); 9: len 4; hex 80000000; asc     ;; 10: len 4; hex 80000001; asc     ;; 11: len 4; hex 80000000; asc     ;; 12: len 4; hex 80000000; asc     ;; 13: len 30; hex 6f72672e6170616368652e636c6f7564737461636b2e6170692e72657370; asc org.apache.cloudstack.api.resp;...(truncated); 14: len 8; hex 80001a6f7bb0d0a8; asc    o{   ;; 15: len 8; hex 80001a6f7bb0d0a8; asc    o{   ;; 16: len 8; hex 8000124f06cfd5b6; asc    O    ;; 17: len 8; hex 8000124f06cfd5b6; asc    O    ;; 18: SQL NULL; 19: SQL NULL; 20: len 30; hex 66376466396532362d323139622d346338652d393231332d393766653636; asc f7df9e26-219b-4c8e-9213-97fe66;...(truncated); 21: len 30; hex 36623238306364362d663436652d343563322d383833642d333863616439; asc 6b280cd6-f46e-45c2-883d-38cad9;...(truncated); 22: SQL NULL; 23: len 21; hex 4170694173796e634a6f6244697370617463686572; asc ApiAsyncJobDispatcher;; 24: SQL NULL; 25: len 4; hex 80000000; asc     ;;
+
+    	*** (2) WAITING FOR THIS LOCK TO BE GRANTED:
+    	RECORD LOCKS space id 0 page no 1275 n bits 80 index `PRIMARY` of table `cloud`.`async_job` trx id 0 98087128 lock_mode X locks rec but not gap waiting
+    	Record lock, heap no 10 PHYSICAL RECORD: n_fields 26; compact format; info bits 0
+    	0: len 8; hex 0000000000000009; asc         ;; 1: len 6; hex 000005d8b0d7; asc       ;; 2: len 7; hex 00000009280110; asc     (  ;; 3: len 8; hex 0000000000000002; asc         ;; 4: len 8; hex 0000000000000002; asc         ;; 5: SQL NULL; 6: SQL NULL; 7: len 30; hex 6f72672e6170616368652e636c6f7564737461636b2e6170692e636f6d6d; asc org.apache.cloudstack.api.comm;...(truncated); 8: len 30; hex 7b226964223a2233222c22706879736963616c6e6574776f726b6964223a; asc {"id":"3","physicalnetworkid":;...(truncated); 9: len 4; hex 80000000; asc     ;; 10: len 4; hex 80000001; asc     ;; 11: len 4; hex 80000000; asc     ;; 12: len 4; hex 80000000; asc     ;; 13: len 30; hex 6f72672e6170616368652e636c6f7564737461636b2e6170692e72657370; asc org.apache.cloudstack.api.resp;...(truncated); 14: len 8; hex 80001a6f7bb0d0a8; asc    o{   ;; 15: len 8; hex 80001a6f7bb0d0a8; asc    o{   ;; 16: len 8; hex 8000124f06cfd5b6; asc    O    ;; 17: len 8; hex 8000124f06cfd5b6; asc    O    ;; 18: SQL NULL; 19: SQL NULL; 20: len 30; hex 62313065306432342d336233352d343663622d386361622d623933623562; asc b10e0d24-3b35-46cb-8cab-b93b5b;...(truncated); 21: len 30; hex 39353664383563632d383336622d346663612d623738622d646238343739; asc 956d85cc-836b-4fca-b78b-db8479;...(truncated); 22: SQL NULL; 23: len 21; hex 4170694173796e634a6f6244697370617463686572; asc ApiAsyncJobDispatcher;; 24: SQL NULL; 25: len 4; hex 80000000; asc     ;;
+
+    	*** WE ROLL BACK TRANSACTION (2)
+*/    	
+    	
+    	//
+    	// TODO
+    	// ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC is a hard-coded time out value, this value
+    	// should actually be in sync with mysql settings
+    	//
+    	// TODO
+    	// how to handle failures from locking?
+    	
+    	if(_jobDao.lockInLockTable(AsyncJob.Contants.SYNC_LOCK_NAME, ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+    		try {
+    			_joinMapDao.completeJoin(joinJobId, joinStatus, joinResult, getMsid());
+    		} finally {
+    			_jobDao.unlockFromLockTable(AsyncJob.Contants.SYNC_LOCK_NAME);
+    		}
+    	} else {
+    		s_logger.error("If this happens, it means too bad");
+    	}
     }
     
     @Override
@@ -642,13 +700,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         }
                     }
               
-                    List<Long> standaloneWakeupJobs = _joinMapDao.wakeupScan();
-                    for(Long jobId : standaloneWakeupJobs) {
-                    	// TODO, we assume that all jobs in this category is API job only
-                    	AsyncJobVO job = _jobDao.findById(jobId);
-                        if (job != null && (job.getPendingSignals() & AsyncJob.Contants.SIGNAL_MASK_WAKEUP) != 0)
-                    	    scheduleExecution(job, false);
-                    }
+                	if(_jobDao.lockInLockTable(AsyncJob.Contants.SYNC_LOCK_NAME, ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+                		try {
+		                    List<Long> standaloneWakeupJobs = _joinMapDao.wakeupScan();
+		                    for(Long jobId : standaloneWakeupJobs) {
+		                    	// TODO, we assume that all jobs in this category is API job only
+		                    	AsyncJobVO job = _jobDao.findById(jobId);
+		                        if (job != null && (job.getPendingSignals() & AsyncJob.Contants.SIGNAL_MASK_WAKEUP) != 0)
+		                    	    scheduleExecution(job, false);
+		                    }
+                		} finally {
+                			_jobDao.unlockFromLockTable(AsyncJob.Contants.SYNC_LOCK_NAME);
+                		}
+                	}
                 } catch(Throwable e) {
                     s_logger.error("Unexpected exception when trying to execute queue item, ", e);
                 } finally {

@@ -39,6 +39,8 @@ public interface AsyncJob extends JobInfo {
         // need to distinguish them to such level. Therefore, only one wakeup signal
         // is defined
         public static final int SIGNAL_MASK_WAKEUP = 1;
+        
+        public static final String SYNC_LOCK_NAME = "SyncLock";
     }
 	
     @Override
