@@ -88,6 +88,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean applyNetworkACL(long aclId) throws ResourceUnavailableException {
         boolean handled = true;
+        boolean aclApplyStatus = true;
+
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(aclId);
         //Find all networks using this ACL and apply the ACL
         List<NetworkVO> networks = _networkDao.listByAclId(aclId);
@@ -97,7 +99,18 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
                 break;
             }
         }
-        if(handled){
+
+        List<VpcGatewayVO> vpcGateways = _vpcGatewayDao.listByAclIdAndType(aclId, VpcGateway.Type.Private);
+        for (VpcGatewayVO vpcGateway : vpcGateways) {
+            PrivateGateway privateGateway = _vpcMgr.getVpcPrivateGateway(vpcGateway.getId());
+            if (!applyACLToPrivateGw(privateGateway)) {
+                aclApplyStatus = false;
+                s_logger.debug("failed to apply network acl item on private gateway " + privateGateway.getId() + "acl id " + aclId);
+                break;
+            }
+        }
+
+        if(handled && aclApplyStatus){
             for (NetworkACLItem rule : rules) {
                 if (rule.getState() == NetworkACLItem.State.Revoke) {
                     removeRule(rule);
@@ -108,7 +121,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
                 }
             }
         }
-        return handled;
+        return handled && aclApplyStatus;
     }
 
     @Override
