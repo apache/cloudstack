@@ -2685,8 +2685,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
-                VlanVO vlan = vlans.get(0);
                 if (vlans != null && vlans.size() > 0) {
+                    VlanVO vlan = vlans.get(0);
                     if (vlanId == null) {
                         vlanId = vlan.getVlanTag();
                     } else if (!vlan.getVlanTag().equals(vlanId)) {
