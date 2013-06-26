@@ -550,7 +550,7 @@ public class XenServerConnectionPool {
                     }
                 } catch (UuidInvalid e) {
                     String msg = "Host(" + hostUuid + ") doesn't belong to pool(" + poolUuid + "), please execute 'xe pool-join master-address=" + mConn.getIp()
-                        + " master-username=" + mConn.getUsername() + " master-password=" + mConn.getPassword();
+                        + " master-username=" + mConn.getUsername();
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(msg);
                     }
