@@ -113,7 +113,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     
     @DB
     public void add(long dcId, long physicalNetworkId, int start, int end) {
-        String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id, physical_network_id) VALUES ( ?, ?, ?)";
+        String insertVnet = "INSERT IGNORE INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id, physical_network_id) VALUES ( ?, ?, ?)";
         
         Transaction txn = Transaction.currentTxn();
         try {
