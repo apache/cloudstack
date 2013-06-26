@@ -416,7 +416,7 @@ public class CitrixHelper {
         _xenServer56FP1GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.1 (64-bit)", new MemoryValues(512l, 32*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (64-bit)", new MemoryValues(512l, 128*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", new MemoryValues(512l, 16*1024l));// ??
+       // _xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", new MemoryValues(512l, 16*1024l));// ??
         _xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", new MemoryValues(512l, 16*1024l));
@@ -428,22 +428,22 @@ public class CitrixHelper {
         _xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (64-bit)", new MemoryValues(512l, 128*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));  //?
-        _xenServer56FP1GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(512l, 16*1024l));   //?
-        _xenServer56FP1GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
-        _xenServer56FP1GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
-        _xenServer56FP1GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));  //?
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56FP1GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2008 R2 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("Windows Server 2012 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("Windows Server 8 (64-bit)", new MemoryValues(512l, 16*1024l));
@@ -451,8 +451,8 @@ public class CitrixHelper {
         _xenServer56FP1GuestOsMemoryMap.put("Windows XP SP3 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("Ubuntu 10.04 (32-bit)", new MemoryValues(128l, 512l));
         _xenServer56FP1GuestOsMemoryMap.put("Ubuntu 10.04 (64-bit)", new MemoryValues(128l, 32*1024l));
-        _xenServer56FP1GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
-        _xenServer56FP1GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        // _xenServer56FP1GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
+        //_xenServer56FP1GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
         _xenServer56FP1GuestOsMemoryMap.put("Ubuntu 12.04 (32-bit)", new MemoryValues(128l, 32*1024l));
         _xenServer56FP1GuestOsMemoryMap.put("Ubuntu 12.04 (64-bit)", new MemoryValues(128l, 128*1024l));
         // _xenServer56FP1GuestOsMemoryMap.put("Other Linux (32-bit)", new MemoryValues(512l, 16*1024l));
@@ -622,7 +622,7 @@ public class CitrixHelper {
         _xenServer56SP2GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.1 (64-bit)", new MemoryValues(512l, 32*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (64-bit)", new MemoryValues(512l, 128*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", new MemoryValues(512l, 16*1024l));// ??
+        //_xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", new MemoryValues(512l, 16*1024l));// ??
         _xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", new MemoryValues(512l, 16*1024l));
@@ -634,22 +634,22 @@ public class CitrixHelper {
         _xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (64-bit)", new MemoryValues(512l, 128*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));  //?
-        _xenServer56SP2GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(512l, 16*1024l));   //?
-        _xenServer56SP2GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
-        _xenServer56SP2GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
-        _xenServer56SP2GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));  //?
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
+        // _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer56SP2GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2008 R2 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("Windows Server 2012 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("Windows Server 8 (64-bit)", new MemoryValues(512l, 16*1024l));
@@ -657,8 +657,8 @@ public class CitrixHelper {
         _xenServer56SP2GuestOsMemoryMap.put("Windows XP SP3 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("Ubuntu 10.04 (32-bit)", new MemoryValues(128l, 512l));
         _xenServer56SP2GuestOsMemoryMap.put("Ubuntu 10.04 (64-bit)", new MemoryValues(128l, 32*1024l));
-        _xenServer56SP2GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
-        _xenServer56SP2GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer56SP2GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
+        //_xenServer56SP2GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
         _xenServer56SP2GuestOsMemoryMap.put("Ubuntu 12.04 (32-bit)", new MemoryValues(128l, 32*1024l));
         _xenServer56SP2GuestOsMemoryMap.put("Ubuntu 12.04 (64-bit)", new MemoryValues(128l, 128*1024l));
         // _xenServer56SP2GuestOsMemoryMap.put("Other Linux (32-bit)", new MemoryValues(512l, 16*1024l));
@@ -859,7 +859,7 @@ public class CitrixHelper {
         _xenServer600GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.1 (64-bit)", new MemoryValues(512l, 32*1024l));
         _xenServer600GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer600GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (64-bit)", new MemoryValues(512l, 128*1024l));
-        _xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", new MemoryValues(512l, 16*1024l));// ??
+        //_xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", new MemoryValues(512l, 16*1024l));// ??
         _xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));
         _xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", new MemoryValues(512l, 16*1024l));
@@ -871,22 +871,22 @@ public class CitrixHelper {
         _xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (64-bit)", new MemoryValues(512l, 128*1024l));
         _xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));  //?
-        _xenServer600GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(512l, 16*1024l));   //?
-        _xenServer600GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
-        _xenServer600GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
-        _xenServer600GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer600GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer600GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));  //?
+        //_xenServer600GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer600GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer600GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
+        //_xenServer600GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
+        // _xenServer600GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer600GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer600GuestOsMemoryMap.put("Windows Server 2008 R2 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer600GuestOsMemoryMap.put("Windows Server 2012 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer600GuestOsMemoryMap.put("Windows Server 8 (64-bit)", new MemoryValues(512l, 16*1024l));
@@ -894,8 +894,8 @@ public class CitrixHelper {
         _xenServer600GuestOsMemoryMap.put("Windows XP SP3 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer600GuestOsMemoryMap.put("Ubuntu 10.04 (32-bit)", new MemoryValues(128l, 512l));
         _xenServer600GuestOsMemoryMap.put("Ubuntu 10.04 (64-bit)", new MemoryValues(128l, 32*1024l));
-        _xenServer600GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
-        _xenServer600GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer600GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
+        //_xenServer600GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
         _xenServer600GuestOsMemoryMap.put("Ubuntu 12.04 (32-bit)", new MemoryValues(128l, 32*1024l));
         _xenServer600GuestOsMemoryMap.put("Ubuntu 12.04 (64-bit)", new MemoryValues(128l, 128*1024l));
         //_xenServer600GuestOsMemoryMap.put("Other Linux (32-bit)", new MemoryValues(512l, 16*1024l));
@@ -1106,7 +1106,7 @@ public class CitrixHelper {
         _xenServer602GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.1 (64-bit)", new MemoryValues(512l, 32*1024l));
         _xenServer602GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer602GuestOsMemoryMap.put("Red Hat Enterprise Linux 6.2 (64-bit)", new MemoryValues(512l, 128*1024l));
-        _xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", new MemoryValues(512l, 16*1024l));// ??
+        // _xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", new MemoryValues(512l, 16*1024l));// ??
         _xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));
         _xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", new MemoryValues(512l, 16*1024l));
@@ -1118,22 +1118,22 @@ public class CitrixHelper {
         _xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 (64-bit)", new MemoryValues(512l, 128*1024l));
         _xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));  //?
-        _xenServer602GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(512l, 16*1024l));   //?
-        _xenServer602GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
-        _xenServer602GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
-        _xenServer602GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));
-        _xenServer602GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer602GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));  //?
+        //_xenServer602GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer602GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer602GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
+        //_xenServer602GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));
+        //_xenServer602GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer602GuestOsMemoryMap.put("Windows Server 2008 R2 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer602GuestOsMemoryMap.put("Windows Server 2012 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer602GuestOsMemoryMap.put("Windows Server 8 (64-bit)", new MemoryValues(512l, 16*1024l));
@@ -1141,8 +1141,8 @@ public class CitrixHelper {
         _xenServer602GuestOsMemoryMap.put("Windows XP SP3 (32-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer602GuestOsMemoryMap.put("Ubuntu 10.04 (32-bit)", new MemoryValues(128l, 512l));
         _xenServer602GuestOsMemoryMap.put("Ubuntu 10.04 (64-bit)", new MemoryValues(128l, 32*1024l));
-        _xenServer602GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
-        _xenServer602GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer602GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
+        //_xenServer602GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
         _xenServer602GuestOsMemoryMap.put("Ubuntu 12.04 (32-bit)", new MemoryValues(128l, 32*1024l));
         _xenServer602GuestOsMemoryMap.put("Ubuntu 12.04 (64-bit)", new MemoryValues(128l, 128*1024l));
         // _xenServer602GuestOsMemoryMap.put("Other Linux (32-bit)", new MemoryValues(512l, 16*1024l));
@@ -1403,28 +1403,28 @@ public class CitrixHelper {
         _xenServer610GuestOsMemoryMap.put("SUSE Linux Enterprise Server 11 SP1 (64-bit)", new MemoryValues(512l, 128*1024l));
         _xenServer610GuestOsMemoryMap.put("Windows 7 (32-bit)", new MemoryValues(1024l, 4*1024l));
         _xenServer610GuestOsMemoryMap.put("Windows 7 (64-bit)", new MemoryValues(2*1024l, 128*1024l));
-        _xenServer610GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
-        _xenServer610GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));  //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));  //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l)); //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l)); //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));    //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));       //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));          //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));               //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));                  //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));                       //?
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));                          //?
+        //_xenServer610GuestOsMemoryMap.put("Windows 8 (32-bit)", new MemoryValues(512l, 16*1024l));      //?
+        //_xenServer610GuestOsMemoryMap.put("Windows 8 (64-bit)", new MemoryValues(512l, 16*1024l));         //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2003 (32-bit)", new MemoryValues(256l, 64*1024l));  //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2003 (64-bit)", new MemoryValues(256l, 128*1024l));  //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2003 PAE (32-bit)", new MemoryValues(512l, 16*1024l)); //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(32-bit)", new MemoryValues(512l, 16*1024l)); //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2003 Enterprise Edition(64-bit)", new MemoryValues(512l, 16*1024l));    //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(32-bit)", new MemoryValues(512l, 16*1024l));       //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2003 DataCenter Edition(64-bit)", new MemoryValues(512l, 16*1024l));          //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(32-bit)", new MemoryValues(512l, 16*1024l));               //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2003 Standard Edition(64-bit)", new MemoryValues(512l, 16*1024l));                  //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2008 (32-bit)", new MemoryValues(512l, 16*1024l));                       //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2008 (64-bit)", new MemoryValues(512l, 16*1024l));                          //?
         _xenServer610GuestOsMemoryMap.put("Windows Server 2008 R2 (64-bit)", new MemoryValues(512l, 128*1024l));
-        _xenServer610GuestOsMemoryMap.put("Windows Server 2012 (64-bit)", new MemoryValues(512l, 16*1024l)); //?
+        //_xenServer610GuestOsMemoryMap.put("Windows Server 2012 (64-bit)", new MemoryValues(512l, 16*1024l)); //?
         _xenServer610GuestOsMemoryMap.put("Windows Server 8 (64-bit)", new MemoryValues(512l, 16*1024l));
         _xenServer610GuestOsMemoryMap.put("Windows Vista (32-bit)", new MemoryValues(1024l, 4*1024l));
         _xenServer610GuestOsMemoryMap.put("Windows XP SP3 (32-bit)", new MemoryValues(256l, 4*1024l));
         _xenServer610GuestOsMemoryMap.put("Ubuntu 10.04 (32-bit)", new MemoryValues(128l, 512l));
         _xenServer610GuestOsMemoryMap.put("Ubuntu 10.04 (64-bit)", new MemoryValues(128l, 32*1024l));
-        _xenServer610GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
-        _xenServer610GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
+        //_xenServer610GuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));//?
+        //_xenServer610GuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));   //?
         _xenServer610GuestOsMemoryMap.put("Ubuntu 12.04 (32-bit)", new MemoryValues(128l, 32*1024l));
         _xenServer610GuestOsMemoryMap.put("Ubuntu 12.04 (64-bit)", new MemoryValues(128l, 128*1024l));
         // _xenServer610GuestOsMemoryMap.put("Other Linux (32-bit)", new MemoryValues(512l, 16*1024l));
@@ -1492,13 +1492,6 @@ public class CitrixHelper {
     public static long getXenServer56FP1StaticMax(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer56FP1GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMax();
@@ -1507,13 +1500,6 @@ public class CitrixHelper {
     public static long getXenServer56FP1StaticMin(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer56FP1GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMin();
@@ -1536,13 +1522,6 @@ public class CitrixHelper {
     public static long getXenServer56SP2StaticMax(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer56SP2GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMax();
@@ -1551,13 +1530,6 @@ public class CitrixHelper {
     public static long getXenServer56SP2StaticMin(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer56SP2GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMin();
@@ -1581,13 +1553,6 @@ public class CitrixHelper {
     public static long getXenServer600StaticMax(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer600GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMax();
@@ -1596,13 +1561,6 @@ public class CitrixHelper {
     public static long getXenServer600StaticMin(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer600GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMin();
@@ -1626,13 +1584,6 @@ public class CitrixHelper {
     public static long getXenServer602StaticMax(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer602GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMax();
@@ -1641,13 +1592,6 @@ public class CitrixHelper {
     public static long getXenServer602StaticMin(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer602GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMin();
@@ -1670,13 +1614,6 @@ public class CitrixHelper {
     public static long getXenServer610StaticMax(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer610GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMax();
@@ -1685,13 +1622,6 @@ public class CitrixHelper {
     public static long getXenServer610StaticMin(String stdType, boolean bootFromCD) {
         MemoryValues recommendedMaxMinMemory = _xenServer610GuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
-            /*if ( !bootFromCD ) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                guestOS = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }*/
             return 0l;
         }
         return recommendedMaxMinMemory.getMin();
