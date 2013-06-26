@@ -595,6 +595,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
        
         //Validate zone
         DataCenter zone = _configMgr.getZone(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Can't find zone by id specified");
+        }
+        
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             // See DataCenterVO.java
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
