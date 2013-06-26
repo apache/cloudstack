@@ -213,7 +213,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     // update templete ID of system Vms
                     pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'KVM'");
                     pstmt.setLong(1, templateId);
-                    pstmt.execute();
+                    pstmt.executeUpdate();
                     pstmt.close();
                     // Change value of global configuration parameter router.template.kvm
                     pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.kvm', 'systemvm-kvm-4.2', 'Name of the default router template on KVM')");
