@@ -124,6 +124,34 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         }
     }
 
+    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+        long recommendedValue = CitrixHelper.getXenServer56FP1StaticMax(os, b);
+        if(recommendedValue == 0){
+            s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
+            return dynamicMaxRam;
+        }
+
+        long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
+        if (dynamicMaxRam > staticMax){ // XS contraint that dynamic max <= static max
+            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax + ", can lead to stability issues. Setting static max as much as dynamic max ");
+            return dynamicMaxRam;
+        }
+        return staticMax;
+    }
+
+    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+        long recommendedValue = CitrixHelper.getXenServer56FP1StaticMin(os, b);
+        if(recommendedValue == 0){
+            s_logger.warn("No recommended value found for dynamic min");
+            return dynamicMinRam;
+        }
+
+        if(dynamicMinRam < recommendedValue){   // XS contraint that dynamic min > static min
+            s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues.");
+        }
+        return dynamicMinRam;
+    }
+
     @Override
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
         String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD);
@@ -144,9 +172,8 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         Map<String, String> details = vmSpec.getDetails();
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
             //scaling is allowed
-            vmr.memoryStaticMin = mem_128m; //128MB
-            //TODO: Remove hardcoded 8GB and assign proportionate to ServiceOffering and mem overcommit ratio
-            vmr.memoryStaticMax = 8589934592L; //8GB
+            vmr.memoryStaticMin = getStaticMin(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
+            vmr.memoryStaticMax = getStaticMax(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
             vmr.memoryDynamicMin = vmSpec.getMinRam();
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
         } else {
