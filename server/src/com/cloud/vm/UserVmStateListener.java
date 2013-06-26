@@ -99,7 +99,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
             return; // no provider is configured to provide events bus, so just return
         }
 
-        String resourceName = getEntityFromClassName(Network.class.getName());
+        String resourceName = getEntityFromClassName(VirtualMachine.class.getName());
         org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
                 ManagementServer.Name,
                 EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
