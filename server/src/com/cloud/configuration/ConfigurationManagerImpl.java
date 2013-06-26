@@ -4519,11 +4519,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // only root admin can list network offering with specifyVlan = true
-        if (specifyVlan != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, specifyVlan);
-        } else {
+        if(caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
             specifyVlan = false;
         }
+        if (specifyVlan != null) {
+            sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, specifyVlan);
+        } 
 
         if (availability != null) {
             sc.addAnd("availability", SearchCriteria.Op.EQ, availability);
