@@ -897,6 +897,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vifr.MAC = "FE:FF:FF:FF:FF:FF";
             vifr.network = nw;
 
+            vifr.lockingMode = Types.VifLockingMode.NETWORK_DEFAULT;
             dom0vif = VIF.create(conn, vifr);
         }
         // At this stage we surely have a VIF
@@ -1105,6 +1106,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vifr.qosAlgorithmParams.put("kbps", Integer.toString(nic.getNetworkRateMbps() * 128));
         }
 
+        vifr.lockingMode = Types.VifLockingMode.NETWORK_DEFAULT;
         VIF vif = VIF.create(conn, vifr);
         if (s_logger.isDebugEnabled()) {
             vifr = vif.getRecord(conn);
@@ -4965,6 +4967,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vifr.otherConfig = config;
                 vifr.MAC = "FE:FF:FF:FF:FF:FF";
                 vifr.network = linkLocal;
+                vifr.lockingMode = Types.VifLockingMode.NETWORK_DEFAULT;
                 dom0vif = VIF.create(conn, vifr);
                 dom0vif.plug(conn);
             } else {
