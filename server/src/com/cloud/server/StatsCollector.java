@@ -65,6 +65,7 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
@@ -407,6 +408,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
                 sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
                 sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
+                sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, HypervisorType.KVM); // support KVM only util 2013.06.25
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
                 for (HostVO host : hosts) {
