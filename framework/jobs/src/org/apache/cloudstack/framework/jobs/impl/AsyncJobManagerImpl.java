@@ -48,6 +48,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDao;
+import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
@@ -65,11 +66,17 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
@@ -87,6 +94,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private static final int HEARTBEAT_INTERVAL = 2000;
     private static final int GC_INTERVAL = 10000;				// 10 seconds
 
+    @Inject
+    private SyncQueueItemDao _queueItemDao;
     @Inject private SyncQueueManager _queueMgr;
     @Inject private AsyncJobDao _jobDao;
     @Inject private AsyncJobJournalDao _journalDao;
@@ -224,7 +233,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             job.setLastUpdated(DateUtil.currentGMTTime());
             _jobDao.update(jobId, job);
             
-        	List<Long> wakeupList = _joinMapDao.wakeupByJoinedJobCompletion(jobId);
+            List<Long> wakeupList = wakeupByJoinedJobCompletion(jobId);
             _joinMapDao.disjoinAllJobs(jobId);
             
             txn.commit();
@@ -841,10 +850,58 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             throw new ConfigurationException("Unable to load db.properties to configure AsyncJobManagerImpl");
         }
 
+        JoinJobSearch = _joinMapDao.createSearchBuilder(Long.class);
+        JoinJobSearch.and(JoinJobSearch.entity().getJoinJobId(), Op.EQ, "joinJobId");
+        JoinJobSearch.selectField(JoinJobSearch.entity().getJobId());
+        JoinJobSearch.done();
+
+        JobIdsSearch = _jobDao.createSearchBuilder();
+        JobIdsSearch.and(JobIdsSearch.entity().getId(), Op.IN, "ids").done();
+
+        QueueJobIdsSearch = _queueItemDao.createSearchBuilder();
+        QueueJobIdsSearch.and(QueueJobIdsSearch.entity().getContentId(), Op.IN, "contentIds").done();
+
+        JoinJobIdsSearch = _joinMapDao.createSearchBuilder(Long.class);
+        JoinJobIdsSearch.selectField(JoinJobIdsSearch.entity().getJobId());
+        JoinJobIdsSearch.and(JoinJobIdsSearch.entity().getJoinJobId(), Op.EQ, "joinJobId");
+        JoinJobIdsSearch.and(JoinJobIdsSearch.entity().getJobId(), Op.NIN, "jobIds");
+        JoinJobIdsSearch.done();
+
+        ContentIdsSearch = _queueItemDao.createSearchBuilder(Long.class);
+        ContentIdsSearch.selectField(ContentIdsSearch.entity().getContentId()).done();
+
         AsyncJobExecutionContext.init(this, _joinMapDao);
         OutcomeImpl.init(this);
 
         return true;
+    }
+
+    @Override
+    @DB
+    public List<Long> wakeupByJoinedJobCompletion(long joinedJobId) {
+        SearchCriteria<Long> joinJobSC = JoinJobSearch.create("joinJobId", joinedJobId);
+
+        List<Long> result = _joinMapDao.customSearch(joinJobSC, null);
+        if (result.size() != 0) {
+            Collections.sort(result);
+            Long[] ids = result.toArray(new Long[result.size()]);
+
+            SearchCriteria<AsyncJobVO> jobsSC = JobIdsSearch.create("ids", ids);
+            SearchCriteria<SyncQueueItemVO> queueItemsSC = QueueJobIdsSearch.create("contentIds", ids);
+
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            AsyncJobVO job = _jobDao.createForUpdate();
+            job.setPendingSignals(1);
+            _jobDao.update(job, jobsSC);
+
+            SyncQueueItemVO item = _queueItemDao.createForUpdate();
+            item.setLastProcessNumber(null);
+            item.setLastProcessMsid(null);
+            _queueItemDao.update(item, queueItemsSC);
+            txn.commit();
+        }
+        return _joinMapDao.findJobsToWake(joinedJobId);
     }
 
     @Override
@@ -897,4 +954,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         _executor.shutdown();
         return true;
     }
+
+    private GenericSearchBuilder<SyncQueueItemVO, Long> ContentIdsSearch;
+    private GenericSearchBuilder<AsyncJobJoinMapVO, Long> JoinJobSearch;
+    private SearchBuilder<AsyncJobVO> JobIdsSearch;
+    private SearchBuilder<SyncQueueItemVO> QueueJobIdsSearch;
+    private GenericSearchBuilder<AsyncJobJoinMapVO, Long> JoinJobIdsSearch;
+
+    protected AsyncJobManagerImpl() {
+
+    }
+
 }

@@ -37,5 +37,7 @@ public interface AsyncJobJoinMapDao extends GenericDao<AsyncJobJoinMapVO, Long> 
     void completeJoin(long joinJobId, JobInfo.Status joinStatus, String joinResult, long completeMsid);
 	
 	List<Long> wakeupScan();
-	List<Long> wakeupByJoinedJobCompletion(long joinedJobId);
+
+    List<Long> findJobsToWake(long joinedJobId);
+//	List<Long> wakeupByJoinedJobCompletion(long joinedJobId);
 }

@@ -1267,6 +1267,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB(txn=false)
+    @Override
     public int update(final T entity, final SearchCriteria<T> sc) {
         final UpdateBuilder ub = getUpdateBuilder(entity);
         return update(ub, sc, null);

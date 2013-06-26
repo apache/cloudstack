@@ -34,7 +34,6 @@ import net.sf.cglib.proxy.MethodProxy;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria.SelectType;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * GenericSearchBuilder is used to build a search based on a VO object
@@ -75,13 +74,19 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
     }
     
     protected Attribute getSpecifiedAttribute() {
-        assert(_entity != null && _specifiedAttrs != null && _specifiedAttrs.size() == 1) : "Now now, better specify an attribute or else we can't help you";
+        if (_entity == null || _specifiedAttrs == null || _specifiedAttrs.size() != 1) {
+            throw new RuntimeException("Now now, better specify an attribute or else we can't help you");
+        }
         return _specifiedAttrs.get(0);
     }
 
     public GenericSearchBuilder<T, K> selectField(Object... useless) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert _specifiedAttrs.size() > 0 : "You didn't specify any attributes";
+        if (_entity == null) {
+            throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
+        }
+        if (_specifiedAttrs.size() <= 0) {
+            throw new RuntimeException("You didn't specify any attributes");
+        }
    
         if (_selects == null) {
             _selects = new ArrayList<Select>();
@@ -118,9 +123,15 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
      * @return a SearchBuilder to build more search parts.
      */
     public GenericSearchBuilder<T, K> select(String fieldName, Func func, Object useless, Object... params) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert _specifiedAttrs.size() <= 1 : "You can't specify more than one field to search on";
-        assert func.getCount() == -1 || (func.getCount() == (params.length + 1)) : "The number of parameters does not match the function param count for " + func;
+        if (_entity == null) {
+            throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
+        }
+        if (_specifiedAttrs.size() > 1) {
+            throw new RuntimeException("You can't specify more than one field to search on");
+        }
+        if (func.getCount() != -1 && (func.getCount() != (params.length + 1))) {
+            throw new RuntimeException("The number of parameters does not match the function param count for " + func);
+        }
         
         if (_selects == null) {
             _selects = new ArrayList<Select>();
@@ -132,12 +143,15 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
                 field = _resultType.getDeclaredField(fieldName);
                 field.setAccessible(true);
             } catch (SecurityException e) {
-                throw new CloudRuntimeException("Unable to find " + fieldName, e);
+                throw new RuntimeException("Unable to find " + fieldName, e);
             } catch (NoSuchFieldException e) {
-                throw new CloudRuntimeException("Unable to find " + fieldName, e);
+                throw new RuntimeException("Unable to find " + fieldName, e);
             }
         } else {
-            assert _selects.size() == 0 : "You're selecting more than one item and yet is not providing a container class to put these items in.  So what do you expect me to do.  Spin magic?";
+            if (_selects.size() != 0) {
+                throw new RuntimeException(
+                        "You're selecting more than one item and yet is not providing a container class to put these items in.  So what do you expect me to do.  Spin magic?");
+            }
         }
         
         Select select = new Select(func, _specifiedAttrs.size() == 0 ? null : _specifiedAttrs.get(0), field, params);
@@ -147,10 +161,6 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         
         return this;
     }
-    
-//    public GenericSearchBuilder<T, K> select(String joinName, String fieldName, Func func, Object useless, Object... params) {
-//
-//    }
     
     @Override
     public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -175,7 +185,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
 			            }
 			        }
 			    }
-				assert false : "Perhaps you need to make the method start with get or is?";
+                throw new RuntimeException("Perhaps you need to make the method start with get or is: " + method);
 			}
 		}
         return methodProxy.invokeSuper(object, args);
@@ -479,7 +489,9 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
                 sql.delete(sql.length() - 5, sql.length());
                 sql.append(" IS NOT NULL ");
             } else {
-                assert((op.getParams() == 0 && params == null) || (params.length == op.getParams())) : "Problem with condition: " + name;
+                if ((op.getParams() != 0 || params != null) && (params.length != op.getParams())) {
+                    throw new RuntimeException("Problem with condition: " + name);
+                }
             }
         }
         
@@ -527,7 +539,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
 
         public GenericSearchBuilder<T, K> values(Object... params) {
             if (condition.op.getParams() > 0 && condition.op.params != params.length) {
-                throw new CloudRuntimeException("The # of parameters set " + params.length + " does not match # of parameters required by " + condition.op);
+                throw new RuntimeException("The # of parameters set " + params.length + " does not match # of parameters required by " + condition.op);
             }
             condition.setPresets(params);
             return builder;

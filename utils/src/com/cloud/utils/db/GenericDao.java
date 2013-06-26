@@ -134,6 +134,8 @@ public interface GenericDao<T, ID extends Serializable> {
     
     boolean update(ID id, T entity);
     
+    int update(T entity, SearchCriteria<T> sc);
+    
     /**
      * Look for all active rows.
      * @return list of entity beans.
@@ -213,7 +215,7 @@ public interface GenericDao<T, ID extends Serializable> {
     
     /**
      * Remove based on the search criteria.  This will delete if the VO object
-     * does not have a REMOVED column. 
+     * does not have a REMOVED column.
      * @param sc search criteria to match
      * @return rows removed.
      */

@@ -37,6 +37,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Long> implements AsyncJobJoinMapDao {
     public static final Logger s_logger = Logger.getLogger(AsyncJobJoinMapDaoImpl.class);
@@ -45,8 +46,10 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 	private final SearchBuilder<AsyncJobJoinMapVO> RecordSearchByOwner;
 	private final SearchBuilder<AsyncJobJoinMapVO> CompleteJoinSearch;
 	private final SearchBuilder<AsyncJobJoinMapVO> WakeupSearch;
+
+//    private final GenericSearchBuilder<AsyncJobJoinMapVO, Long> JoinJobSearch;
 	
-	public AsyncJobJoinMapDaoImpl() {
+    protected AsyncJobJoinMapDaoImpl() {
 		RecordSearch = createSearchBuilder();
 		RecordSearch.and("jobId", RecordSearch.entity().getJobId(), Op.EQ);
 		RecordSearch.and("joinJobId", RecordSearch.entity().getJoinJobId(), Op.EQ);
@@ -65,6 +68,10 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 		WakeupSearch.and("expiration", WakeupSearch.entity().getExpiration(), Op.GT);
 		WakeupSearch.and("joinStatus", WakeupSearch.entity().getJoinStatus(), Op.EQ);
 		WakeupSearch.done();
+
+//        JoinJobSearch = createSearchBuilder(Long.class);
+//        JoinJobSearch.and(JoinJobSearch.entity().getJoinJobId(), Op.SC, "joinJobId");
+//        JoinJobSearch.done();
 	}
 	
 	@Override
@@ -202,49 +209,67 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
         
         return standaloneList;
 	}
-	
-	@Override
-    public List<Long> wakeupByJoinedJobCompletion(long joinedJobId) {
-		List<Long> standaloneList = new ArrayList<Long>();
-		
-		Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
+
+    @Override
+    public List<Long> findJobsToWake(long joinedJobId) {
+        List<Long> standaloneList = new ArrayList<Long>();
+        Transaction txn = Transaction.currentTxn();
+        String sql = "SELECT job_id FROM async_job_join_map WHERE join_job_id = ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
         try {
-			txn.start();
-			
-			//
-			// performance sensitive processing, do it in plain SQL
-			//
-			String sql = "UPDATE async_job SET job_pending_signals=? WHERE id IN " +
-					"(SELECT job_id FROM async_job_join_map WHERE join_job_id = ?)";
-			pstmt = txn.prepareStatement(sql);
-	        pstmt.setInt(1, AsyncJob.Contants.SIGNAL_MASK_WAKEUP);
-	        pstmt.setLong(2, joinedJobId);
-	        pstmt.executeUpdate();
-	        pstmt.close();
-			
-			sql = "UPDATE sync_queue_item SET queue_proc_msid=NULL, queue_proc_number=NULL WHERE content_id IN " +
-					"(SELECT job_id FROM async_job_join_map WHERE join_job_id = ?)";
-			pstmt = txn.prepareStatement(sql);
-	        pstmt.setLong(1, joinedJobId);
-	        pstmt.executeUpdate();
-	        pstmt.close();
-	        
-	        sql = "SELECT job_id FROM async_job_join_map WHERE join_job_id = ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
-			pstmt = txn.prepareStatement(sql);
-	        pstmt.setLong(1, joinedJobId);
-	        ResultSet rs = pstmt.executeQuery();
-	        while(rs.next()) {
-	        	standaloneList.add(rs.getLong(1));
-	        }
-	        rs.close();
-	        pstmt.close();
-			
-	        txn.commit();
-		} catch (SQLException e) {
-			s_logger.error("Unexpected exception", e);
-		}
-        
+            PreparedStatement pstmt = txn.prepareStatement(sql);
+            pstmt.setLong(1, joinedJobId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                standaloneList.add(rs.getLong(1));
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to execute " + sql, e);
+        }
         return standaloneList;
-	}
+    }
+	
+//    @Override
+//    public List<Long> wakeupByJoinedJobCompletion(long joinedJobId) {
+//        List<Long> standaloneList = new ArrayList<Long>();
+//
+//        Transaction txn = Transaction.currentTxn();
+//        PreparedStatement pstmt = null;
+//        try {
+//            txn.start();
+//
+//            //
+//            // performance sensitive processing, do it in plain SQL
+//            //
+//            String sql = "UPDATE async_job SET job_pending_signals=? WHERE id IN " +
+//                    "(SELECT job_id FROM async_job_join_map WHERE join_job_id = ?)";
+//            pstmt = txn.prepareStatement(sql);
+//            pstmt.setInt(1, AsyncJob.Contants.SIGNAL_MASK_WAKEUP);
+//            pstmt.setLong(2, joinedJobId);
+//            pstmt.executeUpdate();
+//            pstmt.close();
+//
+//            sql = "UPDATE sync_queue_item SET queue_proc_msid=NULL, queue_proc_number=NULL WHERE content_id IN " +
+//                    "(SELECT job_id FROM async_job_join_map WHERE join_job_id = ?)";
+//            pstmt = txn.prepareStatement(sql);
+//            pstmt.setLong(1, joinedJobId);
+//            pstmt.executeUpdate();
+//            pstmt.close();
+//
+//            sql = "SELECT job_id FROM async_job_join_map WHERE join_job_id = ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
+//            pstmt = txn.prepareStatement(sql);
+//            pstmt.setLong(1, joinedJobId);
+//            ResultSet rs = pstmt.executeQuery();
+//            while(rs.next()) {
+//                standaloneList.add(rs.getLong(1));
+//            }
+//            rs.close();
+//            pstmt.close();
+//
+//            txn.commit();
+//        } catch (SQLException e) {
+//            s_logger.error("Unexpected exception", e);
+//        }
+//
+//        return standaloneList;
+//    }
 }
