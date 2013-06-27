@@ -38,8 +38,8 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -96,6 +96,36 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
 
 
+    private String getTemplateStatus(TemplateJoinVO template){
+        boolean isAdmin = false;
+        Account caller = UserContext.current().getCaller();
+        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
+            isAdmin = true;
+        }
+
+        // If the user is an Admin, add the template download status
+        String templateStatus = null;
+        if (isAdmin || caller.getId() == template.getAccountId()) {
+            // add download status
+            if (template.getDownloadState() != Status.DOWNLOADED) {
+                templateStatus = "Processing";
+                if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                    if (template.getDownloadPercent() == 100) {
+                        templateStatus = "Installing Template";
+                    } else {
+                        templateStatus = template.getDownloadPercent() + "% Downloaded";
+                    }
+                } else {
+                    templateStatus = template.getErrorString();
+                }
+            } else if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+                templateStatus = "Download Complete";
+            } else {
+                templateStatus = "Successfully Installed";
+            }
+        }
+        return templateStatus;
+    }
 
     @Override
     public TemplateResponse newTemplateResponse(TemplateJoinVO template) {
@@ -136,33 +166,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         templateResponse.setDomainName(template.getDomainName());
 
 
-
-        boolean isAdmin = false;
-        Account caller = UserContext.current().getCaller();
-        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
-            isAdmin = true;
-        }
-
         // If the user is an Admin, add the template download status
-        if (isAdmin || caller.getId() == template.getAccountId()) {
-            // add download status
-            if (template.getDownloadState() != Status.DOWNLOADED) {
-                String templateStatus = "Processing";
-                if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                    if (template.getDownloadPercent() == 100) {
-                        templateStatus = "Installing Template";
-                    } else {
-                        templateStatus = template.getDownloadPercent() + "% Downloaded";
-                    }
-                } else {
-                    templateStatus = template.getErrorString();
-                }
-                templateResponse.setStatus(templateStatus);
-            } else if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                templateResponse.setStatus("Download Complete");
-            } else {
-                templateResponse.setStatus("Successfully Installed");
-            }
+        String templateStatus = getTemplateStatus(template);
+        if ( templateStatus != null ){
+            templateResponse.setStatus(templateStatus);
         }
 
         Long templateSize = template.getSize();
@@ -179,6 +186,17 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         // set template zone information
         if (template.getDataCenterId() > 0 ){
             TemplateZoneResponse tmplZoneResp = new TemplateZoneResponse(template.getDataCenterUuid(), template.getDataCenterName());
+            tmplZoneResp.setCreated(template.getCreatedOnStore());
+            if ( template.getFormat() == Storage.ImageFormat.BAREMETAL ){
+                // for baremetal template, we didn't download, but is ready to use.
+                tmplZoneResp.setReady(true);
+            }
+            else{
+                tmplZoneResp.setReady(template.getState() == ObjectInDataStoreStateMachine.State.Ready);
+            }
+            if ( templateStatus != null ){
+                tmplZoneResp.setStatus(templateStatus);
+            }
             templateResponse.addZone(tmplZoneResp);
             // set the first found associated zone directly in TemplateResponse
             templateResponse.setZoneId(template.getDataCenterUuid());
@@ -259,6 +277,18 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         // update template zone information
         if (template.getDataCenterId() > 0 ){
             TemplateZoneResponse tmplZoneResp = new TemplateZoneResponse(template.getDataCenterUuid(), template.getDataCenterName());
+            tmplZoneResp.setCreated(template.getCreatedOnStore());
+            if ( template.getFormat() == Storage.ImageFormat.BAREMETAL ){
+                // for baremetal template, we didn't download, but is ready to use.
+                tmplZoneResp.setReady(true);
+            }
+            else{
+                tmplZoneResp.setReady(template.getState() == ObjectInDataStoreStateMachine.State.Ready);
+            }
+            String templateStatus = getTemplateStatus(template);
+            if ( templateStatus != null ){
+                tmplZoneResp.setStatus(templateStatus);
+            }
             templateResponse.addZone(tmplZoneResp);
             if (templateResponse.getZoneId() == null) {
                 // set the first found associated zone directly in
