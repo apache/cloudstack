@@ -705,7 +705,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @DB
     protected void changeState2(VMInstanceVO vm, VirtualMachine.Event vmEvent, Long hostId, VmWorkJobVO work, VirtualMachine.Event workEvent) throws NoTransitionException {
         VmWorkJobVO.Step currentStep = work.getStep();
-        StateMachine<Step, Event> sm = work.getCmd() == VmWorkJobDispatcher.Migrate ? MigrationStateMachine : null;
+        StateMachine<Step, Event> sm = VmWorkJobDispatcher.Migrate.equals(work.getCmd()) ? MigrationStateMachine : null;
 
         Transaction txn = Transaction.currentTxn();
 
@@ -1527,7 +1527,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VirtualMachineTO to = toVmTO(dstVm);
 
         VmWorkJobVO work = _workJobDao.findById(jc.getJob().getId());
-        work.setStep(MigrationStateMachine.getNextState(null, VirtualMachine.Event.MigrationRequested));
+        work.setStep(MigrationStateMachine.getNextState(Step.Filed, VirtualMachine.Event.MigrationRequested));
         work = _workJobDao.persist(work);
 
         PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
