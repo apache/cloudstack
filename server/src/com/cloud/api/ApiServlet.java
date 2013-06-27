@@ -43,6 +43,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.User;
 import com.cloud.utils.StringUtils;
 
 @Component("apiServlet")
@@ -280,6 +281,8 @@ public class ApiServlet extends HttpServlet {
                     writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
                     return;
                 }
+            } else {
+                CallContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
             }
 
             if (_apiServer.verifyRequest(params, userId)) {
