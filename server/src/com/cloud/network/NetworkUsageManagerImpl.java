@@ -188,20 +188,14 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
     @Override
     public boolean deleteTrafficMonitor(DeleteTrafficMonitorCmd cmd) {
         long hostId = cmd.getId();
-        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         HostVO trafficMonitor = _hostDao.findById(hostId);
         if (trafficMonitor == null) {
             throw new InvalidParameterValueException("Could not find an traffic monitor with ID: " + hostId);
         }
 
-		try {
-			if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
-				return true;
-            } else {
-                return false;
-            }
-        } catch (AgentUnavailableException e) {
-            s_logger.debug(e);
+        if (_resourceMgr.deleteHost(hostId, false, false)) {
+            return true;
+        } else {
             return false;
         }
     }
@@ -528,13 +522,20 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         return host;
     }
 
-	@Override
+    @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-		if(host.getType() != Host.Type.TrafficMonitor){
-	    return null;
-    }
+        if(host.getType() != Host.Type.TrafficMonitor){
+            return null;
+        }
 
-		return new DeleteHostAnswer(true);
+        long hostId = host.getId();
+        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
+        _detailsDao.deleteDetails(hostId);
+        host.setGuid(null);
+        _hostDao.update(hostId, host);
+        _hostDao.remove(hostId);
+        return new DeleteHostAnswer(false);
+
     }
 
 }
