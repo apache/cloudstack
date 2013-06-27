@@ -227,13 +227,13 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
-
+    boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
 
     return prepare(false, UserContext.current().getCallerUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
                 cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(),
                 cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()),
                 cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(),
-                cmd.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER);
+                isRouting ? TemplateType.ROUTING : TemplateType.USER);
 
 	}
 
