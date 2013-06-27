@@ -47,7 +47,7 @@ public class UsageVMInstanceVO {
 
     @Column(name="template_id")
     private long templateId;
-    
+
     @Column(name="hypervisor_type")
     private String hypervisorType;
 
@@ -104,6 +104,10 @@ public class UsageVMInstanceVO {
         return templateId;
     }
 
+    public void setServiceOfferingId(long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
     public String getHypervisorType() {
         return hypervisorType;
     }
@@ -112,7 +116,11 @@ public class UsageVMInstanceVO {
 		return startDate;
 	}
 
-	public Date getEndDate() {
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
 		return endDate;
 	}
 	public void setEndDate(Date endDate) {

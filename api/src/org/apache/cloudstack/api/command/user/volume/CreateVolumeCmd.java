@@ -80,7 +80,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.DISPLAY_VOLUME, type=CommandType.BOOLEAN, description="an optional field, whether to display the volume to the end user or not.")
     private Boolean displayVolume;
 
-/////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
@@ -118,7 +118,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
 
     public Boolean getDisplayVolume() {
-        return displayVolume != null ? displayVolume : Boolean.TRUE;
+        return displayVolume;
     }
 
     /////////////////////////////////////////////////////
@@ -133,6 +133,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         return "volume";
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Volume;
     }
@@ -160,10 +161,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
 
-        Volume volume = this._volumeService.allocVolume(this);
+        Volume volume = _volumeService.allocVolume(this);
         if (volume != null) {
-            this.setEntityId(volume.getId());
-            this.setEntityUuid(volume.getUuid());
+            setEntityId(volume.getId());
+            setEntityUuid(volume.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create volume");
         }
@@ -189,7 +190,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
                 }
             }
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a volume");
         }

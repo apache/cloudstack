@@ -1715,6 +1715,10 @@ div.list-view td.state.off span {
   margin-right: 12px;
 }
 
+.detail-view.edit-mode .main-groups {
+  max-height: 360px;
+}
+
 .detail-group table {
   width: 96%;
   font-size: 12px;

@@ -489,6 +489,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         Map<Provider, Set<Service>> providerToServices = getProviderServicesMap(network.getId());
         Map<Provider, ArrayList<PublicIpAddress>> providerToIpList = new HashMap<Provider, ArrayList<PublicIpAddress>>();
         for (Provider provider : providerToServices.keySet()) {
+            if (!(getElementImplementingProvider(provider.getName()) instanceof IpDeployingRequester)) {
+                continue;
+            }
             Set<Service> services = providerToServices.get(provider);
             ArrayList<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
             Set<PublicIpAddress> ipSet = new HashSet<PublicIpAddress>();

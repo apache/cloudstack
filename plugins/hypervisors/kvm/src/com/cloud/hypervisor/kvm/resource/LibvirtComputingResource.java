@@ -724,8 +724,8 @@ ServerResource {
             conn = LibvirtConnection.getConnection();
 
             if (_bridgeType == BridgeType.OPENVSWITCH) {
-                if (conn.getLibVirVersion() < (9 * 1000 + 11)) {
-                    throw new ConfigurationException("LibVirt version 0.9.11 required for openvswitch support, but version "
+                if (conn.getLibVirVersion() < (10 * 1000 + 0)) {
+                    throw new ConfigurationException("LibVirt version 0.10.0 required for openvswitch support, but version "
                             + conn.getLibVirVersion() + " detected");
                 }
             }
@@ -3451,8 +3451,8 @@ ServerResource {
 
             }
 
+            if (data instanceof VolumeObjectTO) {
             VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
-
             if ((volumeObjectTO.getBytesReadRate() != null) && (volumeObjectTO.getBytesReadRate()  > 0))
                 disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
             if ((volumeObjectTO.getBytesWriteRate() != null) && (volumeObjectTO.getBytesWriteRate() > 0))
@@ -3461,7 +3461,7 @@ ServerResource {
                 disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
             if ((volumeObjectTO.getIopsWriteRate() != null) && (volumeObjectTO.getIopsWriteRate() > 0))
                 disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
-
+            }
             vm.getDevices().addDevice(disk);
         }
 

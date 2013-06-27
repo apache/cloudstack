@@ -26,6 +26,8 @@ under the License.
           export PATH=~/.rvm/bin:$PATH
     - Install Ruby 1.9.3, if it installed some other version:
           rvm install 1.9.3
+    - Set rvm to use that 1.9.3
+          rvm use ruby-1.9.3
     - Install bundler: (if you get any openssl issue see https://rvm.io/packages/openssl)
           gem install bundler
 
@@ -65,3 +67,19 @@ Halt the box:
     veewee vbox halt 'systemvmtemplate'
 
 Now VirtualBox can be used to export appliance.
+
+
+Trobuleshooting
+===============
+If you see following line in the screen, then veewee is failing 
+extracting vboxmanage version.
+
+    Downloading vbox guest additions iso v  - http://download.virtualbox.org/vi
+
+You would be able to check it manually by typing:
+
+    vboxmanage --version
+
+If you're using Fedora for example, you'll need to install `kernel-devel`
+package and run `/etc/init.d/vboxdrv setup` to get veewee working.
+

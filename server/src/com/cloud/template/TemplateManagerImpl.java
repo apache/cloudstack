@@ -243,7 +243,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     UploadDao _uploadDao;
     @Inject
     protected GuestOSDao _guestOSDao;
-    long _routerTemplateId = -1;
     @Inject
     StorageManager _storageMgr;
     @Inject
@@ -334,10 +333,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template")
     public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException {
+        Account account = CallContext.current().getCallingAccount();
         if (cmd.getTemplateTag() != null) {
-            Account account = CallContext.current().getCallingAccount();
             if (!_accountService.isRootAdmin(account.getType())) {
                 throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
+            }
+        }
+        if(cmd.isRoutingType() != null){
+            if(!_accountService.isRootAdmin(account.getType())){
+                throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
             }
         }
         
@@ -805,7 +809,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
-        _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
 
         String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));

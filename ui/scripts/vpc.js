@@ -471,73 +471,7 @@
           detailView: {
             isMaximized: true,
             name: 'Internal LB details',
-            actions: {
-              /*
-              assignVm: { 
-                label: 'Assign VMs to Internal LB',
-                messages: {
-                  notification: function(args) { return 'Assign VMs to Internal LB'; }
-                },
-                listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
-                  type: 'checkbox',
-                  filters: false,
-                  dataProvider: function(args) {
-                    $.ajax({
-                      url: createURL('listVirtualMachines'),
-                      data: {
-                        networkid: args.context.networks[0].id,
-                        listAll: true
-                      },
-                      success: function(json) {
-                        var instances = json.listvirtualmachinesresponse.virtualmachine;
-
-                        // Pre-select existing instances in LB rule
-                        $(instances).map(function(index, instance) {
-                          instance._isSelected = $.grep(
-                            args.context.internalLoadBalancers[0].loadbalancerinstance,
-                            
-                            function(lbInstance) {
-                              return lbInstance.id == instance.id;
-                            }
-                          ).length ? true : false;
-                        });
-                        
-                        args.response.success({
-                          data: instances
-                        });
-                      }
-                    });
-                  }
-                }),
-                action: function(args) {                      
-                  var vms = args.context.instances;
-                  var array1 = [];
-                  for(var i = 0; i < vms.length; i++) {
-                    array1.push(vms[i].id);
-                  }
-                  var virtualmachineids = array1.join(',');
-                  
-                  $.ajax({
-                    url: createURL('assignToLoadBalancerRule'),
-                    data: {
-                      id: args.context.internalLoadBalancers[0].id,
-                      virtualmachineids: virtualmachineids
-                    },
-                    dataType: 'json',
-                    async: true,
-                    success: function(data) {                          
-                      var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
-                      args.response.success({
-                        _custom: { jobId: jid }
-                      });
-                    }
-                  });
-                },
-                notification: {
-                  poll: pollAsyncJobResult
-                }
-              },      
-              */                     
+            actions: {              
               remove: {
                 label: 'Delete Internal LB',
                 messages: {
@@ -831,7 +765,7 @@
             $.ajax({
               url: createURL('listPublicIpAddresses'),
               async: false,
-              data: { networkid: args.context.networks[0].id, forloadbalancing: true },
+              data: { associatednetworkid: args.context.networks[0].id, forloadbalancing: true },
               success: function(json) {
                 var items = json.listpublicipaddressesresponse;
                 args.response.success({ data: items });
@@ -1397,7 +1331,11 @@
         listView.listView.dataProvider = function(args) {
           $.ajax({
             url: createURL('listPublicIpAddresses'),
-            data: { networkid: args.context.networks[0].id, isstaticnat: true },
+            data: { 
+            	associatednetworkid: args.context.networks[0].id, 
+              isstaticnat: true,
+              listall: true
+            },
             success: function(json) {
               args.response.success({
                 data: json.listpublicipaddressesresponse.publicipaddress
@@ -1685,8 +1623,9 @@
               select:function(args){
                 $.ajax({
                  url: createURL('listNetworkACLLists'),
-                 dataType: 'json',
-                 async: true,
+                 data: {
+                	 vpcid: args.context.vpc[0].id
+                 },
                  success: function(json) {
                       var objs = json.listnetworkacllistsresponse.networkacllist;
                       var items = [];
@@ -3498,7 +3437,10 @@
             $.ajax({
               url: createURL('listPublicIpAddresses'),
               async: false,
-              data: { 'vpcid': args.context.vpc[0].id },
+              data: { 
+            	  vpcid: args.context.vpc[0].id,
+            	  listAll: true
+              },
               success: function(json) {
                 publicIpAddresses = json.listpublicipaddressesresponse;
               },
@@ -3511,7 +3453,10 @@
             $.ajax({
               url: createURL('listPrivateGateways'),
               async: false,
-              data: { 'vpcid': args.context.vpc[0].id },
+              data: { 
+              	'vpcid': args.context.vpc[0].id,
+              	listAll: true
+              },
               success: function(json) {
                 privateGateways = json.listprivategatewaysresponse;
               },
@@ -3576,7 +3521,7 @@
                 $.ajax({
                   url: createURL('listPublicIpAddresses&listAll=true'),
                   async: false,
-                  data: { networkid: tier.id, forloadbalancing: true },
+                  data: { associatednetworkid: tier.id, forloadbalancing: true },
                   success: function(json) {
                     publicLbIps = json.listpublicipaddressesresponse;
                   },
@@ -3589,7 +3534,7 @@
                 $.ajax({
                   url: createURL('listPublicIpAddresses&listAll=true'),
                   async: false,
-                  data: { networkid: tier.id, isstaticnat: true },
+                  data: { associatednetworkid: tier.id, isstaticnat: true },
                   success: function(json) {
                     staticNatIps = json.listpublicipaddressesresponse;
                   },

@@ -56,8 +56,6 @@ import com.vmware.vim25.GuestInfo;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.HostFirewallRuleset;
-import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
-import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
@@ -211,6 +209,8 @@ import com.cloud.agent.api.routing.SetSourceNatAnswer;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteAnswer;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
@@ -543,6 +543,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((ScaleVmCommand) cmd);
             } else if (clz == PvlanSetupCommand.class) {
                 return execute((PvlanSetupCommand) cmd);
+            } else if (clz == SetStaticRouteCommand.class) {
+                answer = execute((SetStaticRouteCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -656,6 +658,52 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
         return answer;
+    }
+
+    private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetStaticRouteCommand: " + _gson.toJson(cmd));
+        }
+
+        boolean endResult = true;
+
+        String controlIp = getRouterSshControlIp(cmd);
+        String args = "";
+        String[] results = new String[cmd.getStaticRoutes().length];
+        int i = 0;
+
+        // Extract and build the arguments for the command to be sent to the VR.
+        String [][] rules = cmd.generateSRouteRules();
+        StringBuilder sb = new StringBuilder();
+        String[] srRules = rules[0];
+        for (int j = 0; j < srRules.length; j++) {
+            sb.append(srRules[j]).append(',');
+        }
+        args += " -a " + sb.toString();
+
+        // Send over the command for execution, via ssh, to the VR.
+        try {
+            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/vpc_staticroute.sh " + args);
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/vpc_staticroute.sh " + args);
+
+            if (!result.first()) {
+                s_logger.error("SetStaticRouteCommand failure on setting one rule. args: " + args);
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
+        } catch (Throwable e) {
+            s_logger.error("SetStaticRouteCommand(args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
+            results[i++] = "Failed";
+            endResult = false;
+        }
+        return new SetStaticRouteAnswer(cmd, endResult, results);
+
     }
 
     protected NetworkUsageAnswer VPCNetworkUsage(NetworkUsageCommand cmd) {
@@ -1739,12 +1787,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (_publicTrafficInfo != null) {
             vSwitchType = _publicTrafficInfo.getVirtualSwitchType();
         }
+        /** FIXME We have no clue which network this nic is on and that means that we can't figure out the BroadcastDomainType
+         *  so we assume that it's VLAN for now
+         */
         if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
             networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, _ops_timeout, true);
+                    vmMo.getRunningHost(), vlanId, null, null, _ops_timeout, true, BroadcastDomainType.Vlan);
         } else {
             networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, null, _ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false);
+                    vmMo.getRunningHost(), vlanId, null, null, null, _ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan);
         }
 
         int nicIndex = allocPublicNicIndex(vmMo);
@@ -2698,28 +2749,50 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             // pass boot arguments through machine.id & perform customized options to VMX
 
-            Map<String, String> vmDetailOptions = validateVmDetails(vmSpec.getDetails());
-            OptionValue[] extraOptions = new OptionValue[2 + vmDetailOptions.size()];
-            extraOptions[0] = new OptionValue();
-            extraOptions[0].setKey("machine.id");
-            extraOptions[0].setValue(vmSpec.getBootArgs());
+            ArrayList<OptionValue> extraOptions = new ArrayList<OptionValue>();
+            OptionValue newVal = new OptionValue();
+            newVal.setKey("machine.id");
+            newVal.setValue(vmSpec.getBootArgs());
+            extraOptions.add(newVal);
 
-            extraOptions[1] = new OptionValue();
-            extraOptions[1].setKey("devices.hotplug");
-            extraOptions[1].setValue("true");
+            newVal = new OptionValue();
+            newVal.setKey("devices.hotplug");
+            newVal.setValue("true");
+            extraOptions.add(newVal);
 
-            int j = 2;
-            for(Map.Entry<String, String> entry : vmDetailOptions.entrySet()) {
-                extraOptions[j] = new OptionValue();
-                extraOptions[j].setKey(entry.getKey());
-                extraOptions[j].setValue(entry.getValue());
-                j++;
+            /**
+             * Extra Config : nvp.vm-uuid = uuid
+             *  - Required for Nicira NVP integration
+             */
+            newVal = new OptionValue();
+            newVal.setKey("nvp.vm-uuid");
+            newVal.setValue(vmSpec.getUuid());
+            extraOptions.add(newVal);
+            
+            /**
+             * Extra Config : nvp.iface-id<num> = uuid
+             *  - Required for Nicira NVP integration
+             */
+            int nicNum = 0;
+            for (NicTO nicTo : sortNicsByDeviceId(nics)) {
+                newVal = new OptionValue();
+                newVal.setKey("nvp.iface-id" + nicNum);
+                newVal.setValue(nicTo.getUuid());
+                extraOptions.add(newVal);
+                nicNum++;
+            }
+
+            for(Map.Entry<String, String> entry : validateVmDetails(vmSpec.getDetails()).entrySet()) {
+                newVal = new OptionValue();
+                newVal.setKey(entry.getKey());
+                newVal.setValue(entry.getValue());
+                extraOptions.add(newVal);
             }
 
             String keyboardLayout = null;
             if(vmSpec.getDetails() != null)
                 keyboardLayout = vmSpec.getDetails().get(VmDetailConstants.KEYBOARD);
-            vmConfigSpec.getExtraConfig().addAll(Arrays.asList(configureVnc(extraOptions, hyperHost, vmName, vmSpec.getVncPassword(), keyboardLayout)));
+            vmConfigSpec.getExtraConfig().addAll(Arrays.asList(configureVnc(extraOptions.toArray(new OptionValue[0]), hyperHost, vmName, vmSpec.getVncPassword(), keyboardLayout)));
 
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure VM before start. vmName: " + vmName);
@@ -2905,7 +2978,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (VirtualSwitchType.StandardVirtualSwitch == switchType) {
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix,
                     hostMo, getVlanInfo(nicTo, switchName.second()), nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
-                    !namePrefix.startsWith("cloud.private"));
+                    !namePrefix.startsWith("cloud.private"), nicTo.getBroadcastType());
         }
         else {
             String vlanId = getVlanInfo(nicTo, switchName.second());
@@ -2919,7 +2992,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 svlanId = getPvlanInfo(nicTo);
             }
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, vlanId, svlanId,
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType, _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus);
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType,
+                    _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus, nicTo.getBroadcastType());
         }
 
         return networkInfo;
@@ -2933,7 +3007,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // If all 3 fields are mentioned then number of tokens would be 3.
             // If only <VSWITCH>,<VLANID> are mentioned then number of tokens would be 2.
             if(tokens.length == 2 || tokens.length == 3) {
-                return new Pair<String, String>(tokens[0], tokens[1]);
+                String vlanToken = tokens[1];
+                if (vlanToken.isEmpty()) {
+                    vlanToken = Vlan.UNTAGGED;
+                }
+                return new Pair<String, String>(tokens[0], vlanToken);
             } else {
                 return new Pair<String, String>(nicTo.getName(), Vlan.UNTAGGED);
             }
@@ -5280,73 +5358,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return VirtualMachineGuestOsIdentifier.OTHER_GUEST_64;
         }
         return VirtualMachineGuestOsIdentifier.OTHER_GUEST;
-    }
-
-    private void prepareNetworkForVmTargetHost(HostMO hostMo, VirtualMachineMO vmMo) throws Exception {
-        assert (vmMo != null);
-        assert (hostMo != null);
-
-        String[] networks = vmMo.getNetworks();
-        for (String networkName : networks) {
-            HostPortGroupSpec portGroupSpec = hostMo.getHostPortGroupSpec(networkName);
-            HostNetworkTrafficShapingPolicy shapingPolicy = null;
-            if (portGroupSpec != null) {
-                shapingPolicy = portGroupSpec.getPolicy().getShapingPolicy();
-            }
-
-            if (networkName.startsWith("cloud.private")) {
-                String[] tokens = networkName.split("\\.");
-                if (tokens.length == 3) {
-                    Integer networkRateMbps = null;
-                    if (shapingPolicy != null && shapingPolicy.isEnabled() != null && shapingPolicy.isEnabled().booleanValue()) {
-                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
-                    }
-                    String vlanId = null;
-                    if(!"untagged".equalsIgnoreCase(tokens[2]))
-                        vlanId = tokens[2];
-
-                    HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private",
-                            hostMo, vlanId, networkRateMbps, null, _ops_timeout, false);
-                } else {
-                    s_logger.info("Skip suspecious cloud network " + networkName);
-                }
-            } else if (networkName.startsWith("cloud.public")) {
-                String[] tokens = networkName.split("\\.");
-                if (tokens.length == 3) {
-                    Integer networkRateMbps = null;
-                    if (shapingPolicy != null && shapingPolicy.isEnabled() != null && shapingPolicy.isEnabled().booleanValue()) {
-                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
-                    }
-                    String vlanId = null;
-                    if(!"untagged".equalsIgnoreCase(tokens[2]))
-                        vlanId = tokens[2];
-
-                    HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                            hostMo, vlanId, networkRateMbps, null, _ops_timeout, false);
-                } else {
-                    s_logger.info("Skip suspecious cloud network " + networkName);
-                }
-            } else if (networkName.startsWith("cloud.guest")) {
-                String[] tokens = networkName.split("\\.");
-                if (tokens.length >= 3) {
-                    Integer networkRateMbps = null;
-                    if (shapingPolicy != null && shapingPolicy.isEnabled() != null && shapingPolicy.isEnabled().booleanValue()) {
-                        networkRateMbps = (int) (shapingPolicy.getPeakBandwidth().longValue() / (1024 * 1024));
-                    }
-
-                    String vlanId = null;
-                    if(!"untagged".equalsIgnoreCase(tokens[2]))
-                        vlanId = tokens[2];
-
-                    HypervisorHostHelper.prepareNetwork(_guestTrafficInfo.getVirtualSwitchName(), "cloud.guest",
-                            hostMo, vlanId, networkRateMbps, null, _ops_timeout, false);
-                } else {
-                    s_logger.info("Skip suspecious cloud network " + networkName);
-                }
-            } else {
-                s_logger.info("Skip non-cloud network " + networkName + " when preparing target host");
-            }
-        }
     }
 
     private HashMap<String, PowerState> getVmStates() throws Exception {

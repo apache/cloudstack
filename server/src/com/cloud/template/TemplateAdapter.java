@@ -28,6 +28,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
 
@@ -69,6 +70,7 @@ public interface TemplateAdapter extends Adapter {
     public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits,
             Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
             Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
-            String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshKeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable) throws ResourceAllocationException;
+            String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshKeyEnabled,
+            String imageStoreUuid, Boolean isDynamicallyScalable, TemplateType templateType) throws ResourceAllocationException;
 
 }

@@ -45,11 +45,13 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.projects.Project;
 import com.cloud.user.Account;
 
 @APICommand(name = "associateIpAddress", description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
@@ -195,6 +197,18 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         if (accountName != null && domainId != null) {
             Account account = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
             return account.getId();
+        } else if (projectId != null) {
+            Project project = _projectService.getProject(projectId);
+            if (project != null) {
+                if (project.getState() == Project.State.Active) {
+                    return project.getProjectAccountId();
+                } else {
+                    throw new PermissionDeniedException("Can't add resources to the project with specified projectId in state="
+                           + project.getState() + " as it's no longer active");
+                }
+            } else {
+                throw new InvalidParameterValueException("Unable to find project by id");
+            }
         } else if (networkId != null){
             Network network = _networkService.getNetwork(networkId);
             return network.getAccountId();

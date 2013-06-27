@@ -2692,8 +2692,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
-                    VlanVO vlan = vlans.get(0);
                 if (vlans != null && vlans.size() > 0) {
+                    VlanVO vlan = vlans.get(0);
                     if (vlanId == null) {
                         vlanId = vlan.getVlanTag();
                     } else if (!vlan.getVlanTag().equals(vlanId)) {
@@ -3477,6 +3477,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         long allocIpCount = _publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true);
         List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
         boolean success = true;
+        List<IPAddressVO> ipsInUse = new ArrayList<IPAddressVO>();
         if (allocIpCount > 0) {
             try {
                 vlan = _vlanDao.acquireInLockTable(vlanDbId, 30);
@@ -3494,6 +3495,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                     + " as part of Public IP" + " range release to the system pool");
                         }
                         success = success && _networkMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
+                    } else {
+                        ipsInUse.add(ip);
                     }
                 }
                 if (!success) {
@@ -3507,12 +3510,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // A Public IP range can only be dedicated to one account at a time
         if (_accountVlanMapDao.remove(acctVln.get(0).getId())) {
-            // generate usage events to remove dedication for every ip in the
-            // range
+            // generate usage events to remove dedication for every ip in the range that has been disassociated
             for (IPAddressVO ip : ips) {
+                if (!ipsInUse.contains(ip)) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip
                         .getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan
                         .getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+            }
             }
             // decrement resource count for dedicated public ip's
             _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(
@@ -4490,11 +4494,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // only root admin can list network offering with specifyVlan = true
-        if (specifyVlan != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, specifyVlan);
-        } else {
+        if(caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
             specifyVlan = false;
         }
+        if (specifyVlan != null) {
+            sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, specifyVlan);
+        } 
 
         if (availability != null) {
             sc.addAnd("availability", SearchCriteria.Op.EQ, availability);

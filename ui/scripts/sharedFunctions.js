@@ -821,6 +821,10 @@ cloudStack.api = {
           data.projectid=args.context.projects[0].id;
         }
         
+				if(args.jsonObj != null && args.jsonObj.projectid != null && data.projectid == null) {
+				  data.projectid = args.jsonObj.projectid;
+				}
+				
         $.ajax({
           url: createURL('listTags'),
           data: data,

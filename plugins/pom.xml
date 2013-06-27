@@ -35,7 +35,7 @@
     <module>api/rate-limit</module>
     <module>api/discovery</module>
     <module>acl/static-role-based</module>
-    <module>affinity-group-processors/host-anti-affinity</module>
+	<module>affinity-group-processors/host-anti-affinity</module>
     <module>affinity-group-processors/explicit-dedication</module>
     <module>deployment-planners/user-concentrated-pod</module>
     <module>deployment-planners/user-dispersing</module>
@@ -54,6 +54,7 @@
     <module>network-elements/nicira-nvp</module>
     <module>network-elements/bigswitch-vns</module>
     <module>network-elements/midonet</module>
+    <module>network-elements/stratosphere-ssp</module>
     <module>storage-allocators/random</module>
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
@@ -102,7 +103,7 @@
       <modules>
         <module>hypervisors/kvm</module>
       </modules>
-    </profile>      
+    </profile>
     <profile>
       <id>f5</id>
       <activation>

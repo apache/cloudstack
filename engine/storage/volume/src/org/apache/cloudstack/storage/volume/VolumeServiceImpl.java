@@ -335,7 +335,7 @@ public class VolumeServiceImpl implements VolumeService {
         try {
         templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
         } catch (Exception e) {
-            s_logger.info("Got exception in case of multi-thread");
+            s_logger.info("Multiple threads are trying to copy template to primary storage, current thread should just wait");
             try {
                 templateOnPrimaryStoreObj = waitForTemplateDownloaded(dataStore, template);
             } catch (Exception e1) {

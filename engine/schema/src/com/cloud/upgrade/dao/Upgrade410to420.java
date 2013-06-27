@@ -163,7 +163,7 @@ public class Upgrade410to420 implements DbUpgrade {
             s_logger.debug("Updating XenSever System Vms");
             //XenServer
             try {
-                //Get 4.2.0 xenserer system Vm template Id
+                //Get 4.2.0 XenServer system Vm template Id
                 pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name like 'systemvm-xenserver-4.2' and removed is null order by id desc limit 1");
                 rs = pstmt.executeQuery();
                 if(rs.next()){
@@ -179,6 +179,10 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'XenServer'");
                     pstmt.setLong(1, templateId);
                     pstmt.executeUpdate();
+                    pstmt.close();
+                    // Change value of global configuration parameter router.template.xen
+                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.xen', 'systemvm-xenserver-4.2', 'Name of the default router template on Xenserver')");
+                    pstmt.execute();
                     pstmt.close();
                 } else {
                     if (xenserver){
@@ -211,6 +215,10 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt.setLong(1, templateId);
                     pstmt.executeUpdate();
                     pstmt.close();
+                    // Change value of global configuration parameter router.template.kvm
+                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.kvm', 'systemvm-kvm-4.2', 'Name of the default router template on KVM')");
+                    pstmt.execute();
+                    pstmt.close();
                 } else {
                     if (kvm){
                         throw new CloudRuntimeException("4.2.0 KVM SystemVm template not found. Cannot upgrade system Vms");
@@ -241,6 +249,10 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'VMware'");
                     pstmt.setLong(1, templateId);
                     pstmt.executeUpdate();
+                    pstmt.close();
+                    // Change value of global configuration parameter router.template.vmware
+                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.vmware', 'systemvm-vmware-4.2', 'Name of the default router template on Vmware')");
+                    pstmt.execute();
                     pstmt.close();
                 } else {
                     if (VMware){
@@ -273,6 +285,10 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt.setLong(1, templateId);
                     pstmt.executeUpdate();
                     pstmt.close();
+                    // Change value of global configuration parameter router.template.hyperv
+                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.hyperv', 'systemvm-hyperv-4.2', 'Name of the default router template on Hyperv')");
+                    pstmt.execute();
+                    pstmt.close();
                 } else {
                     if (Hyperv){
                         throw new CloudRuntimeException("4.2.0 HyperV SystemVm template not found. Cannot upgrade system Vms");
@@ -303,6 +319,10 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'LXC'");
                     pstmt.setLong(1, templateId);
                     pstmt.executeUpdate();
+                    pstmt.close();
+                    // Change value of global configuration parameter router.template.lxc
+                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.lxc', 'systemvm-lxc-4.2', 'Name of the default router template on LXC')");
+                    pstmt.execute();
                     pstmt.close();
                 } else {
                     if (LXC){

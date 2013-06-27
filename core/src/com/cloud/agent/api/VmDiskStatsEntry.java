@@ -22,15 +22,15 @@ public class VmDiskStatsEntry implements VmDiskStats {
 	
 	String vmName;
 	String path;
-	Long ioRead = 0L;
-	Long ioWrite = 0L;
-	Long bytesWrite = 0L;
-	Long bytesRead = 0L;
+	long ioRead = 0;
+	long ioWrite = 0;
+	long bytesWrite = 0;
+	long bytesRead = 0;
 	    
     public VmDiskStatsEntry() {
     }
     
-    public VmDiskStatsEntry(String vmName, String path, Long ioWrite, Long ioRead, Long bytesWrite, Long bytesRead) {
+    public VmDiskStatsEntry(String vmName, String path, long ioWrite, long ioRead, long bytesWrite, long bytesRead) {
         this.ioRead = ioRead;
         this.ioWrite = ioWrite;
         this.bytesRead = bytesRead;
@@ -55,35 +55,35 @@ public class VmDiskStatsEntry implements VmDiskStats {
         return path;
     }
     
-    public void setBytesRead(Long bytesRead) {
+    public void setBytesRead(long bytesRead) {
     	this.bytesRead = bytesRead;
     }
 
-    public Long getBytesRead() {
+    public long getBytesRead() {
     	return bytesRead;
     }
     
-    public void setBytesWrite(Long bytesWrite) {
+    public void setBytesWrite(long bytesWrite) {
     	this.bytesWrite = bytesWrite;
     }
     
-    public Long getBytesWrite() {
+    public long getBytesWrite() {
     	return bytesWrite;
     }
     
-    public void setIORead(Long ioRead) {
+    public void setIORead(long ioRead) {
         this.ioRead = ioRead;
     }
 
-    public Long getIORead() {
+    public long getIORead() {
         return ioRead;
     }
     
-    public void setIOWrite(Long ioWrite) {
+    public void setIOWrite(long ioWrite) {
         this.ioWrite = ioWrite;
     }
     
-    public Long getIOWrite() {
+    public long getIOWrite() {
         return ioWrite;
     }
 

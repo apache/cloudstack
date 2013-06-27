@@ -16,7 +16,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
- 
+echo "####################################################"
+echo " Note there is a new systemvm build script based on "
+echo " Veewee(Vagrant) under tools/appliance."
+echo "####################################################"
+
 set -e
 set -x
 

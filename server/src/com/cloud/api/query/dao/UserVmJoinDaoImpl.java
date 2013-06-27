@@ -38,6 +38,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDaoBase;
@@ -180,17 +181,21 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                 Double networkKbWrite = Double.valueOf(vmStats.getNetworkWriteKBs());
                 userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
 
-                Double diskKbsRead = Double.valueOf(vmStats.getDiskReadKBs());
-                userVmResponse.setDiskKbsRead(diskKbsRead.longValue());
+                if ((userVm.getHypervisorType() != null) 
+                        && (userVm.getHypervisorType().equals(HypervisorType.KVM)
+                        || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
+                    Double diskKbsRead = Double.valueOf(vmStats.getDiskReadKBs());
+                    userVmResponse.setDiskKbsRead(diskKbsRead.longValue());
 
-                Double diskKbsWrite = Double.valueOf(vmStats.getDiskWriteKBs());
-                userVmResponse.setDiskKbsWrite(diskKbsWrite.longValue());
+                    Double diskKbsWrite = Double.valueOf(vmStats.getDiskWriteKBs());
+                    userVmResponse.setDiskKbsWrite(diskKbsWrite.longValue());
 
-                Double diskIORead = Double.valueOf(vmStats.getDiskReadIOs());
-                userVmResponse.setDiskIORead(diskIORead.longValue());
+                    Double diskIORead = Double.valueOf(vmStats.getDiskReadIOs());
+                    userVmResponse.setDiskIORead(diskIORead.longValue());
 
-                Double diskIOWrite = Double.valueOf(vmStats.getDiskWriteIOs());
-                userVmResponse.setDiskIOWrite(diskIOWrite.longValue());
+                    Double diskIOWrite = Double.valueOf(vmStats.getDiskWriteIOs());
+                    userVmResponse.setDiskIOWrite(diskIOWrite.longValue());
+                }
             }
         }
 

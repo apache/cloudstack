@@ -171,7 +171,7 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list host returns a valid list"
                         )
         host = hosts[0]
-        
+
         self.debug("Router ID: %s, state: %s" % (router.id, router.state))
 
         self.assertEqual(
@@ -180,21 +180,32 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list router response for router state"
                         )
 
-        result = get_process_status(
-                                host.ipaddress,
-                                self.services['virtual_machine']["publicport"],
-                                self.vm_1.username,
-                                self.vm_1.password,
-                                router.linklocalip,
-                                "service dnsmasq status"
-                                )
-        res = str(result)
-        self.debug("Dnsmasq process status: %s" % res)
+        if self.apiclient.hypervisor.lower() == 'vmware':
+               result = get_process_status(
+                                   self.apiclient.connection.mgtSvr,
+                                   22,
+                               self.apiclient.connection.user,
+                               self.apiclient.connection.passwd,
+                               router.linklocalip,
+                               "service dnsmasq status",
+                                   hypervisor=self.apiclient.hypervisor
+                               )
+        else:
+                result = get_process_status(
+                                    host.ipaddress,
+                                    self.services['virtual_machine']["publicport"],
+                                    self.vm_1.username,
+                                    self.vm_1.password,
+                                    router.linklocalip,
+                                    "service dnsmasq status"
+                                    )
+                res = str(result)
+                self.debug("Dnsmasq process status: %s" % res)
 
-        self.assertEqual(
-                            res.count("running"),
-                            1,
-                            "Check dnsmasq service is running or not"
+                self.assertEqual(
+                                res.count("running"),
+                                1,
+                                "Check dnsmasq service is running or not"
                         )
         return
 
@@ -242,7 +253,18 @@ class TestRouterServices(cloudstackTestCase):
                             "Check list router response for router state"
                         )
 
-        result = get_process_status(
+        if self.apiclient.hypervisor.lower() == 'vmware':
+           result = get_process_status(
+                           self.apiclient.connection.mgtSvr,
+                               22,
+                           self.apiclient.connection.user,
+                           self.apiclient.connection.passwd,
+                           router.linklocalip,
+                           "service dnsmasq status",
+                               hypervisor=self.apiclient.hypervisor
+                           )
+        else:
+            result = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
                                 self.vm_1.username,
@@ -259,7 +281,18 @@ class TestRouterServices(cloudstackTestCase):
                             "Check dnsmasq service is running or not"
                         )
 
-        result = get_process_status(
+        if self.apiclient.hypervisor.lower() == 'vmware':
+           result = get_process_status(
+                               self.apiclient.connection.mgtSvr,
+                           22,
+                           self.apiclient.connection.user,
+                           self.apiclient.connection.passwd,
+                           router.linklocalip,
+                           "service haproxy status",
+                           hypervisor=self.apiclient.hypervisor
+                           )
+        else:
+            result = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
                                 self.vm_1.username,
@@ -423,7 +456,18 @@ class TestRouterServices(cloudstackTestCase):
                         )
         host = hosts[0]
 
-        res = get_process_status(
+        if self.apiclient.hypervisor.lower() == 'vmware':
+           res = get_process_status(
+                           self.apiclient.connection.mgtSvr,
+                           22,
+                           self.apiclient.connection.user,
+                           self.apiclient.connection.passwd,
+                           router.linklocalip,
+                           "uptime",
+                           hypervisor=self.apiclient.hypervisor
+                           )
+        else:
+            res = get_process_status(
                                 host.ipaddress,
                                 self.services['virtual_machine']["publicport"],
                                 self.vm_1.username,
