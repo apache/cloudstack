@@ -1,25 +1,9 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
 
 /**
  * AssociateAddressType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +17,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = AssociateAddressType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -48,60 +32,149 @@
         
 
                         /**
-                        * field for PublicIp
+                        * field for AssociateAddressTypeChoice_type0
                         */
 
                         
-                                    protected java.lang.String localPublicIp ;
+                                    protected com.amazon.ec2.AssociateAddressTypeChoice_type0 localAssociateAddressTypeChoice_type0 ;
                                 
 
                            /**
                            * Auto generated getter method
-                           * @return java.lang.String
+                           * @return com.amazon.ec2.AssociateAddressTypeChoice_type0
                            */
-                           public  java.lang.String getPublicIp(){
-                               return localPublicIp;
+                           public  com.amazon.ec2.AssociateAddressTypeChoice_type0 getAssociateAddressTypeChoice_type0(){
+                               return localAssociateAddressTypeChoice_type0;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param PublicIp
+                               * @param param AssociateAddressTypeChoice_type0
                                */
-                               public void setPublicIp(java.lang.String param){
+                               public void setAssociateAddressTypeChoice_type0(com.amazon.ec2.AssociateAddressTypeChoice_type0 param){
                             
-                                            this.localPublicIp=param;
+                                            this.localAssociateAddressTypeChoice_type0=param;
                                     
 
                                }
                             
 
                         /**
-                        * field for InstanceId
+                        * field for AssociateAddressTypeChoice_type1
                         */
 
                         
-                                    protected java.lang.String localInstanceId ;
+                                    protected com.amazon.ec2.AssociateAddressTypeChoice_type1 localAssociateAddressTypeChoice_type1 ;
                                 
 
                            /**
                            * Auto generated getter method
-                           * @return java.lang.String
+                           * @return com.amazon.ec2.AssociateAddressTypeChoice_type1
                            */
-                           public  java.lang.String getInstanceId(){
-                               return localInstanceId;
+                           public  com.amazon.ec2.AssociateAddressTypeChoice_type1 getAssociateAddressTypeChoice_type1(){
+                               return localAssociateAddressTypeChoice_type1;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param InstanceId
+                               * @param param AssociateAddressTypeChoice_type1
                                */
-                               public void setInstanceId(java.lang.String param){
+                               public void setAssociateAddressTypeChoice_type1(com.amazon.ec2.AssociateAddressTypeChoice_type1 param){
                             
-                                            this.localInstanceId=param;
+                                            this.localAssociateAddressTypeChoice_type1=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for PrivateIpAddress
+                        */
+
+                        
+                                    protected java.lang.String localPrivateIpAddress ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localPrivateIpAddressTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getPrivateIpAddress(){
+                               return localPrivateIpAddress;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param PrivateIpAddress
+                               */
+                               public void setPrivateIpAddress(java.lang.String param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localPrivateIpAddressTracker = true;
+                                       } else {
+                                          localPrivateIpAddressTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localPrivateIpAddress=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for AllowReassociation
+                        */
+
+                        
+                                    protected boolean localAllowReassociation ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localAllowReassociationTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return boolean
+                           */
+                           public  boolean getAllowReassociation(){
+                               return localAllowReassociation;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param AllowReassociation
+                               */
+                               public void setAllowReassociation(boolean param){
+                            
+                                       // setting primitive attribute tracker to true
+                                       
+                                               if (false) {
+                                           localAllowReassociationTracker = false;
+                                              
+                                       } else {
+                                          localAllowReassociationTracker = true;
+                                       }
+                                   
+                                            this.localAllowReassociation=param;
                                     
 
                                }
@@ -190,7 +263,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":AssociateAddressType",
@@ -204,74 +277,79 @@
                
                    }
                
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                            if (localAssociateAddressTypeChoice_type0==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("AssociateAddressTypeChoice_type0 cannot be null!!");
+                                            }
+                                           localAssociateAddressTypeChoice_type0.serialize(null,factory,xmlWriter);
+                                        
+                                            if (localAssociateAddressTypeChoice_type1==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("AssociateAddressTypeChoice_type1 cannot be null!!");
+                                            }
+                                           localAssociateAddressTypeChoice_type1.serialize(null,factory,xmlWriter);
+                                         if (localPrivateIpAddressTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
                                         if (prefix == null) {
                                             prefix = generatePrefix(namespace);
 
-                                            xmlWriter.writeStartElement(prefix,"publicIp", namespace);
+                                            xmlWriter.writeStartElement(prefix,"privateIpAddress", namespace);
                                             xmlWriter.writeNamespace(prefix, namespace);
                                             xmlWriter.setPrefix(prefix, namespace);
 
                                         } else {
-                                            xmlWriter.writeStartElement(namespace,"publicIp");
+                                            xmlWriter.writeStartElement(namespace,"privateIpAddress");
                                         }
 
                                     } else {
-                                        xmlWriter.writeStartElement("publicIp");
+                                        xmlWriter.writeStartElement("privateIpAddress");
                                     }
                                 
 
-                                          if (localPublicIp==null){
+                                          if (localPrivateIpAddress==null){
                                               // write the nil attribute
                                               
-                                                     throw new org.apache.axis2.databinding.ADBException("publicIp cannot be null!!");
+                                                     throw new org.apache.axis2.databinding.ADBException("privateIpAddress cannot be null!!");
                                                   
                                           }else{
 
                                         
-                                                   xmlWriter.writeCharacters(localPublicIp);
+                                                   xmlWriter.writeCharacters(localPrivateIpAddress);
                                             
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                             } if (localAllowReassociationTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
                                         if (prefix == null) {
                                             prefix = generatePrefix(namespace);
 
-                                            xmlWriter.writeStartElement(prefix,"instanceId", namespace);
+                                            xmlWriter.writeStartElement(prefix,"allowReassociation", namespace);
                                             xmlWriter.writeNamespace(prefix, namespace);
                                             xmlWriter.setPrefix(prefix, namespace);
 
                                         } else {
-                                            xmlWriter.writeStartElement(namespace,"instanceId");
+                                            xmlWriter.writeStartElement(namespace,"allowReassociation");
                                         }
 
                                     } else {
-                                        xmlWriter.writeStartElement("instanceId");
+                                        xmlWriter.writeStartElement("allowReassociation");
                                     }
                                 
-
-                                          if (localInstanceId==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new org.apache.axis2.databinding.ADBException("instanceId cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(localInstanceId);
-                                            
-                                          }
+                                               if (false) {
+                                           
+                                                         throw new org.apache.axis2.databinding.ADBException("allowReassociation cannot be null!!");
+                                                      
+                                               } else {
+                                                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localAllowReassociation));
+                                               }
                                     
                                    xmlWriter.writeEndElement();
-                             
+                             }
                     xmlWriter.writeEndElement();
                
 
@@ -434,24 +512,39 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
-                                                                      "publicIp"));
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "AssociateAddressTypeChoice_type0"));
+                            
+                            
+                                    if (localAssociateAddressTypeChoice_type0==null){
+                                         throw new org.apache.axis2.databinding.ADBException("AssociateAddressTypeChoice_type0 cannot be null!!");
+                                    }
+                                    elementList.add(localAssociateAddressTypeChoice_type0);
+                                
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "AssociateAddressTypeChoice_type1"));
+                            
+                            
+                                    if (localAssociateAddressTypeChoice_type1==null){
+                                         throw new org.apache.axis2.databinding.ADBException("AssociateAddressTypeChoice_type1 cannot be null!!");
+                                    }
+                                    elementList.add(localAssociateAddressTypeChoice_type1);
+                                 if (localPrivateIpAddressTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "privateIpAddress"));
                                  
-                                        if (localPublicIp != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localPublicIp));
+                                        if (localPrivateIpAddress != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localPrivateIpAddress));
                                         } else {
-                                           throw new org.apache.axis2.databinding.ADBException("publicIp cannot be null!!");
+                                           throw new org.apache.axis2.databinding.ADBException("privateIpAddress cannot be null!!");
                                         }
-                                    
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
-                                                                      "instanceId"));
+                                    } if (localAllowReassociationTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "allowReassociation"));
                                  
-                                        if (localInstanceId != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localInstanceId));
-                                        } else {
-                                           throw new org.apache.axis2.databinding.ADBException("instanceId cannot be null!!");
-                                        }
-                                    
+                                elementList.add(
+                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localAllowReassociation));
+                            }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -530,41 +623,57 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","publicIp").equals(reader.getName())){
+                                    if (reader.isStartElement() ){
                                 
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setPublicIp(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
-                                    
+                                                object.setAssociateAddressTypeChoice_type0(com.amazon.ec2.AssociateAddressTypeChoice_type0.Factory.parse(reader));
+                                            
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","instanceId").equals(reader.getName())){
+                                    if (reader.isStartElement() ){
+                                
+                                                object.setAssociateAddressTypeChoice_type1(com.amazon.ec2.AssociateAddressTypeChoice_type1.Factory.parse(reader));
+                                            
+                              }  // End of if for expected property start element
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","privateIpAddress").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
-                                              object.setInstanceId(
+                                              object.setPrivateIpAddress(
                                                     org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
                                               
                                         reader.next();
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                              
+                                    else {
+                                        
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","allowReassociation").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setAllowReassociation(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToBoolean(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
+                                  
                             while (!reader.isStartElement() && !reader.isEndElement())
                                 reader.next();
                             
