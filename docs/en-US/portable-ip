@@ -32,7 +32,6 @@
   </section>
   <section id="config-pip">
     <title>Configuring Portable IPs</title>
-    <para/>
     <orderedlist>
       <listitem>
         <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
@@ -73,7 +72,9 @@
           </listitem>
         </itemizedlist>
       </listitem>
-      <listitem><para>Click OK.</para></listitem>
+      <listitem>
+        <para>Click OK.</para>
+      </listitem>
     </orderedlist>
   </section>
   <section id="acquire-pip">
