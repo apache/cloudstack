@@ -606,6 +606,12 @@ addBaremetalPxeKickStartServer=1
 addBaremetalPxePingServer=1
 addBaremetalDhcp=1
 
+#### UCS commands
+addUcsManager=1
+listUcsProfile=1
+listUcsBlade=1
+associatesUcsProfileToBlade=1
+
 #### New Load Balancer commands
 createLoadBalancer=15
 listLoadBalancers=15

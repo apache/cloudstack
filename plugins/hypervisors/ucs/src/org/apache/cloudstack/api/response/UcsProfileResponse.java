@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package com.cloud.ucs.manager;
+package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package com.cloud.ucs.manager;
+package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
@@ -23,8 +23,13 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UcsManagerResponse;
+import org.apache.cloudstack.api.response.UcsProfileResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -32,43 +37,17 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.server.ManagementService;
+import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
-@APICommand(name="associatesUscProfileToBlade", description="associate a profile to a blade", responseObject=UcsBladeResponse.class)
-public class AssociateUcsProfileToBladeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AssociateUcsProfileToBladeCmd.class);
+@APICommand(name="listUcsProfile", description="List profile in ucs manager", responseObject=UcsProfileResponse.class)
+public class ListUcsProfileCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListUcsProfileCmd.class);
 
-    @Inject
-    private UcsManager mgr;
+    @Inject UcsManager mgr;
 
-    @Parameter(name=ApiConstants.UCS_MANAGER_ID, type=CommandType.UUID, description="ucs manager id", entityType=UcsManagerResponse.class, required=true)
+    @Parameter(name=ApiConstants.UCS_MANAGER_ID, type=CommandType.UUID,  entityType=UcsManagerResponse.class, description="the id for the ucs manager", required=true)
     private Long ucsManagerId;
-    @Parameter(name=ApiConstants.UCS_PROFILE_DN, type=CommandType.STRING, description="profile dn", required=true)
-    private String profileDn;
-    @Parameter(name=ApiConstants.UCS_BLADE_ID, type=CommandType.UUID, entityType=UcsBladeResponse.class, description="blade id", required=true)
-    private Long bladeId;
-
-    @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
-        try {
-            UcsBladeResponse rsp = mgr.associateProfileToBlade(this);
-            rsp.setResponseName(getCommandName());
-            this.setResponseObject(rsp);
-        } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
-    }
-
-    @Override
-    public String getCommandName() {
-        return "associateucsprofiletobladeresponse";
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
-    }
 
     public Long getUcsManagerId() {
         return ucsManagerId;
@@ -78,19 +57,28 @@ public class AssociateUcsProfileToBladeCmd extends BaseCmd {
         this.ucsManagerId = ucsManagerId;
     }
 
-    public String getProfileDn() {
-        return profileDn;
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+            ResourceAllocationException, NetworkRuleConflictException {
+        try {
+            ListResponse<UcsProfileResponse> response = mgr.listUcsProfiles(this);
+            response.setResponseName(getCommandName());
+            response.setObjectName("ucsprofiles");
+            this.setResponseObject(response);
+        } catch (Exception e) {
+            s_logger.warn("Exception: ", e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
     }
 
-    public void setProfileDn(String profileDn) {
-        this.profileDn = profileDn;
+    @Override
+    public String getCommandName() {
+        return "listucsprofileresponse";
     }
 
-    public Long getBladeId() {
-        return bladeId;
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    public void setBladeId(Long bladeId) {
-        this.bladeId = bladeId;
-    }
 }

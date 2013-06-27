@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.ucs.manager;
+package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
@@ -26,6 +26,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UcsBladeResponse;
+import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -33,6 +35,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
 
 @APICommand(name="listUcsBlade", description="List ucs blades", responseObject=UcsBladeResponse.class)

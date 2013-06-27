@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package com.cloud.ucs.manager;
+package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
@@ -23,10 +23,10 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.UcsBladeResponse;
+import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -34,37 +34,27 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.server.ManagementService;
+import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
-
-@APICommand(name="addUcsManager", description="Adds a Ucs manager", responseObject=UcsManagerResponse.class)
-public class AddUcsManagerCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddUcsManagerCmd.class);
+@APICommand(name="associatesUcsProfileToBlade", description="associate a profile to a blade", responseObject=UcsBladeResponse.class)
+public class AssociateUcsProfileToBladeCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(AssociateUcsProfileToBladeCmd.class);
 
     @Inject
     private UcsManager mgr;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, description="the Zone id for the ucs manager", entityType=ZoneResponse.class, required=true)
-    private Long zoneId;
-
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of UCS manager")
-    private String name;
-
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, description="the name of UCS url", required=true)
-    private String url;
-
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, description="the username of UCS", required=true)
-    private String username;
-
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="the password of UCS", required=true)
-    private String password;
+    @Parameter(name=ApiConstants.UCS_MANAGER_ID, type=CommandType.UUID, description="ucs manager id", entityType=UcsManagerResponse.class, required=true)
+    private Long ucsManagerId;
+    @Parameter(name=ApiConstants.UCS_PROFILE_DN, type=CommandType.STRING, description="profile dn", required=true)
+    private String profileDn;
+    @Parameter(name=ApiConstants.UCS_BLADE_ID, type=CommandType.UUID, entityType=UcsBladeResponse.class, description="blade id", required=true)
+    private Long bladeId;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException, NetworkRuleConflictException {
         try {
-            UcsManagerResponse rsp = mgr.addUcsManager(this);
-            rsp.setObjectName("ucsmanager");
+            UcsBladeResponse rsp = mgr.associateProfileToBlade(this);
             rsp.setResponseName(getCommandName());
             this.setResponseObject(rsp);
         } catch (Exception e) {
@@ -75,7 +65,7 @@ public class AddUcsManagerCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return "addUcsManagerResponse";
+        return "associateucsprofiletobladeresponse";
     }
 
     @Override
@@ -83,44 +73,27 @@ public class AddUcsManagerCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    public Long getZoneId() {
-        return zoneId;
+    public Long getUcsManagerId() {
+        return ucsManagerId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+    public void setUcsManagerId(Long ucsManagerId) {
+        this.ucsManagerId = ucsManagerId;
     }
 
-    public String getName() {
-        return name;
+    public String getProfileDn() {
+        return profileDn;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setProfileDn(String profileDn) {
+        this.profileDn = profileDn;
     }
 
-    public String getUrl() {
-        return url;
+    public Long getBladeId() {
+        return bladeId;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setBladeId(Long bladeId) {
+        this.bladeId = bladeId;
     }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
 }
