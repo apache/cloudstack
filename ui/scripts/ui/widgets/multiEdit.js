@@ -336,7 +336,8 @@
                             },
                             error: function(args) {
                               error(args);
-                              $multi.trigger('refresh');
+                              $loading.remove();
+                              $dataItem.show();
 
                               return cloudStack.dialog.error;
                             }
@@ -401,8 +402,6 @@
               var editableFields = {};
 
               $.each(fields, function(key, field) {
-                field.isDisabled = false;
-                
                 if (field && field.isEditable) editableFields[key] = $.extend(true, {}, field, {
                   defaultValue: data[key]
                 });
