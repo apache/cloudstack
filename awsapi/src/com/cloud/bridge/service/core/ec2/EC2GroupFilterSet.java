@@ -45,6 +45,8 @@ public class EC2GroupFilterSet {
         filterTypes.put( "ip-permission.group-name","string" );
         filterTypes.put( "ip-permission.user-id",   "string" );
 		filterTypes.put( "owner-id",                "string" );
+        filterTypes.put( "tag-key",                 "string" );
+        filterTypes.put( "tag-value",               "string" );
 	}
 
 
@@ -119,6 +121,42 @@ public class EC2GroupFilterSet {
 			String owner = new String( sg.getDomainId() + ":" + sg.getAccountName()); 
 			return containsString( owner, valueSet );	
 		}
+        else if (filterName.equalsIgnoreCase("tag-key"))
+        {
+            EC2TagKeyValue[] tagSet = sg.getResourceTags();
+            for (EC2TagKeyValue tag : tagSet)
+                if (containsString(tag.getKey(), valueSet)) return true;
+            return false;
+        }
+        else if (filterName.equalsIgnoreCase("tag-value"))
+        {
+            EC2TagKeyValue[] tagSet = sg.getResourceTags();
+            for (EC2TagKeyValue tag : tagSet){
+                if (tag.getValue() == null) {
+                    if (containsEmptyValue(valueSet)) return true;
+                }
+                else {
+                    if (containsString(tag.getValue(), valueSet)) return true;
+                }
+            }
+            return false;
+        }
+        else if (filterName.startsWith("tag:"))
+        {
+            String key = filterName.split(":")[1];
+            EC2TagKeyValue[] tagSet = sg.getResourceTags();
+            for (EC2TagKeyValue tag : tagSet){
+                if (tag.getKey().equalsIgnoreCase(key)) {
+                    if (tag.getValue() == null) {
+                        if (containsEmptyValue(valueSet)) return true;
+                    }
+                    else {
+                        if (containsString(tag.getValue(), valueSet)) return true;
+                    }
+                }
+            }
+            return false;
+        }
 		else return false;
 	}
 
@@ -181,5 +219,11 @@ public class EC2GroupFilterSet {
 		}
 		return false;
 	}
+
+    private boolean containsEmptyValue( String[] set ) {
+        for( int i=0; i < set.length; i++ )
+            if (set[i].isEmpty()) return true;
+        return false;
+    }
 
 }
