@@ -2061,7 +2061,14 @@ public class EC2Engine extends ManagerBase {
                     ec2Group.setDomainId(group.getDomainId());
                     ec2Group.setId(group.getId().toString());
                     toPermission(ec2Group, group);
-
+                    List<CloudStackKeyValue> resourceTags = group.getTags();
+                    for(CloudStackKeyValue resourceTag : resourceTags) {
+                        EC2TagKeyValue param = new EC2TagKeyValue();
+                             param.setKey(resourceTag.getKey());
+                        if (resourceTag.getValue() != null)
+                            param.setValue(resourceTag.getValue());
+                        ec2Group.addResourceTag(param);
+                    }
                     groupSet.addGroup(ec2Group);
                 }
             return groupSet;
@@ -2510,6 +2517,8 @@ public class EC2Engine extends ManagerBase {
             return("template");
         else if(resourceType.equalsIgnoreCase("instance"))
             return("userVm");
+        else if (resourceType.equalsIgnoreCase("security-group"))
+            return("securityGroup");
         else
             return resourceType;
     }
@@ -2525,6 +2534,8 @@ public class EC2Engine extends ManagerBase {
             return("image");
         else if(resourceType.equalsIgnoreCase("userVm"))
             return("instance");
+        else if(resourceType.equalsIgnoreCase("securityGroup"))
+            return("security-group");
         else
             return (resourceType.toLowerCase());
     }
