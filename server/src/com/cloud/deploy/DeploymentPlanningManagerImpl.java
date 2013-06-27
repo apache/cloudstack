@@ -452,8 +452,21 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
             if (dedicatedZone != null) {
                 long accountDomainId = vmProfile.getOwner().getDomainId();
+                long accountId = vmProfile.getOwner().getAccountId();
                 if (dedicatedZone.getDomainId() != null && !dedicatedZone.getDomainId().equals(accountDomainId)) {
                     throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated.");
+                }
+
+                // If a zone is dedicated to an account then all hosts in this zone will be explicitly dedicated to
+                // that account. So there won't be any shared hosts in the zone, the only way to deploy vms from that
+                // account will be to use explicit dedication affinity group.
+                if (dedicatedZone.getAccountId() != null) {
+                    if (dedicatedZone.getAccountId().equals(accountId)) {
+                        throw new CloudRuntimeException("Failed to deploy VM. There are no shared hosts available in" +
+                                " this dedicated zone.");
+                    } else {
+                        throw new CloudRuntimeException("Failed to deploy VM. Zone " + dc.getName() + " is dedicated.");
+                    }
                 }
             }
 
