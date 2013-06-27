@@ -1744,16 +1744,8 @@ public class EC2Engine extends ManagerBase {
 
     private CloudStackServiceOfferingVO getCSServiceOfferingId(String instanceType) throws Exception {
         try {
-            // list of valid values for AWS EC2 instanceType
-            String[] validInstanceTypes = {"t1.micro", "m1.small", "m1.medium", "m1.large", "m1.xlarge",
-                    "c1.medium", "c1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge",
-                    "m3.xlarge", "m3.2xlarge", "hi1.4xlarge", "cc1.4xlarge", "cg1.4xlarge", "cc2.8xlarge"};
-
             if (instanceType == null)
                 instanceType = "m1.small"; // default value
-            else if ( !Arrays.asList(validInstanceTypes).contains(instanceType)) { 
-                throw new Exception("Specified instance type is invalid");
-            }
             return scvoDao.getSvcOfferingByName(instanceType);
         } catch(Exception e) {
             logger.error( "Error while retrieving ServiceOffering information by name - ", e);
