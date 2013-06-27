@@ -988,8 +988,21 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 usageInstances = m_usageInstanceDao.search(sc, null);
                 if (usageInstances == null || (usageInstances.size() == 0)) {
                     s_logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
+                } else if (usageInstances.size() == 1) {
+                    UsageVMInstanceVO usageInstance = usageInstances.get(0);
+                    if(usageInstance.getSerivceOfferingId() != soId){
+                        //Service Offering changed after Vm creation
+                        //End current Allocated usage and create new Allocated Vm entry with new soId
+                        usageInstance.setEndDate(event.getCreateDate());
+                        m_usageInstanceDao.update(usageInstance);
+                        usageInstance.setServiceOfferingId(soId);
+                        usageInstance.setStartDate(event.getCreateDate());
+                        usageInstance.setEndDate(null);
+                        m_usageInstanceDao.persist(usageInstance);
+                    }
                 }
-                
+
+
                 Long templateId = event.getTemplateId();
                 String hypervisorType = event.getResourceType();
 
