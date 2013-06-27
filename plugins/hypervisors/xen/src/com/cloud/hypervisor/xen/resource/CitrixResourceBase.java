@@ -3721,8 +3721,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
         long beginTime = System.currentTimeMillis();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") sent to " + c.getSessionReference() +  " is pending completion with a " + timeout + "ms timeout");
+        }
         while (task.getStatus(c) == Types.TaskStatusType.PENDING) {
             try {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") is pending, sleeping for " + pollInterval + "ms");
+                }
                 Thread.sleep(pollInterval);
             } catch (InterruptedException e) {
             }
@@ -3737,6 +3743,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected void checkForSuccess(Connection c, Task task) throws XenAPIException, XmlRpcException {
         if (task.getStatus(c) == Types.TaskStatusType.SUCCESS) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") completed");
+            }
             return;
         } else {
             String msg = "Task failed! Task record: " + task.getRecord(c);
