@@ -72,6 +72,4 @@ public interface ManagementServer extends ManagementService, PluggableService  {
     String getEncryptionIV();
     void resetEncryptionKeyIV();
 
-    boolean getExecuteInSequence();
-
 }

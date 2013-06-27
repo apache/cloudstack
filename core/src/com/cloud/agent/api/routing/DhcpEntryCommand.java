@@ -32,7 +32,6 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String ip6Gateway;
     String duid;
     private boolean isDefault;
-    boolean executeInSequence = false;
 
     protected DhcpEntryCommand() {
 
@@ -40,20 +39,19 @@ public class DhcpEntryCommand extends NetworkElementCommand {
 
     @Override
     public boolean executeInSequence() {
-        return executeInSequence;
+        return true;
     }
 
-    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address, boolean executeInSequence) {
+    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address) {
         this.vmMac = vmMac;
         this.vmIpAddress = vmIpAddress;
         this.vmName = vmName;
         this.vmIp6Address = vmIp6Address;
         this.setDefault(true);
-        this.executeInSequence = executeInSequence;
     }
 
-    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address, String dns, String gateway, String ip6Gateway, boolean executeInSequence) {
-        this(vmMac, vmIpAddress, vmName, vmIp6Address, executeInSequence);
+    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address, String dns, String gateway, String ip6Gateway) {
+        this(vmMac, vmIpAddress, vmName, vmIp6Address);
         this.dns = dns;
         this.gateway = gateway;
     }

@@ -152,7 +152,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
     private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress,
             String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String vmUuid, String publicKey) {
-        VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkMgr.getExecuteInSeqNtwkElmtCmd());
+        VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName);
 
         cmd.addVmData("userdata", "user-data", userData);
         cmd.addVmData("metadata", "service-offering", serviceOffering);
@@ -217,7 +217,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             Commands cmds = new Commands(OnError.Continue);
             if (password != null && nic.isDefaultNic()) {
                 final String encodedPassword = PasswordGenerator.rot13(password);
-                SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), uservm.getVirtualMachine().getHostName(), _networkMgr.getExecuteInSeqNtwkElmtCmd());
+                SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), uservm.getVirtualMachine().getHostName());
                 cmds.addCommand("password", cmd);
             }
             String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(uservm.getServiceOfferingId()).getDisplayText();

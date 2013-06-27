@@ -879,10 +879,4 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     public Nic getNicInNetworkIncludingRemoved(long vmId, long networkId) {
         return null;
     }
-
-    @Override
-    public boolean getExecuteInSeqNtwkElmtCmd() {
-        // TODO Auto-generated method stub
-        return false;
-    }
 }

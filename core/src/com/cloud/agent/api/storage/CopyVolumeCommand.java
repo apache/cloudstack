@@ -28,24 +28,22 @@ public class CopyVolumeCommand extends Command {
 	String secondaryStorageURL;
 	boolean toSecondaryStorage;
 	String vmName;
-	boolean executeInSequence = false;
 
 	public CopyVolumeCommand() {
 	}
 
-	public CopyVolumeCommand(long volumeId, String volumePath, StoragePool pool, String secondaryStorageURL, boolean toSecondaryStorage, int wait, boolean executeInSequence) {
+	public CopyVolumeCommand(long volumeId, String volumePath, StoragePool pool, String secondaryStorageURL, boolean toSecondaryStorage, int wait) {
 		this.volumeId = volumeId;
 		this.volumePath = volumePath;
 		this.pool = new StorageFilerTO(pool);
 		this.secondaryStorageURL = secondaryStorageURL;
 		this.toSecondaryStorage = toSecondaryStorage;
 		setWait(wait);
-		this.executeInSequence = executeInSequence;
 	}
 
     @Override
     public boolean executeInSequence() {
-        return executeInSequence;
+        return true;
     }
 
 	public String getVolumePath() {

@@ -386,5 +386,4 @@ public interface NetworkManager  {
     DhcpServiceProvider getDhcpServiceProvider(Network network);
 
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
-
 }

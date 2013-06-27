@@ -25,9 +25,7 @@
 source /root/func.sh
 
 lock="passwdlock"
-#default timeout value is 30 mins as password reset command is not synchronized on agent side any more,
-#and multiple commands can be sent to the same VR at a time
-locked=$(getLockFile $lock 1800)
+locked=$(getLockFile $lock)
 if [ "$locked" != "1" ]
 then
     exit 1

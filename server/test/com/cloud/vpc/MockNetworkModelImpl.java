@@ -892,10 +892,4 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
 
-    @Override
-    public boolean getExecuteInSeqNtwkElmtCmd() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
 }
