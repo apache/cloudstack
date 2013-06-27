@@ -3682,6 +3682,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     private void createFirewallRulesCommands(List<? extends FirewallRule> rules, VirtualRouter router, Commands cmds, long guestNetworkId) {
         List<FirewallRuleTO> rulesTO = null;
         String systemRule = null;
+        Boolean defaultEgressPolicy = false;
         if (rules != null) {
             if (rules.size() > 0) {
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
@@ -3696,17 +3697,17 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr(),Purpose.Firewall,traffictype);
                     rulesTO.add(ruleTO);
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress){
+                    NetworkVO network = _networkDao.findById(guestNetworkId);
+                    NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                    defaultEgressPolicy = offering.getEgressDefaultPolicy();
                     assert (rule.getSourceIpAddressId()==null) : "ipAddressId should be null for egress firewall rule. ";
-                    FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null,"",Purpose.Firewall, traffictype);
+                    FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null,"",Purpose.Firewall, traffictype, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
                 }
             }
         }
 
 
-        NetworkVO network = _networkDao.findById(guestNetworkId);
-        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        Boolean defaultEgressPolicy = offering.getEgressDefaultPolicy();
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rulesTO);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(guestNetworkId, router.getId()));

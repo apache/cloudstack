@@ -109,6 +109,12 @@ public class FirewallRuleTO implements InternalIdentity {
         this.trafficType = trafficType;
     }
 
+    public FirewallRuleTO(FirewallRule rule, String srcVlanTag, String srcIp, FirewallRule.Purpose purpose, FirewallRule.TrafficType trafficType, boolean defaultEgressPolicy) {
+        this(rule.getId(),srcVlanTag, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, purpose,rule.getSourceCidrList(),rule.getIcmpType(),rule.getIcmpCode());
+        this.trafficType = trafficType;
+        this.defaultEgressPolicy = defaultEgressPolicy;
+    }
+
     public FirewallRuleTO(FirewallRule rule, String srcVlanTag, String srcIp, FirewallRule.Purpose purpose, boolean revokeState, boolean alreadyAdded) {
         this(rule.getId(),srcVlanTag, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), revokeState, alreadyAdded, purpose,rule.getSourceCidrList(),rule.getIcmpType(),rule.getIcmpCode());
     }
