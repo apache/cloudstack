@@ -20,8 +20,6 @@ package org.apache.cloudstack.framework.jobs.impl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -819,7 +817,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         SearchCriteria<Long> joinJobSC = JoinJobSearch.create("joinJobId", joinedJobId);
 
         List<Long> result = _joinMapDao.customSearch(joinJobSC, null);
-        if (result.size() != 0) {
+        if (result.size() > 0) {
             Collections.sort(result);
             Long[] ids = result.toArray(new Long[result.size()]);
 
@@ -849,55 +847,36 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
-        try {
-            txn.start();
 
+        SearchCriteria<Long> sc = JoinJobTimeSearch.create();
+        sc.setParameters("beginTime", DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+        sc.setParameters("endTime", DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
 
-            //
-            // performance sensitive processing, do it in plain SQL
-            //
-            String sql = "UPDATE async_job SET job_pending_signals=? WHERE id IN " +
-                    "(SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ?)";
-            pstmt = txn.prepareStatement(sql);
-            pstmt.setInt(1, AsyncJob.Constants.SIGNAL_MASK_WAKEUP);
-            pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            pstmt.setString(3, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            pstmt.executeUpdate();
-            pstmt.close();
+        List<Long> result = _joinMapDao.customSearch(sc, null);
 
-            sql = "UPDATE sync_queue_item SET queue_proc_msid=NULL, queue_proc_number=NULL WHERE content_id IN " +
-                    "(SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ?)";
-            pstmt = txn.prepareStatement(sql);
-            pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            pstmt.executeUpdate();
-            pstmt.close();
+        txn.start();
+        if (result.size() > 0) {
+            Collections.sort(result);
+            Long[] ids = result.toArray(new Long[result.size()]);
 
-            sql = "SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
-            pstmt = txn.prepareStatement(sql);
-            pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                standaloneList.add(rs.getLong(1));
-            }
-            rs.close();
-            pstmt.close();
+            AsyncJobVO job = _jobDao.createForUpdate();
+            job.setPendingSignals(AsyncJob.Constants.SIGNAL_MASK_WAKEUP);
 
-            // update for next wake-up
-            sql = "UPDATE async_job_join_map SET next_wakeup=DATE_ADD(next_wakeup, INTERVAL wakeup_interval SECOND) WHERE next_wakeup < ? AND expiration > ?";
-            pstmt = txn.prepareStatement(sql);
-            pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-            pstmt.executeUpdate();
-            pstmt.close();
+            SearchCriteria<AsyncJobVO> sc2 = JobIdsSearch.create("ids", ids);
+            SearchCriteria<SyncQueueItemVO> queueItemsSC = QueueJobIdsSearch.create("contentIds", ids);
 
-            txn.commit();
-        } catch (SQLException e) {
-            s_logger.error("Unexpected exception", e);
+            _jobDao.update(job, sc2);
+
+            SyncQueueItemVO item = _queueItemDao.createForUpdate();
+            item.setLastProcessNumber(null);
+            item.setLastProcessMsid(null);
+            _queueItemDao.update(item, queueItemsSC);
         }
 
-        return standaloneList;
+        List<Long> wakupIds = _joinMapDao.findJobsToWakeBetween(cutDate);
+        txn.commit();
+
+        return wakupIds;
     }
 
     @Override
@@ -925,7 +904,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         JoinJobSearch.selectField(JoinJobSearch.entity().getJobId());
         JoinJobSearch.done();
 
-        JoinJobTimeSearch
+        JoinJobTimeSearch = _joinMapDao.createSearchBuilder(Long.class);
+        JoinJobTimeSearch.and(JoinJobTimeSearch.entity().getNextWakeupTime(), Op.LT, "beginTime");
+        JoinJobTimeSearch.and(JoinJobTimeSearch.entity().getExpiration(), Op.GT, "endTime");
+        JoinJobTimeSearch.selectField(JoinJobTimeSearch.entity().getJobId()).done();
 
         JobIdsSearch = _jobDao.createSearchBuilder();
         JobIdsSearch.and(JobIdsSearch.entity().getId(), Op.IN, "ids").done();
