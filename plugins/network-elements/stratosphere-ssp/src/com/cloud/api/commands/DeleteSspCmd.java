@@ -18,13 +18,15 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -32,7 +34,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.SspService;
-import com.cloud.user.UserContext;
 
 @APICommand(name="deleteStratosphereSsp", responseObject=SuccessResponse.class, description="Removes stratosphere ssp server")
 public class DeleteSspCmd extends BaseCmd {
@@ -51,7 +52,7 @@ public class DeleteSspCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccountId();
     }
 
     @Override
@@ -61,7 +62,7 @@ public class DeleteSspCmd extends BaseCmd {
         s_logger.trace("execute");
         SuccessResponse resp = new SuccessResponse();
         resp.setSuccess(_service.deleteSspHost(this));
-        this.setResponseObject(resp);
+        setResponseObject(resp);
     }
 
     public Long getHostId() {

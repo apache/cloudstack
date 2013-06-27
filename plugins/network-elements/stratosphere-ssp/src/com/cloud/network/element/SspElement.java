@@ -66,15 +66,14 @@ import com.cloud.network.dao.SspTenantVO;
 import com.cloud.network.dao.SspUuidDao;
 import com.cloud.network.dao.SspUuidVO;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.resource.ResourceManager;
 
 /**
  * Stratosphere sdn platform network element
@@ -306,6 +305,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         return _hostDao.remove(cmd.getHostId());
     }
 
+    @Override
     public boolean createNetwork(Network network, NetworkOffering offering,
             DeployDestination dest, ReservationContext context){
         if(_sspUuidDao.findUuidByNetwork(network) != null){
@@ -343,6 +343,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         }
     }
 
+    @Override
     public boolean deleteNetwork(Network network){
         String tenantNetworkUuid = _sspUuidDao.findUuidByNetwork(network);
         if(tenantNetworkUuid != null){
@@ -364,6 +365,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     }
 
     // we use context.reservationId for dedup of guru & element operations.
+    @Override
     public boolean createNicEnv(Network network, NicProfile nic, DeployDestination dest, ReservationContext context){
         String tenantNetworkUuid = _sspUuidDao.findUuidByNetwork(network);
         if(tenantNetworkUuid == null){
@@ -415,6 +417,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         return false;
     }
 
+    @Override
     public boolean deleteNicEnv(Network network, NicProfile nic, ReservationContext context){
         if(context==null){
             s_logger.error("ReservationContext was null for "+nic+" "+network);
@@ -507,7 +510,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
      */
     @Override
     public boolean prepare(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
                     throws ConcurrentOperationException, ResourceUnavailableException,
                     InsufficientCapacityException {
@@ -524,7 +527,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
      */
     @Override
     public boolean release(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
         s_logger.trace("release");
@@ -567,7 +570,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
 
     @Override
     public boolean prepareMigration(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context) {
         try {
             prepare(network, nic, vm, dest, context);
@@ -586,7 +589,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
 
     @Override
     public void rollbackMigration(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext src, ReservationContext dst) {
         try {
             release(network, nic, vm, dst);
@@ -599,7 +602,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
 
     @Override
     public void commitMigration(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext src, ReservationContext dst) {
         try {
             release(network, nic, vm, src);

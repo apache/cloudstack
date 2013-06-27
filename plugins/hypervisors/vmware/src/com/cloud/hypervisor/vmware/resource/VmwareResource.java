@@ -2777,7 +2777,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 newVal = new OptionValue();
                 newVal.setKey("nvp.iface-id" + nicNum);
-                newVal.setValue(nicTo.getUuid());
+                newVal.setValue(nicTo.getNicUuid());
                 extraOptions.add(newVal);
                 nicNum++;
             }

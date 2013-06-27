@@ -17,12 +17,14 @@
 package com.cloud.api.commands;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.response.SspResponse;
 import com.cloud.dc.dao.DataCenterDao;
@@ -33,7 +35,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.network.element.SspService;
-import com.cloud.user.UserContext;
 
 
 @APICommand(name="addStratosphereSsp", responseObject=SspResponse.class, description="Adds stratosphere ssp server")
@@ -70,7 +71,7 @@ public class AddSspCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccountId();
     }
 
     @Override
@@ -82,10 +83,10 @@ public class AddSspCmd extends BaseCmd {
         SspResponse response = new SspResponse();
         response.setResponseName(getCommandName());
         response.setObjectName("ssphost");
-        response.setUrl(this.getUrl());
+        response.setUrl(getUrl());
         response.setZoneId(_dcDao.findById(getZoneId()).getUuid());
         response.setHostId(host.getUuid());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     public Long getZoneId() {

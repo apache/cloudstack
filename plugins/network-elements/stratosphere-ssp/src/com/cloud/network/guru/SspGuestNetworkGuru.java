@@ -38,7 +38,6 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -117,7 +116,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public void reserve(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
                     throws InsufficientVirtualNetworkCapcityException,
                     InsufficientAddressCapacityException {
@@ -127,7 +126,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public boolean release(NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             String reservationId) {
         Network network = _networkDao.findById(nic.getNetworkId());
         _sspMgr.deleteNicEnv(network, nic, new ReservationContextImpl(reservationId, null, null));
@@ -141,7 +140,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public boolean prepareMigration(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context) {
         try {
             reserve(nic, network, vm, dest, context);
@@ -157,14 +156,14 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public void rollbackMigration(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext src, ReservationContext dst) {
         release(nic, vm, dst.getReservationId());
     }
 
     @Override
     public void commitMigration(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext src, ReservationContext dst) {
         release(nic, vm, src.getReservationId());
     }
