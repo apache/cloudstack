@@ -73,6 +73,7 @@
   <!--
     Stratosphere SSP support components
   -->
+  <!--
   <bean id="sspCredentialDaoImpl" class="com.cloud.network.dao.SspCredentialDaoImpl"/>
   <bean id="sspTenantDaoImpl" class="com.cloud.network.dao.SspTenantDaoImpl"/>
   <bean id="sspUuidDaoImpl" class="com.cloud.network.dao.SspUuidDaoImpl"/>
@@ -82,6 +83,7 @@
   <bean id="StratosphereSsp" class="com.cloud.network.element.SspElement">
     <property name="name" value="StratosphereSsp"/>
   </bean>
+  -->
 
 <!--
 

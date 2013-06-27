@@ -19,15 +19,12 @@ package org.apache.cloudstack.framework.jobs.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.sql.PreparedStatement;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -841,16 +838,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @DB
     protected List<Long> wakeupScan() {
-        List<Long> standaloneList = new ArrayList<Long>();
-
         Date cutDate = DateUtil.currentGMTTime();
-
         Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
 
         SearchCriteria<Long> sc = JoinJobTimeSearch.create();
-        sc.setParameters("beginTime", DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
-        sc.setParameters("endTime", DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+        sc.setParameters("beginTime", cutDate);
+        sc.setParameters("endTime", cutDate);
 
         List<Long> result = _joinMapDao.customSearch(sc, null);
 
