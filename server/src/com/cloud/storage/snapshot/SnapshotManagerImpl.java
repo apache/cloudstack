@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
@@ -1031,7 +1032,12 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         // Create the Snapshot object and save it so we can return it to the
         // user        
-        HypervisorType hypervisorType = this._volsDao.getHypervisorType(volumeId);
+        HypervisorType hypervisorType = HypervisorType.None;
+        if (storagePoolVO.getScope() == ScopeType.ZONE) {
+            hypervisorType = storagePoolVO.getHypervisor();
+        } else {
+            hypervisorType = this._volsDao.getHypervisorType(volumeId);
+        }
         SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), null, snapshotName,
                 (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
         SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
