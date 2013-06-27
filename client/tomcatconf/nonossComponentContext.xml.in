@@ -183,7 +183,6 @@
      
 -->
 
-
   <!--Motion Strategies-->
   <bean id="vmwareStorageMotionStrategy" class="org.apache.cloudstack.storage.motion.VmwareStorageMotionStrategy" />
   <bean id="dataMotionServiceImpl" class="org.apache.cloudstack.storage.motion.DataMotionServiceImpl">
