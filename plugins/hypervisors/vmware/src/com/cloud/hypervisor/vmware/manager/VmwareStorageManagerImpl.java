@@ -687,7 +687,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String result;
         Script command;
         String templateVMDKName = "";
-        String snapshotFullVMDKName = snapshotRoot + "/";
+        //String snapshotFullVMDKName = snapshotRoot + "/";
+        // the backedUpSnapshotUuid field currently has the format: uuid/uuid. so we need to extract the uuid out
+        String backupSSUuid = backedUpSnapshotUuid.substring(0, backedUpSnapshotUuid.indexOf('/'));
+        String snapshotFullVMDKName = snapshotRoot + "/" + backupSSUuid + "/";
 
         synchronized(installPath.intern()) {
             command = new Script(false, "mkdir", _timeout, s_logger);
@@ -742,12 +745,15 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         throw new Exception(msg);
                      }
 
-                     File snapshotdir = new File(snapshotRoot);
+                     s_logger.info("vmdkfile parent dir: " + snapshotFullVMDKName);
+                     File snapshotdir = new File(snapshotFullVMDKName);
+                     // File snapshotdir = new File(snapshotRoot);
                      File[] ssfiles = snapshotdir.listFiles();
                      // List<String> filenames = new ArrayList<String>();
                      for (int i = 0; i < ssfiles.length; i++) {
                          String vmdkfile = ssfiles[i].getName();
-                         if(vmdkfile.toLowerCase().startsWith(backedUpSnapshotUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
+                         s_logger.info("vmdk file name: " + vmdkfile);
+                         if(vmdkfile.toLowerCase().startsWith(backupSSUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
                               snapshotFullVMDKName += vmdkfile;
                               templateVMDKName += vmdkfile;
                               break;
