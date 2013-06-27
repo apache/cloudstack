@@ -27,7 +27,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -39,6 +38,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
@@ -152,41 +152,14 @@ public class TemplateObject implements TemplateInfo {
         return this.imageVO.getFormat();
     }
 
-    // public boolean stateTransit(TemplateEvent e) throws NoTransitionException
-    // {
-    // this.imageVO = imageDao.findById(this.imageVO.getId());
-    // boolean result = imageMgr.getStateMachine().transitTo(this.imageVO, e,
-    // null, imageDao);
-    // this.imageVO = imageDao.findById(this.imageVO.getId());
-    // return result;
-    // }
-
     @Override
     public void processEvent(Event event) {
         try {
-            if (this.getDataStore().getRole() == DataStoreRole.Image
-                    || this.getDataStore().getRole() == DataStoreRole.ImageCache) {
-                TemplateEvent templEvent = null;
-                if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
-                    templEvent = TemplateEvent.CreateRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested) {
-                    templEvent = TemplateEvent.DestroyRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
-                    templEvent = TemplateEvent.OperationSucceeded;
-                } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                    templEvent = TemplateEvent.OperationFailed;
-                }
-
-                // if (templEvent != null && this.getDataStore().getRole() ==
-                // DataStoreRole.Image) {
-                // this.stateTransit(templEvent);
-                // }
-            }
-
             objectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {
-            s_logger.debug("failed to update state", e);
-            throw new CloudRuntimeException("Failed to update state" + e.toString());
+            throw new CloudRuntimeException("Failed to update state", e);
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Failed to update state", e);
         } finally {
             // in case of OperationFailed, expunge the entry
             if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
@@ -229,22 +202,6 @@ public class TemplateObject implements TemplateInfo {
                         this.imageDao.update(templateVO.getId(), templateVO);
                     }
                 }
-
-                TemplateEvent templEvent = null;
-                if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
-                    templEvent = TemplateEvent.CreateRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested) {
-                    templEvent = TemplateEvent.DestroyRequested;
-                } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
-                    templEvent = TemplateEvent.OperationSucceeded;
-                } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
-                    templEvent = TemplateEvent.OperationFailed;
-                }
-
-                // if (templEvent != null && this.getDataStore().getRole() ==
-                // DataStoreRole.Image) {
-                // this.stateTransit(templEvent);
-                // }
             }
             objectInStoreMgr.update(this, event);
         } catch (NoTransitionException e) {

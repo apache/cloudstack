@@ -42,6 +42,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.S3TO;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -127,14 +128,14 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 if (dataStore.getTO() instanceof S3TO) {
                     TemplateInfo tmpl = (TemplateInfo) obj;
                     installPath += "/" + tmpl.getUniqueName(); // for S3, we
-                                                               // append
-                                                               // template name
-                                                               // in the path
-                                                               // for template
-                                                               // sync since we
-                                                               // don't have
-                                                               // template.properties
-                                                               // there
+                    // append
+                    // template name
+                    // in the path
+                    // for template
+                    // sync since we
+                    // don't have
+                    // template.properties
+                    // there
                 }
                 ts.setInstallPath(installPath);
                 ts.setState(ObjectInDataStoreStateMachine.State.Allocated);
@@ -221,34 +222,39 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     }
 
     @Override
-    public boolean update(DataObject data, Event event) throws NoTransitionException {
+    public boolean update(DataObject data, Event event) throws NoTransitionException, ConcurrentOperationException {
         DataObjectInStore obj = this.findObject(data, data.getDataStore());
         if (obj == null) {
             throw new CloudRuntimeException("can't find mapping in ObjectInDataStore table for: " + data);
         }
 
+        boolean result = true;
         if (data.getDataStore().getRole() == DataStoreRole.Image
                 || data.getDataStore().getRole() == DataStoreRole.ImageCache) {
             switch (data.getType()) {
             case TEMPLATE:
-                this.stateMachines.transitTo(obj, event, null, templateDataStoreDao);
+                result = this.stateMachines.transitTo(obj, event, null, templateDataStoreDao);
                 break;
             case SNAPSHOT:
-                this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
+                result = this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
                 break;
             case VOLUME:
-                this.stateMachines.transitTo(obj, event, null, volumeDataStoreDao);
+                result = this.stateMachines.transitTo(obj, event, null, volumeDataStoreDao);
                 break;
             }
         } else if (data.getType() == DataObjectType.TEMPLATE && data.getDataStore().getRole() == DataStoreRole.Primary) {
 
-            this.stateMachines.transitTo(obj, event, null, templatePoolDao);
+            result = this.stateMachines.transitTo(obj, event, null, templatePoolDao);
 
         } else if (data.getType() == DataObjectType.SNAPSHOT && data.getDataStore().getRole() == DataStoreRole.Primary) {
-            this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
+            result = this.stateMachines.transitTo(obj, event, null, snapshotDataStoreDao);
         } else {
             throw new CloudRuntimeException("Invalid data or store type: " + data.getType() + " "
                     + data.getDataStore().getRole());
+        }
+
+        if (!result){
+            throw new ConcurrentOperationException("Multiple threads are trying to update data object state, racing condition");
         }
         return true;
     }

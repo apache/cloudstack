@@ -22,6 +22,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 
 import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -32,7 +33,7 @@ public interface ObjectInDataStoreManager {
 
     public DataObject get(DataObject dataObj, DataStore store);
 
-    public boolean update(DataObject vo, Event event) throws NoTransitionException;
+    public boolean update(DataObject vo, Event event) throws NoTransitionException, ConcurrentOperationException;
 
     DataObjectInStore findObject(long objId, DataObjectType type, long dataStoreId, DataStoreRole role);
 

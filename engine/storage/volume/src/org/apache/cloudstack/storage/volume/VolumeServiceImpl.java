@@ -332,7 +332,7 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
         } catch (Exception e) {
-            s_logger.info("Got exception in case of multi-thread");
+            s_logger.info("Multiple threads are trying to copy template to primary storage, current thread should just wait");
             try {
                 templateOnPrimaryStoreObj = waitForTemplateDownloaded(dataStore, template);
             } catch (Exception e1) {
@@ -1050,7 +1050,7 @@ public class VolumeServiceImpl implements VolumeService {
                         try {
                             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()),
                                     com.cloud.configuration.Resource.ResourceType.secondary_storage, volInfo.getSize()
-                                            - volInfo.getPhysicalSize());
+                                    - volInfo.getPhysicalSize());
                         } catch (ResourceAllocationException e) {
                             s_logger.warn(e.getMessage());
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED,
@@ -1075,8 +1075,8 @@ public class VolumeServiceImpl implements VolumeService {
         if (toBeDownloaded.size() > 0) {
             for (VolumeDataStoreVO volumeHost : toBeDownloaded) {
                 if (volumeHost.getDownloadUrl() == null) { // If url is null we
-                                                           // can't initiate the
-                                                           // download
+                    // can't initiate the
+                    // download
                     continue;
                 }
                 s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + store.getName());
