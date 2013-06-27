@@ -541,12 +541,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     ServerResource resource = entry.getKey();
 
-                    // For Hyper-V, we are here means agent have already started
-                    // and connected to management server
-                    if (hypervisorType == Hypervisor.HypervisorType.Hyperv) {
-                        break;
-                    }
-
                     HostVO host = (HostVO) createHostAndAgent(resource, entry.getValue(), true, null, false);
                     if (host != null) {
                         hosts.add(host);

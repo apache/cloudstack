@@ -537,10 +537,6 @@
     <property name="name" value="Lxc Discover"/>
   </bean>
 
-  <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
-    <property name="name" value="SCVMMServer"/>
-  </bean>
-
   <bean id="OvmDiscoverer" class="com.cloud.ovm.hypervisor.OvmDiscoverer">
     <property name="name" value="Ovm Discover"/>
   </bean>

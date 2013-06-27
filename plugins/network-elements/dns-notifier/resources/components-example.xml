@@ -113,7 +113,6 @@ under the License.
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
             <adapter name="Bare Metal Agent" class="com.cloud.baremetal.BareMetalDiscoverer"/>
-            <adapter name="SCVMMServer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer"/>            
 			<adapter name="Ovm Discover" class="com.cloud.ovm.hypervisor.OvmDiscoverer" />
         </adapters>
         <adapters key="com.cloud.deploy.DeploymentPlanner">
@@ -147,7 +146,6 @@ under the License.
             <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
             <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
             <adapter name="BareMetalGuru" class="com.cloud.baremetal.BareMetalGuru"/>
-            <adapter name="HypervGuru" class="com.cloud.hypervisor.guru.HypervGuru"/>            
             <adapter name="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru" />
         </adapters>
         <adapters key="com.cloud.agent.StartupCommandProcessor">
