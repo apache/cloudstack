@@ -1,45 +1,29 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
 
 /**
- * ProductCodeSetType.java
+ * ImportInstanceGroupItemType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5  Built on : Apr 30, 2009 (06:07:47 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
             
 
             /**
-            *  ProductCodeSetType bean class
+            *  ImportInstanceGroupItemType bean class
             */
         
-        public  class ProductCodeSetType
+        public  class ImportInstanceGroupItemType
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
-                name = ProductCodeSetType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-08-31/
+                name = ImportInstanceGroupItemType
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-08-31/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -48,86 +32,92 @@
         
 
                         /**
-                        * field for Item
-                        * This was an Array!
+                        * field for GroupId
                         */
 
                         
-                                    protected com.amazon.ec2.ProductCodeType[] localItem ;
+                                    protected java.lang.String localGroupId ;
                                 
                            /*  This tracker boolean wil be used to detect whether the user called the set method
                           *   for this attribute. It will be used to determine whether to include this field
                            *   in the serialized XML
                            */
-                           protected boolean localItemTracker = false ;
+                           protected boolean localGroupIdTracker = false ;
                            
 
                            /**
                            * Auto generated getter method
-                           * @return com.amazon.ec2.ProductCodeType[]
+                           * @return java.lang.String
                            */
-                           public  com.amazon.ec2.ProductCodeType[] getItem(){
-                               return localItem;
+                           public  java.lang.String getGroupId(){
+                               return localGroupId;
                            }
 
                            
                         
-
-
-                               
-                              /**
-                               * validate the array for Item
+                            /**
+                               * Auto generated setter method
+                               * @param param GroupId
                                */
-                              protected void validateItem(com.amazon.ec2.ProductCodeType[] param){
-                             
-                              }
-
-
-                             /**
-                              * Auto generated setter method
-                              * @param param Item
-                              */
-                              public void setItem(com.amazon.ec2.ProductCodeType[] param){
-                              
-                                   validateItem(param);
-
-                               
-                                          if (param != null){
-                                             //update the setting tracker
-                                             localItemTracker = true;
-                                          } else {
-                                             localItemTracker = false;
-                                                 
-                                          }
-                                      
-                                      this.localItem=param;
-                              }
-
-                               
-                             
-                             /**
-                             * Auto generated add method for the array for convenience
-                             * @param param com.amazon.ec2.ProductCodeType
-                             */
-                             public void addItem(com.amazon.ec2.ProductCodeType param){
-                                   if (localItem == null){
-                                   localItem = new com.amazon.ec2.ProductCodeType[]{};
-                                   }
-
+                               public void setGroupId(java.lang.String param){
                             
-                                 //update the setting tracker
-                                localItemTracker = true;
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localGroupIdTracker = true;
+                                       } else {
+                                          localGroupIdTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localGroupId=param;
+                                    
+
+                               }
                             
 
-                               java.util.List list =
-                            org.apache.axis2.databinding.utils.ConverterUtil.toList(localItem);
-                               list.add(param);
-                               this.localItem =
-                             (com.amazon.ec2.ProductCodeType[])list.toArray(
-                            new com.amazon.ec2.ProductCodeType[list.size()]);
+                        /**
+                        * field for GroupName
+                        */
 
-                             }
-                             
+                        
+                                    protected java.lang.String localGroupName ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localGroupNameTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getGroupName(){
+                               return localGroupName;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param GroupName
+                               */
+                               public void setGroupName(java.lang.String param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localGroupNameTracker = true;
+                                       } else {
+                                          localGroupNameTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localGroupName=param;
+                                    
+
+                               }
+                            
 
      /**
      * isReaderMTOMAware
@@ -161,7 +151,7 @@
                        new org.apache.axis2.databinding.ADBDataSource(this,parentQName){
 
                  public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-                       ProductCodeSetType.this.serialize(parentQName,factory,xmlWriter);
+                       ImportInstanceGroupItemType.this.serialize(parentQName,factory,xmlWriter);
                  }
                };
                return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(
@@ -212,38 +202,88 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-08-31/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
-                           namespacePrefix+":ProductCodeSetType",
+                           namespacePrefix+":ImportInstanceGroupItemType",
                            xmlWriter);
                    } else {
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
-                           "ProductCodeSetType",
+                           "ImportInstanceGroupItemType",
                            xmlWriter);
                    }
 
                
                    }
-                if (localItemTracker){
-                                       if (localItem!=null){
-                                            for (int i = 0;i < localItem.length;i++){
-                                                if (localItem[i] != null){
-                                                 localItem[i].serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-08-31/","item"),
-                                                           factory,xmlWriter);
-                                                } else {
-                                                   
-                                                        // we don't have to do any thing since minOccures is zero
-                                                    
-                                                }
+                if (localGroupIdTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
 
-                                            }
-                                     } else {
-                                        
-                                               throw new org.apache.axis2.databinding.ADBException("item cannot be null!!");
-                                        
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"groupId", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"groupId");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("groupId");
                                     }
-                                 }
+                                
+
+                                          if (localGroupId==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new org.apache.axis2.databinding.ADBException("groupId cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localGroupId);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localGroupNameTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"groupName", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"groupName");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("groupName");
+                                    }
+                                
+
+                                          if (localGroupName==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new org.apache.axis2.databinding.ADBException("groupName cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localGroupName);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             }
                     xmlWriter.writeEndElement();
                
 
@@ -405,28 +445,25 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                 if (localItemTracker){
-                             if (localItem!=null) {
-                                 for (int i = 0;i < localItem.length;i++){
-
-                                    if (localItem[i] != null){
-                                         elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-08-31/",
-                                                                          "item"));
-                                         elementList.add(localItem[i]);
-                                    } else {
-                                        
-                                                // nothing to do
-                                            
-                                    }
-
-                                 }
-                             } else {
+                 if (localGroupIdTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "groupId"));
                                  
-                                        throw new org.apache.axis2.databinding.ADBException("item cannot be null!!");
-                                    
-                             }
-
-                        }
+                                        if (localGroupId != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localGroupId));
+                                        } else {
+                                           throw new org.apache.axis2.databinding.ADBException("groupId cannot be null!!");
+                                        }
+                                    } if (localGroupNameTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "groupName"));
+                                 
+                                        if (localGroupName != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localGroupName));
+                                        } else {
+                                           throw new org.apache.axis2.databinding.ADBException("groupName cannot be null!!");
+                                        }
+                                    }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -451,9 +488,9 @@
         * Postcondition: If this object is an element, the reader is positioned at its end element
         *                If this object is a complex type, the reader is positioned at the end element of its outer element
         */
-        public static ProductCodeSetType parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
-            ProductCodeSetType object =
-                new ProductCodeSetType();
+        public static ImportInstanceGroupItemType parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
+            ImportInstanceGroupItemType object =
+                new ImportInstanceGroupItemType();
 
             int event;
             java.lang.String nillableValue = null;
@@ -477,10 +514,10 @@
 
                     java.lang.String type = fullTypeName.substring(fullTypeName.indexOf(":")+1);
                     
-                            if (!"ProductCodeSetType".equals(type)){
+                            if (!"ImportInstanceGroupItemType".equals(type)){
                                 //find namespace for the prefix
                                 java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (ProductCodeSetType)com.amazon.ec2.ExtensionMapper.getTypeObject(
+                                return (ImportInstanceGroupItemType)com.amazon.ec2.ExtensionMapper.getTypeObject(
                                      nsUri,type,reader);
                               }
                         
@@ -502,48 +539,36 @@
                     
                     reader.next();
                 
-                        java.util.ArrayList list1 = new java.util.ArrayList();
-                    
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-08-31/","item").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","groupId").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setGroupId(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
                                 
                                     
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","groupName").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
                                     
-                                    // Process the array and step past its final element's end.
-                                    list1.add(com.amazon.ec2.ProductCodeType.Factory.parse(reader));
-                                                                
-                                                        //loop until we find a start element that is not part of this array
-                                                        boolean loopDone1 = false;
-                                                        while(!loopDone1){
-                                                            // We should be at the end element, but make sure
-                                                            while (!reader.isEndElement())
-                                                                reader.next();
-                                                            // Step out of this element
-                                                            reader.next();
-                                                            // Step to next element event.
-                                                            while (!reader.isStartElement() && !reader.isEndElement())
-                                                                reader.next();
-                                                            if (reader.isEndElement()){
-                                                                //two continuous end elements means we are exiting the xml structure
-                                                                loopDone1 = true;
-                                                            } else {
-                                                                if (new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-08-31/","item").equals(reader.getName())){
-                                                                    list1.add(com.amazon.ec2.ProductCodeType.Factory.parse(reader));
-                                                                        
-                                                                }else{
-                                                                    loopDone1 = true;
-                                                                }
-                                                            }
-                                                        }
-                                                        // call the converter utility  to convert and set the array
-                                                        
-                                                        object.setItem((com.amazon.ec2.ProductCodeType[])
-                                                            org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
-                                                                com.amazon.ec2.ProductCodeType.class,
-                                                                list1));
-                                                            
+                                              object.setGroupName(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
+                                        reader.next();
+                                    
                               }  // End of if for expected property start element
                                 
                                     else {

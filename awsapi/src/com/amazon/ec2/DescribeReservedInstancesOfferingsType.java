@@ -1,25 +1,9 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
 
 /**
  * DescribeReservedInstancesOfferingsType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +17,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = DescribeReservedInstancesOfferingsType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -267,6 +251,363 @@
                                }
                             
 
+                        /**
+                        * field for InstanceTenancy
+                        */
+
+                        
+                                    protected java.lang.String localInstanceTenancy ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localInstanceTenancyTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getInstanceTenancy(){
+                               return localInstanceTenancy;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param InstanceTenancy
+                               */
+                               public void setInstanceTenancy(java.lang.String param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localInstanceTenancyTracker = true;
+                                       } else {
+                                          localInstanceTenancyTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localInstanceTenancy=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for OfferingType
+                        */
+
+                        
+                                    protected java.lang.String localOfferingType ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localOfferingTypeTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getOfferingType(){
+                               return localOfferingType;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param OfferingType
+                               */
+                               public void setOfferingType(java.lang.String param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localOfferingTypeTracker = true;
+                                       } else {
+                                          localOfferingTypeTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localOfferingType=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for IncludeMarketplace
+                        */
+
+                        
+                                    protected boolean localIncludeMarketplace ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localIncludeMarketplaceTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return boolean
+                           */
+                           public  boolean getIncludeMarketplace(){
+                               return localIncludeMarketplace;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param IncludeMarketplace
+                               */
+                               public void setIncludeMarketplace(boolean param){
+                            
+                                       // setting primitive attribute tracker to true
+                                       
+                                               if (false) {
+                                           localIncludeMarketplaceTracker = false;
+                                              
+                                       } else {
+                                          localIncludeMarketplaceTracker = true;
+                                       }
+                                   
+                                            this.localIncludeMarketplace=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for MinDuration
+                        */
+
+                        
+                                    protected long localMinDuration ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localMinDurationTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return long
+                           */
+                           public  long getMinDuration(){
+                               return localMinDuration;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param MinDuration
+                               */
+                               public void setMinDuration(long param){
+                            
+                                       // setting primitive attribute tracker to true
+                                       
+                                               if (param==java.lang.Long.MIN_VALUE) {
+                                           localMinDurationTracker = false;
+                                              
+                                       } else {
+                                          localMinDurationTracker = true;
+                                       }
+                                   
+                                            this.localMinDuration=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for MaxDuration
+                        */
+
+                        
+                                    protected long localMaxDuration ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localMaxDurationTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return long
+                           */
+                           public  long getMaxDuration(){
+                               return localMaxDuration;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param MaxDuration
+                               */
+                               public void setMaxDuration(long param){
+                            
+                                       // setting primitive attribute tracker to true
+                                       
+                                               if (param==java.lang.Long.MIN_VALUE) {
+                                           localMaxDurationTracker = false;
+                                              
+                                       } else {
+                                          localMaxDurationTracker = true;
+                                       }
+                                   
+                                            this.localMaxDuration=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for MaxInstanceCount
+                        */
+
+                        
+                                    protected int localMaxInstanceCount ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localMaxInstanceCountTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return int
+                           */
+                           public  int getMaxInstanceCount(){
+                               return localMaxInstanceCount;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param MaxInstanceCount
+                               */
+                               public void setMaxInstanceCount(int param){
+                            
+                                       // setting primitive attribute tracker to true
+                                       
+                                               if (param==java.lang.Integer.MIN_VALUE) {
+                                           localMaxInstanceCountTracker = false;
+                                              
+                                       } else {
+                                          localMaxInstanceCountTracker = true;
+                                       }
+                                   
+                                            this.localMaxInstanceCount=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for NextToken
+                        */
+
+                        
+                                    protected java.lang.String localNextToken ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localNextTokenTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getNextToken(){
+                               return localNextToken;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param NextToken
+                               */
+                               public void setNextToken(java.lang.String param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localNextTokenTracker = true;
+                                       } else {
+                                          localNextTokenTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localNextToken=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for MaxResults
+                        */
+
+                        
+                                    protected int localMaxResults ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localMaxResultsTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return int
+                           */
+                           public  int getMaxResults(){
+                               return localMaxResults;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param MaxResults
+                               */
+                               public void setMaxResults(int param){
+                            
+                                       // setting primitive attribute tracker to true
+                                       
+                                               if (param==java.lang.Integer.MIN_VALUE) {
+                                           localMaxResultsTracker = false;
+                                              
+                                       } else {
+                                          localMaxResultsTracker = true;
+                                       }
+                                   
+                                            this.localMaxResults=param;
+                                    
+
+                               }
+                            
+
      /**
      * isReaderMTOMAware
      * @return true if the reader supports MTOM
@@ -350,7 +691,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":DescribeReservedInstancesOfferingsType",
@@ -367,10 +708,10 @@
                                             if (localReservedInstancesOfferingsSet==null){
                                                  throw new org.apache.axis2.databinding.ADBException("reservedInstancesOfferingsSet cannot be null!!");
                                             }
-                                           localReservedInstancesOfferingsSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","reservedInstancesOfferingsSet"),
+                                           localReservedInstancesOfferingsSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","reservedInstancesOfferingsSet"),
                                                factory,xmlWriter);
                                         } if (localInstanceTypeTracker){
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -404,7 +745,7 @@
                                     
                                    xmlWriter.writeEndElement();
                              } if (localAvailabilityZoneTracker){
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -438,7 +779,7 @@
                                     
                                    xmlWriter.writeEndElement();
                              } if (localProductDescriptionTracker){
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -475,9 +816,256 @@
                                             if (localFilterSet==null){
                                                  throw new org.apache.axis2.databinding.ADBException("filterSet cannot be null!!");
                                             }
-                                           localFilterSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","filterSet"),
+                                           localFilterSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","filterSet"),
                                                factory,xmlWriter);
+                                        } if (localInstanceTenancyTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"instanceTenancy", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"instanceTenancy");
                                         }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("instanceTenancy");
+                                    }
+                                
+
+                                          if (localInstanceTenancy==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new org.apache.axis2.databinding.ADBException("instanceTenancy cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localInstanceTenancy);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localOfferingTypeTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"offeringType", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"offeringType");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("offeringType");
+                                    }
+                                
+
+                                          if (localOfferingType==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new org.apache.axis2.databinding.ADBException("offeringType cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localOfferingType);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localIncludeMarketplaceTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"includeMarketplace", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"includeMarketplace");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("includeMarketplace");
+                                    }
+                                
+                                               if (false) {
+                                           
+                                                         throw new org.apache.axis2.databinding.ADBException("includeMarketplace cannot be null!!");
+                                                      
+                                               } else {
+                                                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localIncludeMarketplace));
+                                               }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localMinDurationTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"minDuration", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"minDuration");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("minDuration");
+                                    }
+                                
+                                               if (localMinDuration==java.lang.Long.MIN_VALUE) {
+                                           
+                                                         throw new org.apache.axis2.databinding.ADBException("minDuration cannot be null!!");
+                                                      
+                                               } else {
+                                                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMinDuration));
+                                               }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localMaxDurationTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"maxDuration", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"maxDuration");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("maxDuration");
+                                    }
+                                
+                                               if (localMaxDuration==java.lang.Long.MIN_VALUE) {
+                                           
+                                                         throw new org.apache.axis2.databinding.ADBException("maxDuration cannot be null!!");
+                                                      
+                                               } else {
+                                                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMaxDuration));
+                                               }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localMaxInstanceCountTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"maxInstanceCount", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"maxInstanceCount");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("maxInstanceCount");
+                                    }
+                                
+                                               if (localMaxInstanceCount==java.lang.Integer.MIN_VALUE) {
+                                           
+                                                         throw new org.apache.axis2.databinding.ADBException("maxInstanceCount cannot be null!!");
+                                                      
+                                               } else {
+                                                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMaxInstanceCount));
+                                               }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localNextTokenTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"nextToken", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"nextToken");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("nextToken");
+                                    }
+                                
+
+                                          if (localNextToken==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new org.apache.axis2.databinding.ADBException("nextToken cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localNextToken);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             } if (localMaxResultsTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"maxResults", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"maxResults");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("maxResults");
+                                    }
+                                
+                                               if (localMaxResults==java.lang.Integer.MIN_VALUE) {
+                                           
+                                                         throw new org.apache.axis2.databinding.ADBException("maxResults cannot be null!!");
+                                                      
+                                               } else {
+                                                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMaxResults));
+                                               }
+                                    
+                                   xmlWriter.writeEndElement();
+                             }
                     xmlWriter.writeEndElement();
                
 
@@ -640,7 +1228,7 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                  if (localReservedInstancesOfferingsSetTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "reservedInstancesOfferingsSet"));
                             
                             
@@ -649,7 +1237,7 @@
                                     }
                                     elementList.add(localReservedInstancesOfferingsSet);
                                 } if (localInstanceTypeTracker){
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "instanceType"));
                                  
                                         if (localInstanceType != null){
@@ -658,7 +1246,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("instanceType cannot be null!!");
                                         }
                                     } if (localAvailabilityZoneTracker){
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "availabilityZone"));
                                  
                                         if (localAvailabilityZone != null){
@@ -667,7 +1255,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("availabilityZone cannot be null!!");
                                         }
                                     } if (localProductDescriptionTracker){
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "productDescription"));
                                  
                                         if (localProductDescription != null){
@@ -676,7 +1264,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("productDescription cannot be null!!");
                                         }
                                     } if (localFilterSetTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "filterSet"));
                             
                             
@@ -684,7 +1272,64 @@
                                          throw new org.apache.axis2.databinding.ADBException("filterSet cannot be null!!");
                                     }
                                     elementList.add(localFilterSet);
-                                }
+                                } if (localInstanceTenancyTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "instanceTenancy"));
+                                 
+                                        if (localInstanceTenancy != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localInstanceTenancy));
+                                        } else {
+                                           throw new org.apache.axis2.databinding.ADBException("instanceTenancy cannot be null!!");
+                                        }
+                                    } if (localOfferingTypeTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "offeringType"));
+                                 
+                                        if (localOfferingType != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localOfferingType));
+                                        } else {
+                                           throw new org.apache.axis2.databinding.ADBException("offeringType cannot be null!!");
+                                        }
+                                    } if (localIncludeMarketplaceTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "includeMarketplace"));
+                                 
+                                elementList.add(
+                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localIncludeMarketplace));
+                            } if (localMinDurationTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "minDuration"));
+                                 
+                                elementList.add(
+                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMinDuration));
+                            } if (localMaxDurationTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "maxDuration"));
+                                 
+                                elementList.add(
+                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMaxDuration));
+                            } if (localMaxInstanceCountTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "maxInstanceCount"));
+                                 
+                                elementList.add(
+                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMaxInstanceCount));
+                            } if (localNextTokenTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "nextToken"));
+                                 
+                                        if (localNextToken != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localNextToken));
+                                        } else {
+                                           throw new org.apache.axis2.databinding.ADBException("nextToken cannot be null!!");
+                                        }
+                                    } if (localMaxResultsTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "maxResults"));
+                                 
+                                elementList.add(
+                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMaxResults));
+                            }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -763,7 +1408,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","reservedInstancesOfferingsSet").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","reservedInstancesOfferingsSet").equals(reader.getName())){
                                 
                                                 object.setReservedInstancesOfferingsSet(com.amazon.ec2.DescribeReservedInstancesOfferingsSetType.Factory.parse(reader));
                                               
@@ -778,7 +1423,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","instanceType").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceType").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -796,7 +1441,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","availabilityZone").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","availabilityZone").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -814,7 +1459,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","productDescription").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","productDescription").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -832,7 +1477,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","filterSet").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","filterSet").equals(reader.getName())){
                                 
                                                 object.setFilterSet(com.amazon.ec2.FilterSetType.Factory.parse(reader));
                                               
@@ -842,6 +1487,158 @@
                                 
                                     else {
                                         
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceTenancy").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setInstanceTenancy(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","offeringType").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setOfferingType(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","includeMarketplace").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setIncludeMarketplace(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToBoolean(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","minDuration").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setMinDuration(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToLong(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                               object.setMinDuration(java.lang.Long.MIN_VALUE);
+                                           
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","maxDuration").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setMaxDuration(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToLong(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                               object.setMaxDuration(java.lang.Long.MIN_VALUE);
+                                           
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","maxInstanceCount").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setMaxInstanceCount(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToInt(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                               object.setMaxInstanceCount(java.lang.Integer.MIN_VALUE);
+                                           
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","nextToken").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setNextToken(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","maxResults").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setMaxResults(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToInt(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                               object.setMaxResults(java.lang.Integer.MIN_VALUE);
+                                           
                                     }
                                   
                             while (!reader.isStartElement() && !reader.isEndElement())

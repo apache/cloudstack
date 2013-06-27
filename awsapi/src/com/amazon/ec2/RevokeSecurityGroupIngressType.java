@@ -1,25 +1,9 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
 
 /**
  * RevokeSecurityGroupIngressType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +17,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = RevokeSecurityGroupIngressType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -54,6 +38,12 @@
                         
                                     protected java.lang.String localUserId ;
                                 
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localUserIdTracker = false ;
+                           
 
                            /**
                            * Auto generated getter method
@@ -71,6 +61,14 @@
                                */
                                public void setUserId(java.lang.String param){
                             
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localUserIdTracker = true;
+                                       } else {
+                                          localUserIdTracker = false;
+                                              
+                                       }
+                                   
                                             this.localUserId=param;
                                     
 
@@ -78,30 +76,30 @@
                             
 
                         /**
-                        * field for GroupName
+                        * field for RevokeSecurityGroupIngressTypeChoice_type0
                         */
 
                         
-                                    protected java.lang.String localGroupName ;
+                                    protected com.amazon.ec2.RevokeSecurityGroupIngressTypeChoice_type0 localRevokeSecurityGroupIngressTypeChoice_type0 ;
                                 
 
                            /**
                            * Auto generated getter method
-                           * @return java.lang.String
+                           * @return com.amazon.ec2.RevokeSecurityGroupIngressTypeChoice_type0
                            */
-                           public  java.lang.String getGroupName(){
-                               return localGroupName;
+                           public  com.amazon.ec2.RevokeSecurityGroupIngressTypeChoice_type0 getRevokeSecurityGroupIngressTypeChoice_type0(){
+                               return localRevokeSecurityGroupIngressTypeChoice_type0;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param GroupName
+                               * @param param RevokeSecurityGroupIngressTypeChoice_type0
                                */
-                               public void setGroupName(java.lang.String param){
+                               public void setRevokeSecurityGroupIngressTypeChoice_type0(com.amazon.ec2.RevokeSecurityGroupIngressTypeChoice_type0 param){
                             
-                                            this.localGroupName=param;
+                                            this.localRevokeSecurityGroupIngressTypeChoice_type0=param;
                                     
 
                                }
@@ -220,7 +218,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":RevokeSecurityGroupIngressType",
@@ -233,8 +231,8 @@
 
                
                    }
-               
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                if (localUserIdTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -267,45 +265,16 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = generatePrefix(namespace);
-
-                                            xmlWriter.writeStartElement(prefix,"groupName", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"groupName");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("groupName");
-                                    }
-                                
-
-                                          if (localGroupName==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new org.apache.axis2.databinding.ADBException("groupName cannot be null!!");
-                                                  
-                                          }else{
-
+                             }
+                                            if (localRevokeSecurityGroupIngressTypeChoice_type0==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("RevokeSecurityGroupIngressTypeChoice_type0 cannot be null!!");
+                                            }
+                                           localRevokeSecurityGroupIngressTypeChoice_type0.serialize(null,factory,xmlWriter);
                                         
-                                                   xmlWriter.writeCharacters(localGroupName);
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                             
                                             if (localIpPermissions==null){
                                                  throw new org.apache.axis2.databinding.ADBException("ipPermissions cannot be null!!");
                                             }
-                                           localIpPermissions.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","ipPermissions"),
+                                           localIpPermissions.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ipPermissions"),
                                                factory,xmlWriter);
                                         
                     xmlWriter.writeEndElement();
@@ -469,8 +438,8 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                 if (localUserIdTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "userId"));
                                  
                                         if (localUserId != null){
@@ -478,17 +447,17 @@
                                         } else {
                                            throw new org.apache.axis2.databinding.ADBException("userId cannot be null!!");
                                         }
-                                    
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
-                                                                      "groupName"));
-                                 
-                                        if (localGroupName != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localGroupName));
-                                        } else {
-                                           throw new org.apache.axis2.databinding.ADBException("groupName cannot be null!!");
-                                        }
-                                    
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                    }
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "RevokeSecurityGroupIngressTypeChoice_type0"));
+                            
+                            
+                                    if (localRevokeSecurityGroupIngressTypeChoice_type0==null){
+                                         throw new org.apache.axis2.databinding.ADBException("RevokeSecurityGroupIngressTypeChoice_type0 cannot be null!!");
+                                    }
+                                    elementList.add(localRevokeSecurityGroupIngressTypeChoice_type0);
+                                
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "ipPermissions"));
                             
                             
@@ -575,7 +544,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","userId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","userId").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -586,34 +555,23 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
+                                    else {
+                                        
+                                    }
+                                
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","groupName").equals(reader.getName())){
+                                    if (reader.isStartElement() ){
                                 
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setGroupName(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
-                                    
+                                                object.setRevokeSecurityGroupIngressTypeChoice_type0(com.amazon.ec2.RevokeSecurityGroupIngressTypeChoice_type0.Factory.parse(reader));
+                                            
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","ipPermissions").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ipPermissions").equals(reader.getName())){
                                 
                                                 object.setIpPermissions(com.amazon.ec2.IpPermissionSetType.Factory.parse(reader));
                                               

@@ -1,25 +1,9 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
 
 /**
  * IpPermissionType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +17,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = IpPermissionType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -84,6 +68,12 @@
                         
                                     protected int localFromPort ;
                                 
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localFromPortTracker = false ;
+                           
 
                            /**
                            * Auto generated getter method
@@ -101,6 +91,15 @@
                                */
                                public void setFromPort(int param){
                             
+                                       // setting primitive attribute tracker to true
+                                       
+                                               if (param==java.lang.Integer.MIN_VALUE) {
+                                           localFromPortTracker = false;
+                                              
+                                       } else {
+                                          localFromPortTracker = true;
+                                       }
+                                   
                                             this.localFromPort=param;
                                     
 
@@ -114,6 +113,12 @@
                         
                                     protected int localToPort ;
                                 
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localToPortTracker = false ;
+                           
 
                            /**
                            * Auto generated getter method
@@ -131,6 +136,15 @@
                                */
                                public void setToPort(int param){
                             
+                                       // setting primitive attribute tracker to true
+                                       
+                                               if (param==java.lang.Integer.MIN_VALUE) {
+                                           localToPortTracker = false;
+                                              
+                                       } else {
+                                          localToPortTracker = true;
+                                       }
+                                   
                                             this.localToPort=param;
                                     
 
@@ -280,7 +294,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":IpPermissionType",
@@ -294,7 +308,7 @@
                
                    }
                
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -327,8 +341,8 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                              if (localFromPortTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -356,8 +370,8 @@
                                                }
                                     
                                    xmlWriter.writeEndElement();
-                             
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                             } if (localToPortTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -385,17 +399,17 @@
                                                }
                                     
                                    xmlWriter.writeEndElement();
-                             
+                             }
                                             if (localGroups==null){
                                                  throw new org.apache.axis2.databinding.ADBException("groups cannot be null!!");
                                             }
-                                           localGroups.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","groups"),
+                                           localGroups.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","groups"),
                                                factory,xmlWriter);
                                         
                                             if (localIpRanges==null){
                                                  throw new org.apache.axis2.databinding.ADBException("ipRanges cannot be null!!");
                                             }
-                                           localIpRanges.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","ipRanges"),
+                                           localIpRanges.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ipRanges"),
                                                factory,xmlWriter);
                                         
                     xmlWriter.writeEndElement();
@@ -560,7 +574,7 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "ipProtocol"));
                                  
                                         if (localIpProtocol != null){
@@ -568,20 +582,20 @@
                                         } else {
                                            throw new org.apache.axis2.databinding.ADBException("ipProtocol cannot be null!!");
                                         }
-                                    
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                     if (localFromPortTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "fromPort"));
                                  
                                 elementList.add(
                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localFromPort));
-                            
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            } if (localToPortTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "toPort"));
                                  
                                 elementList.add(
                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localToPort));
-                            
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            }
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "groups"));
                             
                             
@@ -590,7 +604,7 @@
                                     }
                                     elementList.add(localGroups);
                                 
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "ipRanges"));
                             
                             
@@ -677,7 +691,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","ipProtocol").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ipProtocol").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -696,7 +710,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","fromPort").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","fromPort").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -707,15 +721,16 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
+                                    else {
+                                        
+                                               object.setFromPort(java.lang.Integer.MIN_VALUE);
+                                           
+                                    }
+                                
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","toPort").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","toPort").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -726,15 +741,16 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
+                                    else {
+                                        
+                                               object.setToPort(java.lang.Integer.MIN_VALUE);
+                                           
+                                    }
+                                
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","groups").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","groups").equals(reader.getName())){
                                 
                                                 object.setGroups(com.amazon.ec2.UserIdGroupPairSetType.Factory.parse(reader));
                                               
@@ -750,7 +766,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","ipRanges").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ipRanges").equals(reader.getName())){
                                 
                                                 object.setIpRanges(com.amazon.ec2.IpRangeSetType.Factory.parse(reader));
                                               

@@ -1,25 +1,9 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
 
 /**
  * ModifyInstanceAttributeTypeChoice_type0.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +17,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = ModifyInstanceAttributeTypeChoice_type0
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -64,6 +48,12 @@
                    localInstanceInitiatedShutdownBehaviorTracker = false;
                 
                    localBlockDeviceMappingTracker = false;
+                
+                   localSourceDestCheckTracker = false;
+                
+                   localGroupSetTracker = false;
+                
+                   localEbsOptimizedTracker = false;
                 
             }
         
@@ -390,6 +380,144 @@
                                }
                             
 
+                        /**
+                        * field for SourceDestCheck
+                        */
+
+                        
+                                    protected com.amazon.ec2.AttributeBooleanValueType localSourceDestCheck ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localSourceDestCheckTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return com.amazon.ec2.AttributeBooleanValueType
+                           */
+                           public  com.amazon.ec2.AttributeBooleanValueType getSourceDestCheck(){
+                               return localSourceDestCheck;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param SourceDestCheck
+                               */
+                               public void setSourceDestCheck(com.amazon.ec2.AttributeBooleanValueType param){
+                            
+                                clearAllSettingTrackers();
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localSourceDestCheckTracker = true;
+                                       } else {
+                                          localSourceDestCheckTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localSourceDestCheck=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for GroupSet
+                        */
+
+                        
+                                    protected com.amazon.ec2.SecurityGroupIdSetType localGroupSet ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localGroupSetTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return com.amazon.ec2.SecurityGroupIdSetType
+                           */
+                           public  com.amazon.ec2.SecurityGroupIdSetType getGroupSet(){
+                               return localGroupSet;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param GroupSet
+                               */
+                               public void setGroupSet(com.amazon.ec2.SecurityGroupIdSetType param){
+                            
+                                clearAllSettingTrackers();
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localGroupSetTracker = true;
+                                       } else {
+                                          localGroupSetTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localGroupSet=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for EbsOptimized
+                        */
+
+                        
+                                    protected com.amazon.ec2.AttributeBooleanValueType localEbsOptimized ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localEbsOptimizedTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return com.amazon.ec2.AttributeBooleanValueType
+                           */
+                           public  com.amazon.ec2.AttributeBooleanValueType getEbsOptimized(){
+                               return localEbsOptimized;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param EbsOptimized
+                               */
+                               public void setEbsOptimized(com.amazon.ec2.AttributeBooleanValueType param){
+                            
+                                clearAllSettingTrackers();
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localEbsOptimizedTracker = true;
+                                       } else {
+                                          localEbsOptimizedTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localEbsOptimized=param;
+                                    
+
+                               }
+                            
+
      /**
      * isReaderMTOMAware
      * @return true if the reader supports MTOM
@@ -452,7 +580,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":ModifyInstanceAttributeTypeChoice_type0",
@@ -469,43 +597,61 @@
                                             if (localInstanceType==null){
                                                  throw new org.apache.axis2.databinding.ADBException("instanceType cannot be null!!");
                                             }
-                                           localInstanceType.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","instanceType"),
+                                           localInstanceType.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceType"),
                                                factory,xmlWriter);
                                         } if (localKernelTracker){
                                             if (localKernel==null){
                                                  throw new org.apache.axis2.databinding.ADBException("kernel cannot be null!!");
                                             }
-                                           localKernel.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","kernel"),
+                                           localKernel.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","kernel"),
                                                factory,xmlWriter);
                                         } if (localRamdiskTracker){
                                             if (localRamdisk==null){
                                                  throw new org.apache.axis2.databinding.ADBException("ramdisk cannot be null!!");
                                             }
-                                           localRamdisk.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","ramdisk"),
+                                           localRamdisk.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ramdisk"),
                                                factory,xmlWriter);
                                         } if (localUserDataTracker){
                                             if (localUserData==null){
                                                  throw new org.apache.axis2.databinding.ADBException("userData cannot be null!!");
                                             }
-                                           localUserData.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","userData"),
+                                           localUserData.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","userData"),
                                                factory,xmlWriter);
                                         } if (localDisableApiTerminationTracker){
                                             if (localDisableApiTermination==null){
                                                  throw new org.apache.axis2.databinding.ADBException("disableApiTermination cannot be null!!");
                                             }
-                                           localDisableApiTermination.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","disableApiTermination"),
+                                           localDisableApiTermination.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","disableApiTermination"),
                                                factory,xmlWriter);
                                         } if (localInstanceInitiatedShutdownBehaviorTracker){
                                             if (localInstanceInitiatedShutdownBehavior==null){
                                                  throw new org.apache.axis2.databinding.ADBException("instanceInitiatedShutdownBehavior cannot be null!!");
                                             }
-                                           localInstanceInitiatedShutdownBehavior.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","instanceInitiatedShutdownBehavior"),
+                                           localInstanceInitiatedShutdownBehavior.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceInitiatedShutdownBehavior"),
                                                factory,xmlWriter);
                                         } if (localBlockDeviceMappingTracker){
                                             if (localBlockDeviceMapping==null){
                                                  throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
                                             }
-                                           localBlockDeviceMapping.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","blockDeviceMapping"),
+                                           localBlockDeviceMapping.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","blockDeviceMapping"),
+                                               factory,xmlWriter);
+                                        } if (localSourceDestCheckTracker){
+                                            if (localSourceDestCheck==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("sourceDestCheck cannot be null!!");
+                                            }
+                                           localSourceDestCheck.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","sourceDestCheck"),
+                                               factory,xmlWriter);
+                                        } if (localGroupSetTracker){
+                                            if (localGroupSet==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("groupSet cannot be null!!");
+                                            }
+                                           localGroupSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","groupSet"),
+                                               factory,xmlWriter);
+                                        } if (localEbsOptimizedTracker){
+                                            if (localEbsOptimized==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("ebsOptimized cannot be null!!");
+                                            }
+                                           localEbsOptimized.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ebsOptimized"),
                                                factory,xmlWriter);
                                         }
 
@@ -668,7 +814,7 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                  if (localInstanceTypeTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "instanceType"));
                             
                             
@@ -677,7 +823,7 @@
                                     }
                                     elementList.add(localInstanceType);
                                 } if (localKernelTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "kernel"));
                             
                             
@@ -686,7 +832,7 @@
                                     }
                                     elementList.add(localKernel);
                                 } if (localRamdiskTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "ramdisk"));
                             
                             
@@ -695,7 +841,7 @@
                                     }
                                     elementList.add(localRamdisk);
                                 } if (localUserDataTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "userData"));
                             
                             
@@ -704,7 +850,7 @@
                                     }
                                     elementList.add(localUserData);
                                 } if (localDisableApiTerminationTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "disableApiTermination"));
                             
                             
@@ -713,7 +859,7 @@
                                     }
                                     elementList.add(localDisableApiTermination);
                                 } if (localInstanceInitiatedShutdownBehaviorTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "instanceInitiatedShutdownBehavior"));
                             
                             
@@ -722,7 +868,7 @@
                                     }
                                     elementList.add(localInstanceInitiatedShutdownBehavior);
                                 } if (localBlockDeviceMappingTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "blockDeviceMapping"));
                             
                             
@@ -730,6 +876,33 @@
                                          throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
                                     }
                                     elementList.add(localBlockDeviceMapping);
+                                } if (localSourceDestCheckTracker){
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "sourceDestCheck"));
+                            
+                            
+                                    if (localSourceDestCheck==null){
+                                         throw new org.apache.axis2.databinding.ADBException("sourceDestCheck cannot be null!!");
+                                    }
+                                    elementList.add(localSourceDestCheck);
+                                } if (localGroupSetTracker){
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "groupSet"));
+                            
+                            
+                                    if (localGroupSet==null){
+                                         throw new org.apache.axis2.databinding.ADBException("groupSet cannot be null!!");
+                                    }
+                                    elementList.add(localGroupSet);
+                                } if (localEbsOptimizedTracker){
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "ebsOptimized"));
+                            
+                            
+                                    if (localEbsOptimized==null){
+                                         throw new org.apache.axis2.databinding.ADBException("ebsOptimized cannot be null!!");
+                                    }
+                                    elementList.add(localEbsOptimized);
                                 }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
@@ -777,7 +950,7 @@
                 
 
                  
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","instanceType").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceType").equals(reader.getName())){
                                 
                                                 object.setInstanceType(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
                                               
@@ -787,7 +960,7 @@
                                 
                                         else
                                     
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","kernel").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","kernel").equals(reader.getName())){
                                 
                                                 object.setKernel(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
                                               
@@ -797,7 +970,7 @@
                                 
                                         else
                                     
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","ramdisk").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ramdisk").equals(reader.getName())){
                                 
                                                 object.setRamdisk(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
                                               
@@ -807,7 +980,7 @@
                                 
                                         else
                                     
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","userData").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","userData").equals(reader.getName())){
                                 
                                                 object.setUserData(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
                                               
@@ -817,7 +990,7 @@
                                 
                                         else
                                     
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","disableApiTermination").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","disableApiTermination").equals(reader.getName())){
                                 
                                                 object.setDisableApiTermination(com.amazon.ec2.AttributeBooleanValueType.Factory.parse(reader));
                                               
@@ -827,7 +1000,7 @@
                                 
                                         else
                                     
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","instanceInitiatedShutdownBehavior").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceInitiatedShutdownBehavior").equals(reader.getName())){
                                 
                                                 object.setInstanceInitiatedShutdownBehavior(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
                                               
@@ -837,9 +1010,39 @@
                                 
                                         else
                                     
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","blockDeviceMapping").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","blockDeviceMapping").equals(reader.getName())){
                                 
                                                 object.setBlockDeviceMapping(com.amazon.ec2.InstanceBlockDeviceMappingType.Factory.parse(reader));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                        else
+                                    
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","sourceDestCheck").equals(reader.getName())){
+                                
+                                                object.setSourceDestCheck(com.amazon.ec2.AttributeBooleanValueType.Factory.parse(reader));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                        else
+                                    
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","groupSet").equals(reader.getName())){
+                                
+                                                object.setGroupSet(com.amazon.ec2.SecurityGroupIdSetType.Factory.parse(reader));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                        else
+                                    
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ebsOptimized").equals(reader.getName())){
+                                
+                                                object.setEbsOptimized(com.amazon.ec2.AttributeBooleanValueType.Factory.parse(reader));
                                               
                                         reader.next();
                                     
