@@ -37,8 +37,6 @@ public interface AsyncJobManager extends Manager {
 
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
 
-    List<Long> wakeupByJoinedJobCompletion(long joinedJobId);
-
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
     void logJobJournal(long jobId, AsyncJob.JournalType journalType, String

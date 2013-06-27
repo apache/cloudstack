@@ -32,7 +32,7 @@ public interface AsyncJob extends JobInfo {
         public static final String JOB_STATE = "job.state";
     }
     
-    public static interface Contants {
+    public static interface Constants {
 
     	// Although we may have detailed masks for each individual wakeup event, i.e.
         // periodical timer, matched topic from message bus, it seems that we don't

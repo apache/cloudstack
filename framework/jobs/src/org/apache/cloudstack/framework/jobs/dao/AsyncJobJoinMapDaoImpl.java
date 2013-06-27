@@ -169,7 +169,7 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 			String sql = "UPDATE async_job SET job_pending_signals=? WHERE id IN " +
 					"(SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ?)";
 			pstmt = txn.prepareStatement(sql);
-			pstmt.setInt(1, AsyncJob.Contants.SIGNAL_MASK_WAKEUP);
+			pstmt.setInt(1, AsyncJob.Constants.SIGNAL_MASK_WAKEUP);
 	        pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
 	        pstmt.setString(3, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
 	        pstmt.executeUpdate();
