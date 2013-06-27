@@ -1,25 +1,9 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
 
 /**
  * DisassociateAddressType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,18 +17,29 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = DisassociateAddressType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
         }
 
+        
+            /** Whenever a new property is set ensure all others are unset
+             *  There can be only one choice and the last one wins
+             */
+            private void clearAllSettingTrackers() {
+            
+                   localPublicIpTracker = false;
+                
+                   localAssociationIdTracker = false;
+                
+            }
         
 
                         /**
@@ -54,6 +49,12 @@
                         
                                     protected java.lang.String localPublicIp ;
                                 
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localPublicIpTracker = false ;
+                           
 
                            /**
                            * Auto generated getter method
@@ -71,7 +72,63 @@
                                */
                                public void setPublicIp(java.lang.String param){
                             
+                                clearAllSettingTrackers();
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localPublicIpTracker = true;
+                                       } else {
+                                          localPublicIpTracker = false;
+                                              
+                                       }
+                                   
                                             this.localPublicIp=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for AssociationId
+                        */
+
+                        
+                                    protected java.lang.String localAssociationId ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localAssociationIdTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return java.lang.String
+                           */
+                           public  java.lang.String getAssociationId(){
+                               return localAssociationId;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param AssociationId
+                               */
+                               public void setAssociationId(java.lang.String param){
+                            
+                                clearAllSettingTrackers();
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localAssociationIdTracker = true;
+                                       } else {
+                                          localAssociationIdTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localAssociationId=param;
                                     
 
                                }
@@ -160,7 +217,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":DisassociateAddressType",
@@ -173,8 +230,8 @@
 
                
                    }
-               
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                if (localPublicIpTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -207,7 +264,41 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             
+                             } if (localAssociationIdTracker){
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+                                    if (! namespace.equals("")) {
+                                        prefix = xmlWriter.getPrefix(namespace);
+
+                                        if (prefix == null) {
+                                            prefix = generatePrefix(namespace);
+
+                                            xmlWriter.writeStartElement(prefix,"associationId", namespace);
+                                            xmlWriter.writeNamespace(prefix, namespace);
+                                            xmlWriter.setPrefix(prefix, namespace);
+
+                                        } else {
+                                            xmlWriter.writeStartElement(namespace,"associationId");
+                                        }
+
+                                    } else {
+                                        xmlWriter.writeStartElement("associationId");
+                                    }
+                                
+
+                                          if (localAssociationId==null){
+                                              // write the nil attribute
+                                              
+                                                     throw new org.apache.axis2.databinding.ADBException("associationId cannot be null!!");
+                                                  
+                                          }else{
+
+                                        
+                                                   xmlWriter.writeCharacters(localAssociationId);
+                                            
+                                          }
+                                    
+                                   xmlWriter.writeEndElement();
+                             }
                     xmlWriter.writeEndElement();
                
 
@@ -369,8 +460,8 @@
                  java.util.ArrayList elementList = new java.util.ArrayList();
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
-                
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                 if (localPublicIpTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "publicIp"));
                                  
                                         if (localPublicIp != null){
@@ -378,7 +469,16 @@
                                         } else {
                                            throw new org.apache.axis2.databinding.ADBException("publicIp cannot be null!!");
                                         }
-                                    
+                                    } if (localAssociationIdTracker){
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "associationId"));
+                                 
+                                        if (localAssociationId != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localAssociationId));
+                                        } else {
+                                           throw new org.apache.axis2.databinding.ADBException("associationId cannot be null!!");
+                                        }
+                                    }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -453,11 +553,11 @@
                  
                     
                     reader.next();
+                   
+                while(!reader.isEndElement()) {
+                    if (reader.isStartElement() ){
                 
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","publicIp").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","publicIp").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -468,18 +568,24 @@
                                     
                               }  // End of if for expected property start element
                                 
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                              
-                            while (!reader.isStartElement() && !reader.isEndElement())
+                                        else
+                                    
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","associationId").equals(reader.getName())){
+                                
+                                    java.lang.String content = reader.getElementText();
+                                    
+                                              object.setAssociationId(
+                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                             } else {
                                 reader.next();
-                            
-                                if (reader.isStartElement())
-                                // A start element we are not expecting indicates a trailing invalid property
-                                throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                            
+                             }  
+                           }  // end of while loop
+                        
 
 
 

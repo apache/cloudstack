@@ -1,45 +1,29 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
 
 /**
- * ProductCodeType.java
+ * ReportInstanceStatusReasonCodeSetItemType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5  Built on : Apr 30, 2009 (06:07:47 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
             
 
             /**
-            *  ProductCodeType bean class
+            *  ReportInstanceStatusReasonCodeSetItemType bean class
             */
         
-        public  class ProductCodeType
+        public  class ReportInstanceStatusReasonCodeSetItemType
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
-                name = ProductCodeType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-08-31/
+                name = ReportInstanceStatusReasonCodeSetItemType
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-08-31/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -48,30 +32,30 @@
         
 
                         /**
-                        * field for ProductCode
+                        * field for ReasonCode
                         */
 
                         
-                                    protected java.lang.String localProductCode ;
+                                    protected java.lang.String localReasonCode ;
                                 
 
                            /**
                            * Auto generated getter method
                            * @return java.lang.String
                            */
-                           public  java.lang.String getProductCode(){
-                               return localProductCode;
+                           public  java.lang.String getReasonCode(){
+                               return localReasonCode;
                            }
 
                            
                         
                             /**
                                * Auto generated setter method
-                               * @param param ProductCode
+                               * @param param ReasonCode
                                */
-                               public void setProductCode(java.lang.String param){
+                               public void setReasonCode(java.lang.String param){
                             
-                                            this.localProductCode=param;
+                                            this.localReasonCode=param;
                                     
 
                                }
@@ -109,7 +93,7 @@
                        new org.apache.axis2.databinding.ADBDataSource(this,parentQName){
 
                  public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-                       ProductCodeType.this.serialize(parentQName,factory,xmlWriter);
+                       ReportInstanceStatusReasonCodeSetItemType.this.serialize(parentQName,factory,xmlWriter);
                  }
                };
                return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(
@@ -160,49 +144,49 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-08-31/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
-                           namespacePrefix+":ProductCodeType",
+                           namespacePrefix+":ReportInstanceStatusReasonCodeSetItemType",
                            xmlWriter);
                    } else {
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
-                           "ProductCodeType",
+                           "ReportInstanceStatusReasonCodeSetItemType",
                            xmlWriter);
                    }
 
                
                    }
                
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-08-31/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
                                         if (prefix == null) {
                                             prefix = generatePrefix(namespace);
 
-                                            xmlWriter.writeStartElement(prefix,"productCode", namespace);
+                                            xmlWriter.writeStartElement(prefix,"reasonCode", namespace);
                                             xmlWriter.writeNamespace(prefix, namespace);
                                             xmlWriter.setPrefix(prefix, namespace);
 
                                         } else {
-                                            xmlWriter.writeStartElement(namespace,"productCode");
+                                            xmlWriter.writeStartElement(namespace,"reasonCode");
                                         }
 
                                     } else {
-                                        xmlWriter.writeStartElement("productCode");
+                                        xmlWriter.writeStartElement("reasonCode");
                                     }
                                 
 
-                                          if (localProductCode==null){
+                                          if (localReasonCode==null){
                                               // write the nil attribute
                                               
-                                                     throw new org.apache.axis2.databinding.ADBException("productCode cannot be null!!");
+                                                     throw new org.apache.axis2.databinding.ADBException("reasonCode cannot be null!!");
                                                   
                                           }else{
 
                                         
-                                                   xmlWriter.writeCharacters(localProductCode);
+                                                   xmlWriter.writeCharacters(localReasonCode);
                                             
                                           }
                                     
@@ -370,13 +354,13 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-08-31/",
-                                                                      "productCode"));
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "reasonCode"));
                                  
-                                        if (localProductCode != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localProductCode));
+                                        if (localReasonCode != null){
+                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localReasonCode));
                                         } else {
-                                           throw new org.apache.axis2.databinding.ADBException("productCode cannot be null!!");
+                                           throw new org.apache.axis2.databinding.ADBException("reasonCode cannot be null!!");
                                         }
                                     
 
@@ -403,9 +387,9 @@
         * Postcondition: If this object is an element, the reader is positioned at its end element
         *                If this object is a complex type, the reader is positioned at the end element of its outer element
         */
-        public static ProductCodeType parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
-            ProductCodeType object =
-                new ProductCodeType();
+        public static ReportInstanceStatusReasonCodeSetItemType parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
+            ReportInstanceStatusReasonCodeSetItemType object =
+                new ReportInstanceStatusReasonCodeSetItemType();
 
             int event;
             java.lang.String nillableValue = null;
@@ -429,10 +413,10 @@
 
                     java.lang.String type = fullTypeName.substring(fullTypeName.indexOf(":")+1);
                     
-                            if (!"ProductCodeType".equals(type)){
+                            if (!"ReportInstanceStatusReasonCodeSetItemType".equals(type)){
                                 //find namespace for the prefix
                                 java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (ProductCodeType)com.amazon.ec2.ExtensionMapper.getTypeObject(
+                                return (ReportInstanceStatusReasonCodeSetItemType)com.amazon.ec2.ExtensionMapper.getTypeObject(
                                      nsUri,type,reader);
                               }
                         
@@ -457,11 +441,11 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-08-31/","productCode").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","reasonCode").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
-                                              object.setProductCode(
+                                              object.setReasonCode(
                                                     org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
                                               
                                         reader.next();
