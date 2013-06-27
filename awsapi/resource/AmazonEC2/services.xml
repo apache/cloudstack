@@ -2,11 +2,11 @@
 <!-- This file was auto-generated from WSDL -->
 <!-- by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:00:16 CEST) -->
 <serviceGroup>
-    <service name="AmazonEC2">
+    <service name="AmazonEC2" class="com.cloud.bridge.lifecycle.ServiceEngineLifecycle">
         <messageReceivers>
             <messageReceiver mep="http://www.w3.org/ns/wsdl/in-out" class="com.amazon.ec2.AmazonEC2MessageReceiverInOut"/>
         </messageReceivers>
-        <parameter name="ServiceClass">com.amazon.ec2.AmazonEC2Skeleton</parameter>
+        <parameter name="ServiceClass">com.cloud.bridge.service.EC2SoapService</parameter>
         <parameter name="useOriginalwsdl">true</parameter>
         <parameter name="modifyUserWSDLPortAddress">true</parameter>
         <operation name="DescribePlacementGroups" mep="http://www.w3.org/ns/wsdl/in-out" namespace="http://ec2.amazonaws.com/doc/2012-08-15/">
