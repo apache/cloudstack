@@ -69,7 +69,7 @@ public class PortableIpDaoImpl extends GenericDaoBase<PortableIpVO, Long> implem
         listByRangeIDAndStateSearch.done();
 
         listByRegionIDAndStateSearch = createSearchBuilder();
-        listByRegionIDAndStateSearch.and("regionId", listByRegionIDAndStateSearch.entity().getRangeId(), SearchCriteria.Op.EQ);
+        listByRegionIDAndStateSearch.and("regionId", listByRegionIDAndStateSearch.entity().getRegionId(), SearchCriteria.Op.EQ);
         listByRegionIDAndStateSearch.and("state", listByRegionIDAndStateSearch.entity().getState(), SearchCriteria.Op.EQ);
         listByRegionIDAndStateSearch.done();
 
