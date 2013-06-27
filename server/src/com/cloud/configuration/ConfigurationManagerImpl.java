@@ -3267,6 +3267,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             else {
                 ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(vlanRange.getVlanGateway(), vlanRange.getNetworkId(),  NicIpAlias.state.active);
+                if (ipAlias == null) {
+                    throw  new InvalidParameterValueException ("Cannot delete this range as some of the Ips are in use.");
+                }
+
                 //check if this ip belongs to this vlan and is allocated.
                 ip = _publicIpAddressDao.findByIpAndVlanId(ipAlias.getIp4Address(), vlanDbId);
                 if (ip != null && ip.getState() == IpAddress.State.Allocated) {
