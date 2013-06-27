@@ -2127,6 +2127,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 				param4.addItem(param5);
 			}
 			param3.setIpPermissions(param4);
+            EC2TagKeyValue[] tags = group.getResourceTags();
+            param3.setTagSet(setResourceTags(tags));
 			param2.addItem(param3);
 		}
 		param1.setSecurityGroupInfo(param2);

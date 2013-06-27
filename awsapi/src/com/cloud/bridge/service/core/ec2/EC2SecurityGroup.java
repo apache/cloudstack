@@ -27,6 +27,7 @@ public class EC2SecurityGroup {
 	private String accountName;
 	private String domainId;
 	private List<EC2IpPermission> permissionSet = new ArrayList<EC2IpPermission>();    
+    private List<EC2TagKeyValue> tagsSet = new ArrayList<EC2TagKeyValue>();
 
 	public EC2SecurityGroup() {
 		id          = null;
@@ -91,5 +92,13 @@ public class EC2SecurityGroup {
 	public void setDomainId(String domainId) {
 		this.domainId = domainId;
 	}
-	
+
+    public void addResourceTag( EC2TagKeyValue param ) {
+        tagsSet.add( param );
+    }
+
+    public EC2TagKeyValue[] getResourceTags() {
+        return tagsSet.toArray(new EC2TagKeyValue[0]);
+    }
+
 }
