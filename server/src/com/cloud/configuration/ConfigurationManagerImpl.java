@@ -123,7 +123,6 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -142,7 +141,6 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -3138,11 +3136,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return vlan;
     }
 
-    public boolean removeFromDb (long  vlanDbId){
-        if (!deletePublicIPRange(vlanDbId)) {
-            return false;
-        }
-        return  _vlanDao.expunge(vlanDbId);
+    @DB
+    public void deleteVLANFromDb(long vlanDbId) throws SQLException {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        _publicIpAddressDao.deletePublicIPRange(vlanDbId);
+        _vlanDao.expunge(vlanDbId);
+        txn.commit();
     }
 
     @Override
@@ -3226,34 +3226,31 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             .getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
                 }
             }
-            if (_networkModel.areServicesSupportedInNetwork(vlanRange.getNetworkId(), Service.Dhcp)) {
-                Network network = _networkDao.findById(vlanRange.getNetworkId());
-                DhcpServiceProvider dhcpServiceProvider = _networkMgr.getDhcpServiceProvider(network);
-                if (!dhcpServiceProvider.getProvider().getName().equalsIgnoreCase(Provider.VirtualRouter.getName())) {
-                    Transaction txn = Transaction.currentTxn();
-                    txn.start();
-                    if (!removeFromDb(vlanDbId)) {
-                        txn.rollback();
-                        txn.close();
-                        return false;
+            try {
+                if (_networkModel.areServicesSupportedInNetwork(vlanRange.getNetworkId(), Service.Dhcp)) {
+                    Network network = _networkDao.findById(vlanRange.getNetworkId());
+                    DhcpServiceProvider dhcpServiceProvider = _networkMgr.getDhcpServiceProvider(network);
+                    if (!dhcpServiceProvider.getProvider().getName().equalsIgnoreCase(Provider.VirtualRouter.getName())) {
+                        deleteVLANFromDb(vlanDbId);
+                    } else {
+                        return  handleIpAliasDeletion(vlanRange, vlanDbId, dhcpServiceProvider, network);
                     }
-
-                    else {
-                        txn.commit();
-                    }
-                    txn.close();
                 }
 
                 else {
-                  return  handleIpAliasDeletion(vlanRange, vlanDbId, dhcpServiceProvider, network);
+                    deleteVLANFromDb(vlanDbId);
                 }
             }
+            catch ( SQLException e) {
+               throw  new CloudRuntimeException(e.getMessage());
+            }
+
         }
         return true;
     }
 
-    private boolean handleIpAliasDeletion(VlanVO vlanRange, long vlanDbId, DhcpServiceProvider dhcpServiceProvider, Network network) {
-        boolean result_final = false;
+    @DB
+    private boolean handleIpAliasDeletion(VlanVO vlanRange, long vlanDbId, DhcpServiceProvider dhcpServiceProvider, Network network) throws SQLException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         IPAddressVO ip = null;
@@ -3263,87 +3260,48 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             //search if the vlan has any allocated ips.
             allocIpCount = _publicIpAddressDao.countIPs(vlanRange.getDataCenterId(), vlanDbId, true);
             if (allocIpCount > 1) {
-                throw  new InvalidParameterValueException ("cannot delete this range as some of the vlans are in use.");
+                throw  new InvalidParameterValueException ("Cannot delete this range as some of the vlans are in use.");
             }
-            if (allocIpCount == 0){
-                result_final=true;
+            else if (allocIpCount == 0){
+                deleteVLANFromDb(vlanDbId);
             }
             else {
                 ipAlias = _nicIpAliasDao.findByGatewayAndNetworkIdAndState(vlanRange.getVlanGateway(), vlanRange.getNetworkId(),  NicIpAlias.state.active);
-                ipAlias.setState(NicIpAlias.state.revoked);
-                _nicIpAliasDao.update(ipAlias.getId(), ipAlias);
                 //check if this ip belongs to this vlan and is allocated.
                 ip = _publicIpAddressDao.findByIpAndVlanId(ipAlias.getIp4Address(), vlanDbId);
                 if (ip != null && ip.getState() == IpAddress.State.Allocated) {
                     //check if there any other vlan ranges in the same subnet having free ips
                     List<VlanVO> vlanRanges = _vlanDao.listVlansByNetworkIdAndGateway(vlanRange.getNetworkId(), vlanRange.getVlanGateway());
                     //if there is no other vlanrage in this subnet. free the ip and delete the vlan.
-                    if (vlanRanges.size() == 1){
-                        boolean result = dhcpServiceProvider.removeDhcpSupportForSubnet(network);
-                        if (result == false) {
-                            result_final = false;
+                    if (vlanRanges.size() == 1) {
+                        ipAlias.setState(NicIpAlias.state.revoked);
+                        _nicIpAliasDao.update(ipAlias.getId(), ipAlias);
+                        if (!dhcpServiceProvider.removeDhcpSupportForSubnet(network)) {
                             s_logger.debug("Failed to delete the vlan range as we could not free the ip used to provide the dhcp service.");
-                        } else {
+                            //setting the state back to active
+                            ipAlias.setState(NicIpAlias.state.active);
+                            _nicIpAliasDao.update(ipAlias.getId(), ipAlias);
+                        }
+                        else {
                             _publicIpAddressDao.unassignIpAddress(ip.getId());
-                            result_final = true;
+                            deleteVLANFromDb(vlanDbId);
                         }
                     } else {
-                        // if there are more vlans in the subnet check if there
-                        // are free ips.
-                        List<Long> vlanDbIdList = new ArrayList<Long>();
-                        for (VlanVO vlanrange : vlanRanges) {
-                            if (vlanrange.getId() != vlanDbId) {
-                                vlanDbIdList.add(vlanrange.getId());
-                            }
-                        }
-                        s_logger.info("vlan Range"
-                                + vlanRange.getId()
-                                + " id being deleted, one of the Ips in this range is used to provide the dhcp service, trying to free this ip and allocate a new one.");
-                        for (VlanVO vlanrange : vlanRanges) {
-                            if (vlanrange.getId() != vlanDbId) {
-
-                                long freeIpsInsubnet =  _publicIpAddressDao.countFreeIpsInVlan(vlanrange.getId());
-                                if (freeIpsInsubnet > 0){
-                                    //assign one free ip to the router for creating ip Alias. The ipalias is system managed ip so we are using the system account to allocate the ip not the caller.
-                                    boolean result = false;
-                                    PublicIp routerPublicIP = _networkMgr.assignPublicIpAddressFromVlans(network.getDataCenterId(), null, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), Vlan.VlanType.DirectAttached, vlanDbIdList, network.getId(), null, false);
-                                    s_logger.info("creating a db entry for the new ip alias.");
-                                    NicIpAliasVO newipAlias = new NicIpAliasVO(ipAlias.getNicId(), routerPublicIP.getAddress().addr(), ipAlias.getVmId(), ipAlias.getAccountId(), network.getDomainId(), network.getId(), ipAlias.getGateway(), ipAlias.getNetmask());
-                                    newipAlias.setAliasCount(routerPublicIP.getIpMacAddress());
-                                    _nicIpAliasDao.persist(newipAlias);
-                                    //we revoke all the rules and apply all the rules as a part of the removedhcp config. so the new ip will get configured when we delete the old ip.
-                                    s_logger.info("removing the old ip alias on router");
-                                    result = dhcpServiceProvider.removeDhcpSupportForSubnet(network);
-                                    if (result == false) {
-                                        s_logger.debug("could't delete the ip alias on the router");
-                                        result_final = false;
-                                    }
-                                    else {
-                                        _publicIpAddressDao.unassignIpAddress(ip.getId());
-                                        result_final=true;
-                                    }
-                                }
-                            }
-                        }
+                        // if there are more vlans in the subnet, free all the ips in the range except the ip alias.
+                        s_logger.info("vlan Range"+vlanRange.getId()+" id being deleted, one of the Ips in this range is used to provide the dhcp service, will free the rest of the IPs in range.");
+                        _publicIpAddressDao.deletePublicIPRangeExceptAliasIP(vlanDbId, ipAlias.getIp4Address());
+                        VlanVO vlan = _vlanDao.findById(vlanDbId);
+                        vlan.setIpRange(ipAlias.getIp4Address()+"-"+ipAlias.getIp4Address());
+                        _vlanDao.update(vlan.getId(), vlan);
                     }
                 }
             }
-
-        } catch (InsufficientAddressCapacityException e) {
-            throw new InvalidParameterValueException("cannot delete  vlan range"+ vlanRange.getId()+"one of the ips in this range is benig used to provide dhcp service. Cannot use some other ip as there are no free ips in this subnet");
+        } catch (CloudRuntimeException e) {
+            txn.rollback();
+            throw e;
         }
-        finally {
-            if (result_final) {
-                if (!removeFromDb(vlanDbId)) {
-                    txn.rollback();
-                }
-                else {
-                    txn.commit();
-                }
-                txn.close();
-            }
-        }
-        return result_final;
+        txn.commit();
+        return true;
     }
 
     @Override
@@ -3563,25 +3521,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return tags;
-    }
-
-    @DB
-    protected boolean deletePublicIPRange(long vlanDbId) {
-        Transaction txn = Transaction.currentTxn();
-        String deleteSql = "DELETE FROM `cloud`.`user_ip_address` WHERE vlan_db_id = ?";
-
-        txn.start();
-        try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(deleteSql);
-            stmt.setLong(1, vlanDbId);
-            stmt.executeUpdate();
-        } catch (Exception ex) {
-            s_logger.error(ex.getMessage());
-            return false;
-        }
-        txn.commit();
-
-        return true;
     }
 
     @DB

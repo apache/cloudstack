@@ -2849,8 +2849,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     network.getId(), DataCenter.class, network.getDataCenterId());
         }
 
-        boolean agentResults = true;
-
         for (DomainRouterVO router : routers) {
             if (router.getState() != State.Running) {
                 s_logger.warn("Failed to add/remove VPN users: router not in running state");
