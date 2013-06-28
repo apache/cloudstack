@@ -68,7 +68,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-    class CreateContext<T> extends AsyncRpcContext<T> {
+    protected class CreateContext<T> extends AsyncRpcContext<T> {
         final DataObject data;
 
         public CreateContext(AsyncCompletionCallback<T> callback, DataObject data) {
@@ -92,7 +92,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
     }
 
-    protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<BaseImageStoreDriverImpl, DownloadAnswer> callback,
+    protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
             CreateContext<CreateCmdResult> context) {
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
@@ -139,7 +139,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-    protected Void createVolumeAsyncCallback(AsyncCallbackDispatcher<BaseImageStoreDriverImpl, DownloadAnswer> callback,
+    protected Void createVolumeAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
             CreateContext<CreateCmdResult> context) {
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;

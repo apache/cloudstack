@@ -54,16 +54,12 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
         return null;
     }
 
-<<<<<<< HEAD
     @Override
     public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
         return null;
     }
 
-    private class CreateVolumeContext<T> extends AsyncRpcConext<T> {
-=======
     private class CreateVolumeContext<T> extends AsyncRpcContext<T> {
->>>>>>> Fix typo in class name
         private final DataObject volume;
         public CreateVolumeContext(AsyncCompletionCallback<T> callback, DataObject volume) {
             super(callback);

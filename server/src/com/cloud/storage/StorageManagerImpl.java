@@ -570,7 +570,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else {
             s_logger.debug("Storage cleanup is not enabled, so the storage cleanup thread is not being scheduled.");
         }
-
         return true;
     }
 
@@ -579,7 +578,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (_storageCleanupEnabled) {
             _executor.shutdown();
         }
-
         return true;
     }
 
@@ -591,7 +589,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (dc == null || !dc.isLocalStorageEnabled()) {
             return null;
         }
-        DataStore store = null;
+        DataStore store;
         try {
             StoragePoolVO pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), pInfo.getHostPath(),
                     pInfo.getUuid());
@@ -693,21 +691,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
-        Map ds = cmd.getDetails();
-        Map<String, String> details = new HashMap<String, String>();
-        if (ds != null) {
-            Collection detailsCollection = ds.values();
-            Iterator it = detailsCollection.iterator();
-            while (it.hasNext()) {
-                HashMap d = (HashMap) it.next();
-                Iterator it2 = d.entrySet().iterator();
-                while (it2.hasNext()) {
-                    Map.Entry entry = (Map.Entry) it2.next();
-                    details.put((String) entry.getKey(), (String) entry.getValue());
-                }
-            }
-        }
-
+        Map<String, String> details = extractApiParamAsMap(cmd.getDetails());
         DataCenterVO zone = _dcDao.findById(cmd.getZoneId());
         if (zone == null) {
             throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
@@ -732,10 +716,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("capacityIops", cmd.getCapacityIops());
 
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
-        DataStore store = null;
+        DataStore store;
         try {
             store = lifeCycle.initialize(params);
-
             if (scopeType == ScopeType.CLUSTER) {
                 ClusterScope clusterScope = new ClusterScope(clusterId, podId, zoneId);
                 lifeCycle.attachCluster(store, clusterScope);
@@ -749,6 +732,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
+    }
+
+    private Map<String, String> extractApiParamAsMap(Map ds) {
+        Map<String, String> details = new HashMap<String, String>();
+        if (ds != null) {
+            Collection detailsCollection = ds.values();
+            Iterator it = detailsCollection.iterator();
+            while (it.hasNext()) {
+                HashMap d = (HashMap) it.next();
+                Iterator it2 = d.entrySet().iterator();
+                while (it2.hasNext()) {
+                    Map.Entry entry = (Map.Entry) it2.next();
+                    details.put((String) entry.getKey(), (String) entry.getValue());
+                }
+            }
+        }
+        return details;
     }
 
     @Override
@@ -1637,7 +1637,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Long dcId = cmd.getZoneId();
-        String url = cmd.getUrl();
         Map details = cmd.getDetails();
         ScopeType scopeType = ScopeType.ZONE;
         if (dcId == null) {
@@ -1686,7 +1685,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("role", DataStoreRole.Image);
 
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
-        DataStore store = null;
+        DataStore store;
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
