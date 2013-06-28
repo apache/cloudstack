@@ -252,7 +252,9 @@
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp" />
           <ref bean="MidoNetElement"/>
+          <!-- see commit 422d9b8daf281c6c897125d0ff0bf526c67b3f2b
           <ref bean="StratosphereSsp"/>
+          -->
           <ref bean="InternalLbVm"/>
           <ref bean="BareMetalDhcp"/>
           <ref bean="BareMetalPxe"/>
