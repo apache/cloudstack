@@ -54,9 +54,21 @@ specify a valid config file" % cfgFile)
             hostcmd.hypervisor = hypervisor
             self.apiClient.addHost(hostcmd)
 
-    def createClusters(self, clusters, zoneId, podId):
+    def addVmWareDataCenter(self, vmwareDc):
+        vdc = addVmwareDc.addVmwareDcCmd()
+        vdc.zoneid = vmwareDc.zoneid
+        vdc.name = vmwareDc.name
+        vdc.vcenter = vmwareDc.vcenter
+        vdc.username = vmwareDc.username
+        vdc.password = vmwareDc.password
+        self.apiClient.addVmwareDc(vdc)
+
+    def createClusters(self, clusters, zoneId, podId, vmwareDc=None):
         if clusters is None:
             return
+
+        if vmwareDc:
+            self.addVmWareDataCenter(vmwareDc)
 
         for cluster in clusters:
             clustercmd = addCluster.addClusterCmd()
@@ -108,7 +120,7 @@ specify a valid config file" % cfgFile)
                 self.createVlanIpRanges("Basic", pod.guestIpRanges, zoneId,
                                         podId, networkId)
 
-            self.createClusters(pod.clusters, zoneId, podId)
+            self.createClusters(pod.clusters, zoneId, podId, vmwareDc=pod.vmwaredc)
 
     def createVlanIpRanges(self, mode, ipranges, zoneId, podId=None,
                            networkId=None, forvirtualnetwork=None):
