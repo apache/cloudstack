@@ -126,6 +126,11 @@ public class CheckNetworkAnswerTest {
             };
 
             @Override
+            public Long getCapacityIops() {
+                return 0L;
+            };
+
+            @Override
             public Long getClusterId() {
                 return 0L;
             };

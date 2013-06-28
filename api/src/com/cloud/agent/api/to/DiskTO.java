@@ -23,14 +23,16 @@ import com.cloud.storage.Volume;
 public class DiskTO {
     private DataTO data;
     private Long diskSeq;
+    private String vdiUuid;
     private Volume.Type type;
     public DiskTO() {
         
     }
     
-    public DiskTO(DataTO data, Long diskSeq, Volume.Type type) {
+    public DiskTO(DataTO data, Long diskSeq, String vdiUuid, Volume.Type type) {
         this.data = data;
         this.diskSeq = diskSeq;
+        this.vdiUuid = vdiUuid;
         this.type = type;
     }
 
@@ -48,6 +50,14 @@ public class DiskTO {
 
     public void setDiskSeq(Long diskSeq) {
         this.diskSeq = diskSeq;
+    }
+
+    public String getVdiUuid() {
+        return vdiUuid;
+    }
+
+    public void setVdiUuid(String vdiUuid) {
+        this.vdiUuid = vdiUuid;
     }
 
     public Volume.Type getType() {

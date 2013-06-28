@@ -55,7 +55,6 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -171,7 +170,16 @@ public class XenServerStorageProcessor implements StorageProcessor {
         try {
             Connection conn = this.hypervisorResource.getConnection();
             // Look up the VDI
-            VDI vdi = this.hypervisorResource.mount(conn, null, null, data.getPath());
+            VDI vdi = null;
+
+            if (cmd.isManaged()) {
+                vdi = this.hypervisorResource.handleSrAndVdiAttach(cmd.get_iScsiName(), cmd.getStorageHost(),
+                        cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword());
+            }
+            else {
+                vdi = this.hypervisorResource.mount(conn, null, null, data.getPath());
+            }
+
             // Look up the VM
             VM vm = this.hypervisorResource.getVM(conn, vmName);
             /* For HVM guest, if no pv driver installed, no attach/detach */
@@ -223,7 +231,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             // Update the VDI's label to include the VM name
             vdi.setNameLabel(conn, vmName + "-DATA");
-            DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), disk.getType());
+            DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), vdi.getUuid(conn), disk.getType());
             return new AttachAnswer(newDisk);
 
         } catch (XenAPIException e) {
@@ -349,6 +357,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vdi.setNameLabel(conn, "detached");
 
             this.hypervisorResource.umount(conn, vdi);
+
+            if (cmd.isManaged()) {
+                this.hypervisorResource.handleSrAndVdiDetach(cmd.get_iScsiName());
+            }
 
             return new DettachAnswer(disk);
         } catch(Exception e) {

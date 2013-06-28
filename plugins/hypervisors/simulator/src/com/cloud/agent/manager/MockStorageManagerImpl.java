@@ -258,7 +258,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             }
             txn.commit();
 
-            return new AttachVolumeAnswer(cmd, cmd.getDeviceId());
+            return new AttachVolumeAnswer(cmd, cmd.getDeviceId(), cmd.getVolumePath());
         } catch (Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("Error when attaching volume " + cmd.getVolumeName() + " to VM "

@@ -76,6 +76,14 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "size of the disk volume")
     private Long size;
 
+    @SerializedName(ApiConstants.MIN_IOPS)
+    @Param(description = "min iops of the disk volume")
+    private Long minIops;
+
+    @SerializedName(ApiConstants.MAX_IOPS)
+    @Param(description = "max iops of the disk volume")
+    private Long maxIops;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date the disk volume was created")
     private Date created;
@@ -239,6 +247,14 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     public void setSize(Long size) {
         this.size = size;
+    }
+
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
     }
 
     public void setCreated(Date created) {

@@ -35,8 +35,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -143,6 +146,16 @@ public class VolumeServiceImpl implements VolumeService {
 
     }
 
+    public ChapInfo getChapInfo(VolumeInfo volumeInfo, DataStore dataStore) {
+        DataStoreDriver dataStoreDriver = dataStore.getDriver();
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            return ((PrimaryDataStoreDriver)dataStoreDriver).getChapInfo(volumeInfo);
+        }
+
+        return null;
+    }
+
     @Override
     public AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, DataStore dataStore) {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
@@ -154,7 +167,7 @@ public class VolumeServiceImpl implements VolumeService {
         AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createVolumeCallback(null, null)).setContext(context);
 
-        dataStore.getDriver().createAsync(volumeOnStore, caller);
+        dataStore.getDriver().createAsync(dataStore, volumeOnStore, caller);
         return future;
     }
 
@@ -238,7 +251,7 @@ public class VolumeServiceImpl implements VolumeService {
         AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteVolumeCallback(null, null)).setContext(context);
 
-        volume.getDataStore().getDriver().deleteAsync(volume, caller);
+        volume.getDataStore().getDriver().deleteAsync(volume.getDataStore(), volume, caller);
         return future;
     }
 
@@ -935,7 +948,7 @@ public class VolumeServiceImpl implements VolumeService {
         caller.setCallback(caller.getTarget().registerVolumeCallback(null, null));
         caller.setContext(context);
 
-        store.getDriver().createAsync(volumeOnStore, caller);
+        store.getDriver().createAsync(store, volumeOnStore, caller);
         return future;
     }
 

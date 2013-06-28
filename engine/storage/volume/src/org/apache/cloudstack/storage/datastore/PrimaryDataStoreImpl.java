@@ -288,6 +288,11 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     }
 
     @Override
+    public Long getCapacityIops() {
+        return this.pdsv.getCapacityIops();
+    }
+
+    @Override
     public Long getClusterId() {
         return this.pdsv.getClusterId();
     }

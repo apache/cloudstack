@@ -45,7 +45,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface VolumeManager extends VolumeApiService {
-
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId,
             Long destPoolClusterId, HypervisorType dataDiskHyperType)
             throws ConcurrentOperationException;

@@ -60,7 +60,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name="host_address")
     private String hostAddress;
 
-
     @Column(name="status")
     @Enumerated(value=EnumType.STRING)
     private StoragePoolStatus status;
@@ -109,7 +108,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name="pod_name")
     private String podName;
 
-
     @Column(name="tag")
     private String tag;
 
@@ -118,7 +116,6 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="disk_reserved_capacity")
     private long reservedCapacity;
-
 
     @Column(name="job_id")
     private Long jobId;
@@ -133,6 +130,8 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
 
+    @Column(name="capacity_iops")
+    private Long capacityIops;
 
     @Column(name = "hypervisor")
     @Enumerated(value = EnumType.STRING)
@@ -241,6 +240,14 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public void setCapacityBytes(long capacityBytes) {
         this.capacityBytes = capacityBytes;
+    }
+
+    public Long getCapacityIops() {
+        return capacityIops;
+    }
+
+    public void setCapacityIops(Long capacityIops) {
+        this.capacityIops = capacityIops;
     }
 
     public long getClusterId() {

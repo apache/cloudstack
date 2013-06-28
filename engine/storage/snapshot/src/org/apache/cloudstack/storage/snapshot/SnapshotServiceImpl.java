@@ -355,7 +355,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteSnapshotCallback(null, null)).setContext(context);
         DataStore store = snapInfo.getDataStore();
-        store.getDriver().deleteAsync(snapInfo, caller);
+        store.getDriver().deleteAsync(store, snapInfo, caller);
 
         SnapshotResult result = null;
         try {

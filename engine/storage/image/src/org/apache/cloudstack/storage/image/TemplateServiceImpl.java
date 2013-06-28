@@ -166,7 +166,7 @@ public class TemplateServiceImpl implements TemplateService {
 
         AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createTemplateCallback(null, null)).setContext(context);
-        store.getDriver().createAsync(templateOnStore, caller);
+        store.getDriver().createAsync(store, templateOnStore, caller);
     }
 
     @Override
@@ -511,7 +511,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null, to, future);
         AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteTemplateCallback(null, null)).setContext(context);
-        to.getDataStore().getDriver().deleteAsync(to, caller);
+        to.getDataStore().getDriver().deleteAsync(to.getDataStore(), to, caller);
         return future;
     }
 

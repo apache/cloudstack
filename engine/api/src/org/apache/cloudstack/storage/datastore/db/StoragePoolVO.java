@@ -103,6 +103,12 @@ public class StoragePoolVO implements StoragePool {
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
 
+    @Column(name = "managed")
+    private boolean managed;
+
+    @Column(name = "capacity_iops", updatable = true, nullable = true)
+    private Long capacityIops;
+
     @Column(name = "hypervisor")
     @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisor;
@@ -201,8 +207,24 @@ public class StoragePoolVO implements StoragePool {
         usedBytes = available;
     }
 
-    public void setCapacityBytes(long capacity) {
-        capacityBytes = capacity;
+    public void setCapacityBytes(long capacityBytes) {
+        this.capacityBytes = capacityBytes;
+    }
+
+    public void setManaged(boolean managed) {
+    	this.managed = managed;
+    }
+
+    public boolean isManaged() {
+    	return managed;
+    }
+
+    public void setCapacityIops(Long capacityIops) {
+        this.capacityIops = capacityIops;
+    }
+
+    public Long getCapacityIops() {
+        return capacityIops;
     }
 
     public Long getClusterId() {

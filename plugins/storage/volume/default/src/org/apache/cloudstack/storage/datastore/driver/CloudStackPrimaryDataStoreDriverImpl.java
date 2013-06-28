@@ -95,7 +95,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     }
 
     @Override
-    public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+    public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
+        return null;
+    }
+
+    @Override
+    public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         String errMsg = null;
         Answer answer = null;
         if (data.getType() == DataObjectType.VOLUME) {
@@ -118,7 +123,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     }
 
     @Override
-    public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
+    public void deleteAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
         DeleteCommand cmd = new DeleteCommand(data.getTO());
 
         CommandResult result = new CommandResult();

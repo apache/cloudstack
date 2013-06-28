@@ -145,7 +145,7 @@ public class ImageStoreImpl implements ImageStoreEntity {
     @Override
     public boolean delete(DataObject obj) {
         AsyncCallFuture<CommandResult> future = new AsyncCallFuture<CommandResult>();
-        this.driver.deleteAsync(obj, future);
+        this.driver.deleteAsync(obj.getDataStore(), obj, future);
         try {
             future.get();
         } catch (InterruptedException e) {

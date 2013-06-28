@@ -694,9 +694,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 throw new InvalidParameterValueException(
                         "Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
-            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware) {
+            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware &&
+                hypervisorType != HypervisorType.Any) {
                 throw new InvalidParameterValueException(
-                        "zone wide storage pool is not suported for hypervisor type " + hypervisor);
+                        "zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         }
 
@@ -734,6 +735,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("name", cmd.getStoragePoolName());
         params.put("details", details);
         params.put("providerName", storeProvider.getName());
+        params.put("managed", cmd.isManaged());
+        params.put("capacityBytes", cmd.getCapacityBytes());
+        params.put("capacityIops", cmd.getCapacityIops());
 
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = null;
@@ -1561,7 +1565,41 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean storagePoolHasEnoughSpace(List<Volume> volumes, StoragePool pool) {
+    public boolean storagePoolHasEnoughIops(List<Volume> requestedVolumes,
+            StoragePool pool) {
+        if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null)
+            return false;
+
+        long currentIops = 0;
+
+        List<VolumeVO> volumesInPool = _volumeDao.findByPoolId(pool.getId(), null);
+
+        for (VolumeVO volumeInPool : volumesInPool) {
+            Long minIops = volumeInPool.getMinIops();
+
+            if (minIops != null && minIops > 0) {
+                currentIops += minIops;
+            }
+        }
+
+        long requestedIops = 0;
+
+        for (Volume requestedVolume : requestedVolumes) {
+            Long minIops = requestedVolume.getMinIops();
+
+            if (minIops != null && minIops > 0) {
+                requestedIops += minIops;
+            }
+        }
+
+        long futureIops = currentIops + requestedIops;
+
+        return futureIops <= pool.getCapacityIops();
+    }
+
+    @Override
+    public boolean storagePoolHasEnoughSpace(List<Volume> volumes,
+            StoragePool pool) {
         if (volumes == null || volumes.isEmpty())
             return false;
 

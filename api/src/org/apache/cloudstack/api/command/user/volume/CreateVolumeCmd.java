@@ -68,6 +68,12 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="Arbitrary volume size")
     private Long size;
 
+    @Parameter(name=ApiConstants.MIN_IOPS, type=CommandType.LONG, description="min iops")
+    private Long minIops;
+
+    @Parameter(name=ApiConstants.MAX_IOPS, type=CommandType.LONG, description="max iops")
+    private Long maxIops;
+
     @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.UUID, entityType=SnapshotResponse.class,
             description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
     private Long snapshotId;
@@ -102,6 +108,14 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 
     public Long getSize() {
         return size;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
     }
 
     public Long getSnapshotId() {

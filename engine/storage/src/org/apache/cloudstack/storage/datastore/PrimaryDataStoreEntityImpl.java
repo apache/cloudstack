@@ -176,6 +176,12 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
     }
 
     @Override
+    public Long getCapacityIops() {
+        // TODO Auto-generated method stub
+        return 0L;
+    }
+
+    @Override
     public Long getClusterId() {
         // TODO Auto-generated method stub
         return null;

@@ -51,6 +51,9 @@ public class ApiConstants {
     public static final String CPU_OVERCOMMIT_RATIO="cpuovercommitratio";
     public static final String CREATED = "created";
     public static final String CUSTOMIZED = "customized";
+    public static final String CUSTOMIZED_IOPS = "customizediops";
+    public static final String MIN_IOPS = "miniops";
+    public static final String MAX_IOPS = "maxiops";
     public static final String DESCRIPTION = "description";
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
@@ -326,6 +329,9 @@ public class ApiConstants {
     public static final String SERVICE_CAPABILITY_LIST = "servicecapabilitylist";
     public static final String CAN_CHOOSE_SERVICE_CAPABILITY = "canchooseservicecapability";
     public static final String PROVIDER = "provider";
+    public static final String MANAGED = "managed";
+    public static final String CAPACITY_BYTES = "capacitybytes";
+    public static final String CAPACITY_IOPS = "capacityiops";
     public static final String NETWORK_SPEED = "networkspeed";
     public static final String BROADCAST_DOMAIN_RANGE = "broadcastdomainrange";
     public static final String ISOLATION_METHODS = "isolationmethods";

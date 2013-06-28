@@ -203,7 +203,7 @@ class cloudConnection(object):
                             i = i + 1
         return cmdname, isAsync, requests
 
-    def marvin_request(self, cmd, response_type=None, method='GET'):
+    def marvin_request(self, cmd, response_type=None, method='GET', data=''):
         """
         Requester for marvin command objects
         @param cmd: marvin's command from cloudstackAPI

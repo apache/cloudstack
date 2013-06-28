@@ -78,6 +78,10 @@ public class SnapshotCommandTest {
             return 0L;
         };
 
+        public Long getCapacityIops() {
+            return 0L;
+        };
+
         public Long getClusterId() {
             return 0L;
         };

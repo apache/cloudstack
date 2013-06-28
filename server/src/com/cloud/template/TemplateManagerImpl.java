@@ -1023,7 +1023,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         DataTO isoTO = tmplt.getTO();
-        DiskTO disk = new DiskTO(isoTO, null, Volume.Type.ISO);
+        DiskTO disk = new DiskTO(isoTO, null, null, Volume.Type.ISO);
         Command cmd = null;
         if (attach) {
             cmd = new AttachCommand(disk, vmName);

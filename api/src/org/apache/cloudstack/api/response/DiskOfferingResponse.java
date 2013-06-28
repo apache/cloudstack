@@ -52,6 +52,15 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("iscustomized") @Param(description="true if disk offering uses custom size, false otherwise")
     private Boolean customized;
 
+    @SerializedName("iscustomizediops") @Param(description="true if disk offering uses custom iops, false otherwise")
+    private Boolean customizedIops;
+
+    @SerializedName(ApiConstants.MIN_IOPS) @Param(description="the min iops of the disk offering")
+    private Long minIops;
+
+    @SerializedName(ApiConstants.MAX_IOPS) @Param(description="the max iops of the disk offering")
+    private Long maxIops;
+
     @SerializedName(ApiConstants.TAGS) @Param(description="the tags for the disk offering")
     private String tags;
 
@@ -152,6 +161,30 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setCustomized(Boolean customized) {
         this.customized = customized;
+    }
+
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public void setCustomizedIops(Boolean customizedIops) {
+        this.customizedIops = customizedIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
     }
 
     public String getStorageType() {

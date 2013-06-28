@@ -2573,7 +2573,7 @@ ServerResource {
             return new AttachVolumeAnswer(cmd, e.toString());
         }
 
-        return new AttachVolumeAnswer(cmd, cmd.getDeviceId());
+        return new AttachVolumeAnswer(cmd, cmd.getDeviceId(), cmd.getVolumePath());
     }
 
     private Answer execute(ReadyCommand cmd) {

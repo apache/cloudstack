@@ -49,25 +49,37 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         Volume volume = _volumeDao.findById(dskCh.getVolumeId());
         List<Volume> requestVolumes = new ArrayList<Volume>();
         requestVolumes.add(volume);
-        return storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
+
+        return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) &&
+               storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
     }
 
-    @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
-            DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        s_logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
-        List<StoragePool> suitablePools = new ArrayList<StoragePool>();
-        HypervisorType hypervisor = dskCh.getHypervisorType();
-        if (hypervisor != null) {
-            if (hypervisor != HypervisorType.KVM && hypervisor != HypervisorType.VMware) {
-                s_logger.debug("Only kvm, VMware hypervisors are enabled to support zone wide storage");
-                return suitablePools;
+	@Override
+	protected List<StoragePool> select(DiskProfile dskCh,
+			VirtualMachineProfile<? extends VirtualMachine> vmProfile,
+			DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+	    s_logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
+		List<StoragePool> suitablePools = new ArrayList<StoragePool>();
+
+        List<StoragePoolVO> storagePools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
+
+        if (storagePools == null) {
+            storagePools = new ArrayList<StoragePoolVO>();
+        }
+
+        List<StoragePoolVO> anyHypervisorStoragePools = new ArrayList<StoragePoolVO>();
+
+        for (StoragePoolVO storagePool : storagePools) {
+            if (HypervisorType.Any.equals(storagePool.getHypervisor())) {
+                anyHypervisorStoragePools.add(storagePool);
             }
         }
 
-        List<StoragePoolVO> storagePools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
         List<StoragePoolVO> storagePoolsByHypervisor = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(plan.getDataCenterId(), dskCh.getHypervisorType());
+
         storagePools.retainAll(storagePoolsByHypervisor);
+
+        storagePools.addAll(anyHypervisorStoragePools);
 
         // add remaining pools in zone, that did not match tags, to avoid set
         List<StoragePoolVO> allPools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null);

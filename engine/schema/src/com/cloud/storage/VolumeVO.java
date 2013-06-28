@@ -70,6 +70,12 @@ public class VolumeVO implements Volume {
     @Column(name = "size")
     Long size;
 
+    @Column(name = "min_iops")
+    Long minIops;
+
+    @Column(name = "max_iops")
+    Long maxIops;
+
     @Column(name = "folder")
     String folder;
 
@@ -141,25 +147,32 @@ public class VolumeVO implements Volume {
     @Column(name = "display_volume", updatable = true, nullable = false)
     protected boolean displayVolume;
 
+    @Column(name = "iscsi_name")
+    private String _iScsiName;
+
     @Transient
     // @Column(name="reservation")
     String reservationId;
 
     // Real Constructor
-    public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
+    public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size,
+    		Long minIops, Long maxIops, String iScsiName) {
         this.volumeType = type;
         this.name = name;
         this.dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
         this.size = size;
+        this.minIops = minIops;
+        this.maxIops = maxIops;
+        this._iScsiName = iScsiName;
         this.diskOfferingId = diskOfferingId;
         this.state = State.Allocated;
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, Long dcId, Long podId, long accountId, long domainId, Long instanceId, String folder,
-            String path, long size, Volume.Type vType) {
+    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path,
+    		long size, Long minIops, Long maxIops, String iScsiName, Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -167,6 +180,9 @@ public class VolumeVO implements Volume {
         this.folder = folder;
         this.path = path;
         this.size = size;
+        this.minIops = minIops;
+        this.maxIops = maxIops;
+        this._iScsiName = iScsiName;
         this.podId = podId;
         this.dataCenterId = dcId;
         this.volumeType = vType;
@@ -177,11 +193,15 @@ public class VolumeVO implements Volume {
 
     // Copy Constructor
     public VolumeVO(Volume that) {
-        this(that.getName(), that.getDataCenterId(), that.getPodId(), that.getAccountId(), that.getDomainId(), that
-                .getInstanceId(), that.getFolder(), that.getPath(), that.getSize(), that.getVolumeType());
+        this(that.getName(), that.getDataCenterId(), that.getPodId(), that.getAccountId(), that.getDomainId(), that.getInstanceId(),
+        		that.getFolder(), that.getPath(), that.getSize(), that.getMinIops(), that.getMaxIops(),
+        		that.get_iScsiName(), that.getVolumeType());
         this.recreatable = that.isRecreatable();
         this.state = that.getState();
         this.size = that.getSize();
+        this.minIops = that.getMinIops();
+        this.maxIops = that.getMaxIops();
+        this._iScsiName = that.get_iScsiName();
         this.diskOfferingId = that.getDiskOfferingId();
         this.poolId = that.getPoolId();
         this.attached = that.getAttached();
@@ -272,6 +292,24 @@ public class VolumeVO implements Volume {
 
     public void setSize(Long size) {
         this.size = size;
+    }
+
+    @Override
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    @Override
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
     }
 
     @Override
@@ -462,6 +500,15 @@ public class VolumeVO implements Volume {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public String get_iScsiName() {
+    	return this._iScsiName;
+    }
+
+    public void set_iScsiName(String iScsiName) {
+    	this._iScsiName = iScsiName;
     }
 
     public boolean isDisplayVolume() {

@@ -58,6 +58,12 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "size")
     long size;
 
+    @Column(name = "min_iops")
+    Long minIops;
+
+    @Column(name = "max_iops")
+    Long maxIops;
+
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
     private Volume.State state;
@@ -337,12 +343,25 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.size = size;
     }
 
+    public Long getMinIops() {
+        return minIops;
+    }
 
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
 
     public Volume.State getState() {
         return state;
     }
-
 
 
     public void setState(Volume.State state) {

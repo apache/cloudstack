@@ -2297,8 +2297,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_CREATE, eventDescription = "creating disk offering")
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled,
-            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
+    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
+    		boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
+    		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && (numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2314,8 +2315,44 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             isCustomized = true;
         }
 
+        if (isCustomizedIops != null) {
+            bytesReadRate = null;
+            bytesWriteRate = null;
+            iopsReadRate = null;
+            iopsWriteRate = null;
+
+            if (isCustomizedIops) {
+            	minIops = null;
+            	maxIops = null;
+            }
+            else {
+                if (minIops == null && maxIops == null) {
+                    minIops = 0L;
+                    maxIops = 0L;
+                }
+                else {
+                	if (minIops == null || minIops <= 0) {
+                	    throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
+        	        }
+
+                	if (maxIops == null) {
+        	        	maxIops = 0L;
+        	        }
+
+                	if (minIops > maxIops) {
+                		throw new InvalidParameterValueException("The min IOPS must be less than or equal to the max IOPS.");
+                	}
+                }
+            }
+        }
+        else {
+            minIops = null;
+            maxIops = null;
+        }
+
         tags = cleanupTags(tags);
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized,
+        		isCustomizedIops, minIops, maxIops);
         newDiskOffering.setUseLocalStorage(localStorageRequired);
         newDiskOffering.setDisplayOffering(isDisplayOfferingEnabled);
 
@@ -2355,7 +2392,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long domainId = cmd.getDomainId();
 
         if (!isCustomized && numGibibytes == null) {
-            throw new InvalidParameterValueException("Disksize is required for non-customized disk offering");
+            throw new InvalidParameterValueException("Disksize is required for a non-customized disk offering");
         }
 
         boolean localStorageRequired = false;
@@ -2369,11 +2406,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        Boolean isCustomizedIops = cmd.isCustomizedIops();
+        Long minIops = cmd.getMinIops();
+        Long maxIops = cmd.getMaxIops();
         Long bytesReadRate = cmd.getBytesReadRate();
         Long bytesWriteRate = cmd.getBytesWriteRate();
         Long iopsReadRate = cmd.getIopsReadRate();
         Long iopsWriteRate = cmd.getIopsWriteRate();
-        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized, localStorageRequired, isDisplayOfferingEnabled, bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate);
+
+        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized,
+        		localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops, maxIops,
+        		bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate);
     }
 
     @Override

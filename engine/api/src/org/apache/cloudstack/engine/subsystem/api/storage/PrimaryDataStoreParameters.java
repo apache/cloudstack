@@ -20,6 +20,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.Map;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class PrimaryDataStoreParameters {
@@ -30,12 +31,17 @@ public class PrimaryDataStoreParameters {
     private Map<String, String> details;
     private String tags;
     private StoragePoolType type;
+    private HypervisorType hypervisorType;
     private String host;
     private String path;
     private int port;
     private String uuid;
     private String name;
     private String userInfo;
+    private long capacityBytes;
+    private long usedBytes;
+    private boolean managed;
+    private Long capacityIops;
 
     /**
      * @return the userInfo
@@ -187,6 +193,30 @@ public class PrimaryDataStoreParameters {
         this.providerName = providerName;
     }
 
+    public void setManaged(boolean managed) {
+    	this.managed = managed;
+    }
+
+    public boolean isManaged() {
+    	return managed;
+    }
+
+    public void setCapacityIops(Long capacityIops) {
+        this.capacityIops = capacityIops;
+    }
+
+    public Long getCapacityIops() {
+        return capacityIops;
+    }
+
+    public void setHypervisorType(HypervisorType hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+
+    public HypervisorType getHypervisorType() {
+        return hypervisorType;
+    }
+
     /**
      * @return the clusterId
      */
@@ -230,5 +260,25 @@ public class PrimaryDataStoreParameters {
      */
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public long getCapacityBytes()
+    {
+    	return capacityBytes;
+    }
+
+    public void setCapacityBytes(long capacityBytes)
+    {
+    	this.capacityBytes = capacityBytes;
+    }
+
+    public long getUsedBytes()
+    {
+    	return usedBytes;
+    }
+
+    public void setUsedBytes(long usedBytes)
+    {
+    	this.usedBytes = usedBytes;
     }
 }

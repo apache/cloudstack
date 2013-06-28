@@ -80,6 +80,18 @@ public class CreateStoragePoolCmd extends BaseCmd {
             required=false, description="the scope of the storage: cluster or zone")
     private String scope;
 
+    @Parameter(name=ApiConstants.MANAGED, type=CommandType.BOOLEAN,
+            required=false, description="whether the storage should be managed by CloudStack")
+    private Boolean managed;
+
+    @Parameter(name=ApiConstants.CAPACITY_IOPS, type=CommandType.LONG,
+            required=false, description="IOPS CloudStack can provision from this storage pool")
+    private Long capacityIops;
+
+    @Parameter(name=ApiConstants.CAPACITY_BYTES, type=CommandType.LONG,
+            required=false, description="bytes CloudStack can provision from this storage pool")
+    private Long capacityBytes;
+
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=false,
             description="hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.")
     private String hypervisor;
@@ -122,6 +134,18 @@ public class CreateStoragePoolCmd extends BaseCmd {
 
     public String getScope() {
         return this.scope;
+    }
+
+    public Boolean isManaged() {
+    	return managed;
+    }
+
+    public Long getCapacityIops() {
+        return capacityIops;
+    }
+
+    public Long getCapacityBytes() {
+        return capacityBytes;
     }
 
     public String getHypervisor() {

@@ -932,7 +932,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         diskSize = diskSize * 1024 * 1024 * 1024;
         tags = cleanupTags(tags);
 
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized, null, null, null);
         newDiskOffering.setUniqueName("Cloud.Com-" + name);
         newDiskOffering.setSystemUse(isSystemUse);
         newDiskOffering = _diskOfferingDao.persistDeafultDiskOffering(newDiskOffering);

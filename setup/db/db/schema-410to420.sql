@@ -429,6 +429,20 @@ ALTER TABLE `cloud`.`nics` ADD COLUMN `display_nic` tinyint(1) NOT NULL DEFAULT 
 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `display_offering` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should disk offering be displayed to the end user';
 
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `customized_iops` tinyint(1) unsigned COMMENT 'Should customized IOPS be displayed to the end user';
+
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `min_iops` bigint(20) unsigned COMMENT 'Minimum IOPS';
+
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `max_iops` bigint(20) unsigned COMMENT 'Maximum IOPS';
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `min_iops` bigint(20) unsigned COMMENT 'Minimum IOPS';
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `max_iops` bigint(20) unsigned COMMENT 'Maximum IOPS';
+
+ALTER TABLE `cloud`.`storage_pool` ADD COLUMN `managed` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Should CloudStack manage this storage';
+
+ALTER TABLE `cloud`.`storage_pool` ADD COLUMN `capacity_iops` bigint(20) unsigned DEFAULT NULL COMMENT 'IOPS CloudStack can provision from this storage pool';
+
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_read_rate` bigint(20);
 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `bytes_write_rate` bigint(20);
@@ -871,6 +885,8 @@ CREATE VIEW `cloud`.`volume_view` AS
         volumes.device_id,
         volumes.volume_type,
         volumes.size,
+        volumes.min_iops,
+        volumes.max_iops,
         volumes.created,
         volumes.state,
         volumes.attached,
@@ -981,6 +997,7 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         storage_pool.created,
         storage_pool.removed,
         storage_pool.capacity_bytes,
+        storage_pool.capacity_iops,
         storage_pool.scope,
         storage_pool.hypervisor,
         cluster.id cluster_id,
@@ -1521,9 +1538,12 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         disk_offering.name,
         disk_offering.display_text,
         disk_offering.disk_size,
+        disk_offering.min_iops,
+        disk_offering.max_iops,
         disk_offering.created,
         disk_offering.tags,
         disk_offering.customized,
+        disk_offering.customized_iops,
         disk_offering.removed,
         disk_offering.use_local_storage,
         disk_offering.system_use,
@@ -1736,6 +1756,8 @@ CREATE VIEW `cloud`.`volume_view` AS
         volumes.device_id,
         volumes.volume_type,
         volumes.size,
+        volumes.min_iops,
+        volumes.max_iops,
         volumes.created,
         volumes.state,
         volumes.attached,

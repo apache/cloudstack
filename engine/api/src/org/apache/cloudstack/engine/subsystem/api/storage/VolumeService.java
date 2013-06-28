@@ -42,6 +42,8 @@ public interface VolumeService {
         }
     }
 
+    ChapInfo getChapInfo(VolumeInfo volumeInfo, DataStore dataStore);
+
     /**
      * Creates the volume based on the given criteria
      * 

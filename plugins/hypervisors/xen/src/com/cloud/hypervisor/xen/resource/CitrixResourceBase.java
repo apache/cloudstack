@@ -4172,11 +4172,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                             for (VIF vif : vifs) {
                                 networks.add(vif.getNetwork(conn));
                             }
-                            List<VDI> vdis = getVdis(conn, vm);
                             vm.destroy(conn);
-                            for( VDI vdi : vdis ){
-                                umount(conn, vdi);
-                            }
                             state = State.Stopped;
                             SR sr = getISOSRbyVmName(conn, cmd.getVmName());
                             removeSR(conn, sr);
@@ -4479,7 +4475,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("Could not find available VIF slot in VM with name: " + vmName);
     }
 
-    protected VDI mount(Connection conn, StoragePoolType pooltype, String volumeFolder, String volumePath) {
+    protected VDI mount(Connection conn, StoragePoolType poolType, String volumeFolder, String volumePath) {
         return getVDIbyUuid(conn, volumePath);
     }
 
@@ -5549,7 +5545,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (pool.getType() == StoragePoolType.NetworkFilesystem) {
                 getNfsSR(conn, pool);
             } else if (pool.getType() == StoragePoolType.IscsiLUN) {
-                getIscsiSR(conn, pool);
+                getIscsiSR(conn, pool.getUuid(), pool.getHost(), pool.getPath(), null, null, new Boolean[1]);
             } else if (pool.getType() == StoragePoolType.PreSetup) {
             } else {
                 return new Answer(cmd, false, "The pool type: " + pool.getType().name() + " is not supported.");
@@ -6229,7 +6225,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     public Answer execute(ResizeVolumeCommand cmd) {
         Connection conn = getConnection();
-        StorageFilerTO pool = cmd.getPool();
         String volid = cmd.getPath();
         long newSize = cmd.getNewSize();
 
@@ -6367,19 +6362,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected SR getIscsiSR(Connection conn, StorageFilerTO pool) {
-        synchronized (pool.getUuid().intern()) {
+    protected SR getIscsiSR(Connection conn, String srNameLabel, String target, String path,
+    		String chapInitiatorUsername, String chapInitiatorPassword, Boolean[] created) {
+        synchronized (srNameLabel.intern()) {
             Map<String, String> deviceConfig = new HashMap<String, String>();
             try {
-                String target = pool.getHost();
-                String path = pool.getPath();
                 if (path.endsWith("/")) {
                     path = path.substring(0, path.length() - 1);
                 }
 
                 String tmp[] = path.split("/");
                 if (tmp.length != 3) {
-                    String msg = "Wrong iscsi path " + pool.getPath() + " it should be /targetIQN/LUN";
+                    String msg = "Wrong iscsi path " + path + " it should be /targetIQN/LUN";
                     s_logger.warn(msg);
                     throw new CloudRuntimeException(msg);
                 }
@@ -6387,7 +6381,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 String lunid = tmp[2].trim();
                 String scsiid = "";
 
-                Set<SR> srs = SR.getByNameLabel(conn, pool.getUuid());
+                Set<SR> srs = SR.getByNameLabel(conn, srNameLabel);
                 for (SR sr : srs) {
                     if (!SRType.LVMOISCSI.equals(sr.getType(conn))) {
                         continue;
@@ -6412,19 +6406,24 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     }
                     if (target.equals(dc.get("target")) && targetiqn.equals(dc.get("targetIQN")) && lunid.equals(dc.get("lunid"))) {
                         throw new CloudRuntimeException("There is a SR using the same configuration target:" + dc.get("target") +  ",  targetIQN:"
-                                + dc.get("targetIQN")  + ", lunid:" + dc.get("lunid") + " for pool " + pool.getUuid() + "on host:" + _host.uuid);
+                                + dc.get("targetIQN")  + ", lunid:" + dc.get("lunid") + " for pool " + srNameLabel + "on host:" + _host.uuid);
                     }
                 }
                 deviceConfig.put("target", target);
                 deviceConfig.put("targetIQN", targetiqn);
 
+                if (StringUtils.isNotBlank(chapInitiatorUsername) &&
+                    StringUtils.isNotBlank(chapInitiatorPassword)) {
+                    deviceConfig.put("chapuser", chapInitiatorUsername);
+                    deviceConfig.put("chappassword", chapInitiatorPassword);
+                }
+
                 Host host = Host.getByUuid(conn, _host.uuid);
                 Map<String, String> smConfig = new HashMap<String, String>();
                 String type = SRType.LVMOISCSI.toString();
-                String poolId = Long.toString(pool.getId());
                 SR sr = null;
                 try {
-                    sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), poolId, type, "user", true,
+                    sr = SR.create(conn, host, deviceConfig, new Long(0), srNameLabel, srNameLabel, type, "user", true,
                             smConfig);
                 } catch (XenAPIException e) {
                     String errmsg = e.toString();
@@ -6463,19 +6462,30 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if( result.indexOf("<UUID>") != -1) {
                     pooluuid = result.substring(result.indexOf("<UUID>") + 6, result.indexOf("</UUID>")).trim();
                 }
-                if( pooluuid == null || pooluuid.length() != 36) {
-                    sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), poolId, type, "user", true,
+
+                if (pooluuid == null || pooluuid.length() != 36)
+                {
+                    sr = SR.create(conn, host, deviceConfig, new Long(0), srNameLabel, srNameLabel, type, "user", true,
                             smConfig);
+
+                    created[0] = true; // note that the SR was created (as opposed to introduced)
                 } else {
-                    sr = SR.introduce(conn, pooluuid, pool.getUuid(), poolId,
-                            type, "user", true, smConfig);
-                    Pool.Record pRec = XenServerConnectionPool.getPoolRecord(conn);
-                    PBD.Record rec = new PBD.Record();
-                    rec.deviceConfig = deviceConfig;
-                    rec.host = pRec.master;
-                    rec.SR = sr;
-                    PBD pbd = PBD.create(conn, rec);
-                    pbd.plug(conn);
+                    sr = SR.introduce(conn, pooluuid, srNameLabel, srNameLabel,
+                        type, "user", true, smConfig);
+
+                    Set<Host> setHosts = Host.getAll(conn);
+
+                    for (Host currentHost : setHosts) {
+                        PBD.Record rec = new PBD.Record();
+
+                        rec.deviceConfig = deviceConfig;
+                        rec.host = currentHost;
+                        rec.SR = sr;
+
+                        PBD pbd = PBD.create(conn, rec);
+
+                        pbd.plug(conn);
+                    }
                 }
                 sr.scan(conn);
                 return sr;
@@ -6636,6 +6646,52 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    // for about 1 GiB of physical size, about 4 MiB seems to be used for metadata
+    private long getMetadata(long physicalSize) {
+    	return (long)(physicalSize * 0.00390625); // 1 GiB / 4 MiB = 0.00390625
+    }
+
+    protected VDI handleSrAndVdiAttach(String iqn, String storageHostName,
+            String chapInitiatorName, String chapInitiatorPassword) throws Exception {
+        VDI vdi = null;
+
+        Connection conn = getConnection();
+
+        Boolean[] created = { false };
+
+        SR sr = getIscsiSR(conn, iqn,
+                    storageHostName, iqn,
+                    chapInitiatorName, chapInitiatorPassword, created);
+
+        // if created[0] is true, this means the SR was actually created...as opposed to introduced
+        if (created[0]) {
+            VDI.Record vdir = new VDI.Record();
+
+            vdir.nameLabel = iqn;
+            vdir.SR = sr;
+            vdir.type = Types.VdiType.USER;
+            vdir.virtualSize = sr.getPhysicalSize(conn) - sr.getPhysicalUtilisation(conn) - getMetadata(sr.getPhysicalSize(conn));
+
+            if (vdir.virtualSize < 0) {
+            	throw new Exception("VDI virtual size cannot be less than 0.");
+            }
+
+            vdi = VDI.create(conn, vdir);
+        }
+        else {
+            vdi = sr.getVDIs(conn).iterator().next();
+        }
+
+    	return vdi;
+    }
+
+    protected void handleSrAndVdiDetach(String iqn) throws Exception {
+        Connection conn = getConnection();
+
+        SR sr = getStorageRepository(conn, iqn);
+
+        removeSR(conn, sr);
+    }
 
     protected AttachVolumeAnswer execute(final AttachVolumeCommand cmd) {
         Connection conn = getConnection();
@@ -6652,7 +6708,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         try {
             // Look up the VDI
-            VDI vdi = mount(conn, cmd.getPooltype(), cmd.getVolumeFolder(),cmd.getVolumePath());
+            VDI vdi = null;
+
+            if (cmd.getAttach() && cmd.isManaged()) {
+                vdi = handleSrAndVdiAttach(cmd.get_iScsiName(), cmd.getStorageHost(),
+                        cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword());
+            }
+            else {
+                vdi = getVDIbyUuid(conn, cmd.getVolumePath());
+            }
+
             // Look up the VM
             VM vm = getVM(conn, vmName);
             /* For HVM guest, if no pv driver installed, no attach/detach */
@@ -6704,7 +6769,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 // Update the VDI's label to include the VM name
                 vdi.setNameLabel(conn, vmName + "-DATA");
 
-                return new AttachVolumeAnswer(cmd, Long.parseLong(diskNumber));
+                return new AttachVolumeAnswer(cmd, Long.parseLong(diskNumber), vdi.getUuid(conn));
             } else {
                 // Look up all VBDs for this VDI
                 Set<VBD> vbds = vdi.getVBDs(conn);
@@ -6723,7 +6788,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 // Update the VDI's label to be "detached"
                 vdi.setNameLabel(conn, "detached");
 
-                umount(conn, vdi);
+                if (cmd.isManaged()) {
+                    handleSrAndVdiDetach(cmd.get_iScsiName());
+                }
 
                 return new AttachVolumeAnswer(cmd);
             }
@@ -7606,30 +7673,30 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected SR getStorageRepository(Connection conn, String uuid) {
+    protected SR getStorageRepository(Connection conn, String srNameLabel) {
         Set<SR> srs;
         try {
-            srs = SR.getByNameLabel(conn, uuid);
+            srs = SR.getByNameLabel(conn, srNameLabel);
         } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to get SR " + uuid + " due to " + e.toString(), e);
+            throw new CloudRuntimeException("Unable to get SR " + srNameLabel + " due to " + e.toString(), e);
         } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to get SR " + uuid + " due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Unable to get SR " + srNameLabel + " due to " + e.getMessage(), e);
         }
 
         if (srs.size() > 1) {
-            throw new CloudRuntimeException("More than one storage repository was found for pool with uuid: " + uuid);
+            throw new CloudRuntimeException("More than one storage repository was found for pool with uuid: " + srNameLabel);
         } else if (srs.size() == 1) {
             SR sr = srs.iterator().next();
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("SR retrieved for " + uuid);
+                s_logger.debug("SR retrieved for " + srNameLabel);
             }
 
             if (checkSR(conn, sr)) {
                 return sr;
             }
-            throw new CloudRuntimeException("SR check failed for storage pool: " + uuid + "on host:" + _host.uuid);
+            throw new CloudRuntimeException("SR check failed for storage pool: " + srNameLabel + "on host:" + _host.uuid);
         } else {
-            throw new CloudRuntimeException("Can not see storage pool: " + uuid + " from on host:" + _host.uuid);
+            throw new CloudRuntimeException("Can not see storage pool: " + srNameLabel + " from on host:" + _host.uuid);
         }
     }
 

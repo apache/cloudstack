@@ -16,13 +16,46 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
+import java.util.List;
+import java.util.Set;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
+import org.apache.log4j.Logger;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountDetailVO;
+import com.cloud.user.dao.AccountDao;
 
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
+    private static final Logger s_logger = Logger.getLogger(SolidfirePrimaryDataStoreDriver.class);
+
+    @Inject private PrimaryDataStoreDao _storagePoolDao;
+    @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
+    @Inject private VolumeDao _volumeDao;
+    @Inject private VolumeDetailsDao _volumeDetailsDao;
+    @Inject private DataCenterDao _zoneDao;
+    @Inject private AccountDao _accountDao;
+    @Inject private AccountDetailsDao _accountDetailsDao;
 
     @Override
     public DataTO getTO(DataObject data) {
@@ -34,12 +67,450 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return null;
     }
 
-    @Override
-    public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+    private static class SolidFireConnection {
+        private final String _managementVip;
+        private final int _managementPort;
+        private final String _clusterAdminUsername;
+        private final String _clusterAdminPassword;
+
+        public SolidFireConnection(String managementVip, int managementPort,
+                String clusterAdminUsername, String clusterAdminPassword) {
+            _managementVip = managementVip;
+            _managementPort = managementPort;
+            _clusterAdminUsername = clusterAdminUsername;
+            _clusterAdminPassword = clusterAdminPassword;
+        }
+
+        public String getManagementVip() {
+            return _managementVip;
+        }
+
+        public int getManagementPort() {
+            return _managementPort;
+        }
+
+        public String getClusterAdminUsername() {
+            return _clusterAdminUsername;
+        }
+
+        public String getClusterAdminPassword() {
+            return _clusterAdminPassword;
+        }
+    }
+
+    private SolidFireConnection getSolidFireConnection(long storagePoolId) {
+        StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.MANAGEMENT_VIP);
+
+        String mVip = storagePoolDetail.getValue();
+
+        storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.MANAGEMENT_PORT);
+
+        int mPort = Integer.parseInt(storagePoolDetail.getValue());
+
+        storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.CLUSTER_ADMIN_USERNAME);
+
+        String clusterAdminUsername = storagePoolDetail.getValue();
+
+        storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.CLUSTER_ADMIN_PASSWORD);
+
+        String clusterAdminPassword = storagePoolDetail.getValue();
+
+        return new SolidFireConnection(mVip, mPort, clusterAdminUsername, clusterAdminPassword);
+    }
+
+    private SolidFireUtil.SolidFireAccount createSolidFireAccount(String sfAccountName,
+            SolidFireConnection sfConnection) {
+        try {
+            String mVip = sfConnection.getManagementVip();
+            int mPort = sfConnection.getManagementPort();
+            String clusterAdminUsername = sfConnection.getClusterAdminUsername();
+            String clusterAdminPassword = sfConnection.getClusterAdminPassword();
+
+            long accountNumber = SolidFireUtil.createSolidFireAccount(mVip, mPort,
+                clusterAdminUsername, clusterAdminPassword, sfAccountName);
+
+            return SolidFireUtil.getSolidFireAccountById(mVip, mPort,
+                clusterAdminUsername, clusterAdminPassword, accountNumber);
+        }
+        catch (Exception ex) {
+            throw new IllegalArgumentException(ex.getMessage());
+        }
+    }
+
+    private void updateCsDbWithAccountInfo(long csAccountId, SolidFireUtil.SolidFireAccount sfAccount) {
+        AccountDetailVO accountDetails = new AccountDetailVO(csAccountId,
+                SolidFireUtil.ACCOUNT_ID,
+                String.valueOf(sfAccount.getId()));
+
+        _accountDetailsDao.persist(accountDetails);
+
+        accountDetails = new AccountDetailVO(csAccountId,
+                SolidFireUtil.CHAP_INITIATOR_USERNAME,
+                String.valueOf(sfAccount.getName()));
+
+        _accountDetailsDao.persist(accountDetails);
+
+        accountDetails = new AccountDetailVO(csAccountId,
+                SolidFireUtil.CHAP_INITIATOR_SECRET,
+                String.valueOf(sfAccount.getInitiatorSecret()));
+
+        _accountDetailsDao.persist(accountDetails);
+
+        accountDetails = new AccountDetailVO(csAccountId,
+                SolidFireUtil.CHAP_TARGET_USERNAME,
+                sfAccount.getName());
+
+        _accountDetailsDao.persist(accountDetails);
+
+        accountDetails = new AccountDetailVO(csAccountId,
+                SolidFireUtil.CHAP_TARGET_SECRET,
+                sfAccount.getTargetSecret());
+
+        _accountDetailsDao.persist(accountDetails);
+    }
+
+    private class ChapInfoImpl implements ChapInfo {
+        private final String _initiatorUsername;
+        private final String _initiatorSecret;
+        private final String _targetUsername;
+        private final String _targetSecret;
+
+        public ChapInfoImpl(String initiatorUsername, String initiatorSecret,
+                String targetUsername, String targetSecret) {
+            _initiatorUsername = initiatorUsername;
+            _initiatorSecret = initiatorSecret;
+            _targetUsername = targetUsername;
+            _targetSecret = targetSecret;
+        }
+
+        public String getInitiatorUsername() {
+            return _initiatorUsername;
+        }
+
+        public String getInitiatorSecret() {
+            return _initiatorSecret;
+        }
+
+        public String getTargetUsername() {
+            return _targetUsername;
+        }
+
+        public String getTargetSecret() {
+            return _targetSecret;
+        }
     }
 
     @Override
-    public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
+    public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
+        long accountId = volumeInfo.getAccountId();
+
+        AccountDetailVO accountDetail = _accountDetailsDao.findDetail(accountId, SolidFireUtil.CHAP_INITIATOR_USERNAME);
+
+        String chapInitiatorUsername = accountDetail.getValue();
+
+        accountDetail = _accountDetailsDao.findDetail(accountId, SolidFireUtil.CHAP_INITIATOR_SECRET);
+
+        String chapInitiatorSecret = accountDetail.getValue();
+
+        accountDetail = _accountDetailsDao.findDetail(accountId, SolidFireUtil.CHAP_TARGET_USERNAME);
+
+        String chapTargetUsername = accountDetail.getValue();
+
+        accountDetail = _accountDetailsDao.findDetail(accountId, SolidFireUtil.CHAP_TARGET_SECRET);
+
+        String chapTargetSecret = accountDetail.getValue();
+
+        return new ChapInfoImpl(chapInitiatorUsername, chapInitiatorSecret,
+                chapTargetUsername, chapTargetSecret);
+    }
+
+    private SolidFireUtil.SolidFireVolume createSolidFireVolume(VolumeInfo volumeInfo, SolidFireConnection sfConnection)
+            throws StorageUnavailableException, Exception
+    {
+        String mVip = sfConnection.getManagementVip();
+        int mPort = sfConnection.getManagementPort();
+        String clusterAdminUsername = sfConnection.getClusterAdminUsername();
+        String clusterAdminPassword = sfConnection.getClusterAdminPassword();
+
+        AccountDetailVO accountDetail = _accountDetailsDao.findDetail(volumeInfo.getAccountId(), SolidFireUtil.ACCOUNT_ID);
+        long sfAccountId = Long.parseLong(accountDetail.getValue());
+
+        final Iops iops;
+
+        Long minIops = volumeInfo.getMinIops();
+        Long maxIops = volumeInfo.getMaxIops();
+
+        if (minIops == null || minIops <= 0 ||
+            maxIops == null || maxIops <= 0) {
+            iops = new Iops(100, 15000);
+        }
+        else {
+            iops = new Iops(volumeInfo.getMinIops(), volumeInfo.getMaxIops());
+        }
+
+    	long sfVolumeId = SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword,
+    	        volumeInfo.getName(), sfAccountId, volumeInfo.getSize(), true,
+    	        iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
+
+    	return SolidFireUtil.getSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
+    }
+
+    private static class Iops
+    {
+    	private final long _minIops;
+    	private final long _maxIops;
+    	private final long _burstIops;
+
+    	public Iops(long minIops, long maxIops) throws Exception
+    	{
+    	    if (minIops <= 0 || maxIops <= 0) {
+    	        throw new Exception("The 'Min IOPS' and 'Max IOPS' values must be greater than 0.");
+    	    }
+
+            if (minIops > maxIops) {
+                throw new Exception("The 'Min IOPS' value cannot exceed the 'Max IOPS' value.");
+            }
+
+            _minIops = minIops;
+            _maxIops = maxIops;
+
+            _burstIops = getBurstIops(_maxIops);
+    	}
+
+    	public long getMinIops()
+    	{
+    		return _minIops;
+    	}
+
+    	public long getMaxIops()
+    	{
+    		return _maxIops;
+    	}
+
+    	public long getBurstIops()
+    	{
+    		return _burstIops;
+    	}
+
+        private static long getBurstIops(long maxIops)
+        {
+        	return (long)(maxIops * 1.5);
+        }
+    }
+
+    private void deleteSolidFireVolume(VolumeInfo volumeInfo, SolidFireConnection sfConnection)
+            throws StorageUnavailableException, Exception
+    {
+        Long storagePoolId = volumeInfo.getPoolId();
+
+        if (storagePoolId == null) {
+            return; // this volume was never assigned to a storage pool, so no SAN volume should exist for it
+        }
+
+        String mVip = sfConnection.getManagementVip();
+        int mPort = sfConnection.getManagementPort();
+        String clusterAdminUsername = sfConnection.getClusterAdminUsername();
+        String clusterAdminPassword = sfConnection.getClusterAdminPassword();
+
+        long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
+
+        SolidFireUtil.deleteSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
+    }
+
+    private String getSfAccountName(String csAccountUuid, long csAccountId) {
+        return "CloudStack_" + csAccountUuid + "_" + getRandomNumber() + "_" + csAccountId;
+    }
+
+    private static long getRandomNumber()
+    {
+        return Math.round(Math.random() * 1000000000);
+    }
+
+    private boolean sfAccountExists(String sfAccountName, SolidFireConnection sfConnection) throws Exception {
+        String mVip = sfConnection.getManagementVip();
+        int mPort = sfConnection.getManagementPort();
+        String clusterAdminUsername = sfConnection.getClusterAdminUsername();
+        String clusterAdminPassword = sfConnection.getClusterAdminPassword();
+
+        try {
+            SolidFireUtil.getSolidFireAccountByName(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfAccountName);
+        }
+        catch (Exception ex) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void createAsync(DataStore dataStore, DataObject dataObject,
+            AsyncCompletionCallback<CreateCmdResult> callback) {
+        String iqn = null;
+        String errMsg = null;
+
+        if (dataObject.getType() == DataObjectType.VOLUME) {
+            try {
+                VolumeInfo volumeInfo = (VolumeInfo)dataObject;
+                AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
+                String sfAccountName = getSfAccountName(account.getUuid(), account.getAccountId());
+
+                long storagePoolId = dataStore.getId();
+                SolidFireConnection sfConnection = getSolidFireConnection(storagePoolId);
+
+                if (!sfAccountExists(sfAccountName, sfConnection)) {
+                    SolidFireUtil.SolidFireAccount sfAccount = createSolidFireAccount(sfAccountName,
+                            sfConnection);
+
+                    updateCsDbWithAccountInfo(account.getId(), sfAccount);
+                }
+
+                SolidFireUtil.SolidFireVolume sfVolume = createSolidFireVolume(volumeInfo, sfConnection);
+
+                iqn = sfVolume.getIqn();
+
+                VolumeVO volume = this._volumeDao.findById(volumeInfo.getId());
+
+                volume.set_iScsiName(iqn);
+                volume.setFolder(String.valueOf(sfVolume.getId()));
+                volume.setPoolType(StoragePoolType.IscsiLUN);
+                volume.setPoolId(storagePoolId);
+
+                _volumeDao.update(volume.getId(), volume);
+
+                StoragePoolVO storagePool = _storagePoolDao.findById(dataStore.getId());
+
+                long capacityBytes = storagePool.getCapacityBytes();
+                long usedBytes = storagePool.getUsedBytes();
+
+                usedBytes += volumeInfo.getSize();
+
+                if (usedBytes > capacityBytes) {
+                    usedBytes = capacityBytes;
+                }
+
+                storagePool.setUsedBytes(usedBytes);
+
+                _storagePoolDao.update(storagePoolId, storagePool);
+            } catch (StorageUnavailableException e) {
+                s_logger.error("Failed to create volume (StorageUnavailableException)", e);
+                errMsg = e.toString();
+            } catch (Exception e) {
+                s_logger.error("Failed to create volume (Exception)", e);
+                errMsg = e.toString();
+            }
+        }
+        else {
+            errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to createAsync";
+        }
+
+        // path = iqn
+        // size is pulled from DataObject instance, if errMsg is null
+        CreateCmdResult result = new CreateCmdResult(iqn, new Answer(null, errMsg == null, errMsg));
+
+        result.setResult(errMsg);
+
+        callback.complete(result);
+    }
+
+    private void deleteSolidFireAccount(long sfAccountId, SolidFireConnection sfConnection) throws Exception {
+        String mVip = sfConnection.getManagementVip();
+        int mPort = sfConnection.getManagementPort();
+        String clusterAdminUsername = sfConnection.getClusterAdminUsername();
+        String clusterAdminPassword = sfConnection.getClusterAdminPassword();
+
+        List<SolidFireUtil.SolidFireVolume> sfVolumes = SolidFireUtil.getDeletedVolumes(mVip, mPort,
+                clusterAdminUsername, clusterAdminPassword);
+
+        // if there are volumes for this account in the trash, delete them (so the account can be deleted)
+        if (sfVolumes != null) {
+            for (SolidFireUtil.SolidFireVolume sfVolume : sfVolumes) {
+                if (sfVolume.getAccountId() == sfAccountId) {
+                    SolidFireUtil.purgeSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolume.getId());
+                }
+            }
+        }
+
+        SolidFireUtil.deleteSolidFireAccount(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfAccountId);
+    }
+
+    private boolean sfAccountHasVolume(long sfAccountId, SolidFireConnection sfConnection) throws Exception {
+        String mVip = sfConnection.getManagementVip();
+        int mPort = sfConnection.getManagementPort();
+        String clusterAdminUsername = sfConnection.getClusterAdminUsername();
+        String clusterAdminPassword = sfConnection.getClusterAdminPassword();
+
+        List<SolidFireUtil.SolidFireVolume> sfVolumes = SolidFireUtil.getSolidFireVolumesForAccountId(mVip, mPort,
+                clusterAdminUsername, clusterAdminPassword, sfAccountId);
+
+        if (sfVolumes != null) {
+            for (SolidFireUtil.SolidFireVolume sfVolume : sfVolumes) {
+                if (sfVolume.isActive()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public void deleteAsync(DataStore dataStore, DataObject dataObject,
+            AsyncCompletionCallback<CommandResult> callback) {
+        String errMsg = null;
+
+        if (dataObject.getType() == DataObjectType.VOLUME) {
+            try {
+                VolumeInfo volumeInfo = (VolumeInfo)dataObject;
+                AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
+                AccountDetailVO accountDetails = _accountDetailsDao.findDetail(account.getAccountId(), SolidFireUtil.ACCOUNT_ID);
+                long sfAccountId = Long.parseLong(accountDetails.getValue());
+
+                long storagePoolId = dataStore.getId();
+                SolidFireConnection sfConnection = getSolidFireConnection(storagePoolId);
+
+                deleteSolidFireVolume(volumeInfo, sfConnection);
+
+                _volumeDao.deleteVolumesByInstance(volumeInfo.getId());
+
+                if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
+                    // delete the account from the SolidFire SAN
+                    deleteSolidFireAccount(sfAccountId, sfConnection);
+
+                    // delete the info in the account_details table
+                    // that's related to the SolidFire account
+                    _accountDetailsDao.deleteDetails(account.getAccountId());
+                }
+
+                StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
+
+                long usedBytes = storagePool.getUsedBytes();
+
+                usedBytes -= volumeInfo.getSize();
+
+                if (usedBytes < 0) {
+                    usedBytes = 0;
+                }
+
+                storagePool.setUsedBytes(usedBytes);
+
+                _storagePoolDao.update(storagePoolId, storagePool);
+            } catch (StorageUnavailableException e) {
+                s_logger.error("Failed to create volume (StorageUnavailableException)", e);
+                errMsg = e.toString();
+            } catch (Exception e) {
+                s_logger.error("Failed to create volume (Exception)", e);
+                errMsg = e.toString();
+            }
+        }
+        else {
+            errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to deleteAsync";
+        }
+
+        CommandResult result = new CommandResult();
+
+        result.setResult(errMsg);
+
+        callback.complete(result);
     }
 
     @Override
@@ -62,5 +533,4 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
     }
-
 }

@@ -162,7 +162,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         AsyncCallbackDispatcher<DataObjectManagerImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createAsynCallback(null, null)).setContext(context);
 
-        store.getDriver().createAsync(objInStore, caller);
+        store.getDriver().createAsync(store, objInStore, caller);
         return;
     }
 
@@ -321,7 +321,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         AsyncCallbackDispatcher<DataObjectManagerImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteAsynCallback(null, null)).setContext(context);
 
-        data.getDataStore().getDriver().deleteAsync(data, caller);
+        data.getDataStore().getDriver().deleteAsync(data.getDataStore(), data, caller);
         return;
     }
 

@@ -79,6 +79,11 @@ public class PrimaryDataStoreHelper {
         dataStoreVO.setClusterId(params.getClusterId());
         dataStoreVO.setStatus(StoragePoolStatus.Initialized);
         dataStoreVO.setUserInfo(params.getUserInfo());
+        dataStoreVO.setManaged(params.isManaged());
+        dataStoreVO.setCapacityIops(params.getCapacityIops());
+        dataStoreVO.setCapacityBytes(params.getCapacityBytes());
+        dataStoreVO.setUsedBytes(params.getUsedBytes());
+        dataStoreVO.setHypervisor(params.getHypervisorType());
 
         Map<String, String> details = params.getDetails();
         String tags = params.getTags();

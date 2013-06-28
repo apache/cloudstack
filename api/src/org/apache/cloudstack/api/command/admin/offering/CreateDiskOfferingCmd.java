@@ -52,7 +52,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="tags for the disk offering", length=4096)
     private String tags;
 
-    @Parameter(name=ApiConstants.CUSTOMIZED, type=CommandType.BOOLEAN, description="whether disk offering is custom or not")
+    @Parameter(name=ApiConstants.CUSTOMIZED, type=CommandType.BOOLEAN, description="whether disk offering size is custom or not")
     private Boolean customized;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
@@ -61,6 +61,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
+
+    @Parameter(name=ApiConstants.DISPLAY_OFFERING, type=CommandType.BOOLEAN, description="an optional field, whether to display the offering to the end user or not.")
+    private Boolean displayOffering;
 
     @Parameter(name=ApiConstants.BYTES_READ_RATE, type=CommandType.LONG, required=false, description="bytes read rate of the disk offering")
     private Long bytesReadRate;
@@ -74,8 +77,14 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.IOPS_WRITE_RATE, type=CommandType.LONG, required=false, description="io requests write rate of the disk offering")
     private Long iopsWriteRate;
 
-    @Parameter(name=ApiConstants.DISPLAY_OFFERING, type=CommandType.BOOLEAN, description="an optional field, whether to display the offering to the end user or not.")
-    private Boolean displayOffering;
+    @Parameter(name=ApiConstants.CUSTOMIZED_IOPS, type=CommandType.BOOLEAN, required=false, description="whether disk offering iops is custom or not")
+    private Boolean customizedIops;
+
+    @Parameter(name=ApiConstants.MIN_IOPS, type=CommandType.LONG, required=false, description="min iops of the disk offering")
+    private Long minIops;
+
+    @Parameter(name=ApiConstants.MAX_IOPS, type=CommandType.LONG, required=false, description="max iops of the disk offering")
+    private Long maxIops;
 
 /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -99,6 +108,18 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public Boolean isCustomized(){
         return customized;
+    }
+
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
     }
 
     public Long getDomainId(){

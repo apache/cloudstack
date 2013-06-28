@@ -655,8 +655,9 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#createDiskOffering(java.lang.Long, java.lang.String, java.lang.String, java.lang.Long, java.lang.String, boolean, boolean, boolean)
      */
     @Override
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired, boolean isDisplayOfferingEnabled,
-            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
+    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
+    		boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
+    		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         // TODO Auto-generated method stub
         return null;
     }

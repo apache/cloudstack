@@ -132,6 +132,16 @@
                         else {
                           $diskSize.hide();
                         }
+                        var $minIops = $form.find('.form-item[rel=minIops]');
+                        var $maxIops = $form.find('.form-item[rel=maxIops]');
+                        if (selectedDiskOfferingObj.iscustomizediops == true) {
+                          $minIops.css('display', 'inline-block');
+                          $maxIops.css('display', 'inline-block');
+                        }
+                        else {
+                          $minIops.hide();
+                          $maxIops.hide();
+                        }
                       });
                     }
                   }
@@ -141,7 +151,19 @@
                     label: 'label.disk.size.gb',
                     validation: { required: true, number: true },
                     isHidden: true
-                  }
+                  },
+                  
+                  minIops: {
+                    label: 'label.disk.iops.min',
+                    validation: { required: false, number: true },
+                    isHidden: true
+                  },
+                  
+                  maxIops: {
+                    label: 'label.disk.iops.max',
+                    validation: { required: false, number: true },
+                    isHidden: true
+                  },
 
                 }
               },
@@ -158,6 +180,20 @@
 								  $.extend(data, {
 									  size: args.data.diskSize
 									});
+                }
+                
+                if (selectedDiskOfferingObj.iscustomizediops == true) {
+                    if (args.data.minIops != "" && args.data.minIops > 0) {
+								  $.extend(data, {
+									  miniops: args.data.minIops
+									});
+					}
+				    
+				    if (args.data.maxIops != "" && args.data.maxIops > 0) {
+								  $.extend(data, {
+									  maxiops: args.data.maxIops
+									});
+					}
                 }
 
                 $.ajax({
@@ -1226,6 +1262,24 @@
                           return "";
                         else
                           return cloudStack.converters.convertBytes(args);
+                      }
+                    },
+                    miniops: {
+                      label: 'label.disk.iops.min',
+                      converter: function(args) {
+                        if(args == null || args == 0)
+                          return "";
+                        else
+                          return args;
+                      }
+                    },
+                    maxiops: {
+                      label: 'label.disk.iops.max',
+                      converter: function(args) {
+                        if(args == null || args == 0)
+                          return "";
+                        else
+                          return args;
                       }
                     },
                     virtualmachineid: {

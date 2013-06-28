@@ -83,6 +83,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         long allocatedSize = pool.getUsedCapacity() + pool.getReservedCapacity();
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
+        poolResponse.setCapacityIops(pool.getCapacityIops());
 
         // TODO: StatsCollector does not persist data
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
@@ -144,6 +145,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         long allocatedSize = ApiDBUtils.getStorageCapacitybyPool(pool.getId(), capacityType);
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
+        poolResponse.setCapacityIops(pool.getCapacityIops());
 
         // TODO: StatsCollector does not persist data
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());

@@ -107,6 +107,11 @@ public class VolumeObject implements VolumeInfo {
         volumeVO.setUuid(uuid);
     }
 
+    @Override
+    public String get_iScsiName() {
+    	return volumeVO.get_iScsiName();
+    }
+
     public void setSize(Long size) {
         volumeVO.setSize(size);
     }
@@ -124,6 +129,16 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public Long getSize() {
         return volumeVO.getSize();
+    }
+
+    @Override
+    public Long getMinIops() {
+        return volumeVO.getMinIops();
+    }
+
+    @Override
+    public Long getMaxIops() {
+        return volumeVO.getMaxIops();
     }
 
     public long getVolumeId() {

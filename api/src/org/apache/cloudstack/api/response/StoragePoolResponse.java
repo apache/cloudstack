@@ -74,6 +74,9 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName("disksizeused") @Param(description="the host's currently used disk size")
     private Long diskSizeUsed;
 
+    @SerializedName("capacityiops") @Param(description="IOPS CloudStack can provision from this storage pool")
+    private Long capacityIops;
+
     @SerializedName("tags") @Param(description="the tags for the storage pool")
     private String tags;
 
@@ -235,6 +238,14 @@ public class StoragePoolResponse extends BaseResponse {
 
     public void setDiskSizeUsed(Long diskSizeUsed) {
         this.diskSizeUsed = diskSizeUsed;
+    }
+
+    public Long getCapacityIops() {
+        return capacityIops;
+    }
+
+    public void setCapacityIops(Long capacityIops) {
+        this.capacityIops = capacityIops;
     }
 
     public String getTags() {

@@ -54,6 +54,11 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
         return null;
     }
 
+    @Override
+    public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
+        return null;
+    }
+
     private class CreateVolumeContext<T> extends AsyncRpcConext<T> {
         private final DataObject volume;
         public CreateVolumeContext(AsyncCompletionCallback<T> callback, DataObject volume) {
@@ -77,7 +82,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     }
 
     @Override
-    public void deleteAsync(DataObject vo, AsyncCompletionCallback<CommandResult> callback) {
+    public void deleteAsync(DataStore dataStore, DataObject vo, AsyncCompletionCallback<CommandResult> callback) {
         /*
          * DeleteCommand cmd = new DeleteCommand(vo.getUri());
          * 
@@ -146,7 +151,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
      */
 
     @Override
-    public void createAsync(DataObject vol, AsyncCompletionCallback<CreateCmdResult> callback) {
+    public void createAsync(DataStore dataStore, DataObject vol, AsyncCompletionCallback<CreateCmdResult> callback) {
         EndPoint ep = selector.select(vol);
         CreateObjectCommand createCmd = new CreateObjectCommand(null);
 

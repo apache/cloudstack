@@ -979,7 +979,7 @@ public class DatabaseConfig {
             newTags.delete(newTags.length() - 1, newTags.length());
             tags = newTags.toString();
         }
-        DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace , tags, false);
+        DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace, tags, false, null, null, null);
         diskOffering.setUseLocalStorage(local);
 
         Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));

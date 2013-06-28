@@ -321,8 +321,8 @@ cloudStack.converters = {
   toBooleanText: function(booleanValue) {
     if(booleanValue == true)
       return "Yes";
-    else if(booleanValue == false)
-      return "No";
+
+    return "No";
   },
   convertHz: function(hz) {
     if (hz == null)
