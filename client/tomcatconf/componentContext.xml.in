@@ -236,7 +236,9 @@
           <ref bean="PrivateNetworkGuru"/>
           <ref bean="NiciraNvpGuestNetworkGuru"/>
           <ref bean="MidoNetGuestNetworkGuru"/>
+          <!-- see commit 422d9b8daf281c6c897125d0ff0bf526c67b3f2b
           <ref bean="SspGuestNetworkGuru"/>
+          -->
       </list>
     </property>
   </bean>
