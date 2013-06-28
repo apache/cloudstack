@@ -1069,7 +1069,7 @@
 					var apiCmd, apiCmdRes;							
 					if(!('multiRules' in args.context)) { //from a new LB 	
             var data = {
-						  zoneid: args.context.networks[0].zoneid,
+						  zoneid: args.context.ipAddresses[0].zoneid, //args.context.networks[0] doesn't have zoneid property, so use args.context.ipAddresses[0] instead
 							serviceofferingid: args.data.serviceOfferingId,
 							templateid: args.data.templateNames,
 							destroyvmgraceperiod: args.data.destroyVMgracePeriod,
