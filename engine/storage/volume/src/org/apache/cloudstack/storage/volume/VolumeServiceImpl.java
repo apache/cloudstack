@@ -33,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -68,10 +69,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.template.TemplateProp;
@@ -79,6 +82,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -107,6 +111,8 @@ public class VolumeServiceImpl implements VolumeService {
     ConfigurationDao configDao;
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
+    @Inject
+    VMTemplatePoolDao _tmpltPoolDao;
     @Inject
     VolumeDao _volumeDao;
     @Inject
@@ -269,16 +275,18 @@ public class VolumeServiceImpl implements VolumeService {
         private final TemplateInfo srcTemplate;
         private final AsyncCallFuture<VolumeApiResult> future;
         final DataObject destObj;
+        long templatePoolId;
 
         public CreateBaseImageContext(AsyncCompletionCallback<T> callback, VolumeInfo volume,
                 PrimaryDataStore datastore, TemplateInfo srcTemplate, AsyncCallFuture<VolumeApiResult> future,
-                DataObject destObj) {
+                DataObject destObj, long templatePoolId) {
             super(callback);
             this.volume = volume;
             this.dataStore = datastore;
             this.future = future;
             this.srcTemplate = srcTemplate;
             this.destObj = destObj;
+            this.templatePoolId = templatePoolId;
         }
 
         public VolumeInfo getVolume() {
@@ -296,6 +304,11 @@ public class VolumeServiceImpl implements VolumeService {
         public AsyncCallFuture<VolumeApiResult> getFuture() {
             return this.future;
         }
+
+        public long getTemplatePoolId() {
+            return templatePoolId;
+        }
+
 
     }
 
@@ -324,44 +337,51 @@ public class VolumeServiceImpl implements VolumeService {
             AsyncCallFuture<VolumeApiResult> future) {
 
         DataObject templateOnPrimaryStoreObj = dataStore.create(template);
+
+        VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId());
+        if (templatePoolRef == null) {
+            throw new CloudRuntimeException("Failed to find template " + template.getUniqueName()
+                    + " in VMTemplateStoragePool");
+        }
+        long templatePoolRefId = templatePoolRef.getId();
         CreateBaseImageContext<CreateCmdResult> context = new CreateBaseImageContext<CreateCmdResult>(null, volume,
-                dataStore, template, future, templateOnPrimaryStoreObj);
+                dataStore, template, future, templateOnPrimaryStoreObj, templatePoolRefId);
         AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().copyBaseImageCallback(null, null)).setContext(context);
 
-        try {
-            templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
-        } catch (Exception e) {
-            s_logger.info("Multiple threads are trying to copy template to primary storage, current thread should just wait");
-            try {
-                templateOnPrimaryStoreObj = waitForTemplateDownloaded(dataStore, template);
-            } catch (Exception e1) {
-                s_logger.debug("wait for template:" + template.getId() + " downloading finished, but failed");
-                VolumeApiResult result = new VolumeApiResult(volume);
-                result.setResult(e1.toString());
-                future.complete(result);
-                return;
-            }
-            if (templateOnPrimaryStoreObj == null) {
-                VolumeApiResult result = new VolumeApiResult(volume);
-                result.setResult("wait for template:" + template.getId() + " downloading finished, but failed");
-                future.complete(result);
-                return;
-            } else {
-                s_logger.debug("waiting for template:" + template.getId() + " downloading finished, success");
+        int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(
+                configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
+        if (templatePoolRef == null) {
+            templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId());
+            if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready ) {
+                s_logger.info("Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId + ", But Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
                 createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
                 return;
             }
+            throw new CloudRuntimeException("Unable to acquire lock on VMTemplateStoragePool: " + templatePoolRefId);
         }
 
         try {
+            // lock acquired
+            if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready ) {
+                s_logger.info("Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
+                createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
+                return;
+            }
+            // remove the leftover hanging entry
+            dataStore.delete(templateOnPrimaryStoreObj);
+            // create a new entry to restart copying process
+            templateOnPrimaryStoreObj = dataStore.create(template);
+            templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
             motionSrv.copyAsync(template, templateOnPrimaryStoreObj, caller);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             s_logger.debug("failed to create template on storage", e);
             templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
             VolumeApiResult result = new VolumeApiResult(volume);
             result.setResult(e.toString());
             future.complete(result);
+            _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
         }
         return;
     }
@@ -376,12 +396,14 @@ public class VolumeServiceImpl implements VolumeService {
         DataObject templateOnPrimaryStoreObj = context.destObj;
         if (!result.isSuccess()) {
             templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
+            _tmpltPoolDao.releaseFromLockTable(context.getTemplatePoolId());
             res.setResult(result.getResult());
             future.complete(res);
             return null;
         }
 
         templateOnPrimaryStoreObj.processEvent(Event.OperationSuccessed, result.getAnswer());
+        _tmpltPoolDao.releaseFromLockTable(context.getTemplatePoolId());
         createVolumeFromBaseImageAsync(context.volume, templateOnPrimaryStoreObj, context.dataStore, future);
         return null;
     }
