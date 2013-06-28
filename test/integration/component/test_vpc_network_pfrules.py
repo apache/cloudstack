@@ -84,8 +84,6 @@ class Services:
                     "StaticNat": 'VpcVirtualRouter',
                     "NetworkACL": 'VpcVirtualRouter'
                 },
-                "servicecapabilitylist": {
-                },
             },
             "network_offering_no_lb": {
                 "name": 'VPC Network offering',
@@ -175,7 +173,6 @@ class Services:
             "ostype": 'CentOS 5.3 (64-bit)',
             "sleep": 60,
             "timeout": 10,
-            "mode": 'advanced'
         }
 
 

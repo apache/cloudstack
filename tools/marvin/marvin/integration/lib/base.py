@@ -2965,28 +2965,40 @@ class AffinityGroup:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None):
-        agCmd = createAffinityGroup.createAffinityGroupCmd()
-        agCmd.name = services['name']
-        agCmd.displayText = services['displaytext'] if 'displaytext' in services else services['name']
-        agCmd.type = services['type']
-        agCmd.account = services['account'] if 'account' in services else account
-        agCmd.domainid = services['domainid'] if 'domainid' in services else domainid
-        return AffinityGroup(apiclient.createAffinityGroup(agCmd).__dict__)
+    def create(cls, apiclient, aff_grp, account=None, domainid=None):
+        cmd = createAffinityGroup.createAffinityGroupCmd()
+        cmd.name = aff_grp['name']
+        cmd.displayText = aff_grp['name']
+        cmd.type = aff_grp['type']
+        #if account is not None:
+        #    cmd.account = account
+        #if domainid is not None:
+        #    cmd.domainid = domainid
+        return AffinityGroup(apiclient.createAffinityGroup(cmd).__dict__)
 
     def update(self, apiclient):
         pass
 
-    def delete(self, apiclient):
+    @classmethod
+    def delete(cls, apiclient, name=None, id=None, account=None,
+               domainid=None):
         cmd = deleteAffinityGroup.deleteAffinityGroupCmd()
-        cmd.id = self.id
-        return apiclient.deleteVPC(cmd)
+        if id is not None:
+            cmd.id = id
+        if name is not None:
+            cmd.name = name
+        if account is not None:
+            cmd.account = account
+        if domainid is not None:
+            cmd.domaindid = domainid
+
+        return apiclient.deleteAffinityGroup(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
         cmd = listAffinityGroups.listAffinityGroupsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return(apiclient.listVPCs(cmd))
+        return apiclient.listAffinityGroups(cmd)
 
 class StaticRoute:
     """Manage static route lifecycle"""

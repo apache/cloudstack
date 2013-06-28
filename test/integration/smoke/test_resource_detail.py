@@ -91,9 +91,6 @@ class Services:
                     "name": "xs",
                     "passwordenabled": False,
                 },
-            "diskdevice": '/dev/xvdd',
-            # Disk device where ISO is attached to instance
-            "mount_dir": "/mnt/tmp",
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid

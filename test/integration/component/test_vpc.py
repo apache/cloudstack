@@ -202,7 +202,6 @@ class TestVPC(cloudstackTestCase):
         cls.vpc_off.update(cls.api_client, state='Enabled')
         cls._cleanup = [
                         cls.service_offering,
-                        cls.vpc_off
                         ]
         return
 
@@ -224,25 +223,7 @@ class TestVPC(cloudstackTestCase):
                                      admin=True,
                                      domainid=self.domain.id
                                      )
-        self.cleanup = [self.account]
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                   )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        self._cleanup.insert(0, self.account)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -453,7 +434,7 @@ class TestVPC(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_04_delete_vpc_with_networks(self):
-        """ Test delete VPC having with networks
+        """ Test delete VPC having networks
         """
 
         # Validate the following
@@ -775,7 +756,7 @@ class TestVPC(cloudstackTestCase):
                                      self.apiclient,
                                      self.services["account"],
                                 )
-        self.cleanup.append(self.user)
+        self._cleanup.append(self.user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -1859,7 +1840,7 @@ class TestVPC(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_13_deploy_vm_with_vpc_netdomain(self):
-        """ Test deployment of vm in a VPC with netdomain
+        """ Test deployment of vm in a VPC with network domain
         """
 
         # 1. Create VPC with providing networkDomain.
@@ -1936,7 +1917,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self.cleanup.append(user)
+        self._cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -2017,7 +1998,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self.cleanup.append(user)
+        self._cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -2093,7 +2074,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self.cleanup.append(user)
+        self._cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -2177,7 +2158,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["domain_admin"]
                             )
         self.debug("Created account: %s" % domain_admin.name)
-        self.cleanup.append(domain_admin)
+        self._cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
                                         account=domain_admin.name,
                                         domain=domain_admin.domain,
@@ -2188,7 +2169,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self.cleanup.append(user)
+        self._cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %
@@ -2212,8 +2193,7 @@ class TestVPC(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_18_create_net_for_user_diff_domain_by_doadmin(self):
-        """ Test creation of network by domain admin for user from different
-            domain.
+        """ Test creation of network by domain admin for user from different domain
         """
 
         #1. As domain admin account , Create VPC(name,zoneId,cidr,vpcOfferingId,networkDomain) without passing Account/domain ID.
@@ -2229,7 +2209,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["domain_admin"]
                             )
         self.debug("Created account: %s" % domain_admin.name)
-        self.cleanup.append(domain_admin)
+        self._cleanup.append(domain_admin)
         da_apiclient = self.testClient.getUserApiClient(
                                         account=domain_admin.name,
                                         domain=self.services["domain"]["name"],
@@ -2240,7 +2220,7 @@ class TestVPC(cloudstackTestCase):
                             self.services["account"]
                             )
         self.debug("Created account: %s" % user.name)
-        self.cleanup.append(user)
+        self._cleanup.append(user)
 
         self.services["vpc"]["cidr"] = "10.1.1.1/16"
         self.debug("creating a VPC network in the account: %s" %

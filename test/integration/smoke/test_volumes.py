@@ -80,7 +80,6 @@ class Services:
                         "privateport": 22,
                         "publicport": 22,
                         "protocol": 'TCP',
-                        "diskdevice": "/dev/xvdb",
                         "ostype": 'CentOS 5.5 (64-bit)',
                         "sleep": 10,
                         "timeout": 600,
