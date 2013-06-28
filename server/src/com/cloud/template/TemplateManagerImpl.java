@@ -229,7 +229,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject UploadDao _uploadDao;
     @Inject
     protected GuestOSDao _guestOSDao;
-    long _routerTemplateId = -1;
     @Inject StorageManager _storageMgr;
     @Inject AsyncJobManager _asyncMgr;
     @Inject UserVmManager _vmMgr;
@@ -1205,7 +1204,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
-        _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
 
         String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
