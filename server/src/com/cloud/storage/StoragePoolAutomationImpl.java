@@ -23,12 +23,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -137,6 +132,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             //Handeling the Zone wide and cluster wide primay storage
             List<HostVO> hosts = new ArrayList<HostVO>();
             // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
+            //TODO: if it's zone wide, this code will list a lot of hosts in the zone, which may cause performance/OOM issue.
             if (pool.getScope().equals(ScopeType.ZONE)) {
                 hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(pool.getHypervisor() , pool.getDataCenterId());
             } else {
@@ -366,8 +362,16 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 .findById(store.getId());
         StoragePool pool = (StoragePool)store;
 
-        List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(
+        //Handeling the Zone wide and cluster wide primay storage
+        List<HostVO> hosts = new ArrayList<HostVO>();
+        // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
+        if (poolVO.getScope().equals(ScopeType.ZONE)) {
+            hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(poolVO.getHypervisor(), pool.getDataCenterId());
+        } else {
+            hosts = _resourceMgr.listHostsInClusterByStatus(
                 pool.getClusterId(), Status.Up);
+        }
+
         if (hosts == null || hosts.size() == 0) {
             return true;
         }
