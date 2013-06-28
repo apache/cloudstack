@@ -197,74 +197,83 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase implements Te
 
 	@Override
 	public TemplateProfile prepareExtractTemplate(ExtractTemplateCmd extractcmd) {
-             TemplateProfile profile = super.prepareExtractTemplate(extractcmd);
-             VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
-             Long zoneId = profile.getZoneId();
-             Long templateId = template.getId();
+        TemplateProfile profile = super.prepareExtractTemplate(extractcmd);
+        VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
+        Long zoneId = profile.getZoneId();
+        Long templateId = template.getId();
 
-             if (template.getHypervisorType() == HypervisorType.VMware) {
-                PrepareOVAPackingCommand cmd = null;
-                String zoneName="";
-                List<HostVO> secondaryStorageHosts;
-                if (!template.isCrossZones() && zoneId != null) {
-                        DataCenterVO zone = _dcDao.findById(zoneId);
-                        zoneName = zone.getName();
-                        secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
+        // Simply return profile if non-ESX hypervisor.
+        if (template.getHypervisorType() == HypervisorType.VMware) {
+            PrepareOVAPackingCommand cmd = null;
+            String zoneName="";
+            List<HostVO> secondaryStorageHosts;
 
-                    s_logger.debug("Attempting to mark template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
+            if (!template.isCrossZones()) {
+                if (zoneId == null) {
+                    throw new CloudRuntimeException("ZoneId cannot be null for a template that is not available across zones");
+                }
+                // Else get the list of secondary hosts in this zone's scope.
+                DataCenterVO zone = _dcDao.findById(zoneId);
+                zoneName = zone.getName();
+                secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
+            } else {
+                // template is available across zones. Get a list of all image stores.
+                secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInAllZones();
+            }
 
-                // Make sure the template is downloaded to all the necessary secondary storage hosts
+            if (secondaryStorageHosts == null || secondaryStorageHosts.size() == 0) {
+                throw new CloudRuntimeException("Unable to find a secondary host when trying to download template " + profile.getTemplate());
+            }
 
-                for (HostVO secondaryStorageHost : secondaryStorageHosts) {
-                        long hostId = secondaryStorageHost.getId();
-                        List<VMTemplateHostVO> templateHostVOs = _tmpltHostDao.listByHostTemplate(hostId, templateId);
-                        for (VMTemplateHostVO templateHostVO : templateHostVOs) {
-                        if (templateHostVO.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
-                                 String errorMsg = "Please specify a template that is not currently being downloaded.";
-                                 s_logger.debug("Template: " + template.getName() + " is currently being downloaded to secondary storage host: " + secondaryStorageHost.getName() + ".");
-                                 throw new CloudRuntimeException(errorMsg);
+            s_logger.debug("Attempting to mark template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
+
+            // Make sure the template is downloaded to all the necessary secondary storage hosts
+
+            for (HostVO secondaryStorageHost : secondaryStorageHosts) {
+                long hostId = secondaryStorageHost.getId();
+                List<VMTemplateHostVO> templateHostVOs = _tmpltHostDao.listByHostTemplate(hostId, templateId);
+                for (VMTemplateHostVO templateHostVO : templateHostVOs) {
+                    if (templateHostVO.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
+                        String errorMsg = "Please specify a template that is not currently being downloaded.";
+                        s_logger.debug("Template: " + template.getName() + " is currently being downloaded to secondary storage host: " + secondaryStorageHost.getName() + ".");
+                        throw new CloudRuntimeException(errorMsg);
+                    }
+                    String installPath = templateHostVO.getInstallPath();
+                    if (installPath != null) {
+                        HostVO ssvmhost = _ssvmMgr.pickSsvmHost(secondaryStorageHost);
+                        if( ssvmhost == null ) {
+                            s_logger.warn("prepareOVAPacking (hyervisorTemplateAdapter): There is no secondary storage VM for secondary storage host " + secondaryStorageHost.getName());
+                            throw new CloudRuntimeException("PrepareExtractTemplate: can't locate ssvm for SecStorage Host.");
                         }
-                        String installPath = templateHostVO.getInstallPath();
-                        if (installPath != null) {
-                              HostVO ssvmhost = _ssvmMgr.pickSsvmHost(secondaryStorageHost);
-                              if( ssvmhost == null ) {
-                                 s_logger.warn("prepareOVAPacking (hyervisorTemplateAdapter): There is no secondary storage VM for secondary storage host " + secondaryStorageHost.getName());
-                                 throw new CloudRuntimeException("PrepareExtractTemplate: can't locate ssvm for SecStorage Host.");
-                              }
-                           //Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new PrepareOVAPackingCommand(secondaryStorageHost.getStorageUrl(), installPath));
-                              cmd = new PrepareOVAPackingCommand(secondaryStorageHost.getStorageUrl(), installPath);
+                        cmd = new PrepareOVAPackingCommand(secondaryStorageHost.getStorageUrl(), installPath);
 
-                              if (cmd == null) {
-                                    s_logger.debug("Fang: PrepareOVAPacking cmd can't created. cmd is null .");
-                                    throw new CloudRuntimeException("PrepareExtractTemplate: can't create a new cmd to packing ova.");
-                              } else {
-                                    cmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
-                              }
-                              Answer answer = null;
-                              s_logger.debug("Fang: PrepareOVAPAcking cmd, before send out. cmd: " + cmd.toString());
-                              try {
-                                   answer = _agentMgr.send(ssvmhost.getId(), cmd);
-                                } catch (AgentUnavailableException e) {
-                                    s_logger.warn("Unable to packOVA for template: id: " + templateId + ", name " + ssvmhost.getName(), e);
-                                } catch (OperationTimedoutException e) {
-                                    s_logger.warn("Unable to packOVA for template timeout. template id: " + templateId);
-                                    e.printStackTrace();
-                                }
+                        if (cmd == null) {
+                            s_logger.debug("PrepareOVAPacking cmd can't created. cmd is null .");
+                            throw new CloudRuntimeException("PrepareExtractTemplate: can't create a new cmd to packing ova.");
+                        } else {
+                            cmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
+                        }
+                        Answer answer = null;
+                        s_logger.debug("PrepareOVAPAcking cmd, before send out. cmd: " + cmd.toString());
+                        try {
+                            answer = _agentMgr.send(ssvmhost.getId(), cmd);
+                        } catch (AgentUnavailableException e) {
+                            s_logger.warn("Unable to packOVA for template: id: " + templateId + ", name " + ssvmhost.getName(), e);
+                        } catch (OperationTimedoutException e) {
+                            s_logger.warn("Unable to packOVA for template timeout. template id: " + templateId);
+                            e.printStackTrace();
+                        }
 
-                                  if (answer == null || !answer.getResult()) {
-                                      s_logger.debug("Failed to create OVA for template " + templateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
-                                      throw new CloudRuntimeException("PrepareExtractTemplate: Failed to create OVA for template extraction. ");
-                                  }
-                       }
-              }
-           }
-         }  else {
-			s_logger.debug("Failed to create OVA for template " + template + " due to zone non-existing.");
-                        throw new CloudRuntimeException("PrepareExtractTemplate: Failed to create OVA for template extraction. ");
-		}
-         }
-		return profile;
+                        if (answer == null || !answer.getResult()) {
+                            s_logger.debug("Failed to create OVA for template " + templateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
+                            throw new CloudRuntimeException("PrepareExtractTemplate: Failed to create OVA for template extraction. ");
+                        }
+                    }
+                }
+            }
         }
+        return profile;
+    }
 
 	@Override @DB
 	public boolean delete(TemplateProfile profile) {
