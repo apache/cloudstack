@@ -688,7 +688,7 @@
   <bean id="dataStoreProviderManagerImpl" class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl" />
   <bean id="elasticLoadBalancerManagerImpl" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl" />
   <bean id="entityManagerImpl" class="com.cloud.dao.EntityManagerImpl" />
-  <bean id="externalLoadBalancerUsageManagerImpl" class="com.cloud.network.ExternalLoadBalancerUsageManagerImpl" />
+  <bean id="externalDeviceUsageManagerImpl" class="com.cloud.network.ExternalDeviceUsageManagerImpl" />
   <bean id="externalNetworkDeviceManagerImpl" class="com.cloud.network.ExternalNetworkDeviceManagerImpl" />
   <bean id="firewallManagerImpl" class="com.cloud.network.firewall.FirewallManagerImpl" />
   <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" />

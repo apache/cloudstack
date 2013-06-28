@@ -30,6 +30,12 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.network.ExternalDeviceUsageManager;
+import com.cloud.network.IpAddress;
+import com.cloud.network.LBHealthCheckPolicyVO;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
@@ -63,15 +69,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.ExternalLoadBalancerUsageManager;
-import com.cloud.network.IpAddress;
-import com.cloud.network.LBHealthCheckPolicyVO;
-import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
@@ -210,7 +210,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     ConfigurationManager _configMgr;
 
     @Inject
-    ExternalLoadBalancerUsageManager _externalLBUsageMgr;
+    ExternalDeviceUsageManager _externalDeviceUsageMgr;
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
@@ -1214,7 +1214,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         NetworkVO network = _networkDao.findById(lb.getNetworkId());
         if (network != null) {
             if (_networkModel.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
-                _externalLBUsageMgr.updateExternalLoadBalancerNetworkUsageStats(loadBalancerId);
+                _externalDeviceUsageMgr.updateExternalLoadBalancerNetworkUsageStats(loadBalancerId);
             }
         }
 
