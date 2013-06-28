@@ -45,6 +45,7 @@ import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestInfo;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HttpNfcLeaseDeviceUrl;
 import com.vmware.vim25.HttpNfcLeaseInfo;
 import com.vmware.vim25.HttpNfcLeaseState;
@@ -84,6 +85,7 @@ import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineCloneSpec;
 import com.vmware.vim25.VirtualMachineConfigInfo;
+import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineFileInfo;
@@ -1592,6 +1594,21 @@ public class VirtualMachineMO extends BaseMO {
 		    }
 		}
 	}
+
+    public GuestOsDescriptor getGuestOsDescriptor(String guestOsId) throws Exception {
+        GuestOsDescriptor guestOsDescriptor = null;
+        ManagedObjectReference vmEnvironmentBrowser =
+                _context.getVimClient().getMoRefProp(_mor, "environmentBrowser");
+        VirtualMachineConfigOption  vmConfigOption = _context.getService().queryConfigOption(vmEnvironmentBrowser, null, null);
+        List<GuestOsDescriptor> guestDescriptors = vmConfigOption.getGuestOSDescriptor();
+        for (GuestOsDescriptor descriptor : guestDescriptors) {
+            if (guestOsId != null && guestOsId.equalsIgnoreCase(descriptor.getId())) {
+                guestOsDescriptor = descriptor;
+                break;
+            }
+        }
+        return guestOsDescriptor;
+    }
 
 	public void plugDevice(VirtualDevice device) throws Exception {
         VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
