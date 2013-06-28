@@ -1347,7 +1347,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                             ResourceType.volume);
                     /* If volume is in primary storage, decrement primary storage count else decrement secondary
                      storage count (in case of upload volume). */
-                    if (volume.getFolder() != null) {
+                    if (volume.getFolder() != null || volume.getState() == Volume.State.Allocated) {
                         _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage,
                                 new Long(volume.getSize()));
                     } else {
