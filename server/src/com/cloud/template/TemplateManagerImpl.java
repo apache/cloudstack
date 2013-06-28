@@ -304,17 +304,22 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template")
     public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException{
+        Account account = UserContext.current().getCaller();
         if(cmd.getTemplateTag() != null){
-            Account account = UserContext.current().getCaller();
             if(!_accountService.isRootAdmin(account.getType())){
                 throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
             }
         }
-        
+        if(cmd.isRoutingType() != null){
+            if(!_accountService.isRootAdmin(account.getType())){
+                throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
+            }
+        }
+
     	TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
     	TemplateProfile profile = adapter.prepare(cmd);
     	VMTemplateVO template = adapter.create(profile);
-    	
+
     	if (template != null){
         	return template;
         }else {

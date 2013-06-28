@@ -57,6 +57,9 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if template/ISO contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     private Boolean isDynamicallyScalable;
 
+    @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")
+    protected Boolean isRoutingType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -95,5 +98,9 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
 
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
+    }
+
+    public Boolean isRoutingType() {
+        return isRoutingType;
     }
 }
