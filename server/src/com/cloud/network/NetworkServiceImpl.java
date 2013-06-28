@@ -2561,7 +2561,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (removeVlan != null){
             List<Integer> tokens = processVlanRange(network,removeVlan);
-            removeVlanRange(network, tokens.get(0), tokens.get(1));
+            boolean result = removeVlanRange(network, tokens.get(0), tokens.get(1));
         }
 
         if (tags != null && tags.size() > 1) {
@@ -2589,6 +2589,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             network.setSpeed(networkSpeed);
         }
 
+        // Vnet range can be extended only
         boolean AddVnet = true;
         List<Pair<Integer, Integer>> vnetsToAdd = new ArrayList<Pair<Integer, Integer>>();
 
@@ -2605,6 +2606,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     int existingStartVnet = existingRanges.get(j).first();
                     int existingEndVnet = existingRanges.get(j).second();
 
+                    // check if vnet is being extended
                     if (newStartVnet.intValue() >= existingStartVnet & newEndVnet.intValue() <= existingEndVnet) {
                         throw new InvalidParameterValueException("The vlan range you trying to add already exists.");
                     }
@@ -2628,62 +2630,79 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet+1,newEndVnet));
                         existingRanges.get(j).first(newStartVnet);
                         existingRanges.get(j).second(newEndVnet);
-                        AddVnet = false;
                         break;
                     }
                 }
 
             }
             if (AddVnet){
-                vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, newEndVnet));
-                existingRanges.add(new Pair<Integer, Integer>(newStartVnet,newEndVnet));
-                j= existingRanges.size()-1;
+                    vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, newEndVnet));
+                    existingRanges.add(new Pair<Integer, Integer>(newStartVnet,newEndVnet));
             }
+
+            Map <Integer,Integer> vnetMap = new HashMap<Integer, Integer>(existingRanges.size());
+            Map <Integer, Integer> IndexMap = new HashMap<Integer, Integer>(existingRanges.size());
+            for (int i=0; i< existingRanges.size(); i++){
+                 vnetMap.put(existingRanges.get(i).first(),existingRanges.get(i).second());
+                 IndexMap.put(existingRanges.get(i).first(),i);
+            }
+
             Integer value;
+            Integer index;
             String vnetString = "";
-
-            Integer changed_entry_start = existingRanges.get(j).first();
-            Integer changed_entry_end = existingRanges.get(j).second();
             for (int i=0; i < existingRanges.size(); i++){
-                if (i !=j  && existingRanges.get(i).first()<=changed_entry_end && existingRanges.get(i).second() >= changed_entry_end) {
-                    existingRanges.get(j).second(existingRanges.get(i).second());
+                 value = vnetMap.get((existingRanges.get(i).second()+1));
+                 if (value != null) {
+                     vnetMap.remove((existingRanges.get(i).second()+1));
+                     vnetMap.remove(existingRanges.get(i).first());
+                     vnetMap.put(existingRanges.get(i).first(),value);
+                     existingRanges.add(new Pair<Integer,Integer>(existingRanges.get(i).first(),value));
+                     index = IndexMap.get(existingRanges.get(i).second()+1);
+                     existingRanges.get(index).first(-1);
+                     existingRanges.get(index).second(-1);
+                     existingRanges.get(i).first(-1);
+                     existingRanges.get(i).second(-1);
+                 }
+                value = vnetMap.get((existingRanges.get(i).second()));
+                if (value != null && ( (existingRanges.get(i).second()) != (existingRanges.get(i).first()) )) {
+                    vnetMap.remove((existingRanges.get(i).second()));
+                    vnetMap.remove(existingRanges.get(i).first());
+                    vnetMap.put(existingRanges.get(i).first(),value);
+                    existingRanges.add(new Pair<Integer,Integer>(existingRanges.get(i).first(),value));
+                    index = IndexMap.get(existingRanges.get(i).second());
+                    existingRanges.get(index).first(-1);
+                    existingRanges.get(index).second(-1);
                     existingRanges.get(i).first(-1);
                     existingRanges.get(i).second(-1);
-                } else if ((i !=j  && changed_entry_end > existingRanges.get(i).second()) && changed_entry_start <= existingRanges.get(i).first()) {
-                    existingRanges.get(i).first(-1);
-                    existingRanges.get(i).second(-1);
-                }else if ((i != j ) &&  changed_entry_end > existingRanges.get(i).second() && changed_entry_start <= existingRanges.get(i).second() &&  existingRanges.get(i).first() <= changed_entry_start) {
-                    existingRanges.get(j).first(existingRanges.get(i).first());
-                    existingRanges.get(i).first(-1);
-                    existingRanges.get(i).first(-1);
                 }
             }
 
 
-            for (Pair<Integer,Integer> vnetRange : existingRanges ){
-                value=vnetRange.first();
-                if (value != -1){
-                    vnetString = vnetString+vnetRange.first().toString()+"-"+vnetRange.second().toString()+";";
-                }
+
+            if (newVnetRangeString != null) {
+               for (Pair<Integer,Integer> vnetRange : existingRanges ){
+                    value=vnetMap.get(vnetRange.first());
+                    if (value != null){
+                        vnetString = vnetString+vnetRange.first().toString()+"-"+value.toString()+";";
+                    }
+               }
+               if (vnetString.length() > 0 && vnetString.charAt(vnetString.length()-1)==';') {
+                   vnetString = vnetString.substring(0, vnetString.length()-1);
+               }
+               network.setVnet(vnetString);
             }
-            if (vnetString.length() > 0 && vnetString.charAt(vnetString.length()-1)==';') {
-                vnetString = vnetString.substring(0, vnetString.length()-1);
-            }
-            network.setVnet(vnetString);
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
+
             for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
                 s_logger.debug("Adding vnet range " + vnetToAdd.first() + "-" + vnetToAdd.second() + " for the physicalNetwork id= " + id + " and zone id=" + network.getDataCenterId()
-                        + " as a part of updatePhysicalNetwork call");
+                    + " as a part of updatePhysicalNetwork call");
                 _dcDao.addVnet(network.getDataCenterId(), network.getId(), vnetToAdd.first(), vnetToAdd.second());
             }
-            _physicalNetworkDao.update(id, network);
-            txn.commit();
         }
 
-        return  network;
-    }
+        _physicalNetworkDao.update(id, network);
 
+        return network;
+    }
 
     private List<Integer> processVlanRange(PhysicalNetworkVO network, String removeVlan) {
         Integer StartVnet;
