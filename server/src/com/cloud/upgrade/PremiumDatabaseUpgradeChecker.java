@@ -149,6 +149,6 @@ public class PremiumDatabaseUpgradeChecker extends DatabaseUpgradeChecker {
 
         _upgradeMap.put("4.0.2", new DbUpgrade[] { new Upgrade40to41(), new Upgrade410to411() });
 
-	_upgradeMap.put("4.1.0", new DbUpgrade[] { new new Upgrade410to411() });
+        _upgradeMap.put("4.1.0", new DbUpgrade[] { new Upgrade410to411() });
    }
 }
