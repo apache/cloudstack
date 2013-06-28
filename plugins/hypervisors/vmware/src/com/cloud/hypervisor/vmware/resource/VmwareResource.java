@@ -273,6 +273,7 @@ import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestInfo;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.HostFirewallRuleset;
@@ -307,6 +308,7 @@ import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualLsiLogicController;
+import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
@@ -2545,9 +2547,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
             vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024*1024)), ramMb,
             translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), vmSpec.getLimitCpuUse());
+            String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value();
+            boolean guestSupportsCpuHotAdd = false;
+            boolean guestSupportsMemoryHotAdd = false;
+            GuestOsDescriptor vmGuestOsDescriptor = vmMo.getGuestOsDescriptor(guestOsId);
+            if (vmGuestOsDescriptor != null) {
+                guestSupportsCpuHotAdd = vmGuestOsDescriptor.isSupportsCpuHotAdd();
+                guestSupportsMemoryHotAdd = vmGuestOsDescriptor.isSupportsMemoryHotAdd();
+            }
 
-            vmConfigSpec.setMemoryHotAddEnabled(true);
-            vmConfigSpec.setCpuHotAddEnabled(true);
+            vmConfigSpec.setMemoryHotAddEnabled(guestSupportsMemoryHotAdd);
+            vmConfigSpec.setCpuHotAddEnabled(guestSupportsCpuHotAdd);
 
             if ("true".equals(vmSpec.getDetails().get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG))) {
                 s_logger.debug("Nested Virtualization enabled in configuration, checking hypervisor capability");
