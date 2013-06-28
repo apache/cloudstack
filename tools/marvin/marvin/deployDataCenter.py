@@ -147,9 +147,9 @@ specify a valid config file" % cfgFile)
             if secondarycmd.provider == 'S3':
                 for key, value in vars(secondary.details).iteritems():
                     secondarycmd.details.append({
-                        'key': key,
-                        'value': value
-                        })
+                                                'key': key,
+                                                'value': value
+                                                })
             if secondarycmd.provider == "NFS":
                 secondarycmd.zoneid = zoneId
             self.apiClient.addImageStore(secondarycmd)
@@ -167,9 +167,9 @@ specify a valid config file" % cfgFile)
             if cache.details:
                 for key, value in vars(cache.details).iteritems():
                     cachecmd.details.append({
-                        'key': key,
-                        'value': value
-                        })
+                                            'key': key,
+                                            'value': value
+                                            })
             self.apiClient.createCacheStore(cachecmd)
 
     def createnetworks(self, networks, zoneId):
