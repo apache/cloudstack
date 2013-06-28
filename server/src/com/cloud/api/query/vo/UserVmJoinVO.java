@@ -391,6 +391,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="uuid")
     private String uuid;
 
+    @Column(name="dynamically_scalable")
+    private boolean isDynamicallyScalable;
+
     public UserVmJoinVO() {
     }
 
@@ -1715,6 +1718,14 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getAffinityGroupDescription() {
         return affinityGroupDescription;
+    }
+
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable;
+    }
+
+    public void setDynamicallyScalable(boolean isDynamicallyScalable) {
+        this.isDynamicallyScalable = isDynamicallyScalable;
     }
 
 

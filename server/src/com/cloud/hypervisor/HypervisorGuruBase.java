@@ -29,6 +29,8 @@ import com.cloud.configuration.Config;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -37,6 +39,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
@@ -46,7 +49,6 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject VMInstanceDao _virtualMachineDao;
     @Inject NicSecondaryIpDao _nicSecIpDao;
     @Inject ConfigurationServer _configServer;
-
 
     protected HypervisorGuruBase() {
         super();
@@ -120,15 +122,18 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         if(detailsInVm != null) {
         	details.putAll(detailsInVm);
         }
+        if (details.get(VirtualMachine.IsDynamicScalingEnabled) == null || details.get(VirtualMachine.IsDynamicScalingEnabled).isEmpty()) {
+            to. setEnableDynamicallyScaleVm(false);
+        } else {
+            // check if XStools/VMWare tools are present in the VM and dynamic scaling feature is enabled (per zone/global)
+            to.setEnableDynamicallyScaleVm(details.get(VirtualMachine.IsDynamicScalingEnabled).equals("true") && Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vm.getDataCenterId())));
+        }
         to.setDetails(details);
-        
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
         to.setUuid(vmInstance.getUuid());
 
         //
-        to.setEnableDynamicallyScaleVm(Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vm.getDataCenterId())));
-
         return to;
     }
 

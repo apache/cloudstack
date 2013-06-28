@@ -47,6 +47,7 @@ public class TemplateProfile {
 	String templateTag;
 	Long imageStoreId;
 	Map details;
+    Boolean isDynamicallyScalable;
 	
 	public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
 			String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
@@ -84,11 +85,12 @@ public class TemplateProfile {
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
             String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
             HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details, Boolean sshKeyEnabled,
-            Long imageStoreId) {
+            Long imageStoreId, Boolean isDynamicallyScalable) {
         this(templateId, userId, name, displayText, bits, passwordEnabled, requiresHvm, url, isPublic, featured, isExtractable, format, guestOsId, zoneId,
                 hypervisorType, accountName, domainId, accountId, chksum, bootable, details, sshKeyEnabled);
         this.templateTag = templateTag;
         this.imageStoreId = imageStoreId;
+        this.isDynamicallyScalable = isDynamicallyScalable;
     }	
 	
 	public Long getTemplateId() {
@@ -257,5 +259,13 @@ public class TemplateProfile {
     
     public Long getImageStoreId() {
         return this.imageStoreId;
+    }
+
+    public Boolean IsDynamicallyScalable() {
+        return this.isDynamicallyScalable;
+    }
+
+    public void setScalabe(Boolean isDynamicallyScalabe) {
+        this.isDynamicallyScalable = isDynamicallyScalabe;
     }
 }

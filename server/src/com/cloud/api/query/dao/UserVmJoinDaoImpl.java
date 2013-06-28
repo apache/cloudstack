@@ -247,6 +247,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
 
         userVmResponse.setObjectName(objectName);
+        if (userVm.isDynamicallyScalable() == null) {
+            userVmResponse.setDynamicallyScalable(false);
+        } else {
+            userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
+        }
 
         return userVmResponse;
     }

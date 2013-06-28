@@ -148,6 +148,9 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
     @Transient
     Map details;
 
+    @Column(name = "dynamically_scalable")
+    protected boolean dynamicallyScalable;
+
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -171,12 +174,13 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
     	this.state = TemplateState.Allocated;
     }
 
-    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled) {
+    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled, boolean isDynamicallyScalable) {
         this(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType, details);
         this.templateTag = templateTag;
     	this.uuid = UUID.randomUUID().toString();
     	this.state = TemplateState.Allocated;
     	this.enableSshKey = sshKeyEnabled;
+        this.dynamicallyScalable = isDynamicallyScalable;
     }
 
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
@@ -529,6 +533,14 @@ public class VMTemplateVO implements VirtualMachineTemplate, StateObject<Templat
 	    public void setUpdated(Date updated) {
 	        this.updated = updated;
 	    }
+
+        public void setDynamicallyScalable(boolean dynamicallyScalable) {
+            this.dynamicallyScalable = dynamicallyScalable;
+        }
+
+        public Boolean isDynamicallyScalable() {
+            return this.dynamicallyScalable;
+        }
 
 
 }

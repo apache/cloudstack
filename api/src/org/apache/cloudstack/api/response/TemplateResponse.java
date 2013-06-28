@@ -139,6 +139,9 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.SSHKEY_ENABLED) @Param(description="true if template is sshkey enabled, false otherwise")
     private Boolean sshKeyEnabled;
 
+    @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE) @Param(description="true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    private Boolean isDynamicallyScalable;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -294,6 +297,10 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
 
     public void setSshKeyEnabled(boolean sshKeyEnabled) {
         this.sshKeyEnabled = sshKeyEnabled;
+    }
+
+    public void setDynamicallyScalable(boolean isDynamicallyScalable) {
+        this.isDynamicallyScalable = isDynamicallyScalable;
     }
 
 }

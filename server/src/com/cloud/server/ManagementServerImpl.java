@@ -1873,6 +1873,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Boolean passwordEnabled = cmd.isPasswordEnabled();
         Boolean bootable = cmd.isBootable();
         Integer sortKey = cmd.getSortKey();
+        Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         Account account = UserContext.current().getCaller();
 
         // verify that template exists
@@ -1894,7 +1895,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
 
         boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null
-                && bootable == null && sortKey == null);
+                && bootable == null && sortKey == null && isDynamicallyScalable == null);
         if (!updateNeeded) {
             return template;
         }
@@ -1941,6 +1942,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (bootable != null) {
             template.setBootable(bootable);
+        }
+
+        if (isDynamicallyScalable != null) {
+            template.setDynamicallyScalable(isDynamicallyScalable);
         }
 
         _templateDao.update(id, template);

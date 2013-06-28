@@ -158,6 +158,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         }
     }
 
+    public static final String IsDynamicScalingEnabled = "enable.dynamic.scaling";
+
     public enum Event {
         CreateRequested,
         StartRequested,

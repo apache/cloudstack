@@ -680,6 +680,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new CloudRuntimeException("Unable to scale the vm: " + vmName + " as DMC - Dynamic memory control is not enabled for the XenServer:" + _host.uuid + " ,check your license and hypervisor version.");
             }
 
+            if(!vmSpec.isEnableDynamicallyScaleVm()) {
+                throw new CloudRuntimeException("Unable to Scale the vm: " + vmName + "as vm does not have xs tools to support dynamic scaling");
+            }
+
             // stop vm which is running on this host or is in halted state
             Iterator<VM> iter = vms.iterator();
             while ( iter.hasNext() ) {
