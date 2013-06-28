@@ -2126,4 +2126,25 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public boolean getExecuteInSeqNtwkElmtCmd() {
         return _executeInSequenceNtwkElmtCmd;
     }
+
+    @Override
+    public boolean isNetworkReadyForGc(long networkId) {
+        Network network = getNetwork(networkId);
+        List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
+        List<String> secondaryIps = _nicSecondaryIpDao.listSecondaryIpAddressInNetwork(networkId);
+        if (!networkIds.contains(networkId)) {
+            return false;
+        }
+
+        // add an exception for networks that use external networking devices and has secondary guest IP's allocated.
+        // On network GC, when network goes through implement phase a new vlan is allocated, based on the acquired VLAN
+        // id cidr of the network is decided in case of external networking case. While NIC uses reservation strategy 'Start'
+        // which ensures that new primary ip is allocated for the NiC from the new CIDR. Secondary IP's have hardcoded IP's in
+        // network rules. So prevent network GC.
+        if (secondaryIps != null && !secondaryIps.isEmpty() &&
+                networkIsConfiguredForExternalNetworking(network.getDataCenterId(), networkId)) {
+        }
+
+        return true;
+    }
 }

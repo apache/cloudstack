@@ -2975,6 +2975,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
                 List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
                 for (Long networkId : networkIds) {
+
+                    if (!_networkModel.isNetworkReadyForGc(networkId)) {
+                        continue;
+                    }
+
                     Long time = _lastNetworkIdsToFree.remove(networkId);
                     if (time == null) {
                         if (s_logger.isDebugEnabled()) {
