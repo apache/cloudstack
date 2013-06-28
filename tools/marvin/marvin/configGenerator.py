@@ -21,7 +21,7 @@ from optparse import OptionParser
 import jsonHelper
 
 
-class managementServer():
+class managementServer(object):
     def __init__(self):
         self.mgtSvrIp = None
         self.port = 8096
@@ -29,7 +29,7 @@ class managementServer():
         self.securityKey = None
 
 
-class dbServer():
+class dbServer(object):
     def __init__(self):
         self.dbSvr = None
         self.port = 3306
@@ -38,20 +38,20 @@ class dbServer():
         self.db = "cloud"
 
 
-class configuration():
+class configuration(object):
     def __init__(self):
         self.name = None
         self.value = None
 
 
-class logger():
+class logger(object):
     def __init__(self):
         '''TestCase/TestClient'''
         self.name = None
         self.file = None
 
 
-class cloudstackConfiguration():
+class cloudstackConfiguration(object):
     def __init__(self):
         self.zones = []
         self.mgtSvr = []
@@ -60,7 +60,7 @@ class cloudstackConfiguration():
         self.logger = []
 
 
-class zone():
+class zone(object):
     def __init__(self):
         self.dns1 = None
         self.internaldns1 = None
@@ -79,7 +79,7 @@ class zone():
         self.cacheStorages = []
 
 
-class traffictype():
+class traffictype(object):
     def __init__(self, typ, labeldict=None):
         self.typ = typ  # Guest/Management/Public
         if labeldict:
@@ -96,7 +96,7 @@ class traffictype():
         #}
 
 
-class pod():
+class pod(object):
     def __init__(self):
         self.gateway = None
         self.name = None
@@ -109,7 +109,7 @@ class pod():
         self.guestIpRanges = []
 
 
-class cluster():
+class cluster(object):
     def __init__(self):
         self.clustername = None
         self.clustertype = None
@@ -123,7 +123,7 @@ class cluster():
         self.primaryStorages = []
 
 
-class host():
+class host(object):
     def __init__(self):
         self.hypervisor = None
         self.password = None
@@ -140,7 +140,7 @@ class host():
         self.memory = None
 
 
-class physical_network():
+class physical_network(object):
     def __init__(self):
         self.name = None
         self.tags = []
@@ -154,7 +154,7 @@ class physical_network():
         self.providers = [vrouter]
 
 
-class provider():
+class provider(object):
     def __init__(self, name=None):
         self.name = name
         self.state = None
@@ -164,7 +164,7 @@ class provider():
         self.devices = []
 
 
-class network():
+class network(object):
     def __init__(self):
         self.displaytext = None
         self.name = None
@@ -176,7 +176,7 @@ class network():
         self.ipranges = []
 
 
-class iprange():
+class iprange(object):
     def __init__(self):
         '''tagged/untagged'''
         self.gateway = None
@@ -189,27 +189,27 @@ class iprange():
         self.domain = None
 
 
-class primaryStorage():
+class primaryStorage(object):
     def __init__(self):
         self.name = None
         self.url = None
 
 
-class secondaryStorage():
+class secondaryStorage(object):
     def __init__(self):
         self.url = None
         self.provider = None
         self.details = None
 
 
-class cacheStorage():
+class cacheStorage(object):
     def __init__(self):
         self.url = None
         self.provider = None
         self.details = None
 
 
-class s3():
+class s3(object):
     def __init__(self):
         self.accesskey = None
         self.secretkey = None
@@ -221,7 +221,7 @@ class s3():
         self.usehttps = None
 
 
-class netscaler():
+class netscaler(object):
     def __init__(self, hostname=None, username='nsroot', password='nsroot'):
         self.hostname = hostname
         self.username = username
@@ -242,7 +242,7 @@ class netscaler():
                                              for r in req])
 
 
-class srx():
+class srx(object):
     def __init__(self, hostname=None, username='root', password='admin'):
         self.hostname = hostname
         self.username = username
@@ -265,7 +265,7 @@ class srx():
                                              for r in req])
 
 
-class bigip():
+class bigip(object):
     def __init__(self, hostname=None, username='root', password='default'):
         self.hostname = hostname
         self.username = username

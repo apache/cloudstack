@@ -172,8 +172,7 @@ class cloudConnection(object):
         requests = {}
         required = []
         for attribute in dir(cmd):
-            if attribute != "__doc__" and attribute != "__init__" and\
-               attribute != "__module__":
+            if not attribute.startswith('__'):
                 if attribute == "isAsync":
                     isAsync = getattr(cmd, attribute)
                 elif attribute == "required":

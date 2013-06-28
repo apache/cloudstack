@@ -25,7 +25,7 @@ from os import path
 from optparse import OptionParser
 
 
-class deployDataCenters():
+class deployDataCenters(object):
 
     def __init__(self, cfgFile):
         if not path.exists(cfgFile) \
@@ -133,7 +133,6 @@ specify a valid config file" % cfgFile)
                     vlanipcmd.forvirtualnetwork = "false"
             else:
                 vlanipcmd.forvirtualnetwork = "true"
-
             self.apiClient.createVlanIpRange(vlanipcmd)
 
     def createSecondaryStorages(self, secondaryStorages, zoneId):
@@ -145,9 +144,12 @@ specify a valid config file" % cfgFile)
             secondarycmd.provider = secondary.provider
             secondarycmd.details = []
 
-            if isinstance(secondary.details, list):
-                for item in secondary.details:
-                    secondarycmd.details.append(item.__dict__)
+            if secondarycmd.provider == 'S3':
+                for key, value in vars(secondary.details).iteritems():
+                    secondarycmd.details.append({
+                        'key': key,
+                        'value': value
+                        })
             if secondarycmd.provider == "NFS":
                 secondarycmd.zoneid = zoneId
             self.apiClient.addImageStore(secondarycmd)
@@ -161,8 +163,13 @@ specify a valid config file" % cfgFile)
             cachecmd.provider = cache.provider
             cachecmd.zoneid = zoneId
             cachecmd.details = []
-            for item in cache.details:
-                cachecmd.details.append(item.__dict__)
+
+            if cache.details:
+                for key, value in vars(cache.details).iteritems():
+                    cachecmd.details.append({
+                        'key': key,
+                        'value': value
+                        })
             self.apiClient.createCacheStore(cachecmd)
 
     def createnetworks(self, networks, zoneId):
