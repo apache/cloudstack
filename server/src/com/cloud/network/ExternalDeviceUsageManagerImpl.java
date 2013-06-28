@@ -87,9 +87,10 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 @Component
-@Local(value = { ExternalLoadBalancerUsageManager.class })
-public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements ExternalLoadBalancerUsageManager {
+@Local(value = { ExternalDeviceUsageManager.class })
+public class ExternalDeviceUsageManagerImpl extends ManagerBase implements ExternalDeviceUsageManager {
 
+    String _name;
     @Inject
     NetworkExternalLoadBalancerDao _networkExternalLBDao;
     @Inject
@@ -98,8 +99,6 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
     HostDao _hostDao;
     @Inject
     DataCenterDao _dcDao;
-    @Inject
-    NetworkModel _networkMgr;
     @Inject
     InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject
@@ -146,10 +145,13 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
     ExternalFirewallDeviceDao _externalFirewallDeviceDao;
     @Inject
     protected HostPodDao _podDao = null;
-    
+    @Inject
+    NetworkModel _networkModel;
+
+
     ScheduledExecutorService _executor;
     private int _externalNetworkStatsInterval;
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerUsageManagerImpl.class);
+    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalDeviceUsageManagerImpl.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -249,7 +251,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
             return;
         }
 
-        String publicIp = _networkMgr.getIp(lb.getSourceIpAddressId()).getAddress().addr();
+        String publicIp = _networkModel.getIp(lb.getSourceIpAddressId()).getAddress().addr();
         DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
         String statsEntryIdentifier = "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID " + externalLoadBalancer.getName();
 
@@ -259,7 +261,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
         if (publicIp != null) {
             long[] bytesSentAndReceived = null;
             statsEntryIdentifier += ", public IP: " + publicIp;
-            boolean inline = _networkMgr.isNetworkInlineMode(network);
+            boolean inline = _networkModel.isNetworkInlineMode(network);
             if (externalLoadBalancer.getType().equals(Host.Type.ExternalLoadBalancer) && inline) {
                 // Look up stats for the guest IP address that's mapped to the public IP address
                 InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(publicIp);
@@ -380,7 +382,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
                     }
 
                     for (NetworkVO network : networksForAccount) {
-                        if (!_networkMgr.networkIsConfiguredForExternalNetworking(zoneId, network.getId())) {
+                        if (!_networkModel.networkIsConfiguredForExternalNetworking(zoneId, network.getId())) {
                             s_logger.debug("Network " + network.getId() + " is not configured for external networking, so skipping usage check.");
                             continue;
                         }
@@ -603,7 +605,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
                 String networkErrorMsg = accountErrorMsg + ", network ID = " + network.getId();
 
                 boolean sharedSourceNat = false;
-                Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Network.Service.SourceNat);
+                Map<Network.Capability, String> sourceNatCapabilities = _networkModel.getNetworkServiceCapabilities(network.getId(), Network.Service.SourceNat);
                 if (sourceNatCapabilities != null) {
                     String supportedSourceNatTypes = sourceNatCapabilities.get(Network.Capability.SupportedSourceNatTypes).toLowerCase();
                     if (supportedSourceNatTypes.contains("zone")) {
@@ -634,7 +636,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
                         // Manage one entry for each port forwarding rule in this network
                         List<PortForwardingRuleVO> portForwardingRules = _portForwardingRulesDao.listByNetwork(network.getId());
                         for (PortForwardingRuleVO portForwardingRule : portForwardingRules) {
-                            String publicIp = _networkMgr.getIp(portForwardingRule.getSourceIpAddressId()).getAddress().addr();
+                            String publicIp = _networkModel.getIp(portForwardingRule.getSourceIpAddressId()).getAddress().addr();
                             if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
                                 throw new ExecutionException(networkErrorMsg + ", port forwarding rule public IP = " + publicIp);
                             }
@@ -649,11 +651,10 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
 
                 // If an external load balancer is added, manage one entry for each load balancing rule in this network
                 if (externalLoadBalancer != null && lbAnswer != null) {
-                    boolean inline = _networkMgr.isNetworkInlineMode(network);
+                    boolean inline = _networkModel.isNetworkInlineMode(network);
                     List<LoadBalancerVO> loadBalancers = _loadBalancerDao.listByNetworkIdAndScheme(network.getId(), Scheme.Public);
                     for (LoadBalancerVO loadBalancer : loadBalancers) {
-                        String publicIp = _networkMgr.getIp(loadBalancer.getSourceIpAddressId()).getAddress().addr();
-                        
+                        String publicIp = _networkModel.getIp(loadBalancer.getSourceIpAddressId()).getAddress().addr();
                         if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalLoadBalancer.getId(), lbAnswer, inline)) {
                             throw new ExecutionException(networkErrorMsg + ", load balancing rule public IP = " + publicIp);
                         }
@@ -669,5 +670,4 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
             }
         }
     }
-
 }
