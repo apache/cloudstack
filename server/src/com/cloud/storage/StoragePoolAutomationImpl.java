@@ -363,8 +363,16 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 .findById(store.getId());
         StoragePool pool = (StoragePool)store;
 
-        List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(
+        //Handeling the Zone wide and cluster wide primay storage
+        List<HostVO> hosts = new ArrayList<HostVO>();
+        // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
+        if (poolVO.getScope().equals(ScopeType.ZONE)) {
+            hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(poolVO.getHypervisor(), pool.getDataCenterId());
+        } else {
+            hosts = _resourceMgr.listHostsInClusterByStatus(
                 pool.getClusterId(), Status.Up);
+        }
+
         if (hosts == null || hosts.size() == 0) {
             return true;
         }
