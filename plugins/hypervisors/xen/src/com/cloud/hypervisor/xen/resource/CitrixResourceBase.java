@@ -53,19 +53,51 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import com.cloud.agent.api.*;
-import com.cloud.agent.api.to.*;
-import com.cloud.network.rules.FirewallRule;
-
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+
+import com.trilead.ssh2.SCPClient;
+import com.xensource.xenapi.Bond;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Console;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.HostCpu;
+import com.xensource.xenapi.HostMetrics;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.PIF.Record;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadAsyncResult;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.ConsoleProtocol;
+import com.xensource.xenapi.Types.IpConfigurationMode;
+import com.xensource.xenapi.Types.OperationNotAllowed;
+import com.xensource.xenapi.Types.SrFull;
+import com.xensource.xenapi.Types.VbdType;
+import com.xensource.xenapi.Types.VmBadPowerState;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VBDMetrics;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VLAN;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
+import com.xensource.xenapi.XenAPIObject;
+
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -208,8 +240,12 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.S3TO;
@@ -264,82 +300,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
-import com.trilead.ssh2.SCPClient;
-import com.xensource.xenapi.Bond;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Console;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.HostCpu;
-import com.xensource.xenapi.HostMetrics;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.PIF.Record;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Task;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadAsyncResult;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.ConsoleProtocol;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.OperationNotAllowed;
-import com.xensource.xenapi.Types.SrFull;
-import com.xensource.xenapi.Types.VbdType;
-import com.xensource.xenapi.Types.VmBadPowerState;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VBDMetrics;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
-import com.xensource.xenapi.XenAPIObject;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -430,7 +390,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     public XsHost getHost() {
-        return this._host;
+        return _host;
     }
 
     protected boolean cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
@@ -665,7 +625,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
             return execute((CheckS2SVpnConnectionsCommand) cmd);
         } else if (cmd instanceof StorageSubSystemCommand) {
-            return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
+            return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
         } else if (clazz == CreateVMSnapshotCommand.class) {
             return execute((CreateVMSnapshotCommand)cmd);
         } else if (clazz == DeleteVMSnapshotCommand.class) {
@@ -753,7 +713,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             for (VM vm : vms) {
-                VM.Record vmr = vm.getRecord(conn);
+                vm.getRecord(conn);
                 try {
                     scaleVM(conn, vm, vmSpec, host);
                 } catch (Exception e) {
@@ -964,12 +924,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vswitchNw = networks.iterator().next();
                 }
 
-                enableXenServerNetwork(conn, vswitchNw, "vswitch", "vswicth network");
+                enableXenServerNetwork(conn, vswitchNw, "vswitch", "vswitch network");
                 _host.vswitchNetwork = vswitchNw;
             }
             return _host.vswitchNetwork;
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (BadServerResponse e) {
+            s_logger.error("Failed to setup vswitch network", e);
+        } catch (XenAPIException e) {
+            s_logger.error("Failed to setup vswitch network", e);
+        } catch (XmlRpcException e) {
+            s_logger.error("Failed to setup vswitch network", e);
         }
 
         return null;
@@ -3040,14 +3004,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 try {
                     host_uuid = host.getUuid(conn);
                 } catch (BadServerResponse e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
                 } catch (XenAPIException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
                 } catch (XmlRpcException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
                 }
                 vmStates.put(record.nameLabel, new Pair<String, State>(host_uuid, state));
             }
@@ -3539,7 +3500,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.warn("There are no Consoles available to the vm : " + record.nameDescription);
                 return -1;
             }
-            Iterator<Console> i = consoles.iterator();
+            consoles.iterator();
         } catch (XenAPIException e) {
             String msg = "Unable to get vnc-port due to " + e.toString();
             s_logger.warn(msg, e);
@@ -5778,39 +5739,36 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 return new Answer(cmd, false, result);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (BadServerResponse e) {
+            s_logger.error("Failed to delete flow", e);
+        } catch (XenAPIException e) {
+            s_logger.error("Failed to delete flow", e);
+        } catch (XmlRpcException e) {
+            s_logger.error("Failed to delete flow", e);
         }
         return new Answer(cmd, false, "failed to delete flow for " + cmd.getVmName());
     }
 
     private List<Pair<String, Long>> ovsFullSyncStates() {
         Connection conn = getConnection();
-        try {
-            String result = callHostPlugin(conn, "ovsgre", "ovs_get_vm_log", "host_uuid", _host.uuid);
-            String [] logs = result != null ?result.split(";"): new String [0];
-            List<Pair<String, Long>> states = new ArrayList<Pair<String, Long>>();
-            for (String log: logs){
-                String [] info = log.split(",");
-                if (info.length != 5) {
-                    s_logger.warn("Wrong element number in ovs log(" + log +")");
-                    continue;
-                }
-
-                //','.join([bridge, vmName, vmId, seqno, tag])
-                try {
-                    states.add(new Pair<String,Long>(info[0], Long.parseLong(info[3])));
-                } catch (NumberFormatException nfe) {
-                    states.add(new Pair<String,Long>(info[0], -1L));
-                }
+        String result = callHostPlugin(conn, "ovsgre", "ovs_get_vm_log", "host_uuid", _host.uuid);
+        String [] logs = result != null ?result.split(";"): new String [0];
+        List<Pair<String, Long>> states = new ArrayList<Pair<String, Long>>();
+        for (String log: logs){
+            String [] info = log.split(",");
+            if (info.length != 5) {
+                s_logger.warn("Wrong element number in ovs log(" + log +")");
+                continue;
             }
 
-            return states;
-        } catch (Exception e) {
-            e.printStackTrace();
+            //','.join([bridge, vmName, vmId, seqno, tag])
+            try {
+                states.add(new Pair<String,Long>(info[0], Long.parseLong(info[3])));
+            } catch (NumberFormatException nfe) {
+                states.add(new Pair<String,Long>(info[0], -1L));
+            }
         }
-
-        return null;
+        return states;
     }
 
     private OvsSetTagAndFlowAnswer execute(OvsSetTagAndFlowCommand cmd) {
@@ -5835,8 +5793,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 return new OvsSetTagAndFlowAnswer(cmd, false, result);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (BadServerResponse e) {
+            s_logger.error("Failed to set tag and flow", e);
+        } catch (XenAPIException e) {
+            s_logger.error("Failed to set tag and flow", e);
+        } catch (XmlRpcException e) {
+            s_logger.error("Failed to set tag and flow", e);
         }
 
         return new OvsSetTagAndFlowAnswer(cmd, false, "EXCEPTION");
@@ -5849,18 +5811,24 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         s_logger.debug("Will look for network with name-label:" + label + " on host " + _host.ip);
         Connection conn = getConnection();
         try {
-            XsLocalNetwork nw = this.getNetworkByName(conn, label);
+            XsLocalNetwork nw = getNetworkByName(conn, label);
             s_logger.debug("Network object:" + nw.getNetwork().getUuid(conn));
             PIF pif = nw.getPif(conn);
             Record pifRec = pif.getRecord(conn);
             s_logger.debug("PIF object:" + pifRec.uuid + "(" + pifRec.device + ")");
             return new OvsFetchInterfaceAnswer(cmd, true, "Interface " + pifRec.device + " retrieved successfully", 
                     pifRec.IP, pifRec.netmask, pifRec.MAC);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (BadServerResponse e) {
             s_logger.error("An error occurred while fetching the interface for " +
-                    label + " on host " + _host.ip + ":" + e.toString() + 
-                    "(" + e.getClass() + ")");
+                    label + " on host " + _host.ip , e);
+            return new OvsFetchInterfaceAnswer(cmd, false, "EXCEPTION:" + e.getMessage());
+        } catch (XenAPIException e) {
+            s_logger.error("An error occurred while fetching the interface for " +
+                    label + " on host " + _host.ip , e);
+            return new OvsFetchInterfaceAnswer(cmd, false, "EXCEPTION:" + e.getMessage());
+        } catch (XmlRpcException e) {
+            s_logger.error("An error occurred while fetching the interface for " +
+                    label + " on host " + _host.ip, e);
             return new OvsFetchInterfaceAnswer(cmd, false, "EXCEPTION:" + e.getMessage());
         }
     }
@@ -5885,12 +5853,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 return new OvsCreateGreTunnelAnswer(cmd, true, result, _host.ip, bridge, Integer.parseInt(res[1]));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (BadServerResponse e) {
             s_logger.error("An error occurred while creating a GRE tunnel to " +
-                    cmd.getRemoteIp() + " on host " + _host.ip + ":" + e.getMessage() + 
-                    "(" + e.getClass() + ")");
-
+                    cmd.getRemoteIp() + " on host " + _host.ip , e);
+        } catch (XenAPIException e) {
+            s_logger.error("An error occurred while creating a GRE tunnel to " +
+                    cmd.getRemoteIp() + " on host " + _host.ip , e);
+        } catch (XmlRpcException e) {
+            s_logger.error("An error occurred while creating a GRE tunnel to " +
+                    cmd.getRemoteIp() + " on host " + _host.ip , e);
         }
 
         return new OvsCreateGreTunnelAnswer(cmd, false, "EXCEPTION", _host.ip, bridge);
@@ -6139,7 +6110,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         CheckXenHostInfo();
 
-        this.storageHandler = getStorageHandler();
+        storageHandler = getStorageHandler();
         return true;
 
     }
