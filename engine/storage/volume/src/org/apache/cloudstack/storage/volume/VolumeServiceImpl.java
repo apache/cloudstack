@@ -464,6 +464,9 @@ public class VolumeServiceImpl implements VolumeService {
 
         try {
             volume.processEvent(event);
+            VolumeVO vol = this.volDao.findById(volume.getId());
+            vol.setPoolId(context.primaryStore.getId());
+            this.volDao.update(vol.getId(), vol);
         } catch (Exception e) {
             s_logger.debug("create volume from snapshot failed", e);
             apiResult.setResult(e.toString());
