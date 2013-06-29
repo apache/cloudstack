@@ -28,8 +28,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -56,9 +54,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -102,7 +98,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> PublicIsoSearch;
     private SearchBuilder<VMTemplateVO> UserIsoSearch;
     private GenericSearchBuilder<VMTemplateVO, Long> CountTemplatesByAccount;
-   // private SearchBuilder<VMTemplateVO> updateStateSearch;
+    // private SearchBuilder<VMTemplateVO> updateStateSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -344,6 +340,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         AccountIdSearch = createSearchBuilder();
         AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.and("publicTemplate", AccountIdSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
+        AccountIdSearch.and("removed", AccountIdSearch.entity().getRemoved(), SearchCriteria.Op.NULL); // only list not removed templates for this account
         AccountIdSearch.done();
 
         SearchBuilder<VMTemplateZoneVO> tmpltZoneSearch = _templateZoneDao.createSearchBuilder();
@@ -369,11 +366,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         CountTemplatesByAccount.and("removed", CountTemplatesByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
         CountTemplatesByAccount.done();
 
-//        updateStateSearch = this.createSearchBuilder();
-//        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
-//        updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
-//        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
-//        updateStateSearch.done();
+        //        updateStateSearch = this.createSearchBuilder();
+        //        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
+        //        updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
+        //        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
+        //        updateStateSearch.done();
 
         return result;
     }
