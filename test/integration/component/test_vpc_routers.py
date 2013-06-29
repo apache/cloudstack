@@ -49,7 +49,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,
-                                    "memory": 64,
+                                    "memory": 128,
                                     },
                          "service_offering_new": {
                                     "name": "Small Instance",
