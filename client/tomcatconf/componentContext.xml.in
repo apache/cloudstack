@@ -98,12 +98,14 @@
   It determines whether or not a adapter is activated or how it is loaded in order in its managing provider,
 
 -->
-  <bean id="CloudStackImageStoreProviderImpl"
+  <bean id="cloudStackImageStoreProviderImpl"
         class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl"/>
-  <bean id="S3ImageStoreProviderImpl"
+  <bean id="s3ImageStoreProviderImpl"
         class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl"/>
-  <bean id="SwiftImageStoreProviderImpl"
+  <bean id="swiftImageStoreProviderImpl"
         class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl"/>
+  <bean id="solidFireDataStoreProvider"
+        class="org.apache.cloudstack.storage.datastore.provider.SolidfirePrimaryDataStoreProvider"/>
 
   <!--Storage Providers-->
   <bean id="dataStoreProviderManager"
@@ -111,9 +113,10 @@
     <property name="providers">
       <list merge="true">
         <ref bean="CloudStackPrimaryDataStoreProviderImpl"/>
-        <ref local="CloudStackImageStoreProviderImpl"/>
-        <ref local="S3ImageStoreProviderImpl"/>
-        <ref local="SwiftImageStoreProviderImpl"/>
+        <ref local="cloudStackImageStoreProviderImpl"/>
+        <ref local="s3ImageStoreProviderImpl"/>
+        <ref local="swiftImageStoreProviderImpl"/>
+        <ref local="solidFireDataStoreProvider"/>
       </list>
     </property>
   </bean>
