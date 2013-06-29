@@ -207,10 +207,10 @@
   </bean>
 
   <!--
-    Image Store
+    UCS support components
   -->
-
-
+  <bean id="ucsBladeDaoImpl" class="com.cloud.ucs.database.UcsBladeDaoImpl"/>
+  <bean id="ucsManagerDaoImpl" class="com.cloud.ucs.database.UcsManagerDaoImpl"/>
 
   <bean id="GlobalLoadBalancingRulesServiceImpl"
         class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl"/>
