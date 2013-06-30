@@ -833,6 +833,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 ClusterDetailsVO cluster_detail_ram =  _clusterDetailsDao.findDetail(cluster_id,"memoryOvercommitRatio");
                 vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
                 vmProfile.setMemoryOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
+                StartAnswer startAnswer = null;
 
                 try {
                     if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
@@ -877,7 +878,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _workDao.updateStep(work, Step.Started);
 
 
-                    StartAnswer startAnswer = cmds.getAnswer(StartAnswer.class);
+                    startAnswer = cmds.getAnswer(StartAnswer.class);
                     if (startAnswer != null && startAnswer.getResult()) {
                         String host_guid = startAnswer.getHost_guid();
                         if( host_guid != null ) {
@@ -891,6 +892,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             if (!changeState(vm, Event.OperationSucceeded, destHostId, work, Step.Done)) {
                                 throw new ConcurrentOperationException("Unable to transition to a new state.");
                             }
+
                             startedVm = vm;
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Start completed for VM " + vm);
@@ -946,7 +948,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (startedVm == null && canRetry) {
                         Step prevStep = work.getStep();
                         _workDao.updateStep(work, Step.Release);
-                        if (prevStep == Step.Started || prevStep == Step.Starting) {
+                        // If previous step was started/ing && we got a valid answer
+                        if((prevStep == Step.Started || prevStep == Step.Starting) && (startAnswer != null && startAnswer.getResult())){  //TODO check the response of cleanup and record it in DB for retry
                             cleanup(vmGuru, vmProfile, work, Event.OperationFailed, false, caller, account);
                         } else {
                             //if step is not starting/started, send cleanup command with force=true
