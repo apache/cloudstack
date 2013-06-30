@@ -118,7 +118,8 @@ class deployDataCenters():
                 self.createVlanIpRanges("Basic", pod.guestIpRanges, zoneId,\
                                         podId, networkId)
 
-            self.createClusters(pod.clusters, zoneId, podId, vmwareDc=pod.vmwaredc)
+            self.createClusters(pod.clusters, zoneId, podId,
+                                vmwareDc=pod.vmwaredc)
 
     def createVlanIpRanges(self, mode, ipranges, zoneId, podId=None,\
                            networkId=None, forvirtualnetwork=None):
