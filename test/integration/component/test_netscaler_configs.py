@@ -730,9 +730,9 @@ class TestNetScalerDedicated(cloudstackTestCase):
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                         )
-	self.debug("Deploying an instance in account: %s" % self.account_2.account.name)
+        self.debug("Deploying an instance in account: %s" % self.account_2.account.name)
         with self.assertRaises(Exception):
-        	VirtualMachine.create(
+            VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_2.account.name,
@@ -740,7 +740,7 @@ class TestNetScalerDedicated(cloudstackTestCase):
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
                                   )
-	self.debug("Deply instacne in dedicated Network offering mode failed")
+        self.debug("Deply instance in dedicated Network offering mode failed")
         return
 
 
@@ -1285,7 +1285,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                                  )
         if isinstance(physical_networks, list):
             physical_network = physical_networks[0]
-	cls.services["netscaler"]["lbdevicecapacity"] = 2
+        cls.services["netscaler"]["lbdevicecapacity"] = 2
         cls.netscaler = NetScaler.add(
                                   cls.api_client,
                                   cls.services["netscaler"],
