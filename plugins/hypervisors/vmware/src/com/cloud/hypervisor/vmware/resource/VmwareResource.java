@@ -3984,7 +3984,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
             String datastoreVolumePath = dsMo.searchFileInSubFolders(cmd.getVolumePath() + ".vmdk", true);
             assert (datastoreVolumePath != null) : "Virtual disk file must exist in specified datastore for attach/detach operations.";
-
+            if (datastoreVolumePath == null) {
+                throw new CloudRuntimeException("Unable to find file " + cmd.getVolumePath() + ".vmdk in datastore " + dsMo.getName());
+            }
             AttachVolumeAnswer answer = new AttachVolumeAnswer(cmd, cmd.getDeviceId(), datastoreVolumePath);
             if (cmd.getAttach()) {
                 vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);

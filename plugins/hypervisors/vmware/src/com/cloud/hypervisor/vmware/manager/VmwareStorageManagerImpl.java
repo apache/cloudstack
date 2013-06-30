@@ -74,6 +74,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.vmware.vim25.ManagedObjectReference;
@@ -1090,6 +1091,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private String getVolumePathInDatastore(DatastoreMO dsMo, String volumeFileName) throws Exception {
         String datastoreVolumePath = dsMo.searchFileInSubFolders(volumeFileName, true);
         assert (datastoreVolumePath != null) : "Virtual disk file missing from datastore.";
+        if (datastoreVolumePath == null) {
+            throw new CloudRuntimeException("Unable to find file " + volumeFileName + " in datastore " + dsMo.getName());
+        }
         return datastoreVolumePath;
     }
 
