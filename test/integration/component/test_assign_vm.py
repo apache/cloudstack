@@ -40,13 +40,14 @@ from marvin.integration.lib.common import (get_domain,
                                            list_virtual_machines)
 
 def log_test_exceptions(func):
-    def _log_test_exceptions(self, *args, **kwargs):
+    def test_wrap_exception_log(self, *args, **kwargs):
         try:
             func(self, *args, **kwargs)
         except Exception as e:
             self.debug('Test %s Failed due to Exception=%s' % (func, e))
             raise e
-    return _log_test_exceptions
+    test_wrap_exception_log.__doc__ = func.__doc__
+    return test_wrap_exception_log
 
 class Services:
     """Test service data for:Change the ownershop of
@@ -228,6 +229,7 @@ class TestVMOwnership(cloudstackTestCase):
             self.debug("Cleanup complete!")
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
+
 
     @attr(tags = ["advanced"])
     @log_test_exceptions
