@@ -669,7 +669,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             self.debug(
                 "SSH into VM (IPaddress: %s) & NAT Rule (Public IP: %s)" %
                 (self.vm_1.ipaddress, src_nat_ip_addr.ipaddress)
-                )
+            )
 
             ssh_1 = remoteSSHClient(
                                     src_nat_ip_addr.ipaddress,
@@ -804,20 +804,20 @@ class TestLoadBalancingRule(cloudstackTestCase):
             )
 
 
-	hostnames = []
-	self.try_ssh(src_nat_ip_addr, hostnames)
-	self.try_ssh(src_nat_ip_addr, hostnames)
-	self.try_ssh(src_nat_ip_addr, hostnames)
-	self.try_ssh(src_nat_ip_addr, hostnames)
-	self.try_ssh(src_nat_ip_addr, hostnames)
+        hostnames = []
+        self.try_ssh(src_nat_ip_addr, hostnames)
+        self.try_ssh(src_nat_ip_addr, hostnames)
+        self.try_ssh(src_nat_ip_addr, hostnames)
+        self.try_ssh(src_nat_ip_addr, hostnames)
+        self.try_ssh(src_nat_ip_addr, hostnames)
 
-	self.debug("Hostnames: %s" % str(hostnames))
-	self.assertIn(
+        self.debug("Hostnames: %s" % str(hostnames))
+        self.assertIn(
               self.vm_1.name,
               hostnames,
               "Check if ssh succeeded for server1"
             )
-	self.assertIn(
+        self.assertIn(
               self.vm_2.name,
               hostnames,
               "Check if ssh succeeded for server2"
@@ -826,8 +826,8 @@ class TestLoadBalancingRule(cloudstackTestCase):
         #SSH should pass till there is a last VM associated with LB rule
         lb_rule.remove(self.apiclient, [self.vm_2])
 
-	# making hostnames list empty
-	hostnames[:] = []
+        # making hostnames list empty
+        hostnames[:] = []
 
         try:
             self.debug("SSHing into IP address: %s after removing VM (ID: %s)" %
@@ -837,13 +837,11 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                              ))
 
             self.try_ssh(src_nat_ip_addr, hostnames)
-
-	    self.assertIn(
-                      self.vm_1.name,
-                      hostnames,
-                      "Check if ssh succeeded for server1"
-                      )
-
+            self.assertIn(
+                          self.vm_1.name,
+                          hostnames,
+                          "Check if ssh succeeded for server1"
+                          )
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" %
                                         (e, src_nat_ip_addr.ipaddress))
@@ -958,23 +956,23 @@ class TestLoadBalancingRule(cloudstackTestCase):
         )
         try:
             hostnames = []
-	    self.try_ssh(self.non_src_nat_ip, hostnames)
-	    self.try_ssh(self.non_src_nat_ip, hostnames)
-	    self.try_ssh(self.non_src_nat_ip, hostnames)
-	    self.try_ssh(self.non_src_nat_ip, hostnames)
-	    self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.try_ssh(self.non_src_nat_ip, hostnames)
 
-	    self.debug("Hostnames: %s" % str(hostnames))
-	    self.assertIn(
-                self.vm_1.name,
-                hostnames,
-                "Check if ssh succeeded for server1"
-                )
-	    self.assertIn(
-                self.vm_2.name,
-                hostnames,
-                "Check if ssh succeeded for server2"
-                )
+            self.debug("Hostnames: %s" % str(hostnames))
+            self.assertIn(
+                    self.vm_1.name,
+                    hostnames,
+                    "Check if ssh succeeded for server1"
+                    )
+            self.assertIn(
+                    self.vm_2.name,
+                    hostnames,
+                    "Check if ssh succeeded for server2"
+                    )
 
             #SSH should pass till there is a last VM associated with LB rule
             lb_rule.remove(self.apiclient, [self.vm_2])
@@ -984,19 +982,16 @@ class TestLoadBalancingRule(cloudstackTestCase):
                            self.non_src_nat_ip.ipaddress.ipaddress,
                            self.vm_2.id
                            ))
-	    # Making host list empty
+            # Making host list empty
             hostnames[:] = []
 
-	    self.try_ssh(self.non_src_nat_ip, hostnames)
-
-	    self.assertIn(
-		self.vm_1.name,
-		hostnames,
-		"Check if ssh succeeded for server1"
-		)
-
+            self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.assertIn(
+            self.vm_1.name,
+            hostnames,
+            "Check if ssh succeeded for server1"
+            )
             self.debug("Hostnames after removing VM2: %s" % str(hostnames))
-
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" %
                       (e, self.non_src_nat_ip.ipaddress.ipaddress))
@@ -1016,7 +1011,6 @@ class TestLoadBalancingRule(cloudstackTestCase):
             )
             ssh_1.execute("hostname")[0]
         return
-
 
 class TestRebootRouter(cloudstackTestCase):
 
@@ -1336,31 +1330,29 @@ class TestAssignRemoveLB(cloudstackTestCase):
                               )
         lb_rule.assign(self.apiclient, [self.vm_1, self.vm_2])
 
-	hostnames = []
-	self.try_ssh(self.non_src_nat_ip, hostnames)
-	self.try_ssh(self.non_src_nat_ip, hostnames)
-	self.try_ssh(self.non_src_nat_ip, hostnames)
-	self.try_ssh(self.non_src_nat_ip, hostnames)
-	self.try_ssh(self.non_src_nat_ip, hostnames)
+        hostnames = []
+        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip, hostnames)
 
-	self.debug("Hostnames: %s" % str(hostnames))
-	self.assertIn(
-              self.vm_1.name,
-              hostnames,
-              "Check if ssh succeeded for server1"
-            )
-	self.assertIn(
-              self.vm_2.name,
-              hostnames,
-              "Check if ssh succeeded for server2"
-              )
-
-
+        self.debug("Hostnames: %s" % str(hostnames))
+        self.assertIn(
+                  self.vm_1.name,
+                  hostnames,
+                  "Check if ssh succeeded for server1"
+                )
+        self.assertIn(
+                  self.vm_2.name,
+                  hostnames,
+                  "Check if ssh succeeded for server2"
+                  )
         #Removing VM and assigning another VM to LB rule
         lb_rule.remove(self.apiclient, [self.vm_2])
 
-	# making hostnames list empty
-	hostnames[:] = []
+        # making hostnames list empty
+        hostnames[:] = []
 
         try:
             self.debug("SSHing again into IP address: %s with VM (ID: %s) added to LB rule" %
@@ -1370,38 +1362,35 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                              ))
             self.try_ssh(self.non_src_nat_ip, hostnames)
 
-	    self.assertIn(
-                      self.vm_1.name,
-                      hostnames,
-                      "Check if ssh succeeded for server1"
-                      )
-
+            self.assertIn(
+                          self.vm_1.name,
+                          hostnames,
+                          "Check if ssh succeeded for server1"
+                          )
         except Exception as e:
             self.fail("SSH failed for VM with IP: %s" %
                                     self.non_src_nat_ip.ipaddress)
 
         lb_rule.assign(self.apiclient, [self.vm_3])
 
-	# Making hostnames list empty
+        # Making hostnames list empty
         hostnames[:] = []
-
-	self.try_ssh(self.non_src_nat_ip, hostnames)
-	self.try_ssh(self.non_src_nat_ip, hostnames)
-	self.try_ssh(self.non_src_nat_ip, hostnames)
-	self.try_ssh(self.non_src_nat_ip, hostnames)
-	self.try_ssh(self.non_src_nat_ip, hostnames)
-
-	self.debug("Hostnames: %s" % str(hostnames))
-	self.assertIn(
-              self.vm_1.name,
-              hostnames,
-              "Check if ssh succeeded for server1"
-            )
-	self.assertIn(
-              self.vm_3.name,
-              hostnames,
-              "Check if ssh succeeded for server3"
-              )
+        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.debug("Hostnames: %s" % str(hostnames))
+        self.assertIn(
+                  self.vm_1.name,
+                  hostnames,
+                  "Check if ssh succeeded for server1"
+                )
+        self.assertIn(
+                  self.vm_3.name,
+                  hostnames,
+                  "Check if ssh succeeded for server3"
+                  )
         return
 
 class TestReleaseIP(cloudstackTestCase):

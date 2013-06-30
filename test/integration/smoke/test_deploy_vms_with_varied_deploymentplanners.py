@@ -23,30 +23,30 @@ from nose.plugins.attrib import attr
 
 class Services:
     def __init__(self):
-	self.services = {
-	    "account": {
-		"email": "test@test.com",
-		"firstname": "Test",
-		"lastname": "User",
-		"username": "test",
-		# Random characters are appended for unique
-		# username
-		"password": "password",
-	    },
-	    "service_offering": {
-		"name": "Planner Service Offering",
-		"displaytext": "Planner Service Offering",
-		"cpunumber": 1,
-		"cpuspeed": 100,
-		# in MHz
-		"memory": 128,
-		# In MBs
-	    },
-	    "ostype": 'CentOS 5.3 (64-bit)',
-	    "virtual_machine": {
-		"hypervisor": "XenServer",
-	    }
-	}
+        self.services = {
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                # Random characters are appended for unique
+                # username
+                "password": "password",
+            },
+            "service_offering": {
+                "name": "Planner Service Offering",
+                "displaytext": "Planner Service Offering",
+                "cpunumber": 1,
+                "cpuspeed": 100,
+                # in MHz
+                "memory": 128,
+                # In MBs
+            },
+            "ostype": 'CentOS 5.3 (64-bit)',
+            "virtual_machine": {
+                "hypervisor": "XenServer",
+            }
+        }
 
 
 class TestDeployVmWithVariedPlanners(cloudstackTestCase):

@@ -304,15 +304,14 @@ class TestListAffinityGroups(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cls.api_client = super(TestListAffinityGroups, cls).getClsTestClient().getApiClient()
+            self.api_client = super(TestListAffinityGroups, self).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(self.api_client, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     @classmethod
     def tearDownClass(cls):
-
         try:
             cls.api_client = super(TestListAffinityGroups, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
@@ -327,10 +326,6 @@ class TestListAffinityGroups(cloudstackTestCase):
             api_client = self.api_client
         if aff_grp == None:
             self.services["host_anti_affinity_0"]
-        #if acc == None:
-        #    acc = self.account.name
-        #if domainid == None:
-        #    domainid = self.domain.id
 
         try:
             self.aff_grp.append(AffinityGroup.create(api_client,
@@ -339,34 +334,25 @@ class TestListAffinityGroups(cloudstackTestCase):
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
     def create_vm_in_aff_grps(self, ag_list):
-   #try:
-   self.debug('Creating VM in AffinityGroup=%s' % ag_list[0])
-   vm = VirtualMachine.create(
-               self.api_client,
-               self.services["virtual_machine"],
-               templateid=self.template.id,
-               #accountid=self.account.name,
-               #domainid=self.account.domainid,
-               serviceofferingid=self.service_offering.id,
-               affinitygroupnames=ag_list
-            )
-   self.debug('Created VM=%s in Affinity Group=%s' %
-           (vm.id, ag_list[0]))
-   #except Exception:
-       #self.debug('Unable to create VM in a Affinity Group=%s'
-       #                 % ag_list[0])
+        self.debug('Creating VM in AffinityGroup=%s' % ag_list[0])
+        vm = VirtualMachine.create(
+                   self.api_client,
+                   self.services["virtual_machine"],
+                   templateid=self.template.id,
+                   serviceofferingid=self.service_offering.id,
+                   affinitygroupnames=ag_list
+                )
+        self.debug('Created VM=%s in Affinity Group=%s' %
+               (vm.id, ag_list[0]))
 
-   list_vm = list_virtual_machines(self.api_client, id=vm.id)
-
+        list_vm = list_virtual_machines(self.api_client, id=vm.id)
         self.assertEqual(isinstance(list_vm, list), True,
                          "Check list response returns a valid list")
         self.assertNotEqual(len(list_vm),0,
                             "Check VM available in List Virtual Machines")
-
         vm_response = list_vm[0]
         self.assertEqual(vm_response.state, 'Running',
                          msg="VM is not in Running state")
-
         return vm, vm_response.hostid
 
     def test_01_list_aff_grps_for_vm(self):
@@ -543,11 +529,6 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
             api_client = self.api_client
         if aff_grp == None:
             self.services["host_anti_affinity_0"]
-        #if acc == None:
-        #    acc = self.account.name
-        #if domainid == None:
-        #    domainid = self.domain.id
-
         try:
             self.aff_grp.append(AffinityGroup.create(api_client,
                                                      aff_grp, acc, domainid))
@@ -555,24 +536,18 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
     def create_vm_in_aff_grps(self, ag_list):
-   #try:
-   self.debug('Creating VM in AffinityGroup=%s' % ag_list[0])
-   vm = VirtualMachine.create(
-               self.api_client,
-               self.services["virtual_machine"],
-               templateid=self.template.id,
-               #accountid=self.account.name,
-               #domainid=self.account.domainid,
-               serviceofferingid=self.service_offering.id,
-               affinitygroupnames=ag_list
-            )
-   self.debug('Created VM=%s in Affinity Group=%s' %
-           (vm.id, ag_list[0]))
-   #except Exception:
-       #self.debug('Unable to create VM in a Affinity Group=%s'
-       #                 % ag_list[0])
+        self.debug('Creating VM in AffinityGroup=%s' % ag_list[0])
+        vm = VirtualMachine.create(
+                   self.api_client,
+                   self.services["virtual_machine"],
+                   templateid=self.template.id,
+                   serviceofferingid=self.service_offering.id,
+                   affinitygroupnames=ag_list
+                )
+        self.debug('Created VM=%s in Affinity Group=%s' %
+               (vm.id, ag_list[0]))
 
-   list_vm = list_virtual_machines(self.api_client, id=vm.id)
+        list_vm = list_virtual_machines(self.api_client, id=vm.id)
 
         self.assertEqual(isinstance(list_vm, list), True,
                          "Check list response returns a valid list")
@@ -817,11 +792,6 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
             api_client = self.api_client
         if aff_grp == None:
             self.services["host_anti_affinity_0"]
-        #if acc == None:
-        #    acc = self.account.name
-        #if domainid == None:
-        #    domainid = self.domain.id
-
         try:
             self.aff_grp.append(AffinityGroup.create(api_client,
                                                      aff_grp, acc, domainid))
@@ -829,24 +799,18 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
     def create_vm_in_aff_grps(self, ag_list):
-   #try:
-   self.debug('Creating VM in AffinityGroup=%s' % ag_list[0])
-   vm = VirtualMachine.create(
-               self.api_client,
+        self.debug('Creating VM in AffinityGroup=%s' % ag_list[0])
+        vm = VirtualMachine.create(
+                self.api_client,
                self.services["virtual_machine"],
                templateid=self.template.id,
-               #accountid=self.account.name,
-               #domainid=self.account.domainid,
                serviceofferingid=self.service_offering.id,
                affinitygroupnames=ag_list
             )
-   self.debug('Created VM=%s in Affinity Group=%s' %
-           (vm.id, ag_list[0]))
-   #except Exception:
-       #self.debug('Unable to create VM in a Affinity Group=%s'
-       #                 % ag_list[0])
+        self.debug('Created VM=%s in Affinity Group=%s' %
+                   (vm.id, ag_list[0]))
 
-   list_vm = list_virtual_machines(self.api_client, id=vm.id)
+        list_vm = list_virtual_machines(self.api_client, id=vm.id)
 
         self.assertEqual(isinstance(list_vm, list), True,
                          "Check list response returns a valid list")
@@ -996,7 +960,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
 
         vm1.start(self.api_client)
         list_aff_grps = AffinityGroup.list(self.api_client,
-                                           virtualmachineid=vm.id)
+                                           virtualmachineid=vm1.id)
         self.assertEqual(list_aff_grps, [], "The affinity groups list is not empyty")
 
         vm1.delete(self.api_client)
@@ -1096,10 +1060,6 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
             api_client = self.api_client
         if aff_grp == None:
             self.services["host_anti_affinity_0"]
-        #if acc == None:
-        #    acc = self.account.name
-        #if domainid == None:
-        #    domainid = self.domain.id
 
         try:
             self.aff_grp.append(AffinityGroup.create(api_client,
@@ -1111,21 +1071,19 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
 
         if api_client == None:
             api_client = self.api_client
-   self.debug('Creating VM in AffinityGroup=%s' % ag_list)
-   vm = VirtualMachine.create(
+        self.debug('Creating VM in AffinityGroup=%s' % ag_list)
+        vm = VirtualMachine.create(
                api_client,
                self.services["virtual_machine"],
                templateid=self.template.id,
-               #accountid=self.account.name,
-               #domainid=self.account.domainid,
                serviceofferingid=self.service_offering.id,
                affinitygroupnames=ag_list,
                 affinitygroupids=ag_ids
             )
-   self.debug('Created VM=%s in Affinity Group=%s' %
-           (vm.id, ag_list))
+        self.debug('Created VM=%s in Affinity Group=%s' %
+                    (vm.id, ag_list))
 
-   list_vm = list_virtual_machines(self.api_client, id=vm.id)
+        list_vm = list_virtual_machines(self.api_client, id=vm.id)
 
         self.assertEqual(isinstance(list_vm, list), True,
                          "Check list response returns a valid list")
@@ -1143,7 +1101,6 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         """
             Deploy VM without affinity group
         """
-
         vm1, hostid1 = self.create_vm_in_aff_grps()
 
         vm1.delete(self.api_client)
@@ -1441,10 +1398,6 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
             api_client = self.api_client
         if aff_grp == None:
             self.services["host_anti_affinity_0"]
-        #if acc == None:
-        #    acc = self.account.name
-        #if domainid == None:
-        #    domainid = self.domain.id
 
         try:
             self.aff_grp.append(AffinityGroup.create(api_client,
@@ -1456,21 +1409,19 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
 
         if api_client == None:
             api_client = self.api_client
-   self.debug('Creating VM in AffinityGroup=%s' % ag_list)
-   vm = VirtualMachine.create(
+        self.debug('Creating VM in AffinityGroup=%s' % ag_list)
+        vm = VirtualMachine.create(
                api_client,
                self.services["virtual_machine"],
                templateid=self.template.id,
-               #accountid=self.account.name,
-               #domainid=self.account.domainid,
                serviceofferingid=self.service_offering.id,
                affinitygroupnames=ag_list,
                 affinitygroupids=ag_ids
             )
-   self.debug('Created VM=%s in Affinity Group=%s' %
-           (vm.id, ag_list))
+        self.debug('Created VM=%s in Affinity Group=%s' %
+                   (vm.id, ag_list))
 
-   list_vm = list_virtual_machines(self.api_client, id=vm.id)
+        list_vm = list_virtual_machines(self.api_client, id=vm.id)
 
         self.assertEqual(isinstance(list_vm, list), True,
                          "Check list response returns a valid list")

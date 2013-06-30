@@ -2098,7 +2098,7 @@ class TestSharedNetworks(cloudstackTestCase):
                          networkofferingid=self.shared_network_offering.id,
                          zoneid=self.zone.id,
                          )
-	    self.cleanup_networks.append(self.network1)
+            self.cleanup_networks.append(self.network1)
             self.fail("Network got created with used vlan id, which is invalid")
         except Exception as e:
             self.debug("Network creation failed because the valn id being used by another network.")

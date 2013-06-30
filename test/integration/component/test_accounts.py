@@ -753,7 +753,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
                             domainid=cls.domain_2.id
                             )
 
-       cls._cleanup = [
+        cls._cleanup = [
                        cls.account_2,
                        cls.domain_2,
                        cls.service_offering,
