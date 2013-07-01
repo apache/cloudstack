@@ -45,7 +45,7 @@
       <!--Override the cloudstack default image store provider to use simulator defined provider-->
       <list>
         <!--Data Store Providers-->
-        <ref bean="CloudStackPrimaryDataStoreProviderImpl"/>
+        <ref bean="cloudStackPrimaryDataStoreProviderImpl"/>
         <ref bean="SimulatorImageStoreProviderImpl"/>
       </list>
     </property>
