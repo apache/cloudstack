@@ -276,4 +276,6 @@ public interface NetworkModel {
     Nic getNicInNetworkIncludingRemoved(long vmId, long networkId);
 
     boolean getExecuteInSeqNtwkElmtCmd();
+
+    boolean isNetworkReadyForGc(long networkId);
 }

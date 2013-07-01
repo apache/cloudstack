@@ -185,7 +185,7 @@ class TestLdap(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-
+    @attr(tags=["advanced", "basic"])
     def test_01_configLDAP(self):
         '''
         This test is to verify ldapConfig API  with valid  values.(i.e query fileter as email)
@@ -215,7 +215,7 @@ class TestLdap(cloudstackTestCase):
 
         self.debug("end test")
 
-
+    @attr(tags=["advanced", "basic"])
     def test_02_configLDAP(self):
         '''
         This test is to verify ldapConfig API  with valid  values.(i.e query fileter as displayName)
@@ -236,7 +236,7 @@ class TestLdap(cloudstackTestCase):
             self.debug("LDAP Configuration failed with exception")
         self.debug("end test")
 
-
+    @attr(tags=["advanced", "basic"])
     def test_03_configLDAP(self):
 
         '''
@@ -250,7 +250,7 @@ class TestLdap(cloudstackTestCase):
         self.ldapconfRes=self._testldapConfig(self.services["ldapCon_3"])
         self.assertEquals(self.ldapconfRes,0,"LDAP configuration successful with invalid value.API failed")
         self.debug("end test")
-
+    @attr(tags=["advanced", "basic"])
     def test_04_configLDAP(self):
         '''
         This test is to verify ldapConfig API with invalid configuration values(by passing wrong query filter)
@@ -263,7 +263,7 @@ class TestLdap(cloudstackTestCase):
         self.assertEquals(self.ldapconfRes,0,"API failed")
 
 
-
+    @attr(tags=["advanced", "basic"])
     def test_05_configLDAP(self):
 
         '''
@@ -281,6 +281,7 @@ class TestLdap(cloudstackTestCase):
         self.assertNotEqual(loginRes,1,"login API failed")
         self.debug("end test")
 
+    @attr(tags=["advanced", "basic"])
     def test_06_removeLDAP(self):
         '''
         This test is to verify ldapRemove API functionality

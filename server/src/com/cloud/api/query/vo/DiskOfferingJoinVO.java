@@ -61,6 +61,15 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name="customized")
     private boolean customized;
 
+    @Column(name="customized_iops")
+    private Boolean customizedIops;
+
+    @Column(name="min_iops")
+    private Long minIops;
+
+    @Column(name="max_iops")
+    private Long maxIops;
+
     @Column(name="sort_key")
     int sortKey;
 
@@ -177,6 +186,30 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public void setCustomized(boolean customized) {
         this.customized = customized;
+    }
+
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public void setCustomizedIops(Boolean customizedIops) {
+        this.customizedIops = customizedIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
     }
 
     public boolean isDisplayOffering() {

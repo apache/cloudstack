@@ -197,4 +197,8 @@ public class VlanVO implements Vlan {
 	public void setIp6Range(String ip6Range) {
 		this.ip6Range = ip6Range;
 	}
+
+    public void setIpRange(String ipRange) {
+        this.ip6Range = ipRange;
+    }
 }

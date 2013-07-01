@@ -258,7 +258,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             }
             txn.commit();
 
-            return new AttachVolumeAnswer(cmd, cmd.getDeviceId());
+            return new AttachVolumeAnswer(cmd, cmd.getDeviceId(), cmd.getVolumePath());
         } catch (Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("Error when attaching volume " + cmd.getVolumeName() + " to VM "
@@ -476,7 +476,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
         }
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         MockSecStorageVO storage = null;
-        String nfsUrl = ((NfsTO)cmd.getDataStore()).getUrl();
+        String nfsUrl = ((NfsTO) store).getUrl();
         try {
             txn.start();
             storage = _mockSecStorageDao.findByUrl(nfsUrl);
@@ -868,19 +868,16 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        // TODO Auto-generated method stub
         return true;
     }
 
     @Override
     public boolean start() {
-        // TODO Auto-generated method stub
         return true;
     }
 
     @Override
     public boolean stop() {
-        // TODO Auto-generated method stub
         return true;
     }
 
@@ -891,18 +888,13 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
 
     @Override
     public void preinstallTemplates(String url, long zoneId) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         MockSecStorageVO storage = null;
         try {
-            txn.start();
             storage = _mockSecStorageDao.findByUrl(url);
-            txn.commit();
         } catch (Exception ex) {
-            txn.rollback();
             throw new CloudRuntimeException("Unable to find sec storage at " + url, ex);
         } finally {
-            txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
         }
         if (storage == null) {
@@ -923,7 +915,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             storage.setCapacity(DEFAULT_HOST_STORAGE_SIZE);
 
             storage.setMountPoint(dir);
-            txn = Transaction.open(Transaction.SIMULATOR_DB);
+            Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
             try {
                 txn.start();
                 storage = _mockSecStorageDao.persist(storage);
@@ -981,7 +973,6 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                 txn.close();
             }
         }
-
     }
 
     @Override

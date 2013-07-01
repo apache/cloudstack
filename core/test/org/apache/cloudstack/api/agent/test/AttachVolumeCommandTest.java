@@ -25,8 +25,8 @@ import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class AttachVolumeCommandTest {
-    AttachVolumeCommand avc = new AttachVolumeCommand(true, "vmname",
-            StoragePoolType.Filesystem, "vFolder", "vPath", "vName",
+    AttachVolumeCommand avc = new AttachVolumeCommand(true, false, "vmname",
+            StoragePoolType.Filesystem, "vPath", "vName",
             123456789L, "chainInfo");
 
     @Test
@@ -63,12 +63,6 @@ public class AttachVolumeCommandTest {
         avc.setPooltype(StoragePoolType.Iscsi);
         pt = avc.getPooltype();
         assertTrue(pt.equals(StoragePoolType.Iscsi));
-    }
-
-    @Test
-    public void testGetVolumeFolder() {
-        String vFolder = avc.getVolumeFolder();
-        assertTrue(vFolder.equals("vFolder"));
     }
 
     @Test

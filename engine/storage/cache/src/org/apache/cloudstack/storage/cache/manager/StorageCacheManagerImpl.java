@@ -147,7 +147,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                         object = cacheReplacementAlgorithm.chooseOneToBeReplaced(store);
                         findAStore = store;
                         if (object != null) {
-                              break;
+                            break;
                         }
                     }
 
@@ -230,6 +230,12 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     @Override
     public DataObject createCacheObject(DataObject data, Scope scope) {
         DataStore cacheStore = this.getCacheStorage(scope);
+
+        if (cacheStore == null)
+        {
+            String errMsg = "No cache DataStore in scope id " + scope.getScopeId() + " type " + scope.getScopeType().toString();
+            throw new CloudRuntimeException(errMsg);
+        }
         return this.createCacheObject(data, cacheStore);
     }
 

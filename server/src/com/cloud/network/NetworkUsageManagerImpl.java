@@ -32,6 +32,10 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -68,17 +72,9 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-
-import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
-import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
-import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
-import org.apache.cloudstack.api.response.TrafficMonitorResponse;
-import org.apache.cloudstack.context.CallContext;
-
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.User;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
@@ -189,22 +185,16 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
     @Override
     public boolean deleteTrafficMonitor(DeleteTrafficMonitorCmd cmd) {
         long hostId = cmd.getId();
-        User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         HostVO trafficMonitor = _hostDao.findById(hostId);
         if (trafficMonitor == null) {
             throw new InvalidParameterValueException("Could not find an traffic monitor with ID: " + hostId);
         }
 
-		try {
-			if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
+        if (_resourceMgr.deleteHost(hostId, false, false)) {
 				return true;
             } else {
                 return false;
             }
-        } catch (AgentUnavailableException e) {
-            s_logger.debug(e);
-            return false;
-        }
     }
 
     @Override
@@ -254,7 +244,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
 
         private int _interval;
 
-        private long mgmtSrvrId = MacAddress.getMacAddress().toLong();
+        private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
 
         protected DirectNetworkStatsListener(int interval) {
             _interval = interval;
@@ -535,7 +525,14 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
 	    return null;
     }
 
-		return new DeleteHostAnswer(true);
+        long hostId = host.getId();
+        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
+        _detailsDao.deleteDetails(hostId);
+        host.setGuid(null);
+        _hostDao.update(hostId, host);
+        _hostDao.remove(hostId);
+        return new DeleteHostAnswer(false);
+
     }
 
 }

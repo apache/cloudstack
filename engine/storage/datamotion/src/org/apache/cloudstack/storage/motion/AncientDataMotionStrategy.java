@@ -35,6 +35,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -57,6 +58,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -135,6 +137,22 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (destStoreTO instanceof NfsTO || destStoreTO.getRole() == DataStoreRole.ImageCache) {
             return false;
         }
+
+        if (srcData.getType() == DataObjectType.TEMPLATE) {
+            TemplateInfo template = (TemplateInfo)srcData;
+            if (template.getHypervisorType() == HypervisorType.Hyperv) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("needCacheStorage false due to src TemplateInfo, which is DataObjectType.TEMPLATE of HypervisorType.Hyperv");
+                }
+                return false;
+            }
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("needCacheStorage true, dest at " +
+                    destTO.getPath() + " dest role " + destStoreTO.getRole().toString() +
+                    srcTO.getPath() + " src role " + srcStoreTO.getRole().toString() );
+        }
         return true;
     }
 
@@ -157,26 +175,24 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int _primaryStorageDownloadWait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
         Answer answer = null;
+        boolean usingCache = false;
         DataObject cacheData = null;
+        DataObject srcForCopy = srcData;
         try {
             if (needCacheStorage(srcData, destData)) {
-                // need to copy it to image cache store
                 Scope destScope = getZoneScope(destData.getDataStore().getScope());
-                cacheData = cacheMgr.createCacheObject(srcData, destScope);
-                CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
-                EndPoint ep = selector.select(cacheData, destData);
-                answer = ep.sendMessage(cmd);
-            } else {
-                // handle copy it to/from cache store
-                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait);
-                EndPoint ep = selector.select(srcData, destData);
-                answer = ep.sendMessage(cmd);
+                srcForCopy = cacheData = cacheMgr.createCacheObject(srcData, destScope);
             }
+
+            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), destData.getTO(), _primaryStorageDownloadWait);
+            EndPoint ep = selector.select(srcForCopy, destData);
+            answer = ep.sendMessage(cmd);
+
             if (cacheData != null) {
                 if (answer == null || !answer.getResult()) {
-                    cacheMgr.deleteCacheObject(cacheData);
+                    cacheMgr.deleteCacheObject(srcForCopy);
                 } else {
-                    cacheMgr.releaseCacheObject(cacheData);
+                    cacheMgr.releaseCacheObject(srcForCopy);
                 }
             }
             return answer;
@@ -187,7 +203,6 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             throw new CloudRuntimeException(e.toString());
         }
-
     }
 
     protected DataObject cacheSnapshotChain(SnapshotInfo snapshot) {
@@ -204,10 +219,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected void deleteSnapshotCacheChain(SnapshotInfo snapshot) {
-       while (snapshot != null) {
-           cacheMgr.deleteCacheObject(snapshot);
-           snapshot = snapshot.getParent();
-       }
+        while (snapshot != null) {
+            cacheMgr.deleteCacheObject(snapshot);
+            snapshot = snapshot.getParent();
+        }
     }
 
     protected Answer copyVolumeFromSnapshot(DataObject snapObj, DataObject volObj) {
@@ -317,6 +332,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         Answer answer = null;
         String errMsg = null;
         try {
+            s_logger.debug("copyAsync inspecting src type " + srcData.getType().toString() +
+                    " copyAsync inspecting dest type " + destData.getType().toString());
 
             if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.VOLUME) {
                 answer = copyVolumeFromSnapshot(srcData, destData);
@@ -404,7 +421,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     @Override
     public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+                          AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult(null, null);
         result.setResult("Unsupported operation requested for copying data.");
         callback.complete(result);

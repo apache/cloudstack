@@ -898,4 +898,8 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return false;
     }
 
+    @Override
+    public boolean isNetworkReadyForGc(long networkId) {
+        return true;
+    }
 }

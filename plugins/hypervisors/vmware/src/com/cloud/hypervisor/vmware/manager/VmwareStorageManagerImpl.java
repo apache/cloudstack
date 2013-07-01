@@ -83,6 +83,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 
@@ -685,7 +686,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String result;
         Script command;
         String templateVMDKName = "";
-        String snapshotFullVMDKName = snapshotRoot + "/";
+        //String snapshotFullVMDKName = snapshotRoot + "/";
+        // the backedUpSnapshotUuid field currently has the format: uuid/uuid. so we need to extract the uuid out
+        String backupSSUuid = backedUpSnapshotUuid.substring(0, backedUpSnapshotUuid.indexOf('/'));
+        String snapshotFullVMDKName = snapshotRoot + "/" + backupSSUuid + "/";
 
         synchronized(installPath.intern()) {
             command = new Script(false, "mkdir", _timeout, s_logger);
@@ -740,12 +744,15 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         throw new Exception(msg);
                      }
 
-                     File snapshotdir = new File(snapshotRoot);
+                     s_logger.info("vmdkfile parent dir: " + snapshotFullVMDKName);
+                     File snapshotdir = new File(snapshotFullVMDKName);
+                     // File snapshotdir = new File(snapshotRoot);
                      File[] ssfiles = snapshotdir.listFiles();
                      // List<String> filenames = new ArrayList<String>();
                      for (int i = 0; i < ssfiles.length; i++) {
                          String vmdkfile = ssfiles[i].getName();
-                         if(vmdkfile.toLowerCase().startsWith(backedUpSnapshotUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
+                         s_logger.info("vmdk file name: " + vmdkfile);
+                         if(vmdkfile.toLowerCase().startsWith(backupSSUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
                               snapshotFullVMDKName += vmdkfile;
                               templateVMDKName += vmdkfile;
                               break;
@@ -1082,6 +1089,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private String getVolumePathInDatastore(DatastoreMO dsMo, String volumeFileName) throws Exception {
         String datastoreVolumePath = dsMo.searchFileInSubFolders(volumeFileName, true);
         assert (datastoreVolumePath != null) : "Virtual disk file missing from datastore.";
+        if (datastoreVolumePath == null) {
+            throw new CloudRuntimeException("Unable to find file " + volumeFileName + " in datastore " + dsMo.getName());
+        }
         return datastoreVolumePath;
     }
 

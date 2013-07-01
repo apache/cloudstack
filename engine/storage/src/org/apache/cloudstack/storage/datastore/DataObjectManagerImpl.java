@@ -30,7 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -78,7 +78,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         return objectInDataStoreMgr.get(dataObj, dataStore);
     }
 
-    class CreateContext<T> extends AsyncRpcConext<T> {
+    class CreateContext<T> extends AsyncRpcContext<T> {
         final DataObject objInStrore;
 
         public CreateContext(AsyncCompletionCallback<T> callback, DataObject objInStore) {
@@ -162,7 +162,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         AsyncCallbackDispatcher<DataObjectManagerImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createAsynCallback(null, null)).setContext(context);
 
-        store.getDriver().createAsync(objInStore, caller);
+        store.getDriver().createAsync(store, objInStore, caller);
         return;
     }
 
@@ -205,7 +205,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         return null;
     }
 
-    class CopyContext<T> extends AsyncRpcConext<T> {
+    class CopyContext<T> extends AsyncRpcContext<T> {
         DataObject destObj;
         DataObject srcObj;
 
@@ -293,7 +293,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         return null;
     }
 
-    class DeleteContext<T> extends AsyncRpcConext<T> {
+    class DeleteContext<T> extends AsyncRpcContext<T> {
         private final DataObject obj;
 
         public DeleteContext(AsyncCompletionCallback<T> callback, DataObject obj) {
@@ -321,7 +321,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         AsyncCallbackDispatcher<DataObjectManagerImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteAsynCallback(null, null)).setContext(context);
 
-        data.getDataStore().getDriver().deleteAsync(data, caller);
+        data.getDataStore().getDriver().deleteAsync(data.getDataStore(), data, caller);
         return;
     }
 

@@ -148,7 +148,8 @@ public class StorageAllocatorTest {
         diskOffering = diskOfferingDao.persist(diskOffering);
         diskOfferingId = diskOffering.getId();
 
-        volume = new VolumeVO(Volume.Type.ROOT, "volume", dcId, 1, 1, diskOffering.getId(), diskOffering.getDiskSize());
+        volume = new VolumeVO(Volume.Type.ROOT, "volume", dcId, 1, 1, diskOffering.getId(), diskOffering.getDiskSize(),
+                diskOffering.getMinIops(), diskOffering.getMaxIops(), "");
         volume = volumeDao.persist(volume);
         volumeId = volume.getId();
     }

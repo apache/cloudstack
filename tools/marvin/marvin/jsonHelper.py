@@ -21,7 +21,7 @@ import inspect
 from cloudstackAPI import *
 
 
-class jsonLoader:
+class jsonLoader(object):
     '''The recursive class for building and representing objects with.'''
     def __init__(self, obj):
         for k in obj:
@@ -51,7 +51,7 @@ class jsonLoader:
                                       in self.__dict__.iteritems()))
 
 
-class jsonDump:
+class jsonDump(object):
     @staticmethod
     def __serialize(obj):
         """Recursively walk object's hierarchy."""

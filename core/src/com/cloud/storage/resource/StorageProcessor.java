@@ -32,7 +32,7 @@ public interface StorageProcessor {
     public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd);
     public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd);
     public Answer createTemplateFromVolume(CopyCommand cmd);
-    public Answer backupSnasphot(CopyCommand cmd);
+    public Answer backupSnapshot(CopyCommand cmd);
     public Answer attachIso(AttachCommand cmd);
     public Answer attachVolume(AttachCommand cmd);
     public Answer dettachIso(DettachCommand cmd);

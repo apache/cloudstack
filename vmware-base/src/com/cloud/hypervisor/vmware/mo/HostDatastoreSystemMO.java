@@ -26,14 +26,16 @@ import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostNasVolumeSpec;
+import com.vmware.vim25.HostScsiDisk;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
-import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VmfsDatastoreCreateSpec;
+import com.vmware.vim25.VmfsDatastoreOption;
 
 public class HostDatastoreSystemMO extends BaseMO {
 
@@ -120,6 +122,22 @@ public class HostDatastoreSystemMO extends BaseMO {
 		}
 
 		return null;
+	}
+
+	public List<HostScsiDisk> queryAvailableDisksForVmfs() throws Exception {
+		return _context.getService().queryAvailableDisksForVmfs(_mor, null);
+	}
+
+	public ManagedObjectReference createVmfsDatastore(String datastoreName, HostScsiDisk hostScsiDisk) throws Exception {
+		// just grab the first instance of VmfsDatastoreOption
+		VmfsDatastoreOption vmfsDatastoreOption = _context.getService().queryVmfsDatastoreCreateOptions(_mor, hostScsiDisk.getDevicePath(), 4).get(0);
+
+		VmfsDatastoreCreateSpec vmfsDatastoreCreateSpec = (VmfsDatastoreCreateSpec)vmfsDatastoreOption.getSpec();
+
+		// set the name of the datastore to be created
+		vmfsDatastoreCreateSpec.getVmfs().setVolumeName(datastoreName);
+
+		return _context.getService().createVmfsDatastore(_mor, vmfsDatastoreCreateSpec);
 	}
 
 	public boolean deleteDatastore(String name) throws Exception {

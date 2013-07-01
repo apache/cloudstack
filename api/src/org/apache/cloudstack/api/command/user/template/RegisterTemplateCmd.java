@@ -213,7 +213,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     }
 
     public Boolean isRoutingType() {
-        return isRoutingType == null ? false : isRoutingType;
+        return isRoutingType;
     }
 
     /////////////////////////////////////////////////////

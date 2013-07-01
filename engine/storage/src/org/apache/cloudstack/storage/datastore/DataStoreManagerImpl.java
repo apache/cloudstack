@@ -18,11 +18,9 @@
  */
 package org.apache.cloudstack.storage.datastore;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.storage.DataStoreRole;
+import com.cloud.utils.exception.CloudRuntimeException;
+import edu.emory.mathcs.backport.java.util.Collections;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
@@ -30,22 +28,20 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.DataStoreRole;
-import com.cloud.utils.exception.CloudRuntimeException;
-
-import edu.emory.mathcs.backport.java.util.Collections;
+import javax.inject.Inject;
+import java.util.List;
 
 @Component
 public class DataStoreManagerImpl implements DataStoreManager {
     @Inject
-    PrimaryDataStoreProviderManager primaryStorMgr;
+    PrimaryDataStoreProviderManager primaryStoreMgr;
     @Inject
     ImageStoreProviderManager imageDataStoreMgr;
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
         if (role == DataStoreRole.Primary) {
-            return primaryStorMgr.getPrimaryDataStore(storeId);
+            return primaryStoreMgr.getPrimaryDataStore(storeId);
         } else if (role == DataStoreRole.Image) {
             return imageDataStoreMgr.getImageStore(storeId);
         } else if (role == DataStoreRole.ImageCache) {
@@ -57,7 +53,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
     @Override
     public DataStore getDataStore(String uuid, DataStoreRole role) {
         if (role == DataStoreRole.Primary) {
-            return primaryStorMgr.getPrimaryDataStore(uuid);
+            return primaryStoreMgr.getPrimaryDataStore(uuid);
         } else if (role == DataStoreRole.Image) {
             return imageDataStoreMgr.getImageStore(uuid);
         }
@@ -81,7 +77,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
 
     @Override
     public DataStore getPrimaryDataStore(long storeId) {
-        return primaryStorMgr.getPrimaryDataStore(storeId);
+        return primaryStoreMgr.getPrimaryDataStore(storeId);
     }
 
     @Override
@@ -94,4 +90,11 @@ public class DataStoreManagerImpl implements DataStoreManager {
         return imageDataStoreMgr.listImageStores();
     }
 
+    public void setPrimaryStoreMgr(PrimaryDataStoreProviderManager primaryStoreMgr) {
+        this.primaryStoreMgr = primaryStoreMgr;
+    }
+
+    public void setImageDataStoreMgr(ImageStoreProviderManager imageDataStoreMgr) {
+        this.imageDataStoreMgr = imageDataStoreMgr;
+    }
 }

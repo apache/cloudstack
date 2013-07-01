@@ -18,44 +18,8 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import org.apache.cloudstack.storage.command.AttachAnswer;
-import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
-import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachAnswer;
-import org.apache.cloudstack.storage.command.DettachCommand;
-import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -88,6 +52,40 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
+import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DettachAnswer;
+import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -171,7 +169,16 @@ public class XenServerStorageProcessor implements StorageProcessor {
         try {
             Connection conn = this.hypervisorResource.getConnection();
             // Look up the VDI
-            VDI vdi = this.hypervisorResource.mount(conn, null, null, data.getPath());
+            VDI vdi = null;
+
+            if (cmd.isManaged()) {
+                vdi = this.hypervisorResource.handleSrAndVdiAttach(cmd.get_iScsiName(), cmd.getStorageHost(),
+                        cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword());
+            }
+            else {
+                vdi = this.hypervisorResource.mount(conn, null, null, data.getPath());
+            }
+
             // Look up the VM
             VM vm = this.hypervisorResource.getVM(conn, vmName);
             /* For HVM guest, if no pv driver installed, no attach/detach */
@@ -223,7 +230,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             // Update the VDI's label to include the VM name
             vdi.setNameLabel(conn, vmName + "-DATA");
-            DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), disk.getType());
+            DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), vdi.getUuid(conn), disk.getType());
             return new AttachAnswer(newDisk);
 
         } catch (XenAPIException e) {
@@ -349,6 +356,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vdi.setNameLabel(conn, "detached");
 
             this.hypervisorResource.umount(conn, vdi);
+
+            if (cmd.isManaged()) {
+                this.hypervisorResource.handleSrAndVdiDetach(cmd.get_iScsiName());
+            }
 
             return new DettachAnswer(disk);
         } catch(Exception e) {
@@ -1209,7 +1220,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer backupSnasphot(CopyCommand cmd) {
+    public Answer backupSnapshot(CopyCommand cmd) {
         Connection conn = hypervisorResource.getConnection();
         DataTO srcData = cmd.getSrcTO();
         DataTO cacheData = cmd.getCacheTO();

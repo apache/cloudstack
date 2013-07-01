@@ -47,11 +47,23 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     Date getCreated();
 
-    long getDiskSize();
-
     boolean isCustomized();
 
     void setDiskSize(long diskSize);
+
+    long getDiskSize();
+
+    void setCustomizedIops(Boolean customizedIops);
+
+    Boolean isCustomizedIops();
+
+    void setMinIops(Long minIops);
+
+    Long getMinIops();
+
+    void setMaxIops(Long maxIops);
+
+    Long getMaxIops();
 
     void setBytesReadRate(Long bytesReadRate);
 

@@ -24,7 +24,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCallbackDriver;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,7 +59,7 @@ public class AsyncSampleEventDrivenStyleCaller {
         }
     }
     
-    private class TestContext<T> extends AsyncRpcConext<T> {
+    private class TestContext<T> extends AsyncRpcContext<T> {
         private boolean finished;
         private String result;
         /**

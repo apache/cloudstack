@@ -125,11 +125,6 @@
     <property name="name" value="Bare Metal Agent"/>
   </bean>
 
-  <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
-    <property name="name" value="SCVMMServer"/>
-  </bean>
-
-
   <bean id="FirstFitPlanner" class="com.cloud.deploy.FirstFitPlanner">
     <property name="name" value="First Fit"/>
   </bean>
@@ -188,10 +183,6 @@
     <property name="name" value="BareMetalGuru"/>
   </bean>
 
-  <bean id="HypervGuru" class="com.cloud.hypervisor.guru.HypervGuru">
-    <property name="name" value="HypervGuru"/>
-  </bean>
-  
   <!--
     DAO with customized configuration
   -->

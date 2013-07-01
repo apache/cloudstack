@@ -172,8 +172,7 @@ class cloudConnection(object):
         requests = {}
         required = []
         for attribute in dir(cmd):
-            if attribute != "__doc__" and attribute != "__init__" and\
-               attribute != "__module__":
+            if not attribute.startswith('__'):
                 if attribute == "isAsync":
                     isAsync = getattr(cmd, attribute)
                 elif attribute == "required":
@@ -204,7 +203,7 @@ class cloudConnection(object):
                             i = i + 1
         return cmdname, isAsync, requests
 
-    def marvin_request(self, cmd, response_type=None, method='GET'):
+    def marvin_request(self, cmd, response_type=None, method='GET', data=''):
         """
         Requester for marvin command objects
         @param cmd: marvin's command from cloudstackAPI

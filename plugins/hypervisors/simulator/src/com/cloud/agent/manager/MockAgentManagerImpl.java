@@ -16,24 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.PatternSyntaxException;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -45,7 +27,6 @@ import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.host.Host;
 import com.cloud.resource.AgentResourceBase;
 import com.cloud.resource.AgentRoutingResource;
 import com.cloud.resource.AgentStorageResource;
@@ -62,7 +43,23 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.PatternSyntaxException;
 
 @Component
 @Local(value = { MockAgentManager.class })
@@ -195,9 +192,6 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             random = SecureRandom.getInstance("SHA1PRNG");
             _executor = new ThreadPoolExecutor(1, 5, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(),
                     new NamedThreadFactory("Simulator-Agent-Mgr"));
-            // ComponentLocator locator = ComponentLocator.getCurrentLocator();
-            // _simulatorMgr = (SimulatorManager)
-            // locator.getComponent(SimulatorManager.Name);
         } catch (NoSuchAlgorithmException e) {
             s_logger.debug("Failed to initialize random:" + e.toString());
             return false;
@@ -330,10 +324,6 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                     details.put("guid", this.guid);
                     storageResource.configure("secondaryStorage", params);
                     storageResource.start();
-                    // on the simulator the ssvm is as good as a direct
-                    // agent
-                    _resourceMgr.addHost(mockHost.getDataCenterId(), storageResource, Host.Type.SecondaryStorageVM,
-                            details);
                     _resources.put(this.guid, storageResource);
                 } catch (ConfigurationException e) {
                     s_logger.debug("Failed to load secondary storage resource: " + e.toString());

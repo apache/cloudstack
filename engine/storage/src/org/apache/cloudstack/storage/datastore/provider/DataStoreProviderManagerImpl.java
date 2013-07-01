@@ -18,15 +18,8 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.component.ManagerBase;
 import org.apache.cloudstack.api.response.StorageProviderResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
@@ -38,8 +31,13 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.component.ManagerBase;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager {
@@ -50,7 +48,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     @Inject
     PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
     @Inject
-    ImageStoreProviderManager imageDataStoreProviderMgr;
+    ImageStoreProviderManager imageStoreProviderMgr;
 
     @Override
     public DataStoreProvider getDataStoreProvider(String name) {
@@ -125,7 +123,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
                             (PrimaryDataStoreDriver) provider.getDataStoreDriver());
                     primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
                 } else if (types.contains(DataStoreProviderType.IMAGE)) {
-                    imageDataStoreProviderMgr.registerDriver(provider.getName(),
+                    imageStoreProviderMgr.registerDriver(provider.getName(),
                             (ImageStoreDriver) provider.getDataStoreDriver());
                 }
             } catch (Exception e) {
@@ -167,5 +165,17 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         } else {
             throw new InvalidParameterValueException("Invalid parameter: " + type);
         }
+    }
+
+    public void setProviders(List<DataStoreProvider> providers) {
+        this.providers = providers;
+    }
+
+    public void setPrimaryDataStoreProviderMgr(PrimaryDataStoreProviderManager primaryDataStoreProviderMgr) {
+        this.primaryDataStoreProviderMgr = primaryDataStoreProviderMgr;
+    }
+
+    public void setImageStoreProviderMgr(ImageStoreProviderManager imageDataStoreProviderMgr) {
+        this.imageStoreProviderMgr = imageDataStoreProviderMgr;
     }
 }

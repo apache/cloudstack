@@ -24,6 +24,8 @@ import com.cloud.agent.api.to.DiskTO;
 public class DettachCommand extends Command implements StorageSubSystemCommand {
     private DiskTO disk;
     private String vmName;
+    private boolean _managed;
+    private String _iScsiName;
 
     public DettachCommand(DiskTO disk, String vmName) {
         super();
@@ -52,4 +54,19 @@ public class DettachCommand extends Command implements StorageSubSystemCommand {
         this.vmName = vmName;
     }
 
+    public void setManaged(boolean managed) {
+        _managed = managed;
+    }
+
+    public boolean isManaged() {
+        return _managed;
+    }
+
+    public void set_iScsiName(String iScsiName) {
+        _iScsiName = iScsiName;
+    }
+
+    public String get_iScsiName() {
+        return _iScsiName;
+    }
 }

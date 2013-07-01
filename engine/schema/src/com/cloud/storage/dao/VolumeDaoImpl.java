@@ -109,6 +109,19 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", Volume.State.Destroy);
         sc.setParameters("vType", Volume.Type.ROOT.toString());
+	    return listBy(sc);
+	}
+
+    @Override
+    public List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("poolId", poolId);
+        sc.setParameters("notDestroyed", Volume.State.Destroy);
+
+        if (volumeType != null) {
+            sc.setParameters("vType", volumeType.toString());
+        }
+
         return listBy(sc);
     }
 

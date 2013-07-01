@@ -60,6 +60,8 @@ public interface StoragePool extends Identity, InternalIdentity {
      */
     long getUsedBytes();
 
+    Long getCapacityIops();
+
     Long getClusterId();
 
     /**

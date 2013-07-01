@@ -25,7 +25,7 @@ from os import path
 from optparse import OptionParser
 
 
-class deployDataCenters():
+class deployDataCenters(object):
 
     def __init__(self, cfgFile):
         if not path.exists(cfgFile) \
@@ -54,9 +54,21 @@ specify a valid config file" % cfgFile)
             hostcmd.hypervisor = hypervisor
             self.apiClient.addHost(hostcmd)
 
-    def createClusters(self, clusters, zoneId, podId):
+    def addVmWareDataCenter(self, vmwareDc):
+        vdc = addVmwareDc.addVmwareDcCmd()
+        vdc.zoneid = vmwareDc.zoneid
+        vdc.name = vmwareDc.name
+        vdc.vcenter = vmwareDc.vcenter
+        vdc.username = vmwareDc.username
+        vdc.password = vmwareDc.password
+        self.apiClient.addVmwareDc(vdc)
+
+    def createClusters(self, clusters, zoneId, podId, vmwareDc=None):
         if clusters is None:
             return
+
+        if vmwareDc:
+            self.addVmWareDataCenter(vmwareDc)
 
         for cluster in clusters:
             clustercmd = addCluster.addClusterCmd()
@@ -108,7 +120,8 @@ specify a valid config file" % cfgFile)
                 self.createVlanIpRanges("Basic", pod.guestIpRanges, zoneId,
                                         podId, networkId)
 
-            self.createClusters(pod.clusters, zoneId, podId)
+            self.createClusters(pod.clusters, zoneId, podId,
+                                vmwareDc=pod.vmwaredc)
 
     def createVlanIpRanges(self, mode, ipranges, zoneId, podId=None,
                            networkId=None, forvirtualnetwork=None):
@@ -133,7 +146,6 @@ specify a valid config file" % cfgFile)
                     vlanipcmd.forvirtualnetwork = "false"
             else:
                 vlanipcmd.forvirtualnetwork = "true"
-
             self.apiClient.createVlanIpRange(vlanipcmd)
 
     def createSecondaryStorages(self, secondaryStorages, zoneId):
@@ -145,9 +157,12 @@ specify a valid config file" % cfgFile)
             secondarycmd.provider = secondary.provider
             secondarycmd.details = []
 
-            if isinstance(secondary.details, list):
-                for item in secondary.details:
-                    secondarycmd.details.append(item.__dict__)
+            if secondarycmd.provider == 'S3':
+                for key, value in vars(secondary.details).iteritems():
+                    secondarycmd.details.append({
+                                                'key': key,
+                                                'value': value
+                                                })
             if secondarycmd.provider == "NFS":
                 secondarycmd.zoneid = zoneId
             self.apiClient.addImageStore(secondarycmd)
@@ -161,8 +176,13 @@ specify a valid config file" % cfgFile)
             cachecmd.provider = cache.provider
             cachecmd.zoneid = zoneId
             cachecmd.details = []
-            for item in cache.details:
-                cachecmd.details.append(item.__dict__)
+
+            if cache.details:
+                for key, value in vars(cache.details).iteritems():
+                    cachecmd.details.append({
+                                            'key': key,
+                                            'value': value
+                                            })
             self.apiClient.createCacheStore(cachecmd)
 
     def createnetworks(self, networks, zoneId):

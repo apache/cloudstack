@@ -849,9 +849,9 @@ public class EC2Engine extends ManagerBase {
             CloudStackAccount caller = getCurrentAccount();
 
             CloudStackZone zone = findZone();
-            CloudStackNetwork net = findNetwork(zone);
+            //CloudStackNetwork net = findNetwork(zone);
 //			CloudStackIpAddress resp = getApi().associateIpAddress(null, null, null, "0036952d-48df-4422-9fd0-94b0885e18cb");
-            CloudStackIpAddress resp = getApi().associateIpAddress(zone.getId(), caller.getName(), caller.getDomainId(), net != null ? net.getId():null);
+            CloudStackIpAddress resp = getApi().associateIpAddress(zone.getId(), caller.getName(), caller.getDomainId(), null);
             ec2Address.setAssociatedInstanceId(resp.getId());
 
             if (resp.getIpAddress() == null) {
@@ -1399,14 +1399,14 @@ public class EC2Engine extends ManagerBase {
             CloudStackZone zone = zones.get(0);
 
             // network
-            CloudStackNetwork network = findNetwork(zone);
+            //CloudStackNetwork network = findNetwork(zone);
 
             // now actually deploy the vms
             for( int i=0; i < createInstances; i++ ) {
                 try{
                     CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
-                            request.getTemplateId(), zoneId, null, null, null, null, 
-                            null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
+                            request.getTemplateId(), zoneId, null, null, null, null,
+                            null, null, null, request.getKeyName(), null, null,
                             null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
                     EC2Instance vm = new EC2Instance();
                     vm.setId(resp.getId().toString());
@@ -1744,16 +1744,8 @@ public class EC2Engine extends ManagerBase {
 
     private CloudStackServiceOfferingVO getCSServiceOfferingId(String instanceType) throws Exception {
         try {
-            // list of valid values for AWS EC2 instanceType
-            String[] validInstanceTypes = {"t1.micro", "m1.small", "m1.medium", "m1.large", "m1.xlarge",
-                    "c1.medium", "c1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge",
-                    "m3.xlarge", "m3.2xlarge", "hi1.4xlarge", "cc1.4xlarge", "cg1.4xlarge", "cc2.8xlarge"};
-
             if (instanceType == null)
                 instanceType = "m1.small"; // default value
-            else if ( !Arrays.asList(validInstanceTypes).contains(instanceType)) { 
-                throw new Exception("Specified instance type is invalid");
-            }
             return scvoDao.getSvcOfferingByName(instanceType);
         } catch(Exception e) {
             logger.error( "Error while retrieving ServiceOffering information by name - ", e);

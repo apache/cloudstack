@@ -19,11 +19,11 @@ package com.cloud.acl;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.BaseCmd;
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -93,6 +93,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             // validate that the template is usable by the account
             if (!template.isPublicTemplate()) {
                 if (BaseCmd.isRootAdmin(caller.getType()) || (owner.getId() == caller.getId())) {
+                    return true;
+                }
+                //special handling for the project case
+                if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT && _projectMgr.canAccessProjectAccount(caller, owner.getId())) {
                     return true;
                 }
                 

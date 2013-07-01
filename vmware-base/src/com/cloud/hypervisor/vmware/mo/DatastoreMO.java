@@ -335,7 +335,7 @@ public class DatastoreMO extends BaseMO {
 
         HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
         ArrayList<HostDatastoreBrowserSearchResults> results = browserMo.searchDatastoreSubFolders("[" + getName() + "]", fileName, caseInsensitive);
-        if (results.size() > 1) {
+        if (results != null && results.size() > 1) {
             s_logger.warn("Multiple files with name " + fileName + " exists in datastore " + datastorePath + ". Trying to choose first file found in search attempt.");
         }
         for (HostDatastoreBrowserSearchResults result : results) {

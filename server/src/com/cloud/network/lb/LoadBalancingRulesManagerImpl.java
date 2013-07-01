@@ -68,7 +68,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.ExternalLoadBalancerUsageManager;
+import com.cloud.network.ExternalDeviceUsageManager;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LBHealthCheckPolicyVO;
 import com.cloud.network.Network;
@@ -212,7 +212,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     ConfigurationManager _configMgr;
 
     @Inject
-    ExternalLoadBalancerUsageManager _externalLBUsageMgr;
+    ExternalDeviceUsageManager _externalDeviceUsageMgr;
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
@@ -1216,7 +1216,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         NetworkVO network = _networkDao.findById(lb.getNetworkId());
         if (network != null) {
             if (_networkModel.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
-                _externalLBUsageMgr.updateExternalLoadBalancerNetworkUsageStats(loadBalancerId);
+                _externalDeviceUsageMgr.updateExternalLoadBalancerNetworkUsageStats(loadBalancerId);
             }
         }
 

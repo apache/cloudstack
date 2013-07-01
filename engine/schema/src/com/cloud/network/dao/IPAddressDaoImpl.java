@@ -40,6 +40,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -362,6 +363,28 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         sc.setParameters("state", State.Free);
         sc.setParameters("networkId", networkId);
         return customSearch(sc, null).get(0);       
+    }
+
+    @Override
+    public boolean deletePublicIPRangeExceptAliasIP(long vlanDbId, String aliasIp) throws SQLException {
+        Transaction txn = Transaction.currentTxn();
+        String deleteSql = "DELETE FROM `cloud`.`user_ip_address` WHERE vlan_db_id = ? and public_ip_address!=?";
+
+        txn.start();
+        PreparedStatement stmt = txn.prepareAutoCloseStatement(deleteSql);
+        stmt.setLong(1, vlanDbId);
+        stmt.setString(2, aliasIp);
+        stmt.executeUpdate();
+        txn.commit();
+        return true;
+    }
+
+    @Override
+    public boolean deletePublicIPRange(long vlanDbId) throws SQLException{
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vlan", vlanDbId);
+        remove(sc);
+        return true;
     }
 
     @Override

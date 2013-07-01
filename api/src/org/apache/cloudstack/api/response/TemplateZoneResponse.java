@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -29,6 +31,15 @@ public class TemplateZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone for the template")
     private String zoneName;
 
+    @SerializedName(ApiConstants.STATUS) @Param(description="the status of the template")
+    private String status;
+
+    @SerializedName(ApiConstants.IS_READY) // propName="ready"  (FIXME:  this used to be part of Param annotation, do we need it?)
+    @Param(description="true if the template is ready to be deployed from, false otherwise.")
+    private boolean isReady;
+
+    @SerializedName(ApiConstants.CREATED) @Param(description="the date this template was created")
+    private Date created;
 
     public TemplateZoneResponse(){
         super();
@@ -58,6 +69,31 @@ public class TemplateZoneResponse extends BaseResponse {
         this.zoneName = zoneName;
     }
 
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public boolean isReady() {
+        return isReady;
+    }
+
+    public void setReady(boolean isReady) {
+        this.isReady = isReady;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -69,21 +105,26 @@ public class TemplateZoneResponse extends BaseResponse {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         TemplateZoneResponse other = (TemplateZoneResponse) obj;
         String oid = this.getZoneId();
         if (oid == null) {
-            if (other.getZoneId() != null)
+            if (other.getZoneId() != null) {
                 return false;
-        } else if (!oid.equals(other.getZoneId()))
+            }
+        } else if (!oid.equals(other.getZoneId())) {
             return false;
-        else if ( this.getZoneName().equals(other.getZoneName()))
+        } else if ( this.getZoneName().equals(other.getZoneName())) {
             return false;
+        }
         return true;
     }
 

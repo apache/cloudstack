@@ -94,6 +94,15 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "uuid")
     private String uuid;
 
+    @Column(name="customized_iops")
+    private Boolean customizedIops;
+
+    @Column(name="min_iops")
+    Long minIops;
+
+    @Column(name="max_iops")
+    Long maxIops;
+
     @Column(name = "sort_key")
     int sortKey;
 
@@ -116,8 +125,8 @@ public class DiskOfferingVO implements DiskOffering {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags,
-            boolean isCustomized) {
+    public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized,
+    		Boolean isCustomizedIops, Long minIops, Long maxIops) {
         this.domainId = domainId;
         this.name = name;
         this.displayText = displayText;
@@ -128,6 +137,9 @@ public class DiskOfferingVO implements DiskOffering {
         this.useLocalStorage = false;
         this.customized = isCustomized;
         this.uuid = UUID.randomUUID().toString();
+        this.customizedIops = isCustomizedIops;
+        this.minIops = minIops;
+        this.maxIops = maxIops;
     }
 
     public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable,
@@ -175,6 +187,36 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    @Override
+    public void setCustomizedIops(Boolean customizedIops) {
+        this.customizedIops = customizedIops;
+    }
+
+    @Override
+    public Long getMinIops() {
+        return minIops;
+    }
+
+	@Override
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    @Override
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    @Override
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
+
+	@Override
     public String getUniqueName() {
         return uniqueName;
     }

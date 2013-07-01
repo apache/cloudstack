@@ -31,6 +31,8 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
+  <context:annotation-config />
+
 
 <!--
 
@@ -73,17 +75,21 @@
   <!--
     Stratosphere SSP support components
   -->
-  <!--
-  <bean id="sspCredentialDaoImpl" class="com.cloud.network.dao.SspCredentialDaoImpl"/>
-  <bean id="sspTenantDaoImpl" class="com.cloud.network.dao.SspTenantDaoImpl"/>
-  <bean id="sspUuidDaoImpl" class="com.cloud.network.dao.SspUuidDaoImpl"/>
-  <bean id="SspGuestNetworkGuru" class="com.cloud.network.guru.SspGuestNetworkGuru">
+  <bean id="sspCredentialDaoImpl" class="org.apache.cloudstack.network.dao.SspCredentialDaoImpl"/>
+  <bean id="sspTenantDaoImpl" class="org.apache.cloudstack.network.dao.SspTenantDaoImpl"/>
+  <bean id="sspUuidDaoImpl" class="org.apache.cloudstack.network.dao.SspUuidDaoImpl"/>
+  <bean id="SspGuestNetworkGuru" class="org.apache.cloudstack.network.guru.SspGuestNetworkGuru">
     <property name="name" value="SspGuestNetworkGuru"/>
   </bean>
-  <bean id="StratosphereSsp" class="com.cloud.network.element.SspElement">
+  <bean id="StratosphereSsp" class="org.apache.cloudstack.network.element.SspElement">
     <property name="name" value="StratosphereSsp"/>
   </bean>
+
+  <!--
+    UCS support components
   -->
+  <bean id="ucsBladeDaoImpl" class="com.cloud.ucs.database.UcsBladeDaoImpl" />
+  <bean id="ucsManagerDaoImpl" class="com.cloud.ucs.database.UcsManagerDaoImpl" />
 
 <!--
 
@@ -92,6 +98,28 @@
   It determines whether or not a adapter is activated or how it is loaded in order in its managing provider,
 
 --> 
+  <bean id="cloudStackImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl"/>
+  <bean id="s3ImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl"/>
+  <bean id="swiftImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl"/>
+  <bean id="solidFireDataStoreProvider"
+        class="org.apache.cloudstack.storage.datastore.provider.SolidfirePrimaryDataStoreProvider"/>
+
+  <!--Storage Providers-->
+  <bean id="dataStoreProviderManager"
+        class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl">
+    <property name="providers">
+      <list merge="true">
+        <ref bean="cloudStackPrimaryDataStoreProviderImpl"/>
+        <ref local="cloudStackImageStoreProviderImpl"/>
+        <ref local="s3ImageStoreProviderImpl"/>
+        <ref local="swiftImageStoreProviderImpl"/>
+        <ref local="solidFireDataStoreProvider"/>
+      </list>
+    </property>
+  </bean>
 
   <!-- Security adapters -->
   <bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList">

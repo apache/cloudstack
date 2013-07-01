@@ -49,6 +49,14 @@ public class StringUtils {
         return org.apache.commons.lang.StringUtils.join(components, delimiter);
     }
 
+    public static boolean isNotBlank(String str) {
+        if (str != null && str.trim().length() > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * @param tags
      * @return List of tags

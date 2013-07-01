@@ -94,7 +94,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer backupSnasphot(CopyCommand cmd) {
+    public Answer backupSnapshot(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
         SnapshotObjectTO snapshot = (SnapshotObjectTO) srcData;

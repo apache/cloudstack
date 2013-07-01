@@ -22,7 +22,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
-    void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);
-
-    void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback);
+    public ChapInfo getChapInfo(VolumeInfo volumeInfo);
+    public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);
+    public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback);
 }

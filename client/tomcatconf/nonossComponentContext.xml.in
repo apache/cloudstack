@@ -80,7 +80,6 @@
   <bean id="VmwareDatacenterDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterDaoImpl" />
   <bean id="VmwareDatacenterZoneMapDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDaoImpl" />
   <bean id="LegacyZoneDaoImpl" class="com.cloud.hypervisor.vmware.dao.LegacyZoneDaoImpl" />
-  <bean id="vmwareStorageMotionStrategy" class="org.apache.cloudstack.storage.motion.VmwareStorageMotionStrategy"/>
 
   <!--
     Nicira support components
@@ -170,6 +169,12 @@
   </bean>
 
 
+  <!--
+    UCS support components
+  -->
+  <bean id="ucsBladeDaoImpl" class="com.cloud.ucs.database.UcsBladeDaoImpl" />
+  <bean id="ucsManagerDaoImpl" class="com.cloud.ucs.database.UcsManagerDaoImpl" />
+  
 <!--
 
   Deployment configurations of various adapters
@@ -177,6 +182,40 @@
   It determines whether or not a adapter is activated or how it is loaded in order in its managing provider,
      
 --> 
+
+  <!--Motion Strategies-->
+  <bean id="vmwareStorageMotionStrategy" class="org.apache.cloudstack.storage.motion.VmwareStorageMotionStrategy" />
+  <bean id="dataMotionServiceImpl" class="org.apache.cloudstack.storage.motion.DataMotionServiceImpl">
+    <property name="strategies">
+      <list>
+        <ref bean="ancientDataMotionStrategy"/>
+        <ref bean="xenserverStorageMotionStrategy"/>
+        <ref local="vmwareStorageMotionStrategy"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="cloudStackImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl"/>
+  <bean id="s3ImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl"/>
+  <bean id="swiftImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl"/>
+  <bean id="solidFireDataStoreProvider"
+        class="org.apache.cloudstack.storage.datastore.provider.SolidfirePrimaryDataStoreProvider"/>
+
+  <!--Storage Providers-->
+  <bean id="dataStoreProviderManager"
+        class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl">
+    <property name="providers">
+      <list merge="true">
+        <ref bean="cloudStackPrimaryDataStoreProviderImpl"/>
+        <ref bean="cloudStackImageStoreProviderImpl"/>
+        <ref bean="s3ImageStoreProviderImpl"/>
+        <ref bean="solidFireDataStoreProvider"/>
+      </list>
+    </property>
+  </bean>
 
   <!-- Security adapters -->
   <bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList">

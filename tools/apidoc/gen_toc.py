@@ -152,7 +152,9 @@ known_categories = {
     'PortableIp': 'Portable IP',
     'dedicateHost': 'Dedicate Resources',
     'releaseDedicatedHost': 'Dedicate Resources',
-    'Baremetal' : 'Baremetal'
+    'Baremetal' : 'Baremetal',
+    'UCS' : 'UCS',
+    'Ucs' : 'UCS'
     }
 
 

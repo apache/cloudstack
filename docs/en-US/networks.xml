@@ -48,6 +48,7 @@
   <xi:include href="dns-dhcp.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="elastic-ip.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="portable-ip.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="pvlan.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="inter-vlan-routing.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="configure-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

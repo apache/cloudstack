@@ -99,27 +99,22 @@ public interface StorageManager extends StorageService {
 
     void cleanupSecondaryStorage(boolean recurring);
 
-
 	HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
+
+    boolean storagePoolHasEnoughIops(List<Volume> volume, StoragePool pool);
 
     boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
 
-    
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
     StoragePool findStoragePool(DiskProfile dskCh, DataCenterVO dc,
             HostPodVO pod, Long clusterId, Long hostId, VMInstanceVO vm,
             Set<StoragePool> avoid);
 
-
     void connectHostToSharedPool(long hostId, long poolId)
             throws StorageUnavailableException;
 
     void createCapacityEntry(long poolId);
-
-
-
-
 
     DataStore createLocalStorage(Host host, StoragePoolInfo poolInfo) throws ConnectionException;
 

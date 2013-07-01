@@ -12745,11 +12745,11 @@
                   {
                     id: { label: 'label.id' },
                     state: { label: 'label.state' },
-										tags: {
-										  label: 'label.storage.tags',
-											isEditable: true
-										},
-										podname: { label: 'label.pod' },
+					tags: {
+						label: 'label.storage.tags',
+						isEditable: true
+					},
+					podname: { label: 'label.pod' },
                     clustername: { label: 'label.cluster' },
                     type: { label: 'label.type' },
                     ipaddress: { label: 'label.ip.address' },
@@ -12770,6 +12770,15 @@
                           return "";
                         else
                           return cloudStack.converters.convertBytes(args);
+                      }
+                    },
+                    capacityiops: {
+                      label: 'label.disk.iops.total',
+                      converter: function(args) {
+                        if (args == null || args == 0)
+                          return "";
+                        else
+                          return args;
                       }
                     }
                   }

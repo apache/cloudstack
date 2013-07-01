@@ -22,6 +22,7 @@ import com.cloud.network.NetworkServiceImpl;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Transaction;
 import org.junit.Test;
 import org.junit.*;
 import org.mockito.ArgumentCaptor;
@@ -54,6 +55,7 @@ public class UpdatePhysicalNetworkTest {
 
     @Test
     public void updatePhysicalNetworkTest(){
+        Transaction txn = Transaction.open("updatePhysicalNetworkTest");
         NetworkServiceImpl networkService = setUp();
         existingRange.add(new Pair<Integer, Integer>(520, 524));
         when(_physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetworkVO);
@@ -61,6 +63,7 @@ public class UpdatePhysicalNetworkTest {
         when(_physicalNetworkDao.update(anyLong(), any(physicalNetworkVO.getClass()))).thenReturn(true);
         when(physicalNetworkVO.getVnet()).thenReturn(existingRange);
         networkService.updatePhysicalNetwork(1l, null, null, "525-530", null, null);
+        txn.close("updatePhysicalNetworkTest");
         verify(physicalNetworkVO).setVnet(argumentCaptor.capture());
         assertEquals("520-530", argumentCaptor.getValue());
     }

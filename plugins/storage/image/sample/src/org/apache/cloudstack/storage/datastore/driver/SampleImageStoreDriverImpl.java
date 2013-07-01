@@ -39,13 +39,11 @@ public class SampleImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format) {
-        // TODO Auto-generated method stub
         return null;
     }
 
