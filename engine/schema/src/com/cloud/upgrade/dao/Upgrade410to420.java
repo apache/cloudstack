@@ -1112,6 +1112,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 //Add internal lb vm to the list of physical network elements
                 PreparedStatement pstmt1 = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" +
                 		" WHERE physical_network_id=? AND provider_name='InternalLbVm'");
+                pstmt1.setLong(1, pNtwkId);
                 ResultSet rs1 = pstmt1.executeQuery();
                 while (rs1.next()) {
                     long providerId = rs1.getLong(1);
@@ -1124,7 +1125,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
 
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable existing physical networks with internal lb provider", e);
+            throw new CloudRuntimeException("Unable to update existing physical networks with internal lb provider", e);
         } finally {
             try {
                 if (rs != null) {
