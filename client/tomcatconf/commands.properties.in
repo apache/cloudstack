@@ -605,6 +605,8 @@ addBaremetalHost=1
 addBaremetalPxeKickStartServer=1
 addBaremetalPxePingServer=1
 addBaremetalDhcp=1
+listBaremetalDhcp=1
+listBaremetalPxePingServer=1
 
 #### UCS commands
 addUcsManager=1
