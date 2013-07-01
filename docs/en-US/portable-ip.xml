@@ -33,17 +33,16 @@
           <para>IP is statically allocated </para>
         </listitem>
         <listitem>
-          <para>Not required to be associated with a network </para>
+          <para>IP need not be associated with a network </para>
         </listitem>
         <listitem>
-          <para>Can transfer association across the networks </para>
+          <para>Network association is transferable across networks </para>
         </listitem>
         <listitem>
-          <para>Transfer IP across basic/advanced zones </para>
+          <para>IP is transferable across both Basic and Advanced zones </para>
         </listitem>
         <listitem>
-          <para>Transfer across VPC, non-VPC isolated/shared networks
-          </para>
+          <para>IP is transferable across VPC, non-VPC Isolated and Shared networks </para>
         </listitem>
         <listitem>
           <para/>
