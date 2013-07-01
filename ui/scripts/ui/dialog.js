@@ -236,7 +236,7 @@
             response: {
               success: function(args) {
                 $(args.data).each(function() {
-                  var id = this.id;
+                  var id = this.id !== undefined ? this.id : this.name;
                   var description = this.description;
 
                   if (args.descriptionField)
@@ -272,7 +272,7 @@
             .appendTo($value);
 
           // Pass form item to provider for additional manipulation
-          $.extend(selectArgs, { $select: $input });
+          $.extend(selectArgs, { $select: $input, $form: $form, type: 'createForm' });
 
           if (dependsOn) {
             $dependsOn = $input.closest('form').find('input, select').filter(function() {
