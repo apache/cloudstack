@@ -658,7 +658,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             try {
                 scopeType = Enum.valueOf(ScopeType.class, scope.toUpperCase());
             } catch (Exception e) {
-                throw new InvalidParameterValueException("invalid scope" + scope);
+                throw new InvalidParameterValueException("invalid scope for pool " + scope);
             }
         }
 
@@ -678,7 +678,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 try {
                     hypervisorType = HypervisorType.getType(hypervisor);
                 } catch (Exception e) {
-                    throw new InvalidParameterValueException("invalid hypervisor type" + hypervisor);
+                    throw new InvalidParameterValueException("invalid hypervisor type " + hypervisor);
                 }
             } else {
                 throw new InvalidParameterValueException(
@@ -812,9 +812,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     try {
                         future.get();
                     } catch (InterruptedException e) {
-                        s_logger.debug("expunge volume failed" + vol.getId(), e);
+                        s_logger.debug("expunge volume failed:" + vol.getId(), e);
                     } catch (ExecutionException e) {
-                        s_logger.debug("expunge volume failed" + vol.getId(), e);
+                        s_logger.debug("expunge volume failed:" + vol.getId(), e);
                     }
                 }
             }
@@ -822,7 +822,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             // Check if the pool has associated volumes in the volumes table
             // If it does , then you cannot delete the pool
             if (vlms.first() > 0) {
-                throw new CloudRuntimeException("Cannot delete pool " + sPool.getName() + " as there are associated vols" + " for this pool");
+                throw new CloudRuntimeException("Cannot delete pool " + sPool.getName() + " as there are associated volumes for this pool");
             }
         }
 
@@ -1277,7 +1277,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
         for (ManagementServerHostVO vo : nodeList) {
             if (vo.getMsid() == _serverId) {
-                s_logger.info("Cleaning up storage maintenance jobs associated with Management server" + vo.getMsid());
+                s_logger.info("Cleaning up storage maintenance jobs associated with Management server: " + vo.getMsid());
                 List<Long> poolIds = _storagePoolWorkDao.searchForPoolIdsForPendingWorkJobs(vo.getMsid());
                 if (poolIds.size() > 0) {
                     for (Long poolId : poolIds) {
@@ -1802,7 +1802,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 scopeType = Enum.valueOf(ScopeType.class, scope.toUpperCase());
 
             } catch (Exception e) {
-                throw new InvalidParameterValueException("invalid scope" + scope);
+                throw new InvalidParameterValueException("invalid scope for cache store " + scope);
             }
 
             if (scopeType != ScopeType.ZONE) {
