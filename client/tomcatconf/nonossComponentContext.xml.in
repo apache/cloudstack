@@ -195,17 +195,24 @@
     </property>
   </bean>
 
-  <!--<bean id="SolidfirePrimaryDataStoreProvider" class="org.apache.cloudstack.storage.datastore.provider.SolidfirePrimaryDataStoreProvider"/>-->
+  <bean id="cloudStackImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl"/>
+  <bean id="s3ImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.S3ImageStoreProviderImpl"/>
+  <bean id="swiftImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl"/>
+  <bean id="solidFireDataStoreProvider"
+        class="org.apache.cloudstack.storage.datastore.provider.SolidfirePrimaryDataStoreProvider"/>
+
   <!--Storage Providers-->
   <bean id="dataStoreProviderManager"
         class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl">
     <property name="providers">
       <list merge="true">
-        <ref bean="CloudStackPrimaryDataStoreProviderImpl"/>
-        <ref bean="CloudStackImageStoreProviderImpl"/>
-        <ref bean="S3ImageStoreProviderImpl"/>
-        <ref bean="SwiftImageStoreProviderImpl"/>
-        <!--<ref local="SolidfirePrimaryDataStoreProvider"/>-->
+        <ref bean="cloudStackPrimaryDataStoreProviderImpl"/>
+        <ref bean="cloudStackImageStoreProviderImpl"/>
+        <ref bean="s3ImageStoreProviderImpl"/>
+        <ref bean="solidFireDataStoreProvider"/>
       </list>
     </property>
   </bean>

@@ -61,8 +61,8 @@ class Services:
                                                 "name": "Tiny Instance",
                                                 "displaytext": "Tiny Instance",
                                                 "cpunumber": 1,
-                                                "cpuspeed": 1000,
-                                                "memory": 512,
+                                                "cpuspeed": 100,
+                                                "memory": 128,
                                                 },
                                 "network_offering": {
                                                 "name": 'VPC Network offering',

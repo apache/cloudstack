@@ -21,29 +21,32 @@
     specific language governing permissions and limitations
     under the License.
 -->
-
 <section id="working-with-volumes">
-    <title>Using Swift for Secondary Storage</title>
-    <para>A volume provides storage to a guest VM.  The volume can provide for
-      a root disk or an additional data disk.  &PRODUCT; supports additional
-      volumes for guest VMs.
-    </para>
-    <para>Volumes are created for a specific hypervisor type. A volume that has
-      been attached to guest using one hypervisor type (e.g, XenServer) may not
-      be attached to a guest that is using another hypervisor type (e.g. 
-      vSphere, KVM).  This is because the different hypervisors use
-      different disk image formats.
-    </para>
-    <para>&PRODUCT; defines a volume as a unit of storage available to a guest
-      VM. Volumes are either root disks or data disks. The root disk has "/"
-      in the file system and is usually the boot device. Data disks provide
-      for additional storage (e.g. As "/opt" or "D:"). Every guest VM has a root
-      disk, and VMs can also optionally have a data disk. End users can mount
-      multiple data disks to guest VMs. Users choose data disks from the disk
-      offerings created by administrators. The user can create a template from
-      a volume as well; this is the standard procedure for private template
-      creation. Volumes are hypervisor-specific: a volume from one hypervisor
-      type may not be used on a guest of another hypervisor type.
-    </para>    
+  <title>Working With Volumes</title>
+  <para>A volume provides storage to a guest VM. The volume can provide for a root disk or an
+    additional data disk. &PRODUCT; supports additional volumes for guest VMs. </para>
+  <para>Volumes are created for a specific hypervisor type. A volume that has been attached to guest
+    using one hypervisor type (e.g, XenServer) may not be attached to a guest that is using another
+    hypervisor type, for example:vSphere, KVM. This is because the different hypervisors use different
+    disk image formats. </para>
+  <para>&PRODUCT; defines a volume as a unit of storage available to a guest VM. Volumes are either
+    root disks or data disks. The root disk has "/" in the file system and is usually the boot
+    device. Data disks provide for additional storage, for example: "/opt" or "D:". Every guest VM
+    has a root disk, and VMs can also optionally have a data disk. End users can mount multiple data
+    disks to guest VMs. Users choose data disks from the disk offerings created by administrators.
+    The user can create a template from a volume as well; this is the standard procedure for private
+    template creation. Volumes are hypervisor-specific: a volume from one hypervisor type may not be
+    used on a guest of another hypervisor type. </para>
+  <note>
+    <para>&PRODUCT; supports attaching up to 13 data disks to a VM on XenServer hypervisor versions
+      6.0 and above. For the VMs on other hypervisor types, the data disk limit is 6.</para>
+  </note>
+  <xi:include href="creating-new-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="upload-existing-volume-to-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="attaching-volume.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="detach-move-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="vm-storage-migration.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="resizing-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="volume-deletion-garbage-collection.xml"
+    xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>
-

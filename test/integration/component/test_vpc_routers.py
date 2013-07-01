@@ -49,7 +49,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,
-                                    "memory": 64,
+                                    "memory": 128,
                                     },
                          "service_offering_new": {
                                     "name": "Small Instance",
@@ -424,9 +424,9 @@ class TestVPCRoutersBasic(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_02_reboot_router_after_creating_vpc(self):
-	""" Test to reboot the router after creating a VPC
-	"""
-	    # Validate the following 
+        """ Test to reboot the router after creating a VPC
+        """
+        # Validate the following
 	    # 1. Create a VPC with cidr - 10.1.1.1/16
 	    # 2. Reboot the VPC Virtual Router which is created as a result of VPC creation.
         	    # Stop the VPC Router
@@ -473,9 +473,9 @@ class TestVPCRoutersBasic(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_03_destroy_router_after_creating_vpc(self):
-	""" Test to destroy the router after creating a VPC
-	"""
-	    # Validate the following 
+        """ Test to destroy the router after creating a VPC
+	    """
+        # Validate the following
 	    # 1. Create a VPC with cidr - 10.1.1.1/16
 	    # 2. Destroy the VPC Virtual Router which is created as a result of VPC creation.
         self.validate_vpc_offering(self.vpc_off)
@@ -528,15 +528,15 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                          "List Routers should return a valid list"
                          )
         self.migrate_router(routers[0])
-    	return
+        return
 
     @attr(tags=["advanced", "intervlan"])
     def test_05_change_service_offerring_vpc(self):
-	""" Tests to change service offering of the Router after 
-	    creating a vpc
-	"""
+        """ Tests to change service offering of the Router after
+            creating a vpc
+        """
         
-	    # Validate the following 
+        # Validate the following
 	    # 1. Create a VPC with cidr - 10.1.1.1/16
 	    # 2. Change the service offerings of the VPC Virtual Router which is created as a result of VPC creation.
         
@@ -568,7 +568,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                                                  )
         self.debug("Changing service offering for the Router %s" % router.id)
         try: 
-	        router = Router.change_service_offering(self.apiclient,
+            router = Router.change_service_offering(self.apiclient,
 				                           router.id,
 				                           service_offering.id
 				                          )
@@ -589,7 +589,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
                          "Changing service offering failed as id is %s and expected"
                          "is %s" % (router.serviceofferingid, service_offering.id)
                         ) 
-    	return
+        return
 
 class TestVPCRouterOneNetwork(cloudstackTestCase):
 
@@ -748,18 +748,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                     account=cls.account.name,
                                     domainid=cls.account.domainid
                                   )
-#        cls.assertEqual(
-#                         isinstance(public_ips, list),
-#                         True,
-#                         "List public Ip for network should list the Ip addr"
-#                         )
-#        cls.assertEqual(
-#                         public_ips[0].ipaddress,
-#                         public_ip_2.ipaddress.ipaddress,
-#                         "List public Ip for network should list the Ip addr"
-#                         )
-#
-
         public_ip_3 = PublicIPAddress.create(
                                 cls.apiclient,
                                 accountid=cls.account.name,
@@ -917,8 +905,8 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         return
 
     def validate_network_rules(self):
-	""" Validate network rules
-	"""
+        """ Validate network rules
+        """
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
@@ -1014,8 +1002,8 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_01_start_stop_router_after_addition_of_one_guest_network(self):
-	""" Test start/stop of router after addition of one guest network
-	"""
+        """ Test start/stop of router after addition of one guest network
+	    """
         # Validations
 	    #1. Create a VPC with cidr - 10.1.1.1/16
         #2. Add network1(10.1.1.1/24) to this VPC. 
@@ -1031,7 +1019,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
         self.validate_vpc_offering(self.vpc_off)
         self.validate_vpc_network(self.vpc)
-        #self.validate_network_rules()
         self.assertEqual(
                         isinstance(self.gateways, list),
                         True,
@@ -1063,7 +1050,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         cmd.id = router.id
         self.apiclient.stopRouter(cmd)
 	
-	    #List routers to check state of router
+        #List routers to check state of router
         router_response = list_routers(
                                     self.apiclient,
                                     id=router.id
@@ -1082,13 +1069,13 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
         self.debug("Stopped the router with ID: %s" % router.id)
 
-	    # Start The Router
+        # Start The Router
         self.debug("Starting the router with ID: %s" % router.id)
         cmd = startRouter.startRouterCmd()
         cmd.id = router.id
         self.apiclient.startRouter(cmd)
 
-	    #List routers to check state of router
+        #List routers to check state of router
         router_response = list_routers(
                                     self.apiclient,
                                     id=router.id
@@ -1110,8 +1097,8 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_02_reboot_router_after_addition_of_one_guest_network(self):
-	""" Test reboot of router after addition of one guest network
-	"""
+        """ Test reboot of router after addition of one guest network
+	    """
         # Validations
 	    #1. Create a VPC with cidr - 10.1.1.1/16
         #2. Add network1(10.1.1.1/24) to this VPC. 
@@ -1177,8 +1164,8 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_03_destroy_router_after_addition_of_one_guest_network(self):
-	""" Test destroy of router after addition of one guest network
-	"""
+        """ Test destroy of router after addition of one guest network
+        """
         # Validations
 	    #1. Create a VPC with cidr - 10.1.1.1/16
         #2. Add network1(10.1.1.1/24) to this VPC. 
@@ -1236,8 +1223,8 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"])
     def test_04_migrate_router_after_addition_of_one_guest_network(self):
-	""" Test migrate of router after addition of one guest network
-	"""
+        """ Test migrate of router after addition of one guest network
+	    """
         # Validations
 	    #1. Create a VPC with cidr - 10.1.1.1/16
         #2. Add network1(10.1.1.1/24) to this VPC. 
@@ -1275,12 +1262,12 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                          "List Routers should return a valid list"
                          )
         self.migrate_router(routers[0])
-    	return
+        return
 
     @attr(tags=["advanced", "intervlan"])
     def test_05_chg_srv_off_router_after_addition_of_one_guest_network(self):
-	""" Test to change service offering of router after addition of one guest network
-	"""
+        """ Test to change service offering of router after addition of one guest network
+	    """
         # Validations
 	    #1. Create a VPC with cidr - 10.1.1.1/16
         #2. Add network1(10.1.1.1/24) to this VPC. 
@@ -1332,7 +1319,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                                                  )
         self.debug("Changing service offering for the Router %s" % router.id)
         try: 
-	        router = Router.change_service_offering(self.apiclient,
+            router = Router.change_service_offering(self.apiclient,
 				                           router.id,
 				                           service_offering.id
 				                          )
@@ -1353,5 +1340,4 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
                          "Changing service offering failed as id is %s and expected"
                          "is %s" % (router.serviceofferingid, service_offering.id)
                         ) 
-    	return
-
+        return

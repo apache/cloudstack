@@ -112,7 +112,7 @@
         class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl">
     <property name="providers">
       <list merge="true">
-        <ref bean="CloudStackPrimaryDataStoreProviderImpl"/>
+        <ref bean="cloudStackPrimaryDataStoreProviderImpl"/>
         <ref local="cloudStackImageStoreProviderImpl"/>
         <ref local="s3ImageStoreProviderImpl"/>
         <ref local="swiftImageStoreProviderImpl"/>
