@@ -33,7 +33,7 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
-import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -373,17 +373,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             TimerTask timerTask = new TimerTask() {
                 @Override
                 public void run() {
-                    try {
-                        CallContext.registerSystemCallContextOnceOnly();
-                    } catch (Exception e) {
-                        s_logger.error("Unable to register context", e);
-                        return;
-                    }
+                    ServerContexts.registerSystemContext();
                     try {
                         Date currentTimestamp = new Date();
                         poll(currentTimestamp);
                     } catch (Throwable t) {
                         s_logger.warn("Catch throwable in snapshot scheduler ", t);
+                    } finally {
+                        ServerContexts.unregisterSystemContext();
                     }
                 }
             };

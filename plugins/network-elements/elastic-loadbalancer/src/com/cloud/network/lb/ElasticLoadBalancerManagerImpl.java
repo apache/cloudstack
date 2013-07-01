@@ -38,6 +38,7 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -765,19 +766,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
     public class CleanupTask implements Runnable {
         @Override
         public void run() {
-            try {
-                CallContext.registerSystemCallContextOnceOnly();
-            } catch (Exception e) {
-                s_logger.fatal("Unable to establish system context");
-                System.exit(1);
-            }
-            
+            ServerContexts.registerSystemContext();
             garbageCollectUnusedElbVms();
-            
         }
 
         CleanupTask() {
-
         }
     }
 

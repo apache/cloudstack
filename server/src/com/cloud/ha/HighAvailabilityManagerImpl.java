@@ -34,7 +34,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.framework.jobs.Outcome;
 
 import com.cloud.agent.AgentManager;
@@ -828,7 +828,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
         @Override
         public void run() {
-            CallContext.registerSystemCallContextOnceOnly();
+            ServerContexts.registerSystemContext();
             s_logger.info("Starting work");
             while (!_stopped) {
                 HaWorkVO work = null;

@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
@@ -267,7 +268,7 @@ public class ApiServlet extends HttpServlet {
                         writeResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType);
                         return;
                     }
-                    CallContext.register(userId, ((Account)accountObj).getId(), null);
+                    ServerContexts.registerUserContext(userId, ((Account)accountObj).getId());
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server
                     // restarts if the userId was serialized to the stored session
@@ -282,6 +283,8 @@ public class ApiServlet extends HttpServlet {
                     return;
                 }
             } else {
+                s_logger.info("Registering as system user");
+                ServerContexts.registerSystemContext();
                 CallContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null);
             }
 
@@ -334,8 +337,9 @@ public class ApiServlet extends HttpServlet {
 	            if (s_logger.isDebugEnabled()) {
 	                s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
 	            }
-	            // cleanup user context to prevent from being peeked in other request context ???
-	            CallContext.unregister();
+	            
+                // cleanup user context to prevent from being peeked in other request context ???
+                ServerContexts.unregisterUserContext();
             } catch(Throwable e) {
             	s_logger.error("Really unexpected exception", e);
             }

@@ -41,7 +41,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.agent.AgentManager;
@@ -1155,12 +1155,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         @Override
         public void run() {
-            try {
-                CallContext.registerSystemCallContextOnceOnly();
-            } catch (Exception e) {
-                s_logger.error("Unable to register context", e);
-                return;
-            }
+            ServerContexts.registerSystemContext();
             _request.logD("Processing the first command ");
             StartupCommand[] startups = new StartupCommand[_cmds.length];
             for (int i = 0; i < _cmds.length; i++) {

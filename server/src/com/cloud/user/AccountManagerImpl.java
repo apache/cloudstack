@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 
 import com.cloud.api.ApiDBUtils;
@@ -1451,12 +1452,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected class AccountCleanupTask implements Runnable {
         @Override
         public void run() {
-            try {
-                CallContext.registerSystemCallContextOnceOnly();
-            } catch (Exception e) {
-                s_logger.error("Unable to register the system user context", e);
-                return;
-            }
+            ServerContexts.registerSystemContext();
             try {
                 GlobalLock lock = GlobalLock.getInternLock("AccountCleanup");
                 if (lock == null) {
@@ -1549,6 +1545,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             } catch (Exception e) {
                 s_logger.error("Exception ", e);
+            } finally {
+                ServerContexts.unregisterSystemContext();
             }
         }
     }

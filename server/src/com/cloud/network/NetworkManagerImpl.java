@@ -43,6 +43,7 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
@@ -2971,6 +2972,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         @Override
         public void run() {
+            ServerContexts.registerSystemContext();
             try {
                 List<Long> shutdownList = new ArrayList<Long>();
                 long currentTime = System.currentTimeMillis() >> 10;
@@ -3018,6 +3020,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 }
             } catch (Exception e) {
                 s_logger.warn("Caught exception while running network gc: ", e);
+            } finally {
+                ServerContexts.unregisterSystemContext();
             }
         }
     }

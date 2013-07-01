@@ -81,7 +81,6 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
@@ -114,6 +113,7 @@ import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -153,7 +153,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 
-@Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
@@ -303,7 +302,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-                CallContext.register(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, true);
+                ServerContexts.registerSystemContext();
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
                 String responseText = handleRequest(parameterMap, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
@@ -317,10 +316,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 // log runtime exception like NullPointerException to help identify the source easier
                 s_logger.error("Unhandled exception, ", e);
                 throw e;
+            } finally {
+                ServerContexts.unregisterSystemContext();
             }
         } finally {
             s_accessLogger.info(sb.toString());
-            CallContext.unregister();
         }
     }
 

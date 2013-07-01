@@ -45,6 +45,7 @@ import org.apache.cloudstack.config.ConfigKey;
 import org.apache.cloudstack.config.ConfigValue;
 import org.apache.cloudstack.config.Configurable;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -2679,6 +2680,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected class TransitionTask implements Runnable {
         @Override
         public void run() {
+            ServerContexts.registerSystemContext();
             GlobalLock lock = GlobalLock.getInternLock("TransitionChecking");
             if (lock == null) {
                 s_logger.debug("Couldn't get the global lock");
@@ -2703,6 +2705,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 */
+
             	scanStalledVMInTransitionStateOnDisconnectedHosts();
                 
             } catch (Exception e) {

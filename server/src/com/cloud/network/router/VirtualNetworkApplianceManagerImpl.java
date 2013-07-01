@@ -45,6 +45,7 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.ServerContexts;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -1283,8 +1284,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         @Override
         public void run() {
+            ServerContexts.registerSystemContext();
             try {
-                CallContext.registerSystemCallContextOnceOnly();
                 while (true) {
                     try {
                         Long networkId = _vrUpdateQueue.take();
@@ -1325,7 +1326,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             } catch (Exception e) {
                 s_logger.error("Unable to setup the calling context", e);
             } finally {
-                CallContext.unregister();
+                ServerContexts.unregisterSystemContext();
             }
         }
 
