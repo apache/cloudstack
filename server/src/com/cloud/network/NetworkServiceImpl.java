@@ -2025,7 +2025,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 }
                 // check if the network is upgradable
                 if (!canUpgrade(network, oldNetworkOfferingId, networkOfferingId)) {
-                    throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNetworkOfferingId + " to " + networkOfferingId + "; check logs for more information");
+                    throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNtwkOff.getUuid() +
+                            " to " + networkOffering.getUuid() + "; check logs for more information");
                 }
                 restartNetwork = true;
                 networkOfferingChanged = true;
@@ -2333,7 +2334,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 return false;
             }
             if (!oldNetworkOffering.getTags().equalsIgnoreCase(newNetworkOffering.getTags())) {
-                s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different tags, can't upgrade");
+                s_logger.debug("Network offerings " + newNetworkOffering.getUuid() + " and " + oldNetworkOffering.getUuid() + " have different tags, can't upgrade");
                 return false;
             }
         }
