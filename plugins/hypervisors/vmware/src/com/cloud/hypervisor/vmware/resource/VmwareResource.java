@@ -2109,7 +2109,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(final DnsMasqConfigCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing deleteipAlias command: " + _gson.toJson(cmd));
+            s_logger.info("Executing dnsmasqConfig command: " + _gson.toJson(cmd));
         }
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String controlIp = getRouterSshControlIp(cmd);
@@ -2135,7 +2135,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             try {
 
-                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "scp" + tmpConfigFilePath + "/root/dnsmasq.sh");
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "scp" + tmpConfigFilePath + " /root/dnsmasq.sh");
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Run command on domain router " + routerIp + ",  /root/dnsmasq.sh");
                 }
@@ -2155,7 +2155,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new Answer(cmd);
         } catch (Throwable e) {
             s_logger.error("Unexpected exception: " + e.toString(), e);
-            return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to " + VmwareHelper.getExceptionMessage(e));
+            return new Answer(cmd, false, " DnsmasqConfig command failed due to " + VmwareHelper.getExceptionMessage(e));
         }
     }
 
