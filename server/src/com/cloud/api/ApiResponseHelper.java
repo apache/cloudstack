@@ -2527,6 +2527,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
             response.setProjectId(project.getUuid());
             response.setProjectName(project.getName());
+            response.setAccountName(account.getAccountName());
         } else {
             response.setAccountName(account.getAccountName());
         }
