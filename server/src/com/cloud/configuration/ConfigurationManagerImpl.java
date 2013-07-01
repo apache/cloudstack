@@ -3120,10 +3120,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        // Check if a guest VLAN is using the same tag
+        // Check if the vlan is being used 
         if (_zoneDao.findVnet(zoneId, physicalNetworkId, vlanId).size() > 0) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId
-                    + " is already being used for the guest network in zone " + zone.getName());
+                    + " is already being used for dynamic vlan allocation for the guest network in zone " + zone.getName());
         }
 
         String ipRange = null;
