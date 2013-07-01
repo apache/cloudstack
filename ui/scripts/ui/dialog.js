@@ -236,7 +236,7 @@
             response: {
               success: function(args) {
                 $(args.data).each(function() {
-                  var id = this.id ? this.id : this.name;
+                  var id = this.id !== undefined ? this.id : this.name;
                   var description = this.description;
 
                   if (args.descriptionField)
