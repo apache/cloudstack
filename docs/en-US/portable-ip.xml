@@ -22,13 +22,36 @@
   <title>Portable IPs</title>
   <section id="about-pip">
     <title>About Portable IP</title>
-    <para>Portable IPs in &PRODUCT; are nothing but elastic IPs that can be transferred across
-      geographically separated zones. As an administrator, you can provision a pool of portable IPs
-      at region level and are available for user consumption. The users can acquire portable IPs if
-      admin has provisioned portable public IPs at the region level they are part of. These IPs can
-      be use for any service within an advanced zone. You can also use portable IPs for EIP service
-      in basic zones. Additionally, a portable IP can be transferred from one network to another
-      network.</para>
+    <para>Portable IPs in &PRODUCT; are region-level pool of IPs, which are elastic in nature, that
+      can be transferred across geographically separated zones. As an administrator, you can
+      provision a pool of portable IPs at region level and are available for user consumption. The
+      users can acquire portable IPs if admin has provisioned portable public IPs at the region
+      level they are part of. These IPs can be use for any service within an advanced zone. You can
+      also use portable IPs for EIP services in basic zones. </para>
+    <para>The salient features of Portable IP are as follows:<itemizedlist>
+        <listitem>
+          <para>IP is statically allocated </para>
+        </listitem>
+        <listitem>
+          <para>Not required to be associated with a network </para>
+        </listitem>
+        <listitem>
+          <para>Can transfer association across the networks </para>
+        </listitem>
+        <listitem>
+          <para>Transfer IP across basic/advanced zones </para>
+        </listitem>
+        <listitem>
+          <para>Transfer across VPC, non-VPC isolated/shared networks
+          </para>
+        </listitem>
+        <listitem>
+          <para/>
+        </listitem>
+        <listitem>
+          <para/>
+        </listitem>
+      </itemizedlist></para>
   </section>
   <section id="config-pip">
     <title>Configuring Portable IPs</title>
@@ -73,7 +96,9 @@
           </listitem>
         </itemizedlist>
       </listitem>
-      <listitem><para>Click OK.</para></listitem>
+      <listitem>
+        <para>Click OK.</para>
+      </listitem>
     </orderedlist>
   </section>
   <section id="acquire-pip">
