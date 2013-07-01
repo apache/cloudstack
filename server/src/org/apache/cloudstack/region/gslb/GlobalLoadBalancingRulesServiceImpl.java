@@ -648,8 +648,9 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             try {
                 _gslbProvider.applyGlobalLoadBalancerRule(zoneId.first(), zoneId.second(), gslbConfigCmd);
             } catch (ResourceUnavailableException e) {
-                s_logger.warn("Failed to configure GSLB rul in the zone " + zoneId + " due to " + e.getMessage());
-                throw new CloudRuntimeException("Failed to configure GSLB rul in the zone");
+                String msg =  "Failed to configure GSLB rule in the zone " + zoneId.first() + " due to " + e.getMessage();
+                s_logger.warn(msg);
+                throw new CloudRuntimeException(msg);
             }
         }
 
