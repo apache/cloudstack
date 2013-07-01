@@ -688,7 +688,7 @@
     <property name="imageDataStoreMgr" ref="imageStoreProviderMgr"/>
   </bean>
 
-  <bean id="CloudStackPrimaryDataStoreProviderImpl"
+  <bean id="cloudStackPrimaryDataStoreProviderImpl"
         class="org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl"/>
 
   <bean id="dataStoreProviderManager"
@@ -696,7 +696,7 @@
     <property name="providers">
       <list>
         <!--Data Store Providers-->
-        <ref bean="CloudStackPrimaryDataStoreProviderImpl"/>
+        <ref bean="cloudStackPrimaryDataStoreProviderImpl"/>
       </list>
     </property>
   </bean>
