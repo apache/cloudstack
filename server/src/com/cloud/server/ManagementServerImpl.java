@@ -304,6 +304,7 @@ import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadB
 import org.apache.cloudstack.api.command.user.region.ha.gslb.CreateGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.DeleteGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.ListGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.UpdateGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.RemoveFromGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.resource.GetCloudIdentifierCmd;
 import org.apache.cloudstack.api.command.user.resource.ListHypervisorsCmd;
@@ -2767,6 +2768,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateGlobalLoadBalancerRuleCmd.class);
         cmdList.add(DeleteGlobalLoadBalancerRuleCmd.class);
         cmdList.add(ListGlobalLoadBalancerRuleCmd.class);
+        cmdList.add(UpdateGlobalLoadBalancerRuleCmd.class);
         cmdList.add(AssignToGlobalLoadBalancerRuleCmd.class);
         cmdList.add(RemoveFromGlobalLoadBalancerRuleCmd.class);
         cmdList.add(ListStorageProvidersCmd.class);
