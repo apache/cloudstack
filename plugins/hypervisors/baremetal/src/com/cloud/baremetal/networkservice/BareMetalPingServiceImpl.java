@@ -33,6 +33,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
+import org.apache.cloudstack.api.ListBaremetalPxePingServersCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
