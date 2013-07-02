@@ -36,6 +36,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.StorageManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
@@ -55,6 +56,9 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
     @Override
     public PrimaryDataStore getPrimaryDataStore(long dataStoreId) {
         StoragePoolVO dataStoreVO = dataStoreDao.findById(dataStoreId);
+        if (dataStoreVO == null) {
+            throw new CloudRuntimeException("Unable to locate datastore with id " + dataStoreId);
+        }
         String providerName = dataStoreVO.getStorageProviderName();
         DataStoreProvider provider = providerManager.getDataStoreProvider(providerName);
         PrimaryDataStoreImpl dataStore = PrimaryDataStoreImpl.createDataStore(dataStoreVO,
