@@ -1883,7 +1883,6 @@ CREATE VIEW `cloud`.`template_view` AS
         vm_template.display_text,
         vm_template.enable_password,
         vm_template.guest_os_id,
-        -- vm_template.state,
         guest_os.uuid guest_os_uuid,
         guest_os.display_name guest_os_name,
         vm_template.bootable,
@@ -1913,6 +1912,7 @@ CREATE VIEW `cloud`.`template_view` AS
         data_center.name data_center_name,
         launch_permission.account_id lp_account_id,
         template_store_ref.store_id,
+		image_store.scope as store_scope,
         template_store_ref.state,
         template_store_ref.download_state,
         template_store_ref.download_pct,
@@ -1931,7 +1931,8 @@ CREATE VIEW `cloud`.`template_view` AS
         resource_tags.resource_id tag_resource_id,
         resource_tags.resource_uuid tag_resource_uuid,
         resource_tags.resource_type tag_resource_type,
-        resource_tags.customer tag_customer
+        resource_tags.customer tag_customer,
+		CONCAT(vm_template.id, '_', IFNULL(data_center.id, 0)) as temp_zone_pair
     from
         `cloud`.`vm_template`
             inner join
@@ -1945,24 +1946,21 @@ CREATE VIEW `cloud`.`template_view` AS
             left join
         `cloud`.`vm_template_details` ON vm_template_details.template_id = vm_template.id         
             left join
-        `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id            
+        `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id    
             left join
-        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id
-            AND template_zone_ref.removed is null
+        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id
             left join
-        `cloud`.`data_center` ON template_zone_ref.zone_id = data_center.id
+        `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id 
+        	left join
+        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null    
             left join
-        `cloud`.`image_store` ON image_store.removed is NULL AND (image_store.data_center_id = data_center.id OR image_store.scope = 'REGION')
-            left join
-        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id AND template_store_ref.store_id = image_store.id
+        `cloud`.`data_center` ON (image_store.data_center_id = data_center.id OR template_zone_ref.zone_id = data_center.id)
             left join
         `cloud`.`launch_permission` ON launch_permission.template_id = vm_template.id
             left join
         `cloud`.`resource_tags` ON resource_tags.resource_id = vm_template.id
             and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO');
-
-
-
+            
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.apiserver.address', 'http://localhost:8081', 'Specify the address at which the Midonet API server can be contacted (if using Midonet)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.providerrouter.id', 'd7c5e6a3-e2f4-426b-b728-b7ce6a0448e5', 'Specifies the UUID of the Midonet provider router (if using Midonet)');
 

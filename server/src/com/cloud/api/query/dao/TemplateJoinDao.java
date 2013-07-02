@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.TemplateResponse;
+
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericDao;
@@ -37,8 +38,8 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
     List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate tmpl, long zoneId, boolean readyOnly);
 
-    List<TemplateJoinVO> searchByIds(Long... ids);
+    List<TemplateJoinVO> searchByTemplateZonePair(String... pairs);
 
     List<TemplateJoinVO> listActiveTemplates(long storeId);
 
- }
+}

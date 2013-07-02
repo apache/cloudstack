@@ -27,7 +27,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.storage.*;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -56,7 +55,28 @@ import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
-import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceDetailResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
@@ -132,8 +152,14 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
@@ -729,7 +755,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // first search distinct vm id by using query criteria and pagination
         SearchBuilder<UserVmJoinVO> sb = _userVmJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids
+        // ids
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
 
@@ -951,7 +977,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 cmd.getPageSizeVal());
         SearchBuilder<SecurityGroupJoinVO> sb = _securityGroupJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids
+        // ids
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
 
@@ -1474,7 +1500,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         SearchBuilder<HostJoinVO> sb = _hostJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids
+        // ids
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
@@ -1935,7 +1961,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         SearchBuilder<StoragePoolJoinVO> sb = _poolJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids
+        // ids
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("path", sb.entity().getPath(), SearchCriteria.Op.EQ);
@@ -2025,7 +2051,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         SearchBuilder<ImageStoreJoinVO> sb = _imageStoreJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids
+        // ids
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
@@ -2105,7 +2131,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         SearchBuilder<ImageStoreJoinVO> sb = _imageStoreJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids
+        // ids
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
@@ -2229,14 +2255,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
             spc.addOr("domainId", SearchCriteria.Op.NULL); // include public
-                                                           // offering as where
+            // offering as where
             sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root
-                                                                 // users should
-                                                                 // not see
-                                                                 // system
-                                                                 // offering at
-                                                                 // all
+            // users should
+            // not see
+            // system
+            // offering at
+            // all
 
         }
 
@@ -2356,7 +2382,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
             spc.addOr("domainId", SearchCriteria.Op.NULL); // include public
-                                                           // offering as where
+            // offering as where
             sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
 
         } else {
@@ -2439,8 +2465,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
 
-        if (networkType != null)
+        if (networkType != null) {
             sc.addAnd("networkType", SearchCriteria.Op.EQ, networkType);
+        }
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
@@ -2550,8 +2577,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (account != null) {
                 if ((available != null) && Boolean.FALSE.equals(available)) {
                     Set<Long> dcIds = new HashSet<Long>(); // data centers with
-                                                           // at least one VM
-                                                           // running
+                    // at least one VM
+                    // running
                     List<DomainRouterVO> routers = _routerDao.listBy(account.getId());
                     for (DomainRouterVO router : routers) {
                         dcIds.add(router.getDataCenterId());
@@ -2664,6 +2691,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, startIndex, pageSize);
+
+        SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair
         SearchCriteria<TemplateJoinVO> sc = _templateJoinDao.createSearchCriteria();
 
         // verify templateId parameter and specially handle it
@@ -2846,7 +2876,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
 
             if (zoneId != null) {
-                sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+                SearchCriteria<TemplateJoinVO> zoneSc = _templateJoinDao.createSearchCriteria();
+                zoneSc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+                // handle the case where xs-tools.iso and vmware-tools.iso do not have data_center information in template_view
+                SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
+                isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
+                isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
+                zoneSc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
+                sc.addAnd("dataCenterId", SearchCriteria.Op.SC, zoneSc);
             }
 
             if (!showDomr) {
@@ -2867,12 +2904,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             return uniqueTmplPair;
         }
         List<TemplateJoinVO> uniqueTmpls = uniqueTmplPair.first();
-        Long[] vrIds = new Long[uniqueTmpls.size()];
+        String[] tzIds = new String[uniqueTmpls.size()];
         int i = 0;
         for (TemplateJoinVO v : uniqueTmpls) {
-            vrIds[i++] = v.getId();
+            tzIds[i++] = v.getTempZonePair();
         }
-        List<TemplateJoinVO> vrs = _templateJoinDao.searchByIds(vrIds);
+        List<TemplateJoinVO> vrs = _templateJoinDao.searchByTemplateZonePair(tzIds);
         return new Pair<List<TemplateJoinVO>, Integer>(vrs, count);
 
         // TODO: revisit the special logic for iso search in
@@ -2926,6 +2963,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
     }
 
+    @Override
     public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
             String affinityGroupType, Long vmId, String accountName, Long domainId, boolean isRecursive,
             boolean listAll, Long startIndex, Long pageSize) {
@@ -2971,7 +3009,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 listProjectResourcesCriteria);
 
         groupSearch.select(null, Func.DISTINCT, groupSearch.entity().getId()); // select
-                                                                               // distinct
+        // distinct
 
         SearchCriteria<AffinityGroupJoinVO> sc = groupSearch.create();
         _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
@@ -3026,6 +3064,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
     }
 
+    @Override
     public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd) {
 
         String key = cmd.getKey();
