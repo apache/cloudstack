@@ -364,6 +364,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         List<HostVO> allHosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, primarystore.getClusterId(),
                 primarystore.getPodId(), primarystore.getDataCenterId());
         if (allHosts.isEmpty()) {
+            primaryDataStoreDao.expunge(primarystore.getId());
             throw new CloudRuntimeException("No host up to associate a storage pool with in cluster "
                     + primarystore.getClusterId());
         }
