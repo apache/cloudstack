@@ -29,7 +29,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = Account.class)
-public class AccountResponse extends BaseResponse {
+public class AccountResponse extends BaseResponse implements ResourceLimitAndCountResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the account")
     private String id;
 
@@ -168,7 +168,6 @@ public class AccountResponse extends BaseResponse {
     @SerializedName("secondarystorageavailable") @Param(description="the total secondary storage space (in GiB) available to be used for this account", since="4.2.0")
     private String secondaryStorageAvailable;
 
-
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the account")
     private String state;
 
@@ -221,70 +220,87 @@ public class AccountResponse extends BaseResponse {
         this.bytesSent = bytesSent;
     }
 
+    @Override
     public void setVmLimit(String vmLimit) {
         this.vmLimit = vmLimit;
     }
 
+    @Override
     public void setVmTotal(Long vmTotal) {
         this.vmTotal = vmTotal;
     }
 
+    @Override
     public void setVmAvailable(String vmAvailable) {
         this.vmAvailable = vmAvailable;
     }
 
+    @Override
     public void setIpLimit(String ipLimit) {
         this.ipLimit = ipLimit;
     }
 
+    @Override
     public void setIpTotal(Long ipTotal) {
         this.ipTotal = ipTotal;
     }
 
+    @Override
     public void setIpAvailable(String ipAvailable) {
         this.ipAvailable = ipAvailable;
     }
 
+    @Override
     public void setVolumeLimit(String volumeLimit) {
         this.volumeLimit = volumeLimit;
     }
 
+    @Override
     public void setVolumeTotal(Long volumeTotal) {
         this.volumeTotal = volumeTotal;
     }
 
+    @Override
     public void setVolumeAvailable(String volumeAvailable) {
         this.volumeAvailable = volumeAvailable;
     }
 
+    @Override
     public void setSnapshotLimit(String snapshotLimit) {
         this.snapshotLimit = snapshotLimit;
     }
 
+    @Override
     public void setSnapshotTotal(Long snapshotTotal) {
         this.snapshotTotal = snapshotTotal;
     }
 
+    @Override
     public void setSnapshotAvailable(String snapshotAvailable) {
         this.snapshotAvailable = snapshotAvailable;
     }
 
+    @Override
     public void setTemplateLimit(String templateLimit) {
         this.templateLimit = templateLimit;
     }
 
+    @Override
     public void setTemplateTotal(Long templateTotal) {
         this.templateTotal = templateTotal;
     }
 
+    @Override
     public void setTemplateAvailable(String templateAvailable) {
         this.templateAvailable = templateAvailable;
     }
 
+    @Override
     public void setVmStopped(Integer vmStopped) {
         this.vmStopped = vmStopped;
     }
 
+    @Override
     public void setVmRunning(Integer vmRunning) {
         this.vmRunning = vmRunning;
     }
@@ -321,66 +337,81 @@ public class AccountResponse extends BaseResponse {
         this.projectAvailable = projectAvailable;
     }
 
+    @Override
     public void setNetworkLimit(String networkLimit) {
         this.networkLimit = networkLimit;
     }
 
+    @Override
     public void setNetworkTotal(Long networkTotal) {
         this.networkTotal = networkTotal;
     }
-
+    
+    @Override
     public void setNetworkAvailable(String networkAvailable) {
         this.networkAvailable = networkAvailable;
     }
-
+    
+    @Override
     public void setCpuLimit(String cpuLimit) {
         this.cpuLimit = cpuLimit;
     }
-
+    
+    @Override
     public void setCpuTotal(Long cpuTotal) {
         this.cpuTotal = cpuTotal;
     }
-
+    
+    @Override
     public void setCpuAvailable(String cpuAvailable) {
         this.cpuAvailable = cpuAvailable;
     }
-
+    
+    @Override
     public void setMemoryLimit(String memoryLimit) {
         this.memoryLimit = memoryLimit;
     }
-
+    
+    @Override
     public void setMemoryTotal(Long memoryTotal) {
         this.memoryTotal = memoryTotal;
     }
-
+    
+    @Override
     public void setMemoryAvailable(String memoryAvailable) {
         this.memoryAvailable = memoryAvailable;
     }
-
+    
+    @Override
     public void setPrimaryStorageLimit(String primaryStorageLimit) {
         this.primaryStorageLimit = primaryStorageLimit;
     }
-
+    
+    @Override
     public void setPrimaryStorageTotal(Long primaryStorageTotal) {
         this.primaryStorageTotal = primaryStorageTotal;
     }
-
+    
+    @Override
     public void setPrimaryStorageAvailable(String primaryStorageAvailable) {
         this.primaryStorageAvailable = primaryStorageAvailable;
     }
-
+    
+    @Override
     public void setSecondaryStorageLimit(String secondaryStorageLimit) {
         this.secondaryStorageLimit = secondaryStorageLimit;
     }
-
+    
+    @Override
     public void setSecondaryStorageTotal(Long secondaryStorageTotal) {
         this.secondaryStorageTotal = secondaryStorageTotal;
     }
-
+    
+    @Override
     public void setSecondaryStorageAvailable(String secondaryStorageAvailable) {
         this.secondaryStorageAvailable = secondaryStorageAvailable;
     }
-
+    
     public void setDefaultZone(String defaultZoneId) {
         this.defaultZoneId = defaultZoneId;
     }
