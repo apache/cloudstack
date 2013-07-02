@@ -551,9 +551,9 @@ class TestPortForwarding(cloudstackTestCase):
             self.debug("SSHing into VM with IP address %s with NAT IP %s" %
                                     (
                                      self.virtual_machine.ipaddress,
-                                     ip_address.ipaddress
+                                     ip_address.ipaddress.ipaddress
                                     ))
-            self.virtual_machine.get_ssh_client(ip_address.ipaddress)
+            self.virtual_machine.get_ssh_client(ip_address.ipaddress.ipaddress)
         except Exception as e:
             self.fail(
                       "SSH Access failed for %s: %s" % \
@@ -577,7 +577,7 @@ class TestPortForwarding(cloudstackTestCase):
                                                  self.virtual_machine.ipaddress)
 
             remoteSSHClient(
-                                            ip_address.ipaddress,
+                                            ip_address.ipaddress.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
                                             self.virtual_machine.password
@@ -956,11 +956,11 @@ class TestLoadBalancingRule(cloudstackTestCase):
         )
         try:
             hostnames = []
-            self.try_ssh(self.non_src_nat_ip, hostnames)
-            self.try_ssh(self.non_src_nat_ip, hostnames)
-            self.try_ssh(self.non_src_nat_ip, hostnames)
-            self.try_ssh(self.non_src_nat_ip, hostnames)
-            self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
 
             self.debug("Hostnames: %s" % str(hostnames))
             self.assertIn(
@@ -985,7 +985,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             # Making host list empty
             hostnames[:] = []
 
-            self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
             self.assertIn(
             self.vm_1.name,
             hostnames,
