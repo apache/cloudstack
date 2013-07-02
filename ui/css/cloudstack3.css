@@ -11624,7 +11624,6 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 /*Regions*/
 .region-switcher {
   display: inline-block;
-  z-index: 2002;
   position: relative;
   background: url(../images/bg-gradients.png) repeat-x 0px -867px;
   border: 1px solid #5E5E5E;
