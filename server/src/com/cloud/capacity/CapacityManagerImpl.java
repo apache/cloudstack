@@ -47,6 +47,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
@@ -623,15 +624,21 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 	        }
         }else {
         	Transaction txn = Transaction.currentTxn();
-            CapacityState capacityState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(host.getClusterId())) == AllocationState.Disabled ?
-            							  CapacityState.Disabled : CapacityState.Enabled;
         	txn.start();
         	CapacityVO capacity = new CapacityVO(host.getId(),
                     host.getDataCenterId(), host.getPodId(), host.getClusterId(), usedMemory,
                     host.getTotalMemory(),
                     CapacityVO.CAPACITY_TYPE_MEMORY);
             capacity.setReservedCapacity(reservedMemory);
-            capacity.setCapacityState(capacityState);
+            CapacityState capacityState = CapacityState.Enabled;
+            if (host.getClusterId() != null) {
+                ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
+                if (cluster != null) {
+                    capacityState = _configMgr.findClusterAllocationState(cluster) == AllocationState.Disabled ? CapacityState.Disabled
+                            : CapacityState.Enabled;
+                    capacity.setCapacityState(capacityState);
+                }
+            }
             _capacityDao.persist(capacity);
 
             capacity = new CapacityVO(

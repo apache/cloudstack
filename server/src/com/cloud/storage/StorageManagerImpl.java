@@ -892,16 +892,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (capacities.size() == 0) {
             CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(),
                     storagePool.getClusterId(), allocated, totalOverProvCapacity, capacityType);
-            AllocationState allocationState = null;
+
             if (storagePool.getScope() == ScopeType.ZONE) {
                 DataCenterVO dc = ApiDBUtils.findZoneById(storagePool.getDataCenterId());
-                allocationState = dc.getAllocationState();
+                AllocationState allocationState = dc.getAllocationState();
+                CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled
+                        : CapacityState.Enabled;
+                capacity.setCapacityState(capacityState);
             } else {
-                allocationState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(storagePool.getClusterId()));
+                if (storagePool.getClusterId() != null) {
+                    ClusterVO cluster = ApiDBUtils.findClusterById(storagePool.getClusterId());
+                    if (cluster != null) {
+                        AllocationState allocationState = _configMgr.findClusterAllocationState(cluster);
+                        CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled
+                                : CapacityState.Enabled;
+                        capacity.setCapacityState(capacityState);
+                    }
+                }
             }
-            CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
-
-            capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
