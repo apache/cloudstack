@@ -94,6 +94,7 @@ public class ApiConstants {
     public static final String GSLB_SERVICE_DOMAIN_NAME = "gslbdomainname";
     public static final String GSLB_SERVICE_TYPE = "gslbservicetype";
     public static final String GSLB_STICKY_SESSION_METHOD = "gslbstickysessionmethodname";
+    public static final String GSLB_LBRULE_WEIGHT_MAP = "gslblbruleweightsmap";
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
     public static final String GUEST_VLAN_RANGE = "guestvlanrange";
     public static final String HA_ENABLE = "haenable";

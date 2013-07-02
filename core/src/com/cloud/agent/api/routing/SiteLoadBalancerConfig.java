@@ -45,6 +45,9 @@ public class SiteLoadBalancerConfig {
     // zone id in which site is located
     long dataCenterId;
 
+    // wight corresponding to this site
+    long weight = 1;
+
     public SiteLoadBalancerConfig(boolean revoked, String serviceType, String servicePublicIp, String servicePort,
                                   long dataCenterId) {
         this.revoked = revoked;
@@ -118,4 +121,14 @@ public class SiteLoadBalancerConfig {
     public boolean forRevoke() {
         return revoked;
     }
+
+    public void setWeight(long weight) {
+        assert(weight >= 1 && weight <= 100);
+        this.weight = weight;
+    }
+
+    public long getWeight() {
+        return weight;
+    }
+
 }
