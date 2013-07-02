@@ -196,7 +196,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             self.assertNotEqual(
                         len(list_hosts_response),
                         0,
-                        "Check list Hosts in the cluster: " + cluster
+                        "Check list Hosts in the cluster: " + cluster.name
                         )
 
 
