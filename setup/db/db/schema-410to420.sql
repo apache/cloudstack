@@ -513,6 +513,7 @@ CREATE TABLE `cloud`.`global_load_balancer_lb_rule_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `gslb_rule_id` bigint unsigned NOT NULL,
   `lb_rule_id` bigint unsigned NOT NULL,
+  `weight` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'weight of the site in gslb',
   `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`gslb_rule_id`, `lb_rule_id`),

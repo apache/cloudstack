@@ -235,6 +235,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
         }
 
+        Map<Long, Long> lbRuleWeightMap = assignToGslbCmd.getLoadBalancerRuleWeightMap();
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -243,6 +245,9 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             GlobalLoadBalancerLbRuleMapVO newGslbLbMap = new GlobalLoadBalancerLbRuleMapVO();
             newGslbLbMap.setGslbLoadBalancerId(gslbRuleId);
             newGslbLbMap.setLoadBalancerId(lbRuleId);
+            if (lbRuleWeightMap != null && lbRuleWeightMap.get(lbRuleId) != null) {
+                newGslbLbMap.setWeight(lbRuleWeightMap.get(lbRuleId));
+            }
             _gslbLbMapDao.persist(newGslbLbMap);
         }
 
@@ -633,6 +638,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
             siteLb.setGslbProviderPublicIp(_gslbProvider.getZoneGslbProviderPublicIp(dataCenterId, physicalNetworkId));
             siteLb.setGslbProviderPrivateIp(_gslbProvider.getZoneGslbProviderPrivateIp(dataCenterId, physicalNetworkId));
+            siteLb.setWeight(gslbLbMapVo.getWeight());
 
             zoneSiteLoadbalancerMap.put(network.getDataCenterId(), siteLb);
         }

@@ -748,7 +748,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         phyNetworkId.set(networkVo, new Long(200));
         when(gslbServiceImpl._networkDao.findById(new Long(1))).thenReturn(networkVo);
 
-        GlobalLoadBalancerLbRuleMapVO gslbLbMap = new GlobalLoadBalancerLbRuleMapVO(1, 1);
+        GlobalLoadBalancerLbRuleMapVO gslbLbMap = new GlobalLoadBalancerLbRuleMapVO(1, 1, 1);
         List<GlobalLoadBalancerLbRuleMapVO>  listSslbLbMap = new ArrayList<GlobalLoadBalancerLbRuleMapVO>();
         listSslbLbMap.add(gslbLbMap);
         when(gslbServiceImpl._gslbLbMapDao.listByGslbRuleId(new Long(1))).thenReturn(listSslbLbMap);
@@ -950,7 +950,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
 
-        GlobalLoadBalancerLbRuleMapVO gslbLmMap = new GlobalLoadBalancerLbRuleMapVO(1,1);
+        GlobalLoadBalancerLbRuleMapVO gslbLmMap = new GlobalLoadBalancerLbRuleMapVO(1,1,1);
         List<GlobalLoadBalancerLbRuleMapVO> gslbLbMapVos = new ArrayList<GlobalLoadBalancerLbRuleMapVO>();
         gslbLbMapVos.add(gslbLmMap);
         when(gslbServiceImpl._gslbLbMapDao.listByGslbRuleId(new Long(1))).thenReturn(gslbLbMapVos);

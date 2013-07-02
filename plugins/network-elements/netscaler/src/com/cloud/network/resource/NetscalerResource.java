@@ -902,7 +902,7 @@ public class NetscalerResource implements ServerResource {
                                     servicePublicIp, servicePublicPort, siteName);
 
                             // Bind 'gslbservice' service object to GSLB virtual server
-                            GSLB.createVserverServiceBinding(_netscalerService, serviceName, vserverName);
+                            GSLB.createVserverServiceBinding(_netscalerService, serviceName, vserverName, site.getWeight());
 
                             // create a monitor for the service running on the site
                             GSLB.createGslbServiceMonitor(_netscalerService, servicePublicIp, serviceName);
@@ -1334,13 +1334,16 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
-        private static void createVserverServiceBinding(nitro_service client, String serviceName, String vserverName)
+        private static void createVserverServiceBinding(nitro_service client, String serviceName, String vserverName,
+                                                        long weight)
                     throws ExecutionException {
             String errMsg;
             try {
+                assert(weight >= 1 && weight <= 100);
                 gslbvserver_gslbservice_binding binding = new gslbvserver_gslbservice_binding();
                 binding.set_name(vserverName);
                 binding.set_servicename(serviceName);
+                binding.set_weight(weight);
                 gslbvserver_gslbservice_binding.add(client, binding);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Successfully created service: " + serviceName + " and virtual server: "
