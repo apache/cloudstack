@@ -26,7 +26,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.TemplateZoneResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.log4j.Logger;
@@ -60,7 +59,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     @Inject
     private ConfigurationDao  _configDao;
 
-    private final SearchBuilder<TemplateJoinVO> tmpltSearch;
+    private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdSearch;
 
@@ -71,9 +70,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
     protected TemplateJoinDaoImpl() {
 
-        tmpltSearch = createSearchBuilder();
-        tmpltSearch.and("idIN", tmpltSearch.entity().getId(), SearchCriteria.Op.IN);
-        tmpltSearch.done();
+        tmpltIdPairSearch = createSearchBuilder();
+        tmpltIdPairSearch.and("tempZonePairIN", tmpltIdPairSearch.entity().getTempZonePair(), SearchCriteria.Op.IN);
+        tmpltIdPairSearch.done();
 
         tmpltIdSearch = createSearchBuilder();
         tmpltIdSearch.and("id", tmpltIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -91,7 +90,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         activeTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
-        this._count = "select count(distinct id) from template_view WHERE ";
+        this._count = "select count(distinct temp_zone_pair) from template_view WHERE ";
     }
 
 
@@ -172,6 +171,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
             templateResponse.setStatus(templateStatus);
         }
 
+        if ( template.getDataCenterId() > 0 ){
+            templateResponse.setZoneId(template.getDataCenterUuid());
+            templateResponse.setZoneName(template.getDataCenterName());
+        }
+
         Long templateSize = template.getSize();
         if (templateSize > 0) {
             templateResponse.setSize(templateSize);
@@ -182,26 +186,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
             templateResponse.setSourceTemplateId(template.getSourceTemplateUuid());
         }
         templateResponse.setTemplateTag(template.getTemplateTag());
-
-        // set template zone information
-        if (template.getDataCenterId() > 0 ){
-            TemplateZoneResponse tmplZoneResp = new TemplateZoneResponse(template.getDataCenterUuid(), template.getDataCenterName());
-            tmplZoneResp.setCreated(template.getCreatedOnStore());
-            if ( template.getFormat() == Storage.ImageFormat.BAREMETAL ){
-                // for baremetal template, we didn't download, but is ready to use.
-                tmplZoneResp.setReady(true);
-            }
-            else{
-                tmplZoneResp.setReady(template.getState() == ObjectInDataStoreStateMachine.State.Ready);
-            }
-            if ( templateStatus != null ){
-                tmplZoneResp.setStatus(templateStatus);
-            }
-            templateResponse.addZone(tmplZoneResp);
-            // set the first found associated zone directly in TemplateResponse
-            templateResponse.setZoneId(template.getDataCenterUuid());
-            templateResponse.setZoneName(template.getDataCenterName());
-        }
 
         // set details map
         if (template.getDetailName() != null){
@@ -274,30 +258,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     @Override
     public TemplateResponse setTemplateResponse(TemplateResponse templateResponse, TemplateJoinVO template) {
 
-        // update template zone information
-        if (template.getDataCenterId() > 0 ){
-            TemplateZoneResponse tmplZoneResp = new TemplateZoneResponse(template.getDataCenterUuid(), template.getDataCenterName());
-            tmplZoneResp.setCreated(template.getCreatedOnStore());
-            if ( template.getFormat() == Storage.ImageFormat.BAREMETAL ){
-                // for baremetal template, we didn't download, but is ready to use.
-                tmplZoneResp.setReady(true);
-            }
-            else{
-                tmplZoneResp.setReady(template.getState() == ObjectInDataStoreStateMachine.State.Ready);
-            }
-            String templateStatus = getTemplateStatus(template);
-            if ( templateStatus != null ){
-                tmplZoneResp.setStatus(templateStatus);
-            }
-            templateResponse.addZone(tmplZoneResp);
-            if (templateResponse.getZoneId() == null) {
-                // set the first found associated zone directly in
-                // TemplateResponse
-                templateResponse.setZoneId(template.getDataCenterUuid());
-                templateResponse.setZoneName(template.getDataCenterName());
-            }
-        }
-
         // update details map
         if (template.getDetailName() != null){
             Map<String, String> details = templateResponse.getDetails();
@@ -354,15 +314,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         isoResponse.setDomainId(iso.getDomainUuid());
         isoResponse.setDomainName(iso.getDomainName());
 
-        // set template zone information
-        if (iso.getDataCenterId() > 0 ){
-            TemplateZoneResponse tmplZoneResp = new TemplateZoneResponse(iso.getDataCenterUuid(), iso.getDataCenterName());
-            isoResponse.addZone(tmplZoneResp);
-            // set the first found associated zone directly in TemplateResponse
-            isoResponse.setZoneId(iso.getDataCenterUuid());
-            isoResponse.setZoneName(iso.getDataCenterName());
-        }
-
 
         Account caller = UserContext.current().getCaller();
         boolean isAdmin = false;
@@ -392,6 +343,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
                 isoResponse.setStatus("Successfully Installed");
             }
         }
+
+        if ( iso.getDataCenterId() > 0 ){
+            isoResponse.setZoneId(iso.getDataCenterUuid());
+            isoResponse.setZoneName(iso.getDataCenterName());
+        }
+
 
         Long isoSize = iso.getSize();
         if (isoSize > 0) {
@@ -433,7 +390,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
 
     @Override
-    public List<TemplateJoinVO> searchByIds(Long... tmplIds) {
+    public List<TemplateJoinVO> searchByTemplateZonePair(String... idPairs) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = _configDao.getValue("detail.batch.query.size");
@@ -444,14 +401,14 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         List<TemplateJoinVO> uvList = new ArrayList<TemplateJoinVO>();
         // query details by batches
         int curr_index = 0;
-        if ( tmplIds.length > DETAILS_BATCH_SIZE ){
-            while ( (curr_index + DETAILS_BATCH_SIZE ) <= tmplIds.length ) {
-                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+        if ( idPairs.length > DETAILS_BATCH_SIZE ){
+            while ( (curr_index + DETAILS_BATCH_SIZE ) <= idPairs.length ) {
+                String[] labels = new String[DETAILS_BATCH_SIZE];
                 for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
-                    ids[k] = tmplIds[j];
+                    labels[k] = idPairs[j];
                 }
-                SearchCriteria<TemplateJoinVO> sc = tmpltSearch.create();
-                sc.setParameters("idIN", ids);
+                SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
+                sc.setParameters("tempZonePairIN", labels);
                 List<TemplateJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
                 if (vms != null) {
                     uvList.addAll(vms);
@@ -459,15 +416,14 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
                 curr_index += DETAILS_BATCH_SIZE;
             }
         }
-        if (curr_index < tmplIds.length) {
-            int batch_size = (tmplIds.length - curr_index);
-            // set the ids value
-            Long[] ids = new Long[batch_size];
+        if (curr_index < idPairs.length) {
+            int batch_size = (idPairs.length - curr_index);
+            String[] labels = new String[batch_size];
             for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
-                ids[k] = tmplIds[j];
+                labels[k] = idPairs[j];
             }
-            SearchCriteria<TemplateJoinVO> sc = tmpltSearch.create();
-            sc.setParameters("idIN", ids);
+            SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
+            sc.setParameters("tempZonePairIN", labels);
             List<TemplateJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
             if (vms != null) {
                 uvList.addAll(vms);

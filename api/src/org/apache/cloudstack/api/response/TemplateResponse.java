@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -137,8 +136,10 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
     @SerializedName(ApiConstants.DETAILS) @Param(description="additional key/value details tied with template")
     private Map details;
 
-    @SerializedName("zones")  @Param(description="list of zones associated with tempate", responseObject = TemplateZoneResponse.class)
-    private Set<TemplateZoneResponse> zones;
+    // To avoid breaking backwards compatibility, we still treat a template at different zones as different templates, so not embedding
+    // template_zone information in this TemplateZoneResponse set.
+    //    @SerializedName("zones")  @Param(description="list of zones associated with tempate", responseObject = TemplateZoneResponse.class)
+    //    private Set<TemplateZoneResponse> zones;
 
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with tempate", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
@@ -150,7 +151,7 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
     private Boolean isDynamicallyScalable;
 
     public TemplateResponse(){
-        zones = new LinkedHashSet<TemplateZoneResponse>();
+        //  zones = new LinkedHashSet<TemplateZoneResponse>();
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
 
@@ -176,6 +177,7 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
         this.accountId = accountId;
     }
 
+    @Override
     public void setAccountName(String account) {
         this.account = account;
     }
@@ -312,13 +314,6 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
         this.tags.add(tag);
     }
 
-    public void setZones(Set<TemplateZoneResponse> zones){
-        this.zones = zones;
-    }
-
-    public void addZone(TemplateZoneResponse zone){
-        this.zones.add(zone);
-    }
 
     public void setSshKeyEnabled(boolean sshKeyEnabled) {
         this.sshKeyEnabled = sshKeyEnabled;
