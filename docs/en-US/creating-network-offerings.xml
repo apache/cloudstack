@@ -68,7 +68,9 @@
         </listitem>
         <listitem>
           <para><emphasis role="bold">Specify VLAN</emphasis>. (Isolated guest networks only)
-            Indicate whether a VLAN should be specified when this offering is used.</para>
+            Indicate whether a VLAN could be specified when this offering is used. If you select
+            this option and later use this network offering while creating a VPC tier or an isolated
+            network, you will be able to specify a VLAN ID for the network you create.</para>
         </listitem>
         <listitem>
           <para><emphasis role="bold">VPC</emphasis>. This option indicate whether the guest network
