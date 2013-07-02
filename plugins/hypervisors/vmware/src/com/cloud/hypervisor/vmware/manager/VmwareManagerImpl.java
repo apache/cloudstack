@@ -915,15 +915,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String vCenterHost = cmd.getVcenter();
         String vmwareDcName = cmd.getName();
 
-        // Zone validation
-        validateZone(zoneId, "add VMware datacenter to zone");
-
-        VmwareDatacenterZoneMapVO vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
-        // Check if zone is associated with VMware DC
-        if (vmwareDcZoneMap != null) {
-            throw new CloudRuntimeException("Zone " + zoneId + " is already associated with a VMware datacenter.");
-        }
-
         // Validate username, password, VMware DC name and vCenter
         if (userName == null) {
             throw new InvalidParameterValueException("Missing or invalid parameter username.");
@@ -941,6 +932,36 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             throw new InvalidParameterValueException("Missing or invalid parameter name. " +
                     "Please provide valid VMware vCenter server's IP address or fully qualified domain name.");
         }
+
+        if (zoneId == null) {
+            throw new InvalidParameterValueException("Missing or invalid parameter name. " +
+                    "Please provide valid zone id.");
+        }
+
+        // Zone validation
+        validateZone(zoneId);
+
+        VmwareDatacenterZoneMapVO vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
+        // Check if zone is associated with VMware DC
+        if (vmwareDcZoneMap != null) {
+            // Check if the associated VMware DC matches the one specified in API params
+            // This check would yield success as the association exists between same entities (zone and VMware DC)
+            // This scenario would result in if the API addVmwareDc is called more than once with same parameters.
+            Long associatedVmwareDcId = vmwareDcZoneMap.getVmwareDcId();
+            VmwareDatacenterVO associatedVmwareDc = _vmwareDcDao.findById(associatedVmwareDcId);
+            if (associatedVmwareDc.getVcenterHost().equalsIgnoreCase(vCenterHost) &&
+                    associatedVmwareDc.getVmwareDatacenterName().equalsIgnoreCase(vmwareDcName)) {
+                s_logger.info("Ignoring API call addVmwareDc, because VMware DC " + vCenterHost + "/" + vmwareDcName +
+                              " is already associated with specified zone with id " + zoneId);
+                return associatedVmwareDc;
+            } else {
+                throw new CloudRuntimeException("Zone " + zoneId + " is already associated with a VMware datacenter. " +
+                                                "Only 1 VMware DC can be associated with a zone.");
+            }
+        }
+        // Zone validation to check if the zone already has resources.
+        // Association of VMware DC to zone is not allowed if zone already has resources added.
+        validateZoneWithResources(zoneId, "add VMware datacenter to zone");
 
         // Check if DC is already part of zone
         // In that case vmware_data_center table should have the DC
@@ -1037,7 +1058,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     public boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws ResourceInUseException {
         Long zoneId = cmd.getZoneId();
         // Validate zone
-        validateZone(zoneId, "remove VMware datacenter from zone");
+        validateZone(zoneId);
+        // Zone validation to check if the zone already has resources.
+        // Association of VMware DC to zone is not allowed if zone already has resources added.
+        validateZoneWithResources(zoneId, "remove VMware datacenter to zone");
 
         // Get DC associated with this zone
         VmwareDatacenterZoneMapVO vmwareDcZoneMap;
@@ -1107,7 +1131,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         return true;
     }
 
-    private void validateZone(Long zoneId, String errStr) throws ResourceInUseException {
+    private void validateZone(Long zoneId) throws ResourceInUseException {
         // Check if zone with specified id exists
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
@@ -1115,7 +1139,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                     "Can't find zone by the id specified.");
             throw ex;
         }
+    }
 
+    private void validateZoneWithResources(Long zoneId, String errStr) throws ResourceInUseException {
         // Check if zone has resources? - For now look for clusters
         List<ClusterVO> clusters = _clusterDao.listByZoneId(zoneId);
         if (clusters != null && clusters.size() > 0) {
