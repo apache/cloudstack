@@ -9155,6 +9155,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   margin-left: 53px;
   background: url(../images/bg-gradients.png) 0px -867px;
   padding: 5px;
+  height: 28px;
 }
 
 .project-switcher select:hover {
