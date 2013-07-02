@@ -475,8 +475,6 @@
         };
       }
     };
-		
-    document.title = 'CloudStack';
 
     if ($.urlParam('loginUrl') != 0
 		||(window.name != null && window.name.indexOf("&domain=") != -1)) {
@@ -490,5 +488,7 @@
     cloudStack.localizationFn = function(str) {
       return dictionary[str];
     };
+
+    document.title = _l('label.app.name');
   });
 })(cloudStack, jQuery);

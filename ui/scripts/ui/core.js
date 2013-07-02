@@ -275,7 +275,7 @@
     var $options = $('<div>').attr({ id: 'user-options' })
           .appendTo($('#header'));
     
-    $(['label.logout', 'label.help', 'About']).each(function() {
+    $(['label.logout', 'label.help', 'label.about']).each(function() {
       var $link = $('<a>')
             .attr({ href: '#' })
             .html(_l(this.toString()))
@@ -290,15 +290,15 @@
           return false;
         });
       }
-      if (this == 'About') {
+      if (this == 'label.about') {
         $link.click(function() {
-          var $logo = $('<div>').addClass('logo').html('CloudStack'),
+          var $logo = $('<div>').addClass('logo').html(_l('label.app.name')),
           $version = $('<div>').addClass('version').html(g_cloudstackversion),
           $about = $('<div>').addClass('about').append($logo).append($version);
           $about.dialog({
             modal: true,
             width: 300,
-            title: 'About CloudStack',
+            title: _l('label.about.app'),
             closeOnEscape: false,
             dialogClass: 'dialog-about',
             buttons: {
