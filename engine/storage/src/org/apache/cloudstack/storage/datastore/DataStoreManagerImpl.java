@@ -40,12 +40,16 @@ public class DataStoreManagerImpl implements DataStoreManager {
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
-        if (role == DataStoreRole.Primary) {
-            return primaryStoreMgr.getPrimaryDataStore(storeId);
-        } else if (role == DataStoreRole.Image) {
-            return imageDataStoreMgr.getImageStore(storeId);
-        } else if (role == DataStoreRole.ImageCache) {
-            return imageDataStoreMgr.getImageStore(storeId);
+        try {
+            if (role == DataStoreRole.Primary) {
+                return primaryStoreMgr.getPrimaryDataStore(storeId);
+            } else if (role == DataStoreRole.Image) {
+                return imageDataStoreMgr.getImageStore(storeId);
+            } else if (role == DataStoreRole.ImageCache) {
+                return imageDataStoreMgr.getImageStore(storeId);
+            }
+        } catch (CloudRuntimeException e) {
+            throw e;
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
