@@ -67,7 +67,8 @@ specify a valid config file" % cfgFile)
         if clusters is None:
             return
 
-        if vmwareDc:
+        if vmwareDc is not None:
+            vmwareDc.zoneid = zoneId
             self.addVmWareDataCenter(vmwareDc)
 
         for cluster in clusters:
