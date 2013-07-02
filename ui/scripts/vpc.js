@@ -582,7 +582,98 @@
           detailView: {
             isMaximized: true,
             name: 'Internal LB details',
-            actions: {              
+            actions: {                
+              assignVMs: {
+                label: 'Assign VMs',
+                messages: {
+                  notification: function(args) { return 'Assign VMs'; }
+                },
+                needsRefresh: true,
+                listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
+                  type: 'checkbox',
+                  filters: false,
+                  dataProvider: function(args) {       
+                    var assignedInstances;
+                    $.ajax({
+                      url: createURL('listLoadBalancers'),
+                      data: {
+                        id: args.context.internalLoadBalancers[0].id
+                      },
+                      async: false,
+                      success: function(json) {    
+                        assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;         
+                        if(assignedInstances == null)
+                          assignedInstances = []; 
+                      }
+                    });                     
+                    
+                    $.ajax({
+                      url: createURL('listVirtualMachines'),
+                      data: {
+                        networkid: args.context.networks[0].id,
+                        listAll: true
+                      },
+                      success: function(json) {
+                        var instances = json.listvirtualmachinesresponse.virtualmachine;
+
+                        // Pre-select existing instances in LB rule
+                        $(instances).map(function(index, instance) {
+                          instance._isSelected = $.grep(assignedInstances,                                  
+                            function(assignedInstance) {
+                              return assignedInstance.id == instance.id;
+                            }
+                          ).length ? true : false;
+                        });
+                        
+                        //remove assigned VMs (i.e. instance._isSelected == true)
+                        var items = [];
+                        if(instances != null) {
+                          for(var i = 0; i < instances.length; i++) {
+                            if(instances[i]._isSelected == true)
+                              continue;
+                            else
+                              items.push(instances[i]);
+                          }
+                        }
+                        
+                        args.response.success({
+                          data: items
+                        });
+                      }
+                    });
+                  }
+                }),
+                action: function(args) {                          
+                  var vms = args.context.instances;
+                  var array1 = [];
+                  for(var i = 0; i < vms.length; i++) {
+                    array1.push(vms[i].id);
+                  }
+                  var virtualmachineids = array1.join(',');
+                  
+                  $.ajax({
+                    url: createURL('assignToLoadBalancerRule'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id,
+                      virtualmachineids: virtualmachineids
+                    },
+                    dataType: 'json',
+                    async: true,
+                    success: function(data) {                          
+                      var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
+                      args.response.success({
+                        _custom: { 
+                          jobId: jid
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }                      
+              },
+                            
               remove: {
                 label: 'Delete Internal LB',
                 messages: {
@@ -630,7 +721,22 @@
                     sourceipaddress: { label: 'Source IP Address' },
                     sourceport: { label: 'Source Port' },
                     instanceport: { label: 'Instance Port' },
-                    algorithm: { label: 'label.algorithm' }                        
+                    algorithm: { label: 'label.algorithm' },
+                    loadbalancerinstance: { 
+                      label: 'Assigned VMs',
+                      converter: function(objArray) {                       
+                        var s = '';
+                        if(objArray != null) {
+                          for(var i = 0; i < objArray.length; i++) {
+                            if(i > 0) {
+                              s += ', ';      
+                            }                                                    
+                            s += objArray[i].name + ' ('+ objArray[i].ipaddress + ')';
+                          }
+                        }                        
+                        return s;                     
+                      }
+                    }
                   }
                 ],                    
                 dataProvider: function(args) {      
