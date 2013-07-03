@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class BaseListCmd extends BaseCmd {
@@ -109,7 +108,7 @@ public abstract class BaseListCmd extends BaseCmd {
         return startIndex;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.None;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.None;
     }
 }

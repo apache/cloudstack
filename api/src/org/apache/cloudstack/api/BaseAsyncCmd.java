@@ -88,8 +88,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         return null;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.None;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.None;
     }
 
     public String getSyncObjType() {

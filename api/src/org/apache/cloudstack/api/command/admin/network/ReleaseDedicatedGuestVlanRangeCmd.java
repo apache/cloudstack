@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.admin.network;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.user.Account;
@@ -55,8 +54,8 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.DedicatedGuestVlanRange;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.DedicatedGuestVlanRange;
     }
 
     @Override

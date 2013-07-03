@@ -26,7 +26,8 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.async.AsyncJob;
+import org.apache.cloudstack.api.ApiCommandJobType;
+
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.db.DB;
@@ -98,7 +99,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         return null;
 	}
 	
-	public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId) {
+	public List<AsyncJobVO> findInstancePendingAsyncJobs(ApiCommandJobType instanceType, Long accountId) {
 		SearchCriteria<AsyncJobVO> sc = pendingAsyncJobsSearch.create();
         sc.setParameters("instanceType", instanceType);
         

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.template;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -28,7 +29,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
@@ -114,8 +114,8 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
         return  "extracting template: " + getId() + " from zone: " + getZoneId();
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Template;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Template;
     }
 
     public Long getInstanceId() {

@@ -19,13 +19,14 @@ package com.cloud.async.dao;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.async.AsyncJob;
+import org.apache.cloudstack.api.ApiCommandJobType;
+
 import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
 	AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
-	List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId);
+	List<AsyncJobVO> findInstancePendingAsyncJobs(ApiCommandJobType instanceType, Long accountId);
 	List<AsyncJobVO> getExpiredUnfinishedJobs(Date cutTime, int limit);
 	void resetJobProcess(long msid, int jobResultCode, String jobResultMessage);
 	List<AsyncJobVO> getExpiredCompletedJobs(Date cutTime, int limit);

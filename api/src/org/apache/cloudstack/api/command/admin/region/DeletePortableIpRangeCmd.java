@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.region;
 
 import javax.inject.Inject;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.PortableIpRangeResponse;
@@ -87,7 +86,7 @@ public class DeletePortableIpRangeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.PortableIpAddress;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.PortableIpAddress;
     }
 }
