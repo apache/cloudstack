@@ -265,6 +265,7 @@ import com.cloud.hypervisor.vmware.mo.CustomFieldsManagerMO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
+import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
 import com.cloud.hypervisor.vmware.mo.FeatureKeyConstants;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
@@ -318,6 +319,70 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
+
+import com.google.gson.Gson;
+import com.vmware.vim25.AboutInfo;
+import com.vmware.vim25.BoolPolicy;
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ComputeResourceSummary;
+import com.vmware.vim25.DVPortConfigInfo;
+import com.vmware.vim25.DVPortConfigSpec;
+import com.vmware.vim25.DVPortSetting;
+import com.vmware.vim25.DatastoreSummary;
+import com.vmware.vim25.DistributedVirtualPort;
+import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
+import com.vmware.vim25.DistributedVirtualSwitchPortCriteria;
+import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.GuestInfo;
+import com.vmware.vim25.GuestOsDescriptor;
+import com.vmware.vim25.HostCapability;
+import com.vmware.vim25.HostFirewallInfo;
+import com.vmware.vim25.HostFirewallRuleset;
+import com.vmware.vim25.HostHostBusAdapter;
+import com.vmware.vim25.HostInternetScsiTargetTransport;
+import com.vmware.vim25.HostScsiTopology;
+import com.vmware.vim25.HostInternetScsiHba;
+import com.vmware.vim25.HostInternetScsiHbaAuthenticationProperties;
+import com.vmware.vim25.HostInternetScsiHbaStaticTarget;
+import com.vmware.vim25.HostScsiDisk;
+import com.vmware.vim25.HostScsiTopologyInterface;
+import com.vmware.vim25.HostScsiTopologyLun;
+import com.vmware.vim25.HostScsiTopologyTarget;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.OptionValue;
+import com.vmware.vim25.PerfCounterInfo;
+import com.vmware.vim25.PerfEntityMetric;
+import com.vmware.vim25.PerfEntityMetricBase;
+import com.vmware.vim25.PerfMetricId;
+import com.vmware.vim25.PerfMetricIntSeries;
+import com.vmware.vim25.PerfMetricSeries;
+import com.vmware.vim25.PerfQuerySpec;
+import com.vmware.vim25.PerfSampleInfo;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.ToolsUnavailableFaultMsg;
+import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VimPortType;
+import com.vmware.vim25.VirtualDevice;
+import com.vmware.vim25.VirtualDeviceBackingInfo;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
+import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualLsiLogicController;
+import com.vmware.vim25.VirtualMachineConfigOption;
+import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
+import com.vmware.vim25.VirtualMachinePowerState;
+import com.vmware.vim25.VirtualMachineRelocateSpec;
+import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
+import com.vmware.vim25.VirtualMachineRuntimeInfo;
+import com.vmware.vim25.VirtualSCSISharing;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -1803,7 +1868,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
          */
         if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
             networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, _ops_timeout, true, BroadcastDomainType.Vlan);
+                    vmMo.getRunningHost(), vlanId, null, null, _ops_timeout, true, BroadcastDomainType.Vlan, null);
         } else {
             networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
                     vmMo.getRunningHost(), vlanId, null, null, null, _ops_timeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan);
@@ -2807,13 +2872,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             extraOptions.add(newVal);
             
             /**
-             * Extra Config : nvp.iface-id<num> = uuid
+             * Extra Config : nvp.iface-id.<num> = uuid
              *  - Required for Nicira NVP integration
              */
             int nicNum = 0;
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 newVal = new OptionValue();
-                newVal.setKey("nvp.iface-id" + nicNum);
+                newVal.setKey("nvp.iface-id." + nicNum);
                 newVal.setValue(nicTo.getUuid());
                 extraOptions.add(newVal);
                 nicNum++;
@@ -2837,9 +2902,86 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMask));
 
+            int nicIndex = 0;
+            for (NicTO nicTo : sortNicsByDeviceId(nics)) {
+                s_logger.debug("Checking for port configuration on NIC device : " + nicTo.toString());
+                if (nicTo.getBroadcastType() == BroadcastDomainType.Lswitch) {
+                    // We need to create a port with a unique vlan and pass the key to the nic device
+                    s_logger.debug("Nic " + nicTo.toString() + " needs to be configured for NVP");
+                    VirtualDevice nicVirtualDevice = vmMo.getNicDeviceByIndex(nicIndex);
+                    if (nicVirtualDevice == null) {
+                        throw new Exception("Failed to find a VirtualDevice for nic " + nicIndex); //FIXME Generic exceptions are bad
+                    }
+                    VirtualDeviceBackingInfo backing = nicVirtualDevice.getBacking();
+                    if (backing instanceof VirtualEthernetCardDistributedVirtualPortBackingInfo) {
+                        VirtualEthernetCardDistributedVirtualPortBackingInfo portInfo = (VirtualEthernetCardDistributedVirtualPortBackingInfo) backing;
+                        DistributedVirtualSwitchPortConnection port = portInfo.getPort();
+                        String portKey = port.getPortKey();
+                        String portGroupKey = port.getPortgroupKey();
+                        String dvSwitchUuid = port.getSwitchUuid();
+                        
+                        s_logger.debug("NIC " + nicTo.toString() + " is connected to dvSwitch " + dvSwitchUuid + " pg " + portGroupKey + " port " + portKey);
+                        
+                        ManagedObjectReference dvSwitchManager = vmMo.getContext().getVimClient().getServiceContent().getDvSwitchManager();
+                        ManagedObjectReference dvSwitch = vmMo.getContext().getVimClient().getService().queryDvsByUuid(dvSwitchManager, dvSwitchUuid);
+                        
+                        DistributedVirtualSwitchPortCriteria criteria = new DistributedVirtualSwitchPortCriteria();
+                        criteria.setInside(true);
+                        criteria.getPortgroupKey().add(portGroupKey);
+                        criteria.getPortKey().add(portKey);
+                        List<DistributedVirtualPort> dvPorts = vmMo.getContext().getVimClient().getService().fetchDVPorts(dvSwitch, criteria);
+                        
+                        if (dvPorts.isEmpty()) {
+                            throw new Exception("Empty port list from dvSwitch for nic " + nicTo.toString());
+                        } else if (dvPorts.size() > 1) {
+                            throw new Exception("Expected only one port in the list from dvSwitch for nic " + nicTo.toString());
+                        }
+
+                        DistributedVirtualPort dvPort = dvPorts.get(0);
+                        DVPortConfigInfo dvPortConfigInfo = dvPort.getConfig();
+                        VMwareDVSPortSetting settings = (VMwareDVSPortSetting) dvPortConfigInfo.getSetting();
+                        
+                        VmwareDistributedVirtualSwitchVlanIdSpec vlanId = (VmwareDistributedVirtualSwitchVlanIdSpec) settings.getVlan();
+                        BoolPolicy blocked = settings.getBlocked();
+                        if (blocked.isValue() == Boolean.TRUE) {
+                            s_logger.debug("Port is blocked, we need to set a vlanid and unblock"); 
+                            DVPortConfigSpec dvPortConfigSpec = new DVPortConfigSpec();
+                            VMwareDVSPortSetting edittedSettings = new VMwareDVSPortSetting();
+                            // Unblock
+                            blocked.setValue(Boolean.FALSE);
+                            blocked.setInherited(Boolean.FALSE);
+                            edittedSettings.setBlocked(blocked);
+                            // Set vlan
+                            vlanId.setVlanId(100); //FIXME should be a determined based on usage
+                            vlanId.setInherited(false);
+                            edittedSettings.setVlan(vlanId);
+                            
+                            dvPortConfigSpec.setSetting(edittedSettings);
+                            dvPortConfigSpec.setOperation("edit");
+                            dvPortConfigSpec.setKey(portKey);
+                            List<DVPortConfigSpec> dvPortConfigSpecs = new ArrayList<DVPortConfigSpec>();
+                            dvPortConfigSpecs.add(dvPortConfigSpec);
+                            ManagedObjectReference task = vmMo.getContext().getVimClient().getService().reconfigureDVPortTask(dvSwitch, dvPortConfigSpecs);
+                            if (!vmMo.getContext().getVimClient().waitForTask(task)) {
+                                s_logger.error("Failed to configure the dvSwitch port for nic " + nicTo.toString());
+                            }
+                        } else {
+                            s_logger.trace("Port already configured and set to vlan " + vlanId.getVlanId());
+                        }
+                    }
+                    else {
+                        s_logger.error("nic device backing is of type " + backing.getClass().getName());
+                        throw new Exception("Incompatible backing for a VirtualDevice for nic " + nicIndex); //FIXME Generic exceptions are bad
+                    }
+                }
+                nicIndex++;
+            }
+
             if (!vmMo.powerOn()) {
                 throw new Exception("Failed to start VM. vmName: " + vmName);
             }
+            
+
 
             state = State.Running;
             return new StartAnswer(cmd);
@@ -2971,7 +3113,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (nicTo.getBroadcastType() == BroadcastDomainType.Native) {
             return defaultVlan;
         }
-        if (nicTo.getBroadcastType() == BroadcastDomainType.Vlan || nicTo.getBroadcastType() == BroadcastDomainType.Pvlan) {
+        else if (nicTo.getBroadcastType() == BroadcastDomainType.Vlan || nicTo.getBroadcastType() == BroadcastDomainType.Pvlan) {
             if (nicTo.getBroadcastUri() != null) {
                 if (nicTo.getBroadcastType() == BroadcastDomainType.Vlan)
                     // For vlan, the broadcast uri is of the form vlan://<vlanid>
@@ -2983,6 +3125,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.warn("BroadcastType is not claimed as VLAN or PVLAN, but without vlan info in broadcast URI. Use vlan info from labeling: " + defaultVlan);
                 return defaultVlan;
             }
+        } else if (nicTo.getBroadcastType() == BroadcastDomainType.Lswitch) {
+            // We don't need to set any VLAN id for an NVP logical switch
+            return null;
         }
 
         s_logger.warn("Unrecognized broadcast type in VmwareResource, type: " + nicTo.getBroadcastType().toString() + ". Use vlan info from labeling: " + defaultVlan);
@@ -3015,7 +3160,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (VirtualSwitchType.StandardVirtualSwitch == switchType) {
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix,
                     hostMo, getVlanInfo(nicTo, switchName.second()), nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
-                    !namePrefix.startsWith("cloud.private"), nicTo.getBroadcastType());
+                    !namePrefix.startsWith("cloud.private"), nicTo.getBroadcastType(), nicTo.getUuid());
         }
         else {
             String vlanId = getVlanInfo(nicTo, switchName.second());
@@ -3029,7 +3174,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 svlanId = getPvlanInfo(nicTo);
             }
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, vlanId, svlanId,
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType,
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType, 
                     _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus, nicTo.getBroadcastType());
         }
 

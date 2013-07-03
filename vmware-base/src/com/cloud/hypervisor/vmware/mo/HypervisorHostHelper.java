@@ -52,6 +52,7 @@ import com.vmware.vim25.DVSTrafficShapingPolicy;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
+import com.vmware.vim25.HostPortGroup;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostVirtualSwitch;
 import com.vmware.vim25.HttpNfcLeaseDeviceUrl;
@@ -467,8 +468,12 @@ public class HypervisorHostHelper {
                 throw new InvalidParameterException("Nexus Distributed Virtualswitch is not supported with BroadcastDomainType " + 
                         broadcastDomainType);
             }
-            // Fixed name for the port-group on the vApp vswitch
-            networkName = "br-int";
+            /** 
+             * Nicira NVP requires all vms to be connected to a single port-group.
+             * A unique vlan needs to be set per port. This vlan is specific to
+             * this implementation and has no reference to other vlans in CS
+             */
+            networkName = "br-int"; // FIXME Should be set via a configuration item in CS
             // No doubt about this, depending on vid=null to avoid lots of code below
             vid = null;
         } else {
@@ -508,8 +513,7 @@ public class HypervisorHostHelper {
 
             if (broadcastDomainType == BroadcastDomainType.Lswitch) {
                 if (!dataCenterMo.hasDvPortGroup(networkName)) {
-                    // It'a bad thing if the integration bridge port-group does not exist
-                    throw new InvalidParameterException("Unable to find port-group " + networkName + " on dvSwitch " + dvSwitchName);
+                    throw new InvalidParameterException("NVP integration port-group " + networkName + " does not exist on the DVS " + dvSwitchName);
                 }
                 bWaitPortGroupReady = false;
             } else {
@@ -856,7 +860,7 @@ public class HypervisorHostHelper {
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String vSwitchName, String namePrefix,
             HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps,
-            long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType) throws Exception {
+            long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType, String nicUuid) throws Exception {
 
         HostVirtualSwitch vSwitch;
         if (vSwitchName == null) {
@@ -893,8 +897,11 @@ public class HypervisorHostHelper {
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
-            // Fixed name for the port-group on the vApp vswitch
-            networkName = "br-int";
+            /** 
+             * Nicira NVP requires each vm to have its own port-group with a dedicated
+             * vlan. We'll set the name of the pg to the uuid of the nic.
+             */
+            networkName = nicUuid;
             // No doubt about this, depending on vid=null to avoid lots of code below
             vid = null;
         } else {
@@ -933,10 +940,12 @@ public class HypervisorHostHelper {
         boolean bWaitPortGroupReady = false;
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
             if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-                // It'a bad thing if the integration bridge port-group does not exist
-                throw new InvalidParameterException("Unable to find port-group " + networkName + " on dvSwitch " + vSwitchName);
+                createNvpPortGroup(hostMo, vSwitch, networkName, shapingPolicy);
+                
+                bWaitPortGroupReady = true;
+            } else {
+                bWaitPortGroupReady = false;
             }
-            bWaitPortGroupReady = false;
         } else {
             if (!hostMo.hasPortGroup(vSwitch, networkName)) {
                 hostMo.createPortGroup(vSwitch, networkName, vid, secPolicy, shapingPolicy);
@@ -982,7 +991,7 @@ public class HypervisorHostHelper {
                                         try {
                                             if(s_logger.isDebugEnabled())
                                                 s_logger.debug("Prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
-                                            prepareNetwork(vSwitchName, namePrefix, otherHostMo, vlanId, networkRateMbps, networkRateMulticastMbps, timeOutMs, false, broadcastDomainType);
+                                            prepareNetwork(vSwitchName, namePrefix, otherHostMo, vlanId, networkRateMbps, networkRateMulticastMbps, timeOutMs, false, broadcastDomainType, nicUuid);
                                         } catch(Exception e) {
                                             s_logger.warn("Unable to prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
                                         }
@@ -1040,6 +1049,44 @@ public class HypervisorHostHelper {
             return false;
 
         return true;
+    }
+    
+    private static void createNvpPortGroup(HostMO hostMo, HostVirtualSwitch vSwitch, String networkName, HostNetworkTrafficShapingPolicy shapingPolicy) throws Exception {
+        /** 
+         * No portgroup created yet for this nic
+         * We need to find an unused vlan and create the pg
+         * The vlan is limited to this vSwitch and the NVP vAPP, 
+         * so no relation to the other vlans in use in CloudStack.
+         */
+        String vSwitchName = vSwitch.getName();
+        
+        // Find all vlanids that we have in use
+        List<Integer> usedVlans = new ArrayList<Integer>();
+        for (HostPortGroup pg : hostMo.getHostNetworkInfo().getPortgroup()) {
+           HostPortGroupSpec hpgs = pg.getSpec();
+           if (vSwitchName.equals(hpgs.getVswitchName()))
+               usedVlans.add(hpgs.getVlanId());
+        }
+        
+        // Find the first free vlanid
+        int nvpVlanId = 0;
+        for (nvpVlanId = 1; nvpVlanId < 4095; nvpVlanId++) {
+            if (! usedVlans.contains(nvpVlanId)) {
+                break;
+            }
+        }
+        if (nvpVlanId == 4095) {
+            throw new InvalidParameterException("No free vlan numbers on " + vSwitchName + " to create a portgroup for nic " + networkName);
+        }
+        
+        // Strict security policy
+        HostNetworkSecurityPolicy secPolicy = new HostNetworkSecurityPolicy();
+        secPolicy.setAllowPromiscuous(Boolean.FALSE);
+        secPolicy.setForgedTransmits(Boolean.FALSE);
+        secPolicy.setMacChanges(Boolean.FALSE);
+        
+        // Create a portgroup with the uuid of the nic and the vlanid found above
+        hostMo.createPortGroup(vSwitch, networkName, nvpVlanId, secPolicy, shapingPolicy);      
     }
 
     public static ManagedObjectReference waitForNetworkReady(HostMO hostMo,
