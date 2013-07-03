@@ -581,14 +581,16 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	if ((listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources
         			|| (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.community || templateFilter == TemplateFilter.featured))) &&
         			!(caller.getType() != Account.ACCOUNT_TYPE_NORMAL && templateFilter == TemplateFilter.all)) {
-        		whereClause += " INNER JOIN account a on (t.account_id = a.id)";
+                if(templateFilter != TemplateFilter.community){
+        		    whereClause += " INNER JOIN account a on (t.account_id = a.id)";
+                }
         		if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
             		 whereClause += " INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
              		if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
             			whereClause += " AND a.type != " + Account.ACCOUNT_TYPE_PROJECT;
             		}
         		} else
-        			if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+        			if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources && templateFilter != TemplateFilter.community) {
         				whereClause += " WHERE a.type != " + Account.ACCOUNT_TYPE_PROJECT;
         		}
         	}
