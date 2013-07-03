@@ -25,8 +25,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
@@ -46,6 +46,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
+import com.cloud.projects.ProjectManager;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.ImageFormat;
@@ -86,6 +87,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject DataStoreManager storeMgr;
 	@Inject TemplateManager templateMgr;
     @Inject ConfigurationServer _configServer;
+    @Inject ProjectManager _projectMgr;
 	
 	@Override
 	public boolean stop() {
@@ -299,9 +301,16 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
 				if ((template != null)
 						&& (!template.isPublicTemplate() && (account.getId() != template.getAccountId()) && (template.getTemplateType() != TemplateType.PERHOST))) {
-					throw new PermissionDeniedException(msg + ". Permission denied.");
+				    //special handling for the project case
+				    Account owner = _accountMgr.getAccount(template.getAccountId());
+				    if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+				        if (!_projectMgr.canAccessProjectAccount(account, owner.getId())) {
+	                        throw new PermissionDeniedException(msg + ". Permission denied. The caller can't access project's template");
+				        }
+		            } else {
+		                throw new PermissionDeniedException(msg + ". Permission denied.");
+		            }
 				}
-
 			} else {
 				if ((vmInstanceCheck != null) && !_domainDao.isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
 					throw new PermissionDeniedException(msg + ". Permission denied.");
