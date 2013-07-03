@@ -1940,13 +1940,6 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
     def tearDown(self):
         try:
             self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
