@@ -2118,7 +2118,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         DnsMasqConfigurator configurator = new DnsMasqConfigurator();
         String [] config = configurator.generateConfiguration(cmd);
-        String tmpConfigFilePath = "/tmp/"+ routerIp.replace(".","-")+".cfg";
+        String tmpConfigFilePath = "/tmp/"+ routerIp.replace(".","_")+".cfg";
         String tmpConfigFileContents = "";
         for (int i = 0; i < config.length; i++) {
             tmpConfigFileContents += config[i];
