@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deploy.DeploymentPlanner;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
 
@@ -281,7 +282,7 @@ public class MockVirtualMachineManagerImpl extends ManagerBase implements Virtua
     }
 
     @Override
-    public VMInstanceVO findHostAndMigrate(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId) throws InsufficientCapacityException,
+    public VMInstanceVO findHostAndMigrate(Type vmType, VMInstanceVO vm, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException,
             VirtualMachineMigrationException, ManagementServerException{
         return null;

@@ -26,6 +26,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.server.ConfigurationServer;
@@ -45,9 +46,6 @@ import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
 import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -56,16 +54,12 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.VolumeManager;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -77,10 +71,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.VirtualMachine.Event;
@@ -97,7 +88,6 @@ import org.mockito.Spy;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.*;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -281,7 +271,8 @@ public class VirtualMachineManagerImplTest {
 
         when(_vmInstance.getHostId()).thenReturn(null);
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
-        _vmMgr.findHostAndMigrate(VirtualMachine.Type.User, _vmInstance, 2l);
+        DeploymentPlanner.ExcludeList excludeHostList = new DeploymentPlanner.ExcludeList();
+        _vmMgr.findHostAndMigrate(VirtualMachine.Type.User, _vmInstance, 2l, excludeHostList);
 
     }
 

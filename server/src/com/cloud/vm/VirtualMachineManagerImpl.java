@@ -3007,7 +3007,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public VMInstanceVO findHostAndMigrate(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId)
+    public VMInstanceVO findHostAndMigrate(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId, ExcludeList excludes)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, VirtualMachineMigrationException, ManagementServerException {
 
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
@@ -3019,27 +3019,22 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         Host host = _hostDao.findById(srcHostId);
         DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
-        ExcludeList excludes = new ExcludeList();
         excludes.addHost(vm.getHostId());
         vm.setServiceOfferingId(newSvcOfferingId); // Need to find the destination host based on new svc offering
 
         DeployDestination dest = null;
 
-        for (DeploymentPlanner planner : _planners) {
-            if (planner.canHandle(profile, plan, excludes)) {
-                dest = planner.plan(profile, plan, excludes);
-            } else {
-                continue;
-            }
+        try {
+            dest = _dpMgr.planDeployment(profile, plan, excludes);
+        } catch (AffinityConflictException e2) {
+            s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
+            throw new CloudRuntimeException(
+                    "Unable to create deployment, affinity rules associted to the VM conflict");
+        }
 
-            if (dest != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Planner " + planner + " found " + dest + " for scaling the vm to.");
-                }
-                break;
-            }
+        if (dest != null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Planner " + planner + " was unable to find anything.");
+                s_logger.debug(" Found " + dest + " for scaling the vm to.");
             }
         }
 

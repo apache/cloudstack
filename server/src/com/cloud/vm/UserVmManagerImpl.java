@@ -1180,28 +1180,34 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         boolean success = false;
         if(vmInstance.getState().equals(State.Running)){
             int retry = _scaleRetry;
+            ExcludeList excludes = new ExcludeList();
             boolean enableDynamicallyScaleVm = Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vmInstance.getDataCenterId()));
             if(!enableDynamicallyScaleVm){
                throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
             }
 
-            // Increment CPU and Memory count accordingly.
-            if (newCpu > currentCpu) {
-                _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
-            }
-            if (newMemory > currentMemory) {
-                _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
-            }
-
             while (retry-- != 0) { // It's != so that it can match -1.
                 try{
-                    // #1 Check existing host has capacity
-                    boolean existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - currentServiceOffering.getSpeed(),
-                            (newServiceOffering.getRamSize() - currentServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f, false); // TO DO fill it with mem.
+                    boolean existingHostHasCapacity = false;
 
-                    // #2 migrate the vm if host doesn't have capacity
+                    // Increment CPU and Memory count accordingly.
+                    if (newCpu > currentCpu) {
+                        _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long (newCpu - currentCpu));
+                    }
+                    if (newMemory > currentMemory) {
+                        _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
+                    }
+
+                    // #1 Check existing host has capacity
+                    if( !excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId())) ){
+                        existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - currentServiceOffering.getSpeed(),
+                                (newServiceOffering.getRamSize() - currentServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f, false); // TO DO fill it with mem.
+                        excludes.addHost(vmInstance.getHostId());
+                    }
+
+                    // #2 migrate the vm if host doesn't have capacity or is in avoid set
                     if (!existingHostHasCapacity){
-                        vmInstance = _itMgr.findHostAndMigrate(vmInstance.getType(), vmInstance, newServiceOfferingId);
+                        vmInstance = _itMgr.findHostAndMigrate(vmInstance.getType(), vmInstance, newServiceOfferingId, excludes);
                     }
 
                     // #3 scale the vm now
@@ -1220,7 +1226,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     s_logger.warn("Received exception while scaling ",e);
                 } catch (ManagementServerException e) {
                     s_logger.warn("Received exception while scaling ",e);
-                }finally{
+                } catch (Exception e) {
+                    s_logger.warn("Received exception while scaling ",e);
+                }
+                finally{
                     if(!success){
                         _itMgr.upgradeVmDb(vmId, currentServiceOffering.getId()); // rollback
                         // Decrement CPU and Memory count accordingly.
