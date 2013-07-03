@@ -1522,7 +1522,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         long futureIops = currentIops + requestedIops;
-
+        
+        // getCapacityIops returns a Long so we need to check for null
+        if (pool.getCapacityIops() == null) {
+            s_logger.warn("Storage pool " + pool.getName() + " (" + pool.getId() + ") does not supply Iops capacity, assuming enough capacity");
+            return true;
+        }
+        
         return futureIops <= pool.getCapacityIops();
     }
 
