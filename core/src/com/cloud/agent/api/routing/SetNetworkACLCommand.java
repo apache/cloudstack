@@ -43,16 +43,16 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
         return rules;
     }
     public String[][] generateFwRules() {
-        String [][] result = new String [2][];
-        Set<String> toAdd = new HashSet<String>();
         List<NetworkACLTO> aclList = Arrays.asList(rules);
         Collections.sort(aclList, new Comparator<NetworkACLTO>() {
             @Override
             public int compare(NetworkACLTO acl1, NetworkACLTO acl2) {
-                return acl1.getNumber() > acl2.getNumber() ? 1 : -1;
+                return acl1.getNumber() < acl2.getNumber() ? 1 : -1;
             }
         });
 
+        String [][] result = new String [2][aclList.size()];
+        int i = 0;
         for (NetworkACLTO aclTO: aclList) {
         /*  example  :  Ingress:tcp:80:80:0.0.0.0/0:ACCEPT:,Egress:tcp:220:220:0.0.0.0/0:DROP:,
          *  each entry format      Ingress/Egress:protocol:start port: end port:scidrs:action:
@@ -64,7 +64,7 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
                 /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
                 sb.append(aclTO.getTrafficType().toString()).append(":reverted:0:0:0:");
                 String aclRuleEntry = sb.toString();
-                toAdd.add(aclRuleEntry);
+                result[0][i++] = aclRuleEntry;
                 continue;
             }
 
@@ -91,11 +91,8 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
             }
             sb.append(":").append(aclTO.getAction()).append(":");
             String aclRuleEntry = sb.toString();
-
-            toAdd.add(aclRuleEntry);
-
+            result[0][i++] = aclRuleEntry;
         }
-        result[0] = toAdd.toArray(new String[toAdd.size()]);
 
         return result;
     }

@@ -30,24 +30,19 @@ import com.cloud.utils.db.GenericDao;
 public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     /**
-     * @param datacenterId
-     *            -- the id of the datacenter (availability zone)
+     * @param datacenterId -- the id of the datacenter (availability zone)
      */
     List<StoragePoolVO> listByDataCenterId(long datacenterId);
 
     /**
-     * @param datacenterId
-     *            -- the id of the datacenter (availability zone)
+     * @param datacenterId -- the id of the datacenter (availability zone)
      */
-    List<StoragePoolVO> listBy(long datacenterId, long podId, Long clusterId, ScopeType scope);
+    List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope);
 
     /**
      * Set capacity of storage pool in bytes
-     *
-     * @param id
-     *            pool id.
-     * @param capacity
-     *            capacity in bytes
+     * @param id pool id.
+     * @param capacity capacity in bytes
      */
     void updateCapacity(long id, long capacity);
 
@@ -82,7 +77,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      * @return List of StoragePoolVO
      */
     List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details,
-            ScopeType scope);
+                                           ScopeType scope);
 
     List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags);
 

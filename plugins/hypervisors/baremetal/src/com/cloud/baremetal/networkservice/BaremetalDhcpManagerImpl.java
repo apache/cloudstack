@@ -33,6 +33,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.AddBaremetalDhcpCmd;
+import org.apache.cloudstack.api.ListBaremetalDhcpCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;

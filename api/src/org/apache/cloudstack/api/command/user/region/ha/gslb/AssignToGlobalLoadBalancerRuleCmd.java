@@ -17,7 +17,11 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -36,10 +40,12 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.EntityManager;
 
 @APICommand(name = "assignToGlobalLoadBalancerRule", description="Assign load balancer rule or list of load " +
         "balancer rules to a global load balancer rules.", responseObject=SuccessResponse.class)
@@ -48,6 +54,8 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AssignToGlobalLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "assigntogloballoadbalancerruleresponse";
+
+    @Inject public EntityManager _entityMgr;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,6 +70,12 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
             "will be assigned to gloabal load balacner rule")
     private List<Long> loadBalancerRulesIds;
 
+    @Parameter(name=ApiConstants.GSLB_LBRULE_WEIGHT_MAP, type= CommandType.MAP,
+            description = "Map of LB rule id's and corresponding weights (between 1-100) in the GSLB rule, if not specified weight of " +
+                    "a LB rule is defaulted to 1. Specified as 'gslblbruleweightsmap[0].loadbalancerid=UUID" +
+                    "&gslblbruleweightsmap[0].weight=10'", required=false)
+    private Map gslbLbRuleWieghtMap;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,6 +86,36 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public List<Long> getLoadBalancerRulesIds() {
         return loadBalancerRulesIds;
+    }
+
+    public Map<Long, Long> getLoadBalancerRuleWeightMap() {
+        Map <Long, Long> lbRuleWeightMap = new HashMap<Long, Long>();
+
+        if (gslbLbRuleWieghtMap == null || gslbLbRuleWieghtMap.isEmpty()) {
+            return null;
+        }
+
+        Collection lbruleWeightsCollection = gslbLbRuleWieghtMap.values();
+        Iterator iter = lbruleWeightsCollection.iterator();
+        while (iter.hasNext()) {
+            HashMap<String, String> map = (HashMap<String, String>) iter.next();
+            Long weight;
+            LoadBalancer lbrule = _entityMgr.findByUuid(LoadBalancer.class, map.get("loadbalancerid"));
+            if (lbrule == null) {
+                throw new InvalidParameterValueException("Unable to find load balancer rule with ID: " + map.get("loadbalancerid"));
+            }
+            try {
+                weight = Long.parseLong(map.get("weight"));
+                if (weight < 1 || weight > 100) {
+                    throw new InvalidParameterValueException("Invalid weight " + weight + " given for the LB rule id: " + map.get("loadbalancerid"));
+                }
+            } catch (NumberFormatException nfe) {
+                throw new InvalidParameterValueException("Unable to translate weight given for the LB rule id: " + map.get("loadbalancerid"));
+            }
+            lbRuleWeightMap.put(lbrule.getId(), weight);
+        }
+
+        return lbRuleWeightMap;
     }
 
     /////////////////////////////////////////////////////
@@ -114,7 +158,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
         boolean result = _gslbService.assignToGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign global load balancer rule");
         }

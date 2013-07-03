@@ -107,6 +107,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
         return "resetting SSHKey for vm: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.VirtualMachine;
     }
@@ -127,6 +128,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -142,7 +144,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset vm SSHKey");
         }

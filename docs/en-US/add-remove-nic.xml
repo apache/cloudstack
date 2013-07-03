@@ -98,6 +98,8 @@
     <title>updateDefaultNicForVirtualMachine</title>
     <para>The updateDefaultNicForVirtualMachine API updates the specified NIC to be the default one
       for a selected VM.</para>
+    <para>The NIC is only updated in the database. You must manually update the default NIC on the
+      VM. You get an alert to manually update the NIC. </para>
     <informaltable>
       <tgroup cols="3" align="left" colsep="1" rowsep="1">
         <thead>

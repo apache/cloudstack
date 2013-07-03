@@ -60,13 +60,15 @@
 
        'number':{
            label:'Rule Number',
-           edit:true
+           edit:true,
+         isEditable: true
 
        },
 
-      'cidrlist': { edit: true, label: 'label.cidr' },
+      'cidrlist': { edit: true, label: 'label.cidr', isEditable: true },
       action: {
         label: 'Action',
+        isEditable: true,
         select: function(args) {
           args.response.success({
             data: [
@@ -78,63 +80,125 @@
       },
       'protocol': {
         label: 'label.protocol',
+        isEditable: true,
         select: function(args) {
+          var isEditDialog = args.type === 'createForm';
+          
           args.$select.change(function() {
-            var $inputs = args.$form.find('input');
-            var $icmpFields = $inputs.filter(function() {
-              var name = $(this).attr('name');
+            var $inputs, $icmpFields, $otherFields, $portFields, $protocolFields, $protocolinput;
+            
+            //
+            // Editing existing rules in createForm dialog
+            //
+            if (isEditDialog) {
+              $inputs = args.$form.find('.form-item');
+              $icmpFields = $inputs.filter(function() {
+                var name = $(this).attr('rel');
 
-              return $.inArray(name, [
-                'icmptype',
-                'icmpcode'
-              ]) > -1;
-            });
-            var $otherFields = $inputs.filter(function() {
-              var name = $(this).attr('name');
+                return $.inArray(name, [
+                  'icmptype',
+                  'icmpcode'
+                ]) > -1;
+              });
+              $otherFields = $inputs.filter(function() {
+                var name = $(this).attr('rel');
 
-              return name != 'protocolnumber' &&
-                     name != 'icmptype' &&
-                     name != 'icmpcode' &&
-                     name != 'cidrlist';
-            });
-            var $portFields = $inputs.filter(function() {
-              var name = $(this).attr('name');
-              return $.inArray(name, [
-                'startport',
-                'endport'
-              ]) > -1;
-            });
+                return name != 'protocolnumber' &&
+                  name != 'icmptype' &&
+                  name != 'icmpcode' &&
+                  name != 'cidrlist';
+              });
+              $portFields = $inputs.filter(function() {
+                var name = $(this).attr('rel');
+                return $.inArray(name, [
+                  'startport',
+                  'endport'
+                ]) > -1;
+              });
+              $protocolFields = $inputs.filter(function(){
+                var name = $(this).attr('rel');
 
-            var $protocolinput = args.$form.find('td input');
-            var $protocolFields = $protocolinput.filter(function(){
-             var name = $(this).attr('name');
+                return $.inArray(name,['protocolnumber']) > -1;
+              });
 
-             return  $.inArray(name,['protocolnumber']) > -1;
-            });
-
-            if ($(this).val() == 'protocolnumber' ){
-              $icmpFields.hide();
-              $otherFields.hide();
-              $protocolFields.show().addClass('required');
-            } else if ($(this).val() == 'icmp') {
-              $icmpFields.show();
-              $icmpFields.attr('disabled', false);
-              $protocolFields.hide().removeClass('required');
-              $otherFields.attr('disabled', 'disabled');
-              $otherFields.hide();
-              $otherFields.parent().find('label.error').hide();
-            } else {
-              $otherFields.show();
-              $otherFields.parent().find('label.error').hide();
-              $otherFields.attr('disabled', false);
-              $icmpFields.attr('disabled', 'disabled');
-              $icmpFields.hide();
-              $icmpFields.parent().find('label.error').hide();
-              $protocolFields.hide().removeClass('required');
-              if ($(this).val() == 'all'){
-                $portFields.attr('disabled', 'disabled');
+              if ($(this).val() == 'protocolnumber' ){
+                $icmpFields.hide();
+                $portFields.show();
+                $protocolFields.show();
+              } else if ($(this).val() == 'icmp') {
+                $icmpFields.show();
+                $protocolFields.hide();
                 $portFields.hide();
-              }
+              } else {
+                $otherFields.show();
+                $icmpFields.hide();
+                $protocolFields.hide();
+                
+                if ($(this).val() == 'all') {
+                  $portFields.hide();
+                }
+              }              
+            } else {
+              //
+              // Add new form
+              //
+              $inputs = args.$form.find('input');
+              $icmpFields = $inputs.filter(function() {
+                var name = $(this).attr('name');
+
+                return $.inArray(name, [
+                  'icmptype',
+                  'icmpcode'
+                ]) > -1;
+              });
+              $otherFields = $inputs.filter(function() {
+                var name = $(this).attr('name');
+
+                return name != 'protocolnumber' &&
+                  name != 'icmptype' &&
+                  name != 'icmpcode' &&
+                  name != 'cidrlist' &&
+                  name != 'number';
+              });
+              $portFields = $inputs.filter(function() {
+                var name = $(this).attr('name');
+                return $.inArray(name, [
+                  'startport',
+                  'endport'
+                ]) > -1;
+              });
+
+              $protocolinput = args.$form.find('td input');
+              $protocolFields = $protocolinput.filter(function(){
+                var name = $(this).attr('name');
+
+                return  $.inArray(name,['protocolnumber']) > -1;
+              });
+
+              if ($(this).val() == 'protocolnumber' ){
+                $icmpFields.hide();
+                $otherFields.hide();
+                $protocolFields.show().addClass('required');
+              } else if ($(this).val() == 'icmp') {
+                $icmpFields.show();
+                $icmpFields.attr('disabled', false);
+                $protocolFields.hide().removeClass('required');
+                $otherFields.attr('disabled', 'disabled');
+                $otherFields.hide();
+                $otherFields.parent().find('label.error').hide();
+              } else {
+                $otherFields.show();
+                $otherFields.parent().find('label.error').hide();
+                $otherFields.attr('disabled', false);
+                $icmpFields.attr('disabled', 'disabled');
+                $icmpFields.hide();
+                $icmpFields.parent().find('label.error').hide();
+                $protocolFields.hide().removeClass('required');
+                if ($(this).val() == 'all'){
+                  $portFields.attr('disabled', 'disabled');
+                  $portFields.hide();
+                }
+              }              
             }
           });
 
@@ -153,9 +217,9 @@
         }
       },
 
-      'protocolnumber': {label:'Protocol Number',edit:true},
-      'startport': { edit: true, label: 'label.start.port', isOptional: true },
-      'endport': { edit: true, label: 'label.end.port', isOptional: true },
+      'protocolnumber': {label:'Protocol Number',edit:true, isEditable: true},
+      'startport': { edit: true, label: 'label.start.port', isOptional: true, isEditable: true },
+      'endport': { edit: true, label: 'label.end.port', isOptional: true, isEditable: true },
       'networkid': {
         label: 'Select Tier',
         select: function(args) {
@@ -192,10 +256,11 @@
           });
         }
       },
-      'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true, desc:'Please specify -1 if you want to allow all ICMP types', defaultValue:'-1' },
-      'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true, desc:'Please specify -1 if you want to allow all ICMP codes', defaultValue:'-1' },
+      'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true, desc:'Please specify -1 if you want to allow all ICMP types', defaultValue:'-1', isEditable: true },
+      'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true, desc:'Please specify -1 if you want to allow all ICMP codes', defaultValue:'-1', isEditable: true },
       'traffictype' : {
         label: 'label.traffic.type',
+        isEditable: true,
         select: function(args) {
           args.response.success({
             data: [
@@ -219,54 +284,100 @@
         var $multi = args.$multi;
         //Support for Protocol Number between 0 to 255
         if(args.data.protocol == 'protocolnumber'){
-            $.extend(args.data,{protocol:args.data.protocolnumber});
-            delete args.data.protocolnumber;
+          $.extend(args.data,{protocol:args.data.protocolnumber});
+          delete args.data.protocolnumber;
         }
         else
           delete args.data.protocolnumber;
 
 
-       
+        
         if((args.data.protocol == 'tcp' || args.data.protocol == 'udp') && (args.data.startport=="" || args.data.startport == undefined)){
-         cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
+          cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
           $(window).trigger('cloudStack.fullRefresh');
         }
         else if((args.data.protocol == 'tcp' || args.data.protocol == 'udp')  && (args.data.endport=="" || args.data.endport == undefined)){
-         cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
+          cloudStack.dialog.notice({message:_l('Start Port or End Port value should not be blank')});
           $(window).trigger('cloudStack.fullRefresh');
         }
 
-       else{       
-        $.ajax({
-          url: createURL('createNetworkACL'),
-          data: $.extend(args.data, {
-            aclid: args.context.aclLists[0].id
-          }),
-          dataType: 'json',
-          success: function(data) {
-            args.response.success({
-              _custom: {
-                jobId: data.createnetworkaclresponse.jobid,
-                getUpdatedItem: function(json) {
-                  $(window).trigger('cloudStack.fullRefresh');
+        else{       
+          $.ajax({
+            url: createURL('createNetworkACL'),
+            data: $.extend(args.data, {
+              aclid: args.context.aclLists[0].id
+            }),
+            dataType: 'json',
+            success: function(data) {
+              args.response.success({
+                _custom: {
+                  jobId: data.createnetworkaclresponse.jobid,
+                  getUpdatedItem: function(json) {
+                    $(window).trigger('cloudStack.fullRefresh');
 
-                  return data;
+                    return data;
+                  }
+                },
+                notification: {
+                  label: 'label.add.ACL',
+                  poll: pollAsyncJobResult
                 }
-              },
-              notification: {
-                label: 'label.add.ACL',
-                poll: pollAsyncJobResult
-              }
-            });
-          },
-          error: function(data) {
-            args.response.error(parseXMLHttpResponse(data));
-          }
-        });
-      }
+              });
+            },
+            error: function(data) {
+              args.response.error(parseXMLHttpResponse(data));
+            }
+          });
+        }
       }
     },
     actions: {
+      edit: {
+        label: 'label.edit',
+        action: function(args) {
+          var data = {
+            id: args.context.multiRule[0].id,
+            cidrlist: args.data.cidrlist,
+            number: args.data.number,
+            protocol: args.data.protocol,
+            traffictype: args.data.traffictype,
+            action: args.data.action
+          };
+
+          if (data.protocol === 'tcp' || data.protocol === 'udp') {
+            $.extend(data, {
+              startport: args.data.startport,
+              endport: args.data.endport
+            });
+          } else if (data.protocol === 'icmp') {
+            $.extend(data, {
+              icmptype: args.data.icmptype,
+              icmpcode: args.data.icmpcode
+            });
+          } else if (data.protocol === 'protocolnumber') {
+            $.extend(data, {
+              protocolnumber: args.data.protocolnumber
+            });
+          }
+
+          $.ajax({
+            url: createURL('updateNetworkACLItem'),
+            data: data,
+            success: function(json) {
+              args.response.success({
+                _custom: { jobId: json.createnetworkaclresponse.jobid }, // API response obj name needs to be fixed
+                notification: {
+                  label: 'Edit ACL rule',
+                  poll: pollAsyncJobResult
+                }
+              });
+            },
+            error: function(error) {
+              args.response.error(parseXMLHttpResponse(error));
+            }
+          });         
+        }
+      },
       destroy: {
         label: 'label.remove.ACL',
         action: function(args) {
@@ -471,7 +582,98 @@
           detailView: {
             isMaximized: true,
             name: 'Internal LB details',
-            actions: {              
+            actions: {                
+              assignVMs: {
+                label: 'Assign VMs',
+                messages: {
+                  notification: function(args) { return 'Assign VMs'; }
+                },
+                needsRefresh: true,
+                listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
+                  type: 'checkbox',
+                  filters: false,
+                  dataProvider: function(args) {       
+                    var assignedInstances;
+                    $.ajax({
+                      url: createURL('listLoadBalancers'),
+                      data: {
+                        id: args.context.internalLoadBalancers[0].id
+                      },
+                      async: false,
+                      success: function(json) {    
+                        assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;         
+                        if(assignedInstances == null)
+                          assignedInstances = []; 
+                      }
+                    });                     
+                    
+                    $.ajax({
+                      url: createURL('listVirtualMachines'),
+                      data: {
+                        networkid: args.context.networks[0].id,
+                        listAll: true
+                      },
+                      success: function(json) {
+                        var instances = json.listvirtualmachinesresponse.virtualmachine;
+
+                        // Pre-select existing instances in LB rule
+                        $(instances).map(function(index, instance) {
+                          instance._isSelected = $.grep(assignedInstances,                                  
+                            function(assignedInstance) {
+                              return assignedInstance.id == instance.id;
+                            }
+                          ).length ? true : false;
+                        });
+                        
+                        //remove assigned VMs (i.e. instance._isSelected == true)
+                        var items = [];
+                        if(instances != null) {
+                          for(var i = 0; i < instances.length; i++) {
+                            if(instances[i]._isSelected == true)
+                              continue;
+                            else
+                              items.push(instances[i]);
+                          }
+                        }
+                        
+                        args.response.success({
+                          data: items
+                        });
+                      }
+                    });
+                  }
+                }),
+                action: function(args) {                          
+                  var vms = args.context.instances;
+                  var array1 = [];
+                  for(var i = 0; i < vms.length; i++) {
+                    array1.push(vms[i].id);
+                  }
+                  var virtualmachineids = array1.join(',');
+                  
+                  $.ajax({
+                    url: createURL('assignToLoadBalancerRule'),
+                    data: {
+                      id: args.context.internalLoadBalancers[0].id,
+                      virtualmachineids: virtualmachineids
+                    },
+                    dataType: 'json',
+                    async: true,
+                    success: function(data) {                          
+                      var jid = data.assigntoloadbalancerruleresponse.jobid;                                                   
+                      args.response.success({
+                        _custom: { 
+                          jobId: jid
+                        }
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }                      
+              },
+                            
               remove: {
                 label: 'Delete Internal LB',
                 messages: {
@@ -519,7 +721,22 @@
                     sourceipaddress: { label: 'Source IP Address' },
                     sourceport: { label: 'Source Port' },
                     instanceport: { label: 'Instance Port' },
-                    algorithm: { label: 'label.algorithm' }                        
+                    algorithm: { label: 'label.algorithm' },
+                    loadbalancerinstance: { 
+                      label: 'Assigned VMs',
+                      converter: function(objArray) {                       
+                        var s = '';
+                        if(objArray != null) {
+                          for(var i = 0; i < objArray.length; i++) {
+                            if(i > 0) {
+                              s += ', ';      
+                            }                                                    
+                            s += objArray[i].name + ' ('+ objArray[i].ipaddress + ')';
+                          }
+                        }                        
+                        return s;                     
+                      }
+                    }
                   }
                 ],                    
                 dataProvider: function(args) {      

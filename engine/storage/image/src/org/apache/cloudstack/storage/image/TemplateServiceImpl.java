@@ -54,6 +54,7 @@ import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
@@ -63,6 +64,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -82,6 +85,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateServiceImpl implements TemplateService {
@@ -118,6 +122,8 @@ public class TemplateServiceImpl implements TemplateService {
     EndPointSelector _epSelector;
     @Inject
     TemplateManager _tmpltMgr;
+    @Inject
+    ConfigurationDao _configDao;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -187,7 +193,7 @@ public class TemplateServiceImpl implements TemplateService {
         /* Baremetal need not to download any template */
         availHypers.remove(HypervisorType.BareMetal);
         availHypers.add(HypervisorType.None); // bug 9809: resume ISO
-                                              // download.
+        // download.
 
         for (VMTemplateVO template : toBeDownloaded) {
             if (availHypers.contains(template.getHypervisorType())) {
@@ -377,10 +383,10 @@ public class TemplateServiceImpl implements TemplateService {
             /* Baremetal need not to download any template */
             availHypers.remove(HypervisorType.BareMetal);
             availHypers.add(HypervisorType.None); // bug 9809: resume ISO
-                                                  // download.
+            // download.
             for (VMTemplateVO tmplt : toBeDownloaded) {
                 if (tmplt.getUrl() == null) { // If url is null we can't
-                                              // initiate the download
+                    // initiate the download
                     continue;
                 }
 
@@ -555,8 +561,65 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Override
     public AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate, DataStore destStore) {
-        return copyAsync(srcTemplate, srcTemplate, destStore);
+        // generate a URL from source template ssvm to download to destination data store
+        String url = generateCopyUrl(srcTemplate);
+        if (url == null) {
+            s_logger.warn("Unable to start/resume copy of template " + srcTemplate.getUniqueName() + " to " + destStore.getName() + ", no secondary storage vm in running state in source zone");
+            throw new CloudRuntimeException("No secondary VM in running state in source template zone ");
+        }
+
+        TemplateObject tmplForCopy = (TemplateObject)_templateFactory.getTemplate(srcTemplate, destStore);
+        tmplForCopy.setUrl(url);
+
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
+        DataObject templateOnStore = destStore.create(tmplForCopy);
+        templateOnStore.processEvent(Event.CreateOnlyRequested);
+
+        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
+                (TemplateObject) templateOnStore, future);
+        AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().copyTemplateCallBack(null, null)).setContext(context);
+        destStore.getDriver().createAsync(destStore, templateOnStore, caller);
+        return future;
     }
+
+
+    private String generateCopyUrl(String ipAddress, String dir, String path){
+        String hostname = ipAddress;
+        String scheme = "http";
+        boolean _sslCopy = false;
+        String sslCfg = _configDao.getValue(Config.SecStorageEncryptCopy.toString());
+        if ( sslCfg != null ){
+            _sslCopy = Boolean.parseBoolean(sslCfg);
+        }
+        if (_sslCopy) {
+            hostname = ipAddress.replace(".", "-");
+            hostname = hostname + ".realhostip.com";
+            scheme = "https";
+        }
+        return scheme + "://" + hostname + "/copy/SecStorage/" + dir + "/" + path;
+    }
+
+    private String generateCopyUrl(TemplateInfo  srcTemplate) {
+        DataStore srcStore = srcTemplate.getDataStore();
+        EndPoint ep = _epSelector.select(srcTemplate);
+        if ( ep != null ){
+            if (ep.getPublicAddr() == null) {
+                s_logger.warn("A running secondary storage vm has a null public ip?");
+                return null;
+            }
+            return generateCopyUrl(ep.getPublicAddr(), ((ImageStoreEntity) srcStore).getMountPoint(), srcTemplate.getInstallPath());
+        }
+
+        VMTemplateVO tmplt = _templateDao.findById(srcTemplate.getId());
+        HypervisorType hyperType = tmplt.getHypervisorType();
+        /*No secondary storage vm yet*/
+        if (hyperType != null && hyperType == HypervisorType.KVM) {
+            return "file://" + ((ImageStoreEntity) srcStore).getMountPoint() + "/" + srcTemplate.getInstallPath();
+        }
+        return null;
+    }
+
 
     @Override
     public AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool) {
@@ -598,7 +661,7 @@ public class TemplateServiceImpl implements TemplateService {
                         tmplt.getUrl());
                 tmpltStore.setSize(0L);
                 tmpltStore.setPhysicalSize(0); // no size information for
-                                               // pre-seeded system vm templates
+                // pre-seeded system vm templates
                 tmpltStore.setDataStoreRole(store.getRole());
                 _vmTemplateStoreDao.persist(tmpltStore);
             }

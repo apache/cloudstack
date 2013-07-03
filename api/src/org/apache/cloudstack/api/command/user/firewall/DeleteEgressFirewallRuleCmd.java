@@ -98,7 +98,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete egress firewall rule");
         }

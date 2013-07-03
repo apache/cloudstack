@@ -25,6 +25,9 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.about': '<fmt:message key="label.about" />',
+'label.about.app': '<fmt:message key="label.about.app" />',
+'label.app.name': '<fmt:message key="label.app.name" />',
 'label.custom.disk.iops': '<fmt:message key="label.custom.disk.iops" />',
 'label.disk.iops.min': '<fmt:message key="label.disk.iops.min" />',
 'label.disk.iops.max': '<fmt:message key="label.disk.iops.max" />',

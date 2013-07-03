@@ -514,6 +514,7 @@ CREATE TABLE `cloud`.`global_load_balancer_lb_rule_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `gslb_rule_id` bigint unsigned NOT NULL,
   `lb_rule_id` bigint unsigned NOT NULL,
+  `weight` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'weight of the site in gslb',
   `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`gslb_rule_id`, `lb_rule_id`),
@@ -1950,7 +1951,6 @@ CREATE VIEW `cloud`.`template_view` AS
         vm_template.display_text,
         vm_template.enable_password,
         vm_template.guest_os_id,
-        -- vm_template.state,
         guest_os.uuid guest_os_uuid,
         guest_os.display_name guest_os_name,
         vm_template.bootable,
@@ -1980,6 +1980,7 @@ CREATE VIEW `cloud`.`template_view` AS
         data_center.name data_center_name,
         launch_permission.account_id lp_account_id,
         template_store_ref.store_id,
+		image_store.scope as store_scope,
         template_store_ref.state,
         template_store_ref.download_state,
         template_store_ref.download_pct,
@@ -1998,7 +1999,8 @@ CREATE VIEW `cloud`.`template_view` AS
         resource_tags.resource_id tag_resource_id,
         resource_tags.resource_uuid tag_resource_uuid,
         resource_tags.resource_type tag_resource_type,
-        resource_tags.customer tag_customer
+        resource_tags.customer tag_customer,
+		CONCAT(vm_template.id, '_', IFNULL(data_center.id, 0)) as temp_zone_pair
     from
         `cloud`.`vm_template`
             inner join
@@ -2014,21 +2016,18 @@ CREATE VIEW `cloud`.`template_view` AS
             left join
         `cloud`.`vm_template` source_template ON source_template.id = vm_template.source_template_id            
             left join
-        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id
-            AND template_zone_ref.removed is null
+        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id
             left join
-        `cloud`.`data_center` ON template_zone_ref.zone_id = data_center.id
+        `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id 
             left join
-        `cloud`.`image_store` ON image_store.removed is NULL AND (image_store.data_center_id = data_center.id OR image_store.scope = 'REGION')
+        `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null    
             left join
-        `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id AND template_store_ref.store_id = image_store.id
+        `cloud`.`data_center` ON (image_store.data_center_id = data_center.id OR template_zone_ref.zone_id = data_center.id)
             left join
         `cloud`.`launch_permission` ON launch_permission.template_id = vm_template.id
             left join
         `cloud`.`resource_tags` ON resource_tags.resource_id = vm_template.id
             and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO');
-
-
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.apiserver.address', 'http://localhost:8081', 'Specify the address at which the Midonet API server can be contacted (if using Midonet)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'midonet.providerrouter.id', 'd7c5e6a3-e2f4-426b-b728-b7ce6a0448e5', 'Specifies the UUID of the Midonet provider router (if using Midonet)');
@@ -2261,3 +2260,46 @@ CREATE TABLE `cloud`.`external_stratosphere_ssp_credentials` (
   `username` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL
 ) Engine=InnoDB DEFAULT CHARSET=utf8;
+
+
+DROP VIEW IF EXISTS `cloud`.`project_view`;
+CREATE VIEW `cloud`.`project_view` AS
+    select 
+        projects.id,
+        projects.uuid,
+        projects.name,
+        projects.display_text,
+        projects.state,
+        projects.removed,
+        projects.created,
+        projects.project_account_id,
+        account.account_name owner,
+        pacct.account_id,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        resource_tags.id tag_id,
+        resource_tags.uuid tag_uuid,
+        resource_tags.key tag_key,
+        resource_tags.value tag_value,
+        resource_tags.domain_id tag_domain_id,
+        resource_tags.account_id tag_account_id,
+        resource_tags.resource_id tag_resource_id,
+        resource_tags.resource_uuid tag_resource_uuid,
+        resource_tags.resource_type tag_resource_type,
+        resource_tags.customer tag_customer
+    from
+        `cloud`.`projects`
+            inner join
+        `cloud`.`domain` ON projects.domain_id = domain.id
+            inner join
+        `cloud`.`project_account` ON projects.id = project_account.project_id
+            and project_account.account_role = 'Admin'
+            inner join
+        `cloud`.`account` ON account.id = project_account.account_id
+            left join
+        `cloud`.`resource_tags` ON resource_tags.resource_id = projects.id
+            and resource_tags.resource_type = 'Project'
+            left join
+        `cloud`.`project_account` pacct ON projects.id = pacct.project_id;

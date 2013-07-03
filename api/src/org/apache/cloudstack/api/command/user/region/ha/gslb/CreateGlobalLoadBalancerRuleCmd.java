@@ -151,8 +151,8 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     public void create() {
         try {
             GlobalLoadBalancerRule gslbRule = _gslbService.createGlobalLoadBalancerRule(this);
-            this.setEntityId(gslbRule.getId());
-            this.setEntityUuid(gslbRule.getUuid());
+            setEntityId(gslbRule.getId());
+            setEntityUuid(gslbRule.getUuid());
             CallContext.current().setEventDetails("Rule Id: " + getEntityId());
         } catch (Exception ex) {
             s_logger.warn("Exception: ", ex);

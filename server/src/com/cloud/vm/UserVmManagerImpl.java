@@ -1174,10 +1174,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             boolean success = false;
         if(vmInstance.getState().equals(State.Running)){
             int retry = _scaleRetry;
+            ExcludeList excludes = new ExcludeList();
             boolean enableDynamicallyScaleVm = Boolean.parseBoolean(_configServer.getConfigValue(Config.EnableDynamicallyScaleVm.key(), Config.ConfigurationParameterScope.zone.toString(), vmInstance.getDataCenterId()));
             if(!enableDynamicallyScaleVm){
                throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
             }
+
+            while (retry-- != 0) { // It's != so that it can match -1.
+                try{
+                    boolean existingHostHasCapacity = false;
 
             // Increment CPU and Memory count accordingly.
             if (newCpu > currentCpu) {
@@ -1187,13 +1192,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (newMemory - currentMemory));
             }
 
-            while (retry-- != 0) { // It's != so that it can match -1.
-                try{
                     // #1 Check existing host has capacity
-                    boolean existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - currentServiceOffering.getSpeed(),
+                    if( !excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId())) ){
+                        existingHostHasCapacity = _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - currentServiceOffering.getSpeed(),
                             (newServiceOffering.getRamSize() - currentServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f, false); // TO DO fill it with mem.
+                        excludes.addHost(vmInstance.getHostId());
+                    }
 
-                    // #2 migrate the vm if host doesn't have capacity
+                    // #2 migrate the vm if host doesn't have capacity or is in avoid set
                     if (!existingHostHasCapacity){
                         _itMgr.findHostAndMigrate(vmInstance.getUuid(), newServiceOfferingId);
                     }
@@ -1212,7 +1218,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     s_logger.warn("Received exception while scaling ",e);
                 } catch (ManagementServerException e) {
                     s_logger.warn("Received exception while scaling ",e);
-                }finally{
+                } catch (Exception e) {
+                    s_logger.warn("Received exception while scaling ",e);
+                }
+                finally{
                     if(!success){
                         _itMgr.upgradeVmDb(vmId, currentServiceOffering.getId()); // rollback
                         // Decrement CPU and Memory count accordingly.
@@ -1765,7 +1774,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         String description = "";
 
-        if (!displayName.equals(vmInstance.getDisplayName())) {
+        if (displayName != null && !displayName.equals(vmInstance.getDisplayName())) {
             description += "New display name: " + displayName + ". ";
         }
 

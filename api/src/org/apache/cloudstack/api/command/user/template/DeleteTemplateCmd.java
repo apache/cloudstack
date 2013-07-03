@@ -98,10 +98,12 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
         return "Deleting template " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Template;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -112,7 +114,7 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
         boolean result = _templateService.deleteTemplate(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete template");
         }

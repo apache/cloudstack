@@ -17,6 +17,7 @@
 package com.cloud.api.query.vo;
 
 import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,8 +28,10 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDao;
@@ -175,6 +178,10 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="data_center_name")
     private String dataCenterName;
 
+    @Column(name="store_scope")
+    @Enumerated(value = EnumType.STRING)
+    private ScopeType dataStoreScope;
+
     @Column(name="store_id")
     private Long dataStoreId; // this can be null for baremetal templates
 
@@ -238,6 +245,9 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
+
+    @Column(name="temp_zone_pair")
+    private String tempZonePair; // represent a distinct (templateId, data_center_id) pair
 
     public TemplateJoinVO() {
     }
@@ -1024,6 +1034,28 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public void setState(ObjectInDataStoreStateMachine.State state) {
         this.state = state;
+    }
+
+
+
+    public ScopeType getDataStoreScope() {
+        return dataStoreScope;
+    }
+
+
+    public void setDataStoreScope(ScopeType dataStoreScope) {
+        this.dataStoreScope = dataStoreScope;
+    }
+
+
+    public String getTempZonePair() {
+        return tempZonePair;
+    }
+
+
+
+    public void setTempZonePair(String tempZonePair) {
+        this.tempZonePair = tempZonePair;
     }
 
 

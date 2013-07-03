@@ -247,6 +247,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
         }
 
+        Map<Long, Long> lbRuleWeightMap = assignToGslbCmd.getLoadBalancerRuleWeightMap();
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -255,6 +257,9 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             GlobalLoadBalancerLbRuleMapVO newGslbLbMap = new GlobalLoadBalancerLbRuleMapVO();
             newGslbLbMap.setGslbLoadBalancerId(gslbRuleId);
             newGslbLbMap.setLoadBalancerId(lbRuleId);
+            if (lbRuleWeightMap != null && lbRuleWeightMap.get(lbRuleId) != null) {
+                newGslbLbMap.setWeight(lbRuleWeightMap.get(lbRuleId));
+            }
             _gslbLbMapDao.persist(newGslbLbMap);
         }
 
@@ -507,24 +512,31 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
 
 
-        if (!GlobalLoadBalancerRule.Algorithm.isValidAlgorithm(algorithm)) {
+        if (algorithm != null && !GlobalLoadBalancerRule.Algorithm.isValidAlgorithm(algorithm)) {
             throw new InvalidParameterValueException("Invalid Algorithm: " + algorithm);
         }
 
-        if (!GlobalLoadBalancerRule.Persistence.isValidPersistence(stickyMethod)) {
+        if (stickyMethod != null && !GlobalLoadBalancerRule.Persistence.isValidPersistence(stickyMethod)) {
             throw new InvalidParameterValueException("Invalid persistence: " + stickyMethod);
         }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
+        if (algorithm != null) {
         gslbRule.setAlgorithm(algorithm);
+        }
+        if (stickyMethod != null) {
         gslbRule.setPersistence(stickyMethod);
+        }
+        if (description != null) {
         gslbRule.setDescription(description);
+        }
+        gslbRule.setState(GlobalLoadBalancerRule.State.Add);
         _gslbRuleDao.update(gslbRule.getId(), gslbRule);
         txn.commit();
 
         try {
-            s_logger.debug("Updated global load balancer with id " + gslbRule.getUuid());
+            s_logger.debug("Updating global load balancer with id " + gslbRule.getUuid());
 
             // apply the gslb rule on to the back end gslb service providers on zones participating in gslb
             applyGlobalLoadBalancerRuleConfig(gslbRuleId, false);
@@ -639,6 +651,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
             siteLb.setGslbProviderPublicIp(_gslbProvider.getZoneGslbProviderPublicIp(dataCenterId, physicalNetworkId));
             siteLb.setGslbProviderPrivateIp(_gslbProvider.getZoneGslbProviderPrivateIp(dataCenterId, physicalNetworkId));
+            siteLb.setWeight(gslbLbMapVo.getWeight());
 
             zoneSiteLoadbalancerMap.put(network.getDataCenterId(), siteLb);
         }

@@ -56,6 +56,7 @@ public class TemplateObject implements TemplateInfo {
     private static final Logger s_logger = Logger.getLogger(TemplateObject.class);
     private VMTemplateVO imageVO;
     private DataStore dataStore;
+    private String url;
     @Inject
     VMTemplateDao imageDao;
     @Inject
@@ -109,6 +110,9 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUri() {
+        if ( url != null ){
+            return url;
+        }
         VMTemplateVO image = imageDao.findById(this.imageVO.getId());
 
         return image.getUrl();
@@ -364,7 +368,14 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUrl() {
+        if (url != null ){
+            return url;
+        }
         return this.imageVO.getUrl();
+    }
+
+    public void setUrl(String url){
+        this.url = url;
     }
 
     @Override

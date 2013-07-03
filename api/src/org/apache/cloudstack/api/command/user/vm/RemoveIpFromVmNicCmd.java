@@ -149,7 +149,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
             boolean result = _networkService.releaseSecondaryIpFromNic(id);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove secondary  ip address for the nic");
             }

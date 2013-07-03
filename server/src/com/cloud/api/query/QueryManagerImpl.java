@@ -2464,8 +2464,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
 
-        if (networkType != null)
+        if (networkType != null) {
           sc.addAnd("networkType", SearchCriteria.Op.EQ, networkType);
+        }
         
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
@@ -2689,6 +2690,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, startIndex, pageSize);
+
+        SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getTempZonePair()); // select distinct (templateId, zoneId) pair
         SearchCriteria<TemplateJoinVO> sc = _templateJoinDao.createSearchCriteria();
 
         // verify templateId parameter and specially handle it
@@ -2871,7 +2875,15 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
 
             if (zoneId != null) {
-                sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+                SearchCriteria<TemplateJoinVO> zoneSc = _templateJoinDao.createSearchCriteria();
+                zoneSc.addOr("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+                zoneSc.addOr("dataStoreScope", SearchCriteria.Op.EQ, ScopeType.REGION);
+                // handle the case where xs-tools.iso and vmware-tools.iso do not have data_center information in template_view
+                SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
+                isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
+                isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
+                zoneSc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
+                sc.addAnd("dataCenterId", SearchCriteria.Op.SC, zoneSc);
             }
 
             if (!showDomr) {
@@ -2892,12 +2904,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             return uniqueTmplPair;
         }
         List<TemplateJoinVO> uniqueTmpls = uniqueTmplPair.first();
-        Long[] vrIds = new Long[uniqueTmpls.size()];
+        String[] tzIds = new String[uniqueTmpls.size()];
         int i = 0;
         for (TemplateJoinVO v : uniqueTmpls) {
-            vrIds[i++] = v.getId();
+            tzIds[i++] = v.getTempZonePair();
         }
-        List<TemplateJoinVO> vrs = _templateJoinDao.searchByIds(vrIds);
+        List<TemplateJoinVO> vrs = _templateJoinDao.searchByTemplateZonePair(tzIds);
         return new Pair<List<TemplateJoinVO>, Integer>(vrs, count);
 
         // TODO: revisit the special logic for iso search in
@@ -3052,9 +3064,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
     }
 
-
     @Override
-    public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd){
+    public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd) {
 
         String key = cmd.getKey();
         ResourceTag.TaggedResourceType resourceType = cmd.getResourceType();

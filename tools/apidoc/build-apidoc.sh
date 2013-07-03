@@ -47,7 +47,6 @@ fi
 
 CP=$PATHSEP/
 
-
 java -cp $CP$PATHSEP$TARGETJARDIR/*$PATHSEP$DEPSDIR/* com.cloud.api.doc.ApiXmlDocWriter -d "$DISTDIR" $*
 
 if [ $? -ne 0 ]

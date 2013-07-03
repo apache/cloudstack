@@ -17,14 +17,19 @@
 package com.cloud.api.query.vo;
 
 import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="async_job_view")
@@ -89,7 +94,8 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
     private Date removed;
 
     @Column(name="instance_type", length=64)
-    private String instanceType;
+    @Enumerated(value = EnumType.STRING)
+    private ApiCommandJobType instanceType;
 
     @Column(name="instance_id", length=64)
     private Long instanceId;
@@ -295,12 +301,12 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
     }
 
 
-    public String getInstanceType() {
+    public ApiCommandJobType getInstanceType() {
         return instanceType;
     }
 
 
-    public void setInstanceType(String instanceType) {
+    public void setInstanceType(ApiCommandJobType instanceType) {
         this.instanceType = instanceType;
     }
 

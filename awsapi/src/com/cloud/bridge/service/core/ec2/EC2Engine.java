@@ -1184,13 +1184,22 @@ public class EC2Engine extends ManagerBase {
             String snapshotId = request.getSnapshotId();
             Long size = request.getSize();
             String diskOfferingId = null;
+            String taggedDiskOffering = null;
 
             if (snapshotId == null) {
                 List<CloudStackDiskOffering> disks = getApi().listDiskOfferings(null, null, null, null);
                 for (CloudStackDiskOffering offer : disks) {
                     if (offer.isCustomized()) {
-                        diskOfferingId = offer.getId();
+                        if (offer.getTags() == null) {
+                            diskOfferingId = offer.getId();
+                            break;
+                        } else {
+                            taggedDiskOffering = offer.getId();
+                        }
                     }
+                }
+                if (diskOfferingId == null) {
+                    diskOfferingId = taggedDiskOffering;
                 }
                 if (diskOfferingId == null) throw new EC2ServiceException(ServerError.InternalError, "No Customize Disk Offering Found");
             }

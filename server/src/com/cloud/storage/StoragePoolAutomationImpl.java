@@ -18,6 +18,7 @@
  */
 package com.cloud.storage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -106,9 +107,38 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         Account account = CallContext.current().getCallingAccount();
         StoragePoolVO pool = primaryDataStoreDao.findById(store.getId());
         try {
+            List<StoragePoolVO> spes = null;
+            // Handling Zone and Cluster wide storage scopes.
+            // if the storage is ZONE wide then we pass podid and cluster id as null as they will be empty for ZWPS 
+            if (pool.getScope() == ScopeType.ZONE) {
+                spes = primaryDataStoreDao.listBy(
+                        pool.getDataCenterId(), null,
+                        null, ScopeType.ZONE);
+            }
+            else {
+                spes = primaryDataStoreDao.listBy(
+                        pool.getDataCenterId(), pool.getPodId(),
+                        pool.getClusterId(), ScopeType.CLUSTER);
+            }
+            for (StoragePoolVO sp : spes) {
+                if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
+                    throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId()
+                            + " is already in  PrepareForMaintenance mode ");
+                }
+            }
             StoragePool storagePool = (StoragePool) store;
-            List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(
+
+            //Handeling the Zone wide and cluster wide primay storage
+            List<HostVO> hosts = new ArrayList<HostVO>();
+            // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
+            //TODO: if it's zone wide, this code will list a lot of hosts in the zone, which may cause performance/OOM issue.
+            if (pool.getScope().equals(ScopeType.ZONE)) {
+                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(pool.getHypervisor() , pool.getDataCenterId());
+            } else {
+                hosts = _resourceMgr.listHostsInClusterByStatus(
                     pool.getClusterId(), Status.Up);
+            }
+
             if (hosts == null || hosts.size() == 0) {
                 pool.setStatus(StoragePoolStatus.Maintenance);
                 primaryDataStoreDao.update(pool.getId(), pool);
@@ -131,7 +161,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
                 } else {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("ModifyStoragePool false secceeded");
+                        s_logger.debug("ModifyStoragePool false succeeded");
                     }
                 }
             }
@@ -244,7 +274,6 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
                 }
             }
-            
         } catch(Exception e) {
             s_logger.error("Exception in enabling primary storage maintenance:", e);
             pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
@@ -263,7 +292,16 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         StoragePoolVO poolVO = primaryDataStoreDao.findById(store.getId());
         StoragePool pool = (StoragePool)store;
        
-        List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(pool.getClusterId(), Status.Up);
+        //Handeling the Zone wide and cluster wide primay storage
+        List<HostVO> hosts = new ArrayList<HostVO>();
+        // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
+        if (poolVO.getScope().equals(ScopeType.ZONE)) {
+            hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(poolVO.getHypervisor(), pool.getDataCenterId());
+        } else {
+            hosts = _resourceMgr.listHostsInClusterByStatus(
+                pool.getClusterId(), Status.Up);
+        }
+
         if (hosts == null || hosts.size() == 0) {
             return true;
         }

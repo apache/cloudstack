@@ -194,7 +194,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
-    public List<StoragePoolVO> listBy(long datacenterId, long podId, Long clusterId, ScopeType scope) {
+    public List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope) {
         if (clusterId != null) {
             SearchCriteria<StoragePoolVO> sc = DcPodSearch.create();
             sc.setParameters("datacenterId", datacenterId);
@@ -249,7 +249,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     @DB
     @Override
     public List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details,
-            ScopeType scope) {
+                                                  ScopeType scope) {
         StringBuilder sql = new StringBuilder(DetailsSqlPrefix);
         if (clusterId != null) {
             sql.append("storage_pool.cluster_id = ? OR storage_pool.cluster_id IS NULL) AND (");

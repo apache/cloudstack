@@ -3060,7 +3060,95 @@
                         notification: {
                           poll: pollAsyncJobResult
                         }
-                      }            
+                      },
+                     
+                      migrate: {
+                        label: 'Migrate LB VM',
+                        createForm: {
+                          title: 'Migrate LB VM',                          
+                          fields: {
+                            hostId: {
+                              label: 'label.host',
+                              validation: { required: true },
+                              select: function(args) {
+                                $.ajax({
+                                  url: createURL("listHosts&VirtualMachineId=" + args.context.internallbinstances[0].id),
+                                  dataType: "json",
+                                  async: true,
+                                  success: function(json) {
+                                    var hostObjs = json.listhostsresponse.host;
+                                    var items = [];
+                                    $(hostObjs).each(function() {
+                                      items.push({id: this.id, description: (this.name + " (" + (this.suitableformigration? "Suitable": "Not Suitable") + ")")});
+                                    });
+                                    args.response.success({data: items});
+                                  }
+                                });
+                              },
+                              error: function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                args.response.error(errorMsg);
+                              }
+                            }
+                          }
+                        },
+                        messages: {
+                          notification: function(args) {
+                            return 'Migrate LB VM';
+                          }
+                        },
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL("migrateSystemVm&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.internallbinstances[0].id),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                              var jid = json.migratesystemvmresponse.jobid;
+                              args.response.success({
+                                _custom: {
+                                  jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance                                   
+                                    $.ajax({
+                                      url: createURL("listInternalLoadBalancerVMs&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                      dataType: "json",
+                                      async: false,
+                                      success: function(json) {                                       
+                                        var items = json.listinternallbvmssresponse.internalloadbalancervm;
+                                        if(items != null && items.length > 0) {
+                                          return items[0];
+                                        }
+                                      }
+                                    });
+                                  },
+                                  getActionFilter: function() {
+                                    return internallbinstanceActionfilter;
+                                  }
+                                }
+                              });
+                            }
+                          });
+                        },
+                        notification: {
+                          poll: pollAsyncJobResult
+                        }
+                      },
+
+                      viewConsole: {
+                        label: 'label.view.console',
+                        action: {
+                          externalLink: {
+                            url: function(args) {
+                              return clientConsoleUrl + '?cmd=access&vm=' + args.context.internallbinstances[0].id;
+                            },
+                            title: function(args) {
+                              return args.context.internallbinstances[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+                            },
+                            width: 820,
+                            height: 640
+                          }
+                        }
+                      }
                     },
                     tabs: {
                       details: {
@@ -6507,19 +6595,19 @@
                 dataType: "json",
                 async: true,
                 success: function(json) {
-                 // var jid = json.scalevirtualmachineresponse.jobid;
-                  args.response.success();
-                   /* {_custom:
+                  var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success({
+                    _custom:
                      {jobId: jid,
                       getUpdatedItem: function(json) {
                         return json.queryasyncjobresultresponse.jobresult.virtualmachine;
                       },
                       getActionFilter: function() {
-                        return vmActionfilter;
+                        return systemvmActionfilter;
                          }
                           
                        }
-                    } */
+                    }); 
 
                 },
                  error:function(json){
@@ -6938,7 +7026,30 @@
                     url: createURL('listSystemVms' + searchByArgs),
                     data: { page: args.page, pageSize: pageSize, listAll: true },
                     success: function (json) {
-                      args.response.success({ data: json.listsystemvmsresponse.systemvm });
+                       var items = json.listsystemvmsresponse.systemvm;
+                         if(items != null){
+                                  $.ajax({
+                                     url:createURL("listHosts&listAll=true" ),
+                                     async:false,
+                                     success:function(json){
+
+                                        var hostObj = json.listhostsresponse.host;
+
+                                        $(hostObj).each(function(index){
+
+                                           $.extend(items[index],{agentstate:hostObj[index].state});
+
+                                        });
+                                        args.response.success({ data:items});
+                                     },
+                                     error:function(json){
+                                         args.response.error(parseXMLHttpResponse(json));
+
+                                     }
+                                 });
+                             }
+
+                     // args.response.success({ data: json.listsystemvmsresponse.systemvm });
                     },
                     error: function (json) {
                       args.response.error(parseXMLHttpResponse(json));
@@ -7428,18 +7539,18 @@
                 dataType: "json",
                 async: true,
                 success: function(json) {
-               //   var jid = json.scalevirtualmachineresponse.jobid;
-                  args.response.success();
-                 /*   {_custom:
+                  var jid = json.scalevirtualmachineresponse.jobid;
+                  args.response.success({
+                    _custom:
                      {jobId: jid,
                       getUpdatedItem: function(json) {
                         return json.queryasyncjobresultresponse.jobresult.virtualmachine;
                       },
                       getActionFilter: function() {
-                        return vmActionfilter;
+                        return routerActionfilter;
                         }
                      }
-                    }*/
+                    });
                   
                 },
                  error:function(json){
@@ -7601,7 +7712,7 @@
             },
             zonename: { label: 'label.zone' },
             state: {
-              label: 'label.status',
+              label: 'VM state',
               converter: function(str) {
                 // For localization
                 return str;
@@ -7612,7 +7723,17 @@
                 'Error': 'off',
                 'Destroyed': 'off'
               }
+            },
+             
+            agentstate:{
+              label:'Agent State',
+              indicator:{
+               'Up':'on',
+               'Down':'off'
+              }
             }
+
+            
           },
           dataProvider: function(args) {
             var array1 = [];
@@ -14752,6 +14873,10 @@
 
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
+            
+      allowedActions.push("viewConsole");
+      if (isAdmin())
+        allowedActions.push("migrate");
     }
     else if (jsonObj.state == 'Stopped') {
       allowedActions.push("start");      

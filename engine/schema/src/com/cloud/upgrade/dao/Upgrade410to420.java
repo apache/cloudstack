@@ -20,6 +20,7 @@ package com.cloud.upgrade.dao;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -37,6 +38,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
+import java.util.HashSet;
 import com.cloud.network.vpc.NetworkACL;
 
 public class Upgrade410to420 implements DbUpgrade {
@@ -132,208 +135,89 @@ public class Upgrade410to420 implements DbUpgrade {
 	    // TODO: system vm template migration after storage refactoring
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        boolean xenserver = false;
-        boolean kvm = false;
-        boolean VMware = false;
-        boolean Hyperv = false;
-        boolean LXC = false;
         s_logger.debug("Updating System Vm template IDs");
         try{
             //Get all hypervisors in use
-        try {
+            Set<HypervisorType> hypervisorsListInUse = new HashSet<HypervisorType>();
+            try {
                 pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
                 rs = pstmt.executeQuery();
                 while(rs.next()){
-                    if("XenServer".equals(rs.getString(1))){
-                        xenserver = true;
-                    } else if("KVM".equals(rs.getString(1))){
-                        kvm = true;
-                    } else if("VMware".equals(rs.getString(1))){
-                        VMware = true;
-                    } else if("Hyperv".equals(rs.getString(1))) {
-                        Hyperv = true;
-                    } else if("LXC".equals(rs.getString(1))) {
-                        LXC = true;
+                    switch (HypervisorType.getType(rs.getString(1))) {
+                        case XenServer: hypervisorsListInUse.add(HypervisorType.XenServer);
+                                        break;
+                        case KVM:       hypervisorsListInUse.add(HypervisorType.KVM);
+                                        break;
+                        case VMware:    hypervisorsListInUse.add(HypervisorType.VMware);
+                                        break;
+                        case Hyperv:    hypervisorsListInUse.add(HypervisorType.Hyperv);
+                                        break;
+                        case LXC:       hypervisorsListInUse.add(HypervisorType.LXC);
+                                        break;
                     }
                 }
             } catch (SQLException e) {
                 throw new CloudRuntimeException("Error while listing hypervisors in use", e);
             }
 
-            s_logger.debug("Updating XenSever System Vms");
-            //XenServer
-            try {
-                //Get 4.2.0 XenServer system Vm template Id
-                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name like 'systemvm-xenserver-4.2' and removed is null order by id desc limit 1");
-                rs = pstmt.executeQuery();
-                if(rs.next()){
-                    long templateId = rs.getLong(1);
-                    rs.close();
-                    pstmt.close();
-                    // change template type to SYSTEM
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // update templete ID of system Vms
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'XenServer'");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // Change value of global configuration parameter router.template.xen
-                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.xen', 'systemvm-xenserver-4.2', 'Name of the default router template on Xenserver')");
-                    pstmt.execute();
-                    pstmt.close();
-                } else {
-                    if (xenserver){
-                        throw new CloudRuntimeException("4.2.0 XenServer SystemVm template not found. Cannot upgrade system Vms");
-                    } else {
-                        s_logger.warn("4.2.0 XenServer SystemVm template not found. XenServer hypervisor is not used, so not failing upgrade");
-                    }
+            Map<HypervisorType, String> NewTemplateNameList = new HashMap<HypervisorType, String>(){
+                {   put(HypervisorType.XenServer, "systemvm-xenserver-4.2");
+                    put(HypervisorType.VMware, "systemvm-vmware-4.2");
+                    put(HypervisorType.KVM, "systemvm-kvm-4.2");
+                    put(HypervisorType.LXC, "systemvm-lxc-4.2");
+                    put(HypervisorType.Hyperv, "systemvm-hyperv-4.2");
                 }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("Error while updating XenServer systemVm template", e);
+            };
+
+            Map<HypervisorType, String> routerTemplateConfigurationNames = new HashMap<HypervisorType, String>(){
+                {   put(HypervisorType.XenServer, "router.template.xen");
+                    put(HypervisorType.VMware, "router.template.vmware");
+                    put(HypervisorType.KVM, "router.template.kvm");
+                    put(HypervisorType.LXC, "router.template.lxc");
+                    put(HypervisorType.Hyperv, "router.template.hyperv");
+                }
+            };
+
+            for (Map.Entry<HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()){
+                s_logger.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
+                try {
+                    //Get 4.2.0 system Vm template Id for corresponding hypervisor
+                    pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name like ? and removed is null order by id desc limit 1");
+                    pstmt.setString(1, hypervisorAndTemplateName.getValue());
+                    rs = pstmt.executeQuery();
+                    if(rs.next()){
+                        long templateId = rs.getLong(1);
+                        rs.close();
+                        pstmt.close();
+                        // change template type to SYSTEM
+                        pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
+                        pstmt.setLong(1, templateId);
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                        // update templete ID of system Vms
+                        pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ?");
+                        pstmt.setLong(1, templateId);
+                        pstmt.setString(2, hypervisorAndTemplateName.getKey().toString());
+                        pstmt.executeUpdate();
+                        pstmt.close();
+                        // Change value of global configuration parameter router.template.* for the corresponding hypervisor
+                        pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', ?, ?, 'Name of the default router template on Xenserver')");
+                        pstmt.setString(1, routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()));
+                        pstmt.setString(2, hypervisorAndTemplateName.getValue());
+                        pstmt.execute();
+                        pstmt.close();
+                    } else {
+                        if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())){
+                            throw new CloudRuntimeException("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
+                        } else {
+                            s_logger.warn("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey() + " hypervisor is not used, so not failing upgrade");
+                        }
+                    }
+                } catch (SQLException e) {
+                    throw new CloudRuntimeException("Error while updating "+ hypervisorAndTemplateName.getKey() +" systemVm template", e);
+                }
             }
 
-            //KVM
-            s_logger.debug("Updating KVM System Vms");
-            try {
-                //Get 4.2.0 KVM system Vm template Id
-                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-kvm-4.2' and removed is null order by id desc limit 1");
-                rs = pstmt.executeQuery();
-                if(rs.next()){
-                    long templateId = rs.getLong(1);
-                    rs.close();
-                    pstmt.close();
-                    // change template type to SYSTEM
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // update templete ID of system Vms
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'KVM'");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // Change value of global configuration parameter router.template.kvm
-                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.kvm', 'systemvm-kvm-4.2', 'Name of the default router template on KVM')");
-                    pstmt.execute();
-                    pstmt.close();
-                } else {
-                    if (kvm){
-                        throw new CloudRuntimeException("4.2.0 KVM SystemVm template not found. Cannot upgrade system Vms");
-                    } else {
-                        s_logger.warn("4.2.0 KVM SystemVm template not found. KVM hypervisor is not used, so not failing upgrade");
-                    }
-                }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("Error while updating KVM systemVm template", e);
-            }
-
-            //VMware
-            s_logger.debug("Updating VMware System Vms");
-            try {
-                //Get 4.2.0 VMware system Vm template Id
-                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-vmware-4.2' and removed is null order by id desc limit 1");
-                rs = pstmt.executeQuery();
-                if(rs.next()){
-                    long templateId = rs.getLong(1);
-                    rs.close();
-                    pstmt.close();
-                    // change template type to SYSTEM
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // update templete ID of system Vms
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'VMware'");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // Change value of global configuration parameter router.template.vmware
-                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.vmware', 'systemvm-vmware-4.2', 'Name of the default router template on Vmware')");
-                    pstmt.execute();
-                    pstmt.close();
-                } else {
-                    if (VMware){
-                        throw new CloudRuntimeException("4.2.0 VMware SystemVm template not found. Cannot upgrade system Vms");
-                    } else {
-                        s_logger.warn("4.2.0 VMware SystemVm template not found. VMware hypervisor is not used, so not failing upgrade");
-                    }
-                }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("Error while updating VMware systemVm template", e);
-            }
-
-            //Hyperv
-            s_logger.debug("Updating Hyperv System Vms");
-            try {
-                //Get 4.2.0 Hyperv system Vm template Id
-                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-hyperv-4.2' and removed is null order by id desc limit 1");
-                rs = pstmt.executeQuery();
-                if(rs.next()){
-                    long templateId = rs.getLong(1);
-                    rs.close();
-                    pstmt.close();
-                    // change template type to SYSTEM
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // update templete ID of system Vms
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'Hyperv'");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // Change value of global configuration parameter router.template.hyperv
-                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.hyperv', 'systemvm-hyperv-4.2', 'Name of the default router template on Hyperv')");
-                    pstmt.execute();
-                    pstmt.close();
-                } else {
-                    if (Hyperv){
-                        throw new CloudRuntimeException("4.2.0 HyperV SystemVm template not found. Cannot upgrade system Vms");
-                    } else {
-                        s_logger.warn("4.2.0 Hyperv SystemVm template not found. Hyperv hypervisor is not used, so not failing upgrade");
-                    }
-                }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("Error while updating Hyperv systemVm template", e);
-            }
-
-            //LXC
-            s_logger.debug("Updating LXC System Vms");
-            try {
-                //Get 4.2.0 LXC system Vm template Id
-                pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-lxc-4.2' and removed is null order by id desc limit 1");
-                rs = pstmt.executeQuery();
-                if(rs.next()){
-                    long templateId = rs.getLong(1);
-                    rs.close();
-                    pstmt.close();
-                    // change template type to SYSTEM
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_template` set type='SYSTEM' where id = ?");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // update templete ID of system Vms
-                    pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'LXC'");
-                    pstmt.setLong(1, templateId);
-                    pstmt.executeUpdate();
-                    pstmt.close();
-                    // Change value of global configuration parameter router.template.lxc
-                    pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.lxc', 'systemvm-lxc-4.2', 'Name of the default router template on LXC')");
-                    pstmt.execute();
-                    pstmt.close();
-                } else {
-                    if (LXC){
-                        throw new CloudRuntimeException("4.2.0 LXC SystemVm template not found. Cannot upgrade system Vms");
-                    } else {
-                        s_logger.warn("4.2.0 LXC SystemVm template not found. LXC hypervisor is not used, so not failing upgrade");
-                    }
-                }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("Error while updating LXC systemVm template", e);
-            }
             s_logger.debug("Updating System Vm Template IDs Complete");
         }
         finally {
@@ -364,7 +248,6 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
         */
-
 	}
 
 	private void updatePrimaryStore(Connection conn) {
@@ -1112,6 +995,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 //Add internal lb vm to the list of physical network elements
                 PreparedStatement pstmt1 = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" +
                 		" WHERE physical_network_id=? AND provider_name='InternalLbVm'");
+                pstmt1.setLong(1, pNtwkId);
                 ResultSet rs1 = pstmt1.executeQuery();
                 while (rs1.next()) {
                     long providerId = rs1.getLong(1);
@@ -1124,7 +1008,7 @@ public class Upgrade410to420 implements DbUpgrade {
             }
 
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable existing physical networks with internal lb provider", e);
+            throw new CloudRuntimeException("Unable to update existing physical networks with internal lb provider", e);
         } finally {
             try {
                 if (rs != null) {

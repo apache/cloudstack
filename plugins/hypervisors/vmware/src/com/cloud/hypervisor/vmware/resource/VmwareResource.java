@@ -2028,36 +2028,36 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(final CreateIpAliasCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing createipAlias command: " + _gson.toJson(cmd));
+            s_logger.info("Executing createIpAlias command: " + _gson.toJson(cmd));
         }
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
-        String args=routerIp+" ";
+        String args="";
         for (IpAliasTO ipaliasto : ipAliasTOs) {
             args = args + ipaliasto.getAlias_count()+":"+ipaliasto.getRouterip()+":"+ipaliasto.getNetmask()+"-";
         }
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/createipAlias " + args);
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/createIpAlias " + args);
         }
 
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             String controlIp = getRouterSshControlIp(cmd);
             Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
-                    "/root/createipAlias.sh " + args);
+                    "/root/createIpAlias.sh " + args);
 
             if (!result.first()) {
-                s_logger.error("ipAlias command on domr " + controlIp + " failed, message: " + result.second());
+                s_logger.error("CreateIpAlias command on domr " + controlIp + " failed, message: " + result.second());
 
                 return new Answer(cmd, false, "createipAlias failed due to " + result.second());
             }
 
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("createipAlias command on domain router " + controlIp + " completed");
+                s_logger.info("createIpAlias command on domain router " + controlIp + " completed");
             }
 
         } catch (Throwable e) {
-            String msg = "createipAlias failed due to " + VmwareHelper.getExceptionMessage(e);
+            String msg = "createIpAlias failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
@@ -2070,9 +2070,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
         List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing deleteipAlias command: " + _gson.toJson(cmd));
+            s_logger.info("Executing deleteIpAlias command: " + _gson.toJson(cmd));
         }
-        String args=routerIp+" ";
+        String args="";
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
         }
@@ -2081,27 +2081,27 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args = args + ipAliasTO.getAlias_count()+":"+ipAliasTO.getRouterip()+":"+ipAliasTO.getNetmask()+"-";
         }
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/deleteipAlias " + args);
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/deleteIpAlias " + args);
         }
 
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             String controlIp = getRouterSshControlIp(cmd);
             Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
-                    "/root/deleteipAlias.sh " + args);
+                    "/root/deleteIpAlias.sh " + args);
 
             if (!result.first()) {
-                s_logger.error("ipAlias command on domr " + controlIp + " failed, message: " + result.second());
+                s_logger.error("deleteIpAlias command on domr " + controlIp + " failed, message: " + result.second());
 
-                return new Answer(cmd, false, "deleteipAlias failed due to " + result.second());
+                return new Answer(cmd, false, "deleteIpAlias failed due to " + result.second());
             }
 
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("deleteipAlias command on domain router " + controlIp + " completed");
+                s_logger.info("deleteIpAlias command on domain router " + controlIp + " completed");
             }
 
         } catch (Throwable e) {
-            String msg = "deleteipAlias failed due to " + VmwareHelper.getExceptionMessage(e);
+            String msg = "deleteIpAlias failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
@@ -2111,7 +2111,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(final DnsMasqConfigCommand cmd) {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing deleteipAlias command: " + _gson.toJson(cmd));
+            s_logger.info("Executing dnsmasqConfig command: " + _gson.toJson(cmd));
         }
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String controlIp = getRouterSshControlIp(cmd);
@@ -2120,7 +2120,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         DnsMasqConfigurator configurator = new DnsMasqConfigurator();
         String [] config = configurator.generateConfiguration(cmd);
-        String tmpConfigFilePath = "/tmp/"+ routerIp.replace(".","-")+".cfg";
+        String tmpConfigFilePath = "/tmp/"+ routerIp.replace(".","_")+".cfg";
         String tmpConfigFileContents = "";
         for (int i = 0; i < config.length; i++) {
             tmpConfigFileContents += config[i];
@@ -2137,7 +2137,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             try {
 
-                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "scp" + tmpConfigFilePath + "/root/dnsmasq.sh");
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/root/dnsmasq.sh " + tmpConfigFilePath);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Run command on domain router " + routerIp + ",  /root/dnsmasq.sh");
                 }
@@ -2157,7 +2157,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new Answer(cmd);
         } catch (Throwable e) {
             s_logger.error("Unexpected exception: " + e.toString(), e);
-            return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to " + VmwareHelper.getExceptionMessage(e));
+            return new Answer(cmd, false, " DnsmasqConfig command failed due to " + VmwareHelper.getExceptionMessage(e));
         }
     }
 

@@ -409,8 +409,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public VirtualMachineTemplate prepareTemplate(long templateId, long zoneId) {
     	
     	VMTemplateVO vmTemplate = _tmpltDao.findById(templateId);
-        if (vmTemplate == null)
+        if (vmTemplate == null) {
     		throw new InvalidParameterValueException("Unable to find template id=" + templateId);
+        }
     	
     	_accountMgr.checkAccess(CallContext.current().getCallingAccount(), AccessType.ModifyEntry, true, vmTemplate);
     	
@@ -723,6 +724,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         boolean success = copy(userId, template, srcSecStore, dstZone);
         
         if (success) {
+            // increase resource count
+            long accountId = template.getAccountId();
+            if (template.getSize() != null) {
+                _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
+            }
         	return template;
         } else {
         	throw new CloudRuntimeException("Failed to copy template");

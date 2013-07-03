@@ -1577,7 +1577,10 @@
                         }                             
                       }     
                       
-                      $lbProvider.val($lbProvider.find('option:first'));     
+                      //if selected option is disabled, select the first enabled option instead
+                      if($lbProvider.find('option:selected:disabled').length > 0) { 
+                        $lbProvider.val($lbProvider.find('option:first'));                         
+                      }     
                     }
                     else {
                       $lbType.hide();                      

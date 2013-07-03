@@ -894,16 +894,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (capacities.size() == 0) {
             CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(),
                     storagePool.getClusterId(), allocated, totalOverProvCapacity, capacityType);
-            AllocationState allocationState = null;
+
             if (storagePool.getScope() == ScopeType.ZONE) {
                 DataCenterVO dc = ApiDBUtils.findZoneById(storagePool.getDataCenterId());
-                allocationState = dc.getAllocationState();
+                AllocationState allocationState = dc.getAllocationState();
+                CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled
+                        : CapacityState.Enabled;
+                capacity.setCapacityState(capacityState);
             } else {
-                allocationState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(storagePool.getClusterId()));
-            }
-            CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
-            
+                if (storagePool.getClusterId() != null) {
+                    ClusterVO cluster = ApiDBUtils.findClusterById(storagePool.getClusterId());
+                    if (cluster != null) {
+                        AllocationState allocationState = _configMgr.findClusterAllocationState(cluster);
+                        CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled
+                                : CapacityState.Enabled;
             capacity.setCapacityState(capacityState);
+                    }
+                }
+            }
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
@@ -1190,22 +1198,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         boolean restart = true;
         StoragePoolVO primaryStorage = null;
-
         primaryStorage = _storagePoolDao.findById(primaryStorageId);
 
         if (primaryStorage == null) {
             String msg = "Unable to obtain lock on the storage pool record in preparePrimaryStorageForMaintenance()";
             s_logger.error(msg);
             throw new InvalidParameterValueException(msg);
-        }
-
-        List<StoragePoolVO> spes = _storagePoolDao.listBy(primaryStorage.getDataCenterId(), primaryStorage.getPodId(), primaryStorage.getClusterId(),
-                ScopeType.CLUSTER);
-        for (StoragePoolVO sp : spes) {
-            if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
-                throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId()
-                                + " is already in  PrepareForMaintenance mode ");
-            }
         }
 
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up) && !primaryStorage.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)) {
@@ -1527,6 +1525,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long futureIops = currentIops + requestedIops;
 
+        // getCapacityIops returns a Long so we need to check for null
+        if (pool.getCapacityIops() == null) {
+            s_logger.warn("Storage pool " + pool.getName() + " (" + pool.getId() + ") does not supply Iops capacity, assuming enough capacity");
+            return true;
+        }
+        
         return futureIops <= pool.getCapacityIops();
     }
 

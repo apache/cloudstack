@@ -61,6 +61,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
@@ -272,6 +273,7 @@ public class VirtualMachineManagerImplTest {
 
         when(_vmInstance.getHostId()).thenReturn(null);
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
+        DeploymentPlanner.ExcludeList excludeHostList = new DeploymentPlanner.ExcludeList();
         _vmMgr.findHostAndMigrate(_vmInstance.getUuid(), 2l);
 
     }
