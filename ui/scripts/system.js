@@ -7026,7 +7026,30 @@
                     url: createURL('listSystemVms' + searchByArgs),
                     data: { page: args.page, pageSize: pageSize, listAll: true },
                     success: function (json) {
-                      args.response.success({ data: json.listsystemvmsresponse.systemvm });
+                       var items = json.listsystemvmsresponse.systemvm;
+                         if(items != null){
+                                  $.ajax({
+                                     url:createURL("listHosts&listAll=true" ),
+                                     async:false,
+                                     success:function(json){
+
+                                        var hostObj = json.listhostsresponse.host;
+
+                                        $(hostObj).each(function(index){
+
+                                           $.extend(items[index],{agentstate:hostObj[index].state});
+
+                                        });
+                                        args.response.success({ data:items});
+                                     },
+                                     error:function(json){
+                                         args.response.error(parseXMLHttpResponse(json));
+
+                                     }
+                                 });
+                             }
+
+                     // args.response.success({ data: json.listsystemvmsresponse.systemvm });
                     },
                     error: function (json) {
                       args.response.error(parseXMLHttpResponse(json));
@@ -7689,7 +7712,7 @@
             },
             zonename: { label: 'label.zone' },
             state: {
-              label: 'label.status',
+              label: 'VM state',
               converter: function(str) {
                 // For localization
                 return str;
@@ -7700,7 +7723,17 @@
                 'Error': 'off',
                 'Destroyed': 'off'
               }
+            },
+             
+            agentstate:{
+              label:'Agent State',
+              indicator:{
+               'Up':'on',
+               'Down':'off'
+              }
             }
+
+            
           },
           dataProvider: function(args) {
             var array1 = [];
