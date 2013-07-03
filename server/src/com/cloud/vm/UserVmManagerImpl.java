@@ -1783,7 +1783,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         String description = "";
 
-        if (!displayName.equals(vmInstance.getDisplayName())) {
+        if (displayName != null && !displayName.equals(vmInstance.getDisplayName())) {
             description += "New display name: " + displayName + ". ";
         }
 
