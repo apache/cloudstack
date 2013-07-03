@@ -399,14 +399,12 @@ public class EC2RestServlet extends HttpServlet {
         }
         try {
             txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn.start();
             // -> use the keys to see if the account actually exists
             ServiceProvider.getInstance().getEC2Engine().validateAccount( accessKey[0], secretKey[0] );
-            /*    	    UserCredentialsDao credentialDao = new UserCredentialsDao();
-    	    credentialDao.setUserKeys(  ); 
-             */    	    UserCredentialsVO user = new UserCredentialsVO(accessKey[0], secretKey[0]);
-             ucDao.persist(user);
-             txn.commit();
-
+            UserCredentialsVO user = new UserCredentialsVO(accessKey[0], secretKey[0]);
+            ucDao.persist(user);
+            txn.commit();
         } catch( Exception e ) {
             logger.error("SetUserKeys " + e.getMessage(), e);
             response.setStatus(401);
@@ -472,10 +470,8 @@ public class EC2RestServlet extends HttpServlet {
             // [C] Associate the cert's uniqueId with the Cloud API keys
             String uniqueId = AuthenticationUtils.X509CertUniqueId( userCert );
             logger.debug( "SetCertificate, uniqueId: " + uniqueId );
-            /*    	    UserCredentialsDao credentialDao = new UserCredentialsDao();
-    	    credentialDao.setCertificateId( accessKey[0], uniqueId );
-             */	        
             txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn.start();
             UserCredentialsVO user = ucDao.getByAccessKey(accessKey[0]);
             user.setCertUniqueId(uniqueId);
             ucDao.update(user.getId(), user);
