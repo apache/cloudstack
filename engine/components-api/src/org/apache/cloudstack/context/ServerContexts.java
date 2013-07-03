@@ -40,9 +40,11 @@ public class ServerContexts {
 
     public static void unregisterUserContext() {
         CallContext context = CallContext.unregister();
-        AsyncJobExecutionContext.unregister();
-        Transaction txn = (Transaction)context.getContextParameter("Transaction");
-        txn.close(Thread.currentThread().getName());
+        if (context != null) {
+            AsyncJobExecutionContext.unregister();
+            Transaction txn = (Transaction)context.getContextParameter("Transaction");
+            txn.close(Thread.currentThread().getName());
+        }
     }
 
     /**
