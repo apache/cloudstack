@@ -2135,7 +2135,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             try {
 
-                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "scp" + tmpConfigFilePath + " /root/dnsmasq.sh");
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/root/dnsmasq.sh " + tmpConfigFilePath);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Run command on domain router " + routerIp + ",  /root/dnsmasq.sh");
                 }
