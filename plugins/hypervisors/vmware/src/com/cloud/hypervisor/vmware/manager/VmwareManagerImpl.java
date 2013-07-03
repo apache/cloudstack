@@ -352,7 +352,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         s_logger.info("Preparing network on host " + hostMo.getContext().toString() + " for " + privateTrafficLabel);
         //The management network is probably always going to be a physical network with vlans, so assume BroadcastDomainType VLAN
-        HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false, BroadcastDomainType.Vlan);
+        HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false, BroadcastDomainType.Vlan, null);
     }
 
     @Override

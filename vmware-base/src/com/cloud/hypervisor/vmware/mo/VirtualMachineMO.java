@@ -2048,47 +2048,53 @@ public class VirtualMachineMO extends BaseMO {
 		return ++deviceNumber;
 	}
 
-	public VirtualDevice[] getNicDevices() throws Exception {
-		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
-			getDynamicProperty(_mor, "config.hardware.device");
+	private List<VirtualDevice> getNicDevices(boolean sorted) throws Exception {
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
+                getDynamicProperty(_mor, "config.hardware.device");
 
-		List<VirtualDevice> nics = new ArrayList<VirtualDevice>();
-		if(devices != null) {
-			for(VirtualDevice device : devices) {
-				if(device instanceof VirtualEthernetCard) {
-                    nics.add(device);
+            List<VirtualDevice> nics = new ArrayList<VirtualDevice>();
+            if(devices != null) {
+                for(VirtualDevice device : devices) {
+                    if(device instanceof VirtualEthernetCard) {
+                        nics.add(device);
+                    }
                 }
-			}
-		}
+            }
+            
+            if (sorted) {
+                Collections.sort(nics, new Comparator<VirtualDevice>() {
+                    @Override
+                    public int compare(VirtualDevice arg0, VirtualDevice arg1) {
+                        int unitNumber0 = arg0.getUnitNumber() != null ? arg0.getUnitNumber().intValue() : -1;
+                        int unitNumber1 = arg1.getUnitNumber() != null ? arg1.getUnitNumber().intValue() : -1;
+                        if(unitNumber0 < unitNumber1)
+                            return -1;
+                        else if(unitNumber0 > unitNumber1)
+                            return 1;
+                        return 0;
+                    }
+                });
+            }
+            
+            return nics;
+	}
 
-		return nics.toArray(new VirtualDevice[0]);
+	public VirtualDevice[] getNicDevices() throws Exception {
+		return getNicDevices(false).toArray(new VirtualDevice[0]);
+	}
+	
+	public VirtualDevice getNicDeviceByIndex(int index) throws Exception {
+	    List<VirtualDevice> nics = getNicDevices(true);
+	    try {
+	        return nics.get(index);
+	    } catch (IndexOutOfBoundsException e) {
+	        // Not found
+	        return null;
+	    }
 	}
 
 	public Pair<Integer, VirtualDevice> getNicDeviceIndex(String networkNamePrefix) throws Exception {
-        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
-        getDynamicProperty(_mor, "config.hardware.device");
-
-        List<VirtualDevice> nics = new ArrayList<VirtualDevice>();
-        if(devices != null) {
-            for(VirtualDevice device : devices) {
-                if(device instanceof VirtualEthernetCard) {
-                    nics.add(device);
-                }
-            }
-        }
-
-        Collections.sort(nics, new Comparator<VirtualDevice>() {
-            @Override
-            public int compare(VirtualDevice arg0, VirtualDevice arg1) {
-                int unitNumber0 = arg0.getUnitNumber() != null ? arg0.getUnitNumber().intValue() : -1;
-                int unitNumber1 = arg1.getUnitNumber() != null ? arg1.getUnitNumber().intValue() : -1;
-                if(unitNumber0 < unitNumber1)
-                    return -1;
-                else if(unitNumber0 > unitNumber1)
-                    return 1;
-                return 0;
-            }
-        });
+        List<VirtualDevice> nics = getNicDevices(true);
 
         int index = 0;
         String attachedNetworkSummary;
