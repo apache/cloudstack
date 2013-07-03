@@ -4027,7 +4027,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     " migrate to this host");
         }
 
-        return _itMgr.migrateWithStorage(vm.getUuid(), srcHostId, destinationHost.getId(), volToPoolObjectMap);
+        Outcome<VirtualMachine> outcome = _itMgr.migrateWithStorage(vm.getUuid(), srcHostId, destinationHost.getId(), volToPoolObjectMap);
+        try {
+            return outcome.get();
+        } catch (InterruptedException e) {
+            throw new CloudRuntimeException("Interrupted while waiting for the outcome of " + outcome.getJob());
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw new CloudRuntimeException("Unable to start virtual machine", e.getCause());
+        }
     }
 
     @DB

@@ -137,7 +137,8 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
             VirtualMachine migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(),
                     destinationHost, getVolumeToPool());
             if (migratedVm != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", (UserVm)migratedVm).get(0);
+                UserVm vm = _entityMgr.findById(UserVm.class, migratedVm.getId());
+                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", vm).get(0);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {

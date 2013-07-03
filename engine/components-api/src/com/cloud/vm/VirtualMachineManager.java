@@ -139,8 +139,7 @@ public interface VirtualMachineManager extends Manager {
 
     Outcome<VirtualMachine> migrate(String vmUuid, long srcHostId, DeployDestination dest);
 
-    VirtualMachine migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
-            ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+    Outcome<VirtualMachine> migrateWithStorage(String vmUuid, long srcHostId, long destId, Map<Volume, StoragePool> volumeToPool);
 
     void reboot(String vmUuid);
 

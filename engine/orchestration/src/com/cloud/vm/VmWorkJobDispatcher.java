@@ -61,6 +61,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     public final static String Start = "start";
     public final static String Stop = "stop";
     public final static String Migrate = "migrate";
+    public final static String MigrateWithStorage = "migratewithstorage";
 
     @Inject
     private VirtualMachineManagerImpl _vmMgr;
@@ -82,9 +83,12 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                 work = deserialize(VmWorkStop.class, job.getCmdInfo());
             } else if (cmd.equals(Migrate)) {
                 work = deserialize(VmWorkMigrate.class, job.getCmdInfo());
+            } else if (cmd.equals(MigrateWithStorage)) {
+                work = deserialize(VmWorkMigrate.class, job.getCmdInfo());
             }
-        	assert(work != null);
-        	
+
+            assert(work != null);
+
             CallContext.register(work.getUserId(), work.getAccountId(), job.getRelated());
 
             VMInstanceVO vm = _instanceDao.findById(work.getVmId());
@@ -102,6 +106,9 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             } else if (cmd.equals(Migrate)) {
                 VmWorkMigrate migrate = (VmWorkMigrate)work;
                 _vmMgr.orchestrateMigrate(vm.getUuid(), migrate.getSrcHostId(), migrate.getDeployDestination());
+            } else if (cmd.equals(MigrateWithStorage)) {
+                VmWorkMigrate migrate = (VmWorkMigrate)work;
+                _vmMgr.orchestrateMigrateWithStorage(vm.getUuid(), migrate.getSrcHostId(), migrate.getDeployDestination());
             }
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
         } catch(Throwable e) {
