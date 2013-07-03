@@ -92,7 +92,6 @@ class Services:
                          "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
-                                  "vlan": 2370,
                                 },
                          "lbrule": {
                                     "name": "SSH",
@@ -199,13 +198,6 @@ class TestNOVirtualRouter(cloudstackTestCase):
     def tearDown(self):
         try:
             self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -778,13 +770,6 @@ class TestNOWithNetscaler(cloudstackTestCase):
     def tearDown(self):
         try:
             self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1423,13 +1408,6 @@ class TestNetworkUpgrade(cloudstackTestCase):
     def tearDown(self):
         try:
             self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1871,13 +1849,6 @@ class TestSharedNetworkWithoutIp(cloudstackTestCase):
     def tearDown(self):
         try:
             self.account.delete(self.apiclient)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) * 2)
-            #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
