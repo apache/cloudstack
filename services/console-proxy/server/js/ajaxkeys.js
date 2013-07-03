@@ -321,6 +321,10 @@ var	keyboardTables = [
                           {keycode: 92, entry:
                               [{type : KEY_DOWN, code : 0xa6, modifiers : 0, shift : false}]
                           },
+                          // [124 = |]
+                          {keycode: 124, entry:
+                              [{type : KEY_DOWN, code : 0xa6, modifiers : 64, shift : true}]
+                          },
                           // [126 = ~]
                           {keycode: 126, entry:
                               [{type : KEY_DOWN, code : 0x7c, modifiers : 64, shift : true}]
