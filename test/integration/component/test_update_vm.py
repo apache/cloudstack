@@ -154,7 +154,6 @@ class TestUpdateVirtualMachine(cloudstackTestCase):
 
     def tearDown(self):
         try:
-           # cleanup_resources(self.apiclient, self.cleanup)
-            pass
+           cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
