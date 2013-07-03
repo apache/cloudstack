@@ -334,7 +334,7 @@
           </connectors>
           <contextPath>/awsapi</contextPath>
           <webXml>${basedir}/web/web.xml</webXml>
-          <webAppSourceDirectory>${basedir}/target/generated-webapp</webAppSourceDirectory>
+          <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
         </configuration>
       </plugin>
       <plugin>
