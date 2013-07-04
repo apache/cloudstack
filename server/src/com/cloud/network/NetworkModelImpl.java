@@ -2143,6 +2143,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         // network rules. So prevent network GC.
         if (secondaryIps != null && !secondaryIps.isEmpty() &&
                 networkIsConfiguredForExternalNetworking(network.getDataCenterId(), networkId)) {
+            return false;
         }
 
         return true;
