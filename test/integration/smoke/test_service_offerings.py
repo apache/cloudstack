@@ -20,7 +20,7 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
+from marvin.integration.lib.utils import isAlmostEqual
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
@@ -273,21 +273,6 @@ class TestServiceOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def isAlmostEqual(self, first_digit, second_digit, range=0):
-
-        digits_equal_within_range = False
-
-        try:
-            if ((first_digit - range) < second_digit < (first_digit + range)):
-                digits_equal_within_range = True
-
-        except Exception as e:
-            self.fail(
-                "%s: Failed while comparing the numbers %s & %s" %
-                    (e, first_digit, second_digit))
-
-        return digits_equal_within_range
-
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
     def test_02_edit_service_offering(self):
         """Test to update existing service offering"""
@@ -447,10 +432,10 @@ class TestServiceOfferings(cloudstackTestCase):
             "Check CPU Speed for small offering"
         )
         self.assertTrue(
-            self.isAlmostEqual(int(int(total_mem)/1024),
-                               int(self.small_offering.memory),
-                               range=20
-                              ),
+            isAlmostEqual(int(int(total_mem) / 1024),
+                int(self.small_offering.memory),
+                range=20
+            ),
             "Check Memory(kb) for small offering"
         )
         return
