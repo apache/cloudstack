@@ -100,7 +100,7 @@ if [ $no_dhcp_release -eq 0 ]
 then
   #release previous dhcp lease if present
   logger -t cloud "edithosts: releasing $ipv4"
-  dhcp_release lo $ipv4 $(grep $ipv4 $DHCP_LEASES | awk '{print $2}') > /dev/null 2>&1
+  dhcp_release eth0 $ipv4 $(grep $ipv4 $DHCP_LEASES | awk '{print $2}') > /dev/null 2>&1
   logger -t cloud "edithosts: released $ipv4"
 fi
 
