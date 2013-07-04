@@ -35,11 +35,11 @@ def restart_mgmt_server(server):
     try:
         # Get the SSH client
         ssh = is_server_ssh_ready(
-                                  server["ipaddress"],
-                                  server["port"],
-                                  server["username"],
-                                  server["password"],
-                                )
+            server["ipaddress"],
+            server["port"],
+            server["username"],
+            server["password"],
+        )
         result = ssh.execute("/etc/init.d/cloud-management restart")
         res = str(result)
         # Server Stop - OK
@@ -57,21 +57,21 @@ def fetch_latest_mail(services, from_mail):
     # Login to mail server to verify email
     mail = imaplib.IMAP4_SSL(services["server"])
     mail.login(
-                   services["email"],
-                   services["password"]
-                   )
+        services["email"],
+        services["password"]
+    )
     mail.list()
     mail.select(services["folder"])
     date = (datetime.date.today() - datetime.timedelta(1)).strftime("%d-%b-%Y")
 
     result, data = mail.uid(
-            'search',
-            None,
-            '(SENTSINCE {date} HEADER FROM "{mail}")'.format(
-                                                             date=date,
-                                                             mail=from_mail
-                                                             )
-            )
+        'search',
+        None,
+        '(SENTSINCE {date} HEADER FROM "{mail}")'.format(
+            date=date,
+            mail=from_mail
+        )
+    )
     # Return False if email is not present
     if data == []:
         return False
@@ -112,11 +112,11 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=50, keyPair
     while True:
         try:
             ssh = remoteSSHClient(
-                                    host=ipaddress,
-                                    port=port,
-                                    user=username,
-                                    passwd=password,
-                                    keyPairFileLocation=keyPairFileLocation)
+                host=ipaddress,
+                port=port,
+                user=username,
+                passwd=password,
+                keyPairFileLocation=keyPairFileLocation)
         except Exception as e:
             if loop_cnt == 0:
                 raise e
@@ -129,9 +129,9 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=50, keyPair
 def format_volume_to_ext3(ssh_client, device="/dev/sda"):
     """Format attached storage to ext3 fs"""
     cmds = [
-            "echo -e 'n\np\n1\n\n\nw' | fdisk %s" % device,
-            "mkfs.ext3 %s1" % device,
-           ]
+        "echo -e 'n\np\n1\n\n\nw' | fdisk %s" % device,
+        "mkfs.ext3 %s1" % device,
+    ]
     for c in cmds:
         ssh_client.execute(c)
 
@@ -143,15 +143,15 @@ def fetch_api_client(config_file='datacenterCfg'):
     testClientLogger = logging.getLogger("testClient")
     asyncTimeout = 3600
     return cloudstackAPIClient.CloudStackAPIClient(
-            marvin.cloudstackConnection.cloudConnection(
-                                                mgt.mgtSvrIp,
-                                                mgt.port,
-                                                mgt.apiKey,
-                                                mgt.securityKey,
-                                                asyncTimeout,
-                                                testClientLogger
-                                                )
-                                            )
+        marvin.cloudstackConnection.cloudConnection(
+            mgt.mgtSvrIp,
+            mgt.port,
+            mgt.apiKey,
+            mgt.securityKey,
+            asyncTimeout,
+            testClientLogger
+        )
+    )
 
 
 def get_process_status(hostip, port, username, password, linklocalip, process, hypervisor=None):
@@ -164,10 +164,10 @@ def get_process_status(hostip, port, username, password, linklocalip, process, h
     else:
         ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
 
-    ssh_command = ssh_command + \
-                    "-oUserKnownHostsFile=/dev/null -p 3922 %s %s" % (
-                                                                linklocalip,
-                                                                process)
+    ssh_command = ssh_command +\
+                  "-oUserKnownHostsFile=/dev/null -p 3922 %s %s" % (
+                      linklocalip,
+                      process)
 
     # Double hop into router
     timeout = 5
@@ -183,3 +183,18 @@ def get_process_status(hostip, port, username, password, linklocalip, process, h
         time.sleep(5)
         timeout = timeout - 1
     return res
+
+
+def isAlmostEqual(self, first_digit, second_digit, range=0):
+    digits_equal_within_range = False
+
+    try:
+        if ((first_digit - range) < second_digit < (first_digit + range)):
+            digits_equal_within_range = True
+
+    except Exception as e:
+        self.fail(
+            "%s: Failed while comparing the numbers %s & %s" %
+            (e, first_digit, second_digit))
+
+    return digits_equal_within_range
