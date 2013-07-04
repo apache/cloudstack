@@ -17,6 +17,7 @@
 package com.cloud.resource;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.resource.SecondaryStorageDiscoverer;
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -52,6 +54,11 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     @Inject AgentManager _agentMgr;
     @Inject ResourceManager _resourceMgr;
     @Inject SnapshotDao _snapshotDao;
+    protected SecondaryStorageResource resource;
+
+    public void setResource(SecondaryStorageResource resource) {
+        this.resource = resource;
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -62,27 +69,18 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
 
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
-        if (!uri.getScheme().equalsIgnoreCase("nfs") && !uri.getScheme().equalsIgnoreCase("file")
-                && !uri.getScheme().equalsIgnoreCase("iso") && !uri.getScheme().equalsIgnoreCase("dummy")) {
+        if (!uri.getScheme().equalsIgnoreCase("sim")) {
             s_logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
             return null;
         }
-
-        if (uri.getScheme().equalsIgnoreCase("nfs") || uri.getScheme().equalsIgnoreCase("iso")) {
-            return createNfsSecondaryStorageResource(dcId, podId, uri);
-        } else if (uri.getScheme().equalsIgnoreCase("file")) {
-            return createLocalSecondaryStorageResource(dcId, podId, uri);
-        } else if (uri.getScheme().equalsIgnoreCase("dummy")) {
-            return createDummySecondaryStorageResource(dcId, podId, uri);
-        } else {
-            return null;
-        }
+        Map<SecondaryStorageResource, Map<String, String>> resources = new HashMap<SecondaryStorageResource, Map<String, String>>();
+        resources.put(this.resource, new HashMap<String, String>());
+        return resources;
     }
 
 
     @Override
     public void postDiscovery(List<HostVO> hosts, long msId) {
-        super.postDiscovery(hosts, msId);
         for (HostVO host: hosts) {
             if(s_logger.isDebugEnabled()) {
                 s_logger.debug("Preinstalling simulator templates");

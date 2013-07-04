@@ -30,6 +30,8 @@
   <bean id="SimulatorDiscoverer" class="com.cloud.resource.SimulatorDiscoverer">
     <property name="name" value="Simulator Agent"/>
   </bean>
+  <bean id="SimulatorSecondaryDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">
+  </bean>
   <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
     <property name="name" value="Simulator Guru"/>
   </bean>
@@ -89,6 +91,7 @@
     <property name="Adapters">
       <list>
         <ref bean="SimulatorDiscoverer"/>
+        <ref bean="SimulatorSecondaryDiscoverer"/>
         <ref bean="XcpServerDiscoverer"/>
         <ref bean="SecondaryStorageDiscoverer"/>
         <ref bean="KvmServerDiscoverer"/>
