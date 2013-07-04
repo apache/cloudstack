@@ -30,7 +30,8 @@ public class EC2RunInstances {
 	private int    maxCount;
 	private int    minCount;
     private Integer    size;  		// <- in gigs
-    private List<String> groupSet = new ArrayList<String>();
+    private List<String>  groupIdSet;
+    private List<String>  groupNameSet;
 	
 	public EC2RunInstances() {
 		instanceType = null;
@@ -42,6 +43,8 @@ public class EC2RunInstances {
 		maxCount     = 0;
 		minCount     = 0;
 		size		 = 0;
+        groupIdSet   = new ArrayList<String>();
+        groupNameSet = new ArrayList<String>();
 	}
 	
 	public void setInstanceType( String instanceType ) {
@@ -115,12 +118,21 @@ public class EC2RunInstances {
 	public void setSize(Integer size) {
 		this.size = size;
 	}
-	
-    public void addGroupName( String param ) {
-        groupSet.add( param );
+
+    public void addSecuritGroupId( String param ) {
+        groupIdSet.add( param );
     }
 		
-    public String[] getGroupSet() {
-        return groupSet.toArray(new String[0]);
+    public String[] getSecurityGroupIdSet() {
+        return groupIdSet.toArray(new String[0]);
     }
+
+	public void addSecuritGroupName( String param ) {
+        groupNameSet.add( param );
+    }
+		
+    public String[] getSecurityGroupNameSet() {
+        return groupNameSet.toArray(new String[0]);
+    }
+
 }
