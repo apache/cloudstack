@@ -122,8 +122,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	public AuthorizeSecurityGroupIngressResponse authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngress authorizeSecurityGroupIngress) {
         AuthorizeSecurityGroupIngressType sgit = authorizeSecurityGroupIngress.getAuthorizeSecurityGroupIngress();        
         IpPermissionSetType ipPerms = sgit.getIpPermissions();
-        
-        EC2AuthorizeRevokeSecurityGroup request = toSecurityGroup( sgit.getGroupName(), ipPerms.getItem());
+
+        EC2AuthorizeRevokeSecurityGroup request = toSecurityGroup(
+                sgit.getAuthorizeSecurityGroupIngressTypeChoice_type0().getGroupName(), ipPerms.getItem());
 		return toAuthorizeSecurityGroupIngressResponse( engine.authorizeSecurityGroup( request ));
 	}
 
@@ -132,8 +133,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	{
         RevokeSecurityGroupIngressType sgit = revokeSecurityGroupIngress.getRevokeSecurityGroupIngress();        
         IpPermissionSetType ipPerms = sgit.getIpPermissions();
-        
-        EC2AuthorizeRevokeSecurityGroup request = toSecurityGroup( sgit.getGroupName(), ipPerms.getItem());
+
+        EC2AuthorizeRevokeSecurityGroup request = toSecurityGroup(
+                sgit.getRevokeSecurityGroupIngressTypeChoice_type0().getGroupName(), ipPerms.getItem());
 		return toRevokeSecurityGroupIngressResponse( engine.revokeSecurityGroup( request ));
 	}
 
@@ -478,8 +480,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     @Override
     public ReleaseAddressResponse releaseAddress(ReleaseAddress releaseAddress) {
     	EC2ReleaseAddress request = new EC2ReleaseAddress();
-    	
-    	request.setPublicIp(releaseAddress.getReleaseAddress().getPublicIp());
+
+        request.setPublicIp(releaseAddress.getReleaseAddress().getReleaseAddressTypeChoice_type0().getPublicIp());
     	
         return toReleaseAddressResponse( engine.releaseAddress( request ) );
     }
@@ -487,10 +489,12 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     @Override
     public AssociateAddressResponse associateAddress(AssociateAddress associateAddress) {
     	EC2AssociateAddress request = new EC2AssociateAddress();
-    	
-    	request.setPublicIp(associateAddress.getAssociateAddress().getPublicIp());
-    	request.setInstanceId(associateAddress.getAssociateAddress().getInstanceId());
-    	
+	
+        request.setPublicIp( associateAddress.getAssociateAddress().
+                getAssociateAddressTypeChoice_type0().getPublicIp());
+        request.setInstanceId(associateAddress.getAssociateAddress().
+                getAssociateAddressTypeChoice_type1().getInstanceId());
+
         return toAssociateAddressResponse( engine.associateAddress( request ) );
     }
 
@@ -794,7 +798,12 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		if (null != gst) {
 			GroupItemType[] items = gst.getItem();
 			if (null != items) {
-				for( int i=0; i < items.length; i++ ) request.addGroupName(items[i].getGroupId());
+                for( int i=0; i < items.length; i++ ) {
+                    if ( items[i].getGroupName() != null) // either SG-name or SG-id can be provided
+                        request.addSecuritGroupName( items[i].getGroupName());
+                    else
+                        request.addSecuritGroupId( items[i].getGroupId());
+                }
 		    }
 		}
 		return toRunInstancesResponse( engine.runInstances( request ), engine);
@@ -973,6 +982,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		    ProductCodesSetType param4 = new ProductCodesSetType();
 	        ProductCodesSetItemType param5 = new ProductCodesSetItemType();
 	        param5.setProductCode( "" );
+            param5.setType("");
             param4.addItem( param5 );		    
 		    param3.setProductCodes( param4 );
 		    
@@ -1342,6 +1352,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param3.setSnapshotId(snapId);
 	        param3.setAvailabilityZone( vol.getZoneName());
 	        param3.setStatus( vol.getState());
+	        param3.setVolumeType("standard");
 	        
         	// -> CloudStack seems to have issues with timestamp formats so just in case
 	        Calendar cal = EC2RestAuth.parseDateString(vol.getCreated());
@@ -1427,11 +1438,13 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             if (null == groups || 0 == groups.length) {
                 GroupItemType param5 = new GroupItemType();
                 param5.setGroupId("");
+                param5.setGroupName("");
                 param4.addItem( param5 );
             } else {
                 for (EC2SecurityGroup group : groups) {
                     GroupItemType param5 = new GroupItemType();
                     param5.setGroupId(group.getId());
+                    param5.setGroupName("");
                     param4.addItem( param5 );
                 }
             }
@@ -1458,6 +1471,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        ProductCodesSetType param9 = new ProductCodesSetType();
 	        ProductCodesSetItemType param10 = new ProductCodesSetItemType();
 	        param10.setProductCode( "" );
+            param10.setType("");
             param9.addItem( param10 );
 	        param7.setProductCodes( param9 );
 	        
@@ -1494,7 +1508,13 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param7.setRootDeviceType( "" );
         	String devicePath = engine.cloudDeviceIdToDevicePath( inst.getHypervisor(), inst.getRootDeviceId());
             param7.setRootDeviceName( devicePath );
-            
+
+            GroupSetType param14 = new GroupSetType();
+            GroupItemType param15 = new GroupItemType(); // VPC security group
+            param15.setGroupName("");
+            param15.setGroupName("");
+            param14.addItem(param15);
+            param7.setGroupSet(param14);
 
             param7.setInstanceLifecycle( "" );
             param7.setSpotInstanceRequestId( "" );
@@ -1542,6 +1562,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     	AllocateAddressResponseType param1 = new AllocateAddressResponseType();
     	
     	param1.setPublicIp(ec2Address.getIpAddress());
+        param1.setDomain("standard");
+        param1.setAllocationId("");
     	param1.setRequestId(UUID.randomUUID().toString());
     	response.setAllocateAddressResponse(param1);
     	return response;
@@ -1561,7 +1583,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     public static AssociateAddressResponse toAssociateAddressResponse(final boolean result) {
     	AssociateAddressResponse response = new AssociateAddressResponse();
     	AssociateAddressResponseType param1 = new AssociateAddressResponseType();
-    	
+
+        param1.setAssociationId("");
     	param1.setRequestId(UUID.randomUUID().toString());
     	param1.set_return(result);
     	
@@ -1761,6 +1784,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        ProductCodesSetType param9 = new ProductCodesSetType();
 	        ProductCodesSetItemType param10 = new ProductCodesSetItemType();
 	        param10.setProductCode( "" );
+            param10.setType("");
             param9.addItem( param10 );
 	        param7.setProductCodes( param9 );
 	        
@@ -1809,7 +1833,14 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param19.setValue("");
             param18.addItem( param19 );
             param7.setTagSet( param18 );          
-            
+
+            GroupSetType param14 = new GroupSetType();
+            GroupItemType param15 = new GroupItemType();
+            param15.setGroupId("");
+            param15.setGroupName("");
+            param14.addItem(param15);
+            param7.setGroupSet(param14);
+
             String hypervisor = inst.getHypervisor();
             param7.setHypervisor((null != hypervisor ? hypervisor : ""));
 	        param6.addItem( param7 );
@@ -1907,6 +1938,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
         }
 		param1.setCreateTime( cal );
 
+        param1.setVolumeType("standard");
 		param1.setRequestId( UUID.randomUUID().toString());
         response.setCreateVolumeResponse( param1 );
 		return response;
@@ -2040,6 +2072,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			param3.setGroupName(group.getName());
 			String desc = group.getDescription();
 			param3.setGroupDescription((null != desc ? desc : ""));
+            param3.setGroupId(group.getId());
+            param3.setVpcId("");
 
 			IpPermissionSetType param4 = new IpPermissionSetType();
 			EC2IpPermission[] perms = group.getIpPermissionSet();
@@ -2101,11 +2135,16 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		return response;
 	}
 	
-	public static CreateSecurityGroupResponse toCreateSecurityGroupResponse( boolean success ) {
+
+    public static CreateSecurityGroupResponse toCreateSecurityGroupResponse( EC2SecurityGroup sg ) {
 		CreateSecurityGroupResponse response = new CreateSecurityGroupResponse();
 		CreateSecurityGroupResponseType param1 = new CreateSecurityGroupResponseType();
 
-		param1.set_return(success);
+        param1.setGroupId( sg.getId() );
+        if ( sg.getId() != null )
+            param1.set_return(true);
+        else
+            param1.set_return(false);
 		param1.setRequestId( UUID.randomUUID().toString());
 		response.setCreateSecurityGroupResponse( param1 );
 		return response;
@@ -2539,5 +2578,296 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 
 	public ResetSnapshotAttributeResponse resetSnapshotAttribute(ResetSnapshotAttribute resetSnapshotAttribute) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
+	}
+	
+
+	public ResetNetworkInterfaceAttributeResponse resetNetworkInterfaceAttribute(
+			ResetNetworkInterfaceAttribute resetNetworkInterfaceAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateRouteTableResponse createRouteTable(
+			CreateRouteTable createRouteTable) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateNetworkAclEntryResponse createNetworkAclEntry(
+			CreateNetworkAclEntry createNetworkAclEntry) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeVolumeAttributeResponse describeVolumeAttribute(
+			DescribeVolumeAttribute describeVolumeAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteNetworkInterfaceResponse deleteNetworkInterface(
+			DeleteNetworkInterface deleteNetworkInterface) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateInternetGatewayResponse createInternetGateway(
+			CreateInternetGateway createInternetGateway) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DisassociateRouteTableResponse disassociateRouteTable(
+			DisassociateRouteTable disassociateRouteTable) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReplaceNetworkAclEntryResponse replaceNetworkAclEntry(
+			ReplaceNetworkAclEntry replaceNetworkAclEntry) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AuthorizeSecurityGroupEgressResponse authorizeSecurityGroupEgress(
+			AuthorizeSecurityGroupEgress authorizeSecurityGroupEgress) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteNetworkAclEntryResponse deleteNetworkAclEntry(
+			DeleteNetworkAclEntry deleteNetworkAclEntry) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteRouteTableResponse deleteRouteTable(
+			DeleteRouteTable deleteRouteTable) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeNetworkInterfaceAttributeResponse describeNetworkInterfaceAttribute(
+			DescribeNetworkInterfaceAttribute describeNetworkInterfaceAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateReservedInstancesListingResponse createReservedInstancesListing(
+			CreateReservedInstancesListing createReservedInstancesListing) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateNetworkAclResponse createNetworkAcl(
+			CreateNetworkAcl createNetworkAcl) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ModifyVolumeAttributeResponse modifyVolumeAttribute(
+			ModifyVolumeAttribute modifyVolumeAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReplaceNetworkAclAssociationResponse replaceNetworkAclAssociation(
+			ReplaceNetworkAclAssociation replaceNetworkAclAssociation) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public EnableVgwRoutePropagationResponse enableVgwRoutePropagation(
+			EnableVgwRoutePropagation enableVgwRoutePropagation) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public UnassignPrivateIpAddressesResponse unassignPrivateIpAddresses(
+			UnassignPrivateIpAddresses unassignPrivateIpAddresses) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteVpnConnectionRouteResponse deleteVpnConnectionRoute(
+			DeleteVpnConnectionRoute deleteVpnConnectionRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CancelReservedInstancesListingResponse cancelReservedInstancesListing(
+			CancelReservedInstancesListing cancelReservedInstancesListing) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeNetworkAclsResponse describeNetworkAcls(
+			DescribeNetworkAcls describeNetworkAcls) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public EnableVolumeIOResponse enableVolumeIO(EnableVolumeIO enableVolumeIO) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeInternetGatewaysResponse describeInternetGateways(
+			DescribeInternetGateways describeInternetGateways) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeReservedInstancesListingsResponse describeReservedInstancesListings(
+			DescribeReservedInstancesListings describeReservedInstancesListings) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeInstanceStatusResponse describeInstanceStatus(
+			DescribeInstanceStatus describeInstanceStatus) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ModifyNetworkInterfaceAttributeResponse modifyNetworkInterfaceAttribute(
+			ModifyNetworkInterfaceAttribute modifyNetworkInterfaceAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DisableVgwRoutePropagationResponse disableVgwRoutePropagation(
+			DisableVgwRoutePropagation disableVgwRoutePropagation) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeVolumeStatusResponse describeVolumeStatus(
+			DescribeVolumeStatus describeVolumeStatus) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DetachNetworkInterfaceResponse detachNetworkInterface(
+			DetachNetworkInterface detachNetworkInterface) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeNetworkInterfacesResponse describeNetworkInterfaces(
+			DescribeNetworkInterfaces describeNetworkInterfaces) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CancelExportTaskResponse cancelExportTask(
+			CancelExportTask cancelExportTask) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateRouteResponse createRoute(CreateRoute createRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeRouteTablesResponse describeRouteTables(
+			DescribeRouteTables describeRouteTables) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteNetworkAclResponse deleteNetworkAcl(
+			DeleteNetworkAcl deleteNetworkAcl) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteRouteResponse deleteRoute(DeleteRoute deleteRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateVpnConnectionRouteResponse createVpnConnectionRoute(
+			CreateVpnConnectionRoute createVpnConnectionRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AttachInternetGatewayResponse attachInternetGateway(
+			AttachInternetGateway attachInternetGateway) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReplaceRouteTableAssociationResponse replaceRouteTableAssociation(
+			ReplaceRouteTableAssociation replaceRouteTableAssociation) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AssociateRouteTableResponse associateRouteTable(
+			AssociateRouteTable associateRouteTable) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DetachInternetGatewayResponse detachInternetGateway(
+			DetachInternetGateway detachInternetGateway) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeExportTasksResponse describeExportTasks(
+			DescribeExportTasks describeExportTasks) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateInstanceExportTaskResponse createInstanceExportTask(
+			CreateInstanceExportTask createInstanceExportTask) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AssignPrivateIpAddressesResponse assignPrivateIpAddresses(
+			AssignPrivateIpAddresses assignPrivateIpAddresses) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReportInstanceStatusResponse reportInstanceStatus(
+			ReportInstanceStatus reportInstanceStatus) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteInternetGatewayResponse deleteInternetGateway(
+			DeleteInternetGateway deleteInternetGateway) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AttachNetworkInterfaceResponse attachNetworkInterface(
+			AttachNetworkInterface attachNetworkInterface) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateNetworkInterfaceResponse createNetworkInterface(
+			CreateNetworkInterface createNetworkInterface) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public RevokeSecurityGroupEgressResponse revokeSecurityGroupEgress(
+			RevokeSecurityGroupEgress revokeSecurityGroupEgress) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReplaceRouteResponse replaceRoute(ReplaceRoute replaceRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
 	}
 }

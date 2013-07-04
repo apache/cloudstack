@@ -1255,8 +1255,12 @@ public class EC2RestServlet extends HttpServlet {
             String key = (String)names.nextElement();
             if ( key.startsWith("SecurityGroup")) {
                 String[] value = request.getParameterValues(key);
-                if (null != value && 0 < value.length)
-                    EC2request.addGroupName( value[0]);
+                if (null != value && 0 < value.length) {
+                    if ( key.startsWith("SecurityGroupId"))
+                        EC2request.addSecuritGroupId( value[0]);
+                    else
+                        EC2request.addSecuritGroupName( value[0]);
+                }
             }
         }
 
