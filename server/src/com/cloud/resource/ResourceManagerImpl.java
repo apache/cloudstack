@@ -455,7 +455,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         List<ClusterVO> result = new ArrayList<ClusterVO>();
 
         ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
-        cluster.setHypervisorType(cmd.getHypervisor());
+        cluster.setHypervisorType(hypervisorType.toString());
 
         cluster.setClusterType(clusterType);
         cluster.setAllocationState(allocationState);
