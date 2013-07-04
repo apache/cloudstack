@@ -27,11 +27,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -906,7 +907,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 	}
 
     @Override
-    public boolean checkIfHostReachMaxGuestLimit(HostVO host) {
+    public boolean checkIfHostReachMaxGuestLimit(Host host) {
         Long vmCount = _vmDao.countRunningByHostId(host.getId());
         HypervisorType hypervisorType = host.getHypervisorType();
         String hypervisorVersion = host.getHypervisorVersion();

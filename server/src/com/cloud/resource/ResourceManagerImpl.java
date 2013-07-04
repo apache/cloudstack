@@ -30,7 +30,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.*;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -48,8 +50,6 @@ import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.TapAgentsAction;
@@ -78,9 +78,12 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
@@ -164,7 +167,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.dc.DataCenter.NetworkType;
 
 @Component
 @Local({ ResourceManager.class, ResourceService.class })
@@ -634,12 +636,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public S3 discoverS3(final AddS3Cmd cmd) throws DiscoveryException {
-        return this._s3Mgr.addS3(cmd);
+        return _s3Mgr.addS3(cmd);
     }
 
     @Override
     public List<S3VO> listS3s(final ListS3sCmd cmd) {
-        return this._s3Mgr.listS3s(cmd);
+        return _s3Mgr.listS3s(cmd);
     }
 
 
@@ -704,7 +706,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 // already have a lot of information
                 // in cluster object, to simplify user input, we will construct
                 // neccessary information here
-                Map<String, String> clusterDetails = this._clusterDetailsDao.findDetails(clusterId);
+                Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
                 username = clusterDetails.get("username");
                 assert (username != null);
 
@@ -1971,7 +1973,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         Map<String, String> details = hostDetails;
         String guid = details.get("guid");
-        List<HostVO> currentHosts = this.listAllUpAndEnabledHostsInOneZoneByType(hostType, zoneId);
+        List<HostVO> currentHosts = listAllUpAndEnabledHostsInOneZoneByType(hostType, zoneId);
         for (HostVO currentHost : currentHosts) {
             if (currentHost.getGuid().equals(guid)) {
                 return currentHost;
@@ -2294,7 +2296,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return doUpdateHostPassword(cmd.getHostId());
         } else {
             // get agents for the cluster
-            List<HostVO> hosts = this.listAllHostsInCluster(cmd.getClusterId());
+            List<HostVO> hosts = listAllHostsInCluster(cmd.getClusterId());
             for (HostVO h : hosts) {
                 try {
                     /*
@@ -2468,10 +2470,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId,
+    public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId,
             Set<Long> avoids) {
         for (PodAllocator allocator : _podAllocators) {
-            final Pair<HostPodVO, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
+            final Pair<Pod, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
             if (pod != null) {
                 return pod;
             }
