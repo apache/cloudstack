@@ -324,42 +324,28 @@
           var $form = args.$form;
 
           if (args.data['network-model'] == 'Basic') { //Basic zone
-            args.$form.find('[rel=networkOfferingId]').show();
+            args.$form.find('[rel=networkOfferingId]').show(); //will be used to create a guest network during zone creation 
             args.$form.find('[rel=guestcidraddress]').hide();						
 	    
             args.$form.find('[rel=ip6dns1]').hide();
-	    args.$form.find('[rel=ip6dns2]').hide();
+	          args.$form.find('[rel=ip6dns2]').hide();
           }
-          else { //Advanced zone
-            args.$form.find('[rel=networkOfferingId]').hide();
-						
-	    if(args.data["zone-advanced-sg-enabled"] !=	"on") { //Advanced SG-disabled zone
+          else { //Advanced zone 					
+	          if(args.data["zone-advanced-sg-enabled"] !=	"on") { //Advanced SG-disabled zone
+	            args.$form.find('[rel=networkOfferingId]').hide();
               args.$form.find('[rel=guestcidraddress]').show();
               					  
-	      args.$form.find('[rel=ip6dns1]').show();
-	      args.$form.find('[rel=ip6dns2]').show();
+	            args.$form.find('[rel=ip6dns1]').show();
+	            args.$form.find('[rel=ip6dns2]').show();
             }
-	    else { //Advanced SG-enabled zone
-	      args.$form.find('[rel=guestcidraddress]').hide();
+	          else { //Advanced SG-enabled zone
+	            args.$form.find('[rel=networkOfferingId]').show(); //will be used to create a guest network during zone creation 
+	            args.$form.find('[rel=guestcidraddress]').hide();
 
               args.$form.find('[rel=ip6dns1]').hide();
-	      args.$form.find('[rel=ip6dns2]').hide();
-            }
-          
-	  }													
-										
-      /*    setTimeout(function() {
-            if ($form.find('input[name=ispublic]').is(':checked')) {
-              $form.find('[rel=domain]').show();
-              $form.find('[rel=accountId]').show();
-            }
- 
-            else{
-
-              $form.find('[rel=domain]').hide();
-              $form.find('[rel=accountId]').hide();
-            }
-          });*/
+	            args.$form.find('[rel=ip6dns2]').hide();
+            }          
+	        }			
         },
         fields: {
           name: {
@@ -1723,7 +1709,14 @@
           var array1 = [];
           var networkType = args.data.zone.networkType;  //"Basic", "Advanced"
           array1.push("&networktype=" + todb(networkType));
-          if(networkType == "Advanced") {            
+          
+          if (networkType == "Basic") {        
+            if(selectedNetworkOfferingHavingSG == true)
+              array1.push("&securitygroupenabled=true");  
+            else
+              array1.push("&securitygroupenabled=false");             
+          }
+          else { // networkType == "Advanced"            
 						if(args.data.zone.sgEnabled	!= true) {
 							array1.push("&securitygroupenabled=false"); 
 							
