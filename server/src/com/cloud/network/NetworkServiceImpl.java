@@ -3903,8 +3903,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             s_logger.debug("Created private network " + privateNetwork);
         } else {
             s_logger.debug("Private network already exists: " + privateNetwork);
-            throw new InvalidParameterValueException("Private network for the vlan: " + vlan + " and cidr  "+ cidr +"  already exists " +
-                    " in zone " + _configMgr.getZone(pNtwk.getDataCenterId()).getName());
+            //Do not allow multiple private gateways with same Vlan within a VPC
+            if(vpcId.equals(privateNetwork.getVpcId())){
+                throw new InvalidParameterValueException("Private network for the vlan: " + vlan + " and cidr  "+ cidr +"  already exists " +
+                        "for Vpc "+vpcId+" in zone " + _configMgr.getZone(pNtwk.getDataCenterId()).getName());
+            }
         }
 
         //add entry to private_ip_address table
