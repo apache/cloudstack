@@ -96,6 +96,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -532,8 +533,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         StoragePool pool = null;
 
         Set<Long> podsToAvoid = new HashSet<Long>();
-        Pair<HostPodVO, Long> pod = null;
-
+        Pair<Pod, Long> pod = null;
 
         DiskOfferingVO diskOffering = _diskOfferingDao
                 .findByIdIncludingRemoved(volume.getDiskOfferingId());
@@ -542,14 +542,12 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                 snapshot.getHypervisorType());
 
         // Determine what pod to store the volume in
-        while ((pod = _resourceMgr.findPod(null, null, dc, account.getId(),
-                podsToAvoid)) != null) {
+        while ((pod = _resourceMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
             podsToAvoid.add(pod.first().getId());
             // Determine what storage pool to store the volume in
             while ((pool = storageMgr.findStoragePool(dskCh, dc, pod.first(), null, null,
                     null, poolsToAvoid)) != null) {
                 break;
-                
             }
         }
         

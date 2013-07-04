@@ -24,6 +24,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Host;
@@ -42,7 +43,7 @@ import com.cloud.utils.fsm.NoTransitionException;
  * ResourceManager manages how physical resources are organized within the
  * CloudStack. It also manages the life cycle of the physical resources.
  */
-public interface ResourceManager extends ResourceService{
+public interface ResourceManager extends ResourceService {
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.
@@ -51,69 +52,70 @@ public interface ResourceManager extends ResourceService{
      * @param listener the listener to notify.
      */
     public void registerResourceEvent(Integer event, ResourceListener listener);
-    
+
     public void unregisterResourceEvent(ResourceListener listener);
-    
+
     /**
      * 
      * @param name of adapter
      * @param adapter
-     * @param hates, a list of names which will be eliminated by this adapter. Especially for the case where 
+     * @param hates, a list of names which will be eliminated by this adapter. Especially for the case where
      * can be only one adapter responds to an event, e.g. startupCommand
      */
     public void registerResourceStateAdapter(String name, ResourceStateAdapter adapter);
-    
+
     public void unregisterResourceStateAdapter(String name);
-    
-	public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
-	        boolean forRebalance);
-	
-	public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
-	
-	public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds);
-	
-	public void checkCIDR(HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask);
-	
-	public HostVO fillRoutingHostVO(HostVO host, StartupRoutingCommand ssCmd, HypervisorType hyType, Map<String, String> details, List<String> hostTags);
-	
-	public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException;
-	
+
+    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
+            boolean forRebalance);
+
+    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
+
+    public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds);
+
+    public void checkCIDR(HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask);
+
+    public HostVO fillRoutingHostVO(HostVO host, StartupRoutingCommand ssCmd, HypervisorType hyType, Map<String, String> details, List<String> hostTags);
+
+    public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException;
+
     public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException;
 
-	boolean resourceStateTransitTo(Host host, Event event, long msId) throws NoTransitionException;
+    boolean resourceStateTransitTo(Host host, Event event, long msId) throws NoTransitionException;
 
-	boolean umanageHost(long hostId);
+    boolean umanageHost(long hostId);
 
-	boolean maintenanceFailed(long hostId);
-	
-	public boolean maintain(final long hostId) throws AgentUnavailableException;
-	
+    boolean maintenanceFailed(long hostId);
+
+    public boolean maintain(final long hostId) throws AgentUnavailableException;
+
     @Override
     public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);
-    
+
     public List<HostVO> findDirectlyConnectedHosts();
-    
+
     public List<HostVO> listAllUpAndEnabledHosts(Host.Type type, Long clusterId, Long podId, long dcId);
-    
+
     public List<HostVO> listAllHostsInCluster(long clusterId);
-    
+
     public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status);
-    
+
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Host.Type type, long dcId);
+
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId);
-    
+
     public List<HostVO> listAllHostsInOneZoneByType(Host.Type type, long dcId);
-    
+
     public List<HostVO> listAllHostsInAllZonesByType(Type type);
-    
+
     public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
-    
+
     public HostVO findHostByGuid(String guid);
-    
+
     public HostVO findHostByName(String name);
-    
+
     public List<HostVO> listHostsByNameLike(String name);
-    
+
     /**
      * Find a pod based on the user id, template, and data center.
      * 
@@ -122,25 +124,25 @@ public interface ResourceManager extends ResourceService{
      * @param userId
      * @return
      */
-    Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId, Set<Long> avoids);
-    
+    Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId, Set<Long> avoids);
+
     HostStats getHostStatistics(long hostId);
-    
+
     Long getGuestOSCategoryId(long hostId);
-    
+
     String getHostTags(long hostId);
-    
+
     List<PodCluster> listByDataCenter(long dcId);
 
-	List<HostVO> listAllNotInMaintenanceHostsInOneZone(Type type, Long dcId);
+    List<HostVO> listAllNotInMaintenanceHostsInOneZone(Type type, Long dcId);
 
-	HypervisorType getDefaultHypervisor(long zoneId);
+    HypervisorType getDefaultHypervisor(long zoneId);
 
-	HypervisorType getAvailableHypervisor(long zoneId);
+    HypervisorType getAvailableHypervisor(long zoneId);
 
     Discoverer getMatchingDiscover(HypervisorType hypervisorType);
 
-	List<HostVO> findHostByGuid(long dcId, String guid);
+    List<HostVO> findHostByGuid(long dcId, String guid);
 
     /**
      * @param type

@@ -30,13 +30,12 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
 import com.cloud.vm.DiskProfile;
@@ -108,7 +107,7 @@ public interface StorageManager extends StorageService {
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
     StoragePool findStoragePool(DiskProfile dskCh, DataCenterVO dc,
-            HostPodVO pod, Long clusterId, Long hostId, VMInstanceVO vm,
+            Pod pod, Long clusterId, Long hostId, VMInstanceVO vm,
             Set<StoragePool> avoid);
 
     void connectHostToSharedPool(long hostId, long poolId)

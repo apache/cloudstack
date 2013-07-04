@@ -19,7 +19,6 @@ package com.cloud.capacity;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;

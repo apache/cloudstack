@@ -34,15 +34,12 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -85,7 +82,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
     private int _secondsToSkipDestroyedVMs = 0;
 
     @Override
-    public Pair<HostPodVO, Long> allocateTo(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO zone, long accountId,
+    public Pair<Pod, Long> allocateTo(VirtualMachineTemplate template, ServiceOffering offering, DataCenter zone, long accountId,
             Set<Long> avoids) {
         long zoneId = zone.getId();
         List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zoneId);
@@ -138,12 +135,12 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
                 // If the pod has VMs or volumes in it, return this pod
                 List<UserVmVO> vmsInPod = _vmDao.listByAccountAndPod(accountId, pod.getId());
                 if (!vmsInPod.isEmpty()) {
-                    return new Pair<HostPodVO, Long>(pod, podHostCandidates.get(podId));
+                    return new Pair<Pod, Long>(pod, podHostCandidates.get(podId));
                 }
 
                 List<VolumeVO> volumesInPod = _volumeDao.findByAccountAndPod(accountId, pod.getId());
                 if (!volumesInPod.isEmpty()) {
-                    return new Pair<HostPodVO, Long>(pod, podHostCandidates.get(podId));
+                    return new Pair<Pod, Long>(pod, podHostCandidates.get(podId));
                 }
 
                 availablePods.add(pod);
@@ -158,7 +155,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
             int next = _rand.nextInt(availablePods.size());
             HostPodVO selectedPod = availablePods.get(next);
             s_logger.debug("Found pod " + selectedPod.getName() + " in zone " + zone.getName());
-            return new Pair<HostPodVO, Long>(selectedPod, podHostCandidates.get(selectedPod.getId()));
+            return new Pair<Pod, Long>(selectedPod, podHostCandidates.get(selectedPod.getId()));
         }
     }
 
@@ -319,25 +316,6 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
         _secondsToSkipStoppedVMs = NumbersUtil.parseInt(stoppedValue, 86400);
         _secondsToSkipDestroyedVMs = NumbersUtil.parseInt(destroyedValue, 0);
 
-        /*
-         * ComponentLocator locator = ComponentLocator.getCurrentLocator(); _vmDao = locator.getDao(UserVmDao.class); if (_vmDao
-         * == null) { throw new ConfigurationException("Unable to find UserVMDao."); }
-         *
-         * _volumeDao = locator.getDao(VolumeDao.class); if (_volumeDao == null) { throw new
-         * ConfigurationException("Unable to find VolumeDao."); }
-         *
-         * _templateHostDao = locator.getDao(VMTemplateHostDao.class); if (_templateHostDao == null) { throw new
-         * ConfigurationException("Unable to get template host dao."); }
-         *
-         * _templatePoolDao = locator.getDao(VMTemplatePoolDao.class); if (_templatePoolDao == null) { throw new
-         * ConfigurationException("Unable to get template pool dao."); }
-         *
-         * _podDao = locator.getDao(HostPodDao.class); if (_podDao == null) { throw new
-         * ConfigurationException("Unable to find HostPodDao."); }
-         *
-         * _capacityDao = locator.getDao(CapacityDao.class); if (_capacityDao == null) { throw new
-         * ConfigurationException("Unable to retrieve " + CapacityDao.class); }
-         */
         return true;
     }
 

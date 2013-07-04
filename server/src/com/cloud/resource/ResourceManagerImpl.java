@@ -85,6 +85,7 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
@@ -2468,10 +2469,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId,
+    public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId,
 			Set<Long> avoids) {
 		for (PodAllocator allocator : _podAllocators) {
-            final Pair<HostPodVO, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
+            final Pair<Pod, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
             if (pod != null) {
                 return pod;
             }

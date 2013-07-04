@@ -26,38 +26,42 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
-import org.apache.cloudstack.api.command.admin.host.*;
-import org.apache.cloudstack.api.command.admin.storage.*;
-import org.apache.cloudstack.api.command.admin.swift.*;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
+import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
+import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
+import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
+import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.ImageStore;
 import com.cloud.storage.S3;
 import com.cloud.storage.Swift;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.Manager;
-
-
 import com.cloud.utils.fsm.NoTransitionException;
 
 @Local(value = {ResourceManager.class})
@@ -470,7 +474,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#findPod(com.cloud.template.VirtualMachineTemplate, com.cloud.service.ServiceOfferingVO, com.cloud.dc.DataCenterVO, long, java.util.Set)
      */
     @Override
-    public Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc,
+    public Pair<Pod, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc,
             long accountId, Set<Long> avoids) {
         // TODO Auto-generated method stub
         return null;

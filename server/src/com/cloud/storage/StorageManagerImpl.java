@@ -105,7 +105,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -401,7 +401,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public StoragePool findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, Long hostId, VMInstanceVO vm,
+    public StoragePool findStoragePool(DiskProfile dskCh, final DataCenterVO dc, Pod pod, Long clusterId, Long hostId, VMInstanceVO vm,
             final Set<StoragePool> avoid) {
 
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
