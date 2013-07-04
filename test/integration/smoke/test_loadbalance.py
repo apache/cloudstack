@@ -145,6 +145,14 @@ class TestLoadBalance(cloudstackTestCase):
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
+        cls.vm_3 = VirtualMachine.create(
+                                    cls.api_client,
+                                    cls.services["server"],
+                                    templateid=template.id,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
+                                    serviceofferingid=cls.service_offering.id
+                                    )
         cls.non_src_nat_ip = PublicIPAddress.create(
                                             cls.api_client,
                                             cls.account.name,
