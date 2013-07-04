@@ -527,11 +527,11 @@ class TestLoadBalance(cloudstackTestCase):
         lb_rule.assign(self.apiclient, [self.vm_1, self.vm_2])
 
         hostnames = []
-        self.try_ssh(self.non_src_nat_ip, hostnames)
-        self.try_ssh(self.non_src_nat_ip, hostnames)
-        self.try_ssh(self.non_src_nat_ip, hostnames)
-        self.try_ssh(self.non_src_nat_ip, hostnames)
-        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
 
         self.debug("Hostnames: %s" % str(hostnames))
         self.assertIn(
@@ -556,7 +556,7 @@ class TestLoadBalance(cloudstackTestCase):
                                              self.non_src_nat_ip.ipaddress,
                                              self.vm_1.id,
                                              ))
-            self.try_ssh(self.non_src_nat_ip, hostnames)
+            self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
 
             self.assertIn(
                           self.vm_1.name,
@@ -571,11 +571,11 @@ class TestLoadBalance(cloudstackTestCase):
 
 #        # Making hostnames list empty
         hostnames[:] = []
-        self.try_ssh(self.non_src_nat_ip, hostnames)
-        self.try_ssh(self.non_src_nat_ip, hostnames)
-        self.try_ssh(self.non_src_nat_ip, hostnames)
-        self.try_ssh(self.non_src_nat_ip, hostnames)
-        self.try_ssh(self.non_src_nat_ip, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
+        self.try_ssh(self.non_src_nat_ip.ipaddress, hostnames)
         self.debug("Hostnames: %s" % str(hostnames))
         self.assertIn(
                   self.vm_1.name,
