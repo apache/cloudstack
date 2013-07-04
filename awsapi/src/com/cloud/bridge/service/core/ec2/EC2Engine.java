@@ -25,7 +25,6 @@ import java.security.SignatureException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +110,7 @@ public class EC2Engine extends ManagerBase {
 
 
     /**
-     * Which management server to we talk to?  
+     * Which management server to we talk to?
      * Load a mapping form Amazon values for 'instanceType' to cloud defined
      * diskOfferingId and serviceOfferingId.
      * 
@@ -176,7 +175,7 @@ public class EC2Engine extends ManagerBase {
         if (_eng == null) {
             _eng = new CloudStackApi(managementServer, cloudAPIPort, false);
         }
-        // regardless of whether _eng is initialized, we must make sure 
+        // regardless of whether _eng is initialized, we must make sure
         // access/secret keys are current with what's in the UserCredentials
         _eng.setApiKey(UserContext.current().getAccessKey());
         _eng.setSecretKey(UserContext.current().getSecretKey());
@@ -206,7 +205,7 @@ public class EC2Engine extends ManagerBase {
         }
 
         try {
-            oldApiKey = _eng.getApiKey(); 
+            oldApiKey = _eng.getApiKey();
             oldSecretKey = _eng.getSecretKey();
         } catch(Exception e) {
             // we really don't care, and expect this
@@ -236,18 +235,18 @@ public class EC2Engine extends ManagerBase {
      * @param groupDesc
      * @return
      */
-    public Boolean createSecurityGroup(String groupName, String groupDesc) {
+    public EC2SecurityGroup createSecurityGroup(String groupName, String groupDesc) {
+        EC2SecurityGroup sg = new EC2SecurityGroup();
         try {
             CloudStackSecurityGroup grp = getApi().createSecurityGroup(groupName, null, groupDesc, null);
             if (grp != null && grp.getId() != null) {
-                return true;
+            	sg.setId(grp.getId());
             }
-            return false;
         } catch( Exception e ) {
             logger.error( "EC2 CreateSecurityGroup - ", e);
             handleException(e);
         }
-        return false;
+        return sg;
     }
 
     /**
@@ -292,15 +291,15 @@ public class EC2Engine extends ManagerBase {
     }
 
     /**
-     * CloudStack supports revoke only by using the ruleid of the ingress rule.   
+     * CloudStack supports revoke only by using the ruleid of the ingress rule.
      * We list all security groups and find the matching group and use the first ruleId we find.
      * 
      * @param request
      * @return
      */
-    public boolean revokeSecurityGroup( EC2AuthorizeRevokeSecurityGroup request ) 
+    public boolean revokeSecurityGroup( EC2AuthorizeRevokeSecurityGroup request )
     {
-        try {   
+        try {
             String[] groupSet = new String[1];
             groupSet[0] = request.getName();
             String ruleId = null;
@@ -346,7 +345,7 @@ public class EC2Engine extends ManagerBase {
             for (EC2IpPermission ipPerm : items) {
                 EC2SecurityGroup[] groups = ipPerm.getUserSet();
 
-                List<CloudStackKeyValue> secGroupList = new ArrayList<CloudStackKeyValue>(); 
+                List<CloudStackKeyValue> secGroupList = new ArrayList<CloudStackKeyValue>();
                 for (EC2SecurityGroup group : groups) {
                     CloudStackKeyValue pair = new CloudStackKeyValue();
                     pair.setKeyValue(group.getAccount(), group.getName());
@@ -354,12 +353,12 @@ public class EC2Engine extends ManagerBase {
                 }
                 CloudStackSecurityGroup resp = null;
                 if (ipPerm.getProtocol().equalsIgnoreCase("icmp")) {
-                    resp = getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null, null, 
-                            ipPerm.getIcmpCode(), ipPerm.getIcmpType(), ipPerm.getProtocol(), null, 
+                    resp = getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null, null,
+                            ipPerm.getIcmpCode(), ipPerm.getIcmpType(), ipPerm.getProtocol(), null,
                             request.getName(), null, secGroupList);
                 } else {
-                    resp = getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null, 
-                            ipPerm.getToPort().longValue(), null, null, ipPerm.getProtocol(), null, request.getName(), 
+                    resp = getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null,
+                            ipPerm.getToPort().longValue(), null, null, ipPerm.getProtocol(), null, request.getName(),
                             ipPerm.getFromPort().longValue(), secGroupList);
                 }
                 if (resp != null ){
@@ -418,12 +417,12 @@ public class EC2Engine extends ManagerBase {
             matches++;
         }
 
-        // -> is the port(s) from the request (left) a match of the rule's port(s) 
+        // -> is the port(s) from the request (left) a match of the rule's port(s)
         if (0 != permLeft.getFromPort()) {
             // -> -1 means all ports match
             if (-1 != permLeft.getFromPort()) {
-                if (permLeft.getFromPort().compareTo(permRight.getFromPort()) != 0 || 
-                        permLeft.getToPort().compareTo(permRight.getToPort()) != 0) 
+                if (permLeft.getFromPort().compareTo(permRight.getFromPort()) != 0 ||
+                        permLeft.getToPort().compareTo(permRight.getToPort()) != 0)
                     return null;
             }
             matches++;
@@ -431,7 +430,7 @@ public class EC2Engine extends ManagerBase {
 
 
         // -> was permLeft set up properly with at least one property to match?
-        if ( 0 == matches ) 
+        if ( 0 == matches )
             return null;
         else return permRight.getRuleId();
     }
@@ -442,13 +441,13 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2DescribeSnapshotsResponse describeSnapshots( EC2DescribeSnapshots request ) 
+    public EC2DescribeSnapshotsResponse describeSnapshots( EC2DescribeSnapshots request )
     {
         EC2DescribeSnapshotsResponse response = new EC2DescribeSnapshotsResponse();
         EC2SnapshotFilterSet sfs = request.getFilterSet();
         EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
 
-        try { 
+        try {
             response = listSnapshots( request.getSnapshotSet(),
                     getResourceTags(tagKeyValueSet));
             if (response == null) {
@@ -549,7 +548,7 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public boolean modifyImageAttribute( EC2ModifyImageAttribute request ) 
+    public boolean modifyImageAttribute( EC2ModifyImageAttribute request )
     {
         try {
             if(request.getAttribute().equals(ImageAttribute.launchPermission)){
@@ -681,7 +680,7 @@ public class EC2Engine extends ManagerBase {
         String keyPairName = request.getKeyName();
         try {
             resp = getApi().deleteSSHKeyPair(keyPairName, null, null);
-            if (resp == null) { 
+            if (resp == null) {
                 throw new Exception("Ivalid CloudStack API response");
             }
         } catch(Exception e) {
@@ -866,7 +865,7 @@ public class EC2Engine extends ManagerBase {
             } else {
                 ec2Address.setIpAddress(resp.getIpAddress());
             }
-        } catch(Exception e) { 
+        } catch(Exception e) {
             logger.error( "EC2 AllocateAddress - ", e);
             handleException(e);
         }
@@ -905,7 +904,7 @@ public class EC2Engine extends ManagerBase {
     /**
      * Create a template
      * Amazon API just gives us the instanceId to create the template from.
-     * But our createTemplate function requires the volumeId and osTypeId.  
+     * But our createTemplate function requires the volumeId and osTypeId.
      * So to get that we must make the following sequence of cloud API calls:
      * 1) listVolumes&virtualMachineId=   -- gets the volumeId
      * 2) listVirtualMachinees&id=        -- gets the templateId
@@ -917,7 +916,7 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2CreateImageResponse createImage(EC2CreateImage request) 
+    public EC2CreateImageResponse createImage(EC2CreateImage request)
     {
         EC2CreateImageResponse response = new EC2CreateImageResponse();
         boolean needsRestart = false;
@@ -935,7 +934,7 @@ public class EC2Engine extends ManagerBase {
                         needsRestart = true;
                         if (!stopVirtualMachine( request.getInstanceId() ))
                             throw new Exception("Instance must be in a stopped state");
-                    }           		 
+                    }
                     volumeId = vol.getId();
                     break;
                 }
@@ -952,7 +951,7 @@ public class EC2Engine extends ManagerBase {
             EC2Image[] imageSet = images.getImageSet();
             String osTypeId = imageSet[0].getOsTypeId();
 
-            CloudStackTemplate resp = getApi().createTemplate((request.getDescription() == null ? "" : request.getDescription()), request.getName(), 
+            CloudStackTemplate resp = getApi().createTemplate((request.getDescription() == null ? "" : request.getDescription()), request.getName(),
                     osTypeId, null, null, null, null, null, null, volumeId);
             if (resp == null || resp.getId() == null) {
                 throw new Exception("Image couldn't be created");
@@ -975,15 +974,15 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Register a template
-     *  
+     * 
      * @param request
      * @return
      */
     public EC2CreateImageResponse registerImage(EC2RegisterImage request) {
         EC2CreateImageResponse image = new EC2CreateImageResponse();
         try {
-            List<CloudStackTemplate> templates = getApi().registerTemplate((request.getDescription() == null ? request.getName() : request.getDescription()), 
-                    request.getFormat(), request.getHypervisor(), request.getName(), toOSTypeId(request.getOsTypeName()), request.getLocation(), 
+            List<CloudStackTemplate> templates = getApi().registerTemplate((request.getDescription() == null ? request.getName() : request.getDescription()),
+                    request.getFormat(), request.getHypervisor(), request.getName(), toOSTypeId(request.getOsTypeName()), request.getLocation(),
                     toZoneId(request.getZoneName(), null), null, null, null, null, null, null, null, null, null);
             if (templates != null) {
                 // technically we will only ever register a single template...
@@ -1009,7 +1008,7 @@ public class EC2Engine extends ManagerBase {
      * @param image
      * @return
      */
-    public boolean deregisterImage( EC2Image image ) 
+    public boolean deregisterImage( EC2Image image )
     {
         try {
             CloudStackInfoResponse resp = getApi().deleteTemplate(image.getId(), null);
@@ -1046,7 +1045,7 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public EC2DescribeAvailabilityZonesResponse describeAvailabilityZones(EC2DescribeAvailabilityZones request) {	
+    public EC2DescribeAvailabilityZonesResponse describeAvailabilityZones(EC2DescribeAvailabilityZones request) {
         EC2DescribeAvailabilityZonesResponse availableZones = new EC2DescribeAvailabilityZonesResponse();
         try {
             availableZones = listZones(request.getZoneSet(), null);
@@ -1070,16 +1069,16 @@ public class EC2Engine extends ManagerBase {
         EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
         EC2VolumeFilterSet vfs = request.getFilterSet();
         EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
-        try {   
+        try {
             String[] volumeIds = request.getVolumeSet();
             if ( 0 == volumeIds.length ){
                 volumes = listVolumes( null, null, volumes, getResourceTags(tagKeyValueSet) );
-            } else {     
-                for (String s : volumeIds) 
+            } else {
+                for (String s : volumeIds)
                     volumes = listVolumes(s, null, volumes, getResourceTags(tagKeyValueSet) );
             }
             if ( vfs != null )
-                volumes = vfs.evaluate( volumes );     
+                volumes = vfs.evaluate( volumes );
         }  catch( Exception e ) {
             logger.error( "EC2 DescribeVolumes - ", e);
             handleException(e);
@@ -1095,7 +1094,7 @@ public class EC2Engine extends ManagerBase {
      */
     public EC2Volume attachVolume( EC2Volume request ) {
         EC2Volume resp = new EC2Volume();
-        try {   
+        try {
             request.setDeviceId(mapDeviceToCloudDeviceId(request.getDevice()));
             CloudStackVolume vol = getApi().attachVolume(request.getId(), request.getInstanceId(), request.getDeviceId());
             if(vol != null) {
@@ -1327,12 +1326,12 @@ public class EC2Engine extends ManagerBase {
      * @param request
      * @return
      */
-    public boolean rebootInstances(EC2RebootInstances request) 
+    public boolean rebootInstances(EC2RebootInstances request)
     {
         EC2Instance[] vms = null;
 
         // -> reboot is not allowed on destroyed (i.e., terminated) instances
-        try {   
+        try {
             String[] instanceSet = request.getInstancesSet();
             EC2DescribeInstancesResponse previousState = listVirtualMachines( instanceSet, null, null );
             vms = previousState.getInstanceSet();
@@ -1347,7 +1346,7 @@ public class EC2Engine extends ManagerBase {
             }
 
             // -> if some specified VMs where not found we have to tell the caller
-            if (instanceSet.length != vms.length) 
+            if (instanceSet.length != vms.length)
                 throw new Exception("One or more instanceIds do not exist, other instances rebooted.");
 
             return true;
@@ -1359,7 +1358,7 @@ public class EC2Engine extends ManagerBase {
     }
 
     /**
-     * Using a template (AMI), launch n instances 
+     * Using a template (AMI), launch n instances
      * 
      * @param request
      * @return
@@ -1369,6 +1368,8 @@ public class EC2Engine extends ManagerBase {
         int createInstances    = 0;
         int canCreateInstances = -1;
         int countCreated       = 0;
+        String groupIds   = null;
+        String groupNames = null;
 
         try {
             // ugly...
@@ -1380,14 +1381,14 @@ public class EC2Engine extends ManagerBase {
                 throw new Exception("Min Count is greater than the number of instances left to allocate");
             }
 
-            if ( canCreateInstances < request.getMaxCount()) 
+            if ( canCreateInstances < request.getMaxCount())
                 createInstances = request.getMinCount();
-            else 
+            else
                 createInstances = request.getMaxCount();
 
             //find CS service Offering ID
             String instanceType = "m1.small";
-            if(request.getInstanceType() != null){ 
+            if(request.getInstanceType() != null){
                 instanceType = request.getInstanceType();
             }
             CloudStackServiceOfferingVO svcOffering = getCSServiceOfferingId(instanceType);
@@ -1410,13 +1411,25 @@ public class EC2Engine extends ManagerBase {
             // network
             //CloudStackNetwork network = findNetwork(zone);
 
+            // for EC2 security groups either a group ID or a group name is accepted
+            String[] sgIdList = request.getSecurityGroupIdSet();
+            String[] sgNameList = request.getSecurityGroupNameSet();
+            if (sgIdList.length != 0 && sgNameList.length != 0)
+                throw new EC2ServiceException(ClientError.InvalidParameterCombination,
+                        " for EC2 groups either a group ID or a group name is accepted");
+
+            if (sgIdList.length != 0)
+                groupIds = constructList(sgIdList);
+            if (sgNameList.length != 0)
+                groupNames = constructList(sgNameList);
+
             // now actually deploy the vms
             for( int i=0; i < createInstances; i++ ) {
                 try{
-                    CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
+                    CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(),
                             request.getTemplateId(), zoneId, null, null, null, null,
                             null, null, null, request.getKeyName(), null, null,
-                            null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
+                            groupIds, groupNames, request.getSize().longValue(), request.getUserData());
                     EC2Instance vm = new EC2Instance();
                     vm.setId(resp.getId().toString());
                     vm.setName(resp.getName());
@@ -1480,7 +1493,7 @@ public class EC2Engine extends ManagerBase {
             EC2DescribeInstancesResponse previousState = listVirtualMachines( request.getInstancesSet(), null, null );
             vms = previousState.getInstanceSet();
 
-            // -> send start requests for each item 
+            // -> send start requests for each item
             for (EC2Instance vm : vms) {
                 vm.setPreviousState(vm.getState());
 
@@ -1516,14 +1529,14 @@ public class EC2Engine extends ManagerBase {
         EC2Instance[] virtualMachines = null;
 
         // -> first determine the current state of each VM (becomes it previous state)
-        try {   
+        try {
             String[] instanceSet = request.getInstancesSet();
             Boolean forced = request.getForce();
 
             EC2DescribeInstancesResponse previousState = listVirtualMachines( instanceSet, null, null );
             virtualMachines = previousState.getInstanceSet();
 
-            // -> send stop requests for each item 
+            // -> send stop requests for each item
             for (EC2Instance vm : virtualMachines) {
                 vm.setPreviousState( vm.getState());
                 CloudStackUserVm resp = null;
@@ -1594,14 +1607,14 @@ public class EC2Engine extends ManagerBase {
     }
 
     /**
-     * RunInstances includes a min and max count of requested instances to create.  
+     * RunInstances includes a min and max count of requested instances to create.
      * We have to be able to create the min number for the user or none at all.  So
-     * here we determine what the user has left to create. 
+     * here we determine what the user has left to create.
      * 
      * @return -1 means no limit exists, other positive numbers give max number left that
      *         the user can create.
      */
-    private int calculateAllowedInstances() throws Exception {    
+    private int calculateAllowedInstances() throws Exception {
         int maxAllowed = -1;
 
         CloudStackAccount ourAccount = getCurrentAccount();
@@ -1612,16 +1625,16 @@ public class EC2Engine extends ManagerBase {
             return -99999;
         }
 
-        // if accountType is Admin == 1, then let's return -1 
+        // if accountType is Admin == 1, then let's return -1
         if (ourAccount.getAccountType() == 1) return -1;
 
         // -> get the user limits on instances
-        // "0" represents instances:  
+        // "0" represents instances:
         // http://download.cloud.com/releases/2.2.0/api_2.2.8/user/listResourceLimits.html
         List<CloudStackResourceLimit> limits = getApi().listResourceLimits(null, null, null, null, "0");
         if (limits != null && limits.size() > 0) {
             maxAllowed = (int)limits.get(0).getMax().longValue();
-            if (maxAllowed == -1) 
+            if (maxAllowed == -1)
                 return -1;   // no limit
 
             EC2DescribeInstancesResponse existingVMS = listVirtualMachines( null, null, null );
@@ -1639,7 +1652,7 @@ public class EC2Engine extends ManagerBase {
      * @param ifs - filter out unwanted instances
      */
     private EC2DescribeInstancesResponse listVirtualMachines( String[] virtualMachineIds, EC2InstanceFilterSet ifs,
-            List<CloudStackKeyValue> resourceTags ) throws Exception 
+            List<CloudStackKeyValue> resourceTags ) throws Exception
             {
         EC2DescribeInstancesResponse instances = new EC2DescribeInstancesResponse();
 
@@ -1653,10 +1666,10 @@ public class EC2Engine extends ManagerBase {
 
         if ( null == ifs )
             return instances;
-        else return ifs.evaluate( instances );     
+        else return ifs.evaluate( instances );
             }
 
-    /**  
+    /**
      * Get one or more templates depending on the volumeId parameter.
      * 
      * @param volumeId   - if interested in one specific volume, null if want to list all volumes
@@ -1714,7 +1727,7 @@ public class EC2Engine extends ManagerBase {
     }
 
     /**
-     * Translate the given zone name into the required zoneId.  Query for 
+     * Translate the given zone name into the required zoneId.  Query for
      * a list of all zones and match the zone name given.   Amazon uses zone
      * names while the Cloud API often requires the zoneId.
      * 
@@ -1768,7 +1781,7 @@ public class EC2Engine extends ManagerBase {
      * 
      * @param serviceOfferingId
      * @return A valid value for the Amazon defined instanceType
-     * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException 
+     * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException
      */
     private String serviceOfferingIdToInstanceType( String serviceOfferingId ) throws Exception {
         try{
@@ -1787,13 +1800,13 @@ public class EC2Engine extends ManagerBase {
     }
 
     /**
-     * Match the value in the 'description' field of the listOsTypes response to get 
+     * Match the value in the 'description' field of the listOsTypes response to get
      * the osTypeId.
      * 
      * @param osTypeName
-     * @return the Cloud.com API osTypeId 
+     * @return the Cloud.com API osTypeId
      */
-    private String toOSTypeId( String osTypeName ) throws Exception { 
+    private String toOSTypeId( String osTypeName ) throws Exception {
         try {
             List<CloudStackOsType> osTypes = getApi().listOsTypes(null, null, null);
             for (CloudStackOsType osType : osTypes) {
@@ -1924,7 +1937,7 @@ public class EC2Engine extends ManagerBase {
     }
 
 
-    /**  
+    /**
      * Get one or more templates depending on the templateId parameter.
      * 
      * @param templateId - if null then return information on all existing templates, otherwise
@@ -1939,12 +1952,12 @@ public class EC2Engine extends ManagerBase {
             List<CloudStackTemplate> result = new ArrayList<CloudStackTemplate>();
 
             if(templateId != null){
-                List<CloudStackTemplate> template = getApi().listTemplates("executable", null, null, null, templateId , null, null, null); 
+                List<CloudStackTemplate> template = getApi().listTemplates("executable", null, null, null, templateId , null, null, null);
                 if(template != null){
                     result.addAll(template);
                 }
             }else{
-                List<CloudStackTemplate> selfExecutable = getApi().listTemplates("selfexecutable", null, null, null, null, null, null, null); 
+                List<CloudStackTemplate> selfExecutable = getApi().listTemplates("selfexecutable", null, null, null, null, null, null, null);
                 if(selfExecutable != null){
                     result.addAll(selfExecutable);
                 }
@@ -2214,7 +2227,7 @@ public class EC2Engine extends ManagerBase {
     public CloudStackAccount getCurrentAccount() throws Exception {
         if (currentAccount != null) {
             // verify this is the same account!!!
-            for (CloudStackUser user : currentAccount.getUser()) { 
+            for (CloudStackUser user : currentAccount.getUser()) {
                 if (user.getSecretkey() != null && user.getSecretkey().equalsIgnoreCase(UserContext.current().getSecretKey())) {
                     return currentAccount;
                 }
@@ -2247,7 +2260,7 @@ public class EC2Engine extends ManagerBase {
         List<CloudStackNetwork> networks = getApi().listNetworks(null, null, null, null, null, null, null, null, null, zoneId);
         List<CloudStackNetwork> netWithSecGroup = new ArrayList<CloudStackNetwork>();
         for (CloudStackNetwork network : networks ) {
-            if (!network.getNetworkOfferingAvailability().equalsIgnoreCase("unavailable") && network.getSecurityGroupEnabled()) 
+            if (!network.getNetworkOfferingAvailability().equalsIgnoreCase("unavailable") && network.getSecurityGroupEnabled())
                 netWithSecGroup.add(network);
         }
         // we'll take the first one
@@ -2255,7 +2268,7 @@ public class EC2Engine extends ManagerBase {
     }
 
     /**
-     * Create a network 
+     * Create a network
      * 
      * @param zoneId
      * @param offering
@@ -2264,7 +2277,7 @@ public class EC2Engine extends ManagerBase {
      * @throws Exception
      */
     private CloudStackNetwork createDefaultGuestNetwork(String zoneId, CloudStackNetworkOffering offering, CloudStackAccount owner) throws Exception {
-        return getApi().createNetwork(owner.getName() + "-network", owner.getName() + "-network",  offering.getId(), zoneId, owner.getName(), 
+        return getApi().createNetwork(owner.getName() + "-network", owner.getName() + "-network",  offering.getId(), zoneId, owner.getName(),
                 owner.getDomainId(), true, null, null, null, null, null, null, null, null);
     }
 
@@ -2288,24 +2301,24 @@ public class EC2Engine extends ManagerBase {
             if (networks != null && !networks.isEmpty()) {
                 //pick up the first required network from the network list
                 for (CloudStackNetwork network : networks)  {
-                    for (CloudStackNetworkOffering requiredOffering : reuquiredOfferings) { 
+                    for (CloudStackNetworkOffering requiredOffering : reuquiredOfferings) {
                         logger.debug("[reqd/virtual} offering: " + requiredOffering.getId() + " network " + network.getNetworkOfferingId());
                         if (network.getNetworkOfferingId().equals(requiredOffering.getId())) {
                             return network;
-                        }                
-                    } 
-                } 
+                        }
+                    }
+                }
             } else {
                 //create new network and return it
                 return createDefaultGuestNetwork(zoneId, reuquiredOfferings.get(0), caller);
             }
         } else {
-            //find all optional network offerings in the system 
+            //find all optional network offerings in the system
             List<CloudStackNetworkOffering> optionalOfferings = getApi().listNetworkOfferings("Optional", null, null, null, true, null, null, null, null, null, zoneId);
             if (optionalOfferings != null && !optionalOfferings.isEmpty()) {
                 if (networks != null && !networks.isEmpty()) {
                     for (CloudStackNetwork network : networks) {
-                        for (CloudStackNetworkOffering optionalOffering : optionalOfferings) { 
+                        for (CloudStackNetworkOffering optionalOffering : optionalOfferings) {
                             logger.debug("[optional] offering: " + optionalOffering.getId() + " network " + network.getNetworkOfferingId());
                             if (network.getNetworkOfferingId().equals(optionalOffering.getId())) {
                                 return network;
@@ -2338,7 +2351,7 @@ public class EC2Engine extends ManagerBase {
             return getNetworksWithSecurityGroupEnabled(zone.getId());
 
         } else {
-            return getNetworksWithoutSecurityGroupEnabled(zone.getId()); 
+            return getNetworksWithoutSecurityGroupEnabled(zone.getId());
         }
     }
 
@@ -2413,40 +2426,40 @@ public class EC2Engine extends ManagerBase {
 
 
     /**
-     * Translate the device name string into a Cloud Stack deviceId.   
+     * Translate the device name string into a Cloud Stack deviceId.
      * deviceId 3 is reserved for CDROM and 0 for the ROOT disk
      * 
      * @param device string
      * @return deviceId value
      */
-    private String mapDeviceToCloudDeviceId( String device ) throws Exception 
-    {	
+    private String mapDeviceToCloudDeviceId( String device ) throws Exception
+    {
         if (device.equalsIgnoreCase( "/dev/sdb"  )) return "1";
-        else if (device.equalsIgnoreCase( "/dev/sdc"  )) return "2"; 
-        else if (device.equalsIgnoreCase( "/dev/sde"  )) return "4"; 
-        else if (device.equalsIgnoreCase( "/dev/sdf"  )) return "5"; 
-        else if (device.equalsIgnoreCase( "/dev/sdg"  )) return "6"; 
-        else if (device.equalsIgnoreCase( "/dev/sdh"  )) return "7"; 
-        else if (device.equalsIgnoreCase( "/dev/sdi"  )) return "8"; 
-        else if (device.equalsIgnoreCase( "/dev/sdj"  )) return "9"; 
+        else if (device.equalsIgnoreCase( "/dev/sdc"  )) return "2";
+        else if (device.equalsIgnoreCase( "/dev/sde"  )) return "4";
+        else if (device.equalsIgnoreCase( "/dev/sdf"  )) return "5";
+        else if (device.equalsIgnoreCase( "/dev/sdg"  )) return "6";
+        else if (device.equalsIgnoreCase( "/dev/sdh"  )) return "7";
+        else if (device.equalsIgnoreCase( "/dev/sdi"  )) return "8";
+        else if (device.equalsIgnoreCase( "/dev/sdj"  )) return "9";
 
-        else if (device.equalsIgnoreCase( "/dev/xvdb" )) return "1";  
-        else if (device.equalsIgnoreCase( "/dev/xvdc" )) return "2";  
-        else if (device.equalsIgnoreCase( "/dev/xvde" )) return "4";  
-        else if (device.equalsIgnoreCase( "/dev/xvdf" )) return "5";  
-        else if (device.equalsIgnoreCase( "/dev/xvdg" )) return "6";  
-        else if (device.equalsIgnoreCase( "/dev/xvdh" )) return "7";  
-        else if (device.equalsIgnoreCase( "/dev/xvdi" )) return "8";  
-        else if (device.equalsIgnoreCase( "/dev/xvdj" )) return "9";  
+        else if (device.equalsIgnoreCase( "/dev/xvdb" )) return "1";
+        else if (device.equalsIgnoreCase( "/dev/xvdc" )) return "2";
+        else if (device.equalsIgnoreCase( "/dev/xvde" )) return "4";
+        else if (device.equalsIgnoreCase( "/dev/xvdf" )) return "5";
+        else if (device.equalsIgnoreCase( "/dev/xvdg" )) return "6";
+        else if (device.equalsIgnoreCase( "/dev/xvdh" )) return "7";
+        else if (device.equalsIgnoreCase( "/dev/xvdi" )) return "8";
+        else if (device.equalsIgnoreCase( "/dev/xvdj" )) return "9";
 
-        else if (device.equalsIgnoreCase( "xvdb"      )) return "1";  
-        else if (device.equalsIgnoreCase( "xvdc"      )) return "2";  
-        else if (device.equalsIgnoreCase( "xvde"      )) return "4";  
-        else if (device.equalsIgnoreCase( "xvdf"      )) return "5";  
-        else if (device.equalsIgnoreCase( "xvdg"      )) return "6";  
-        else if (device.equalsIgnoreCase( "xvdh"      )) return "7";  
-        else if (device.equalsIgnoreCase( "xvdi"      )) return "8";  
-        else if (device.equalsIgnoreCase( "xvdj"      )) return "9";  
+        else if (device.equalsIgnoreCase( "xvdb"      )) return "1";
+        else if (device.equalsIgnoreCase( "xvdc"      )) return "2";
+        else if (device.equalsIgnoreCase( "xvde"      )) return "4";
+        else if (device.equalsIgnoreCase( "xvdf"      )) return "5";
+        else if (device.equalsIgnoreCase( "xvdg"      )) return "6";
+        else if (device.equalsIgnoreCase( "xvdh"      )) return "7";
+        else if (device.equalsIgnoreCase( "xvdi"      )) return "8";
+        else if (device.equalsIgnoreCase( "xvdj"      )) return "9";
 
         else throw new Exception("Device is not supported");
     }
@@ -2457,7 +2470,7 @@ public class EC2Engine extends ManagerBase {
      * @param state
      * @return
      */
-    private String mapToAmazonVolState( String state ) 
+    private String mapToAmazonVolState( String state )
     {
         if (state.equalsIgnoreCase( "Allocated" ) ||
                 state.equalsIgnoreCase( "Creating"  ) ||
@@ -2465,7 +2478,7 @@ public class EC2Engine extends ManagerBase {
 
         if (state.equalsIgnoreCase( "Destroy"   )) return "deleting";
 
-        return "error"; 
+        return "error";
     }
 
     /**
@@ -2554,7 +2567,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Start an existing stopped instance(VM)
-     *  
+     * 
      * @param instanceId
      * @return
      * @throws Exception
@@ -2574,10 +2587,10 @@ public class EC2Engine extends ManagerBase {
     /**
      * Cloud Stack API takes a comma separated list as a parameter.
      * 
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
     private String constructList( String[] elements ) throws UnsupportedEncodingException {
-        if (null == elements || 0 == elements.length) return null;  	
+        if (null == elements || 0 == elements.length) return null;
         StringBuffer elementList = new StringBuffer();
 
         for( int i=0; i < elements.length; i++ ) {
@@ -2787,7 +2800,7 @@ public class EC2Engine extends ManagerBase {
                             "Not enough available addresses to satisfy your minimum request");
                 } else {
                     throw new EC2ServiceException( ServerError.InternalError, "There is insufficient capacity");
-                } 
+                }
             } else if (errorCode == 401) {
                 if ( errorMessage.contains("Unauthorized") ) {
                     throw new EC2ServiceException(ClientError.AuthFailure, "User not authorised");
