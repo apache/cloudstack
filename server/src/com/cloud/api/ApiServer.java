@@ -502,6 +502,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
 
             params.put("ctxStartEventId", String.valueOf(startEventId));
+            params.put("cmdEventType", asyncCmd.getEventType().toString());
 
             ctx.setAccountId(asyncCmd.getEntityOwnerId());
 
