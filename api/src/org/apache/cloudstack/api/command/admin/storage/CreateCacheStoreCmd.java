@@ -18,22 +18,22 @@
  */
 package org.apache.cloudstack.api.command.admin.storage;
 
-import java.util.Map;
-
+import com.cloud.storage.ImageStore;
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.exception.DiscoveryException;
-import com.cloud.storage.ImageStore;
-import com.cloud.user.Account;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 @APICommand(name = "createCacheStore", description="create cache store.", responseObject=ImageStoreResponse.class)
 public class CreateCacheStoreCmd extends BaseCmd {
@@ -76,7 +76,19 @@ public class CreateCacheStoreCmd extends BaseCmd {
     }
 
      public Map<String, String> getDetails() {
-        return details;
+         Map<String, String> detailsMap = null;
+         if (details != null && !details.isEmpty()) {
+             detailsMap = new HashMap<String, String>();
+             Collection<?> props = details.values();
+             Iterator<?> iter = props.iterator();
+             while (iter.hasNext()) {
+                 HashMap<String, String> detail = (HashMap<String, String>) iter.next();
+                 String key = detail.get("key");
+                 String value = detail.get("value");
+                 detailsMap.put(key, value);
+             }
+         }
+         return detailsMap;
     }
 
     public String getScope() {
