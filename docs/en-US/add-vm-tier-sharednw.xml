@@ -25,13 +25,10 @@
     network provided by a service provider.</para>
   <orderedlist>
     <listitem>
-      <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+      <para>Log in to the &PRODUCT; UI as an administrator.</para>
     </listitem>
     <listitem>
       <para>In the left navigation, choose Instances.</para>
-    </listitem>
-    <listitem>
-      <para>Select the VM you want to work with.</para>
     </listitem>
     <listitem>
       <para>Click Add Instance.</para>
@@ -41,8 +38,6 @@
     </listitem>
     <listitem>
       <para>Select a template or ISO, then follow the steps in the wizard. </para>
-      <para>For more information about how the templates came to be in this list, see <xref
-          linkend="working-with-templates"/>.</para>
     </listitem>
     <listitem>
       <para>Ensure that the hardware you have allows starting the selected service offering.</para>
