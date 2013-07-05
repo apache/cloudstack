@@ -25,6 +25,7 @@ import java.security.SignatureException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1764,7 +1765,7 @@ public class EC2Engine extends ManagerBase {
 
             if (instanceType == null)
                 instanceType = "m1.small"; // default value
-            else if ( !Arrays.asList(validInstanceTypes).contains(instanceType)) { 
+            else if ( !Arrays.asList(validInstanceTypes).contains(instanceType)) {
                 throw new Exception("Specified instance type is invalid");
             }
             return scvoDao.getSvcOfferingByName(instanceType);
