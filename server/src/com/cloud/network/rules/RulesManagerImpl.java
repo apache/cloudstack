@@ -964,7 +964,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         try {
-            if (!_networkMgr.applyStaticNats(staticNats, continueOnError)) {
+            if (!_networkMgr.applyStaticNats(staticNats, continueOnError, false)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -1307,7 +1307,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (staticNats != null && !staticNats.isEmpty()) {
             try {
-                if (!_networkMgr.applyStaticNats(staticNats, continueOnError)) {
+                if (!_networkMgr.applyStaticNats(staticNats, continueOnError, forRevoke)) {
                     return false;
                 }
             } catch (ResourceUnavailableException ex) {
@@ -1334,7 +1334,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 s_logger.debug("Found " + staticNats.size() + " static nats to disable for network id " + networkId);
             }
             try {
-                if (!_networkMgr.applyStaticNats(staticNats, continueOnError)) {
+                if (!_networkMgr.applyStaticNats(staticNats, continueOnError, forRevoke)) {
                     return false;
                 }
             } catch (ResourceUnavailableException ex) {
