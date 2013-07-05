@@ -106,7 +106,8 @@
                 return name != 'protocolnumber' &&
                   name != 'icmptype' &&
                   name != 'icmpcode' &&
-                  name != 'cidrlist';
+                  name != 'cidrlist' &&
+                  name != 'number' ;
               });
               $portFields = $inputs.filter(function() {
                 var name = $(this).attr('rel');
@@ -125,18 +126,21 @@
                 $icmpFields.hide();
                 $portFields.show();
                 $protocolFields.show();
+                $portFields.show();
               } else if ($(this).val() == 'icmp') {
                 $icmpFields.show();
                 $protocolFields.hide();
                 $portFields.hide();
-              } else {
+              } 
+               else if ($(this).val() == 'all') {
+                  $portFields.hide();
+                }
+
+                else {
                 $otherFields.show();
                 $icmpFields.hide();
                 $protocolFields.hide();
                 
-                if ($(this).val() == 'all') {
-                  $portFields.hide();
-                }
               }              
             } else {
               //
@@ -179,6 +183,7 @@
                 $icmpFields.hide();
                 $otherFields.hide();
                 $protocolFields.show().addClass('required');
+                $portFields.show();
               } else if ($(this).val() == 'icmp') {
                 $icmpFields.show();
                 $icmpFields.attr('disabled', false);
@@ -186,7 +191,13 @@
                 $otherFields.attr('disabled', 'disabled');
                 $otherFields.hide();
                 $otherFields.parent().find('label.error').hide();
-              } else {
+              } 
+             else if ($(this).val() == 'all'){
+                  $portFields.attr('disabled', 'disabled');
+                  $portFields.hide();
+                }
+
+              else {
                 $otherFields.show();
                 $otherFields.parent().find('label.error').hide();
                 $otherFields.attr('disabled', false);
@@ -194,10 +205,6 @@
                 $icmpFields.hide();
                 $icmpFields.parent().find('label.error').hide();
                 $protocolFields.hide().removeClass('required');
-                if ($(this).val() == 'all'){
-                  $portFields.attr('disabled', 'disabled');
-                  $portFields.hide();
-                }
               }              
             }
           });
