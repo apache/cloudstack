@@ -185,16 +185,12 @@ def get_process_status(hostip, port, username, password, linklocalip, process, h
     return res
 
 
-def isAlmostEqual(self, first_digit, second_digit, range=0):
+def isAlmostEqual(first_digit, second_digit, range=0):
     digits_equal_within_range = False
 
     try:
         if ((first_digit - range) < second_digit < (first_digit + range)):
             digits_equal_within_range = True
-
     except Exception as e:
-        self.fail(
-            "%s: Failed while comparing the numbers %s & %s" %
-            (e, first_digit, second_digit))
-
+        raise e
     return digits_equal_within_range

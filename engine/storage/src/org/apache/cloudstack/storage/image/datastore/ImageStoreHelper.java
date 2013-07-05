@@ -95,7 +95,7 @@ public class ImageStoreHelper {
         if (details != null) {
             Iterator<String> keyIter = details.keySet().iterator();
             while (keyIter.hasNext()) {
-                String key = keyIter.next();
+                String key = keyIter.next().toString();
                 ImageStoreDetailVO detail = new ImageStoreDetailVO();
                 detail.setStoreId(store.getId());
                 detail.setName(key);
