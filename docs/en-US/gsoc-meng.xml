@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<chapter id="gsoc-meng">
+<section id="gsoc-meng">
         <title>Meng's 2013 GSoC Proposal</title>
         <para>This chapter describes Meng's 2013 Google Summer of Code project within the &PRODUCT; ASF project. It is a copy paste of the submitted proposal.</para>
 	<section id="Project-Description">
@@ -232,4 +232,4 @@ http://chriskleban-internet.blogspot.com/2012/03/build-cloud-cloudstack-instance
 		</orderedlist>
 	</section>
 	
-</chapter>
+</section>

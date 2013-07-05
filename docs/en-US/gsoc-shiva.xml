@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<chapter id="gsoc-shiva">
+<section id="gsoc-shiva">
         <title>Shiva Teja's 2013 GSoC Proposal</title>
         <para>This chapter describes Shiva Teja's 2013 Google Summer of Code project within the &PRODUCT; ASF project. It is a copy paste of the submitted proposal.</para>
 	<section id="gsoc-abstract-shiva">
@@ -67,4 +67,4 @@
 		<title>About Me</title>
 		<para> I am a 2nd year computer science undergrad studying at IIT Mandi, India. I've been using Python for an year and a half now. I've used Django, Flask and Tornado for my small projects. Along with Python, I use C++ for competitive programming. Recently, I fell in love with Haskell. I've always been fascinated about web technologies.</para>
 	</section>
-</chapter>
+</section>
