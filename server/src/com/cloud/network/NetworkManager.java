@@ -191,7 +191,7 @@ public interface NetworkManager  {
 
     public String acquireGuestIpAddress(Network network, String requestedIp);
 
-    boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError) throws ResourceUnavailableException;
+    boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException;
 
     boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm,
             DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException;

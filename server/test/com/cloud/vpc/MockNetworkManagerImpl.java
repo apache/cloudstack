@@ -987,7 +987,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      * @see com.cloud.network.NetworkManager#applyStaticNats(java.util.List, boolean)
      */
     @Override
-    public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError)
+    public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke)
             throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;

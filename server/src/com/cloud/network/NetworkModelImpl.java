@@ -273,7 +273,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public Map<PublicIpAddress, Set<Service>> getIpToServices(List<? extends PublicIpAddress> publicIps, boolean rulesRevoked, boolean includingFirewall) {
+    public Map<PublicIpAddress, Set<Service>> getIpToServices(List<? extends PublicIpAddress> publicIps, boolean postApplyRules, boolean includingFirewall) {
             Map<PublicIpAddress, Set<Service>> ipToServices = new HashMap<PublicIpAddress, Set<Service>>();
     
             if (publicIps != null && !publicIps.isEmpty()) {
@@ -331,7 +331,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                             // IP is not being used for any purpose so skip IPAssoc to network service provider
                             continue;
                         } else {
-                            if (rulesRevoked) {
+                            if (postApplyRules) {
                                 // no active rules/revoked rules are associated with this public IP, so remove the
                                 // association with the provider
                                 if (ip.isSourceNat()) {

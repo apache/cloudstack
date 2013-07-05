@@ -627,30 +627,23 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Override
     public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
-        List<PublicIp> publicIps = new ArrayList<PublicIp>();
-        if (userIps != null && !userIps.isEmpty()) {
-            for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                publicIps.add(publicIp);
-            }
-        }
+        boolean success = true;
 
-        boolean success = applyIpAssociations(network, false, continueOnError, publicIps);
-
-        if (success) {
-            for (IPAddressVO addr : userIps) {
-                if (addr.getState() == IpAddress.State.Allocating) {
-                    markPublicIpAsAllocated(addr);
-                } else if (addr.getState() == IpAddress.State.Releasing) {
-                    // Cleanup all the resources for ip address if there are any, and only then un-assign ip in the
-                    // system
-                    if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
-                        s_logger.debug("Unassiging ip address " + addr);
-                        _ipAddressDao.unassignIpAddress(addr.getId());
-                    } else {
-                        success = false;
-                        s_logger.warn("Failed to release resources for ip address id=" + addr.getId());
-                    }
+        // CloudStack will take a lazy approach to associate an acquired public IP to a network service provider as
+        // it will not know what service an acquired IP will be used for. An IP is actually associated with a provider when first
+        // rule is applied. Similarly when last rule on the acquired IP is revoked, IP is not associated with any provider
+        // but still be associated with the account. At this point just mark IP as allocated or released.
+        for (IPAddressVO addr : userIps) {
+            if (addr.getState() == IpAddress.State.Allocating) {
+                addr.setAssociatedWithNetworkId(network.getId());
+                markPublicIpAsAllocated(addr);
+            } else if (addr.getState() == IpAddress.State.Releasing) {
+                // Cleanup all the resources for ip address if there are any, and only then un-assign ip in the system
+                if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
+                    _ipAddressDao.unassignIpAddress(addr.getId());
+                } else {
+                    success = false;
+                    s_logger.warn("Failed to release resources for ip address id=" + addr.getId());
                 }
             }
         }
@@ -658,14 +651,17 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return success;
     }
 
-   
 
+    // CloudStack will take a lazy approach to associate an acquired public IP to a network service provider as
+    // it will not know what a acquired IP will be used for. An IP is actually associated with a provider when first
+    // rule is applied. Similarly when last rule on the acquired IP is revoked, IP is not associated with any provider
+    // but still be associated with the account. Its up to caller of this function to decide when to invoke IPAssociation
     @Override
-    public boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, 
+    public boolean applyIpAssociations(Network network, boolean postApplyRules, boolean continueOnError,
             List<? extends PublicIpAddress> publicIps) throws ResourceUnavailableException {
         boolean success = true;
 
-        Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(publicIps, rulesRevoked, true);
+        Map<PublicIpAddress, Set<Service>> ipToServices = _networkModel.getIpToServices(publicIps, postApplyRules, true);
         Map<Provider, ArrayList<PublicIpAddress>> providerToIpList = _networkModel.getProviderToIpList(network, ipToServices);
 
         for (Provider provider : providerToIpList.keySet()) {
@@ -2943,11 +2939,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                     publicIps.add(publicIp);
                 }
             }
-
-            // rules can not programmed unless IP is associated with network
-            // service provider, so run IP assoication for
-            // the network so as to ensure IP is associated before applying
-            // rules (in add state)
+        }
+        // rules can not programmed unless IP is associated with network service provider, so run IP assoication for
+        // the network so as to ensure IP is associated before applying rules (in add state)
+        if (checkIfIpAssocRequired(network, false, publicIps)) {
             applyIpAssociations(network, false, continueOnError, publicIps);
         }
 
@@ -2961,13 +2956,63 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             success = false;
         }
 
-        if (!(rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
-            // if all the rules configured on public IP are revoked then
-            // dis-associate IP with network service provider
+        // if there are no active rules associated with a public IP, then public IP need not be associated with a provider.
+        // This IPAssoc ensures, public IP is dis-associated after last active rule is revoked.
+        if (checkIfIpAssocRequired(network, true, publicIps)) {
             applyIpAssociations(network, true, continueOnError, publicIps);
         }
 
         return success;
+    }
+
+    // An IP association is required in below cases
+    //  1.there is at least one public IP associated with the network on which first rule (PF/static NAT/LB) is being applied.
+    //  2.last rule (PF/static NAT/LB) on the public IP has been revoked. So the public IP should not be associated with any provider
+    boolean checkIfIpAssocRequired(Network network, boolean postApplyRules, List<PublicIp> publicIps) {
+        for (PublicIp ip : publicIps) {
+            if (ip.isSourceNat()) {
+                continue;
+            } else if (ip.isOneToOneNat()) {
+                continue;
+            } else {
+                Long totalCount = null;
+                Long revokeCount = null;
+                Long activeCount = null;
+                Long addCount = null;
+
+                totalCount = _firewallDao.countRulesByIpId(ip.getId());
+                if (postApplyRules) {
+                    revokeCount = _firewallDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Revoke);
+                } else {
+                    activeCount = _firewallDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active);
+                    addCount = _firewallDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Add);
+                }
+
+                if (totalCount == null || totalCount.longValue() == 0L) {
+                    continue;
+                }
+
+                if (postApplyRules) {
+
+                    if (revokeCount != null && revokeCount.longValue() == totalCount.longValue()) {
+                        s_logger.trace("All rules are in Revoke state, have to dis-assiciate IP from the backend");
+                        return true;
+                    }
+                } else {
+                    if (activeCount != null && activeCount > 0) {
+                        continue;
+                    } else if (addCount != null && addCount.longValue() == totalCount.longValue()) {
+                        s_logger.trace("All rules are in Add state, have to assiciate IP with the backend");
+                        return true;
+                    } else {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        // there are no IP's corresponding to this network that need to be associated with provider
+        return false;
     }
 
     public class NetworkGarbageCollector implements Runnable {
@@ -3535,7 +3580,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
     
     @Override
-    public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError) throws ResourceUnavailableException {
+    public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke)
+            throws ResourceUnavailableException {
         Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
         boolean success = true;
 
@@ -3554,9 +3600,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
         }
 
-        // static NAT rules can not programmed unless IP is associated with network service provider, so run IP
-        // association for the network so as to ensure IP is associated before applying rules (in add state)
-        applyIpAssociations(network, false, continueOnError, publicIps);
+        // static NAT rules can not programmed unless IP is associated with source NAT service provider, so run IP
+        // association for the network so as to ensure IP is associated before applying rules
+        if (checkStaticNatIPAssocRequired(network, false, forRevoke, publicIps)) {
+            applyIpAssociations(network, false, continueOnError, publicIps);
+        }
 
         // get provider
         StaticNatServiceProvider element = getStaticNatProviderForNetwork(network);
@@ -3587,10 +3635,36 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
         }
 
-        // if all the rules configured on public IP are revoked then, dis-associate IP with network service provider
-        applyIpAssociations(network, true, continueOnError, publicIps);
+        // if the static NAT rules configured on public IP is revoked then, dis-associate IP with static NAT service provider
+        if (checkStaticNatIPAssocRequired(network, true, forRevoke, publicIps)) {
+            applyIpAssociations(network, true, continueOnError, publicIps);
+        }
 
         return success;
+    }
+
+    // checks if there are any public IP assigned to network, that are marked for one-to-one NAT that
+    // needs to be associated/dis-associated with static-nat provider
+    boolean checkStaticNatIPAssocRequired(Network network, boolean postApplyRules, boolean forRevoke, List<PublicIp> publicIps) {
+        for (PublicIp ip : publicIps) {
+            if (ip.isOneToOneNat()) {
+                Long activeFwCount = null;
+                activeFwCount =  _firewallDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active);
+
+                if (!postApplyRules && !forRevoke) {
+                    if (activeFwCount > 0) {
+                        continue;
+                    } else {
+                        return true;
+                    }
+                } else if (postApplyRules && forRevoke) {
+                    return true;
+                }
+            } else {
+                continue;
+            }
+        }
+        return false;
     }
 
     @DB
