@@ -19,7 +19,10 @@
     under the License.
 -->
 <section id="add-vm-tier-sharednw">
-  <title>Deploying VMs to a Tier and Shared Network</title>
+  <title>Deploying VMs to VPC Tier and Shared Networks</title>
+  <para>&PRODUCT; allows you deploy VMs on a VPC tier and one or more shared networks. With this
+    feature, VMs deployed in a multi-tier application can receive monitoring services via a shared
+    network provided by a service provider.</para>
   <orderedlist>
     <listitem>
       <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
