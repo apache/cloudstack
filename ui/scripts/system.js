@@ -10373,36 +10373,36 @@
                   
                     //EXPLICIT DEDICATION
                     var array2 = [];
-                    if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true){
+                    if(args.$form.find('.form-item[rel=isDedicated]').find('input[type=checkbox]').is(':Checked')== true) {
                       if(args.data.accountId != "")
                         array2.push("&account=" +todb(args.data.accountId));
                     
+                      if(clusterId != null){
+                        $.ajax({
+                          url:createURL("dedicateCluster&clusterId=" +clusterId +"&domainId=" +args.data.domainId + array2.join("")),
+                          dataType:"json",
+                          success:function(json){
+                            var jid = json.dedicateclusterresponse.jobid;
+                            args.response.success({
+                              _custom:
+                              {      jobId: jid
+                              },
+                              notification: {
+                                poll: pollAsyncJobResult
+                              },
 
-                    if(clusterId != null){
-                      $.ajax({
-                        url:createURL("dedicateCluster&clusterId=" +clusterId +"&domainId=" +args.data.domainId + array2.join("")),
-                        dataType:"json",
-                        success:function(json){
-                          var jid = json.dedicateclusterresponse.jobid;
-                          args.response.success({
-                            _custom:
-                            {      jobId: jid
-                            },
-                            notification: {
-                              poll: pollAsyncJobResult
-                            },
+                              data:$.extend(item, {state:'Enabled'})
+										        });
 
-                            data:$.extend(item, {state:'Enabled'})
-										      });
-
-                        },
-
-                        error:function(json){
-                          args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                        }
-                      });
+                          },
+                          error:function(json){
+                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                          }
+                        });
+                      }
+                    } else {
+                      args.response.success({data: item});
                     }
-                   }
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
