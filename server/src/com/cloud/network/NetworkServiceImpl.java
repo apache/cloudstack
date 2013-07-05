@@ -198,6 +198,12 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     private static final Logger s_logger = Logger.getLogger(NetworkServiceImpl.class);
 
+    private static final long MIN_VLAN_ID = 0L;
+    private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
+    private static final long MIN_GRE_KEY = 0L;
+    private static final long MAX_GRE_KEY = 4294967295L; // 2^32 -1
+
+
     @Inject
     DataCenterDao _dcDao = null;
     @Inject
@@ -2424,6 +2430,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         int vnetStart = 0;
         int vnetEnd = 0;
+        long minVnet = MIN_VLAN_ID;
+        long maxVnet = MAX_VLAN_ID;
+        // Wondering why GRE doesn't check its vNet range here. While they check it in processVlanRange called by updatePhysicalNetwork.
+
         if (vnetRange != null) {
             // Verify zone type
             if (zoneType == NetworkType.Basic
@@ -2442,9 +2452,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             } catch (NumberFormatException e) {
                 throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
             }
-            if ((vnetStart > vnetEnd) || (vnetStart < 0) || (vnetEnd > 4096)) {
+            if ((vnetStart > vnetEnd) || (vnetStart < minVnet) || (vnetEnd > maxVnet)) {
                 s_logger.warn("Invalid vnet range: start range:" + vnetStart + " end range:" + vnetEnd);
-                throw new InvalidParameterValueException("Vnet range should be between 0-4096 and start range should be lesser than or equal to end range");
+                throw new InvalidParameterValueException("Vnet range should be between " + minVnet + "-" + maxVnet + " and start range should be lesser than or equal to end range");
             }
         }
 
@@ -2709,16 +2719,21 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Integer StartVnet;
         Integer EndVnet;
         String[] VnetRange = removeVlan.split("-");
-        int maxVnet = 4096;
+
+        // Init with [min,max] of VLAN. Actually 0x000 and 0xFFF are reserved by IEEE, shoudn't be used.
+        long minVnet = MIN_VLAN_ID;
+        long maxVnet = MAX_VLAN_ID;
+
         // for GRE phynets allow up to 32bits
         // TODO: Not happy about this test.
         // What about guru-like objects for physical networs?
         s_logger.debug("ISOLATION METHODS:" + network.getIsolationMethods());
         // Java does not have unsigned types...
         if (network.getIsolationMethods().contains("GRE")) {
-            maxVnet = (int)(Math.pow(2, 32)-1);
+            minVnet = MIN_GRE_KEY;
+            maxVnet = MAX_GRE_KEY;
         }
-        String rangeMessage = " between 0 and " + maxVnet;
+        String rangeMessage = " between " + minVnet + " and " + maxVnet;
         if (VnetRange.length < 2) {
             throw new InvalidParameterValueException("Please provide valid vnet range" + rangeMessage);
         }
@@ -2734,7 +2749,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             s_logger.warn("Unable to parse vnet range:", e);
             throw new InvalidParameterValueException("Please provide valid vnet range" + rangeMessage);
         }
-        if (StartVnet < 0 || EndVnet > maxVnet) {
+        if (StartVnet < minVnet || EndVnet > maxVnet) {
             throw new InvalidParameterValueException("Vnet range has to be" + rangeMessage);
         }
 
@@ -2785,7 +2800,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         if (temp == 0){
-            throw new InvalidParameterValueException("The vlan range you are trying to delete does not exist.");
+            throw new InvalidParameterValueException("The vnet range you are trying to delete does not exist.");
         }
         if(existingRanges.get(i).first() > existingRanges.get(i).second()){
             existingRanges.remove(i);
