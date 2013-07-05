@@ -501,8 +501,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation){
 
-        // Get size for all the volumes
-        Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
+        // Get size for all the non-destroyed volumes
+        Pair<Long, Long> sizes = _volumeDao.getNonDestroyedCountAndTotalByPool(pool.getId());
         long totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
 
         // Get size for VM Snapshots
