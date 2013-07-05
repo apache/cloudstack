@@ -20,7 +20,7 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
+from marvin.integration.lib.utils import isAlmostEqual
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
@@ -431,9 +431,11 @@ class TestServiceOfferings(cloudstackTestCase):
             self.small_offering.cpuspeed,
             "Check CPU Speed for small offering"
         )
-        self.assertAlmostEqual(
-            int(total_mem) / 1024, # In MBs
-            int(self.small_offering.memory),
+        self.assertTrue(
+            isAlmostEqual(int(int(total_mem) / 1024),
+                int(self.small_offering.memory),
+                range=20
+            ),
             "Check Memory(kb) for small offering"
         )
         return

@@ -850,6 +850,7 @@ class TestRouterServices(cloudstackTestCase):
         gcwait = config[0]
 
         total_wait = int(gcinterval.value) + int(gcwait.value)
+        self.debug("Waiting %s seconds for network cleanup" % str(total_wait * 2))
         # Wait for wait_time * 2 time to cleanup all the resources
         time.sleep(total_wait * 2)
         

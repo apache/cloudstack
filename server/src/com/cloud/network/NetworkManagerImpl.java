@@ -2976,7 +2976,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         public void run() {
             try {
                 List<Long> shutdownList = new ArrayList<Long>();
-                long currentTime = System.currentTimeMillis() >> 10;
+                long currentTime = System.currentTimeMillis() / 1000 ;
                 HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
 
                 List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();

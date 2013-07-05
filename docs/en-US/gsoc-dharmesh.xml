@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<chapter id="gsoc-dharmesh">
+<section id="gsoc-dharmesh">
         <title>Dharmesh's 2013 GSoC Proposal</title>
         <para>This chapter describes Dharmrsh's 2013 Google Summer of Code project within the &PRODUCT; ASF project. It is a copy paste of the submitted proposal.</para>
 	<section id="abstract-dharmesh">
@@ -146,4 +146,4 @@
 			</listitem>
 		</orderedlist>
 	</section>
-</chapter>
+</section>
