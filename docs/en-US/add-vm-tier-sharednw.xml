@@ -43,7 +43,7 @@
       <para>Ensure that the hardware you have allows starting the selected service offering.</para>
     </listitem>
     <listitem>
-      <para>Under Networks, select networks for the VM you are launching.</para>
+      <para>Under Networks, select the desired networks for the VM you are launching.</para>
       <para>You can deploy a VM to a VPC tier and multiple shared networks.</para>
       <mediaobject>
         <imageobject>

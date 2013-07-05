@@ -67,9 +67,14 @@
             assign a special domain name, specify the DNS suffix. This parameter is applied to all
             the tiers within the VPC. That implies, all the tiers you create in the VPC belong to
             the same DNS domain. If the parameter is not specified, a DNS domain name is generated
-            automatically. </para>
+            automatically.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis role="bold">Public Load Balancer Provider</emphasis>:  You have two
+            options: VPC Virtual Router and Netscaler.</para>
         </listitem>
       </itemizedlist>
     </listitem>
+    <listitem><para>Click OK.</para></listitem>
   </orderedlist>
 </section>

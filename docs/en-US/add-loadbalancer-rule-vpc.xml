@@ -35,113 +35,216 @@
       received at a public IP to one or more VMs that belong to a network tier that provides load
       balancing service in a VPC. A user creates a rule, specifies an algorithm, and assigns the
       rule to a set of VMs within a tier.</para>
-    <orderedlist>
-      <listitem>
-        <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
-      </listitem>
-      <listitem>
-        <para>In the left navigation, choose Network.</para>
-      </listitem>
-      <listitem>
-        <para>In the Select view, select VPC.</para>
-        <para>All the VPCs that you have created for the account is listed in the page.</para>
-      </listitem>
-      <listitem>
-        <para>Click the Configure button of the VPC, for which you want to configure load balancing
-          rules.</para>
-        <para>The VPC page is displayed where all the tiers you created listed in a diagram.</para>
-        <para>For each tier, the following options are displayed:</para>
-        <itemizedlist>
-          <listitem>
-            <para>Internal LB</para>
-          </listitem>
-          <listitem>
-            <para>Public LB IP</para>
-          </listitem>
-          <listitem>
-            <para>Static NAT</para>
-          </listitem>
-          <listitem>
-            <para>Virtual Machines</para>
-          </listitem>
-          <listitem>
-            <para>CIDR</para>
-          </listitem>
-        </itemizedlist>
-        <para>The following router information is displayed:</para>
-        <itemizedlist>
-          <listitem>
-            <para>Private Gateways</para>
-          </listitem>
-          <listitem>
-            <para>Public IP Addresses</para>
-          </listitem>
-          <listitem>
-            <para>Site-to-Site VPNs</para>
-          </listitem>
-          <listitem>
-            <para>Network ACL Lists</para>
-          </listitem>
-        </itemizedlist>
-      </listitem>
-      <listitem>
-        <para>In the Router node, select Public IP Addresses.</para>
-        <para>The IP Addresses page is displayed.</para>
-      </listitem>
-      <listitem>
-        <para>Click the IP address for which you want to create the rule, then click the
-          Configuration tab.</para>
-      </listitem>
-      <listitem>
-        <para>In the Load Balancing node of the diagram, click View All.</para>
-      </listitem>
-      <listitem>
-        <para>Select the tier to which you want to apply the rule.</para>
-      </listitem>
-      <listitem>
-        <para>Specify the following:</para>
-        <itemizedlist>
-          <listitem>
-            <para><emphasis role="bold">Name</emphasis>: A name for the load balancer rule.</para>
-          </listitem>
-          <listitem>
-            <para><emphasis role="bold">Public Port</emphasis>: The port that receives the incoming
-              traffic to be balanced.</para>
-          </listitem>
-          <listitem>
-            <para><emphasis role="bold">Private Port</emphasis>: The port that the VMs will use to
-              receive the traffic.</para>
-          </listitem>
-          <listitem>
-            <para><emphasis role="bold">Algorithm</emphasis>. Choose the load balancing algorithm
-              you want &PRODUCT; to use. &PRODUCT; supports the following well-known
-              algorithms:</para>
-            <itemizedlist>
-              <listitem>
-                <para>Round-robin</para>
-              </listitem>
-              <listitem>
-                <para>Least connections</para>
-              </listitem>
-              <listitem>
-                <para>Source</para>
-              </listitem>
-            </itemizedlist>
-          </listitem>
-          <listitem>
-            <para><emphasis role="bold">Stickiness</emphasis>. (Optional) Click Configure and choose
-              the algorithm for the stickiness policy. See Sticky Session Policies for Load Balancer
-              Rules.</para>
-          </listitem>
-          <listitem>
-            <para><emphasis role="bold">Add VMs</emphasis>: Click Add VMs, then select two or more
-              VMs that will divide the load of incoming traffic, and click Apply.</para>
-          </listitem>
-        </itemizedlist>
-      </listitem>
-    </orderedlist>
-    <para>The new load balancing rule appears in the list. You can repeat these steps to add more
-      load balancing rules for this IP address.</para>
+    <section id="enable-vpc-public-lb">
+      <title>Enabling NetScaler as the LB Provider on a VPC Tier</title>
+      <orderedlist>
+        <listitem>
+          <para>Add and enable Netscaler VPX in dedicated mode.</para>
+          <para>Netscaler can be used in a VPC environment only if it is in dedicated mode.</para>
+        </listitem>
+        <listitem>
+          <para>Create a network offering, as given in <xref linkend="ext-lb-offering"/>.</para>
+        </listitem>
+        <listitem>
+          <para>Create a VPC with Netscaler as the Public LB provider.</para>
+          <para>For more information, see <xref linkend="add-vpc"/>.</para>
+        </listitem>
+        <listitem>
+          <para>For the VPC, acquire an IP.</para>
+        </listitem>
+        <listitem>
+          <para>Create an external load balancing rule and apply, as given in <xref
+              linkend="ext-lb-vpc"/>.</para>
+        </listitem>
+      </orderedlist>
+    </section>
+    <section id="ext-lb-offering">
+      <title>Creating a Network Offering for External LB</title>
+      <para>To have internal LB support on VPC, create a network offering as follows: </para>
+      <orderedlist>
+        <listitem>
+          <para>Log in to the &PRODUCT; UI as a user or admin.</para>
+        </listitem>
+        <listitem>
+          <para>From the Select Offering drop-down, choose Network Offering.</para>
+        </listitem>
+        <listitem>
+          <para>Click Add Network Offering.</para>
+        </listitem>
+        <listitem>
+          <para>In the dialog, make the following choices:</para>
+          <itemizedlist>
+            <listitem>
+              <para><emphasis role="bold">Name</emphasis>: Any desired name for the network
+                offering.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Description</emphasis>: A short description of the
+                offering that can be displayed to users.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Network Rate</emphasis>: Allowed data transfer rate in MB
+                per second.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Traffic Type</emphasis>: The type of network traffic that
+                will be carried on the network.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Guest Type</emphasis>: Choose whether the guest network is
+                isolated or shared.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Persistent</emphasis>: Indicate whether the guest network
+                is persistent or not. The network that you can provision without having to deploy a
+                VM on it is termed persistent network. </para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">VPC</emphasis>: This option indicate whether the guest
+                network is Virtual Private Cloud-enabled. A Virtual Private Cloud (VPC) is a
+                private, isolated part of &PRODUCT;. A VPC can have its own virtual network topology
+                that resembles a traditional physical network. For more information on VPCs, see
+                  <xref linkend="vpc"/>.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Specify VLAN</emphasis>: (Isolated guest networks only)
+                Indicate whether a VLAN should be specified when this offering is used.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Supported Services</emphasis>: Select Load Balancer.
+                Select <code>InternalLbVM</code> from the provider list.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Load Balancer Type</emphasis>: Select external LB from the
+                drop-down. Use Netscaler</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">System Offering</emphasis>: Choose the system service
+                offering that you want virtual routers to use in this network.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Conserve mode</emphasis>: Indicate whether to use conserve
+                mode. In this mode, network resources are allocated only when the first virtual
+                machine starts in the network.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+        <listitem>
+          <para>Click OK and the network offering is created.</para>
+        </listitem>
+      </orderedlist>
+    </section>
+    <section id="ext-lb-vpc">
+      <title>Creating an External LB Rule</title>
+      <orderedlist>
+        <listitem>
+          <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+        </listitem>
+        <listitem>
+          <para>In the left navigation, choose Network.</para>
+        </listitem>
+        <listitem>
+          <para>In the Select view, select VPC.</para>
+          <para>All the VPCs that you have created for the account is listed in the page.</para>
+        </listitem>
+        <listitem>
+          <para>Click the Configure button of the VPC, for which you want to configure load
+            balancing rules.</para>
+          <para>The VPC page is displayed where all the tiers you created listed in a
+            diagram.</para>
+          <para>For each tier, the following options are displayed:</para>
+          <itemizedlist>
+            <listitem>
+              <para>Internal LB</para>
+            </listitem>
+            <listitem>
+              <para>Public LB IP</para>
+            </listitem>
+            <listitem>
+              <para>Static NAT</para>
+            </listitem>
+            <listitem>
+              <para>Virtual Machines</para>
+            </listitem>
+            <listitem>
+              <para>CIDR</para>
+            </listitem>
+          </itemizedlist>
+          <para>The following router information is displayed:</para>
+          <itemizedlist>
+            <listitem>
+              <para>Private Gateways</para>
+            </listitem>
+            <listitem>
+              <para>Public IP Addresses</para>
+            </listitem>
+            <listitem>
+              <para>Site-to-Site VPNs</para>
+            </listitem>
+            <listitem>
+              <para>Network ACL Lists</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+        <listitem>
+          <para>In the Router node, select Public IP Addresses.</para>
+          <para>The IP Addresses page is displayed.</para>
+        </listitem>
+        <listitem>
+          <para>Click the IP address for which you want to create the rule, then click the
+            Configuration tab.</para>
+        </listitem>
+        <listitem>
+          <para>In the Load Balancing node of the diagram, click View All.</para>
+        </listitem>
+        <listitem>
+          <para>Select the tier to which you want to apply the rule.</para>
+        </listitem>
+        <listitem>
+          <para>Specify the following:</para>
+          <itemizedlist>
+            <listitem>
+              <para><emphasis role="bold">Name</emphasis>: A name for the load balancer rule.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Public Port</emphasis>: The port that receives the
+                incoming traffic to be balanced.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Private Port</emphasis>: The port that the VMs will use to
+                receive the traffic.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Algorithm</emphasis>. Choose the load balancing algorithm
+                you want &PRODUCT; to use. &PRODUCT; supports the following well-known
+                algorithms:</para>
+              <itemizedlist>
+                <listitem>
+                  <para>Round-robin</para>
+                </listitem>
+                <listitem>
+                  <para>Least connections</para>
+                </listitem>
+                <listitem>
+                  <para>Source</para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Stickiness</emphasis>. (Optional) Click Configure and
+                choose the algorithm for the stickiness policy. See Sticky Session Policies for Load
+                Balancer Rules.</para>
+            </listitem>
+            <listitem>
+              <para><emphasis role="bold">Add VMs</emphasis>: Click Add VMs, then select two or more
+                VMs that will divide the load of incoming traffic, and click Apply.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+      </orderedlist>
+      <para>The new load balancing rule appears in the list. You can repeat these steps to add more
+        load balancing rules for this IP address.</para>
+    </section>
   </section>
   <section id="acros-tiers-lb">
     <title>Load Balancing Across Tiers</title>
