@@ -332,10 +332,6 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
             wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-
-            # Waiting for network cleanup to delete vpc offering
-            wait_for_cleanup(cls.api_client, ["network.gc.wait",
-                                              "network.gc.interval"])
             cls.vpc_off.delete(cls.api_client)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
