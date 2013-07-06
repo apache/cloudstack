@@ -37,7 +37,6 @@ from marvin.integration.lib.common import (get_domain,
                                                         get_zone,
                                                         get_template,
                                                         cleanup_resources,
-                                                        wait_for_cleanup,
                                                         list_routers)
 
 
