@@ -227,8 +227,6 @@ class TestVPCRoutersBasic(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        
-        wait_for_cleanup(cls.apiclient, ["account.cleanup.interval"])
         return
 
     def setUp(self):
@@ -820,8 +818,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        
-        wait_for_cleanup(cls.apiclient, ["account.cleanup.interval"])
         return
 
     def setUp(self):
@@ -839,16 +835,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = list_configurations(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                   )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
        
