@@ -41,7 +41,6 @@ from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         cleanup_resources,
-                                        wait_for_cleanup,
                                         list_routers)
 
 class Services:
@@ -249,10 +248,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self._cleanup)
-            wait_for_cleanup(self.apiclient, [
-                                            "network.gc.interval",
-                                            "network.gc.wait"])
-
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
             #raise Exception("Warning: Exception during cleanup : %s" % e)
