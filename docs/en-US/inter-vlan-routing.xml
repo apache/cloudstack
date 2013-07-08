@@ -29,7 +29,7 @@
     can host multi-tier applications, such as Web, Application, or Database. Such segmentation by
     means of VLANs logically separate application VMs for higher security and lower broadcasts,
     while remaining physically connected to the same device.</para>
-  <para>This feature is supported on XenServer and VMware hypervisors.</para>
+  <para>This feature is supported on XenServer, KVM, and VMware hypervisors.</para>
   <para>The major advantages are:</para>
   <itemizedlist>
     <listitem>
