@@ -833,15 +833,24 @@ $.fn.multiEdit = function(args) {
       handle: '.action.moveDrag',
       
       update: function(event, ui) {
+        var $loading = $('<div>').addClass('loading-overlay');
+
+        $loading.prependTo($multi);
         reorder.moveDrag.action({
+          targetIndex: ui.item.index(),
           context: $.extend(true, {}, context, {
             // Passes all rules, so that each index can be updated
-            multiRule: $multi.find('.data-item').map(function(index, item) {
-              return $(item).data('json-obj');
-            })
+            multiRule: [ui.item.data('json-obj')]
           }),
           response: {
             success: function(args) {
+              $multi.trigger('refresh');
+              $loading.remove();
+            },
+            error: function(msg) {
+              $multi.trigger('refresh');
+              cloudStack.dialog.notice(msg);
+              $loading.remove();
             }
           }
         });

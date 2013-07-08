@@ -30,28 +30,30 @@
     reorder: {
       moveDrag: {
         action: function(args) {
-          $(args.context.multiRule.toArray().reverse()).map(function(index, rule) {
-            $.ajax({
-              url: createURL('updateNetworkACLItem'),
-              data: {
-                id: rule.id,
-                number: index + 1
-              },
-              success: function(json) {
-                var pollTimer = setInterval(function() {
-                  pollAsyncJobResult({
-                    _custom: { jobId: json.createnetworkaclresponse.jobid },
-                    complete: function() {
-                      clearInterval(pollTimer);
-                    },
-                    error: function(errorMsg) {
-                      clearInterval(pollTimer);                      
-                      cloudStack.dialog.notice(errorMsg);
-                    }
-                  });
-                }, 1000);               
-              }
-            });
+          var rule = args.context.multiRule[0];
+          var index = args.targetIndex;
+
+          $.ajax({
+            url: createURL('updateNetworkACLItem'),
+            data: {
+              id: rule.id,
+              number: index + 1
+            },
+            success: function(json) {
+              var pollTimer = setInterval(function() {
+                pollAsyncJobResult({
+                  _custom: { jobId: json.createnetworkaclresponse.jobid },
+                  complete: function() {
+                    clearInterval(pollTimer);
+                    args.response.success();
+                  },
+                  error: function(errorMsg) {
+                    clearInterval(pollTimer);                      
+                    args.response.error(parseXMLHttpResponse(errorMsg));
+                  }
+                });
+              }, 1000);               
+            }
           });
         }
       }
