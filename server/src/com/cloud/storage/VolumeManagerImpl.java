@@ -2388,15 +2388,15 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                             DiskOfferingVO diskOffering = _diskOfferingDao
                                     .findById(vol.getDiskOfferingId());
                             if (diskOffering.getUseLocalStorage()) {
+                                // Currently migration of local volume is not supported so bail out
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Local volume "
                                             + vol
-                                            + " will be recreated on storage pool "
+                                            + " cannot be recreated on storagepool "
                                             + assignedPool
                                             + " assigned by deploymentPlanner");
                                 }
-                                VolumeTask task = new VolumeTask(VolumeTaskType.RECREATE, vol, null);
-                                tasks.add(task);
+                                throw new CloudRuntimeException("Local volume " + vol + " cannot be recreated on storagepool " + assignedPool + " assigned by deploymentPlanner");
                             } else {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Shared volume "
