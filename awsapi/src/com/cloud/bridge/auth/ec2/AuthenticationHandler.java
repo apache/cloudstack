@@ -39,13 +39,13 @@ import org.w3c.dom.NodeList;
 
 import com.cloud.bridge.model.UserCredentialsVO;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
+import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.util.AuthenticationUtils;
 
 
 public class AuthenticationHandler implements Handler {
     protected final static Logger logger = Logger.getLogger(AuthenticationHandler.class);
-    @Inject protected UserCredentialsDao ucDao;
     private DocumentBuilderFactory dbf = null;
 
     protected HandlerDescription handlerDesc = new HandlerDescription( "EC2AuthenticationHandler" );
@@ -117,9 +117,7 @@ public class AuthenticationHandler implements Handler {
             logger.debug( "X509 cert's uniqueId: " + uniqueId );
 
             // -> find the Cloud API key and the secret key from the cert's uniqueId 
-            /*	     	    UserCredentialsDao credentialDao = new UserCredentialsDao();
-	     	    UserCredentials cloudKeys = credentialDao.getByCertUniqueId( uniqueId );
-             */	     	    
+            UserCredentialsDao ucDao = new UserCredentialsDaoImpl();
             UserCredentialsVO cloudKeys = ucDao.getByCertUniqueId(uniqueId);
             if ( null == cloudKeys ) {
                 logger.error( "Cert does not map to Cloud API keys: " + uniqueId );
